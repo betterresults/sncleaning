@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserPlus, Edit, Trash2, RefreshCw } from 'lucide-react';
+import type { User } from '@supabase/supabase-js';
 
 interface UserData {
   id: string;
@@ -125,7 +126,7 @@ const UserManagement = () => {
       // Also check if there are users in auth that are missing from profiles
       if (authUsers?.users) {
         const profileUserIds = new Set(profiles?.map(p => p.user_id) || []);
-        const missingFromProfiles = authUsers.users.filter(authUser => !profileUserIds.has(authUser.id));
+        const missingFromProfiles = authUsers.users.filter((authUser: User) => !profileUserIds.has(authUser.id));
         
         if (missingFromProfiles.length > 0) {
           console.warn('Users in auth but missing from profiles:', missingFromProfiles);
