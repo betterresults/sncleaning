@@ -58,8 +58,8 @@ const UpcomingBookings = () => {
   const [filters, setFilters] = useState<Filters>({
     dateFrom: '',
     dateTo: '',
-    cleanerId: '',
-    customerId: '',
+    cleanerId: 'all',
+    customerId: 'all',
     customerSearch: '',
   });
 
@@ -137,14 +137,14 @@ const UpcomingBookings = () => {
     }
 
     // Cleaner filter
-    if (filters.cleanerId) {
+    if (filters.cleanerId && filters.cleanerId !== 'all') {
       filtered = filtered.filter(booking => 
         booking.cleaner === parseInt(filters.cleanerId)
       );
     }
 
     // Customer filter
-    if (filters.customerId) {
+    if (filters.customerId && filters.customerId !== 'all') {
       filtered = filtered.filter(booking => 
         booking.customer === parseInt(filters.customerId)
       );
@@ -177,8 +177,8 @@ const UpcomingBookings = () => {
     setFilters({
       dateFrom: '',
       dateTo: '',
-      cleanerId: '',
-      customerId: '',
+      cleanerId: 'all',
+      customerId: 'all',
       customerSearch: '',
     });
   };
@@ -338,7 +338,7 @@ const UpcomingBookings = () => {
                   <SelectValue placeholder="Select cleaner" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All cleaners</SelectItem>
+                  <SelectItem value="all">All cleaners</SelectItem>
                   {cleaners.map((cleaner) => (
                     <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
                       {cleaner.first_name} {cleaner.last_name}
@@ -355,7 +355,7 @@ const UpcomingBookings = () => {
                   <SelectValue placeholder="Select customer" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All customers</SelectItem>
+                  <SelectItem value="all">All customers</SelectItem>
                   {customers.map((customer) => (
                     <SelectItem key={customer.id} value={customer.id.toString()}>
                       {customer.first_name} {customer.last_name}
