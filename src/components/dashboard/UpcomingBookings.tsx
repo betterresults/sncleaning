@@ -2,7 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Edit, Trash2, Filter, Search } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Booking {
@@ -15,39 +21,97 @@ interface Booking {
   address: string;
   cleaning_type: string;
   total_cost: number;
-  payment_status: string;
   cleaner: number;
   customer: number;
+  cleaner_name?: string;
+}
+
+interface Filters {
+  dateFrom: string;
+  dateTo: string;
+  cleanerId: string;
+  customerId: string;
+  customerSearch: string;
+}
+
+interface Stats {
+  totalBookings: number;
+  uniqueCustomers: number;
+  totalRevenue: number;
 }
 
 const UpcomingBookings = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
+  const [cleaners, setCleaners] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [stats, setStats] = useState<Stats>({
+    totalBookings: 0,
+    uniqueCustomers: 0,
+    totalRevenue: 0
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [filters, setFilters] = useState<Filters>({
+    dateFrom: '',
+    dateTo: '',
+    cleanerId: '',
+    customerId: '',
+    customerSearch: '',
+  });
 
   const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      console.log('Making simple request to bookings table...');
+      console.log('Fetching upcoming bookings with related data...');
 
-      // Simple direct query to bookings table only
-      const { data, error } = await supabase
+      // Fetch all upcoming bookings with cleaner and customer data
+      const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
-        .select('*');
+        .select(`
+          *,
+          cleaners!bookings_cleaner_fkey (
+            id,
+            first_name,
+            last_name
+          ),
+          customers!bookings_customer_fkey (
+            id,
+            first_name,
+            last_name
+          )
+        `)
+        .gte('date_time', new Date().toISOString())
+        .order('date_time', { ascending: sortOrder === 'asc' });
 
-      console.log('Raw response:', data);
-      console.log('Error:', error);
-
-      if (error) {
-        console.error('Supabase error:', error);
-        setError('Failed to fetch bookings: ' + error.message);
+      if (bookingsError) {
+        console.error('Supabase error:', bookingsError);
+        setError('Failed to fetch bookings: ' + bookingsError.message);
         return;
       }
 
-      setBookings(data || []);
-      console.log('Bookings set:', data?.length || 0);
+      // Fetch cleaners for filter dropdown
+      const { data: cleanersData } = await supabase
+        .from('cleaners')
+        .select('id, first_name, last_name')
+        .order('first_name');
+
+      // Fetch customers for filter dropdown
+      const { data: customersData } = await supabase
+        .from('customers')
+        .select('id, first_name, last_name')
+        .order('first_name');
+
+      setBookings(bookingsData || []);
+      setCleaners(cleanersData || []);
+      setCustomers(customersData || []);
+
+      console.log('Bookings loaded:', bookingsData?.length || 0);
 
     } catch (error) {
       console.error('Catch error:', error);
@@ -57,20 +121,127 @@ const UpcomingBookings = () => {
     }
   };
 
+  const applyFilters = () => {
+    let filtered = [...bookings];
+
+    // Date filters
+    if (filters.dateFrom) {
+      filtered = filtered.filter(booking => 
+        new Date(booking.date_time) >= new Date(filters.dateFrom)
+      );
+    }
+    if (filters.dateTo) {
+      filtered = filtered.filter(booking => 
+        new Date(booking.date_time) <= new Date(filters.dateTo)
+      );
+    }
+
+    // Cleaner filter
+    if (filters.cleanerId) {
+      filtered = filtered.filter(booking => 
+        booking.cleaner === parseInt(filters.cleanerId)
+      );
+    }
+
+    // Customer filter
+    if (filters.customerId) {
+      filtered = filtered.filter(booking => 
+        booking.customer === parseInt(filters.customerId)
+      );
+    }
+
+    // Customer search
+    if (filters.customerSearch) {
+      filtered = filtered.filter(booking => 
+        `${booking.first_name} ${booking.last_name}`.toLowerCase()
+          .includes(filters.customerSearch.toLowerCase()) ||
+        booking.email.toLowerCase().includes(filters.customerSearch.toLowerCase())
+      );
+    }
+
+    setFilteredBookings(filtered);
+    setCurrentPage(1);
+
+    // Calculate stats for filtered bookings
+    const uniqueCustomers = new Set(filtered.map(booking => booking.customer)).size;
+    const totalRevenue = filtered.reduce((sum, booking) => sum + (booking.total_cost || 0), 0);
+    
+    setStats({
+      totalBookings: filtered.length,
+      uniqueCustomers,
+      totalRevenue
+    });
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      dateFrom: '',
+      dateTo: '',
+      cleanerId: '',
+      customerId: '',
+      customerSearch: '',
+    });
+  };
+
+  const handleEdit = (bookingId: number) => {
+    console.log('Edit booking:', bookingId);
+    // TODO: Implement edit functionality
+  };
+
+  const handleDelete = async (bookingId: number) => {
+    if (window.confirm('Are you sure you want to delete this booking?')) {
+      try {
+        const { error } = await supabase
+          .from('bookings')
+          .delete()
+          .eq('id', bookingId);
+
+        if (error) {
+          console.error('Error deleting booking:', error);
+          return;
+        }
+
+        fetchData();
+      } catch (error) {
+        console.error('Error deleting booking:', error);
+      }
+    }
+  };
+
+  const handleDuplicate = async (booking: Booking) => {
+    try {
+      const { id, ...bookingData } = booking;
+      const { error } = await supabase
+        .from('bookings')
+        .insert([bookingData]);
+
+      if (error) {
+        console.error('Error duplicating booking:', error);
+        return;
+      }
+
+      fetchData();
+    } catch (error) {
+      console.error('Error duplicating booking:', error);
+    }
+  };
+
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [sortOrder]);
 
-  const getPaymentStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'paid':
-        return 'bg-green-100 text-green-800';
-      case 'unpaid':
-      case 'not paid':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  useEffect(() => {
+    applyFilters();
+  }, [bookings, filters]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedBookings = filteredBookings.slice(startIndex, startIndex + itemsPerPage);
+
+  const getCleanerName = (cleanerId: number) => {
+    const cleaner = cleaners.find(c => c.id === cleanerId);
+    return cleaner ? `${cleaner.first_name} ${cleaner.last_name}` : 'Unassigned';
   };
 
   if (loading) {
@@ -95,95 +266,297 @@ const UpcomingBookings = () => {
     );
   }
 
-  if (bookings.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <div className="text-gray-500 mb-4">No bookings found</div>
-        <button 
-          onClick={fetchData}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Refresh
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalBookings}</div>
+            <p className="text-xs text-muted-foreground">Upcoming bookings</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Unique Customers</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.uniqueCustomers}</div>
+            <p className="text-xs text-muted-foreground">From upcoming bookings</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Expected Revenue</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">£{stats.totalRevenue.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">From upcoming bookings</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            Filters
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="dateFrom">Date From</Label>
+              <Input
+                id="dateFrom"
+                type="date"
+                value={filters.dateFrom}
+                onChange={(e) => setFilters({...filters, dateFrom: e.target.value})}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="dateTo">Date To</Label>
+              <Input
+                id="dateTo"
+                type="date"
+                value={filters.dateTo}
+                onChange={(e) => setFilters({...filters, dateTo: e.target.value})}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cleaner">Cleaner</Label>
+              <Select value={filters.cleanerId} onValueChange={(value) => setFilters({...filters, cleanerId: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select cleaner" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All cleaners</SelectItem>
+                  {cleaners.map((cleaner) => (
+                    <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
+                      {cleaner.first_name} {cleaner.last_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="customer">Customer</Label>
+              <Select value={filters.customerId} onValueChange={(value) => setFilters({...filters, customerId: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select customer" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All customers</SelectItem>
+                  {customers.map((customer) => (
+                    <SelectItem key={customer.id} value={customer.id.toString()}>
+                      {customer.first_name} {customer.last_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="customerSearch">Search Customer</Label>
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                <Input
+                  id="customerSearch"
+                  placeholder="Search by name or email"
+                  value={filters.customerSearch}
+                  onChange={(e) => setFilters({...filters, customerSearch: e.target.value})}
+                  className="pl-8"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-end">
+              <Button onClick={clearFilters} variant="outline">
+                Clear Filters
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Table Controls */}
       <div className="flex justify-between items-center">
-        <div className="text-sm text-gray-600">
-          Showing {bookings.length} booking{bookings.length !== 1 ? 's' : ''}
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <Label htmlFor="itemsPerPage">Show:</Label>
+            <Select value={itemsPerPage.toString()} onValueChange={(value) => {
+              setItemsPerPage(parseInt(value));
+              setCurrentPage(1);
+            }}>
+              <SelectTrigger className="w-20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Label htmlFor="sortOrder">Sort:</Label>
+            <Select value={sortOrder} onValueChange={(value: 'asc' | 'desc') => setSortOrder(value)}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="asc">Earliest first</SelectItem>
+                <SelectItem value="desc">Latest first</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <button 
-          onClick={fetchData}
-          className="text-blue-600 hover:text-blue-800 text-sm"
-        >
-          Refresh
-        </button>
+
+        <div className="text-sm text-gray-600">
+          Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredBookings.length)} of {filteredBookings.length} bookings
+        </div>
       </div>
-      
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date & Time</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Contact</TableHead>
-              <TableHead>Address</TableHead>
-              <TableHead>Service</TableHead>
-              <TableHead>Cleaner ID</TableHead>
-              <TableHead>Cost</TableHead>
-              <TableHead>Payment</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {bookings.map((booking) => (
-              <TableRow key={booking.id}>
-                <TableCell>
-                  <div className="text-sm">
-                    <div className="font-medium">
-                      {booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : 'No date'}
-                    </div>
-                    <div className="text-gray-500">
-                      {booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'No time'}
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="text-sm">
-                    <div className="font-medium">
-                      {booking.first_name} {booking.last_name}
-                    </div>
-                    <div className="text-gray-500 text-xs">
-                      ID: {booking.customer}
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="text-sm">
-                    <div>{booking.email}</div>
-                    <div className="text-gray-500">{booking.phone_number}</div>
-                  </div>
-                </TableCell>
-                <TableCell className="max-w-32 truncate">
-                  {booking.address}
-                </TableCell>
-                <TableCell>{booking.cleaning_type || 'Standard'}</TableCell>
-                <TableCell>{booking.cleaner || 'Unassigned'}</TableCell>
-                <TableCell className="font-medium">
-                  £{booking.total_cost?.toFixed(2) || '0.00'}
-                </TableCell>
-                <TableCell>
-                  <Badge className={getPaymentStatusColor(booking.payment_status)}>
-                    {booking.payment_status || 'Unpaid'}
-                  </Badge>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+
+      {/* Table */}
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date & Time</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Address</TableHead>
+                  <TableHead>Service</TableHead>
+                  <TableHead>Cleaner</TableHead>
+                  <TableHead>Cost</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedBookings.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8">
+                      No bookings found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  paginatedBookings.map((booking) => (
+                    <TableRow key={booking.id}>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div className="font-medium">
+                            {booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : 'No date'}
+                          </div>
+                          <div className="text-gray-500">
+                            {booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'No time'}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div className="font-medium">
+                            {booking.first_name} {booking.last_name}
+                          </div>
+                          <div className="text-gray-500 text-xs">
+                            ID: {booking.customer}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div>{booking.email}</div>
+                          <div className="text-gray-500">{booking.phone_number}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="max-w-32 truncate">
+                        {booking.address}
+                      </TableCell>
+                      <TableCell>{booking.cleaning_type || 'Standard'}</TableCell>
+                      <TableCell>{getCleanerName(booking.cleaner)}</TableCell>
+                      <TableCell className="font-medium">
+                        £{booking.total_cost?.toFixed(2) || '0.00'}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Open menu</span>
+                              ⋮
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEdit(booking.id)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDuplicate(booking)}>
+                              Duplicate
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDelete(booking.id)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center space-x-2">
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+          
+          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            const pageNum = i + 1;
+            return (
+              <Button
+                key={pageNum}
+                variant={currentPage === pageNum ? "default" : "outline"}
+                onClick={() => setCurrentPage(pageNum)}
+              >
+                {pageNum}
+              </Button>
+            );
+          })}
+          
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

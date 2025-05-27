@@ -98,7 +98,7 @@ const Dashboard = () => {
           {/* Upcoming Bookings Table */}
           <Card>
             <CardHeader>
-              <CardTitle>Upcoming Bookings (Next 7 Days)</CardTitle>
+              <CardTitle>Upcoming Bookings</CardTitle>
             </CardHeader>
             <CardContent>
               <UpcomingBookings />
