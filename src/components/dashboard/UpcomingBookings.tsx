@@ -22,7 +22,6 @@ interface Booking {
 
 const UpcomingBookings = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [cleaners, setCleaners] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,16 +30,15 @@ const UpcomingBookings = () => {
       setLoading(true);
       setError(null);
 
-      console.log('Fetching upcoming bookings...');
+      console.log('Fetching all bookings...');
 
-      // Fetch all upcoming bookings (no user filtering since this is admin-only)
+      // Fetch ALL bookings first to see what's in the database
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
-        .select('*')
-        .gte('date_time', new Date().toISOString())
-        .order('date_time', { ascending: true });
+        .select('*');
 
-      console.log('Bookings query result:', { bookingsData, bookingsError });
+      console.log('All bookings:', bookingsData);
+      console.log('Bookings error:', bookingsError);
 
       if (bookingsError) {
         console.error('Error fetching bookings:', bookingsError);
@@ -48,25 +46,8 @@ const UpcomingBookings = () => {
         return;
       }
 
-      // Fetch cleaners for names
-      const { data: cleanersData, error: cleanersError } = await supabase
-        .from('cleaners')
-        .select('id, first_name, last_name')
-        .order('first_name');
-
-      console.log('Cleaners query result:', { cleanersData, cleanersError });
-
-      if (cleanersError) {
-        console.error('Error fetching cleaners:', cleanersError);
-      }
-
       setBookings(bookingsData || []);
-      setCleaners(cleanersData || []);
-
-      console.log('Final data set:', {
-        bookingsCount: bookingsData?.length || 0,
-        cleanersCount: cleanersData?.length || 0
-      });
+      console.log('Set bookings count:', bookingsData?.length || 0);
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -79,12 +60,6 @@ const UpcomingBookings = () => {
   useEffect(() => {
     fetchData();
   }, []);
-
-  const getCleanerName = (cleanerId: number) => {
-    if (!cleanerId) return 'Unassigned';
-    const cleaner = cleaners.find(c => c.id === cleanerId);
-    return cleaner ? `${cleaner.first_name} ${cleaner.last_name}` : 'Unassigned';
-  };
 
   const getPaymentStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -123,7 +98,7 @@ const UpcomingBookings = () => {
   if (bookings.length === 0) {
     return (
       <div className="text-center py-8">
-        <div className="text-gray-500 mb-4">No upcoming bookings found</div>
+        <div className="text-gray-500 mb-4">No bookings found in database</div>
         <button 
           onClick={fetchData}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
@@ -138,7 +113,7 @@ const UpcomingBookings = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div className="text-sm text-gray-600">
-          Showing {bookings.length} upcoming booking{bookings.length !== 1 ? 's' : ''}
+          Showing {bookings.length} booking{bookings.length !== 1 ? 's' : ''}
         </div>
         <button 
           onClick={fetchData}
@@ -157,7 +132,7 @@ const UpcomingBookings = () => {
               <TableHead>Contact</TableHead>
               <TableHead>Address</TableHead>
               <TableHead>Service</TableHead>
-              <TableHead>Cleaner</TableHead>
+              <TableHead>Cleaner ID</TableHead>
               <TableHead>Cost</TableHead>
               <TableHead>Payment</TableHead>
             </TableRow>
@@ -168,10 +143,10 @@ const UpcomingBookings = () => {
                 <TableCell>
                   <div className="text-sm">
                     <div className="font-medium">
-                      {format(new Date(booking.date_time), 'dd/MM/yyyy')}
+                      {booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : 'No date'}
                     </div>
                     <div className="text-gray-500">
-                      {format(new Date(booking.date_time), 'HH:mm')}
+                      {booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'No time'}
                     </div>
                   </div>
                 </TableCell>
@@ -195,7 +170,7 @@ const UpcomingBookings = () => {
                   {booking.address}
                 </TableCell>
                 <TableCell>{booking.cleaning_type || 'Standard'}</TableCell>
-                <TableCell>{getCleanerName(booking.cleaner)}</TableCell>
+                <TableCell>{booking.cleaner || 'Unassigned'}</TableCell>
                 <TableCell className="font-medium">
                   £{booking.total_cost?.toFixed(2) || '0.00'}
                 </TableCell>
