@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UserPlus, Edit, Trash2 } from 'lucide-react';
+import { UserPlus, Edit, Trash2, RefreshCw } from 'lucide-react';
 
 interface UserData {
   id: string;
@@ -59,54 +59,89 @@ const UserManagement = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      console.log('Fetching users for UserManagement...');
+      console.log('=== FETCHING USERS DEBUG ===');
       
-      // Get users from profiles table with their roles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, user_id, email, first_name, last_name, role');
+      // First, let's get all auth users to see what's actually in the system
+      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      console.log('Auth users from admin.listUsers():', authUsers?.users?.length || 0, authUsers?.users);
       
-      console.log('Profiles data:', profiles, 'Error:', profilesError);
-      
-      if (profilesError) throw profilesError;
-
-      // Get additional roles from user_roles table
-      const { data: userRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id, role');
-      
-      console.log('User roles data:', userRoles, 'Error:', rolesError);
-      
-      if (rolesError) {
-        console.warn('Could not fetch user_roles:', rolesError);
+      if (authError) {
+        console.error('Error fetching auth users:', authError);
       }
 
-      // Combine the data - use user_id as the key since that's what we need
+      // Get users from profiles table
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*');
+      
+      console.log('Profiles data:', profiles?.length || 0, profiles);
+      console.log('Profiles error:', profilesError);
+
+      // Get user roles
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('*');
+      
+      console.log('User roles data:', userRoles?.length || 0, userRoles);
+      console.log('User roles error:', rolesError);
+
+      if (profilesError) {
+        throw profilesError;
+      }
+
+      // Create a map of user roles for easy lookup
+      const roleMap = new Map();
+      if (userRoles) {
+        userRoles.forEach(role => {
+          roleMap.set(role.user_id, role.role);
+        });
+      }
+
+      // Combine profile data with role data
       const usersWithRoles = profiles?.map(profile => {
-        // First check user_roles table, then fall back to profiles table
-        const userRole = userRoles?.find(role => role.user_id === profile.user_id);
-        const finalRole = userRole?.role || profile.role || 'guest';
+        const userRole = roleMap.get(profile.user_id) || profile.role || 'guest';
         
-        console.log(`User ${profile.email}: profile role = ${profile.role}, user_roles = ${userRole?.role}, final = ${finalRole}`);
+        console.log(`Processing user ${profile.email}:`, {
+          profile_role: profile.role,
+          user_roles_role: roleMap.get(profile.user_id),
+          final_role: userRole,
+          user_id: profile.user_id
+        });
         
         return {
-          id: profile.user_id, // Use user_id instead of id for consistency
+          id: profile.user_id,
           email: profile.email || '',
           user_metadata: {
             first_name: profile.first_name || '',
             last_name: profile.last_name || ''
           },
-          role: finalRole as 'guest' | 'user' | 'admin'
+          role: userRole as 'guest' | 'user' | 'admin'
         };
       }) || [];
 
-      console.log('Final users with roles:', usersWithRoles);
+      console.log('Final processed users:', usersWithRoles);
       setUsers(usersWithRoles);
+
+      // Also check if there are users in auth that are missing from profiles
+      if (authUsers?.users) {
+        const profileUserIds = new Set(profiles?.map(p => p.user_id) || []);
+        const missingFromProfiles = authUsers.users.filter(authUser => !profileUserIds.has(authUser.id));
+        
+        if (missingFromProfiles.length > 0) {
+          console.warn('Users in auth but missing from profiles:', missingFromProfiles);
+          toast({
+            title: 'Warning',
+            description: `Found ${missingFromProfiles.length} users in auth that are missing from profiles table`,
+            variant: 'destructive',
+          });
+        }
+      }
+
     } catch (error: any) {
-      console.error('Error fetching users:', error);
+      console.error('Error in fetchUsers:', error);
       toast({
         title: 'Error',
-        description: 'Failed to fetch users',
+        description: 'Failed to fetch users: ' + error.message,
         variant: 'destructive',
       });
     } finally {
@@ -141,6 +176,7 @@ const UserManagement = () => {
   const createUser = async () => {
     try {
       setCreating(true);
+      console.log('Creating user with data:', newUser);
       
       // Call the Edge Function to create user with admin privileges
       const { data, error } = await supabase.functions.invoke('create-user', {
@@ -152,6 +188,8 @@ const UserManagement = () => {
           role: newUser.role
         }
       });
+
+      console.log('Create user response:', { data, error });
 
       if (error) {
         console.error('Edge function error:', error);
@@ -169,7 +207,12 @@ const UserManagement = () => {
 
       setNewUser({ email: '', password: '', firstName: '', lastName: '', role: 'user' });
       setShowCreateUserForm(false);
-      fetchUsers();
+      
+      // Wait a moment for the database to update, then refresh
+      setTimeout(() => {
+        fetchUsers();
+      }, 1000);
+      
     } catch (error: any) {
       console.error('Error creating user:', error);
       toast({
@@ -337,7 +380,7 @@ const UserManagement = () => {
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ role: validRole })
-        .eq('user_id', userId); // Changed from id to user_id
+        .eq('user_id', userId);
       
       if (profileError) {
         console.warn('Could not update profile role:', profileError);
@@ -396,7 +439,18 @@ const UserManagement = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>User & Customer Management</CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle>User & Customer Management</CardTitle>
+          <Button
+            onClick={fetchUsers}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh Users
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="users" className="space-y-6">
@@ -407,7 +461,7 @@ const UserManagement = () => {
           
           <TabsContent value="users" className="space-y-6">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">System Users</h3>
+              <h3 className="text-lg font-semibold">System Users ({users.length})</h3>
               <Button 
                 onClick={() => setShowCreateUserForm(!showCreateUserForm)}
                 variant={showCreateUserForm ? "outline" : "default"}
