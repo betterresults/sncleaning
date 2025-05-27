@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -65,7 +64,7 @@ const UserManagement = () => {
       // Get users from profiles table with their roles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, email, first_name, last_name, role');
+        .select('id, user_id, email, first_name, last_name, role');
       
       console.log('Profiles data:', profiles, 'Error:', profilesError);
       
@@ -82,16 +81,16 @@ const UserManagement = () => {
         console.warn('Could not fetch user_roles:', rolesError);
       }
 
-      // Combine the data
+      // Combine the data - use user_id as the key since that's what we need
       const usersWithRoles = profiles?.map(profile => {
         // First check user_roles table, then fall back to profiles table
-        const userRole = userRoles?.find(role => role.user_id === profile.id);
+        const userRole = userRoles?.find(role => role.user_id === profile.user_id);
         const finalRole = userRole?.role || profile.role || 'guest';
         
         console.log(`User ${profile.email}: profile role = ${profile.role}, user_roles = ${userRole?.role}, final = ${finalRole}`);
         
         return {
-          id: profile.id,
+          id: profile.user_id, // Use user_id instead of id for consistency
           email: profile.email || '',
           user_metadata: {
             first_name: profile.first_name || '',
@@ -338,7 +337,7 @@ const UserManagement = () => {
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ role: validRole })
-        .eq('id', userId);
+        .eq('user_id', userId); // Changed from id to user_id
       
       if (profileError) {
         console.warn('Could not update profile role:', profileError);
@@ -485,31 +484,35 @@ const UserManagement = () => {
                 <div className="text-center py-4">Loading users...</div>
               ) : (
                 <div className="space-y-3">
-                  {users.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <div className="font-medium">
-                          {user.user_metadata.first_name} {user.user_metadata.last_name}
+                  {users.length === 0 ? (
+                    <div className="text-center py-4 text-gray-500">No users found</div>
+                  ) : (
+                    users.map((user) => (
+                      <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                          <div className="font-medium">
+                            {user.user_metadata.first_name} {user.user_metadata.last_name}
+                          </div>
+                          <div className="text-sm text-gray-500">{user.email}</div>
+                          <div className="text-xs text-gray-400">ID: {user.id}</div>
                         </div>
-                        <div className="text-sm text-gray-500">{user.email}</div>
-                        <div className="text-xs text-gray-400">ID: {user.id}</div>
+                        <div className="flex items-center gap-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role || 'guest')}`}>
+                            {getRoleDisplayName(user.role || 'guest')}
+                          </span>
+                          <select
+                            value={user.role || 'guest'}
+                            onChange={(e) => updateUserRole(user.id, e.target.value)}
+                            className="text-sm border rounded px-2 py-1"
+                          >
+                            <option value="guest">Customer</option>
+                            <option value="user">Cleaner</option>
+                            <option value="admin">Administrator</option>
+                          </select>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role || 'guest')}`}>
-                          {getRoleDisplayName(user.role || 'guest')}
-                        </span>
-                        <select
-                          value={user.role || 'guest'}
-                          onChange={(e) => updateUserRole(user.id, e.target.value)}
-                          className="text-sm border rounded px-2 py-1"
-                        >
-                          <option value="guest">Customer</option>
-                          <option value="user">Cleaner</option>
-                          <option value="admin">Administrator</option>
-                        </select>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               )}
             </div>
