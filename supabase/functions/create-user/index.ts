@@ -55,6 +55,36 @@ Deno.serve(async (req) => {
 
     console.log('User created successfully:', userData.user?.id)
 
+    // Now create the profile entry
+    const { error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .insert({
+        id: userData.user!.id,
+        user_id: userData.user!.id,
+        first_name: firstName,
+        last_name: lastName,
+        email: email,
+        role: role
+      })
+
+    if (profileError) {
+      console.error('Error creating profile:', profileError)
+      // Continue anyway, as the user was created successfully
+    }
+
+    // Create the user role entry
+    const { error: roleError } = await supabaseAdmin
+      .from('user_roles')
+      .insert({
+        user_id: userData.user!.id,
+        role: role
+      })
+
+    if (roleError) {
+      console.error('Error creating user role:', roleError)
+      // Continue anyway, as the user was created successfully
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
