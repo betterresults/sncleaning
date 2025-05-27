@@ -65,9 +65,16 @@ const Dashboard = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <h1 className="text-xl font-semibold text-gray-900">SN Cleaning</h1>
-            <Button onClick={handleSignOut} variant="outline">
-              Sign Out
-            </Button>
+            <div className="flex items-center space-x-4">
+              {userRole === 'admin' && (
+                <Button onClick={() => window.location.href = '/admin'} variant="default">
+                  Admin Dashboard
+                </Button>
+              )}
+              <Button onClick={handleSignOut} variant="outline">
+                Sign Out
+              </Button>
+            </div>
           </div>
         </div>
       </header>
