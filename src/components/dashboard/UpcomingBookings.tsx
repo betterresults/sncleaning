@@ -24,39 +24,56 @@ const UpcomingBookings = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [cleaners, setCleaners] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
       setLoading(true);
+      setError(null);
 
-      // Fetch upcoming bookings (next 7 days)
-      const nextWeek = new Date();
-      nextWeek.setDate(nextWeek.getDate() + 7);
+      console.log('Fetching upcoming bookings...');
+
+      // Fetch all upcoming bookings (from now onwards)
+      const now = new Date().toISOString();
+      console.log('Current time for filtering:', now);
 
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
         .select('*')
-        .gte('date_time', new Date().toISOString())
-        .lte('date_time', nextWeek.toISOString())
-        .order('date_time', { ascending: true })
-        .limit(10);
+        .gte('date_time', now)
+        .order('date_time', { ascending: true });
+
+      console.log('Bookings query result:', { bookingsData, bookingsError });
 
       if (bookingsError) {
         console.error('Error fetching bookings:', bookingsError);
+        setError('Failed to fetch bookings: ' + bookingsError.message);
         return;
       }
 
       // Fetch cleaners for names
-      const { data: cleanersData } = await supabase
+      const { data: cleanersData, error: cleanersError } = await supabase
         .from('cleaners')
         .select('id, first_name, last_name')
         .order('first_name');
 
+      console.log('Cleaners query result:', { cleanersData, cleanersError });
+
+      if (cleanersError) {
+        console.error('Error fetching cleaners:', cleanersError);
+      }
+
       setBookings(bookingsData || []);
       setCleaners(cleanersData || []);
 
+      console.log('Final data set:', {
+        bookingsCount: bookingsData?.length || 0,
+        cleanersCount: cleanersData?.length || 0
+      });
+
     } catch (error) {
       console.error('Error fetching data:', error);
+      setError('An unexpected error occurred while fetching data');
     } finally {
       setLoading(false);
     }
@@ -67,6 +84,7 @@ const UpcomingBookings = () => {
   }, []);
 
   const getCleanerName = (cleanerId: number) => {
+    if (!cleanerId) return 'Unassigned';
     const cleaner = cleaners.find(c => c.id === cleanerId);
     return cleaner ? `${cleaner.first_name} ${cleaner.last_name}` : 'Unassigned';
   };
@@ -91,75 +109,112 @@ const UpcomingBookings = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-red-600 mb-4">{error}</div>
+        <button 
+          onClick={fetchData}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   if (bookings.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        No upcoming bookings in the next 7 days
+      <div className="text-center py-8">
+        <div className="text-gray-500 mb-4">No upcoming bookings found</div>
+        <div className="text-sm text-gray-400">
+          This could mean there are no future bookings in the database, or there might be an issue with the date filtering.
+        </div>
+        <button 
+          onClick={fetchData}
+          className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          Refresh
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Date & Time</TableHead>
-            <TableHead>Customer</TableHead>
-            <TableHead>Contact</TableHead>
-            <TableHead>Address</TableHead>
-            <TableHead>Service</TableHead>
-            <TableHead>Cleaner</TableHead>
-            <TableHead>Cost</TableHead>
-            <TableHead>Payment</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {bookings.map((booking) => (
-            <TableRow key={booking.id}>
-              <TableCell>
-                <div className="text-sm">
-                  <div className="font-medium">
-                    {format(new Date(booking.date_time), 'dd/MM/yyyy')}
-                  </div>
-                  <div className="text-gray-500">
-                    {format(new Date(booking.date_time), 'HH:mm')}
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="text-sm">
-                  <div className="font-medium">
-                    {booking.first_name} {booking.last_name}
-                  </div>
-                  <div className="text-gray-500 text-xs">
-                    ID: {booking.customer}
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="text-sm">
-                  <div>{booking.email}</div>
-                  <div className="text-gray-500">{booking.phone_number}</div>
-                </div>
-              </TableCell>
-              <TableCell className="max-w-32 truncate">
-                {booking.address}
-              </TableCell>
-              <TableCell>{booking.cleaning_type || 'Standard'}</TableCell>
-              <TableCell>{getCleanerName(booking.cleaner)}</TableCell>
-              <TableCell className="font-medium">
-                £{booking.total_cost?.toFixed(2) || '0.00'}
-              </TableCell>
-              <TableCell>
-                <Badge className={getPaymentStatusColor(booking.payment_status)}>
-                  {booking.payment_status || 'Unpaid'}
-                </Badge>
-              </TableCell>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div className="text-sm text-gray-600">
+          Showing {bookings.length} upcoming booking{bookings.length !== 1 ? 's' : ''}
+        </div>
+        <button 
+          onClick={fetchData}
+          className="text-blue-600 hover:text-blue-800 text-sm"
+        >
+          Refresh
+        </button>
+      </div>
+      
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Date & Time</TableHead>
+              <TableHead>Customer</TableHead>
+              <TableHead>Contact</TableHead>
+              <TableHead>Address</TableHead>
+              <TableHead>Service</TableHead>
+              <TableHead>Cleaner</TableHead>
+              <TableHead>Cost</TableHead>
+              <TableHead>Payment</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {bookings.map((booking) => (
+              <TableRow key={booking.id}>
+                <TableCell>
+                  <div className="text-sm">
+                    <div className="font-medium">
+                      {format(new Date(booking.date_time), 'dd/MM/yyyy')}
+                    </div>
+                    <div className="text-gray-500">
+                      {format(new Date(booking.date_time), 'HH:mm')}
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="text-sm">
+                    <div className="font-medium">
+                      {booking.first_name} {booking.last_name}
+                    </div>
+                    <div className="text-gray-500 text-xs">
+                      ID: {booking.customer}
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="text-sm">
+                    <div>{booking.email}</div>
+                    <div className="text-gray-500">{booking.phone_number}</div>
+                  </div>
+                </TableCell>
+                <TableCell className="max-w-32 truncate">
+                  {booking.address}
+                </TableCell>
+                <TableCell>{booking.cleaning_type || 'Standard'}</TableCell>
+                <TableCell>{getCleanerName(booking.cleaner)}</TableCell>
+                <TableCell className="font-medium">
+                  £{booking.total_cost?.toFixed(2) || '0.00'}
+                </TableCell>
+                <TableCell>
+                  <Badge className={getPaymentStatusColor(booking.payment_status)}>
+                    {booking.payment_status || 'Unpaid'}
+                  </Badge>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 };
