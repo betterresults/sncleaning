@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info } from 'lucide-react';
 
 interface CreateUserFormProps {
   onSuccess: () => void;
@@ -50,7 +52,7 @@ const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
 
       toast({
         title: 'Success',
-        description: 'User created successfully!',
+        description: 'User created successfully! If the email matches an existing cleaner or customer record, they will be automatically linked.',
       });
 
       setNewUser({ email: '', password: '', firstName: '', lastName: '', role: 'user' });
@@ -73,9 +75,17 @@ const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
   };
 
   return (
-    <div className="p-4 border rounded-lg bg-gray-50">
-      <h4 className="font-semibold mb-4">Create New System User</h4>
-      <div className="grid grid-cols-2 gap-4 mb-4">
+    <div className="p-4 border rounded-lg bg-gray-50 space-y-4">
+      <h4 className="font-semibold">Create New System User</h4>
+      
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          If the email matches an existing cleaner or customer record, the user will be automatically linked to that record. This allows cleaners and customers to access their bookings when they log in.
+        </AlertDescription>
+      </Alert>
+
+      <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="userFirstName">First Name</Label>
           <Input
@@ -93,7 +103,7 @@ const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
           />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="userEmail">Email</Label>
           <Input
@@ -101,6 +111,7 @@ const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
             type="email"
             value={newUser.email}
             onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+            placeholder="Enter email address"
           />
         </div>
         <div>
@@ -110,10 +121,11 @@ const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
             type="password"
             value={newUser.password}
             onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+            placeholder="Enter password"
           />
         </div>
       </div>
-      <div className="mb-4">
+      <div>
         <Label htmlFor="userRole">Role</Label>
         <select
           id="userRole"
@@ -124,8 +136,11 @@ const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
           <option value="user">Cleaner</option>
           <option value="admin">Administrator</option>
         </select>
+        <p className="text-xs text-gray-500 mt-1">
+          Cleaners can view and manage their assigned bookings. Administrators have full system access.
+        </p>
       </div>
-      <Button onClick={createUser} disabled={creating}>
+      <Button onClick={createUser} disabled={creating || !newUser.email || !newUser.password}>
         {creating ? 'Creating...' : 'Create User'}
       </Button>
     </div>

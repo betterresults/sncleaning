@@ -801,6 +801,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_profiles_cleaner"
+            columns: ["cleaner_id"]
+            isOneToOne: false
+            referencedRelation: "cleaners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_profiles_customer"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "profiles_cleaner_id_fkey"
             columns: ["cleaner_id"]
             isOneToOne: false

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, AlertCircle } from 'lucide-react';
+import { UserPlus, AlertCircle, Link2, Unlink } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import CreateUserForm from './CreateUserForm';
 
@@ -17,6 +17,10 @@ interface UserData {
     last_name?: string;
   };
   role?: 'guest' | 'user' | 'admin';
+  cleaner_id?: number;
+  customer_id?: number;
+  cleaner_name?: string;
+  customer_name?: string;
 }
 
 const UsersSection = () => {
@@ -30,14 +34,28 @@ const UsersSection = () => {
     try {
       setLoading(true);
       setFetchError(null);
-      console.log('=== FETCHING USERS DEBUG ===');
+      console.log('=== FETCHING USERS WITH RELATIONSHIPS DEBUG ===');
       
-      // First, get all profiles from the profiles table
+      // Get all profiles with cleaner and customer relationships
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('*');
+        .select(`
+          *,
+          cleaners:cleaner_id (
+            id,
+            first_name,
+            last_name,
+            email
+          ),
+          customers:customer_id (
+            id,
+            first_name,
+            last_name,
+            email
+          )
+        `);
       
-      console.log('Profiles data:', profiles?.length || 0, profiles);
+      console.log('Profiles with relationships:', profiles?.length || 0, profiles);
       
       if (profilesError) {
         console.error('Error fetching profiles:', profilesError);
@@ -68,15 +86,25 @@ const UsersSection = () => {
         });
       }
 
-      // Process profiles with role data
+      // Process profiles with role and relationship data
       const processedUsers = profiles?.map(profile => {
         const userRole = roleMap.get(profile.user_id) || profile.role || 'guest';
+        
+        // Extract cleaner/customer names
+        const cleaner_name = profile.cleaners ? 
+          `${profile.cleaners.first_name || ''} ${profile.cleaners.last_name || ''}`.trim() : null;
+        const customer_name = profile.customers ? 
+          `${profile.customers.first_name || ''} ${profile.customers.last_name || ''}`.trim() : null;
         
         console.log(`Processing user ${profile.email}:`, {
           profile_role: profile.role,
           user_roles_role: roleMap.get(profile.user_id),
           final_role: userRole,
-          user_id: profile.user_id
+          user_id: profile.user_id,
+          cleaner_id: profile.cleaner_id,
+          customer_id: profile.customer_id,
+          cleaner_name,
+          customer_name
         });
         
         return {
@@ -86,11 +114,15 @@ const UsersSection = () => {
             first_name: profile.first_name || '',
             last_name: profile.last_name || ''
           },
-          role: userRole as 'guest' | 'user' | 'admin'
+          role: userRole as 'guest' | 'user' | 'admin',
+          cleaner_id: profile.cleaner_id,
+          customer_id: profile.customer_id,
+          cleaner_name,
+          customer_name
         };
       }) || [];
 
-      console.log('Final processed users:', processedUsers);
+      console.log('Final processed users with relationships:', processedUsers);
       
       if (processedUsers.length === 0) {
         setFetchError("No users found. This might indicate a database issue or that no users have been created yet.");
@@ -168,6 +200,64 @@ const UsersSection = () => {
     }
   };
 
+  const linkUserToRecord = async (userId: string, recordType: 'cleaner' | 'customer', recordId: number) => {
+    try {
+      const updateData = recordType === 'cleaner' 
+        ? { cleaner_id: recordId }
+        : { customer_id: recordId };
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: `User linked to ${recordType} successfully!`,
+      });
+
+      fetchUsers();
+    } catch (error: any) {
+      console.error(`Error linking user to ${recordType}:`, error);
+      toast({
+        title: 'Error',
+        description: `Failed to link user to ${recordType}`,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const unlinkUserFromRecord = async (userId: string, recordType: 'cleaner' | 'customer') => {
+    try {
+      const updateData = recordType === 'cleaner' 
+        ? { cleaner_id: null }
+        : { customer_id: null };
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: `User unlinked from ${recordType} successfully!`,
+      });
+
+      fetchUsers();
+    } catch (error: any) {
+      console.error(`Error unlinking user from ${recordType}:`, error);
+      toast({
+        title: 'Error',
+        description: `Failed to unlink user from ${recordType}`,
+        variant: 'destructive',
+      });
+    }
+  };
+
   const getRoleDisplayName = (role: string) => {
     switch (role) {
       case 'guest':
@@ -235,27 +325,78 @@ const UsersSection = () => {
               <div className="text-center py-4 text-gray-500">No users found</div>
             ) : (
               users.map((user) => (
-                <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <div className="font-medium">
-                      {user.user_metadata.first_name} {user.user_metadata.last_name}
+                <div key={user.id} className="p-4 border rounded-lg space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium">
+                        {user.user_metadata.first_name} {user.user_metadata.last_name}
+                      </div>
+                      <div className="text-sm text-gray-500">{user.email}</div>
+                      <div className="text-xs text-gray-400">ID: {user.id}</div>
                     </div>
-                    <div className="text-sm text-gray-500">{user.email}</div>
-                    <div className="text-xs text-gray-400">ID: {user.id}</div>
+                    <div className="flex items-center gap-3">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role || 'guest')}`}>
+                        {getRoleDisplayName(user.role || 'guest')}
+                      </span>
+                      <select
+                        value={user.role || 'guest'}
+                        onChange={(e) => updateUserRole(user.id, e.target.value)}
+                        className="text-sm border rounded px-2 py-1"
+                      >
+                        <option value="guest">Customer</option>
+                        <option value="user">Cleaner</option>
+                        <option value="admin">Administrator</option>
+                      </select>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role || 'guest')}`}>
-                      {getRoleDisplayName(user.role || 'guest')}
-                    </span>
-                    <select
-                      value={user.role || 'guest'}
-                      onChange={(e) => updateUserRole(user.id, e.target.value)}
-                      className="text-sm border rounded px-2 py-1"
-                    >
-                      <option value="guest">Customer</option>
-                      <option value="user">Cleaner</option>
-                      <option value="admin">Administrator</option>
-                    </select>
+
+                  {/* Relationship Status */}
+                  <div className="flex items-center gap-4 text-sm">
+                    {/* Cleaner Relationship */}
+                    <div className="flex items-center gap-2">
+                      <Link2 className="h-4 w-4 text-gray-400" />
+                      <span className="text-gray-600">Cleaner:</span>
+                      {user.cleaner_id ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-green-600 font-medium">
+                            {user.cleaner_name || `ID: ${user.cleaner_id}`}
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => unlinkUserFromRecord(user.id, 'cleaner')}
+                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                          >
+                            <Unlink className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">Not linked</span>
+                      )}
+                    </div>
+
+                    {/* Customer Relationship */}
+                    <div className="flex items-center gap-2">
+                      <Link2 className="h-4 w-4 text-gray-400" />
+                      <span className="text-gray-600">Customer:</span>
+                      {user.customer_id ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-green-600 font-medium">
+                            {user.customer_name || `ID: ${user.customer_id}`}
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => unlinkUserFromRecord(user.id, 'customer')}
+                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                          >
+                            <Unlink className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">Not linked</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))

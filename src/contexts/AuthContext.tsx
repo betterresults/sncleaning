@@ -7,13 +7,15 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   userRole: string | null;
+  cleanerId: number | null;
+  customerId: number | null;
   loading: boolean;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => {
+export const useAuth = = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
@@ -25,13 +27,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [cleanerId, setCleanerId] = useState<number | null>(null);
+  const [customerId, setCustomerId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchUserRole = async (userId: string) => {
     try {
-      console.log('Fetching role for user:', userId);
+      console.log('Fetching role and relationships for user:', userId);
       
-      // First try to get from user_roles table
+      // Get user profile with cleaner/customer relationships
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select(`
+          role,
+          cleaner_id,
+          customer_id
+        `)
+        .eq('user_id', userId)
+        .single();
+      
+      console.log('Profile query result:', { profileData, profileError });
+      
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Error fetching profile:', profileError);
+        setUserRole('guest');
+        return;
+      }
+      
+      // Also try to get from user_roles table
       const { data: userRoleData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
@@ -40,40 +63,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       console.log('User role query result:', { userRoleData, roleError });
       
-      if (roleError && roleError.code !== 'PGRST116') {
-        console.error('Error fetching user role:', roleError);
-        setUserRole('guest');
-        return;
-      }
+      // Determine the final role
+      const finalRole = userRoleData?.role || profileData?.role || 'guest';
       
-      if (userRoleData?.role) {
-        console.log('Found role in user_roles:', userRoleData.role);
-        setUserRole(userRoleData.role);
-        return;
-      }
+      console.log('Setting user role and relationships:', {
+        role: finalRole,
+        cleanerId: profileData?.cleaner_id,
+        customerId: profileData?.customer_id
+      });
       
-      // If no role found in user_roles, check profiles table
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', userId)
-        .single();
-      
-      console.log('Profile query result:', { profileData, profileError });
-      
-      if (profileError) {
-        console.error('Error fetching profile role:', profileError);
-        setUserRole('guest');
-        return;
-      }
-      
-      const role = profileData?.role || 'guest';
-      console.log('Setting user role to:', role);
-      setUserRole(role);
+      setUserRole(finalRole);
+      setCleanerId(profileData?.cleaner_id || null);
+      setCustomerId(profileData?.customer_id || null);
       
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
       setUserRole('guest');
+      setCleanerId(null);
+      setCustomerId(null);
     }
   };
 
@@ -99,6 +106,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }, 0);
         } else {
           setUserRole(null);
+          setCleanerId(null);
+          setCustomerId(null);
         }
         
         setLoading(false);
@@ -145,6 +154,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     session,
     userRole,
+    cleanerId,
+    customerId,
     loading,
     signOut,
   };
