@@ -41,6 +41,9 @@ const AdminDashboard = () => {
               <Button onClick={() => window.location.href = '/dashboard'} variant="outline">
                 Back to Main Dashboard
               </Button>
+              <Button onClick={() => window.location.href = '/users'} variant="outline">
+                Manage Users
+              </Button>
               <Button onClick={handleSignOut} variant="outline">
                 Sign Out
               </Button>
