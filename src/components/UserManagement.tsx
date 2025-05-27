@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -34,24 +33,36 @@ const UserManagement = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      console.log('Fetching users for UserManagement...');
       
       // Get users from profiles table with their roles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, email, first_name, last_name');
+        .select('id, email, first_name, last_name, role');
+      
+      console.log('Profiles data:', profiles, 'Error:', profilesError);
       
       if (profilesError) throw profilesError;
 
-      // Get roles for each user
+      // Get additional roles from user_roles table
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id, role');
       
-      if (rolesError) throw rolesError;
+      console.log('User roles data:', userRoles, 'Error:', rolesError);
+      
+      if (rolesError) {
+        console.warn('Could not fetch user_roles:', rolesError);
+      }
 
       // Combine the data
       const usersWithRoles = profiles?.map(profile => {
+        // First check user_roles table, then fall back to profiles table
         const userRole = userRoles?.find(role => role.user_id === profile.id);
+        const finalRole = userRole?.role || profile.role || 'guest';
+        
+        console.log(`User ${profile.email}: profile role = ${profile.role}, user_roles = ${userRole?.role}, final = ${finalRole}`);
+        
         return {
           id: profile.id,
           email: profile.email || '',
@@ -59,10 +70,11 @@ const UserManagement = () => {
             first_name: profile.first_name || '',
             last_name: profile.last_name || ''
           },
-          role: (userRole?.role || 'guest') as 'guest' | 'user' | 'admin'
+          role: finalRole as 'guest' | 'user' | 'admin'
         };
       }) || [];
 
+      console.log('Final users with roles:', usersWithRoles);
       setUsers(usersWithRoles);
     } catch (error: any) {
       console.error('Error fetching users:', error);
@@ -114,15 +126,44 @@ const UserManagement = () => {
 
   const updateUserRole = async (userId: string, newRole: string) => {
     try {
+      console.log(`Updating user ${userId} role to ${newRole}`);
+      
       // Ensure the role is one of the valid types
       const validRole = newRole as 'guest' | 'user' | 'admin';
       
-      const { error } = await supabase
+      // First try to update user_roles table
+      const { data: existingRole, error: checkError } = await supabase
         .from('user_roles')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+      
+      if (existingRole) {
+        // Update existing role in user_roles
+        const { error: updateError } = await supabase
+          .from('user_roles')
+          .update({ role: validRole })
+          .eq('user_id', userId);
+        
+        if (updateError) throw updateError;
+      } else {
+        // Insert new role in user_roles
+        const { error: insertError } = await supabase
+          .from('user_roles')
+          .insert({ user_id: userId, role: validRole });
+        
+        if (insertError) throw insertError;
+      }
+      
+      // Also update profiles table for consistency
+      const { error: profileError } = await supabase
+        .from('profiles')
         .update({ role: validRole })
-        .eq('user_id', userId);
-
-      if (error) throw error;
+        .eq('id', userId);
+      
+      if (profileError) {
+        console.warn('Could not update profile role:', profileError);
+      }
 
       toast({
         title: 'Success',
@@ -258,6 +299,7 @@ const UserManagement = () => {
                       {user.user_metadata.first_name} {user.user_metadata.last_name}
                     </div>
                     <div className="text-sm text-gray-500">{user.email}</div>
+                    <div className="text-xs text-gray-400">ID: {user.id}</div>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role || 'guest')}`}>
