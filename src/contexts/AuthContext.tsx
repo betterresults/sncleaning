@@ -30,41 +30,72 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchUserRole = async (userId: string) => {
     try {
       console.log('Fetching role for user:', userId);
-      const { data: userRoleData, error } = await supabase
+      
+      // First try to get from user_roles table
+      const { data: userRoleData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
         .single();
       
-      console.log('User role data:', userRoleData, 'Error:', error);
+      console.log('User role query result:', { userRoleData, roleError });
       
-      if (error) {
-        console.error('Error fetching user role:', error);
+      if (roleError && roleError.code !== 'PGRST116') {
+        console.error('Error fetching user role:', roleError);
         setUserRole('guest');
         return;
       }
       
-      const role = userRoleData?.role || 'guest';
+      if (userRoleData?.role) {
+        console.log('Found role in user_roles:', userRoleData.role);
+        setUserRole(userRoleData.role);
+        return;
+      }
+      
+      // If no role found in user_roles, check profiles table
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+      
+      console.log('Profile query result:', { profileData, profileError });
+      
+      if (profileError) {
+        console.error('Error fetching profile role:', profileError);
+        setUserRole('guest');
+        return;
+      }
+      
+      const role = profileData?.role || 'guest';
       console.log('Setting user role to:', role);
       setUserRole(role);
+      
     } catch (error) {
-      console.error('Error fetching user role:', error);
+      console.error('Error in fetchUserRole:', error);
       setUserRole('guest');
     }
   };
 
   useEffect(() => {
+    let mounted = true;
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('Auth state changed:', event, session);
+        console.log('Auth state changed:', event, session?.user?.id);
+        
+        if (!mounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Use setTimeout to defer the async operation
+          // Use setTimeout to defer the async operation and prevent deadlock
           setTimeout(() => {
-            fetchUserRole(session.user.id);
+            if (mounted) {
+              fetchUserRole(session.user.id);
+            }
           }, 0);
         } else {
           setUserRole(null);
@@ -75,19 +106,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      console.log('Existing session:', session);
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        await fetchUserRole(session.user.id);
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('Initial session check:', { session: !!session, error });
+        
+        if (!mounted) return;
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          await fetchUserRole(session.user.id);
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        console.error('Error checking session:', error);
+        if (mounted) {
+          setLoading(false);
+        }
       }
-      
-      setLoading(false);
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    initializeAuth();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
