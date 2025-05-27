@@ -64,11 +64,11 @@ const Dashboard = () => {
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <h1 className="text-xl font-semibold text-gray-900">SN Cleaning</h1>
+            <h1 className="text-xl font-semibold text-gray-900">SN Cleaning - Main Dashboard</h1>
             <div className="flex items-center space-x-4">
               {userRole === 'admin' && (
                 <Button onClick={() => window.location.href = '/admin'} variant="default">
-                  Admin Dashboard
+                  Analytics & Bookings
                 </Button>
               )}
               <Button onClick={handleSignOut} variant="outline">
@@ -106,7 +106,7 @@ const Dashboard = () => {
                 {userRole === 'admin' && (
                   <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                     <p className="text-green-800">
-                      As an administrator, you have access to the Admin Dashboard for booking statistics and management, as well as user management below.
+                      As an administrator, you can manage users below or access the Analytics & Bookings dashboard using the button above.
                     </p>
                   </div>
                 )}
@@ -130,7 +130,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* User Management - Only for admins */}
+          {/* User Management - ONLY shown for admins on THIS page */}
           {userRole === 'admin' && (
             <UserManagementTabs refreshUsers={refreshUsers} />
           )}

@@ -36,10 +36,10 @@ const AdminDashboard = () => {
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <h1 className="text-xl font-semibold text-gray-900">Admin Dashboard - Analytics & Bookings</h1>
+            <h1 className="text-xl font-semibold text-gray-900">Analytics & Bookings Dashboard</h1>
             <div className="flex items-center space-x-4">
               <Button onClick={() => window.location.href = '/dashboard'} variant="outline">
-                Back to Dashboard
+                Back to Main Dashboard
               </Button>
               <Button onClick={handleSignOut} variant="outline">
                 Sign Out
@@ -49,7 +49,7 @@ const AdminDashboard = () => {
         </div>
       </header>
 
-      {/* Main Content - Analytics and Bookings Only */}
+      {/* Main Content - ONLY Analytics and Bookings */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
           {/* Statistics */}
