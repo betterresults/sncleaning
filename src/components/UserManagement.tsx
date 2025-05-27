@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -142,17 +143,25 @@ const UserManagement = () => {
     try {
       setCreating(true);
       
-      const { data, error } = await supabase.auth.admin.createUser({
-        email: newUser.email,
-        password: newUser.password,
-        user_metadata: {
-          first_name: newUser.firstName,
-          last_name: newUser.lastName,
+      // Call the Edge Function to create user with admin privileges
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          email: newUser.email,
+          password: newUser.password,
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
           role: newUser.role
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to create user');
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to create user');
+      }
 
       toast({
         title: 'Success',
