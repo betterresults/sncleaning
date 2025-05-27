@@ -15,7 +15,6 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [role, setRole] = useState<'admin' | 'cleaner' | 'customer'>('customer');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -50,7 +49,7 @@ const Auth = () => {
             data: {
               first_name: firstName,
               last_name: lastName,
-              role: role,
+              role: 'guest', // Default role for public signups
             },
           },
         });
@@ -110,19 +109,6 @@ const Auth = () => {
                       required
                     />
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <select
-                    id="role"
-                    value={role}
-                    onChange={(e) => setRole(e.target.value as 'admin' | 'cleaner' | 'customer')}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <option value="customer">Customer</option>
-                    <option value="cleaner">Cleaner</option>
-                    <option value="admin">Admin</option>
-                  </select>
                 </div>
               </>
             )}

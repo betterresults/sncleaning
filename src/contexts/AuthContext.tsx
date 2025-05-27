@@ -36,20 +36,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user role after authentication
+          // Fetch user role from user_roles table
           setTimeout(async () => {
             try {
-              const { data: profile } = await supabase
-                .from('profiles')
+              const { data: userRoleData } = await supabase
+                .from('user_roles')
                 .select('role')
                 .eq('user_id', session.user.id)
                 .single();
               
-              console.log('User profile:', profile);
-              setUserRole(profile?.role || 'customer');
+              console.log('User role data:', userRoleData);
+              setUserRole(userRoleData?.role || 'guest');
             } catch (error) {
               console.error('Error fetching user role:', error);
-              setUserRole('customer');
+              setUserRole('guest');
             }
           }, 0);
         } else {
@@ -69,16 +69,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Fetch user role for existing session
         setTimeout(async () => {
           try {
-            const { data: profile } = await supabase
-              .from('profiles')
+            const { data: userRoleData } = await supabase
+              .from('user_roles')
               .select('role')
               .eq('user_id', session.user.id)
               .single();
             
-            setUserRole(profile?.role || 'customer');
+            setUserRole(userRoleData?.role || 'guest');
           } catch (error) {
             console.error('Error fetching user role:', error);
-            setUserRole('customer');
+            setUserRole('guest');
           }
           setLoading(false);
         }, 0);

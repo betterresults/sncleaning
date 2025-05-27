@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navigate } from 'react-router-dom';
+import UserManagement from '@/components/UserManagement';
 
 const Dashboard = () => {
   const { user, userRole, signOut, loading } = useAuth();
@@ -32,9 +33,16 @@ const Dashboard = () => {
   };
 
   const getRoleDisplayName = (role: string | null) => {
-    if (!role) return 'Customer';
-    
-    return role.charAt(0).toUpperCase() + role.slice(1);
+    switch (role) {
+      case 'guest':
+        return 'Customer';
+      case 'user':
+        return 'Cleaner';
+      case 'admin':
+        return 'Administrator';
+      default:
+        return 'Customer';
+    }
   };
 
   const handleSignOut = async () => {
@@ -61,8 +69,8 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="max-w-2xl mx-auto">
-          <Card>
+        <div className="max-w-4xl mx-auto">
+          <Card className="mb-8">
             <CardHeader className="text-center">
               <CardTitle className="text-3xl font-bold text-gray-900">
                 Welcome, {getUserDisplayName()}!
@@ -86,12 +94,12 @@ const Dashboard = () => {
                 {userRole === 'admin' && (
                   <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                     <p className="text-green-800">
-                      As an admin, you have full access to manage the system.
+                      As an administrator, you have full access to manage the system.
                     </p>
                   </div>
                 )}
                 
-                {userRole === 'cleaner' && (
+                {userRole === 'user' && (
                   <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                     <p className="text-yellow-800">
                       As a cleaner, you can manage your bookings and schedule.
@@ -99,7 +107,7 @@ const Dashboard = () => {
                   </div>
                 )}
                 
-                {userRole === 'customer' && (
+                {userRole === 'guest' && (
                   <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
                     <p className="text-purple-800">
                       As a customer, you can book cleaning services and manage your appointments.
@@ -109,6 +117,9 @@ const Dashboard = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Admin User Management */}
+          {userRole === 'admin' && <UserManagement />}
         </div>
       </main>
     </div>
