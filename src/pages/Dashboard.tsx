@@ -4,6 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navigate, Link } from 'react-router-dom';
+import DashboardStats from '@/components/admin/DashboardStats';
+import UpcomingBookings from '@/components/dashboard/UpcomingBookings';
 
 const Dashboard = () => {
   const { user, userRole, signOut, loading } = useAuth();
@@ -88,94 +90,20 @@ const Dashboard = () => {
             <p className="text-gray-600">
               You are logged in as: <span className="font-medium text-blue-600">{getRoleDisplayName()}</span>
             </p>
-            <p className="text-sm text-gray-500 mt-2">This is your main dashboard.</p>
           </div>
-          
-          {/* Role-based content */}
-          {userRole === 'admin' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Link to="/admin">
-                    <Button className="w-full">
-                      View Analytics & Bookings
-                    </Button>
-                  </Link>
-                  <Link to="/users">
-                    <Button variant="outline" className="w-full">
-                      Manage Users
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>System Overview</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-600">Administrator Dashboard</p>
-                  <p className="text-xs text-gray-500">Full system access</p>
-                </CardContent>
-              </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-600">System activity and updates will appear here.</p>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+          {/* Statistics */}
+          <DashboardStats />
           
-          {userRole === 'user' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Cleaner Dashboard</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600">Your cleaning schedule and bookings will appear here.</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Today's Schedule</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-600">No bookings scheduled for today.</p>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-          
-          {userRole === 'guest' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Customer Dashboard</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600">Your bookings and service history will appear here.</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Upcoming Services</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-600">No upcoming services scheduled.</p>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+          {/* Upcoming Bookings Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Upcoming Bookings (Next 7 Days)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <UpcomingBookings />
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>
