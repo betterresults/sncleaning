@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navigate } from 'react-router-dom';
-import UserManagementTabs from '@/components/UserManagementTabs';
+import DashboardStats from '@/components/admin/DashboardStats';
 
 const Dashboard = () => {
   const { user, userRole, signOut, loading } = useAuth();
@@ -21,30 +21,6 @@ const Dashboard = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  const getUserDisplayName = () => {
-    const firstName = user.user_metadata?.first_name;
-    const lastName = user.user_metadata?.last_name;
-    
-    if (firstName && lastName) {
-      return `${firstName} ${lastName}`;
-    }
-    
-    return user.email || 'User';
-  };
-
-  const getRoleDisplayName = (role: string | null) => {
-    switch (role) {
-      case 'guest':
-        return 'Customer';
-      case 'user':
-        return 'Cleaner';
-      case 'admin':
-        return 'Administrator';
-      default:
-        return 'Customer';
-    }
-  };
-
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -53,23 +29,23 @@ const Dashboard = () => {
     }
   };
 
-  const refreshUsers = () => {
-    // This will be handled by the UserManagementTabs component
-    window.location.reload();
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <h1 className="text-xl font-semibold text-gray-900">SN Cleaning - Main Dashboard</h1>
+            <h1 className="text-xl font-semibold text-gray-900">SN Cleaning - Dashboard</h1>
             <div className="flex items-center space-x-4">
               {userRole === 'admin' && (
-                <Button onClick={() => window.location.href = '/admin'} variant="default">
-                  Analytics & Bookings
-                </Button>
+                <>
+                  <Button onClick={() => window.location.href = '/admin'} variant="default">
+                    Analytics & Bookings
+                  </Button>
+                  <Button onClick={() => window.location.href = '/users'} variant="outline">
+                    Manage Users
+                  </Button>
+                </>
               )}
               <Button onClick={handleSignOut} variant="outline">
                 Sign Out
@@ -79,60 +55,61 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* Main Dashboard Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="max-w-4xl mx-auto">
-          <Card className="mb-8">
-            <CardHeader className="text-center">
-              <CardTitle className="text-3xl font-bold text-gray-900">
-                Welcome, {getUserDisplayName()}!
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-center space-y-6">
-              <div className="p-6 bg-blue-50 rounded-lg">
-                <h2 className="text-xl font-semibold text-gray-800 mb-2">
-                  Your Role
-                </h2>
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 text-blue-800 font-medium">
-                  {getRoleDisplayName(userRole)}
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <p className="text-gray-600">
-                  You are logged in as a <strong>{getRoleDisplayName(userRole)}</strong>.
-                </p>
-                
-                {userRole === 'admin' && (
-                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-green-800">
-                      As an administrator, you can manage users below or access the Analytics & Bookings dashboard using the button above.
-                    </p>
-                  </div>
-                )}
-                
-                {userRole === 'user' && (
-                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-yellow-800">
-                      As a cleaner, you can manage your bookings and schedule.
-                    </p>
-                  </div>
-                )}
-                
-                {userRole === 'guest' && (
-                  <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                    <p className="text-purple-800">
-                      As a customer, you can book cleaning services and manage your appointments.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* User Management - ONLY shown for admins on THIS page */}
+        <div className="space-y-8">
+          {/* Dashboard Statistics */}
+          <DashboardStats />
+          
+          {/* Role-based content */}
           {userRole === 'admin' && (
-            <UserManagementTabs refreshUsers={refreshUsers} />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quick Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button onClick={() => window.location.href = '/admin'} className="w-full">
+                    View Analytics & Bookings
+                  </Button>
+                  <Button onClick={() => window.location.href = '/users'} variant="outline" className="w-full">
+                    Manage Users
+                  </Button>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>System Overview</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-600">Administrator Dashboard</p>
+                  <p className="text-xs text-gray-500">Full system access</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+          
+          {userRole === 'user' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Cleaner Dashboard</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">Your cleaning schedule and bookings will appear here.</p>
+              </CardContent>
+            </Card>
+          )}
+          
+          {userRole === 'guest' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Customer Dashboard</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">Your bookings and service history will appear here.</p>
+              </CardContent>
+            </Card>
           )}
         </div>
       </main>
