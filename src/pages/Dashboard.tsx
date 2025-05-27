@@ -3,7 +3,7 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 
 const Dashboard = () => {
   const { user, userRole, signOut, loading } = useAuth();
@@ -53,16 +53,20 @@ const Dashboard = () => {
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <h1 className="text-xl font-semibold text-gray-900">SN Cleaning - Dashboard</h1>
+            <h1 className="text-xl font-semibold text-gray-900">MAIN DASHBOARD</h1>
             <div className="flex items-center space-x-4">
               {userRole === 'admin' && (
                 <>
-                  <Button onClick={() => window.location.href = '/admin'} variant="default">
-                    Analytics & Bookings
-                  </Button>
-                  <Button onClick={() => window.location.href = '/users'} variant="outline">
-                    Manage Users
-                  </Button>
+                  <Link to="/admin">
+                    <Button variant="default">
+                      Analytics & Bookings
+                    </Button>
+                  </Link>
+                  <Link to="/users">
+                    <Button variant="outline">
+                      Manage Users
+                    </Button>
+                  </Link>
                 </>
               )}
               <Button onClick={handleSignOut} variant="outline">
@@ -84,6 +88,7 @@ const Dashboard = () => {
             <p className="text-gray-600">
               You are logged in as: <span className="font-medium text-blue-600">{getRoleDisplayName()}</span>
             </p>
+            <p className="text-sm text-gray-500 mt-2">This is your main dashboard.</p>
           </div>
           
           {/* Role-based content */}
@@ -94,12 +99,16 @@ const Dashboard = () => {
                   <CardTitle>Quick Actions</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Button onClick={() => window.location.href = '/admin'} className="w-full">
-                    View Analytics & Bookings
-                  </Button>
-                  <Button onClick={() => window.location.href = '/users'} variant="outline" className="w-full">
-                    Manage Users
-                  </Button>
+                  <Link to="/admin">
+                    <Button className="w-full">
+                      View Analytics & Bookings
+                    </Button>
+                  </Link>
+                  <Link to="/users">
+                    <Button variant="outline" className="w-full">
+                      Manage Users
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
               

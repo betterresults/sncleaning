@@ -2,7 +2,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import UserManagementTabs from '@/components/UserManagementTabs';
 
 const Users = () => {
@@ -38,14 +38,18 @@ const Users = () => {
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <h1 className="text-xl font-semibold text-gray-900">User Management</h1>
+            <h1 className="text-xl font-semibold text-gray-900">USER MANAGEMENT</h1>
             <div className="flex items-center space-x-4">
-              <Button onClick={() => window.location.href = '/dashboard'} variant="outline">
-                Back to Dashboard
-              </Button>
-              <Button onClick={() => window.location.href = '/admin'} variant="outline">
-                Analytics & Bookings
-              </Button>
+              <Link to="/dashboard">
+                <Button variant="outline">
+                  Back to Dashboard
+                </Button>
+              </Link>
+              <Link to="/admin">
+                <Button variant="outline">
+                  Analytics & Bookings
+                </Button>
+              </Link>
               <Button onClick={handleSignOut} variant="outline">
                 Sign Out
               </Button>
