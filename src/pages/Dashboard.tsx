@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navigate } from 'react-router-dom';
-import UserManagement from '@/components/UserManagement';
+import UserManagementTabs from '@/components/UserManagementTabs';
 
 const Dashboard = () => {
   const { user, userRole, signOut, loading } = useAuth();
@@ -51,6 +51,11 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error signing out:', error);
     }
+  };
+
+  const refreshUsers = () => {
+    // This will be handled by the UserManagementTabs component
+    window.location.reload();
   };
 
   return (
@@ -119,7 +124,7 @@ const Dashboard = () => {
           </Card>
 
           {/* Admin User Management */}
-          {userRole === 'admin' && <UserManagement />}
+          {userRole === 'admin' && <UserManagementTabs refreshUsers={refreshUsers} />}
         </div>
       </main>
     </div>
