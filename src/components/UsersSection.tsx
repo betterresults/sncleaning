@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -36,18 +35,18 @@ const UsersSection = () => {
       setFetchError(null);
       console.log('=== FETCHING USERS WITH RELATIONSHIPS DEBUG ===');
       
-      // Get all profiles with cleaner and customer relationships
+      // Get all profiles with cleaner and customer relationships using specific foreign key names
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select(`
           *,
-          cleaners:cleaner_id (
+          cleaners!fk_profiles_cleaner (
             id,
             first_name,
             last_name,
             email
           ),
-          customers:customer_id (
+          customers!fk_profiles_customer (
             id,
             first_name,
             last_name,
