@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Edit, Trash2 } from 'lucide-react';
 
 interface UserData {
   id: string;
@@ -37,6 +37,8 @@ const UserManagement = () => {
   const [creating, setCreating] = useState(false);
   const [showCreateUserForm, setShowCreateUserForm] = useState(false);
   const [showCreateCustomerForm, setShowCreateCustomerForm] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<number | null>(null);
+  const [editCustomerData, setEditCustomerData] = useState<Partial<CustomerData>>({});
   const [newUser, setNewUser] = useState({
     email: '',
     password: '',
@@ -216,6 +218,80 @@ const UserManagement = () => {
     } finally {
       setCreating(false);
     }
+  };
+
+  const updateCustomer = async (customerId: number) => {
+    try {
+      const { error } = await supabase
+        .from('customers')
+        .update(editCustomerData)
+        .eq('id', customerId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Customer updated successfully!',
+      });
+
+      setEditingCustomer(null);
+      setEditCustomerData({});
+      fetchCustomers();
+    } catch (error: any) {
+      console.error('Error updating customer:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update customer',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const deleteCustomer = async (customerId: number) => {
+    if (!confirm('Are you sure you want to delete this customer?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('customers')
+        .delete()
+        .eq('id', customerId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Customer deleted successfully!',
+      });
+
+      fetchCustomers();
+    } catch (error: any) {
+      console.error('Error deleting customer:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete customer',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const startEditingCustomer = (customer: CustomerData) => {
+    setEditingCustomer(customer.id);
+    setEditCustomerData({
+      first_name: customer.first_name,
+      last_name: customer.last_name,
+      email: customer.email,
+      phone: customer.phone,
+      address: customer.address,
+      postcode: customer.postcode,
+      client_status: customer.client_status
+    });
+  };
+
+  const cancelEditing = () => {
+    setEditingCustomer(null);
+    setEditCustomerData({});
   };
 
   const updateUserRole = async (userId: string, newRole: string) => {
@@ -516,26 +592,108 @@ const UserManagement = () => {
                 <div className="space-y-3">
                   {customers.map((customer) => (
                     <div key={customer.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <div className="font-medium">
-                          {customer.first_name} {customer.last_name}
+                      {editingCustomer === customer.id ? (
+                        <div className="flex-1 grid grid-cols-3 gap-4">
+                          <div>
+                            <Input
+                              placeholder="First Name"
+                              value={editCustomerData.first_name || ''}
+                              onChange={(e) => setEditCustomerData({ ...editCustomerData, first_name: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <Input
+                              placeholder="Last Name"
+                              value={editCustomerData.last_name || ''}
+                              onChange={(e) => setEditCustomerData({ ...editCustomerData, last_name: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <Input
+                              placeholder="Email"
+                              value={editCustomerData.email || ''}
+                              onChange={(e) => setEditCustomerData({ ...editCustomerData, email: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <Input
+                              placeholder="Phone"
+                              value={editCustomerData.phone || ''}
+                              onChange={(e) => setEditCustomerData({ ...editCustomerData, phone: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <Input
+                              placeholder="Address"
+                              value={editCustomerData.address || ''}
+                              onChange={(e) => setEditCustomerData({ ...editCustomerData, address: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <Input
+                              placeholder="Postcode"
+                              value={editCustomerData.postcode || ''}
+                              onChange={(e) => setEditCustomerData({ ...editCustomerData, postcode: e.target.value })}
+                            />
+                          </div>
+                          <div className="col-span-3 flex gap-2">
+                            <Button 
+                              onClick={() => updateCustomer(customer.id)}
+                              size="sm"
+                            >
+                              Save
+                            </Button>
+                            <Button 
+                              onClick={cancelEditing}
+                              variant="outline"
+                              size="sm"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-500">{customer.email}</div>
-                        <div className="text-sm text-gray-500">{customer.phone}</div>
-                        <div className="text-xs text-gray-400">
-                          {customer.address}, {customer.postcode}
-                        </div>
-                        <div className="text-xs text-gray-400">ID: {customer.id}</div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          customer.client_status === 'Current' ? 'bg-green-100 text-green-800' : 
-                          customer.client_status === 'New' ? 'bg-blue-100 text-blue-800' : 
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {customer.client_status}
-                        </span>
-                      </div>
+                      ) : (
+                        <>
+                          <div>
+                            <div className="font-medium">
+                              {customer.first_name} {customer.last_name}
+                            </div>
+                            <div className="text-sm text-gray-500">{customer.email}</div>
+                            <div className="text-sm text-gray-500">{customer.phone}</div>
+                            <div className="text-xs text-gray-400">
+                              {customer.address}, {customer.postcode}
+                            </div>
+                            <div className="text-xs text-gray-400">ID: {customer.id}</div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              customer.client_status === 'Current' ? 'bg-green-100 text-green-800' : 
+                              customer.client_status === 'New' ? 'bg-blue-100 text-blue-800' : 
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {customer.client_status}
+                            </span>
+                            <Button
+                              onClick={() => startEditingCustomer(customer)}
+                              variant="outline"
+                              size="sm"
+                              className="flex items-center gap-1"
+                            >
+                              <Edit className="h-4 w-4" />
+                              Edit
+                            </Button>
+                            <Button
+                              onClick={() => deleteCustomer(customer.id)}
+                              variant="destructive"
+                              size="sm"
+                              className="flex items-center gap-1"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Delete
+                            </Button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>
