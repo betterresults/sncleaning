@@ -27,6 +27,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchUserRole = async (userId: string) => {
+    try {
+      console.log('Fetching role for user:', userId);
+      const { data: userRoleData, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
+      
+      console.log('User role data:', userRoleData, 'Error:', error);
+      
+      if (error) {
+        console.error('Error fetching user role:', error);
+        setUserRole('guest');
+        return;
+      }
+      
+      const role = userRoleData?.role || 'guest';
+      console.log('Setting user role to:', role);
+      setUserRole(role);
+    } catch (error) {
+      console.error('Error fetching user role:', error);
+      setUserRole('guest');
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -36,22 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user role from user_roles table
-          setTimeout(async () => {
-            try {
-              const { data: userRoleData } = await supabase
-                .from('user_roles')
-                .select('role')
-                .eq('user_id', session.user.id)
-                .single();
-              
-              console.log('User role data:', userRoleData);
-              setUserRole(userRoleData?.role || 'guest');
-            } catch (error) {
-              console.error('Error fetching user role:', error);
-              setUserRole('guest');
-            }
-          }, 0);
+          await fetchUserRole(session.user.id);
         } else {
           setUserRole(null);
         }
@@ -61,30 +72,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      console.log('Existing session:', session);
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        // Fetch user role for existing session
-        setTimeout(async () => {
-          try {
-            const { data: userRoleData } = await supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', session.user.id)
-              .single();
-            
-            setUserRole(userRoleData?.role || 'guest');
-          } catch (error) {
-            console.error('Error fetching user role:', error);
-            setUserRole('guest');
-          }
-          setLoading(false);
-        }, 0);
-      } else {
-        setLoading(false);
+        await fetchUserRole(session.user.id);
       }
+      
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
