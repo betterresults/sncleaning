@@ -106,7 +106,7 @@ const Dashboard = () => {
                 {userRole === 'admin' && (
                   <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                     <p className="text-green-800">
-                      As an administrator, you have full access to manage the system.
+                      As an administrator, you have full access to manage the system. Use the Admin Dashboard to view booking statistics and manage bookings.
                     </p>
                   </div>
                 )}
@@ -130,8 +130,10 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Admin User Management */}
-          {userRole === 'admin' && <UserManagementTabs refreshUsers={refreshUsers} />}
+          {/* Admin User Management - Only show on regular dashboard */}
+          {userRole === 'admin' && (
+            <UserManagementTabs refreshUsers={refreshUsers} />
+          )}
         </div>
       </main>
     </div>
