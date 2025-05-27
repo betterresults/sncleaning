@@ -22,6 +22,7 @@ interface Booking {
 
 const UpcomingBookings = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [allBookings, setAllBookings] = useState<Booking[]>([]);
   const [cleaners, setCleaners] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,25 +32,43 @@ const UpcomingBookings = () => {
       setLoading(true);
       setError(null);
 
-      console.log('Fetching upcoming bookings...');
+      console.log('Fetching all bookings to check database...');
 
-      // Fetch all upcoming bookings (from now onwards)
+      // First, let's check if there are ANY bookings at all
+      const { data: allBookingsData, error: allBookingsError } = await supabase
+        .from('bookings')
+        .select('*')
+        .order('date_time', { ascending: true });
+
+      console.log('All bookings in database:', { 
+        allBookingsData, 
+        allBookingsError,
+        count: allBookingsData?.length || 0 
+      });
+
+      if (allBookingsError) {
+        console.error('Error fetching all bookings:', allBookingsError);
+        setError('Failed to fetch bookings: ' + allBookingsError.message);
+        return;
+      }
+
+      setAllBookings(allBookingsData || []);
+
+      // Now let's filter for upcoming bookings
       const now = new Date().toISOString();
       console.log('Current time for filtering:', now);
 
-      const { data: bookingsData, error: bookingsError } = await supabase
-        .from('bookings')
-        .select('*')
-        .gte('date_time', now)
-        .order('date_time', { ascending: true });
+      const upcomingBookings = (allBookingsData || []).filter(booking => {
+        const bookingDate = new Date(booking.date_time);
+        const isUpcoming = bookingDate >= new Date();
+        console.log(`Booking ${booking.id}: ${booking.date_time} - Is upcoming: ${isUpcoming}`);
+        return isUpcoming;
+      });
 
-      console.log('Bookings query result:', { bookingsData, bookingsError });
-
-      if (bookingsError) {
-        console.error('Error fetching bookings:', bookingsError);
-        setError('Failed to fetch bookings: ' + bookingsError.message);
-        return;
-      }
+      console.log('Filtered upcoming bookings:', {
+        upcomingCount: upcomingBookings.length,
+        upcomingBookings: upcomingBookings
+      });
 
       // Fetch cleaners for names
       const { data: cleanersData, error: cleanersError } = await supabase
@@ -63,11 +82,12 @@ const UpcomingBookings = () => {
         console.error('Error fetching cleaners:', cleanersError);
       }
 
-      setBookings(bookingsData || []);
+      setBookings(upcomingBookings);
       setCleaners(cleanersData || []);
 
       console.log('Final data set:', {
-        bookingsCount: bookingsData?.length || 0,
+        totalBookingsInDB: allBookingsData?.length || 0,
+        upcomingBookingsCount: upcomingBookings.length,
         cleanersCount: cleanersData?.length || 0
       });
 
@@ -123,12 +143,12 @@ const UpcomingBookings = () => {
     );
   }
 
-  if (bookings.length === 0) {
+  if (allBookings.length === 0) {
     return (
       <div className="text-center py-8">
-        <div className="text-gray-500 mb-4">No upcoming bookings found</div>
+        <div className="text-gray-500 mb-4">No bookings found in the database</div>
         <div className="text-sm text-gray-400">
-          This could mean there are no future bookings in the database, or there might be an issue with the date filtering.
+          There are no bookings in your database yet. Create some bookings to see them here.
         </div>
         <button 
           onClick={fetchData}
@@ -140,11 +160,31 @@ const UpcomingBookings = () => {
     );
   }
 
+  if (bookings.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-gray-500 mb-4">No upcoming bookings found</div>
+        <div className="text-sm text-gray-400 mb-4">
+          Found {allBookings.length} total booking{allBookings.length !== 1 ? 's' : ''} in database, but none are upcoming.
+        </div>
+        <div className="text-xs text-gray-300 mb-4">
+          All bookings might be in the past, or there might be an issue with date filtering.
+        </div>
+        <button 
+          onClick={fetchData}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          Refresh
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div className="text-sm text-gray-600">
-          Showing {bookings.length} upcoming booking{bookings.length !== 1 ? 's' : ''}
+          Showing {bookings.length} upcoming booking{bookings.length !== 1 ? 's' : ''} out of {allBookings.length} total
         </div>
         <button 
           onClick={fetchData}
