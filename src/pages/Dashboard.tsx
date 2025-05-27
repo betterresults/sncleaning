@@ -4,7 +4,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navigate, Link } from 'react-router-dom';
-import DashboardStats from '@/components/admin/DashboardStats';
 import UpcomingBookings from '@/components/dashboard/UpcomingBookings';
 
 const Dashboard = () => {
@@ -27,25 +26,6 @@ const Dashboard = () => {
       await signOut();
     } catch (error) {
       console.error('Error signing out:', error);
-    }
-  };
-
-  const getUserDisplayName = () => {
-    const firstName = user?.user_metadata?.first_name || '';
-    const lastName = user?.user_metadata?.last_name || '';
-    return `${firstName} ${lastName}`.trim() || user?.email || 'User';
-  };
-
-  const getRoleDisplayName = () => {
-    switch (userRole) {
-      case 'admin':
-        return 'Administrator';
-      case 'user':
-        return 'Cleaner';
-      case 'guest':
-        return 'Customer';
-      default:
-        return 'User';
     }
   };
 
@@ -82,19 +62,6 @@ const Dashboard = () => {
       {/* Main Dashboard Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
-          {/* Welcome Section */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Welcome back, {getUserDisplayName()}!
-            </h2>
-            <p className="text-gray-600">
-              You are logged in as: <span className="font-medium text-blue-600">{getRoleDisplayName()}</span>
-            </p>
-          </div>
-
-          {/* Statistics */}
-          <DashboardStats />
-          
           {/* Upcoming Bookings Table */}
           <Card>
             <CardHeader>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -19,11 +18,21 @@ interface Booking {
   email: string;
   phone_number: string;
   address: string;
-  cleaning_type: string;
+  form_name: string;
   total_cost: number;
   cleaner: number;
   customer: number;
-  cleaner_name?: string;
+  cleaner_pay: number;
+  cleaners?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+  };
+  customers?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+  };
 }
 
 interface Filters {
@@ -94,6 +103,8 @@ const UpcomingBookings = () => {
         setError('Failed to fetch bookings: ' + bookingsError.message);
         return;
       }
+
+      console.log('Raw bookings data:', bookingsData);
 
       // Fetch cleaners for filter dropdown
       const { data: cleanersData } = await supabase
@@ -226,6 +237,31 @@ const UpcomingBookings = () => {
     }
   };
 
+  const getCleanerInfo = (booking: Booking) => {
+    console.log('Booking cleaner data:', booking.cleaner, booking.cleaners);
+    
+    if (booking.cleaners) {
+      return {
+        name: `${booking.cleaners.first_name} ${booking.cleaners.last_name}`,
+        pay: booking.cleaner_pay || 0
+      };
+    }
+    
+    // Fallback to cleaners array lookup
+    const cleaner = cleaners.find(c => c.id === booking.cleaner);
+    if (cleaner) {
+      return {
+        name: `${cleaner.first_name} ${cleaner.last_name}`,
+        pay: booking.cleaner_pay || 0
+      };
+    }
+    
+    return {
+      name: 'Unassigned',
+      pay: 0
+    };
+  };
+
   useEffect(() => {
     fetchData();
   }, [sortOrder]);
@@ -238,11 +274,6 @@ const UpcomingBookings = () => {
   const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedBookings = filteredBookings.slice(startIndex, startIndex + itemsPerPage);
-
-  const getCleanerName = (cleanerId: number) => {
-    const cleaner = cleaners.find(c => c.id === cleanerId);
-    return cleaner ? `${cleaner.first_name} ${cleaner.last_name}` : 'Unassigned';
-  };
 
   if (loading) {
     return (
@@ -457,90 +488,98 @@ const UpcomingBookings = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  paginatedBookings.map((booking) => (
-                    <TableRow key={booking.id} className="hover:bg-gray-50 transition-colors">
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <CalendarDays className="h-4 w-4 text-gray-400" />
-                          <div>
-                            <div className="font-medium text-sm">
-                              {booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : 'No date'}
+                  paginatedBookings.map((booking) => {
+                    const cleanerInfo = getCleanerInfo(booking);
+                    return (
+                      <TableRow key={booking.id} className="hover:bg-gray-50 transition-colors">
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <CalendarDays className="h-4 w-4 text-gray-400" />
+                            <div>
+                              <div className="font-medium text-sm">
+                                {booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : 'No date'}
+                              </div>
+                              <div className="text-gray-500 text-xs flex items-center">
+                                <Clock className="h-3 w-3 mr-1" />
+                                {booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'No time'}
+                              </div>
                             </div>
-                            <div className="text-gray-500 text-xs flex items-center">
-                              <Clock className="h-3 w-3 mr-1" />
-                              {booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'No time'}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="font-medium text-sm flex items-center">
+                              <User className="h-3 w-3 mr-1 text-gray-400" />
+                              {booking.first_name} {booking.last_name}
+                            </div>
+                            <div className="text-xs text-gray-500 flex items-center">
+                              <Mail className="h-3 w-3 mr-1" />
+                              {booking.email}
+                            </div>
+                            <div className="text-xs text-gray-500 flex items-center">
+                              <Phone className="h-3 w-3 mr-1" />
+                              {booking.phone_number}
                             </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="font-medium text-sm flex items-center">
-                            <User className="h-3 w-3 mr-1 text-gray-400" />
-                            {booking.first_name} {booking.last_name}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-start space-x-1 max-w-48">
+                            <MapPin className="h-3 w-3 mt-0.5 text-gray-400 flex-shrink-0" />
+                            <span className="text-sm text-gray-700 leading-tight">{booking.address}</span>
                           </div>
-                          <div className="text-xs text-gray-500 flex items-center">
-                            <Mail className="h-3 w-3 mr-1" />
-                            {booking.email}
+                        </TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {booking.form_name || 'Standard Cleaning'}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="flex items-center space-x-1">
+                              <User className="h-3 w-3 text-gray-400" />
+                              <span className="text-sm font-medium">{cleanerInfo.name}</span>
+                            </div>
+                            <div className="text-xs text-green-600 font-medium">
+                              Pay: £{cleanerInfo.pay.toFixed(2)}
+                            </div>
                           </div>
-                          <div className="text-xs text-gray-500 flex items-center">
-                            <Phone className="h-3 w-3 mr-1" />
-                            {booking.phone_number}
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-semibold text-green-600">
+                            £{booking.total_cost?.toFixed(2) || '0.00'}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex justify-center">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-gray-100">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem onClick={() => handleEdit(booking.id)} className="cursor-pointer">
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDuplicate(booking)} className="cursor-pointer">
+                                  <Copy className="mr-2 h-4 w-4" />
+                                  Duplicate
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => handleDelete(booking.id)}
+                                  className="text-red-600 cursor-pointer"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-start space-x-1 max-w-48">
-                          <MapPin className="h-3 w-3 mt-0.5 text-gray-400 flex-shrink-0" />
-                          <span className="text-sm text-gray-700 leading-tight">{booking.address}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {booking.cleaning_type || 'Standard Cleaning'}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-1">
-                          <User className="h-3 w-3 text-gray-400" />
-                          <span className="text-sm font-medium">{getCleanerName(booking.cleaner)}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-semibold text-green-600">
-                          £{booking.total_cost?.toFixed(2) || '0.00'}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex justify-center">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-gray-100">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40">
-                              <DropdownMenuItem onClick={() => handleEdit(booking.id)} className="cursor-pointer">
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleDuplicate(booking)} className="cursor-pointer">
-                                <Copy className="mr-2 h-4 w-4" />
-                                Duplicate
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => handleDelete(booking.id)}
-                                className="text-red-600 cursor-pointer"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
