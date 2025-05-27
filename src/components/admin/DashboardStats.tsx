@@ -67,7 +67,7 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
       // Calculate stats
       const upcomingBookings = bookings?.length || 0;
       const expectedRevenue = bookings?.reduce((sum, booking) => {
-        return sum + (parseFloat(booking.total_cost) || 0);
+        return sum + (parseFloat(String(booking.total_cost)) || 0);
       }, 0) || 0;
 
       setStats({
@@ -132,7 +132,7 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            £{(filters ? stats.filteredRevenue : stats.expectedRevenue)?.toFixed(2)}
+            £{((filters ? stats.filteredRevenue : stats.expectedRevenue) || 0).toFixed(2)}
           </div>
           <p className="text-xs text-muted-foreground">
             {filters ? 'From filtered bookings' : 'From upcoming bookings'}
