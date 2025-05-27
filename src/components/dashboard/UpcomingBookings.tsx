@@ -30,28 +30,28 @@ const UpcomingBookings = () => {
       setLoading(true);
       setError(null);
 
-      console.log('Fetching all bookings...');
+      console.log('Making simple request to bookings table...');
 
-      // Fetch ALL bookings first to see what's in the database
-      const { data: bookingsData, error: bookingsError } = await supabase
+      // Simple direct query to bookings table only
+      const { data, error } = await supabase
         .from('bookings')
         .select('*');
 
-      console.log('All bookings:', bookingsData);
-      console.log('Bookings error:', bookingsError);
+      console.log('Raw response:', data);
+      console.log('Error:', error);
 
-      if (bookingsError) {
-        console.error('Error fetching bookings:', bookingsError);
-        setError('Failed to fetch bookings: ' + bookingsError.message);
+      if (error) {
+        console.error('Supabase error:', error);
+        setError('Failed to fetch bookings: ' + error.message);
         return;
       }
 
-      setBookings(bookingsData || []);
-      console.log('Set bookings count:', bookingsData?.length || 0);
+      setBookings(data || []);
+      console.log('Bookings set:', data?.length || 0);
 
     } catch (error) {
-      console.error('Error fetching data:', error);
-      setError('An unexpected error occurred while fetching data');
+      console.error('Catch error:', error);
+      setError('An unexpected error occurred');
     } finally {
       setLoading(false);
     }
@@ -98,7 +98,7 @@ const UpcomingBookings = () => {
   if (bookings.length === 0) {
     return (
       <div className="text-center py-8">
-        <div className="text-gray-500 mb-4">No bookings found in database</div>
+        <div className="text-gray-500 mb-4">No bookings found</div>
         <button 
           onClick={fetchData}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
