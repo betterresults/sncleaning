@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UserPlus, Edit, Trash2, RefreshCw } from 'lucide-react';
+import { UserPlus, Edit, Trash2, RefreshCw, AlertCircle } from 'lucide-react';
 import type { User } from '@supabase/supabase-js';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface UserData {
   id: string;
@@ -55,39 +56,41 @@ const UserManagement = () => {
     address: '',
     postcode: ''
   });
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      setFetchError(null);
       console.log('=== FETCHING USERS DEBUG ===');
       
-      // First, let's get all auth users to see what's actually in the system
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
-      console.log('Auth users from admin.listUsers():', authUsers?.users?.length || 0, authUsers?.users);
-      
-      if (authError) {
-        console.error('Error fetching auth users:', authError);
-      }
-
-      // Get users from profiles table
+      // First, get all profiles from the profiles table
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*');
       
       console.log('Profiles data:', profiles?.length || 0, profiles);
-      console.log('Profiles error:', profilesError);
+      
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        setFetchError(`Failed to fetch profiles: ${profilesError.message}`);
+        throw profilesError;
+      }
 
-      // Get user roles
+      if (!profiles || profiles.length === 0) {
+        console.warn('No profiles found in the database');
+      }
+      
+      // Get user roles from user_roles table
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('*');
       
       console.log('User roles data:', userRoles?.length || 0, userRoles);
-      console.log('User roles error:', rolesError);
-
-      if (profilesError) {
-        throw profilesError;
+      
+      if (rolesError) {
+        console.error('Error fetching user roles:', rolesError);
       }
 
       // Create a map of user roles for easy lookup
@@ -98,8 +101,8 @@ const UserManagement = () => {
         });
       }
 
-      // Combine profile data with role data
-      const usersWithRoles = profiles?.map(profile => {
+      // Process profiles with role data
+      const processedUsers = profiles?.map(profile => {
         const userRole = roleMap.get(profile.user_id) || profile.role || 'guest';
         
         console.log(`Processing user ${profile.email}:`, {
@@ -120,26 +123,17 @@ const UserManagement = () => {
         };
       }) || [];
 
-      console.log('Final processed users:', usersWithRoles);
-      setUsers(usersWithRoles);
-
-      // Also check if there are users in auth that are missing from profiles
-      if (authUsers?.users) {
-        const profileUserIds = new Set(profiles?.map(p => p.user_id) || []);
-        const missingFromProfiles = authUsers.users.filter((authUser: User) => !profileUserIds.has(authUser.id));
-        
-        if (missingFromProfiles.length > 0) {
-          console.warn('Users in auth but missing from profiles:', missingFromProfiles);
-          toast({
-            title: 'Warning',
-            description: `Found ${missingFromProfiles.length} users in auth that are missing from profiles table`,
-            variant: 'destructive',
-          });
-        }
+      console.log('Final processed users:', processedUsers);
+      
+      if (processedUsers.length === 0) {
+        setFetchError("No users found. This might indicate a database issue or that no users have been created yet.");
       }
+      
+      setUsers(processedUsers);
 
     } catch (error: any) {
       console.error('Error in fetchUsers:', error);
+      setFetchError(`Failed to fetch users: ${error.message}`);
       toast({
         title: 'Error',
         description: 'Failed to fetch users: ' + error.message,
@@ -472,6 +466,16 @@ const UserManagement = () => {
                 {showCreateUserForm ? 'Cancel' : 'Create New User'}
               </Button>
             </div>
+
+            {fetchError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error fetching users</AlertTitle>
+                <AlertDescription>
+                  {fetchError}
+                </AlertDescription>
+              </Alert>
+            )}
 
             {/* Create User Form */}
             {showCreateUserForm && (
