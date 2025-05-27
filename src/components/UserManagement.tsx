@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { UserPlus } from 'lucide-react';
 
 interface UserData {
   id: string;
@@ -16,17 +18,39 @@ interface UserData {
   role?: 'guest' | 'user' | 'admin';
 }
 
+interface CustomerData {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  address: string;
+  postcode: string;
+  client_status: string;
+  full_name: string;
+}
+
 const UserManagement = () => {
   const [users, setUsers] = useState<UserData[]>([]);
+  const [customers, setCustomers] = useState<CustomerData[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showCreateUserForm, setShowCreateUserForm] = useState(false);
+  const [showCreateCustomerForm, setShowCreateCustomerForm] = useState(false);
   const [newUser, setNewUser] = useState({
     email: '',
     password: '',
     firstName: '',
     lastName: '',
     role: 'user' as 'user' | 'admin'
+  });
+  const [newCustomer, setNewCustomer] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    address: '',
+    postcode: ''
   });
   const { toast } = useToast();
 
@@ -88,6 +112,30 @@ const UserManagement = () => {
     }
   };
 
+  const fetchCustomers = async () => {
+    try {
+      console.log('Fetching customers...');
+      
+      const { data: customers, error } = await supabase
+        .from('customers')
+        .select('*')
+        .order('id', { ascending: false });
+      
+      console.log('Customers data:', customers, 'Error:', error);
+      
+      if (error) throw error;
+
+      setCustomers(customers || []);
+    } catch (error: any) {
+      console.error('Error fetching customers:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch customers',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const createUser = async () => {
     try {
       setCreating(true);
@@ -110,13 +158,59 @@ const UserManagement = () => {
       });
 
       setNewUser({ email: '', password: '', firstName: '', lastName: '', role: 'user' });
-      setShowCreateForm(false);
+      setShowCreateUserForm(false);
       fetchUsers();
     } catch (error: any) {
       console.error('Error creating user:', error);
       toast({
         title: 'Error',
         description: error.message || 'Failed to create user',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const createCustomer = async () => {
+    try {
+      setCreating(true);
+      
+      const { data, error } = await supabase
+        .from('customers')
+        .insert({
+          first_name: newCustomer.firstName,
+          last_name: newCustomer.lastName,
+          email: newCustomer.email,
+          phone: newCustomer.phone,
+          address: newCustomer.address,
+          postcode: newCustomer.postcode,
+          client_status: 'New'
+        })
+        .select();
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Customer created successfully!',
+      });
+
+      setNewCustomer({ 
+        firstName: '', 
+        lastName: '', 
+        email: '', 
+        phone: '', 
+        address: '', 
+        postcode: '' 
+      });
+      setShowCreateCustomerForm(false);
+      fetchCustomers();
+    } catch (error: any) {
+      console.error('Error creating customer:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create customer',
         variant: 'destructive',
       });
     } finally {
@@ -208,118 +302,247 @@ const UserManagement = () => {
   };
 
   useEffect(() => {
-    fetchUsers();
+    const fetchData = async () => {
+      await Promise.all([fetchUsers(), fetchCustomers()]);
+      setLoading(false);
+    };
+    fetchData();
   }, []);
 
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle>User Management</CardTitle>
-          <Button 
-            onClick={() => setShowCreateForm(!showCreateForm)}
-            variant={showCreateForm ? "outline" : "default"}
-          >
-            {showCreateForm ? 'Cancel' : 'Create New User'}
-          </Button>
-        </div>
+        <CardTitle>User & Customer Management</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Create User Form */}
-        {showCreateForm && (
-          <div className="p-4 border rounded-lg bg-gray-50">
-            <h3 className="font-semibold mb-4">Create New User</h3>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <Label htmlFor="firstName">First Name</Label>
-                <Input
-                  id="firstName"
-                  value={newUser.firstName}
-                  onChange={(e) => setNewUser({ ...newUser, firstName: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  value={newUser.lastName}
-                  onChange={(e) => setNewUser({ ...newUser, lastName: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newUser.email}
-                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={newUser.password}
-                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="mb-4">
-              <Label htmlFor="role">Role</Label>
-              <select
-                id="role"
-                value={newUser.role}
-                onChange={(e) => setNewUser({ ...newUser, role: e.target.value as 'user' | 'admin' })}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+      <CardContent>
+        <Tabs defaultValue="users" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="customers">Customers</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="users" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold">System Users</h3>
+              <Button 
+                onClick={() => setShowCreateUserForm(!showCreateUserForm)}
+                variant={showCreateUserForm ? "outline" : "default"}
+                className="flex items-center gap-2"
               >
-                <option value="user">Cleaner</option>
-                <option value="admin">Administrator</option>
-              </select>
+                <UserPlus className="h-4 w-4" />
+                {showCreateUserForm ? 'Cancel' : 'Create New User'}
+              </Button>
             </div>
-            <Button onClick={createUser} disabled={creating}>
-              {creating ? 'Creating...' : 'Create User'}
-            </Button>
-          </div>
-        )}
 
-        {/* Users List */}
-        <div>
-          <h3 className="font-semibold mb-4">All Users</h3>
-          {loading ? (
-            <div className="text-center py-4">Loading users...</div>
-          ) : (
-            <div className="space-y-3">
-              {users.map((user) => (
-                <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+            {/* Create User Form */}
+            {showCreateUserForm && (
+              <div className="p-4 border rounded-lg bg-gray-50">
+                <h4 className="font-semibold mb-4">Create New System User</h4>
+                <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
-                    <div className="font-medium">
-                      {user.user_metadata.first_name} {user.user_metadata.last_name}
-                    </div>
-                    <div className="text-sm text-gray-500">{user.email}</div>
-                    <div className="text-xs text-gray-400">ID: {user.id}</div>
+                    <Label htmlFor="userFirstName">First Name</Label>
+                    <Input
+                      id="userFirstName"
+                      value={newUser.firstName}
+                      onChange={(e) => setNewUser({ ...newUser, firstName: e.target.value })}
+                    />
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role || 'guest')}`}>
-                      {getRoleDisplayName(user.role || 'guest')}
-                    </span>
-                    <select
-                      value={user.role || 'guest'}
-                      onChange={(e) => updateUserRole(user.id, e.target.value)}
-                      className="text-sm border rounded px-2 py-1"
-                    >
-                      <option value="guest">Customer</option>
-                      <option value="user">Cleaner</option>
-                      <option value="admin">Administrator</option>
-                    </select>
+                  <div>
+                    <Label htmlFor="userLastName">Last Name</Label>
+                    <Input
+                      id="userLastName"
+                      value={newUser.lastName}
+                      onChange={(e) => setNewUser({ ...newUser, lastName: e.target.value })}
+                    />
                   </div>
                 </div>
-              ))}
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <Label htmlFor="userEmail">Email</Label>
+                    <Input
+                      id="userEmail"
+                      type="email"
+                      value={newUser.email}
+                      onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="userPassword">Password</Label>
+                    <Input
+                      id="userPassword"
+                      type="password"
+                      value={newUser.password}
+                      onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <Label htmlFor="userRole">Role</Label>
+                  <select
+                    id="userRole"
+                    value={newUser.role}
+                    onChange={(e) => setNewUser({ ...newUser, role: e.target.value as 'user' | 'admin' })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="user">Cleaner</option>
+                    <option value="admin">Administrator</option>
+                  </select>
+                </div>
+                <Button onClick={createUser} disabled={creating}>
+                  {creating ? 'Creating...' : 'Create User'}
+                </Button>
+              </div>
+            )}
+
+            {/* Users List */}
+            <div>
+              {loading ? (
+                <div className="text-center py-4">Loading users...</div>
+              ) : (
+                <div className="space-y-3">
+                  {users.map((user) => (
+                    <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <div className="font-medium">
+                          {user.user_metadata.first_name} {user.user_metadata.last_name}
+                        </div>
+                        <div className="text-sm text-gray-500">{user.email}</div>
+                        <div className="text-xs text-gray-400">ID: {user.id}</div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role || 'guest')}`}>
+                          {getRoleDisplayName(user.role || 'guest')}
+                        </span>
+                        <select
+                          value={user.role || 'guest'}
+                          onChange={(e) => updateUserRole(user.id, e.target.value)}
+                          className="text-sm border rounded px-2 py-1"
+                        >
+                          <option value="guest">Customer</option>
+                          <option value="user">Cleaner</option>
+                          <option value="admin">Administrator</option>
+                        </select>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </TabsContent>
+
+          <TabsContent value="customers" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold">Customers</h3>
+              <Button 
+                onClick={() => setShowCreateCustomerForm(!showCreateCustomerForm)}
+                variant={showCreateCustomerForm ? "outline" : "default"}
+                className="flex items-center gap-2"
+              >
+                <UserPlus className="h-4 w-4" />
+                {showCreateCustomerForm ? 'Cancel' : 'Create New Customer'}
+              </Button>
+            </div>
+
+            {/* Create Customer Form */}
+            {showCreateCustomerForm && (
+              <div className="p-4 border rounded-lg bg-gray-50">
+                <h4 className="font-semibold mb-4">Create New Customer</h4>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <Label htmlFor="customerFirstName">First Name</Label>
+                    <Input
+                      id="customerFirstName"
+                      value={newCustomer.firstName}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, firstName: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="customerLastName">Last Name</Label>
+                    <Input
+                      id="customerLastName"
+                      value={newCustomer.lastName}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, lastName: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <Label htmlFor="customerEmail">Email</Label>
+                    <Input
+                      id="customerEmail"
+                      type="email"
+                      value={newCustomer.email}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="customerPhone">Phone</Label>
+                    <Input
+                      id="customerPhone"
+                      value={newCustomer.phone}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <Label htmlFor="customerAddress">Address</Label>
+                    <Input
+                      id="customerAddress"
+                      value={newCustomer.address}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="customerPostcode">Postcode</Label>
+                    <Input
+                      id="customerPostcode"
+                      value={newCustomer.postcode}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, postcode: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <Button onClick={createCustomer} disabled={creating}>
+                  {creating ? 'Creating...' : 'Create Customer'}
+                </Button>
+              </div>
+            )}
+
+            {/* Customers List */}
+            <div>
+              {loading ? (
+                <div className="text-center py-4">Loading customers...</div>
+              ) : (
+                <div className="space-y-3">
+                  {customers.map((customer) => (
+                    <div key={customer.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <div className="font-medium">
+                          {customer.first_name} {customer.last_name}
+                        </div>
+                        <div className="text-sm text-gray-500">{customer.email}</div>
+                        <div className="text-sm text-gray-500">{customer.phone}</div>
+                        <div className="text-xs text-gray-400">
+                          {customer.address}, {customer.postcode}
+                        </div>
+                        <div className="text-xs text-gray-400">ID: {customer.id}</div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          customer.client_status === 'Current' ? 'bg-green-100 text-green-800' : 
+                          customer.client_status === 'New' ? 'bg-blue-100 text-blue-800' : 
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {customer.client_status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
