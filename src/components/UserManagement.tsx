@@ -14,7 +14,7 @@ interface UserData {
     first_name?: string;
     last_name?: string;
   };
-  role?: string;
+  role?: 'guest' | 'user' | 'admin';
 }
 
 const UserManagement = () => {
@@ -27,7 +27,7 @@ const UserManagement = () => {
     password: '',
     firstName: '',
     lastName: '',
-    role: 'user'
+    role: 'user' as 'user' | 'admin'
   });
   const { toast } = useToast();
 
@@ -59,7 +59,7 @@ const UserManagement = () => {
             first_name: profile.first_name || '',
             last_name: profile.last_name || ''
           },
-          role: userRole?.role || 'guest'
+          role: (userRole?.role || 'guest') as 'guest' | 'user' | 'admin'
         };
       }) || [];
 
@@ -114,9 +114,12 @@ const UserManagement = () => {
 
   const updateUserRole = async (userId: string, newRole: string) => {
     try {
+      // Ensure the role is one of the valid types
+      const validRole = newRole as 'guest' | 'user' | 'admin';
+      
       const { error } = await supabase
         .from('user_roles')
-        .update({ role: newRole })
+        .update({ role: validRole })
         .eq('user_id', userId);
 
       if (error) throw error;
@@ -228,7 +231,7 @@ const UserManagement = () => {
               <select
                 id="role"
                 value={newUser.role}
-                onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                onChange={(e) => setNewUser({ ...newUser, role: e.target.value as 'user' | 'admin' })}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="user">Cleaner</option>
