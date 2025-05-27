@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Edit, Trash2, Filter, Search } from 'lucide-react';
+import { Edit, Trash2, Copy, Filter, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Booking {
@@ -270,71 +270,76 @@ const UpcomingBookings = () => {
     <div className="space-y-6">
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
+        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+            <CardTitle className="text-sm font-medium text-blue-700">Total Bookings</CardTitle>
+            <CalendarDays className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalBookings}</div>
-            <p className="text-xs text-muted-foreground">Upcoming bookings</p>
+            <div className="text-2xl font-bold text-blue-900">{stats.totalBookings}</div>
+            <p className="text-xs text-blue-600">Upcoming bookings</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Unique Customers</CardTitle>
+            <CardTitle className="text-sm font-medium text-green-700">Unique Customers</CardTitle>
+            <User className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.uniqueCustomers}</div>
-            <p className="text-xs text-muted-foreground">From upcoming bookings</p>
+            <div className="text-2xl font-bold text-green-900">{stats.uniqueCustomers}</div>
+            <p className="text-xs text-green-600">From upcoming bookings</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Expected Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium text-purple-700">Expected Revenue</CardTitle>
+            <span className="text-purple-600 font-bold">£</span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">£{stats.totalRevenue.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">From upcoming bookings</p>
+            <div className="text-2xl font-bold text-purple-900">£{stats.totalRevenue.toFixed(2)}</div>
+            <p className="text-xs text-purple-600">From upcoming bookings</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-4 w-4" />
+      {/* Modern Filters */}
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Filter className="h-5 w-5" />
             Filters
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="dateFrom">Date From</Label>
+              <Label htmlFor="dateFrom" className="text-sm font-medium">Date From</Label>
               <Input
                 id="dateFrom"
                 type="date"
                 value={filters.dateFrom}
                 onChange={(e) => setFilters({...filters, dateFrom: e.target.value})}
+                className="h-9"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="dateTo">Date To</Label>
+              <Label htmlFor="dateTo" className="text-sm font-medium">Date To</Label>
               <Input
                 id="dateTo"
                 type="date"
                 value={filters.dateTo}
                 onChange={(e) => setFilters({...filters, dateTo: e.target.value})}
+                className="h-9"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="cleaner">Cleaner</Label>
+              <Label htmlFor="cleaner" className="text-sm font-medium">Cleaner</Label>
               <Select value={filters.cleanerId} onValueChange={(value) => setFilters({...filters, cleanerId: value})}>
-                <SelectTrigger>
+                <SelectTrigger className="h-9">
                   <SelectValue placeholder="Select cleaner" />
                 </SelectTrigger>
                 <SelectContent>
@@ -349,9 +354,9 @@ const UpcomingBookings = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="customer">Customer</Label>
+              <Label htmlFor="customer" className="text-sm font-medium">Customer</Label>
               <Select value={filters.customerId} onValueChange={(value) => setFilters({...filters, customerId: value})}>
-                <SelectTrigger>
+                <SelectTrigger className="h-9">
                   <SelectValue placeholder="Select customer" />
                 </SelectTrigger>
                 <SelectContent>
@@ -366,7 +371,7 @@ const UpcomingBookings = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="customerSearch">Search Customer</Label>
+              <Label htmlFor="customerSearch" className="text-sm font-medium">Search Customer</Label>
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
                 <Input
@@ -374,13 +379,13 @@ const UpcomingBookings = () => {
                   placeholder="Search by name or email"
                   value={filters.customerSearch}
                   onChange={(e) => setFilters({...filters, customerSearch: e.target.value})}
-                  className="pl-8"
+                  className="pl-8 h-9"
                 />
               </div>
             </div>
 
             <div className="flex items-end">
-              <Button onClick={clearFilters} variant="outline">
+              <Button onClick={clearFilters} variant="outline" className="h-9">
                 Clear Filters
               </Button>
             </div>
@@ -389,15 +394,15 @@ const UpcomingBookings = () => {
       </Card>
 
       {/* Table Controls */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
-            <Label htmlFor="itemsPerPage">Show:</Label>
+            <Label htmlFor="itemsPerPage" className="text-sm font-medium">Show:</Label>
             <Select value={itemsPerPage.toString()} onValueChange={(value) => {
               setItemsPerPage(parseInt(value));
               setCurrentPage(1);
             }}>
-              <SelectTrigger className="w-20">
+              <SelectTrigger className="w-20 h-8">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -410,9 +415,9 @@ const UpcomingBookings = () => {
           </div>
 
           <div className="flex items-center space-x-2">
-            <Label htmlFor="sortOrder">Sort:</Label>
+            <Label htmlFor="sortOrder" className="text-sm font-medium">Sort:</Label>
             <Select value={sortOrder} onValueChange={(value: 'asc' | 'desc') => setSortOrder(value)}>
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-32 h-8">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -428,92 +433,111 @@ const UpcomingBookings = () => {
         </div>
       </div>
 
-      {/* Table */}
-      <Card>
+      {/* Modern Table */}
+      <Card className="shadow-sm">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Date & Time</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Address</TableHead>
-                  <TableHead>Service</TableHead>
-                  <TableHead>Cleaner</TableHead>
-                  <TableHead>Cost</TableHead>
-                  <TableHead>Actions</TableHead>
+                <TableRow className="bg-gray-50">
+                  <TableHead className="font-semibold">Date & Time</TableHead>
+                  <TableHead className="font-semibold">Customer</TableHead>
+                  <TableHead className="font-semibold">Address</TableHead>
+                  <TableHead className="font-semibold">Service</TableHead>
+                  <TableHead className="font-semibold">Cleaner</TableHead>
+                  <TableHead className="font-semibold">Cost</TableHead>
+                  <TableHead className="font-semibold text-center">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paginatedBookings.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                       No bookings found
                     </TableCell>
                   </TableRow>
                 ) : (
                   paginatedBookings.map((booking) => (
-                    <TableRow key={booking.id}>
+                    <TableRow key={booking.id} className="hover:bg-gray-50 transition-colors">
                       <TableCell>
-                        <div className="text-sm">
-                          <div className="font-medium">
-                            {booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : 'No date'}
-                          </div>
-                          <div className="text-gray-500">
-                            {booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'No time'}
+                        <div className="flex items-center space-x-2">
+                          <CalendarDays className="h-4 w-4 text-gray-400" />
+                          <div>
+                            <div className="font-medium text-sm">
+                              {booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : 'No date'}
+                            </div>
+                            <div className="text-gray-500 text-xs flex items-center">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'No time'}
+                            </div>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm">
-                          <div className="font-medium">
+                        <div className="space-y-1">
+                          <div className="font-medium text-sm flex items-center">
+                            <User className="h-3 w-3 mr-1 text-gray-400" />
                             {booking.first_name} {booking.last_name}
                           </div>
-                          <div className="text-gray-500 text-xs">
-                            ID: {booking.customer}
+                          <div className="text-xs text-gray-500 flex items-center">
+                            <Mail className="h-3 w-3 mr-1" />
+                            {booking.email}
+                          </div>
+                          <div className="text-xs text-gray-500 flex items-center">
+                            <Phone className="h-3 w-3 mr-1" />
+                            {booking.phone_number}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm">
-                          <div>{booking.email}</div>
-                          <div className="text-gray-500">{booking.phone_number}</div>
+                        <div className="flex items-start space-x-1 max-w-48">
+                          <MapPin className="h-3 w-3 mt-0.5 text-gray-400 flex-shrink-0" />
+                          <span className="text-sm text-gray-700 leading-tight">{booking.address}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="max-w-32 truncate">
-                        {booking.address}
-                      </TableCell>
-                      <TableCell>{booking.cleaning_type || 'Standard'}</TableCell>
-                      <TableCell>{getCleanerName(booking.cleaner)}</TableCell>
-                      <TableCell className="font-medium">
-                        £{booking.total_cost?.toFixed(2) || '0.00'}
+                      <TableCell>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {booking.cleaning_type || 'Standard Cleaning'}
+                        </span>
                       </TableCell>
                       <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              ⋮
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEdit(booking.id)}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDuplicate(booking)}>
-                              Duplicate
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleDelete(booking.id)}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div className="flex items-center space-x-1">
+                          <User className="h-3 w-3 text-gray-400" />
+                          <span className="text-sm font-medium">{getCleanerName(booking.cleaner)}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-semibold text-green-600">
+                          £{booking.total_cost?.toFixed(2) || '0.00'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-center">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-gray-100">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                              <DropdownMenuItem onClick={() => handleEdit(booking.id)} className="cursor-pointer">
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDuplicate(booking)} className="cursor-pointer">
+                                <Copy className="mr-2 h-4 w-4" />
+                                Duplicate
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleDelete(booking.id)}
+                                className="text-red-600 cursor-pointer"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -524,11 +548,12 @@ const UpcomingBookings = () => {
         </CardContent>
       </Card>
 
-      {/* Pagination */}
+      {/* Modern Pagination */}
       {totalPages > 1 && (
-        <div className="flex justify-center space-x-2">
+        <div className="flex justify-center space-x-2 py-4">
           <Button
             variant="outline"
+            size="sm"
             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
           >
@@ -541,6 +566,7 @@ const UpcomingBookings = () => {
               <Button
                 key={pageNum}
                 variant={currentPage === pageNum ? "default" : "outline"}
+                size="sm"
                 onClick={() => setCurrentPage(pageNum)}
               >
                 {pageNum}
@@ -550,6 +576,7 @@ const UpcomingBookings = () => {
           
           <Button
             variant="outline"
+            size="sm"
             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}
           >
