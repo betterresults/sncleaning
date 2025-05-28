@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -8,8 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Edit, Trash2, Copy, Filter, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail, Banknote, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 interface PastBooking {
   id: number;
@@ -77,6 +78,10 @@ const PastBookingsTable = () => {
     customerSearch: '',
     timePeriod: 'all',
   });
+  const { toast } = useToast();
+  const [duplicateDialog, setDuplicateDialog] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<PastBooking | null>(null);
+  const [newDateTime, setNewDateTime] = useState('');
 
   const getTimePeriodDates = (period: string) => {
     const now = new Date();
@@ -252,15 +257,37 @@ const PastBookingsTable = () => {
     });
   };
 
-  const getPaymentStatusIcon = (status: string) => {
+  const getPaymentStatusIcon = (status: string, cost: number | string) => {
     const normalizedStatus = status?.toLowerCase() || '';
+    const costValue = typeof cost === 'string' ? parseFloat(cost) : cost;
     
     if (normalizedStatus.includes('paid') && !normalizedStatus.includes('not')) {
-      return <CheckCircle className="h-4 w-4 text-green-600" />;
+      return (
+        <div className="flex items-center space-x-2">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <span className="font-semibold text-green-600 text-base">
+            £{costValue?.toFixed(2) || '0.00'}
+          </span>
+        </div>
+      );
     } else if (normalizedStatus.includes('processing')) {
-      return <AlertCircle className="h-4 w-4 text-yellow-600" />;
+      return (
+        <div className="flex items-center space-x-2">
+          <AlertCircle className="h-4 w-4 text-yellow-600" />
+          <span className="font-semibold text-yellow-600 text-base">
+            £{costValue?.toFixed(2) || '0.00'}
+          </span>
+        </div>
+      );
     } else {
-      return <XCircle className="h-4 w-4 text-red-600" />;
+      return (
+        <div className="flex items-center space-x-2">
+          <XCircle className="h-4 w-4 text-red-600" />
+          <span className="font-semibold text-red-600 text-base">
+            £{costValue?.toFixed(2) || '0.00'}
+          </span>
+        </div>
+      );
     }
   };
 
@@ -300,6 +327,76 @@ const PastBookingsTable = () => {
       name: 'No Cleaner Assigned',
       pay: 0
     };
+  };
+
+  const handleDuplicate = (booking: PastBooking) => {
+    setSelectedBooking(booking);
+    setDuplicateDialog(true);
+  };
+
+  const handleDuplicateConfirm = async () => {
+    if (!selectedBooking || !newDateTime) {
+      toast({
+        title: "Error",
+        description: "Please select a date and time for the new booking.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Create new booking data based on the selected past booking
+      const newBookingData = {
+        customer: selectedBooking.customer,
+        cleaner: selectedBooking.cleaner,
+        first_name: selectedBooking.first_name,
+        last_name: selectedBooking.last_name,
+        email: selectedBooking.email,
+        phone_number: selectedBooking.phone_number,
+        date_time: newDateTime,
+        address: selectedBooking.address,
+        postcode: selectedBooking.postcode,
+        hours_required: selectedBooking.hours_required,
+        total_cost: typeof selectedBooking.total_cost === 'string' ? parseFloat(selectedBooking.total_cost) : selectedBooking.total_cost,
+        cleaner_pay: selectedBooking.cleaner_pay,
+        form_name: selectedBooking.form_name,
+        property_details: selectedBooking.property_details,
+        additional_details: selectedBooking.additional_details,
+        payment_method: 'Cash', // Default for new booking
+        payment_status: 'Unpaid', // Default for new booking
+        booking_status: 'Confirmed'
+      };
+
+      const { error } = await supabase
+        .from('bookings')
+        .insert([newBookingData]);
+
+      if (error) {
+        console.error('Error duplicating booking:', error);
+        toast({
+          title: "Error",
+          description: "Failed to duplicate booking. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: "Booking duplicated successfully!",
+      });
+
+      setDuplicateDialog(false);
+      setSelectedBooking(null);
+      setNewDateTime('');
+    } catch (error) {
+      console.error('Error duplicating booking:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    }
   };
 
   useEffect(() => {
@@ -582,7 +679,6 @@ const PastBookingsTable = () => {
                   <TableHead className="font-semibold text-base">Address</TableHead>
                   <TableHead className="font-semibold text-base">Service</TableHead>
                   <TableHead className="font-semibold text-base">Cleaner</TableHead>
-                  <TableHead className="font-semibold text-base">Payment Status</TableHead>
                   <TableHead className="font-semibold text-base">Cost</TableHead>
                   <TableHead className="font-semibold text-center text-base">Actions</TableHead>
                 </TableRow>
@@ -590,7 +686,7 @@ const PastBookingsTable = () => {
               <TableBody>
                 {paginatedBookings.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-gray-500 text-base">
+                    <TableCell colSpan={7} className="text-center py-8 text-gray-500 text-base">
                       No past bookings found
                     </TableCell>
                   </TableRow>
@@ -662,17 +758,7 @@ const PastBookingsTable = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center space-x-2">
-                            {getPaymentStatusIcon(booking.payment_status)}
-                            <span className="text-sm font-medium">
-                              {booking.payment_status || 'Unknown'}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-semibold text-green-600 text-base">
-                            £{cost?.toFixed(2) || '0.00'}
-                          </span>
+                          {getPaymentStatusIcon(booking.payment_status, cost)}
                         </TableCell>
                         <TableCell>
                           <div className="flex justify-center">
@@ -683,11 +769,10 @@ const PastBookingsTable = () => {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-40">
-                                <DropdownMenuItem className="cursor-pointer">
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  View Details
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="cursor-pointer">
+                                <DropdownMenuItem 
+                                  className="cursor-pointer"
+                                  onClick={() => handleDuplicate(booking)}
+                                >
                                   <Copy className="mr-2 h-4 w-4" />
                                   Duplicate
                                 </DropdownMenuItem>
@@ -741,6 +826,45 @@ const PastBookingsTable = () => {
           </Button>
         </div>
       )}
+
+      {/* Duplicate Booking Dialog */}
+      <Dialog open={duplicateDialog} onOpenChange={setDuplicateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Duplicate Booking</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Select a new date and time for the duplicated booking:
+            </p>
+            <div>
+              <Label htmlFor="newDateTime">Date & Time *</Label>
+              <Input
+                id="newDateTime"
+                type="datetime-local"
+                value={newDateTime}
+                onChange={(e) => setNewDateTime(e.target.value)}
+                required
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setDuplicateDialog(false);
+                  setSelectedBooking(null);
+                  setNewDateTime('');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleDuplicateConfirm}>
+                Create Booking
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
