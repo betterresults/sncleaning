@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -187,7 +186,9 @@ const UsersSection = ({ key }: UsersSectionProps) => {
     }
   };
 
-  const handleCreateUserClick = () => {
+  const handleCreateUserClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
     console.log('Create user button clicked');
     setShowCreateUserForm(!showCreateUserForm);
   };
@@ -200,15 +201,18 @@ const UsersSection = ({ key }: UsersSectionProps) => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">System Users ({users.length})</h3>
-        <Button 
+        <button
           onClick={handleCreateUserClick}
-          variant={showCreateUserForm ? "outline" : "default"}
-          className="flex items-center gap-2 cursor-pointer"
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer ${
+            showCreateUserForm 
+              ? 'bg-slate-600 hover:bg-slate-700 text-white border border-slate-500' 
+              : 'bg-blue-900 hover:bg-blue-800 text-white shadow-lg hover:shadow-xl'
+          }`}
           type="button"
         >
           <UserPlus className="h-4 w-4" />
           {showCreateUserForm ? 'Cancel' : 'Create New User'}
-        </Button>
+        </button>
       </div>
 
       {fetchError && (

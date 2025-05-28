@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -182,6 +181,13 @@ const CustomersSection = () => {
     setEditCustomerData({});
   };
 
+  const handleCreateCustomerClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Create customer button clicked');
+    setShowCreateCustomerForm(!showCreateCustomerForm);
+  };
+
   useEffect(() => {
     fetchCustomers();
   }, []);
@@ -190,14 +196,18 @@ const CustomersSection = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Customers</h3>
-        <Button 
-          onClick={() => setShowCreateCustomerForm(!showCreateCustomerForm)}
-          variant={showCreateCustomerForm ? "outline" : "default"}
-          className="flex items-center gap-2"
+        <button
+          onClick={handleCreateCustomerClick}
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer ${
+            showCreateCustomerForm 
+              ? 'bg-slate-600 hover:bg-slate-700 text-white border border-slate-500' 
+              : 'bg-blue-900 hover:bg-blue-800 text-white shadow-lg hover:shadow-xl'
+          }`}
+          type="button"
         >
           <UserPlus className="h-4 w-4" />
           {showCreateCustomerForm ? 'Cancel' : 'Create New Customer'}
-        </Button>
+        </button>
       </div>
 
       {/* Create Customer Form */}
@@ -259,9 +269,13 @@ const CustomersSection = () => {
               />
             </div>
           </div>
-          <Button onClick={createCustomer} disabled={creating}>
+          <button
+            onClick={createCustomer}
+            disabled={creating}
+            className="bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          >
             {creating ? 'Creating...' : 'Create Customer'}
-          </Button>
+          </button>
         </div>
       )}
 
