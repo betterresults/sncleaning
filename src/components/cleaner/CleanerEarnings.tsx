@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -114,23 +115,22 @@ const CleanerEarnings = () => {
 
       console.log('Fetching earnings for cleaner ID:', cleanerId);
 
-      // Get all completed bookings for this cleaner
-      const { data: bookingsData, error: bookingsError } = await supabase
-        .from('bookings')
+      // Get all completed bookings for this cleaner from past_bookings table
+      const { data: pastBookingsData, error: pastBookingsError } = await supabase
+        .from('past_bookings')
         .select('*')
         .eq('cleaner', cleanerId)
-        .eq('booking_status', 'Completed')
         .order('date_time', { ascending: false });
 
-      if (bookingsError) {
-        console.error('Error fetching earnings:', bookingsError);
-        setError('Failed to fetch earnings: ' + bookingsError.message);
+      if (pastBookingsError) {
+        console.error('Error fetching past bookings:', pastBookingsError);
+        setError('Failed to fetch earnings: ' + pastBookingsError.message);
         return;
       }
 
-      console.log('Fetched completed bookings:', bookingsData?.length || 0);
+      console.log('Fetched past bookings:', pastBookingsData?.length || 0);
 
-      const completedBookings = bookingsData || [];
+      const completedBookings = pastBookingsData || [];
       const now = new Date();
       const last7Days = subDays(now, 7);
       
@@ -143,7 +143,7 @@ const CleanerEarnings = () => {
           const bookingDate = new Date(booking.date_time);
           return bookingDate >= paymentInfo.periodStartDate && bookingDate <= paymentInfo.periodEndDate;
         })
-        .reduce((sum, booking) => sum + (booking.cleaner_pay || 0), 0);
+        .reduce((sum, booking) => sum + (Number(booking.cleaner_pay) || 0), 0);
 
       // Calculate last 7 days earnings
       const last7DaysEarnings = completedBookings
@@ -151,10 +151,10 @@ const CleanerEarnings = () => {
           const bookingDate = new Date(booking.date_time);
           return bookingDate >= last7Days;
         })
-        .reduce((sum, booking) => sum + (booking.cleaner_pay || 0), 0);
+        .reduce((sum, booking) => sum + (Number(booking.cleaner_pay) || 0), 0);
 
       // Calculate total earnings and stats
-      const totalEarnings = completedBookings.reduce((sum, booking) => sum + (booking.cleaner_pay || 0), 0);
+      const totalEarnings = completedBookings.reduce((sum, booking) => sum + (Number(booking.cleaner_pay) || 0), 0);
       const averagePerJob = completedBookings.length > 0 ? totalEarnings / completedBookings.length : 0;
 
       // Get recent jobs (last 10)
@@ -179,7 +179,7 @@ const CleanerEarnings = () => {
           };
         }
         
-        monthlyData[monthKey].totalEarnings += booking.cleaner_pay || 0;
+        monthlyData[monthKey].totalEarnings += Number(booking.cleaner_pay) || 0;
         monthlyData[monthKey].completedJobs += 1;
       });
 
@@ -189,7 +189,16 @@ const CleanerEarnings = () => {
           ...month,
           averagePerJob: month.completedJobs > 0 ? month.totalEarnings / month.completedJobs : 0
         }))
-        .sort((a, b) => b.year - a.year || (b.month.localeCompare(a.month)));
+        .sort((a, b) => {
+          // Sort by year desc, then by month desc
+          if (a.year !== b.year) {
+            return b.year - a.year;
+          }
+          // Convert month names to numbers for proper sorting
+          const monthOrder = ['January', 'February', 'March', 'April', 'May', 'June', 
+                             'July', 'August', 'September', 'October', 'November', 'December'];
+          return monthOrder.indexOf(b.month) - monthOrder.indexOf(a.month);
+        });
 
       setEarnings({
         upcomingPayment: {
@@ -393,7 +402,7 @@ const CleanerEarnings = () => {
                           {job.booking_status}
                         </Badge>
                         <div className="font-semibold text-green-600">
-                          £{job.cleaner_pay?.toFixed(2) || '0.00'}
+                          £{Number(job.cleaner_pay)?.toFixed(2) || '0.00'}
                         </div>
                       </div>
                     </div>
