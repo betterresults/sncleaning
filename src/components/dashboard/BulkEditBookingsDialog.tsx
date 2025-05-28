@@ -26,6 +26,9 @@ interface Booking {
   total_cost: number;
   cleaner_pay: number;
   cleaner: number | null;
+  total_hours: number;
+  cleaner_rate: number;
+  cleaner_percentage: number;
   cleaners?: {
     full_name: string;
   } | null;
@@ -46,7 +49,7 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [selectedBookings, setSelectedBookings] = useState<number[]>([]);
-  const [editType, setEditType] = useState<'cost' | 'cleaner_pay'>('cost');
+  const [editType, setEditType] = useState<'cost' | 'cleaner_pay' | 'hourly_rate' | 'percentage'>('cost');
   const [newValue, setNewValue] = useState<number>(0);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -88,6 +91,9 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
           total_cost,
           cleaner_pay,
           cleaner,
+          total_hours,
+          cleaner_rate,
+          cleaner_percentage,
           cleaners!bookings_cleaner_fkey (
             full_name
           )
@@ -136,11 +142,26 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
     setLoading(true);
 
     try {
-      const updateField = editType === 'cost' ? 'total_cost' : 'cleaner_pay';
+      let updateData: any = {};
+      
+      switch (editType) {
+        case 'cost':
+          updateData = { total_cost: newValue };
+          break;
+        case 'cleaner_pay':
+          updateData = { cleaner_pay: newValue };
+          break;
+        case 'hourly_rate':
+          updateData = { cleaner_rate: newValue };
+          break;
+        case 'percentage':
+          updateData = { cleaner_percentage: newValue };
+          break;
+      }
       
       const { error } = await supabase
         .from('bookings')
-        .update({ [updateField]: newValue })
+        .update(updateData)
         .in('id', selectedBookings);
 
       if (error) {
@@ -163,13 +184,30 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
     }
   };
 
+  const getFieldLabel = () => {
+    switch (editType) {
+      case 'cost': return 'Total Cost';
+      case 'cleaner_pay': return 'Cleaner Pay';
+      case 'hourly_rate': return 'Hourly Rate';
+      case 'percentage': return 'Percentage';
+      default: return 'Value';
+    }
+  };
+
+  const getFieldUnit = () => {
+    switch (editType) {
+      case 'percentage': return '%';
+      default: return '£';
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Bulk Edit Bookings</DialogTitle>
           <DialogDescription>
-            Search and select bookings to apply changes to their cost or cleaner pay
+            Search and select bookings to apply changes to their cost, cleaner pay, hourly rate, or percentage
           </DialogDescription>
         </DialogHeader>
         
@@ -189,26 +227,28 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
             <div>
               <Label htmlFor="editType">What to update</Label>
-              <Select value={editType} onValueChange={(value: 'cost' | 'cleaner_pay') => setEditType(value)}>
+              <Select value={editType} onValueChange={(value: 'cost' | 'cleaner_pay' | 'hourly_rate' | 'percentage') => setEditType(value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="cost">Total Cost</SelectItem>
                   <SelectItem value="cleaner_pay">Cleaner Pay</SelectItem>
+                  <SelectItem value="hourly_rate">Hourly Rate</SelectItem>
+                  <SelectItem value="percentage">Percentage</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
             <div>
-              <Label htmlFor="newValue">New Value (£)</Label>
+              <Label htmlFor="newValue">New {getFieldLabel()} ({getFieldUnit()})</Label>
               <Input
                 id="newValue"
                 type="number"
-                step="0.01"
+                step={editType === 'percentage' ? '1' : '0.01'}
                 value={newValue}
                 onChange={(e) => setNewValue(Number(e.target.value))}
-                placeholder="Enter new value"
+                placeholder={`Enter new ${getFieldLabel().toLowerCase()}`}
               />
             </div>
 
@@ -256,12 +296,14 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
                   <TableHead>Cleaner</TableHead>
                   <TableHead>Current Cost</TableHead>
                   <TableHead>Current Cleaner Pay</TableHead>
+                  <TableHead>Hourly Rate</TableHead>
+                  <TableHead>Percentage</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredBookings.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
+                    <TableCell colSpan={8} className="text-center py-8">
                       {searchTerm ? 'No bookings match your search' : 'No upcoming bookings found'}
                     </TableCell>
                   </TableRow>
@@ -297,6 +339,12 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
                       </TableCell>
                       <TableCell className="font-medium">
                         £{booking.cleaner_pay?.toFixed(2) || '0.00'}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        £{booking.cleaner_rate?.toFixed(2) || '0.00'}/hr
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {booking.cleaner_percentage || '0'}%
                       </TableCell>
                     </TableRow>
                   ))
