@@ -322,9 +322,8 @@ const BookingsTable = () => {
         />
       )}
 
-      {/* Bulk Edit Button - Make it more prominent */}
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">Bookings Management</h2>
+      {/* Bulk Edit Button - Make it prominent and visible */}
+      <div className="flex justify-end mb-4">
         <Button 
           onClick={() => setBulkEditOpen(true)}
           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
