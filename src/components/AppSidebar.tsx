@@ -2,7 +2,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useLocation } from 'react-router-dom';
-import { Calendar, Users, LayoutDashboard, Plus, User } from 'lucide-react';
+import { Calendar, Users, LayoutDashboard, User } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +15,7 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
+import CreateBookingDialog from '@/components/booking/CreateBookingDialog';
 
 export function AppSidebar() {
   const { user, userRole, signOut } = useAuth();
@@ -55,10 +56,7 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
-        <Button className="w-full" size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Add New Booking
-        </Button>
+        <CreateBookingDialog />
       </SidebarHeader>
       
       <SidebarContent>
