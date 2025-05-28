@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CalendarDays, DollarSign, TrendingUp, Clock, Calendar } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, subMonths, addMonths, subDays, isAfter } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subMonths, addMonths, subDays, isAfter, startOfYear } from 'date-fns';
 
 interface EarningsData {
   upcomingPayment: {
@@ -17,7 +17,6 @@ interface EarningsData {
     periodEnd: string;
   };
   currentEarnings: {
-    last7Days: number;
     totalEarnings: number;
     completedJobs: number;
     averagePerJob: number;
@@ -35,16 +34,14 @@ interface BookingEarning {
   last_name: string;
 }
 
-interface MonthlyEarnings {
-  month: string;
-  year: number;
+interface PeriodData {
   totalEarnings: number;
   completedJobs: number;
   averagePerJob: number;
 }
 
 const CleanerEarnings = () => {
-  const { cleanerId, loading: authLoading } = useAuth();
+  const { user, cleanerId, loading: authLoading } = useAuth();
   const [earnings, setEarnings] = useState<EarningsData>({
     upcomingPayment: {
       paymentDate: '',
@@ -53,16 +50,18 @@ const CleanerEarnings = () => {
       periodEnd: ''
     },
     currentEarnings: {
-      last7Days: 0,
       totalEarnings: 0,
       completedJobs: 0,
       averagePerJob: 0
     },
     recentJobs: []
   });
-  const [monthlyHistory, setMonthlyHistory] = useState<MonthlyEarnings[]>([]);
-  const [selectedMonth, setSelectedMonth] = useState<string>('current');
-  const [selectedMonthData, setSelectedMonthData] = useState<MonthlyEarnings | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('current');
+  const [periodData, setPeriodData] = useState<PeriodData>({
+    totalEarnings: 0,
+    completedJobs: 0,
+    averagePerJob: 0
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -101,6 +100,63 @@ const CleanerEarnings = () => {
     };
   };
 
+  const calculatePeriodData = (bookings: BookingEarning[], period: string) => {
+    const now = new Date();
+    let filteredBookings: BookingEarning[] = [];
+
+    switch (period) {
+      case 'current':
+        // Current month (1st to end of month)
+        const currentStart = startOfMonth(now);
+        const currentEnd = endOfMonth(now);
+        filteredBookings = bookings.filter(booking => {
+          const bookingDate = new Date(booking.date_time);
+          return bookingDate >= currentStart && bookingDate <= currentEnd;
+        });
+        break;
+      case 'lastMonth':
+        const lastMonthStart = startOfMonth(subMonths(now, 1));
+        const lastMonthEnd = endOfMonth(subMonths(now, 1));
+        filteredBookings = bookings.filter(booking => {
+          const bookingDate = new Date(booking.date_time);
+          return bookingDate >= lastMonthStart && bookingDate <= lastMonthEnd;
+        });
+        break;
+      case 'last3Months':
+        const last3MonthsStart = startOfMonth(subMonths(now, 2));
+        filteredBookings = bookings.filter(booking => {
+          const bookingDate = new Date(booking.date_time);
+          return bookingDate >= last3MonthsStart;
+        });
+        break;
+      case 'last6Months':
+        const last6MonthsStart = startOfMonth(subMonths(now, 5));
+        filteredBookings = bookings.filter(booking => {
+          const bookingDate = new Date(booking.date_time);
+          return bookingDate >= last6MonthsStart;
+        });
+        break;
+      case 'allTime':
+        filteredBookings = bookings;
+        break;
+      default:
+        filteredBookings = bookings.filter(booking => {
+          const bookingDate = new Date(booking.date_time);
+          return bookingDate >= startOfMonth(now) && bookingDate <= endOfMonth(now);
+        });
+    }
+
+    const totalEarnings = filteredBookings.reduce((sum, booking) => sum + (Number(booking.cleaner_pay) || 0), 0);
+    const completedJobs = filteredBookings.length;
+    const averagePerJob = completedJobs > 0 ? totalEarnings / completedJobs : 0;
+
+    return {
+      totalEarnings,
+      completedJobs,
+      averagePerJob
+    };
+  };
+
   const fetchEarningsData = async () => {
     if (!cleanerId) {
       console.log('No cleaner ID found, cannot fetch earnings');
@@ -131,8 +187,6 @@ const CleanerEarnings = () => {
       console.log('Fetched past bookings:', pastBookingsData?.length || 0);
 
       const completedBookings = pastBookingsData || [];
-      const now = new Date();
-      const last7Days = subDays(now, 7);
       
       // Get payment period info
       const paymentInfo = getPaymentPeriodInfo();
@@ -145,60 +199,11 @@ const CleanerEarnings = () => {
         })
         .reduce((sum, booking) => sum + (Number(booking.cleaner_pay) || 0), 0);
 
-      // Calculate last 7 days earnings
-      const last7DaysEarnings = completedBookings
-        .filter(booking => {
-          const bookingDate = new Date(booking.date_time);
-          return bookingDate >= last7Days;
-        })
-        .reduce((sum, booking) => sum + (Number(booking.cleaner_pay) || 0), 0);
-
-      // Calculate total earnings and stats
-      const totalEarnings = completedBookings.reduce((sum, booking) => sum + (Number(booking.cleaner_pay) || 0), 0);
-      const averagePerJob = completedBookings.length > 0 ? totalEarnings / completedBookings.length : 0;
+      // Calculate current month data (default)
+      const currentMonthData = calculatePeriodData(completedBookings, 'current');
 
       // Get recent jobs (last 10)
       const recentJobs = completedBookings.slice(0, 10);
-
-      // Calculate monthly history
-      const monthlyData: { [key: string]: MonthlyEarnings } = {};
-      
-      completedBookings.forEach(booking => {
-        const bookingDate = new Date(booking.date_time);
-        const monthKey = format(bookingDate, 'yyyy-MM');
-        const monthName = format(bookingDate, 'MMMM');
-        const year = bookingDate.getFullYear();
-        
-        if (!monthlyData[monthKey]) {
-          monthlyData[monthKey] = {
-            month: monthName,
-            year: year,
-            totalEarnings: 0,
-            completedJobs: 0,
-            averagePerJob: 0
-          };
-        }
-        
-        monthlyData[monthKey].totalEarnings += Number(booking.cleaner_pay) || 0;
-        monthlyData[monthKey].completedJobs += 1;
-      });
-
-      // Calculate averages and sort monthly data
-      const monthlyHistory = Object.values(monthlyData)
-        .map(month => ({
-          ...month,
-          averagePerJob: month.completedJobs > 0 ? month.totalEarnings / month.completedJobs : 0
-        }))
-        .sort((a, b) => {
-          // Sort by year desc, then by month desc
-          if (a.year !== b.year) {
-            return b.year - a.year;
-          }
-          // Convert month names to numbers for proper sorting
-          const monthOrder = ['January', 'February', 'March', 'April', 'May', 'June', 
-                             'July', 'August', 'September', 'October', 'November', 'December'];
-          return monthOrder.indexOf(b.month) - monthOrder.indexOf(a.month);
-        });
 
       setEarnings({
         upcomingPayment: {
@@ -207,16 +212,12 @@ const CleanerEarnings = () => {
           periodStart: paymentInfo.periodStart,
           periodEnd: paymentInfo.periodEnd
         },
-        currentEarnings: {
-          last7Days: last7DaysEarnings,
-          totalEarnings,
-          completedJobs: completedBookings.length,
-          averagePerJob
-        },
+        currentEarnings: currentMonthData,
         recentJobs
       });
 
-      setMonthlyHistory(monthlyHistory);
+      // Set initial period data to current month
+      setPeriodData(currentMonthData);
 
     } catch (error) {
       console.error('Error in fetchEarningsData:', error);
@@ -226,13 +227,22 @@ const CleanerEarnings = () => {
     }
   };
 
-  const handleMonthChange = (value: string) => {
-    setSelectedMonth(value);
-    if (value === 'current') {
-      setSelectedMonthData(null);
-    } else {
-      const monthData = monthlyHistory.find(m => `${m.year}-${m.month}` === value);
-      setSelectedMonthData(monthData || null);
+  const handlePeriodChange = async (value: string) => {
+    setSelectedPeriod(value);
+    
+    // Recalculate data for the selected period
+    if (earnings.recentJobs.length > 0) {
+      // We need to get all bookings again to calculate for the new period
+      const { data: pastBookingsData } = await supabase
+        .from('past_bookings')
+        .select('*')
+        .eq('cleaner', cleanerId)
+        .order('date_time', { ascending: false });
+
+      if (pastBookingsData) {
+        const newPeriodData = calculatePeriodData(pastBookingsData, value);
+        setPeriodData(newPeriodData);
+      }
     }
   };
 
@@ -261,10 +271,16 @@ const CleanerEarnings = () => {
     );
   }
 
-  const displayData = selectedMonthData || earnings.currentEarnings;
+  // Get first name for greeting
+  const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Cleaner';
 
   return (
     <div className="space-y-6">
+      {/* Friendly Greeting */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">Hello {firstName}! 👋</h1>
+      </div>
+
       {/* Upcoming Payment */}
       <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
         <CardHeader>
@@ -286,54 +302,41 @@ const CleanerEarnings = () => {
         </CardContent>
       </Card>
 
-      {/* Monthly History Selector */}
+      {/* Earnings Overview with Period Selector */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Earnings Overview</span>
-            <Select value={selectedMonth} onValueChange={handleMonthChange}>
+            <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
               <SelectTrigger className="w-48">
-                <SelectValue placeholder="Select month" />
+                <SelectValue placeholder="Select period" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="current">Current Period</SelectItem>
-                {monthlyHistory.map((month) => (
-                  <SelectItem key={`${month.year}-${month.month}`} value={`${month.year}-${month.month}`}>
-                    {month.month} {month.year}
-                  </SelectItem>
-                ))}
+                <SelectItem value="current">Current Month</SelectItem>
+                <SelectItem value="lastMonth">Last Month</SelectItem>
+                <SelectItem value="last3Months">Last 3 Months</SelectItem>
+                <SelectItem value="last6Months">Last 6 Months</SelectItem>
+                <SelectItem value="allTime">All Time</SelectItem>
               </SelectContent>
             </Select>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {selectedMonth === 'current' && (
-              <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-green-700">Last 7 Days</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-green-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-900">£{earnings.currentEarnings.last7Days.toFixed(2)}</div>
-                  <p className="text-xs text-green-600">Recent activity</p>
-                </CardContent>
-              </Card>
-            )}
-
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-purple-700">
-                  {selectedMonth === 'current' ? 'Total Earnings' : 'Month Earnings'}
-                </CardTitle>
+                <CardTitle className="text-sm font-medium text-purple-700">Total Earnings</CardTitle>
                 <DollarSign className="h-4 w-4 text-purple-600" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-purple-900">
-                  £{(selectedMonthData?.totalEarnings || displayData.totalEarnings || 0).toFixed(2)}
+                  £{periodData.totalEarnings.toFixed(2)}
                 </div>
                 <p className="text-xs text-purple-600">
-                  {selectedMonth === 'current' ? 'All time' : `${selectedMonthData?.month} ${selectedMonthData?.year}`}
+                  {selectedPeriod === 'current' ? 'This month' : 
+                   selectedPeriod === 'lastMonth' ? 'Last month' :
+                   selectedPeriod === 'last3Months' ? 'Last 3 months' :
+                   selectedPeriod === 'last6Months' ? 'Last 6 months' : 'All time'}
                 </p>
               </CardContent>
             </Card>
@@ -345,7 +348,7 @@ const CleanerEarnings = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-blue-900">
-                  {selectedMonthData?.completedJobs || displayData.completedJobs || 0}
+                  {periodData.completedJobs}
                 </div>
                 <p className="text-xs text-blue-600">Jobs completed</p>
               </CardContent>
@@ -358,7 +361,7 @@ const CleanerEarnings = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-orange-900">
-                  £{(selectedMonthData?.averagePerJob || displayData.averagePerJob || 0).toFixed(2)}
+                  £{periodData.averagePerJob.toFixed(2)}
                 </div>
                 <p className="text-xs text-orange-600">Per completed job</p>
               </CardContent>
@@ -367,51 +370,43 @@ const CleanerEarnings = () => {
         </CardContent>
       </Card>
 
-      {/* Recent Jobs - only show for current period */}
-      {selectedMonth === 'current' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Jobs (Last 7 Days)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {earnings.recentJobs.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">No recent jobs found</p>
-            ) : (
-              <div className="space-y-4">
-                {earnings.recentJobs
-                  .filter(job => {
-                    const jobDate = new Date(job.date_time);
-                    const last7Days = subDays(new Date(), 7);
-                    return jobDate >= last7Days;
-                  })
-                  .map((job) => (
-                    <div key={job.id} className="flex justify-between items-center p-4 border rounded-lg">
-                      <div className="flex-1">
-                        <div className="font-medium">
-                          {job.first_name} {job.last_name}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {job.form_name || 'Standard Cleaning'}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {format(new Date(job.date_time), 'dd/MM/yyyy HH:mm')}
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <Badge variant="default" className="bg-green-100 text-green-800">
-                          {job.booking_status}
-                        </Badge>
-                        <div className="font-semibold text-green-600">
-                          £{Number(job.cleaner_pay)?.toFixed(2) || '0.00'}
-                        </div>
-                      </div>
+      {/* Recent Jobs */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Jobs</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {earnings.recentJobs.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">No recent jobs found</p>
+          ) : (
+            <div className="space-y-4">
+              {earnings.recentJobs.map((job) => (
+                <div key={job.id} className="flex justify-between items-center p-4 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="font-medium">
+                      {job.first_name} {job.last_name}
                     </div>
-                  ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+                    <div className="text-sm text-gray-500">
+                      {job.form_name || 'Standard Cleaning'}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {format(new Date(job.date_time), 'dd/MM/yyyy')}
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Badge variant="default" className="bg-green-100 text-green-800">
+                      {job.booking_status}
+                    </Badge>
+                    <div className="font-semibold text-green-600">
+                      £{Number(job.cleaner_pay)?.toFixed(2) || '0.00'}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
