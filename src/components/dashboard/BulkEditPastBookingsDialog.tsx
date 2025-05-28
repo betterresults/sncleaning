@@ -218,6 +218,7 @@ const BulkEditPastBookingsDialog: React.FC<BulkEditPastBookingsDialogProps> = ({
           <SelectContent>
             <SelectItem value="Paid">Paid</SelectItem>
             <SelectItem value="Not Paid">Not Paid</SelectItem>
+            <SelectItem value="In Process">In Process</SelectItem>
             <SelectItem value="Partially Paid">Partially Paid</SelectItem>
             <SelectItem value="Refunded">Refunded</SelectItem>
           </SelectContent>
