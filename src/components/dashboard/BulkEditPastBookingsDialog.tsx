@@ -16,6 +16,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, Filter, X } from 'lucide-react';
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 interface PastBooking {
   id: number;
@@ -64,6 +65,8 @@ const BulkEditPastBookingsDialog: React.FC<BulkEditPastBookingsDialogProps> = ({
     cleanerPaymentStatus: 'all',
     customerSearch: '',
   });
+
+  const { toast } = useToast();
 
   useEffect(() => {
     if (open) {
@@ -188,12 +191,20 @@ const BulkEditPastBookingsDialog: React.FC<BulkEditPastBookingsDialogProps> = ({
 
   const handleBulkUpdate = async () => {
     if (selectedBookings.length === 0) {
-      alert('Please select at least one booking to update.');
+      toast({
+        title: "No Selection",
+        description: "Please select at least one booking to update.",
+        variant: "destructive",
+      });
       return;
     }
 
     if (!newValue || newValue.trim() === '') {
-      alert('Please enter a valid value.');
+      toast({
+        title: "Invalid Value",
+        description: "Please enter a valid value.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -206,7 +217,11 @@ const BulkEditPastBookingsDialog: React.FC<BulkEditPastBookingsDialogProps> = ({
         case 'total_cost':
           const costValue = parseFloat(newValue);
           if (isNaN(costValue) || costValue <= 0) {
-            alert('Please enter a valid cost amount.');
+            toast({
+              title: "Invalid Cost",
+              description: "Please enter a valid cost amount.",
+              variant: "destructive",
+            });
             setLoading(false);
             return;
           }
@@ -215,7 +230,11 @@ const BulkEditPastBookingsDialog: React.FC<BulkEditPastBookingsDialogProps> = ({
         case 'cleaner_pay':
           const payValue = parseFloat(newValue);
           if (isNaN(payValue) || payValue < 0) {
-            alert('Please enter a valid pay amount.');
+            toast({
+              title: "Invalid Pay",
+              description: "Please enter a valid pay amount.",
+              variant: "destructive",
+            });
             setLoading(false);
             return;
           }
@@ -236,19 +255,37 @@ const BulkEditPastBookingsDialog: React.FC<BulkEditPastBookingsDialogProps> = ({
 
       if (error) {
         console.error('Error updating past bookings:', error);
-        alert('Error updating past bookings: ' + error.message);
+        toast({
+          title: "Update Failed",
+          description: "Error updating past bookings: " + error.message,
+          variant: "destructive",
+        });
         return;
       }
 
       console.log(`Successfully updated ${selectedBookings.length} past bookings`);
+      
+      // Show success toast and refresh data, but keep dialog open
+      toast({
+        title: "Update Successful",
+        description: `Successfully updated ${selectedBookings.length} booking${selectedBookings.length !== 1 ? 's' : ''}`,
+      });
+      
+      // Refresh the bookings data
+      await fetchPastBookings();
       onSuccess();
-      onOpenChange(false);
+      
+      // Clear selections and reset form, but keep dialog open
       setSelectedBookings([]);
       setNewValue('');
-      clearFilters();
+      
     } catch (error) {
       console.error('Error updating past bookings:', error);
-      alert('An unexpected error occurred');
+      toast({
+        title: "Unexpected Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -543,7 +580,7 @@ const BulkEditPastBookingsDialog: React.FC<BulkEditPastBookingsDialogProps> = ({
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            Close
           </Button>
         </DialogFooter>
       </DialogContent>
