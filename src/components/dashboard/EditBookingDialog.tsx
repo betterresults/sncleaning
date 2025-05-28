@@ -309,14 +309,14 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
           <div>
             <Label htmlFor="cleaner">Assign Cleaner</Label>
             <Select 
-              value={formData.cleaner?.toString() || ''} 
-              onValueChange={(value) => setFormData({ ...formData, cleaner: value === '' ? null : Number(value) })}
+              value={formData.cleaner?.toString() || 'no-cleaner'} 
+              onValueChange={(value) => setFormData({ ...formData, cleaner: value === 'no-cleaner' ? null : Number(value) })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select a cleaner" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No cleaner assigned</SelectItem>
+                <SelectItem value="no-cleaner">No cleaner assigned</SelectItem>
                 {cleaners.map((cleaner) => (
                   <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
                     {cleaner.full_name}
