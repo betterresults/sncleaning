@@ -31,12 +31,12 @@ interface Booking {
     id: number;
     first_name: string;
     last_name: string;
-  }[];
+  };
   customers?: {
     id: number;
     first_name: string;
     last_name: string;
-  }[];
+  };
 }
 
 interface Filters {
@@ -242,9 +242,8 @@ const BookingsTable = () => {
     }
 
     // Check if we have cleaner data from the join
-    if (booking.cleaners && booking.cleaners.length > 0) {
-      const cleaner = booking.cleaners[0];
-      return `${cleaner.first_name} ${cleaner.last_name}`;
+    if (booking.cleaners) {
+      return `${booking.cleaners.first_name} ${booking.cleaners.last_name}`;
     }
 
     // Fallback to cleaners array lookup
