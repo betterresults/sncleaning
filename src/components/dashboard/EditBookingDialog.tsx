@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -97,13 +96,22 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   });
 
   useEffect(() => {
-    console.log('Booking data received:', booking);
+    console.log('Booking data received in EditBookingDialog:', booking);
     if (booking && open) {
       const formattedDateTime = booking.date_time 
         ? format(new Date(booking.date_time), "yyyy-MM-dd'T'HH:mm")
         : '';
       
-      console.log('Setting form data with:', {
+      // Map payment status correctly
+      let mappedPaymentStatus = 'unpaid';
+      if (booking.payment_status) {
+        const status = booking.payment_status.toLowerCase().replace(/\s+/g, '');
+        if (status === 'paid') mappedPaymentStatus = 'paid';
+        else if (status === 'notpaid') mappedPaymentStatus = 'unpaid';
+        else if (status === 'pending') mappedPaymentStatus = 'pending';
+      }
+      
+      const newFormData = {
         date_time: formattedDateTime,
         first_name: booking.first_name || '',
         last_name: booking.last_name || '',
@@ -113,23 +121,12 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
         postcode: booking.postcode || '',
         total_cost: Number(booking.total_cost) || 0,
         cleaner: booking.cleaner,
-        payment_status: booking.payment_status || 'unpaid',
+        payment_status: mappedPaymentStatus,
         additional_details: booking.additional_details || '',
-      });
+      };
 
-      setFormData({
-        date_time: formattedDateTime,
-        first_name: booking.first_name || '',
-        last_name: booking.last_name || '',
-        email: booking.email || '',
-        phone_number: booking.phone_number || '',
-        address: booking.address || '',
-        postcode: booking.postcode || '',
-        total_cost: Number(booking.total_cost) || 0,
-        cleaner: booking.cleaner,
-        payment_status: booking.payment_status || 'unpaid',
-        additional_details: booking.additional_details || '',
-      });
+      console.log('Setting form data with:', newFormData);
+      setFormData(newFormData);
     }
   }, [booking, open]);
 
