@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -81,7 +80,18 @@ const UpcomingBookings = () => {
 
       console.log('=== STARTING DATA FETCH ===');
 
-      // Fetch cleaners FIRST and with NO FILTERS
+      // First, let's check if we can access cleaners at all
+      console.log('Testing cleaners table access...');
+      const { count: cleanersCount, error: cleanersCountError } = await supabase
+        .from('cleaners')
+        .select('*', { count: 'exact', head: true });
+
+      console.log('Cleaners count check:', {
+        count: cleanersCount,
+        error: cleanersCountError
+      });
+
+      // Fetch cleaners with detailed error logging
       console.log('Fetching ALL cleaners with NO filters...');
       const { data: cleanersData, error: cleanersError } = await supabase
         .from('cleaners')
@@ -90,13 +100,25 @@ const UpcomingBookings = () => {
       console.log('RAW cleaners query result:', {
         data: cleanersData,
         error: cleanersError,
-        count: cleanersData?.length || 0
+        count: cleanersData?.length || 0,
+        errorDetails: cleanersError ? {
+          message: cleanersError.message,
+          details: cleanersError.details,
+          hint: cleanersError.hint,
+          code: cleanersError.code
+        } : null
       });
 
       if (cleanersError) {
-        console.error('CLEANERS ERROR:', cleanersError);
-        setError('Failed to fetch cleaners: ' + cleanersError.message);
+        console.error('CLEANERS ERROR DETAILS:', cleanersError);
+        setError('Failed to fetch cleaners: ' + cleanersError.message + (cleanersError.hint ? ` (${cleanersError.hint})` : ''));
         return;
+      }
+
+      // Check if cleaners table is actually empty
+      if (!cleanersData || cleanersData.length === 0) {
+        console.warn('⚠️ CLEANERS TABLE IS EMPTY OR INACCESSIBLE');
+        setError('No cleaners found in database. This could be due to Row Level Security policies or an empty table.');
       }
 
       // Fetch customers with NO FILTERS
@@ -162,9 +184,15 @@ const UpcomingBookings = () => {
       // Log a sample cleaner and booking for debugging
       if (cleanersData && cleanersData.length > 0) {
         console.log('Sample cleaner:', cleanersData[0]);
+      } else {
+        console.log('❌ NO CLEANERS AVAILABLE - this will cause "Data Missing" in cleaner info');
       }
       if (bookingsData && bookingsData.length > 0) {
-        console.log('Sample booking:', bookingsData[0]);
+        console.log('Sample booking with cleaner join:', {
+          id: bookingsData[0].id,
+          cleaner_id: bookingsData[0].cleaner,
+          cleaners_join: bookingsData[0].cleaners
+        });
       }
 
     } catch (error) {
