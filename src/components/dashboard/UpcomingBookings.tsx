@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -27,6 +28,7 @@ interface Booking {
     id: number;
     first_name: string;
     last_name: string;
+    full_name: string;
   };
   customers?: {
     id: number;
@@ -113,7 +115,7 @@ const UpcomingBookings = () => {
         console.error('CUSTOMERS ERROR:', customersError);
       }
 
-      // Fetch bookings with proper joins
+      // Fetch bookings with proper joins - INCLUDING full_name
       console.log('Fetching bookings with joins...');
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
@@ -122,7 +124,8 @@ const UpcomingBookings = () => {
           cleaners!bookings_cleaner_fkey (
             id,
             first_name,
-            last_name
+            last_name,
+            full_name
           ),
           customers!bookings_customer_fkey (
             id,
@@ -287,7 +290,9 @@ const UpcomingBookings = () => {
     // First try to use the cleaner data from the booking join
     if (booking.cleaners) {
       console.log('✅ Using cleaner from booking.cleaners join');
-      const name = `${booking.cleaners.first_name || ''} ${booking.cleaners.last_name || ''}`.trim() || 'Unknown Cleaner';
+      const name = booking.cleaners.full_name || 
+                   `${booking.cleaners.first_name || ''} ${booking.cleaners.last_name || ''}`.trim() || 
+                   'Unknown Cleaner';
       return {
         name,
         pay: booking.cleaner_pay || 0
