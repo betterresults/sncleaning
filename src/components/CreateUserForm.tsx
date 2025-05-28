@@ -23,7 +23,9 @@ const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
   });
   const { toast } = useToast();
 
-  const createUser = async () => {
+  const createUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     try {
       setCreating(true);
       console.log('Creating user with data:', newUser);
@@ -85,64 +87,74 @@ const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
         </AlertDescription>
       </Alert>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="userFirstName">First Name</Label>
-          <Input
-            id="userFirstName"
-            value={newUser.firstName}
-            onChange={(e) => setNewUser({ ...newUser, firstName: e.target.value })}
-          />
+      <form onSubmit={createUser} className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="userFirstName">First Name</Label>
+            <Input
+              id="userFirstName"
+              value={newUser.firstName}
+              onChange={(e) => setNewUser({ ...newUser, firstName: e.target.value })}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="userLastName">Last Name</Label>
+            <Input
+              id="userLastName"
+              value={newUser.lastName}
+              onChange={(e) => setNewUser({ ...newUser, lastName: e.target.value })}
+              required
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="userEmail">Email</Label>
+            <Input
+              id="userEmail"
+              type="email"
+              value={newUser.email}
+              onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+              placeholder="Enter email address"
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="userPassword">Password</Label>
+            <Input
+              id="userPassword"
+              type="password"
+              value={newUser.password}
+              onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+              placeholder="Enter password"
+              required
+            />
+          </div>
         </div>
         <div>
-          <Label htmlFor="userLastName">Last Name</Label>
-          <Input
-            id="userLastName"
-            value={newUser.lastName}
-            onChange={(e) => setNewUser({ ...newUser, lastName: e.target.value })}
-          />
+          <Label htmlFor="userRole">Role</Label>
+          <select
+            id="userRole"
+            value={newUser.role}
+            onChange={(e) => setNewUser({ ...newUser, role: e.target.value as 'user' | 'admin' })}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            required
+          >
+            <option value="user">Cleaner</option>
+            <option value="admin">Administrator</option>
+          </select>
+          <p className="text-xs text-gray-500 mt-1">
+            Cleaners can view and manage their assigned bookings. Administrators have full system access.
+          </p>
         </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="userEmail">Email</Label>
-          <Input
-            id="userEmail"
-            type="email"
-            value={newUser.email}
-            onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-            placeholder="Enter email address"
-          />
-        </div>
-        <div>
-          <Label htmlFor="userPassword">Password</Label>
-          <Input
-            id="userPassword"
-            type="password"
-            value={newUser.password}
-            onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-            placeholder="Enter password"
-          />
-        </div>
-      </div>
-      <div>
-        <Label htmlFor="userRole">Role</Label>
-        <select
-          id="userRole"
-          value={newUser.role}
-          onChange={(e) => setNewUser({ ...newUser, role: e.target.value as 'user' | 'admin' })}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        <Button 
+          type="submit" 
+          disabled={creating || !newUser.email || !newUser.password || !newUser.firstName || !newUser.lastName}
         >
-          <option value="user">Cleaner</option>
-          <option value="admin">Administrator</option>
-        </select>
-        <p className="text-xs text-gray-500 mt-1">
-          Cleaners can view and manage their assigned bookings. Administrators have full system access.
-        </p>
-      </div>
-      <Button onClick={createUser} disabled={creating || !newUser.email || !newUser.password}>
-        {creating ? 'Creating...' : 'Create User'}
-      </Button>
+          {creating ? 'Creating...' : 'Create User'}
+        </Button>
+      </form>
     </div>
   );
 };
