@@ -15,7 +15,7 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import CreateBookingDialog from '@/components/booking/CreateBookingDialog';
+import CreateNewBookingDialog from '@/components/booking/CreateNewBookingDialog';
 
 export function AppSidebar() {
   const { user, userRole, signOut } = useAuth();
@@ -61,7 +61,7 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
-        <CreateBookingDialog />
+        <CreateNewBookingDialog />
       </SidebarHeader>
       
       <SidebarContent>
