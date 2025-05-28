@@ -22,11 +22,15 @@ interface PastBooking {
   address: string;
   postcode: string;
   form_name: string;
-  total_cost: string;
+  total_cost: number;
   cleaner: number;
   customer: number;
   cleaner_pay: number;
   payment_status: string;
+  booking_status: string;
+  hours_required: number;
+  property_details: string;
+  additional_details: string;
   cleaners?: {
     id: number;
     first_name: string;
