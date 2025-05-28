@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -307,7 +306,7 @@ const CleanerEarnings = () => {
                   <TrendingUp className="h-4 w-4 text-green-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-green-900">£{displayData.last7Days?.toFixed(2) || '0.00'}</div>
+                  <div className="text-2xl font-bold text-green-900">£{earnings.currentEarnings.last7Days.toFixed(2)}</div>
                   <p className="text-xs text-green-600">Recent activity</p>
                 </CardContent>
               </Card>
