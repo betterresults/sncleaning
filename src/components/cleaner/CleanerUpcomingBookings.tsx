@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,6 +28,8 @@ const CleanerUpcomingBookings = () => {
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [customerSearch, setCustomerSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [serviceTypeFilter, setServiceTypeFilter] = useState('all');
+  const [serviceTypes, setServiceTypes] = useState<string[]>([]);
 
   const fetchData = async () => {
     if (!cleanerId) {
@@ -67,6 +68,15 @@ const CleanerUpcomingBookings = () => {
 
       console.log('Fetched bookings for cleaner:', bookingsData?.length || 0, 'bookings');
       setBookings(bookingsData || []);
+
+      // Extract unique service types for filter dropdown
+      const uniqueServiceTypes = [...new Set(
+        (bookingsData || [])
+          .map(booking => booking.form_name)
+          .filter(formName => formName && formName.trim() !== '')
+      )].sort();
+      
+      setServiceTypes(uniqueServiceTypes);
 
     } catch (error) {
       console.error('Error in fetchData:', error);
@@ -116,6 +126,13 @@ const CleanerUpcomingBookings = () => {
       );
     }
 
+    // Service type filter
+    if (serviceTypeFilter !== 'all') {
+      filtered = filtered.filter(booking => 
+        booking.form_name === serviceTypeFilter
+      );
+    }
+
     setFilteredBookings(filtered);
     setCurrentPage(1);
 
@@ -132,6 +149,7 @@ const CleanerUpcomingBookings = () => {
     setDateTo(undefined);
     setCustomerSearch('');
     setStatusFilter('all');
+    setServiceTypeFilter('all');
   };
 
   const handleDropOff = async (bookingId: number) => {
@@ -203,7 +221,7 @@ const CleanerUpcomingBookings = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [bookings, dateFrom, dateTo, customerSearch, statusFilter]);
+  }, [bookings, dateFrom, dateTo, customerSearch, statusFilter, serviceTypeFilter]);
 
   // Pagination
   const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
@@ -241,10 +259,13 @@ const CleanerUpcomingBookings = () => {
         dateTo={dateTo}
         customerSearch={customerSearch}
         statusFilter={statusFilter}
+        serviceTypeFilter={serviceTypeFilter}
+        serviceTypes={serviceTypes}
         onDateFromChange={setDateFrom}
         onDateToChange={setDateTo}
         onCustomerSearchChange={setCustomerSearch}
         onStatusFilterChange={setStatusFilter}
+        onServiceTypeFilterChange={setServiceTypeFilter}
         onClearFilters={handleClearFilters}
       />
 

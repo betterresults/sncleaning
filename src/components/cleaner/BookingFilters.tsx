@@ -16,10 +16,13 @@ interface BookingFiltersProps {
   dateTo: Date | undefined;
   customerSearch: string;
   statusFilter: string;
+  serviceTypeFilter: string;
+  serviceTypes: string[];
   onDateFromChange: (date: Date | undefined) => void;
   onDateToChange: (date: Date | undefined) => void;
   onCustomerSearchChange: (value: string) => void;
   onStatusFilterChange: (value: string) => void;
+  onServiceTypeFilterChange: (value: string) => void;
   onClearFilters: () => void;
 }
 
@@ -28,16 +31,19 @@ const BookingFilters: React.FC<BookingFiltersProps> = ({
   dateTo,
   customerSearch,
   statusFilter,
+  serviceTypeFilter,
+  serviceTypes,
   onDateFromChange,
   onDateToChange,
   onCustomerSearchChange,
   onStatusFilterChange,
+  onServiceTypeFilterChange,
   onClearFilters,
 }) => {
   return (
     <Card>
       <CardContent className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
           <div className="space-y-2">
             <Label htmlFor="date-from">From Date</Label>
             <Popover>
@@ -116,6 +122,23 @@ const BookingFilters: React.FC<BookingFiltersProps> = ({
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="service-type-filter">Service Type</Label>
+            <Select value={serviceTypeFilter} onValueChange={onServiceTypeFilterChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="All services" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Services</SelectItem>
+                {serviceTypes.map((serviceType) => (
+                  <SelectItem key={serviceType} value={serviceType}>
+                    {serviceType}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
