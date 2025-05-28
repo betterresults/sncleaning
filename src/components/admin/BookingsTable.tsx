@@ -322,6 +322,19 @@ const BookingsTable = () => {
         />
       )}
 
+      {/* Bulk Edit Button - Make it more prominent */}
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">Bookings Management</h2>
+        <Button 
+          onClick={() => setBulkEditOpen(true)}
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
+          size="lg"
+        >
+          <Settings className="h-5 w-5" />
+          Bulk Edit Bookings
+        </Button>
+      </div>
+
       {/* Filters */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -329,13 +342,6 @@ const BookingsTable = () => {
             <Filter className="h-4 w-4" />
             Filters
           </CardTitle>
-          <Button 
-            onClick={() => setBulkEditOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <Settings className="h-4 w-4" />
-            Bulk Edit
-          </Button>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
