@@ -92,27 +92,10 @@ const UpcomingBookings = () => {
         count: cleanersData?.length || 0
       });
 
-      // Add detailed error logging for cleaners
       if (cleanersError) {
-        console.error('❌ DEBUG: Cleaners error details:', {
-          message: cleanersError.message,
-          details: cleanersError.details,
-          hint: cleanersError.hint,
-          code: cleanersError.code
-        });
+        console.error('❌ DEBUG: Error fetching cleaners:', cleanersError);
         setError('Failed to fetch cleaners: ' + cleanersError.message);
         return;
-      }
-
-      // Check if cleaners data is null or empty
-      if (!cleanersData) {
-        console.warn('⚠️ DEBUG: Cleaners data is null');
-        setError('No cleaners data returned from database');
-        return;
-      }
-
-      if (cleanersData.length === 0) {
-        console.warn('⚠️ DEBUG: Cleaners array is empty - no cleaners found in database');
       }
 
       console.log('🔍 DEBUG: Fetching customers...');
