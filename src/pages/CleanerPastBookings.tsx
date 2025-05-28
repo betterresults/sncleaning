@@ -24,6 +24,9 @@ const CleanerPastBookingsPage = () => {
     return <Navigate to="/auth" replace />;
   }
 
+  // Get first name for greeting
+  const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Cleaner';
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -38,8 +41,9 @@ const CleanerPastBookingsPage = () => {
           </header>
           
           <main className="flex-1 space-y-4 p-8 pt-6">
+            {/* Friendly Greeting */}
             <div className="mb-6">
-              <h1 className="text-3xl font-bold tracking-tight">My Past Bookings</h1>
+              <h1 className="text-3xl font-bold tracking-tight">Hello {firstName}! 👋</h1>
               <p className="text-muted-foreground">
                 View your completed booking history.
               </p>

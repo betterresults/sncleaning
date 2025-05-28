@@ -4,8 +4,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { format } from 'date-fns';
-import { CalendarDays, Clock, MapPin, User, Banknote } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { CalendarDays, Clock, MapPin, User, Banknote, Camera, Search, Filter, X } from 'lucide-react';
 
 interface PastBooking {
   id: number;
@@ -23,11 +27,93 @@ interface PastBooking {
   booking_status: string;
 }
 
+interface Filters {
+  dateFrom: string;
+  dateTo: string;
+  customerSearch: string;
+  timePeriod: string;
+}
+
 const CleanerPastBookings = () => {
   const { cleanerId, loading: authLoading } = useAuth();
   const [bookings, setBookings] = useState<PastBooking[]>([]);
+  const [filteredBookings, setFilteredBookings] = useState<PastBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filters, setFilters] = useState<Filters>({
+    dateFrom: '',
+    dateTo: '',
+    customerSearch: '',
+    timePeriod: 'all',
+  });
+
+  const getTimePeriodDates = (period: string) => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    switch (period) {
+      case 'current-month':
+        return { from: startOfMonth(now), to: endOfMonth(now) };
+      case 'last-month':
+        const lastMonth = subMonths(now, 1);
+        return { from: startOfMonth(lastMonth), to: endOfMonth(lastMonth) };
+      case 'last-3-months':
+        const last3Months = subMonths(now, 3);
+        return { from: startOfMonth(last3Months), to: today };
+      case 'last-6-months':
+        const last6Months = subMonths(now, 6);
+        return { from: startOfMonth(last6Months), to: today };
+      default:
+        return null;
+    }
+  };
+
+  const applyFilters = () => {
+    let filtered = [...bookings];
+
+    // Apply time period filter first
+    if (filters.timePeriod !== 'all') {
+      const periodDates = getTimePeriodDates(filters.timePeriod);
+      if (periodDates) {
+        filtered = filtered.filter(booking => {
+          const bookingDate = new Date(booking.date_time);
+          return bookingDate >= periodDates.from && bookingDate <= periodDates.to;
+        });
+      }
+    }
+
+    // Date filters
+    if (filters.dateFrom) {
+      filtered = filtered.filter(booking => 
+        new Date(booking.date_time) >= new Date(filters.dateFrom)
+      );
+    }
+    if (filters.dateTo) {
+      filtered = filtered.filter(booking => 
+        new Date(booking.date_time) <= new Date(filters.dateTo)
+      );
+    }
+
+    // Customer search
+    if (filters.customerSearch) {
+      filtered = filtered.filter(booking => 
+        `${booking.first_name} ${booking.last_name}`.toLowerCase()
+          .includes(filters.customerSearch.toLowerCase()) ||
+        booking.email.toLowerCase().includes(filters.customerSearch.toLowerCase())
+      );
+    }
+
+    setFilteredBookings(filtered);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      dateFrom: '',
+      dateTo: '',
+      customerSearch: '',
+      timePeriod: 'all',
+    });
+  };
 
   const fetchPastBookings = async () => {
     if (!cleanerId) {
@@ -68,6 +154,10 @@ const CleanerPastBookings = () => {
     }
   }, [cleanerId, authLoading]);
 
+  useEffect(() => {
+    applyFilters();
+  }, [bookings, filters]);
+
   if (authLoading || loading) {
     return (
       <div className="flex justify-center py-8">
@@ -86,15 +176,136 @@ const CleanerPastBookings = () => {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>My Past Bookings</CardTitle>
-          <p className="text-sm text-gray-600">
-            {bookings.length} completed booking{bookings.length !== 1 ? 's' : ''}
-          </p>
+      {/* Statistics Card */}
+      <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-blue-700">Total Completed Bookings</CardTitle>
+          <CalendarDays className="h-4 w-4 text-blue-600" />
         </CardHeader>
         <CardContent>
-          {bookings.length === 0 ? (
+          <div className="text-2xl font-bold text-blue-900">{filteredBookings.length}</div>
+          <p className="text-xs text-blue-600">Completed jobs</p>
+        </CardContent>
+      </Card>
+
+      {/* Time Period Filter Buttons */}
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Time Period</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={filters.timePeriod === 'all' ? 'default' : 'outline'}
+              onClick={() => setFilters({...filters, timePeriod: 'all'})}
+              size="sm"
+            >
+              All Time
+            </Button>
+            <Button
+              variant={filters.timePeriod === 'current-month' ? 'default' : 'outline'}
+              onClick={() => setFilters({...filters, timePeriod: 'current-month'})}
+              size="sm"
+            >
+              Current Month
+            </Button>
+            <Button
+              variant={filters.timePeriod === 'last-month' ? 'default' : 'outline'}
+              onClick={() => setFilters({...filters, timePeriod: 'last-month'})}
+              size="sm"
+            >
+              Last Month
+            </Button>
+            <Button
+              variant={filters.timePeriod === 'last-3-months' ? 'default' : 'outline'}
+              onClick={() => setFilters({...filters, timePeriod: 'last-3-months'})}
+              size="sm"
+            >
+              Last 3 Months
+            </Button>
+            <Button
+              variant={filters.timePeriod === 'last-6-months' ? 'default' : 'outline'}
+              onClick={() => setFilters({...filters, timePeriod: 'last-6-months'})}
+              size="sm"
+            >
+              Last 6 Months
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Additional Filters */}
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Filter className="h-5 w-5" />
+            Additional Filters
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="dateFrom" className="text-sm font-medium">Date From</Label>
+              <Input
+                id="dateFrom"
+                type="date"
+                value={filters.dateFrom}
+                onChange={(e) => setFilters({...filters, dateFrom: e.target.value})}
+                className="h-9"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="dateTo" className="text-sm font-medium">Date To</Label>
+              <Input
+                id="dateTo"
+                type="date"
+                value={filters.dateTo}
+                onChange={(e) => setFilters({...filters, dateTo: e.target.value})}
+                className="h-9"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="customerSearch" className="text-sm font-medium">Search Customer</Label>
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                <Input
+                  id="customerSearch"
+                  placeholder="Search by name or email"
+                  value={filters.customerSearch}
+                  onChange={(e) => setFilters({...filters, customerSearch: e.target.value})}
+                  className="pl-8 h-9"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-end">
+              <Button onClick={clearFilters} variant="outline" className="h-9">
+                <X className="mr-2 h-4 w-4" />
+                Clear Filters
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Past Bookings Table */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>My Past Bookings</CardTitle>
+            <p className="text-sm text-gray-600">
+              {filteredBookings.length} completed booking{filteredBookings.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+          <Button variant="outline" className="flex items-center gap-2">
+            <Camera className="h-4 w-4" />
+            View Photos
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {filteredBookings.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               No past bookings found
             </div>
@@ -103,7 +314,7 @@ const CleanerPastBookings = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date & Time</TableHead>
+                    <TableHead>Date</TableHead>
                     <TableHead>Customer</TableHead>
                     <TableHead>Address</TableHead>
                     <TableHead>Service</TableHead>
@@ -111,7 +322,7 @@ const CleanerPastBookings = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {bookings.map((booking) => (
+                  {filteredBookings.map((booking) => (
                     <TableRow key={booking.id}>
                       <TableCell>
                         <div className="flex items-start space-x-3">
