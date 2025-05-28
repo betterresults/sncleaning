@@ -76,7 +76,9 @@ const CleanerUpcomingBookings = () => {
       setLoading(true);
       setError(null);
 
-      console.log('Fetching bookings for cleaner:', cleanerId);
+      console.log('Fetching upcoming bookings for cleaner ID:', cleanerId);
+      
+      // Get only bookings assigned to this specific cleaner and are in the future
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
         .select(`
@@ -98,8 +100,8 @@ const CleanerUpcomingBookings = () => {
         return;
       }
 
+      console.log('Fetched bookings for cleaner:', bookingsData?.length || 0);
       setBookings(bookingsData || []);
-      console.log('Cleaner bookings loaded:', bookingsData?.length || 0);
 
     } catch (error) {
       console.error('Error in fetchData:', error);
@@ -147,7 +149,8 @@ const CleanerUpcomingBookings = () => {
         const { error } = await supabase
           .from('bookings')
           .update({ cleaner: null, cleaner_pay: null })
-          .eq('id', bookingId);
+          .eq('id', bookingId)
+          .eq('cleaner', cleanerId); // Ensure only this cleaner can drop their own bookings
 
         if (error) {
           console.error('Error dropping off booking:', error);
@@ -182,7 +185,8 @@ const CleanerUpcomingBookings = () => {
         const { error } = await supabase
           .from('bookings')
           .update({ booking_status: 'Completed' })
-          .eq('id', bookingId);
+          .eq('id', bookingId)
+          .eq('cleaner', cleanerId); // Ensure only this cleaner can mark their own bookings as completed
 
         if (error) {
           console.error('Error marking booking as completed:', error);
@@ -224,7 +228,9 @@ const CleanerUpcomingBookings = () => {
   };
 
   useEffect(() => {
-    fetchData();
+    if (cleanerId) {
+      fetchData();
+    }
   }, [cleanerId, sortOrder]);
 
   useEffect(() => {
@@ -380,7 +386,7 @@ const CleanerUpcomingBookings = () => {
                 {paginatedBookings.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8 text-gray-500 text-base">
-                      No bookings found
+                      No upcoming bookings found
                     </TableCell>
                   </TableRow>
                 ) : (

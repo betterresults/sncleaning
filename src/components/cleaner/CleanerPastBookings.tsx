@@ -39,6 +39,7 @@ const CleanerPastBookings = () => {
     try {
       console.log('Fetching past bookings for cleaner ID:', cleanerId);
       
+      // Only get past bookings that were assigned to this specific cleaner
       const { data, error } = await supabase
         .from('past_bookings')
         .select('*')
@@ -51,7 +52,7 @@ const CleanerPastBookings = () => {
         return;
       }
 
-      console.log('Past bookings data:', data);
+      console.log('Past bookings data for cleaner:', data?.length || 0);
       setBookings(data || []);
     } catch (error) {
       console.error('Error in fetchPastBookings:', error);
