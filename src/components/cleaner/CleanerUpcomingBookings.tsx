@@ -158,23 +158,21 @@ const CleanerUpcomingBookings = () => {
       return;
     }
 
-    if (window.confirm('Are you sure you want to drop off this booking?')) {
-      try {
-        const { error } = await supabase
-          .from('bookings')
-          .update({ cleaner: null, cleaner_pay: null })
-          .eq('id', bookingId)
-          .eq('cleaner', cleanerId);
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ cleaner: null, cleaner_pay: null })
+        .eq('id', bookingId)
+        .eq('cleaner', cleanerId);
 
-        if (error) {
-          console.error('Error dropping off booking:', error);
-          return;
-        }
-
-        fetchData();
-      } catch (error) {
+      if (error) {
         console.error('Error dropping off booking:', error);
+        return;
       }
+
+      fetchData();
+    } catch (error) {
+      console.error('Error dropping off booking:', error);
     }
   };
 
