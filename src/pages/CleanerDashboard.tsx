@@ -8,7 +8,7 @@ import { CleanerSidebar } from '@/components/CleanerSidebar';
 import CleanerUpcomingBookings from '@/components/cleaner/CleanerUpcomingBookings';
 
 const CleanerDashboard = () => {
-  const { user, userRole, loading } = useAuth();
+  const { user, userRole, cleanerId, loading } = useAuth();
 
   if (loading) {
     return (
@@ -18,7 +18,7 @@ const CleanerDashboard = () => {
     );
   }
 
-  if (!user || userRole !== 'user') {
+  if (!user || userRole !== 'user' || !cleanerId) {
     return <Navigate to="/auth" replace />;
   }
 
@@ -30,6 +30,9 @@ const CleanerDashboard = () => {
           <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
             <SidebarTrigger className="-ml-1" />
             <div className="flex-1" />
+            <div className="text-sm text-gray-600">
+              Welcome, {user.email}
+            </div>
           </header>
           
           <main className="flex-1 space-y-4 p-8 pt-6">
