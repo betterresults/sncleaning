@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -9,9 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Edit, Trash2, Filter, Search } from 'lucide-react';
+import { Edit, Trash2, Filter, Search, Settings } from 'lucide-react';
 import { format } from 'date-fns';
 import DashboardStats from './DashboardStats';
+import BulkEditBookingsDialog from '../dashboard/BulkEditBookingsDialog';
 
 interface Booking {
   id: number;
@@ -75,6 +75,7 @@ const BookingsTable = () => {
     customerId: 'all',
     customerSearch: '',
   });
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -323,11 +324,18 @@ const BookingsTable = () => {
 
       {/* Filters */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-4 w-4" />
             Filters
           </CardTitle>
+          <Button 
+            onClick={() => setBulkEditOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <Settings className="h-4 w-4" />
+            Bulk Edit
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -600,6 +608,12 @@ const BookingsTable = () => {
           </Button>
         </div>
       )}
+
+      <BulkEditBookingsDialog
+        open={bulkEditOpen}
+        onOpenChange={setBulkEditOpen}
+        onSuccess={fetchData}
+      />
     </div>
   );
 };

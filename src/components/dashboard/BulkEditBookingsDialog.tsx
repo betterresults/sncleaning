@@ -1,0 +1,267 @@
+
+import React, { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { format } from 'date-fns';
+
+interface Booking {
+  id: number;
+  date_time: string;
+  first_name: string;
+  last_name: string;
+  total_cost: number;
+  cleaner_pay: number;
+  cleaner: number | null;
+  cleaners?: {
+    full_name: string;
+  } | null;
+}
+
+interface BulkEditBookingsDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
+}
+
+const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
+  open,
+  onOpenChange,
+  onSuccess,
+}) => {
+  const [loading, setLoading] = useState(false);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [selectedBookings, setSelectedBookings] = useState<number[]>([]);
+  const [editType, setEditType] = useState<'cost' | 'cleaner_pay'>('cost');
+  const [newValue, setNewValue] = useState<number>(0);
+
+  useEffect(() => {
+    if (open) {
+      fetchBookings();
+    }
+  }, [open]);
+
+  const fetchBookings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select(`
+          id,
+          date_time,
+          first_name,
+          last_name,
+          total_cost,
+          cleaner_pay,
+          cleaner,
+          cleaners!bookings_cleaner_fkey (
+            full_name
+          )
+        `)
+        .gte('date_time', new Date().toISOString())
+        .order('date_time', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching bookings:', error);
+        return;
+      }
+
+      setBookings(data || []);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+    }
+  };
+
+  const handleBookingSelect = (bookingId: number, checked: boolean) => {
+    if (checked) {
+      setSelectedBookings([...selectedBookings, bookingId]);
+    } else {
+      setSelectedBookings(selectedBookings.filter(id => id !== bookingId));
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedBookings(bookings.map(b => b.id));
+    } else {
+      setSelectedBookings([]);
+    }
+  };
+
+  const handleBulkUpdate = async () => {
+    if (selectedBookings.length === 0) {
+      alert('Please select at least one booking to update.');
+      return;
+    }
+
+    if (!newValue || newValue <= 0) {
+      alert('Please enter a valid value.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const updateField = editType === 'cost' ? 'total_cost' : 'cleaner_pay';
+      
+      const { error } = await supabase
+        .from('bookings')
+        .update({ [updateField]: newValue })
+        .in('id', selectedBookings);
+
+      if (error) {
+        console.error('Error updating bookings:', error);
+        alert('Error updating bookings: ' + error.message);
+        return;
+      }
+
+      console.log(`Successfully updated ${selectedBookings.length} bookings`);
+      onSuccess();
+      onOpenChange(false);
+      setSelectedBookings([]);
+      setNewValue(0);
+    } catch (error) {
+      console.error('Error updating bookings:', error);
+      alert('An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Bulk Edit Bookings</DialogTitle>
+          <DialogDescription>
+            Select bookings and apply changes to their cost or cleaner pay
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          {/* Bulk Edit Controls */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+            <div>
+              <Label htmlFor="editType">What to update</Label>
+              <Select value={editType} onValueChange={(value: 'cost' | 'cleaner_pay') => setEditType(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cost">Total Cost</SelectItem>
+                  <SelectItem value="cleaner_pay">Cleaner Pay</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="newValue">New Value (£)</Label>
+              <Input
+                id="newValue"
+                type="number"
+                step="0.01"
+                value={newValue}
+                onChange={(e) => setNewValue(Number(e.target.value))}
+                placeholder="Enter new value"
+              />
+            </div>
+
+            <div className="flex items-end">
+              <Button 
+                onClick={handleBulkUpdate} 
+                disabled={loading || selectedBookings.length === 0}
+                className="w-full"
+              >
+                {loading ? 'Updating...' : `Update ${selectedBookings.length} booking${selectedBookings.length !== 1 ? 's' : ''}`}
+              </Button>
+            </div>
+          </div>
+
+          {/* Bookings Table */}
+          <div className="border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={selectedBookings.length === bookings.length && bookings.length > 0}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Cleaner</TableHead>
+                  <TableHead>Current Cost</TableHead>
+                  <TableHead>Current Cleaner Pay</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {bookings.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8">
+                      No upcoming bookings found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  bookings.map((booking) => (
+                    <TableRow key={booking.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedBookings.includes(booking.id)}
+                          onCheckedChange={(checked) => handleBookingSelect(booking.id, !!checked)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div className="font-medium">
+                            {booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : 'No date'}
+                          </div>
+                          <div className="text-gray-500">
+                            {booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'No time'}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">
+                          {booking.first_name} {booking.last_name}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {booking.cleaners?.full_name || 'No cleaner assigned'}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        £{booking.total_cost?.toFixed(2) || '0.00'}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        £{booking.cleaner_pay?.toFixed(2) || '0.00'}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default BulkEditBookingsDialog;
