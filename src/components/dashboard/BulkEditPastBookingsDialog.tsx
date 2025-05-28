@@ -278,7 +278,7 @@ const BulkEditPastBookingsDialog: React.FC<BulkEditPastBookingsDialogProps> = ({
           <SelectContent>
             <SelectItem value="Paid">Paid</SelectItem>
             <SelectItem value="Not Paid">Not Paid</SelectItem>
-            <SelectItem value="In Process">In Process</SelectItem>
+            <SelectItem value="Collecting">Collecting</SelectItem>
             <SelectItem value="Partially Paid">Partially Paid</SelectItem>
             <SelectItem value="Refunded">Refunded</SelectItem>
           </SelectContent>
@@ -361,7 +361,7 @@ const BulkEditPastBookingsDialog: React.FC<BulkEditPastBookingsDialogProps> = ({
                     <SelectItem value="all">All</SelectItem>
                     <SelectItem value="Paid">Paid</SelectItem>
                     <SelectItem value="Not Paid">Not Paid</SelectItem>
-                    <SelectItem value="In Process">In Process</SelectItem>
+                    <SelectItem value="Collecting">Collecting</SelectItem>
                     <SelectItem value="Partially Paid">Partially Paid</SelectItem>
                     <SelectItem value="Refunded">Refunded</SelectItem>
                   </SelectContent>
@@ -518,7 +518,7 @@ const BulkEditPastBookingsDialog: React.FC<BulkEditPastBookingsDialogProps> = ({
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                           booking.payment_status === 'Paid' ? 'bg-green-100 text-green-800' :
                           booking.payment_status === 'Partially Paid' ? 'bg-yellow-100 text-yellow-800' :
-                          booking.payment_status === 'In Process' ? 'bg-blue-100 text-blue-800' :
+                          booking.payment_status === 'Collecting' ? 'bg-blue-100 text-blue-800' :
                           'bg-red-100 text-red-800'
                         }`}>
                           {booking.payment_status || 'Not Paid'}
