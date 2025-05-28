@@ -22,7 +22,7 @@ interface PastBooking {
   address: string;
   postcode: string;
   form_name: string;
-  total_cost: number;
+  total_cost: string; // Changed from number to string to match database
   cleaner: number;
   customer: number;
   cleaner_pay: number;
