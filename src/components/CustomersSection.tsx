@@ -98,7 +98,6 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
         address: '', 
         postcode: '' 
       });
-      setShowCreateCustomerForm(false);
       fetchCustomers();
     } catch (error: any) {
       console.error('Error creating customer:', error);
@@ -190,7 +189,7 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
     e.preventDefault();
     e.stopPropagation();
     console.log('Create customer button clicked');
-    setShowCreateCustomerForm(!showCreateCustomerForm);
+    
   };
 
   useEffect(() => {
