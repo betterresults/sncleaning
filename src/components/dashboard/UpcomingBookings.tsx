@@ -107,22 +107,30 @@ const UpcomingBookings = () => {
       console.log('Raw bookings data:', bookingsData);
 
       // Fetch cleaners for filter dropdown
-      const { data: cleanersData } = await supabase
+      const { data: cleanersData, error: cleanersError } = await supabase
         .from('cleaners')
         .select('id, first_name, last_name')
         .order('first_name');
 
+      console.log('Cleaners data:', cleanersData);
+      console.log('Cleaners error:', cleanersError);
+
       // Fetch customers for filter dropdown
-      const { data: customersData } = await supabase
+      const { data: customersData, error: customersError } = await supabase
         .from('customers')
         .select('id, first_name, last_name')
         .order('first_name');
+
+      console.log('Customers data:', customersData);
+      console.log('Customers error:', customersError);
 
       setBookings(bookingsData || []);
       setCleaners(cleanersData || []);
       setCustomers(customersData || []);
 
       console.log('Bookings loaded:', bookingsData?.length || 0);
+      console.log('Cleaners loaded:', cleanersData?.length || 0);
+      console.log('Customers loaded:', customersData?.length || 0);
 
     } catch (error) {
       console.error('Catch error:', error);
@@ -238,9 +246,13 @@ const UpcomingBookings = () => {
   };
 
   const getCleanerInfo = (booking: Booking) => {
-    console.log('Booking cleaner data:', booking.cleaner, booking.cleaners);
+    console.log('Getting cleaner info for booking:', booking.id);
+    console.log('Booking cleaner ID:', booking.cleaner);
+    console.log('Booking cleaners object:', booking.cleaners);
+    console.log('Available cleaners:', cleaners);
     
     if (booking.cleaners) {
+      console.log('Using cleaner from booking.cleaners');
       return {
         name: `${booking.cleaners.first_name} ${booking.cleaners.last_name}`,
         pay: booking.cleaner_pay || 0
@@ -249,6 +261,8 @@ const UpcomingBookings = () => {
     
     // Fallback to cleaners array lookup
     const cleaner = cleaners.find(c => c.id === booking.cleaner);
+    console.log('Found cleaner from array:', cleaner);
+    
     if (cleaner) {
       return {
         name: `${cleaner.first_name} ${cleaner.last_name}`,
@@ -256,6 +270,7 @@ const UpcomingBookings = () => {
       };
     }
     
+    console.log('No cleaner found, returning Unassigned');
     return {
       name: 'Unassigned',
       pay: 0
@@ -375,13 +390,20 @@ const UpcomingBookings = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All cleaners</SelectItem>
-                  {cleaners.map((cleaner) => (
-                    <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
-                      {cleaner.first_name} {cleaner.last_name}
-                    </SelectItem>
-                  ))}
+                  {cleaners.length > 0 ? (
+                    cleaners.map((cleaner) => (
+                      <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
+                        {cleaner.first_name} {cleaner.last_name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-cleaners" disabled>No cleaners found</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
+              {cleaners.length === 0 && (
+                <p className="text-xs text-red-500">No cleaners loaded. Check console for errors.</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -392,13 +414,20 @@ const UpcomingBookings = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All customers</SelectItem>
-                  {customers.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.id.toString()}>
-                      {customer.first_name} {customer.last_name}
-                    </SelectItem>
-                  ))}
+                  {customers.length > 0 ? (
+                    customers.map((customer) => (
+                      <SelectItem key={customer.id} value={customer.id.toString()}>
+                        {customer.first_name} {customer.last_name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-customers" disabled>No customers found</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
+              {customers.length === 0 && (
+                <p className="text-xs text-red-500">No customers loaded. Check console for errors.</p>
+              )}
             </div>
 
             <div className="space-y-2">
