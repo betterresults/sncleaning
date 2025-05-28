@@ -1,55 +1,68 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, MapPin, Briefcase } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import type { Booking } from './types';
+import { CalendarDays, Clock, MapPin, User, Banknote, UserPlus, UserX } from 'lucide-react';
+import { Booking } from './types';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const CleanerAvailableBookings = () => {
   const { cleanerId } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [dropOffBookingId, setDropOffBookingId] = useState<number | null>(null);
 
-  const { data: availableBookings, isLoading, error } = useQuery({
-    queryKey: ['available-bookings'],
-    queryFn: async () => {
-      console.log('Fetching available bookings...');
-      
-      const { data, error } = await supabase
-        .from('bookings')
-        .select(`
-          *,
-          cleaners (
-            id,
-            first_name,
-            last_name,
-            full_name
-          )
-        `)
-        .is('cleaner', null)
-        .gte('date_time', new Date().toISOString())
-        .order('date_time', { ascending: true });
+  console.log('CleanerAvailableBookings - cleanerId:', cleanerId);
 
-      if (error) {
-        console.error('Error fetching available bookings:', error);
-        throw error;
-      }
+  const fetchAvailableBookings = async () => {
+    if (!cleanerId) {
+      console.warn('cleanerId is null or undefined. Skipping fetch.');
+      return [];
+    }
 
-      console.log('Available bookings fetched:', data);
-      return data as Booking[];
-    },
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('*')
+      .eq('cleaner', null)
+      .order('date_time', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching available bookings:', error);
+      throw error;
+    }
+
+    console.log('Available bookings data:', data);
+    return data;
+  };
+
+  const { data: bookings = [], isLoading, error } = useQuery({
+    queryKey: ['available-bookings', cleanerId],
+    queryFn: fetchAvailableBookings,
+    enabled: !!cleanerId,
   });
 
   const assignBookingMutation = useMutation({
     mutationFn: async (bookingId: number) => {
-      console.log('Assigning booking', bookingId, 'to cleaner', cleanerId);
-      
+      console.log('Assigning booking:', bookingId, 'to cleaner:', cleanerId);
+
+      if (!cleanerId) {
+        throw new Error('Cleaner ID is required to assign a booking.');
+      }
+
       const { data, error } = await supabase
         .from('bookings')
         .update({ cleaner: cleanerId })
@@ -61,142 +74,205 @@ const CleanerAvailableBookings = () => {
         throw error;
       }
 
+      console.log('Successfully assigned booking:', data);
       return data;
     },
     onSuccess: () => {
       toast({
-        title: "Success",
-        description: "Booking assigned successfully!",
+        title: "Booking assigned successfully",
+        description: "You have successfully assigned this booking to yourself.",
       });
       queryClient.invalidateQueries({ queryKey: ['available-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['cleaner-bookings'] });
     },
     onError: (error) => {
-      console.error('Error assigning booking:', error);
+      console.error('Assign mutation error:', error);
       toast({
-        title: "Error",
-        description: "Failed to assign booking. Please try again.",
+        title: "Error assigning booking",
+        description: "There was an error assigning the booking. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const dropOffMutation = useMutation({
+    mutationFn: async (bookingId: number) => {
+      console.log('Dropping off booking:', bookingId);
+      
+      const { data, error } = await supabase
+        .from('bookings')
+        .update({ cleaner: null })
+        .eq('id', bookingId)
+        .select();
+
+      if (error) {
+        console.error('Error dropping off booking:', error);
+        throw error;
+      }
+
+      console.log('Successfully dropped off booking:', data);
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Booking dropped off successfully",
+        description: "The booking is now available for other cleaners to pick up.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['available-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['cleaner-bookings'] });
+      setDropOffBookingId(null);
+    },
+    onError: (error) => {
+      console.error('Drop off mutation error:', error);
+      toast({
+        title: "Error dropping off booking",
+        description: "There was an error dropping off the booking. Please try again.",
         variant: "destructive",
       });
     },
   });
 
   const handleAssignBooking = (bookingId: number) => {
+    console.log('Assigning booking:', bookingId, 'to cleaner:', cleanerId);
     assignBookingMutation.mutate(bookingId);
+  };
+
+  const handleDropOffClick = (bookingId: number) => {
+    setDropOffBookingId(bookingId);
+  };
+
+  const handleConfirmDropOff = () => {
+    if (dropOffBookingId) {
+      dropOffMutation.mutate(dropOffBookingId);
+    }
   };
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-2">
-          <Briefcase className="h-6 w-6 text-blue-600" />
-          <h1 className="text-2xl font-bold">Available Bookings</h1>
-        </div>
-        <div className="text-center py-8">
-          <div className="text-lg">Loading available bookings...</div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Loading available bookings...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-2">
-          <Briefcase className="h-6 w-6 text-blue-600" />
-          <h1 className="text-2xl font-bold">Available Bookings</h1>
-        </div>
-        <div className="text-center py-8">
-          <div className="text-lg text-red-600">Error loading available bookings</div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg text-red-500">Error: {error.message}</div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <Briefcase className="h-6 w-6 text-blue-600" />
-        <h1 className="text-2xl font-bold">Available Bookings</h1>
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold tracking-tight">Available Bookings</h2>
+        <Badge variant="secondary" className="text-sm">
+          {bookings.length} available
+        </Badge>
       </div>
 
-      {!availableBookings || availableBookings.length === 0 ? (
+      {bookings.length === 0 ? (
         <Card>
-          <CardContent className="py-8">
-            <div className="text-center">
-              <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Available Bookings</h3>
-              <p className="text-gray-600">
-                There are currently no unassigned bookings available.
-              </p>
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="text-center space-y-2">
+              <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <UserPlus className="h-8 w-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">No available bookings</h3>
+              <p className="text-gray-500">All bookings are currently assigned. Check back later for new opportunities!</p>
             </div>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4">
-          {availableBookings.map((booking) => (
-            <Card key={booking.id} className="border-l-4 border-l-blue-500">
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
+          {bookings.map((booking) => (
+            <Card key={booking.id} className="hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
                     <CardTitle className="text-lg">
                       {booking.first_name} {booking.last_name}
                     </CardTitle>
-                    <div className="flex items-center gap-4 text-sm text-gray-600 mt-2">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        {format(new Date(booking.date_time), 'MMM dd, yyyy')}
+                    <div className="flex items-center space-x-4 text-sm text-gray-500">
+                      <div className="flex items-center">
+                        <CalendarDays className="h-4 w-4 mr-1" />
+                        {booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : 'No date'}
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        {format(new Date(booking.date_time), 'HH:mm')}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        {booking.postcode}
+                      <div className="flex items-center">
+                        <Clock className="h-4 w-4 mr-1" />
+                        {booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'No time'}
                       </div>
                     </div>
                   </div>
-                  <Badge variant="secondary">Available</Badge>
+                  <div className="flex items-center space-x-2">
+                    <Banknote className="h-4 w-4 text-green-600" />
+                    <span className="font-semibold text-green-600 text-lg">
+                      £{booking.cleaner_pay?.toFixed(2) || '0.00'}
+                    </span>
+                  </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Address</p>
-                    <p className="font-medium">{booking.address}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Total Cost</p>
-                    <p className="font-medium">£{booking.total_cost}</p>
-                  </div>
-                  {booking.total_hours && (
-                    <div>
-                      <p className="text-sm text-gray-600">Duration</p>
-                      <p className="font-medium">{booking.total_hours} hours</p>
+              
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div className="flex items-start space-x-2">
+                      <MapPin className="h-4 w-4 mt-0.5 text-gray-400 flex-shrink-0" />
+                      <div className="text-sm">
+                        <div className="font-medium">{booking.address}</div>
+                        {booking.postcode && (
+                          <div className="text-gray-500">{booking.postcode}</div>
+                        )}
+                      </div>
                     </div>
-                  )}
-                  {booking.cleaning_type && (
-                    <div>
-                      <p className="text-sm text-gray-600">Cleaning Type</p>
-                      <p className="font-medium">{booking.cleaning_type}</p>
+                    
+                    <div className="flex items-center space-x-2">
+                      <User className="h-4 w-4 text-gray-400" />
+                      <div className="text-sm">
+                        <div>{booking.email}</div>
+                        <div className="text-gray-500">{booking.phone_number}</div>
+                      </div>
                     </div>
-                  )}
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {booking.form_name || 'Standard Cleaning'}
+                      </span>
+                    </div>
+                    
+                    {booking.total_hours && (
+                      <div className="text-sm">
+                        <span className="font-medium">Duration:</span> {booking.total_hours} hours
+                      </div>
+                    )}
+                    
+                    {booking.cleaning_type && (
+                      <div className="text-sm">
+                        <span className="font-medium">Type:</span> {booking.cleaning_type}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 
                 {booking.additional_details && (
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-600">Additional Details</p>
-                    <p className="text-sm">{booking.additional_details}</p>
+                  <div className="pt-3 border-t">
+                    <div className="text-sm">
+                      <span className="font-medium">Additional Details:</span>
+                      <p className="mt-1 text-gray-600">{booking.additional_details}</p>
+                    </div>
                   </div>
                 )}
-
-                <div className="flex justify-end">
-                  <Button 
+                
+                <div className="flex justify-end pt-4">
+                  <Button
                     onClick={() => handleAssignBooking(booking.id)}
                     disabled={assignBookingMutation.isPending}
-                    className="bg-blue-600 hover:bg-blue-700"
+                    className="bg-green-600 hover:bg-green-700 text-white"
                   >
+                    <UserPlus className="h-4 w-4 mr-2" />
                     {assignBookingMutation.isPending ? 'Assigning...' : 'Assign to Me'}
                   </Button>
                 </div>
@@ -205,6 +281,27 @@ const CleanerAvailableBookings = () => {
           ))}
         </div>
       )}
+
+      <AlertDialog open={dropOffBookingId !== null} onOpenChange={() => setDropOffBookingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Drop Off Booking</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to drop off this booking? It will no longer be assigned to you and will become available for other cleaners to pick up.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDropOff}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              <UserX className="h-4 w-4 mr-2" />
+              Drop Off Booking
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
