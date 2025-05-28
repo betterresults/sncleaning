@@ -19,6 +19,7 @@ interface Booking {
   email: string;
   phone_number: string;
   address: string;
+  postcode: string;
   form_name: string;
   total_cost: number;
   cleaner: number;
