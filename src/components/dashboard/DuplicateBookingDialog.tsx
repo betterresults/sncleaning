@@ -61,6 +61,7 @@ interface Booking {
   cleaner_rate?: number;
   cleaner_percentage?: number;
   booking_status?: string;
+  frontly_id?: number;
 }
 
 interface DuplicateBookingDialogProps {
@@ -79,11 +80,12 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedHour, setSelectedHour] = useState('');
   const [selectedMinute, setSelectedMinute] = useState('');
+  const [selectedPeriod, setSelectedPeriod] = useState('AM');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Generate hour options (0-23)
-  const hourOptions = Array.from({ length: 24 }, (_, i) => {
-    const hour = i.toString().padStart(2, '0');
+  // Generate hour options (1-12 for 12-hour format)
+  const hourOptions = Array.from({ length: 12 }, (_, i) => {
+    const hour = (i + 1).toString();
     return { value: hour, label: hour };
   });
 
@@ -104,14 +106,29 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
     setIsLoading(true);
 
     try {
+      // Convert 12-hour format to 24-hour format
+      let hour24 = parseInt(selectedHour);
+      if (selectedPeriod === 'PM' && hour24 !== 12) {
+        hour24 += 12;
+      } else if (selectedPeriod === 'AM' && hour24 === 12) {
+        hour24 = 0;
+      }
+
       // Combine date and time
       const newDateTime = new Date(selectedDate);
-      newDateTime.setHours(parseInt(selectedHour), parseInt(selectedMinute), 0, 0);
+      newDateTime.setHours(hour24, parseInt(selectedMinute), 0, 0);
 
       console.log('Creating duplicate booking with date:', newDateTime.toISOString());
 
-      // Create duplicate booking data (excluding id and date_time)
-      const { id, date_time, ...bookingData } = booking;
+      // Create duplicate booking data, excluding generated fields and auto-increment fields
+      const { 
+        id, 
+        date_time, 
+        frontly_id, 
+        invoice_id, 
+        invoice_link, 
+        ...bookingData 
+      } = booking;
       
       const duplicateData = {
         ...bookingData,
@@ -141,6 +158,7 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
       setSelectedDate(undefined);
       setSelectedHour('');
       setSelectedMinute('');
+      setSelectedPeriod('AM');
     } catch (error) {
       console.error('Error duplicating booking:', error);
     } finally {
@@ -204,8 +222,8 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
               <div className="flex items-center space-x-1">
                 <Clock className="h-4 w-4 text-gray-400" />
                 <Select value={selectedHour} onValueChange={setSelectedHour}>
-                  <SelectTrigger className="w-20">
-                    <SelectValue placeholder="Hour" />
+                  <SelectTrigger className="w-16">
+                    <SelectValue placeholder="Hr" />
                   </SelectTrigger>
                   <SelectContent>
                     {hourOptions.map((hour) => (
@@ -221,7 +239,7 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
               
               <div>
                 <Select value={selectedMinute} onValueChange={setSelectedMinute}>
-                  <SelectTrigger className="w-20">
+                  <SelectTrigger className="w-16">
                     <SelectValue placeholder="Min" />
                   </SelectTrigger>
                   <SelectContent>
@@ -233,10 +251,22 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
                   </SelectContent>
                 </Select>
               </div>
+
+              <div>
+                <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+                  <SelectTrigger className="w-16">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="AM">AM</SelectItem>
+                    <SelectItem value="PM">PM</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             {selectedHour && selectedMinute && (
               <p className="text-xs text-gray-500 mt-1">
-                Selected time: {selectedHour}:{selectedMinute}
+                Selected time: {selectedHour}:{selectedMinute} {selectedPeriod}
               </p>
             )}
           </div>
