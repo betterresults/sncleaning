@@ -11,6 +11,7 @@ import { Edit, Trash2, Copy, Filter, Search, MoreHorizontal, CalendarDays, MapPi
 import { format } from 'date-fns';
 import DuplicateBookingDialog from './DuplicateBookingDialog';
 import AssignCleanerDialog from './AssignCleanerDialog';
+import EditBookingDialog from './EditBookingDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -109,6 +110,8 @@ const UpcomingBookings = () => {
   const [selectedBookingForAssignment, setSelectedBookingForAssignment] = useState<number | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedBookingForDelete, setSelectedBookingForDelete] = useState<number | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<Booking | null>(null);
 
   // Debounced search
   const [searchTerm, setSearchTerm] = useState('');
@@ -278,10 +281,13 @@ const UpcomingBookings = () => {
   };
 
   const handleEdit = (booking: Booking) => {
-    // TODO: Implement edit functionality
-    console.log('Edit booking functionality not yet implemented for booking:', booking.id);
-    // For now, we'll just log that it needs to be implemented
-    alert('Edit functionality will be implemented soon');
+    setSelectedBookingForEdit(booking);
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSuccess = () => {
+    fetchData();
+    setSelectedBookingForEdit(null);
   };
 
   const handleCopy = (bookingId: number) => {
@@ -881,6 +887,14 @@ const UpcomingBookings = () => {
         onOpenChange={setAssignCleanerDialogOpen}
         bookingId={selectedBookingForAssignment}
         onSuccess={handleAssignCleanerSuccess}
+      />
+
+      {/* Edit Booking Dialog */}
+      <EditBookingDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        booking={selectedBookingForEdit}
+        onSuccess={handleEditSuccess}
       />
 
       {/* Delete Confirmation Dialog */}
