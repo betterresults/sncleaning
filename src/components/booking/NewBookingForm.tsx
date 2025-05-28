@@ -277,7 +277,7 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
         address: formData.address,
         postcode: formData.postcode,
         hours_required: requiresHours ? formData.hoursRequired : null,
-        cleaning_time: requiresCleaningTime ? formData.cleaningTime : null,
+        cleaning_time: requiresCleaningTime ? parseFloat(formData.cleaningTime) || null : null,
         total_cost: formData.totalCost,
         cleaner_pay: formData.cleanerPay,
         form_name: formName,
