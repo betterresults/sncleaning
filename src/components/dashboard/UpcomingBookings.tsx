@@ -79,27 +79,41 @@ const UpcomingBookings = () => {
       setLoading(true);
       setError(null);
 
-      console.log('Fetching cleaners...');
+      console.log('🔍 DEBUG: Starting fetchData...');
+
+      console.log('🔍 DEBUG: Fetching cleaners...');
       const { data: cleanersData, error: cleanersError } = await supabase
         .from('cleaners')
         .select('*');
 
+      console.log('🔍 DEBUG: Cleaners query result:', {
+        data: cleanersData,
+        error: cleanersError,
+        count: cleanersData?.length || 0
+      });
+
       if (cleanersError) {
-        console.error('Error fetching cleaners:', cleanersError);
+        console.error('❌ DEBUG: Error fetching cleaners:', cleanersError);
         setError('Failed to fetch cleaners: ' + cleanersError.message);
         return;
       }
 
-      console.log('Fetching customers...');
+      console.log('🔍 DEBUG: Fetching customers...');
       const { data: customersData, error: customersError } = await supabase
         .from('customers')
         .select('*');
 
+      console.log('🔍 DEBUG: Customers query result:', {
+        data: customersData,
+        error: customersError,
+        count: customersData?.length || 0
+      });
+
       if (customersError) {
-        console.error('Error fetching customers:', customersError);
+        console.error('❌ DEBUG: Error fetching customers:', customersError);
       }
 
-      console.log('Fetching bookings...');
+      console.log('🔍 DEBUG: Fetching bookings...');
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
         .select(`
@@ -120,24 +134,47 @@ const UpcomingBookings = () => {
         .gte('date_time', new Date().toISOString())
         .order('date_time', { ascending: sortOrder === 'asc' });
 
+      console.log('🔍 DEBUG: Bookings query result:', {
+        data: bookingsData,
+        error: bookingsError,
+        count: bookingsData?.length || 0
+      });
+
       if (bookingsError) {
-        console.error('Error fetching bookings:', bookingsError);
+        console.error('❌ DEBUG: Error fetching bookings:', bookingsError);
         setError('Failed to fetch bookings: ' + bookingsError.message);
         return;
+      }
+
+      // Debug each booking's cleaner data
+      if (bookingsData && bookingsData.length > 0) {
+        console.log('🔍 DEBUG: Analyzing booking cleaner data:');
+        bookingsData.forEach((booking, index) => {
+          console.log(`🔍 DEBUG: Booking ${index + 1} (ID: ${booking.id}):`, {
+            cleaner_id: booking.cleaner,
+            cleaner_join_data: booking.cleaners,
+            cleaner_pay: booking.cleaner_pay
+          });
+        });
       }
 
       setBookings(bookingsData || []);
       setCleaners(cleanersData || []);
       setCustomers(customersData || []);
 
-      console.log('Data loaded successfully:', {
+      console.log('✅ DEBUG: Data loaded successfully:', {
         cleaners: cleanersData?.length || 0,
         customers: customersData?.length || 0,
         bookings: bookingsData?.length || 0
       });
 
+      console.log('🔍 DEBUG: Final state will be:', {
+        cleanersArray: cleanersData,
+        bookingsArray: bookingsData
+      });
+
     } catch (error) {
-      console.error('Error in fetchData:', error);
+      console.error('❌ DEBUG: Error in fetchData:', error);
       setError('An unexpected error occurred: ' + (error as Error).message);
     } finally {
       setLoading(false);
@@ -250,11 +287,19 @@ const UpcomingBookings = () => {
   };
 
   const getCleanerInfo = (booking: Booking) => {
+    console.log(`🔍 DEBUG: getCleanerInfo called for booking ${booking.id}:`, {
+      booking_cleaner_id: booking.cleaner,
+      booking_cleaners_join: booking.cleaners,
+      cleaners_array_length: cleaners.length,
+      cleaners_array: cleaners
+    });
+
     // First try to use the cleaner data from the booking join
     if (booking.cleaners) {
       const name = booking.cleaners.full_name || 
                    `${booking.cleaners.first_name || ''} ${booking.cleaners.last_name || ''}`.trim() || 
                    'Unknown Cleaner';
+      console.log(`✅ DEBUG: Found cleaner via join for booking ${booking.id}:`, name);
       return {
         name,
         pay: booking.cleaner_pay || 0
@@ -263,21 +308,26 @@ const UpcomingBookings = () => {
     
     // Fallback to cleaners array lookup if join data is missing
     if (booking.cleaner && cleaners.length > 0) {
+      console.log(`🔍 DEBUG: Looking up cleaner ${booking.cleaner} in cleaners array for booking ${booking.id}`);
       const cleaner = cleaners.find(c => c.id === booking.cleaner);
       
       if (cleaner) {
         const name = cleaner.full_name || 
                      `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim() || 
                      `Cleaner ${cleaner.id}`;
+        console.log(`✅ DEBUG: Found cleaner via array lookup for booking ${booking.id}:`, name);
         return {
           name,
           pay: booking.cleaner_pay || 0
         };
+      } else {
+        console.log(`❌ DEBUG: Cleaner ${booking.cleaner} not found in cleaners array for booking ${booking.id}`);
       }
     }
     
     // If no cleaner is assigned
     if (!booking.cleaner) {
+      console.log(`🔍 DEBUG: No cleaner assigned to booking ${booking.id}`);
       return {
         name: 'No Cleaner Assigned',
         pay: 0
@@ -285,8 +335,9 @@ const UpcomingBookings = () => {
     }
     
     // If we have a cleaner ID but no cleaner data found
+    console.log(`❌ DEBUG: Cleaner ${booking.cleaner} not found anywhere for booking ${booking.id}`);
     return {
-      name: `Cleaner not found`,
+      name: `Cleaner not found (ID: ${booking.cleaner})`,
       pay: booking.cleaner_pay || 0
     };
   };
