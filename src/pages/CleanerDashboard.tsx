@@ -25,6 +25,9 @@ const CleanerDashboard = () => {
     return <Navigate to="/auth" replace />;
   }
 
+  // Get first name for greeting
+  const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Cleaner';
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -33,19 +36,12 @@ const CleanerDashboard = () => {
           <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
             <SidebarTrigger className="-ml-1" />
             <div className="flex-1" />
-            <div className="text-sm text-gray-600">
-              Cleaner Dashboard - {user.email}
+            <div className="text-lg font-semibold">
+              Hello {firstName}! 👋
             </div>
           </header>
           
           <main className="flex-1 space-y-4 p-8 pt-6">
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold tracking-tight">My Dashboard</h1>
-              <p className="text-muted-foreground">
-                Welcome to your cleaner dashboard. Here you can view your upcoming bookings and manage your schedule.
-              </p>
-            </div>
-            
             <CleanerUpcomingBookings />
           </main>
         </SidebarInset>

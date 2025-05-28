@@ -33,31 +33,22 @@ export function CleanerSidebar() {
       title: "My Bookings",
       url: "/cleaner-dashboard",
       icon: Calendar,
-      description: "View upcoming bookings"
     },
     {
       title: "Past Bookings",
       url: "/cleaner-past-bookings",
       icon: History,
-      description: "View completed bookings"
     },
     {
       title: "My Earnings",
       url: "/cleaner-earnings",
       icon: DollarSign,
-      description: "View earnings and payments"
     },
   ];
 
   return (
     <Sidebar>
-      <SidebarHeader className="p-4">
-        <div className="space-y-2">
-          <h2 className="text-lg font-semibold text-primary">Cleaner Portal</h2>
-          <p className="text-sm text-muted-foreground">
-            Cleaner ID: {cleanerId}
-          </p>
-        </div>
+      <SidebarHeader className="p-6">
       </SidebarHeader>
       
       <SidebarContent>
@@ -69,13 +60,11 @@ export function CleanerSidebar() {
                   <SidebarMenuButton 
                     asChild
                     isActive={location.pathname === item.url}
+                    size="lg"
                   >
                     <Link to={item.url} className="w-full">
-                      <item.icon className="h-4 w-4" />
-                      <div className="flex flex-col items-start">
-                        <span className="font-medium">{item.title}</span>
-                        <span className="text-xs text-muted-foreground">{item.description}</span>
-                      </div>
+                      <item.icon className="h-6 w-6" />
+                      <span className="text-base font-medium">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -92,7 +81,6 @@ export function CleanerSidebar() {
               <div className="flex items-center space-x-2">
                 <User className="h-4 w-4" />
                 <div className="flex flex-col items-start">
-                  <span className="text-sm font-medium">Signed in as:</span>
                   <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
                 </div>
               </div>
