@@ -11,6 +11,16 @@ import { Edit, Trash2, Copy, Filter, Search, MoreHorizontal, CalendarDays, MapPi
 import { format } from 'date-fns';
 import DuplicateBookingDialog from './DuplicateBookingDialog';
 import AssignCleanerDialog from './AssignCleanerDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Booking {
   id: number;
@@ -97,6 +107,8 @@ const UpcomingBookings = () => {
   const [selectedBookingForDuplicate, setSelectedBookingForDuplicate] = useState<Booking | null>(null);
   const [assignCleanerDialogOpen, setAssignCleanerDialogOpen] = useState(false);
   const [selectedBookingForAssignment, setSelectedBookingForAssignment] = useState<number | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedBookingForDelete, setSelectedBookingForDelete] = useState<number | null>(null);
 
   // Debounced search
   const [searchTerm, setSearchTerm] = useState('');
@@ -273,7 +285,31 @@ const UpcomingBookings = () => {
   };
 
   const handleDelete = (bookingId: number) => {
-    console.log('Delete booking', bookingId);
+    setSelectedBookingForDelete(bookingId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedBookingForDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('id', selectedBookingForDelete);
+
+      if (error) {
+        console.error('Error deleting booking:', error);
+        return;
+      }
+
+      console.log('Booking deleted successfully');
+      fetchData(); // Refresh the data
+      setDeleteDialogOpen(false);
+      setSelectedBookingForDelete(null);
+    } catch (error) {
+      console.error('Error deleting booking:', error);
+    }
   };
 
   const handleDuplicate = (booking: Booking) => {
@@ -827,6 +863,28 @@ const UpcomingBookings = () => {
         bookingId={selectedBookingForAssignment}
         onSuccess={handleAssignCleanerSuccess}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Booking</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this booking? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Booking
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
