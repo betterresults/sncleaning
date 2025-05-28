@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -15,7 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search } from 'lucide-react';
+import { Search, Filter, X } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface PastBooking {
@@ -39,6 +38,14 @@ interface BulkEditPastBookingsDialogProps {
   onSuccess: () => void;
 }
 
+interface Filters {
+  dateFrom: string;
+  dateTo: string;
+  clientPaymentStatus: string;
+  cleanerPaymentStatus: string;
+  customerSearch: string;
+}
+
 const BulkEditPastBookingsDialog: React.FC<BulkEditPastBookingsDialogProps> = ({
   open,
   onOpenChange,
@@ -50,34 +57,87 @@ const BulkEditPastBookingsDialog: React.FC<BulkEditPastBookingsDialogProps> = ({
   const [selectedBookings, setSelectedBookings] = useState<number[]>([]);
   const [editType, setEditType] = useState<'total_cost' | 'cleaner_pay' | 'payment_status' | 'cleaner_pay_status'>('total_cost');
   const [newValue, setNewValue] = useState<string>('');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState<Filters>({
+    dateFrom: '',
+    dateTo: '',
+    clientPaymentStatus: 'all',
+    cleanerPaymentStatus: 'all',
+    customerSearch: '',
+  });
 
   useEffect(() => {
     if (open) {
       fetchPastBookings();
-      setSearchTerm('');
+      setFilters({
+        dateFrom: '',
+        dateTo: '',
+        clientPaymentStatus: 'all',
+        cleanerPaymentStatus: 'all',
+        customerSearch: '',
+      });
       setSelectedBookings([]);
       setNewValue('');
     }
   }, [open]);
 
   useEffect(() => {
-    // Filter bookings based on search term
-    if (!searchTerm.trim()) {
-      setFilteredBookings(bookings);
-    } else {
-      const filtered = bookings.filter(booking => {
+    applyFilters();
+  }, [bookings, filters]);
+
+  const applyFilters = () => {
+    let filtered = [...bookings];
+
+    // Date filters
+    if (filters.dateFrom) {
+      filtered = filtered.filter(booking => 
+        new Date(booking.date_time) >= new Date(filters.dateFrom)
+      );
+    }
+    if (filters.dateTo) {
+      filtered = filtered.filter(booking => 
+        new Date(booking.date_time) <= new Date(filters.dateTo)
+      );
+    }
+
+    // Client payment status filter
+    if (filters.clientPaymentStatus !== 'all') {
+      filtered = filtered.filter(booking => 
+        booking.payment_status === filters.clientPaymentStatus
+      );
+    }
+
+    // Cleaner payment status filter
+    if (filters.cleanerPaymentStatus !== 'all') {
+      filtered = filtered.filter(booking => 
+        booking.cleaner_pay_status === filters.cleanerPaymentStatus
+      );
+    }
+
+    // Customer search
+    if (filters.customerSearch) {
+      filtered = filtered.filter(booking => {
         const customerName = `${booking.first_name} ${booking.last_name}`.toLowerCase();
         const cleanerName = booking.cleaners?.full_name?.toLowerCase() || '';
         const dateString = booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : '';
         
-        return customerName.includes(searchTerm.toLowerCase()) ||
-               cleanerName.includes(searchTerm.toLowerCase()) ||
-               dateString.includes(searchTerm.toLowerCase());
+        return customerName.includes(filters.customerSearch.toLowerCase()) ||
+               cleanerName.includes(filters.customerSearch.toLowerCase()) ||
+               dateString.includes(filters.customerSearch.toLowerCase());
       });
-      setFilteredBookings(filtered);
     }
-  }, [bookings, searchTerm]);
+
+    setFilteredBookings(filtered);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      dateFrom: '',
+      dateTo: '',
+      clientPaymentStatus: 'all',
+      cleanerPaymentStatus: 'all',
+      customerSearch: '',
+    });
+  };
 
   const fetchPastBookings = async () => {
     try {
@@ -185,7 +245,7 @@ const BulkEditPastBookingsDialog: React.FC<BulkEditPastBookingsDialogProps> = ({
       onOpenChange(false);
       setSelectedBookings([]);
       setNewValue('');
-      setSearchTerm('');
+      clearFilters();
     } catch (error) {
       console.error('Error updating past bookings:', error);
       alert('An unexpected error occurred');
@@ -258,20 +318,92 @@ const BulkEditPastBookingsDialog: React.FC<BulkEditPastBookingsDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Bulk Edit Past Bookings</DialogTitle>
           <DialogDescription>
-            Search and select past bookings to update their cost, cleaner pay, or payment status
+            Filter and select past bookings to update their cost, cleaner pay, or payment status
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
-          {/* Search Filter */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search by customer name, cleaner, or date..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+          {/* Filters Section */}
+          <div className="p-4 bg-gray-50 rounded-lg space-y-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Filter className="h-4 w-4" />
+              <h3 className="font-medium">Filters</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="dateFrom">Date From</Label>
+                <Input
+                  id="dateFrom"
+                  type="date"
+                  value={filters.dateFrom}
+                  onChange={(e) => setFilters({...filters, dateFrom: e.target.value})}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="dateTo">Date To</Label>
+                <Input
+                  id="dateTo"
+                  type="date"
+                  value={filters.dateTo}
+                  onChange={(e) => setFilters({...filters, dateTo: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="clientPaymentStatus">Client Payment Status</Label>
+                <Select value={filters.clientPaymentStatus} onValueChange={(value) => setFilters({...filters, clientPaymentStatus: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="Paid">Paid</SelectItem>
+                    <SelectItem value="Not Paid">Not Paid</SelectItem>
+                    <SelectItem value="In Process">In Process</SelectItem>
+                    <SelectItem value="Partially Paid">Partially Paid</SelectItem>
+                    <SelectItem value="Refunded">Refunded</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="cleanerPaymentStatus">Cleaner Payment Status</Label>
+                <Select value={filters.cleanerPaymentStatus} onValueChange={(value) => setFilters({...filters, cleanerPaymentStatus: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="Paid">Paid</SelectItem>
+                    <SelectItem value="Unpaid">Unpaid</SelectItem>
+                    <SelectItem value="Partially Paid">Partially Paid</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="customerSearch">Search</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="customerSearch"
+                    placeholder="Search customer, cleaner, or date..."
+                    value={filters.customerSearch}
+                    onChange={(e) => setFilters({...filters, customerSearch: e.target.value})}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-end">
+                <Button onClick={clearFilters} variant="outline" className="w-full">
+                  <X className="mr-2 h-4 w-4" />
+                  Clear Filters
+                </Button>
+              </div>
+            </div>
           </div>
 
           {/* Bulk Edit Controls */}
@@ -308,21 +440,19 @@ const BulkEditPastBookingsDialog: React.FC<BulkEditPastBookingsDialogProps> = ({
           </div>
 
           {/* Results Summary */}
-          {searchTerm && (
-            <div className="text-sm text-gray-600">
-              Showing {filteredBookings.length} of {bookings.length} bookings
-              {filteredBookings.length !== bookings.length && (
-                <Button
-                  variant="link"
-                  size="sm"
-                  onClick={() => setSearchTerm('')}
-                  className="p-0 h-auto ml-2 text-blue-600"
-                >
-                  Clear filter
-                </Button>
-              )}
-            </div>
-          )}
+          <div className="text-sm text-gray-600">
+            Showing {filteredBookings.length} of {bookings.length} bookings
+            {filteredBookings.length !== bookings.length && (
+              <Button
+                variant="link"
+                size="sm"
+                onClick={clearFilters}
+                className="p-0 h-auto ml-2 text-blue-600"
+              >
+                Clear filters
+              </Button>
+            )}
+          </div>
 
           {/* Bookings Table */}
           <div className="border rounded-lg overflow-hidden">
@@ -348,7 +478,7 @@ const BulkEditPastBookingsDialog: React.FC<BulkEditPastBookingsDialogProps> = ({
                 {filteredBookings.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-8">
-                      {searchTerm ? 'No bookings match your search' : 'No past bookings found'}
+                      {Object.values(filters).some(f => f && f !== 'all') ? 'No bookings match your filters' : 'No past bookings found'}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -388,6 +518,7 @@ const BulkEditPastBookingsDialog: React.FC<BulkEditPastBookingsDialogProps> = ({
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                           booking.payment_status === 'Paid' ? 'bg-green-100 text-green-800' :
                           booking.payment_status === 'Partially Paid' ? 'bg-yellow-100 text-yellow-800' :
+                          booking.payment_status === 'In Process' ? 'bg-blue-100 text-blue-800' :
                           'bg-red-100 text-red-800'
                         }`}>
                           {booking.payment_status || 'Not Paid'}
