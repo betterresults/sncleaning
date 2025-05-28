@@ -7,11 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Edit, Trash2, Copy, Filter, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail, Banknote, AlertTriangle, UserPlus } from 'lucide-react';
+import { Edit, Trash2, Copy, Filter, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail, Banknote, AlertTriangle, UserPlus, Settings } from 'lucide-react';
 import { format } from 'date-fns';
 import DuplicateBookingDialog from './DuplicateBookingDialog';
 import AssignCleanerDialog from './AssignCleanerDialog';
 import EditBookingDialog from './EditBookingDialog';
+import BulkEditBookingsDialog from './BulkEditBookingsDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -112,6 +113,7 @@ const UpcomingBookings = () => {
   const [selectedBookingForDelete, setSelectedBookingForDelete] = useState<number | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<Booking | null>(null);
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
 
   // Debounced search
   const [searchTerm, setSearchTerm] = useState('');
@@ -528,6 +530,15 @@ const UpcomingBookings = () => {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Bulk Edit Button */}
+          <Button 
+            onClick={() => setBulkEditOpen(true)}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm h-7 sm:h-8"
+          >
+            <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+            Bulk Edit
+          </Button>
         </div>
         <div className="text-xs sm:text-sm text-gray-600 w-full sm:w-auto text-left sm:text-right">
           Showing {startIndex + 1}-{Math.min(endIndex, filteredBookings.length)} of {filteredBookings.length} bookings
@@ -896,6 +907,13 @@ const UpcomingBookings = () => {
         onOpenChange={setEditDialogOpen}
         booking={selectedBookingForEdit}
         onSuccess={handleEditSuccess}
+      />
+
+      {/* Bulk Edit Bookings Dialog */}
+      <BulkEditBookingsDialog
+        open={bulkEditOpen}
+        onOpenChange={setBulkEditOpen}
+        onSuccess={fetchData}
       />
 
       {/* Delete Confirmation Dialog */}
