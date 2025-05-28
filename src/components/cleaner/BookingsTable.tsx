@@ -1,0 +1,153 @@
+
+import React from 'react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
+import { CalendarDays, Clock, MapPin, User, Banknote, UserX, CheckCircle2 } from 'lucide-react';
+import { Booking } from './types';
+
+interface BookingsTableProps {
+  bookings: Booking[];
+  onMarkAsCompleted: (bookingId: number) => void;
+  onDropOff: (bookingId: number) => void;
+}
+
+const BookingsTable: React.FC<BookingsTableProps> = ({
+  bookings,
+  onMarkAsCompleted,
+  onDropOff,
+}) => {
+  const getStatusBadge = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'confirmed':
+        return <Badge variant="default" className="bg-green-100 text-green-800">Confirmed</Badge>;
+      case 'pending':
+        return <Badge variant="secondary">Pending</Badge>;
+      case 'completed':
+        return <Badge variant="default" className="bg-blue-100 text-blue-800">Completed</Badge>;
+      case 'cancelled':
+        return <Badge variant="destructive">Cancelled</Badge>;
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
+    }
+  };
+
+  return (
+    <Card className="shadow-sm">
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gray-50">
+                <TableHead className="font-semibold text-base">Date & Time</TableHead>
+                <TableHead className="font-semibold text-base">Customer</TableHead>
+                <TableHead className="font-semibold text-base">Address</TableHead>
+                <TableHead className="font-semibold text-base">Service</TableHead>
+                <TableHead className="font-semibold text-base">Earnings</TableHead>
+                <TableHead className="font-semibold text-center text-base">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {bookings.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-gray-500 text-base">
+                    No upcoming bookings found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                bookings.map((booking) => (
+                  <TableRow key={booking.id} className="hover:bg-gray-50 transition-colors">
+                    <TableCell>
+                      <div className="flex items-start space-x-3">
+                        <div className="flex flex-col items-center space-y-1">
+                          <CalendarDays className="h-4 w-4 text-gray-400" />
+                          <Clock className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-base">
+                            {booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : 'No date'}
+                          </div>
+                          <div className="text-gray-500 text-sm">
+                            {booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'No time'}
+                          </div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="font-medium text-base flex items-center">
+                          <User className="h-3 w-3 mr-2 text-gray-400" />
+                          {booking.first_name} {booking.last_name}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {booking.email}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {booking.phone_number}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-start space-x-2 max-w-48">
+                        <MapPin className="h-3 w-3 mt-0.5 text-gray-400 flex-shrink-0" />
+                        <div className="text-sm text-gray-700 leading-tight">
+                          <div>{booking.address}</div>
+                          {booking.postcode && (
+                            <div className="text-gray-500 font-medium">{booking.postcode}</div>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                          {booking.form_name || 'Standard Cleaning'}
+                        </span>
+                        {booking.booking_status && (
+                          <div>{getStatusBadge(booking.booking_status)}</div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <Banknote className="h-4 w-4 text-green-600" />
+                        <span className="font-semibold text-green-600 text-base">
+                          £{booking.cleaner_pay?.toFixed(2) || '0.00'}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-center space-x-2">
+                        <Button
+                          onClick={() => onMarkAsCompleted(booking.id)}
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Complete
+                        </Button>
+                        <Button
+                          onClick={() => onDropOff(booking.id)}
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 border-red-300 hover:bg-red-50"
+                        >
+                          <UserX className="h-3 w-3 mr-1" />
+                          Drop Off
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default BookingsTable;
