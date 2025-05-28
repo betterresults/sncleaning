@@ -276,17 +276,18 @@ const UpcomingBookings = () => {
       }
     }
     
-    // If we have a cleaner ID but no cleaner data, it means the relationship is broken
-    if (booking.cleaner) {
+    // If no cleaner is assigned
+    if (!booking.cleaner) {
       return {
-        name: `Cleaner ID: ${booking.cleaner} (Data Missing)`,
-        pay: booking.cleaner_pay || 0
+        name: 'No Cleaner Assigned',
+        pay: 0
       };
     }
     
+    // If we have a cleaner ID but no cleaner data found
     return {
-      name: 'No Cleaner Assigned',
-      pay: 0
+      name: `Cleaner not found`,
+      pay: booking.cleaner_pay || 0
     };
   };
 

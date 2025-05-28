@@ -30,6 +30,9 @@ const Dashboard = () => {
     return <Navigate to="/cleaner-dashboard" replace />;
   }
 
+  // Extract first name from email (before @)
+  const firstName = user.email?.split('@')[0] || 'User';
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -39,18 +42,11 @@ const Dashboard = () => {
             <SidebarTrigger className="-ml-1" />
             <div className="flex-1" />
             <div className="text-sm text-gray-600">
-              Dashboard - {user.email}
+              Hello, {firstName}
             </div>
           </header>
           
           <main className="flex-1 space-y-4 p-8 pt-6">
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-              <p className="text-muted-foreground">
-                Welcome to your dashboard.
-              </p>
-            </div>
-            
             <Card>
               <CardHeader>
                 <CardTitle>Upcoming Bookings</CardTitle>

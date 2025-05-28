@@ -23,6 +23,9 @@ const AdminDashboard = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
+  // Extract first name from email (before @)
+  const firstName = user.email?.split('@')[0] || 'Admin';
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -31,6 +34,9 @@ const AdminDashboard = () => {
           <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
             <SidebarTrigger className="-ml-1" />
             <div className="flex-1" />
+            <div className="text-sm text-gray-600">
+              Hello, {firstName}
+            </div>
           </header>
           
           <main className="flex-1 space-y-4 p-8 pt-6">
