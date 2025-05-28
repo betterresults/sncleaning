@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,15 +7,27 @@ import { RefreshCw } from 'lucide-react';
 import UsersSection from './UsersSection';
 import CustomersSection from './CustomersSection';
 
-const UserManagementTabs = () => {
-  const [refreshKey, setRefreshKey] = useState(0);
+interface UserManagementTabsProps {
+  refreshKey?: number;
+  showCreateUserForm?: boolean;
+  showCreateCustomerForm?: boolean;
+  onCreateUserSuccess?: () => void;
+  onCreateCustomerSuccess?: () => void;
+}
 
+const UserManagementTabs = ({ 
+  refreshKey, 
+  showCreateUserForm, 
+  showCreateCustomerForm, 
+  onCreateUserSuccess, 
+  onCreateCustomerSuccess 
+}: UserManagementTabsProps) => {
   const refreshUsers = () => {
-    setRefreshKey(prev => prev + 1);
+    window.location.reload();
   };
 
   return (
-    <Card className="relative z-0">
+    <Card>
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle>User & Customer Management</CardTitle>
@@ -23,26 +35,33 @@ const UserManagementTabs = () => {
             onClick={refreshUsers}
             variant="outline"
             size="sm"
-            className="flex items-center gap-2 relative z-10"
+            className="flex items-center gap-2"
           >
             <RefreshCw className="h-4 w-4" />
             Refresh Users
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="relative z-0">
+      <CardContent>
         <Tabs defaultValue="users" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="customers">Customers</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="users" className="relative z-0">
-            <UsersSection refreshKey={refreshKey} />
+          <TabsContent value="users">
+            <UsersSection 
+              refreshKey={refreshKey} 
+              hideCreateButton={true}
+            />
           </TabsContent>
           
-          <TabsContent value="customers" className="relative z-0">
-            <CustomersSection />
+          <TabsContent value="customers">
+            <CustomersSection 
+              hideCreateButton={true}
+              showCreateForm={showCreateCustomerForm}
+              onCreateSuccess={onCreateCustomerSuccess}
+            />
           </TabsContent>
         </Tabs>
       </CardContent>

@@ -1,11 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import CreateUserForm from './CreateUserForm';
 
 interface UserData {
   id: string;
@@ -19,12 +16,12 @@ interface UserData {
 
 interface UsersSectionProps {
   refreshKey?: number;
+  hideCreateButton?: boolean;
 }
 
-const UsersSection = ({ refreshKey }: UsersSectionProps) => {
+const UsersSection = ({ refreshKey, hideCreateButton }: UsersSectionProps) => {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateUserForm, setShowCreateUserForm] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -187,34 +184,14 @@ const UsersSection = ({ refreshKey }: UsersSectionProps) => {
     }
   };
 
-  const handleCreateUserClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log('Create user button clicked');
-    setShowCreateUserForm(!showCreateUserForm);
-  };
-
   useEffect(() => {
     fetchUsers();
   }, [refreshKey]);
 
   return (
-    <div className="space-y-6 relative z-0">
-      <div className="flex justify-between items-center relative z-30">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">System Users ({users.length})</h3>
-        <button
-          onClick={handleCreateUserClick}
-          className={`relative z-50 inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer border-0 outline-none focus:outline-none hover:scale-105 ${
-            showCreateUserForm 
-              ? 'bg-slate-600 hover:bg-slate-700 text-white shadow-md hover:shadow-lg' 
-              : 'bg-blue-900 hover:bg-blue-800 text-white shadow-lg hover:shadow-xl'
-          }`}
-          type="button"
-          style={{ pointerEvents: 'auto', position: 'relative', zIndex: 9999 }}
-        >
-          <UserPlus className="h-4 w-4" />
-          {showCreateUserForm ? 'Cancel' : 'Create New User'}
-        </button>
       </div>
 
       {fetchError && (
@@ -225,13 +202,6 @@ const UsersSection = ({ refreshKey }: UsersSectionProps) => {
             {fetchError}
           </AlertDescription>
         </Alert>
-      )}
-
-      {showCreateUserForm && (
-        <CreateUserForm onSuccess={() => {
-          fetchUsers();
-          setShowCreateUserForm(false);
-        }} />
       )}
 
       <div>

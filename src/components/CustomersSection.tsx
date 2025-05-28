@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2 } from 'lucide-react';
 
 interface CustomerData {
   id: number;
@@ -19,11 +18,16 @@ interface CustomerData {
   full_name: string;
 }
 
-const CustomersSection = () => {
+interface CustomersSectionProps {
+  hideCreateButton?: boolean;
+  showCreateForm?: boolean;
+  onCreateSuccess?: () => void;
+}
+
+const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }: CustomersSectionProps) => {
   const [customers, setCustomers] = useState<CustomerData[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
-  const [showCreateCustomerForm, setShowCreateCustomerForm] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<number | null>(null);
   const [editCustomerData, setEditCustomerData] = useState<Partial<CustomerData>>({});
   const [newCustomer, setNewCustomer] = useState({
@@ -194,26 +198,13 @@ const CustomersSection = () => {
   }, []);
 
   return (
-    <div className="space-y-6 relative z-0">
-      <div className="flex justify-between items-center relative z-30">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Customers</h3>
-        <button
-          onClick={handleCreateCustomerClick}
-          className={`relative z-50 inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer border-0 outline-none focus:outline-none hover:scale-105 ${
-            showCreateCustomerForm 
-              ? 'bg-slate-600 hover:bg-slate-700 text-white shadow-md hover:shadow-lg' 
-              : 'bg-blue-900 hover:bg-blue-800 text-white shadow-lg hover:shadow-xl'
-          }`}
-          type="button"
-          style={{ pointerEvents: 'auto', position: 'relative', zIndex: 9999 }}
-        >
-          <UserPlus className="h-4 w-4" />
-          {showCreateCustomerForm ? 'Cancel' : 'Create New Customer'}
-        </button>
       </div>
 
-      {/* Create Customer Form */}
-      {showCreateCustomerForm && (
+      {/* Create Customer Form - shown when showCreateForm is true */}
+      {showCreateForm && (
         <div className="p-4 border rounded-lg bg-gray-50">
           <h4 className="font-semibold mb-4">Create New Customer</h4>
           <div className="grid grid-cols-2 gap-4 mb-4">
@@ -271,15 +262,16 @@ const CustomersSection = () => {
               />
             </div>
           </div>
-          <button
-            onClick={createCustomer}
+          <Button
+            onClick={async () => {
+              await createCustomer();
+              if (onCreateSuccess) onCreateSuccess();
+            }}
             disabled={creating}
-            className="relative z-50 bg-blue-900 hover:bg-blue-800 text-white px-6 py-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105"
-            type="button"
-            style={{ pointerEvents: 'auto', position: 'relative', zIndex: 9999 }}
+            className="bg-blue-900 hover:bg-blue-800 text-white"
           >
             {creating ? 'Creating...' : 'Create Customer'}
-          </button>
+          </Button>
         </div>
       )}
 
