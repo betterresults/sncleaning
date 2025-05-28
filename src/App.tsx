@@ -12,6 +12,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Users from "./pages/Users";
 import PastBookings from "./pages/PastBookings";
 import CleanerDashboard from "./pages/CleanerDashboard";
+import CleanerPastBookings from "./pages/CleanerPastBookings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/users" element={<Users />} />
             <Route path="/past-bookings" element={<PastBookings />} />
             <Route path="/cleaner-dashboard" element={<CleanerDashboard />} />
+            <Route path="/cleaner-past-bookings" element={<CleanerPastBookings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
