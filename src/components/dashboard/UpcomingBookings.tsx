@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Edit, Trash2, Copy, Filter, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail, Banknote, AlertTriangle } from 'lucide-react';
+import { Edit, Trash2, Copy, Filter, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail, Banknote, AlertTriangle, UserPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import DuplicateBookingDialog from './DuplicateBookingDialog';
 import AssignCleanerDialog from './AssignCleanerDialog';
@@ -581,10 +581,14 @@ const UpcomingBookings = () => {
                           <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                             <div className="flex-1">
                               {isUnassigned ? (
-                                <div className="flex items-center space-x-1 bg-red-100 px-2 py-1 rounded-lg border border-red-200">
-                                  <AlertTriangle className="h-3 w-3 text-red-600" />
-                                  <span className="text-xs font-semibold text-red-700">Unassigned</span>
-                                </div>
+                                <button
+                                  onClick={() => handleAssignCleaner(booking.id)}
+                                  className="flex items-center space-x-2 bg-red-100 hover:bg-red-200 px-3 py-2 rounded-lg border border-red-200 transition-colors cursor-pointer w-full text-left"
+                                >
+                                  <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0" />
+                                  <span className="text-sm font-semibold text-red-700">Click to Assign Cleaner</span>
+                                  <UserPlus className="h-3 w-3 text-red-600 ml-auto" />
+                                </button>
                               ) : (
                                 <div className="text-xs">
                                   <span className="text-gray-500">Cleaner: </span>
@@ -696,10 +700,17 @@ const UpcomingBookings = () => {
                         <TableCell className="text-xs sm:text-sm">
                           {isUnassigned ? (
                             <div className="space-y-1">
-                              <div className="flex items-center space-x-1 sm:space-x-2 bg-red-100 px-2 sm:px-3 py-1 sm:py-2 rounded-lg border border-red-200">
-                                <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-red-600" />
-                                <span className="text-xs sm:text-sm font-semibold text-red-700">Unassigned</span>
-                              </div>
+                              <button
+                                onClick={() => handleAssignCleaner(booking.id)}
+                                className="flex items-center space-x-2 bg-red-100 hover:bg-red-200 px-3 py-2 rounded-lg border border-red-200 transition-colors cursor-pointer w-full text-left group"
+                              >
+                                <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0" />
+                                <div className="flex-1">
+                                  <span className="text-sm font-semibold text-red-700 block">Unassigned</span>
+                                  <span className="text-xs text-red-600 group-hover:text-red-700">Click to assign</span>
+                                </div>
+                                <UserPlus className="h-3 w-3 text-red-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </button>
                               <div className="text-xs text-red-600 font-medium flex items-center pl-1 sm:pl-2">
                                 <Banknote className="h-2 w-2 sm:h-3 sm:w-3 mr-1 sm:mr-2" />
                                 Pay: £{cleanerInfo.pay.toFixed(2)}
