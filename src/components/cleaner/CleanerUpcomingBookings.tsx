@@ -229,7 +229,7 @@ const CleanerUpcomingBookings = () => {
   if (authLoading || loading) {
     return (
       <div className="flex justify-center py-8">
-        <div className="text-lg">Loading upcoming bookings...</div>
+        <div className="text-base">Loading upcoming bookings...</div>
       </div>
     );
   }
@@ -237,10 +237,10 @@ const CleanerUpcomingBookings = () => {
   if (error) {
     return (
       <div className="text-center py-8">
-        <div className="text-red-600 mb-4">{error}</div>
+        <div className="text-red-600 mb-4 text-sm px-4">{error}</div>
         <button 
           onClick={fetchData}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm"
         >
           Retry
         </button>
@@ -249,7 +249,7 @@ const CleanerUpcomingBookings = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 max-w-full">
       <UpcomingBookingsStats stats={stats} />
 
       <BookingFilters

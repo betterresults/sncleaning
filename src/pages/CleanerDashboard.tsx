@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -14,8 +13,8 @@ const CleanerDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading cleaner dashboard...</div>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-base">Loading cleaner dashboard...</div>
       </div>
     );
   }
@@ -31,18 +30,18 @@ const CleanerDashboard = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-gray-50">
         <CleanerSidebar />
-        <SidebarInset>
-          <header className="flex h-12 sm:h-16 shrink-0 items-center gap-2 border-b px-3 sm:px-4">
-            <SidebarTrigger className="-ml-1" />
+        <SidebarInset className="flex-1">
+          <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-white px-4 shadow-sm">
+            <SidebarTrigger className="-ml-1 p-2" />
             <div className="flex-1" />
-            <div className="text-sm sm:text-lg font-semibold">
+            <div className="text-base font-semibold text-gray-900 truncate">
               Hello {firstName}! 👋
             </div>
           </header>
           
-          <main className="flex-1 space-y-3 sm:space-y-4 p-3 sm:p-6 lg:p-8 pt-3 sm:pt-6">
+          <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
             <CleanerUpcomingBookings />
           </main>
         </SidebarInset>
@@ -52,4 +51,3 @@ const CleanerDashboard = () => {
 };
 
 export default CleanerDashboard;
-

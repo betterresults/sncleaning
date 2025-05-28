@@ -52,24 +52,27 @@ export function CleanerSidebar() {
   ];
 
   return (
-    <Sidebar>
-      <SidebarHeader className="p-6">
+    <Sidebar className="border-r border-gray-200">
+      <SidebarHeader className="p-4 border-b border-gray-200">
+        <div className="text-lg font-semibold text-gray-900">
+          SN Cleaning
+        </div>
       </SidebarHeader>
       
-      <SidebarContent>
+      <SidebarContent className="px-2">
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild
                     isActive={location.pathname === item.url}
-                    size="lg"
+                    className="w-full h-12 px-3 py-2 text-sm"
                   >
-                    <Link to={item.url} className="w-full">
-                      <item.icon className="h-6 w-6" />
-                      <span className="text-base font-medium">{item.title}</span>
+                    <Link to={item.url} className="flex items-center gap-3 w-full">
+                      <item.icon className="h-5 w-5 flex-shrink-0" />
+                      <span className="font-medium truncate">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -79,14 +82,14 @@ export function CleanerSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4">
-        <SidebarMenu>
+      <SidebarFooter className="p-3 border-t border-gray-200">
+        <SidebarMenu className="space-y-2">
           <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <div className="flex items-center space-x-2">
-                <User className="h-4 w-4" />
-                <div className="flex flex-col items-start">
-                  <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
+            <SidebarMenuButton asChild className="h-auto">
+              <div className="flex items-center gap-2 p-2">
+                <User className="h-4 w-4 flex-shrink-0" />
+                <div className="flex flex-col items-start min-w-0">
+                  <span className="text-xs text-gray-600 truncate w-full">{user?.email}</span>
                 </div>
               </div>
             </SidebarMenuButton>
@@ -96,7 +99,7 @@ export function CleanerSidebar() {
               onClick={handleSignOut} 
               variant="outline" 
               size="sm" 
-              className="w-full"
+              className="w-full h-9"
             >
               Sign Out
             </Button>
