@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Edit, Trash2, Copy, Filter, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail, Banknote, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
+import DuplicateBookingDialog from './DuplicateBookingDialog';
 
 interface Booking {
   id: number;
@@ -55,6 +56,8 @@ const UpcomingBookings = () => {
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [assignedBookings, setAssignedBookings] = useState(0);
   const [unassignedBookings, setUnassignedBookings] = useState(0);
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
+  const [selectedBookingForDuplicate, setSelectedBookingForDuplicate] = useState<Booking | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -203,7 +206,6 @@ const UpcomingBookings = () => {
     return { name: 'Unknown', pay: 0 };
   };
 
-  // Placeholder functions
   const handleEdit = (booking: Booking) => {
     console.log('Edit booking', booking.id);
   };
@@ -214,6 +216,17 @@ const UpcomingBookings = () => {
 
   const handleDelete = (bookingId: number) => {
     console.log('Delete booking', bookingId);
+  };
+
+  const handleDuplicate = (booking: Booking) => {
+    console.log('Duplicate booking', booking.id);
+    setSelectedBookingForDuplicate(booking);
+    setDuplicateDialogOpen(true);
+  };
+
+  const handleDuplicateSuccess = () => {
+    fetchData();
+    setSelectedBookingForDuplicate(null);
   };
 
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -447,9 +460,9 @@ const UpcomingBookings = () => {
                                   <Edit className="mr-2 h-4 w-4" />
                                   Edit
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleCopy(booking.id)}>
+                                <DropdownMenuItem onClick={() => handleDuplicate(booking)}>
                                   <Copy className="mr-2 h-4 w-4" />
-                                  Copy ID
+                                  Duplicate
                                 </DropdownMenuItem>
                                 <DropdownMenuItem 
                                   onClick={() => handleDelete(booking.id)}
@@ -654,9 +667,9 @@ const UpcomingBookings = () => {
                                 <Edit className="h-4 w-4 mr-2" />
                                 Edit
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleCopy(booking.id)}>
+                              <DropdownMenuItem onClick={() => handleDuplicate(booking)}>
                                 <Copy className="h-4 w-4 mr-2" />
-                                Copy ID
+                                Duplicate
                               </DropdownMenuItem>
                               <DropdownMenuItem 
                                 onClick={() => handleDelete(booking.id)}
@@ -719,6 +732,14 @@ const UpcomingBookings = () => {
           </Button>
         </div>
       )}
+      
+      {/* Duplicate Booking Dialog */}
+      <DuplicateBookingDialog
+        open={duplicateDialogOpen}
+        onOpenChange={setDuplicateDialogOpen}
+        booking={selectedBookingForDuplicate}
+        onSuccess={handleDuplicateSuccess}
+      />
     </div>
   );
 };
