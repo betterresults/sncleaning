@@ -193,17 +193,18 @@ const CustomersSection = () => {
   }, []);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 relative">
+      <div className="flex justify-between items-center relative z-10">
         <h3 className="text-lg font-semibold">Customers</h3>
         <button
           onClick={handleCreateCustomerClick}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer ${
+          className={`relative z-20 inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer border-0 outline-none focus:outline-none hover:scale-105 ${
             showCreateCustomerForm 
-              ? 'bg-slate-600 hover:bg-slate-700 text-white border border-slate-500' 
+              ? 'bg-slate-600 hover:bg-slate-700 text-white shadow-md hover:shadow-lg' 
               : 'bg-blue-900 hover:bg-blue-800 text-white shadow-lg hover:shadow-xl'
           }`}
           type="button"
+          style={{ pointerEvents: 'auto' }}
         >
           <UserPlus className="h-4 w-4" />
           {showCreateCustomerForm ? 'Cancel' : 'Create New Customer'}
@@ -272,7 +273,9 @@ const CustomersSection = () => {
           <button
             onClick={createCustomer}
             disabled={creating}
-            className="bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            className="relative z-20 bg-blue-900 hover:bg-blue-800 text-white px-6 py-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105"
+            type="button"
+            style={{ pointerEvents: 'auto' }}
           >
             {creating ? 'Creating...' : 'Create Customer'}
           </button>

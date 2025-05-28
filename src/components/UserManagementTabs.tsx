@@ -15,7 +15,7 @@ const UserManagementTabs = () => {
   };
 
   return (
-    <Card>
+    <Card className="relative">
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle>User & Customer Management</CardTitle>
@@ -23,7 +23,7 @@ const UserManagementTabs = () => {
             onClick={refreshUsers}
             variant="outline"
             size="sm"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 relative z-10"
           >
             <RefreshCw className="h-4 w-4" />
             Refresh Users
@@ -38,7 +38,7 @@ const UserManagementTabs = () => {
           </TabsList>
           
           <TabsContent value="users">
-            <UsersSection key={refreshKey} />
+            <UsersSection refreshKey={refreshKey} />
           </TabsContent>
           
           <TabsContent value="customers">

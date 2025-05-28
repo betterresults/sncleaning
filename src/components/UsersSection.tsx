@@ -17,10 +17,10 @@ interface UserData {
 }
 
 interface UsersSectionProps {
-  key?: number;
+  refreshKey?: number;
 }
 
-const UsersSection = ({ key }: UsersSectionProps) => {
+const UsersSection = ({ refreshKey }: UsersSectionProps) => {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateUserForm, setShowCreateUserForm] = useState(false);
@@ -195,20 +195,21 @@ const UsersSection = ({ key }: UsersSectionProps) => {
 
   useEffect(() => {
     fetchUsers();
-  }, [key]);
+  }, [refreshKey]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 relative">
+      <div className="flex justify-between items-center relative z-10">
         <h3 className="text-lg font-semibold">System Users ({users.length})</h3>
         <button
           onClick={handleCreateUserClick}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer ${
+          className={`relative z-20 inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer border-0 outline-none focus:outline-none hover:scale-105 ${
             showCreateUserForm 
-              ? 'bg-slate-600 hover:bg-slate-700 text-white border border-slate-500' 
+              ? 'bg-slate-600 hover:bg-slate-700 text-white shadow-md hover:shadow-lg' 
               : 'bg-blue-900 hover:bg-blue-800 text-white shadow-lg hover:shadow-xl'
           }`}
           type="button"
+          style={{ pointerEvents: 'auto' }}
         >
           <UserPlus className="h-4 w-4" />
           {showCreateUserForm ? 'Cancel' : 'Create New User'}
