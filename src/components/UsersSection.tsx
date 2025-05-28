@@ -2,8 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { UserPlus, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -17,10 +15,6 @@ interface UserData {
     last_name?: string;
   };
   role?: 'guest' | 'user' | 'admin';
-  cleaner_id?: number;
-  customer_id?: number;
-  cleaner_name?: string;
-  customer_name?: string;
 }
 
 interface UsersSectionProps {
@@ -38,28 +32,13 @@ const UsersSection = ({ key }: UsersSectionProps) => {
     try {
       setLoading(true);
       setFetchError(null);
-      console.log('=== FETCHING USERS WITH RELATIONSHIPS DEBUG ===');
+      console.log('=== FETCHING USERS DEBUG ===');
       
-      // Get all profiles with cleaner and customer relationships using specific foreign key names
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          cleaners!fk_profiles_cleaner (
-            id,
-            first_name,
-            last_name,
-            email
-          ),
-          customers!fk_profiles_customer (
-            id,
-            first_name,
-            last_name,
-            email
-          )
-        `);
+        .select('*');
       
-      console.log('Profiles with relationships:', profiles?.length || 0, profiles);
+      console.log('Profiles:', profiles?.length || 0, profiles);
       
       if (profilesError) {
         console.error('Error fetching profiles:', profilesError);
@@ -71,7 +50,6 @@ const UsersSection = ({ key }: UsersSectionProps) => {
         console.warn('No profiles found in the database');
       }
       
-      // Get user roles from user_roles table
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('*');
@@ -82,7 +60,6 @@ const UsersSection = ({ key }: UsersSectionProps) => {
         console.error('Error fetching user roles:', rolesError);
       }
 
-      // Create a map of user roles for easy lookup
       const roleMap = new Map();
       if (userRoles) {
         userRoles.forEach(role => {
@@ -90,25 +67,14 @@ const UsersSection = ({ key }: UsersSectionProps) => {
         });
       }
 
-      // Process profiles with role and relationship data
       const processedUsers = profiles?.map(profile => {
         const userRole = roleMap.get(profile.user_id) || profile.role || 'guest';
-        
-        // Extract cleaner/customer names
-        const cleaner_name = profile.cleaners ? 
-          `${profile.cleaners.first_name || ''} ${profile.cleaners.last_name || ''}`.trim() : null;
-        const customer_name = profile.customers ? 
-          `${profile.customers.first_name || ''} ${profile.customers.last_name || ''}`.trim() : null;
         
         console.log(`Processing user ${profile.email}:`, {
           profile_role: profile.role,
           user_roles_role: roleMap.get(profile.user_id),
           final_role: userRole,
-          user_id: profile.user_id,
-          cleaner_id: profile.cleaner_id,
-          customer_id: profile.customer_id,
-          cleaner_name,
-          customer_name
+          user_id: profile.user_id
         });
         
         return {
@@ -118,15 +84,11 @@ const UsersSection = ({ key }: UsersSectionProps) => {
             first_name: profile.first_name || '',
             last_name: profile.last_name || ''
           },
-          role: userRole as 'guest' | 'user' | 'admin',
-          cleaner_id: profile.cleaner_id,
-          customer_id: profile.customer_id,
-          cleaner_name,
-          customer_name
+          role: userRole as 'guest' | 'user' | 'admin'
         };
       }) || [];
 
-      console.log('Final processed users with relationships:', processedUsers);
+      console.log('Final processed users:', processedUsers);
       
       if (processedUsers.length === 0) {
         setFetchError("No users found. This might indicate a database issue or that no users have been created yet.");
@@ -151,10 +113,8 @@ const UsersSection = ({ key }: UsersSectionProps) => {
     try {
       console.log(`Updating user ${userId} role to ${newRole}`);
       
-      // Ensure the role is one of the valid types
       const validRole = newRole as 'guest' | 'user' | 'admin';
       
-      // First try to update user_roles table
       const { data: existingRole, error: checkError } = await supabase
         .from('user_roles')
         .select('id')
@@ -162,7 +122,6 @@ const UsersSection = ({ key }: UsersSectionProps) => {
         .single();
       
       if (existingRole) {
-        // Update existing role in user_roles
         const { error: updateError } = await supabase
           .from('user_roles')
           .update({ role: validRole })
@@ -170,7 +129,6 @@ const UsersSection = ({ key }: UsersSectionProps) => {
         
         if (updateError) throw updateError;
       } else {
-        // Insert new role in user_roles
         const { error: insertError } = await supabase
           .from('user_roles')
           .insert({ user_id: userId, role: validRole });
@@ -178,7 +136,6 @@ const UsersSection = ({ key }: UsersSectionProps) => {
         if (insertError) throw insertError;
       }
       
-      // Also update profiles table for consistency
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ role: validRole })
@@ -230,6 +187,11 @@ const UsersSection = ({ key }: UsersSectionProps) => {
     }
   };
 
+  const handleCreateUserClick = () => {
+    console.log('Create user button clicked');
+    setShowCreateUserForm(!showCreateUserForm);
+  };
+
   useEffect(() => {
     fetchUsers();
   }, [key]);
@@ -239,9 +201,10 @@ const UsersSection = ({ key }: UsersSectionProps) => {
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">System Users ({users.length})</h3>
         <Button 
-          onClick={() => setShowCreateUserForm(!showCreateUserForm)}
+          onClick={handleCreateUserClick}
           variant={showCreateUserForm ? "outline" : "default"}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 cursor-pointer"
+          type="button"
         >
           <UserPlus className="h-4 w-4" />
           {showCreateUserForm ? 'Cancel' : 'Create New User'}
@@ -258,10 +221,13 @@ const UsersSection = ({ key }: UsersSectionProps) => {
         </Alert>
       )}
 
-      {/* Create User Form */}
-      {showCreateUserForm && <CreateUserForm onSuccess={fetchUsers} />}
+      {showCreateUserForm && (
+        <CreateUserForm onSuccess={() => {
+          fetchUsers();
+          setShowCreateUserForm(false);
+        }} />
+      )}
 
-      {/* Users List */}
       <div>
         {loading ? (
           <div className="text-center py-4">Loading users...</div>
