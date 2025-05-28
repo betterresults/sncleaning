@@ -8,8 +8,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { CalendarDays, User, MapPin, Clock, Banknote, Plus } from 'lucide-react';
+import { CalendarDays, User, MapPin, Clock, Banknote, Home } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Checkbox } from '@/components/ui/checkbox';
 import CustomerSelector from './CustomerSelector';
 import CleanerSelector from './CleanerSelector';
 
@@ -41,6 +42,7 @@ interface BookingData {
   cleaningType: string;
   propertyDetails: string;
   additionalDetails: string;
+  carpetCleaning: boolean;
   
   // Payment
   paymentMethod: string;
@@ -64,14 +66,15 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
     totalCost: 0,
     cleanerPay: 0,
     formName: 'Standard Cleaning',
-    cleaningType: 'Regular',
+    cleaningType: 'Domestic',
     propertyDetails: '',
     additionalDetails: '',
+    carpetCleaning: false,
     paymentMethod: 'Cash',
     paymentStatus: 'Unpaid'
   });
 
-  const handleInputChange = (field: keyof BookingData, value: string | number) => {
+  const handleInputChange = (field: keyof BookingData, value: string | number | boolean) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -128,6 +131,8 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
     calculateCleanerPay();
   }, [formData.totalCost]);
 
+  const showCarpetCleaningOption = formData.formName === 'Deep Cleaning' || formData.formName === 'End of Tenancy';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -149,7 +154,7 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
         form_name: formData.formName,
         cleaning_type: formData.cleaningType,
         property_details: formData.propertyDetails,
-        additional_details: formData.additionalDetails,
+        additional_details: `${formData.additionalDetails}${formData.carpetCleaning ? ' - Carpet cleaning included' : ''}`,
         payment_method: formData.paymentMethod,
         payment_status: formData.paymentStatus,
         booking_status: 'Confirmed'
@@ -245,56 +250,18 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
         </CardContent>
       </Card>
 
-      {/* Cleaner Selection */}
+      {/* Service Details */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Cleaner Assignment
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CleanerSelector onCleanerSelect={handleCleanerSelect} />
-        </CardContent>
-      </Card>
-
-      {/* Booking Details */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarDays className="h-5 w-5" />
-            Booking Details
+            <Home className="h-5 w-5" />
+            Service Details
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="dateTime">Date & Time *</Label>
-              <Input
-                id="dateTime"
-                type="datetime-local"
-                value={formData.dateTime}
-                onChange={(e) => handleInputChange('dateTime', e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="hoursRequired">Hours Required *</Label>
-              <Input
-                id="hoursRequired"
-                type="number"
-                step="0.5"
-                min="1"
-                value={formData.hoursRequired}
-                onChange={(e) => handleInputChange('hoursRequired', parseFloat(e.target.value) || 0)}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="formName">Service Type</Label>
+              <Label htmlFor="formName">Cleaning Service *</Label>
               <Select value={formData.formName} onValueChange={(value) => handleInputChange('formName', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select service type" />
@@ -308,20 +275,64 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
               </Select>
             </div>
             <div>
-              <Label htmlFor="cleaningType">Cleaning Type</Label>
+              <Label htmlFor="cleaningType">Property Type *</Label>
               <Select value={formData.cleaningType} onValueChange={(value) => handleInputChange('cleaningType', value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select cleaning type" />
+                  <SelectValue placeholder="Select property type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Regular">Regular</SelectItem>
-                  <SelectItem value="One-off">One-off</SelectItem>
-                  <SelectItem value="Weekly">Weekly</SelectItem>
-                  <SelectItem value="Fortnightly">Fortnightly</SelectItem>
-                  <SelectItem value="Monthly">Monthly</SelectItem>
+                  <SelectItem value="Domestic">Domestic</SelectItem>
+                  <SelectItem value="Commercial">Commercial</SelectItem>
+                  <SelectItem value="Air BnB">Air BnB</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="hoursRequired">Hours Required *</Label>
+              <Input
+                id="hoursRequired"
+                type="number"
+                step="0.5"
+                min="1"
+                value={formData.hoursRequired}
+                onChange={(e) => handleInputChange('hoursRequired', parseFloat(e.target.value) || 0)}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="dateTime">Date & Time *</Label>
+              <Input
+                id="dateTime"
+                type="datetime-local"
+                value={formData.dateTime}
+                onChange={(e) => handleInputChange('dateTime', e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          {showCarpetCleaningOption && (
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="carpetCleaning"
+                checked={formData.carpetCleaning}
+                onCheckedChange={(checked) => handleInputChange('carpetCleaning', checked as boolean)}
+              />
+              <Label htmlFor="carpetCleaning">Include Carpet Cleaning</Label>
+            </div>
+          )}
+
+          <div>
+            <Label htmlFor="propertyDetails">Property Details</Label>
+            <Textarea
+              id="propertyDetails"
+              value={formData.propertyDetails}
+              onChange={(e) => handleInputChange('propertyDetails', e.target.value)}
+              placeholder="Bedrooms, bathrooms, special requirements..."
+            />
           </div>
         </CardContent>
       </Card>
@@ -344,24 +355,13 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
               required
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="postcode">Postcode *</Label>
-              <Input
-                id="postcode"
-                value={formData.postcode}
-                onChange={(e) => handleInputChange('postcode', e.target.value)}
-                required
-              />
-            </div>
-          </div>
           <div>
-            <Label htmlFor="propertyDetails">Property Details</Label>
-            <Textarea
-              id="propertyDetails"
-              value={formData.propertyDetails}
-              onChange={(e) => handleInputChange('propertyDetails', e.target.value)}
-              placeholder="Bedrooms, bathrooms, special requirements..."
+            <Label htmlFor="postcode">Postcode *</Label>
+            <Input
+              id="postcode"
+              value={formData.postcode}
+              onChange={(e) => handleInputChange('postcode', e.target.value)}
+              required
             />
           </div>
         </CardContent>
@@ -434,6 +434,19 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
               placeholder="Any special instructions or requirements..."
             />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Cleaner Selection - At the end */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Cleaner Assignment
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <CleanerSelector onCleanerSelect={handleCleanerSelect} />
         </CardContent>
       </Card>
 

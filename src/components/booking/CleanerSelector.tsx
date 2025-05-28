@@ -3,8 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Plus, Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Plus } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import CreateCleanerDialog from './CreateCleanerDialog';
 
@@ -23,8 +22,6 @@ interface CleanerSelectorProps {
 
 const CleanerSelector = ({ onCleanerSelect }: CleanerSelectorProps) => {
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
-  const [filteredCleaners, setFilteredCleaners] = useState<Cleaner[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
   const [selectedCleanerId, setSelectedCleanerId] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
@@ -42,7 +39,6 @@ const CleanerSelector = ({ onCleanerSelect }: CleanerSelectorProps) => {
       }
 
       setCleaners(data || []);
-      setFilteredCleaners(data || []);
     } catch (error) {
       console.error('Error fetching cleaners:', error);
     } finally {
@@ -53,19 +49,6 @@ const CleanerSelector = ({ onCleanerSelect }: CleanerSelectorProps) => {
   useEffect(() => {
     fetchCleaners();
   }, []);
-
-  useEffect(() => {
-    if (searchTerm) {
-      const filtered = cleaners.filter(cleaner => {
-        const fullName = cleaner.full_name || `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim();
-        return fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-               (cleaner.email && cleaner.email.toLowerCase().includes(searchTerm.toLowerCase()));
-      });
-      setFilteredCleaners(filtered);
-    } else {
-      setFilteredCleaners(cleaners);
-    }
-  }, [searchTerm, cleaners]);
 
   const handleCleanerSelect = (cleanerId: string) => {
     setSelectedCleanerId(cleanerId);
@@ -90,20 +73,6 @@ const CleanerSelector = ({ onCleanerSelect }: CleanerSelectorProps) => {
   return (
     <div className="space-y-4">
       <div>
-        <Label htmlFor="cleanerSearch">Search Existing Cleaner</Label>
-        <div className="relative">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-          <Input
-            id="cleanerSearch"
-            placeholder="Search by name or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8"
-          />
-        </div>
-      </div>
-
-      <div>
         <Label htmlFor="cleanerSelect">Select Cleaner</Label>
         <div className="flex gap-2">
           <Select value={selectedCleanerId} onValueChange={handleCleanerSelect}>
@@ -114,10 +83,10 @@ const CleanerSelector = ({ onCleanerSelect }: CleanerSelectorProps) => {
               <SelectItem value="new">+ Create New Cleaner</SelectItem>
               {loading ? (
                 <SelectItem value="loading" disabled>Loading cleaners...</SelectItem>
-              ) : filteredCleaners.length === 0 ? (
+              ) : cleaners.length === 0 ? (
                 <SelectItem value="no-cleaners" disabled>No cleaners found</SelectItem>
               ) : (
-                filteredCleaners.map((cleaner) => {
+                cleaners.map((cleaner) => {
                   const displayName = cleaner.full_name || `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim();
                   return (
                     <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
