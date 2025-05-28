@@ -8,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Edit, Trash2, Copy, Filter, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail, Banknote, CheckCircle, XCircle, AlertCircle, X } from 'lucide-react';
+import { Edit, Trash2, Copy, Filter, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail, Banknote, CheckCircle, XCircle, AlertCircle, X, Edit3 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import BulkEditPastBookingsDialog from './BulkEditPastBookingsDialog';
 
 interface PastBooking {
   id: number;
@@ -86,6 +87,7 @@ const PastBookingsTable = () => {
   const [duplicateDialog, setDuplicateDialog] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<PastBooking | null>(null);
   const [newDateTime, setNewDateTime] = useState('');
+  const [bulkEditDialog, setBulkEditDialog] = useState(false);
 
   const getTimePeriodDates = (period: string) => {
     const now = new Date();
@@ -671,6 +673,15 @@ const PastBookingsTable = () => {
               </SelectContent>
             </Select>
           </div>
+
+          <Button
+            onClick={() => setBulkEditDialog(true)}
+            className="flex items-center gap-2 h-7 sm:h-8 text-xs sm:text-sm"
+            size="sm"
+          >
+            <Edit3 className="h-3 w-3 sm:h-4 sm:w-4" />
+            Bulk Edit
+          </Button>
         </div>
 
         <div className="text-xs sm:text-sm text-gray-600 w-full sm:w-auto text-left sm:text-right">
@@ -986,6 +997,15 @@ const PastBookingsTable = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Edit Past Bookings Dialog */}
+      <BulkEditPastBookingsDialog
+        open={bulkEditDialog}
+        onOpenChange={setBulkEditDialog}
+        onSuccess={() => {
+          fetchData();
+        }}
+      />
     </div>
   );
 };
