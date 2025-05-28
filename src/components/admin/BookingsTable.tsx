@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -23,20 +24,30 @@ interface Booking {
   cleaning_type: string;
   total_cost: number;
   payment_status: string;
-  cleaner: number;
+  cleaner: number | null;
   customer: number;
-  cleaner_name?: string;
-  customer_name?: string;
   cleaners?: {
     id: number;
     first_name: string;
     last_name: string;
-  };
+  } | null;
   customers?: {
     id: number;
     first_name: string;
     last_name: string;
-  };
+  } | null;
+}
+
+interface Cleaner {
+  id: number;
+  first_name: string;
+  last_name: string;
+}
+
+interface Customer {
+  id: number;
+  first_name: string;
+  last_name: string;
 }
 
 interface Filters {
@@ -50,9 +61,10 @@ interface Filters {
 const BookingsTable = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
-  const [cleaners, setCleaners] = useState<any[]>([]);
-  const [customers, setCustomers] = useState<any[]>([]);
+  const [cleaners, setCleaners] = useState<Cleaner[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -67,6 +79,7 @@ const BookingsTable = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setError(null);
 
       // Fetch bookings with related data
       const { data: bookingsData, error: bookingsError } = await supabase
@@ -89,28 +102,43 @@ const BookingsTable = () => {
 
       if (bookingsError) {
         console.error('Error fetching bookings:', bookingsError);
+        setError('Failed to load bookings: ' + bookingsError.message);
         return;
       }
 
       // Fetch cleaners for filter dropdown
-      const { data: cleanersData } = await supabase
+      const { data: cleanersData, error: cleanersError } = await supabase
         .from('cleaners')
         .select('id, first_name, last_name')
         .order('first_name');
 
+      if (cleanersError) {
+        console.error('Error fetching cleaners:', cleanersError);
+      }
+
       // Fetch customers for filter dropdown
-      const { data: customersData } = await supabase
+      const { data: customersData, error: customersError } = await supabase
         .from('customers')
         .select('id, first_name, last_name')
         .order('first_name');
 
-      console.log('Fetched bookings:', bookingsData);
+      if (customersError) {
+        console.error('Error fetching customers:', customersError);
+      }
+
+      console.log('Fetched data:', {
+        bookings: bookingsData?.length || 0,
+        cleaners: cleanersData?.length || 0,
+        customers: customersData?.length || 0
+      });
+
       setBookings(bookingsData || []);
       setCleaners(cleanersData || []);
       setCustomers(customersData || []);
 
     } catch (error) {
       console.error('Error fetching data:', error);
+      setError('An unexpected error occurred');
     } finally {
       setLoading(false);
     }
@@ -168,8 +196,27 @@ const BookingsTable = () => {
     });
   };
 
+  const getCleanerName = (booking: Booking) => {
+    // If no cleaner is assigned
+    if (!booking.cleaner) {
+      return 'Unsigned';
+    }
+
+    // Check if we have cleaner data from the join
+    if (booking.cleaners) {
+      return `${booking.cleaners.first_name} ${booking.cleaners.last_name}`;
+    }
+
+    // Fallback to cleaners array lookup
+    const cleaner = cleaners.find(c => c.id === booking.cleaner);
+    if (cleaner) {
+      return `${cleaner.first_name} ${cleaner.last_name}`;
+    }
+
+    return 'Unsigned';
+  };
+
   const handleEdit = (bookingId: number) => {
-    // TODO: Implement edit functionality
     console.log('Edit booking:', bookingId);
   };
 
@@ -236,38 +283,26 @@ const BookingsTable = () => {
     }
   };
 
-  const getCleanerName = (booking: Booking) => {
-    console.log('Getting cleaner name for booking:', booking.id, 'cleaner ID:', booking.cleaner);
-    
-    // If no cleaner is assigned
-    if (!booking.cleaner) {
-      console.log('No cleaner assigned');
-      return 'Unsigned';
-    }
-
-    // Check if we have cleaner data from the join
-    if (booking.cleaners) {
-      console.log('Found cleaner from join:', booking.cleaners);
-      return `${booking.cleaners.first_name} ${booking.cleaners.last_name}`;
-    }
-
-    // Fallback to cleaners array lookup
-    const cleaner = cleaners.find(c => c.id === booking.cleaner);
-    if (cleaner) {
-      console.log('Found cleaner from array:', cleaner);
-      return `${cleaner.first_name} ${cleaner.last_name}`;
-    }
-
-    console.log('No cleaner found for ID:', booking.cleaner);
-    return 'Unsigned';
-  };
-
-  const getCustomerName = (customerId: number) => {
-    const customer = customers.find(c => c.id === customerId);
-    return customer ? `${customer.first_name} ${customer.last_name}` : 'N/A';
-  };
-
   const hasActiveFilters = Object.values(filters).some(value => value !== '');
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-8">
+        <div className="text-lg">Loading bookings...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-red-600 mb-4">{error}</div>
+        <Button onClick={fetchData}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -430,13 +465,7 @@ const BookingsTable = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">
-                      Loading bookings...
-                    </TableCell>
-                  </TableRow>
-                ) : paginatedBookings.length === 0 ? (
+                {paginatedBookings.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={9} className="text-center py-8">
                       No bookings found
