@@ -2,7 +2,6 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { CleanerSidebar } from '@/components/CleanerSidebar';
 import CleanerUpcomingBookings from '@/components/cleaner/CleanerUpcomingBookings';
@@ -10,15 +9,19 @@ import CleanerUpcomingBookings from '@/components/cleaner/CleanerUpcomingBooking
 const CleanerDashboard = () => {
   const { user, userRole, cleanerId, loading } = useAuth();
 
+  console.log('CleanerDashboard - Auth state:', { user: !!user, userRole, cleanerId, loading });
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
+        <div className="text-lg">Loading cleaner dashboard...</div>
       </div>
     );
   }
 
+  // Only allow users with role 'user' who have a cleanerId
   if (!user || userRole !== 'user' || !cleanerId) {
+    console.log('CleanerDashboard - Redirecting to auth. User:', !!user, 'Role:', userRole, 'CleanerId:', cleanerId);
     return <Navigate to="/auth" replace />;
   }
 
@@ -31,19 +34,19 @@ const CleanerDashboard = () => {
             <SidebarTrigger className="-ml-1" />
             <div className="flex-1" />
             <div className="text-sm text-gray-600">
-              Welcome, {user.email}
+              Cleaner Dashboard - {user.email}
             </div>
           </header>
           
           <main className="flex-1 space-y-4 p-8 pt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>My Upcoming Bookings</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CleanerUpcomingBookings />
-              </CardContent>
-            </Card>
+            <div className="mb-6">
+              <h1 className="text-3xl font-bold tracking-tight">My Dashboard</h1>
+              <p className="text-muted-foreground">
+                Welcome to your cleaner dashboard. Here you can view your upcoming bookings and manage your schedule.
+              </p>
+            </div>
+            
+            <CleanerUpcomingBookings />
           </main>
         </SidebarInset>
       </div>

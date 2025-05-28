@@ -17,7 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 
 export function CleanerSidebar() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, cleanerId } = useAuth();
   const location = useLocation();
 
   const handleSignOut = async () => {
@@ -30,26 +30,34 @@ export function CleanerSidebar() {
 
   const menuItems = [
     {
-      title: "Upcoming Bookings",
+      title: "My Bookings",
       url: "/cleaner-dashboard",
       icon: Calendar,
+      description: "View upcoming bookings"
     },
     {
       title: "Past Bookings",
       url: "/cleaner-past-bookings",
       icon: History,
+      description: "View completed bookings"
     },
     {
-      title: "Earnings",
+      title: "My Earnings",
       url: "/cleaner-earnings",
       icon: DollarSign,
+      description: "View earnings and payments"
     },
   ];
 
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
-        <h2 className="text-lg font-semibold">Cleaner Dashboard</h2>
+        <div className="space-y-2">
+          <h2 className="text-lg font-semibold text-primary">Cleaner Portal</h2>
+          <p className="text-sm text-muted-foreground">
+            Cleaner ID: {cleanerId}
+          </p>
+        </div>
       </SidebarHeader>
       
       <SidebarContent>
@@ -62,9 +70,12 @@ export function CleanerSidebar() {
                     asChild
                     isActive={location.pathname === item.url}
                   >
-                    <Link to={item.url}>
+                    <Link to={item.url} className="w-full">
                       <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                      <div className="flex flex-col items-start">
+                        <span className="font-medium">{item.title}</span>
+                        <span className="text-xs text-muted-foreground">{item.description}</span>
+                      </div>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -78,9 +89,12 @@ export function CleanerSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <div className="flex items-center">
+              <div className="flex items-center space-x-2">
                 <User className="h-4 w-4" />
-                <span className="truncate">{user?.email}</span>
+                <div className="flex flex-col items-start">
+                  <span className="text-sm font-medium">Signed in as:</span>
+                  <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
+                </div>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
