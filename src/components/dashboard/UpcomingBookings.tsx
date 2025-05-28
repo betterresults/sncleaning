@@ -270,14 +270,18 @@ const UpcomingBookings = () => {
 
     const cleaner = cleaners.find((c) => c.id === booking.cleaner);
     if (cleaner) {
-      return { name: cleaner.name, pay: cleaner.pay };
+      // Return the actual cleaner_pay from booking instead of hourly rate
+      return { name: cleaner.name, pay: booking.cleaner_pay || 0 };
     }
 
-    return { name: 'Unknown', pay: 0 };
+    return { name: 'Unknown', pay: booking.cleaner_pay || 0 };
   };
 
   const handleEdit = (booking: Booking) => {
-    console.log('Edit booking', booking.id);
+    // TODO: Implement edit functionality
+    console.log('Edit booking functionality not yet implemented for booking:', booking.id);
+    // For now, we'll just log that it needs to be implemented
+    alert('Edit functionality will be implemented soon');
   };
 
   const handleCopy = (bookingId: number) => {
@@ -633,7 +637,7 @@ const UpcomingBookings = () => {
                                   <span className="font-medium">{cleanerInfo.name}</span>
                                 </div>
                               )}
-                              <div className="text-xs text-green-600 font-medium flex items-center mt-1">
+                              <div className="text-xs text-gray-600 font-medium flex items-center mt-1">
                                 <Banknote className="h-3 w-3 mr-1" />
                                 Pay: £{cleanerInfo.pay.toFixed(2)}
                               </div>
@@ -687,6 +691,7 @@ const UpcomingBookings = () => {
                           : "hover:bg-gray-50 transition-colors"
                         }
                       >
+                        {/* Date & Time */}
                         <TableCell className="text-xs sm:text-sm">
                           <div className="flex flex-col space-y-1">
                             <div className="flex items-center space-x-1 sm:space-x-2">
@@ -703,6 +708,8 @@ const UpcomingBookings = () => {
                             </div>
                           </div>
                         </TableCell>
+
+                        {/* Customer */}
                         <TableCell className="text-xs sm:text-sm">
                           <div className="space-y-1">
                             <div className="flex items-center space-x-1 sm:space-x-2">
@@ -721,6 +728,8 @@ const UpcomingBookings = () => {
                             </div>
                           </div>
                         </TableCell>
+
+                        {/* Address */}
                         <TableCell className="text-xs sm:text-sm hidden sm:table-cell">
                           <div className="flex items-center space-x-1 sm:space-x-2">
                             <MapPin className="h-2 w-2 sm:h-3 sm:w-3 text-gray-400" />
@@ -730,11 +739,15 @@ const UpcomingBookings = () => {
                             </div>
                           </div>
                         </TableCell>
+
+                        {/* Service */}
                         <TableCell className="text-xs sm:text-sm hidden lg:table-cell">
                           <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
                             {booking.form_name}
                           </span>
                         </TableCell>
+
+                        {/* Cleaner */}
                         <TableCell className="text-xs sm:text-sm">
                           {isUnassigned ? (
                             <div className="space-y-1">
@@ -749,7 +762,7 @@ const UpcomingBookings = () => {
                                 </div>
                                 <UserPlus className="h-3 w-3 text-red-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                               </button>
-                              <div className="text-xs text-red-600 font-medium flex items-center pl-1 sm:pl-2">
+                              <div className="text-xs text-gray-600 font-medium flex items-center pl-1 sm:pl-2">
                                 <Banknote className="h-2 w-2 sm:h-3 sm:w-3 mr-1 sm:mr-2" />
                                 Pay: £{cleanerInfo.pay.toFixed(2)}
                               </div>
@@ -760,18 +773,22 @@ const UpcomingBookings = () => {
                                 <User className="h-2 w-2 sm:h-3 sm:w-3 text-gray-400" />
                                 <span className="font-medium">{cleanerInfo.name}</span>
                               </div>
-                              <div className="text-xs text-green-600 font-medium flex items-center">
+                              <div className="text-xs text-gray-600 font-medium flex items-center">
                                 <Banknote className="h-2 w-2 sm:h-3 sm:w-3 mr-1 sm:mr-2" />
                                 Pay: £{cleanerInfo.pay.toFixed(2)}
                               </div>
                             </div>
                           )}
                         </TableCell>
+
+                        {/* Cost */}
                         <TableCell className="text-xs sm:text-sm">
                           <span className="font-semibold text-green-600">
                             £{Number(booking.total_cost).toFixed(2)}
                           </span>
                         </TableCell>
+
+                        {/* Actions */}
                         <TableCell className="text-xs sm:text-sm">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
