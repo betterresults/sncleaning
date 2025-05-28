@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -198,18 +199,18 @@ const UsersSection = ({ refreshKey }: UsersSectionProps) => {
   }, [refreshKey]);
 
   return (
-    <div className="space-y-6 relative">
-      <div className="flex justify-between items-center relative z-10">
+    <div className="space-y-6 relative z-0">
+      <div className="flex justify-between items-center relative z-30">
         <h3 className="text-lg font-semibold">System Users ({users.length})</h3>
         <button
           onClick={handleCreateUserClick}
-          className={`relative z-20 inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer border-0 outline-none focus:outline-none hover:scale-105 ${
+          className={`relative z-50 inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer border-0 outline-none focus:outline-none hover:scale-105 ${
             showCreateUserForm 
               ? 'bg-slate-600 hover:bg-slate-700 text-white shadow-md hover:shadow-lg' 
               : 'bg-blue-900 hover:bg-blue-800 text-white shadow-lg hover:shadow-xl'
           }`}
           type="button"
-          style={{ pointerEvents: 'auto' }}
+          style={{ pointerEvents: 'auto', position: 'relative', zIndex: 9999 }}
         >
           <UserPlus className="h-4 w-4" />
           {showCreateUserForm ? 'Cancel' : 'Create New User'}

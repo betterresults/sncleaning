@@ -15,7 +15,7 @@ const UserManagementTabs = () => {
   };
 
   return (
-    <Card className="relative">
+    <Card className="relative z-0">
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle>User & Customer Management</CardTitle>
@@ -30,18 +30,18 @@ const UserManagementTabs = () => {
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="relative z-0">
         <Tabs defaultValue="users" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="customers">Customers</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="users">
+          <TabsContent value="users" className="relative z-0">
             <UsersSection refreshKey={refreshKey} />
           </TabsContent>
           
-          <TabsContent value="customers">
+          <TabsContent value="customers" className="relative z-0">
             <CustomersSection />
           </TabsContent>
         </Tabs>

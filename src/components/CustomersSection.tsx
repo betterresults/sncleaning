@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -193,18 +194,18 @@ const CustomersSection = () => {
   }, []);
 
   return (
-    <div className="space-y-6 relative">
-      <div className="flex justify-between items-center relative z-10">
+    <div className="space-y-6 relative z-0">
+      <div className="flex justify-between items-center relative z-30">
         <h3 className="text-lg font-semibold">Customers</h3>
         <button
           onClick={handleCreateCustomerClick}
-          className={`relative z-20 inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer border-0 outline-none focus:outline-none hover:scale-105 ${
+          className={`relative z-50 inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer border-0 outline-none focus:outline-none hover:scale-105 ${
             showCreateCustomerForm 
               ? 'bg-slate-600 hover:bg-slate-700 text-white shadow-md hover:shadow-lg' 
               : 'bg-blue-900 hover:bg-blue-800 text-white shadow-lg hover:shadow-xl'
           }`}
           type="button"
-          style={{ pointerEvents: 'auto' }}
+          style={{ pointerEvents: 'auto', position: 'relative', zIndex: 9999 }}
         >
           <UserPlus className="h-4 w-4" />
           {showCreateCustomerForm ? 'Cancel' : 'Create New Customer'}
@@ -273,9 +274,9 @@ const CustomersSection = () => {
           <button
             onClick={createCustomer}
             disabled={creating}
-            className="relative z-20 bg-blue-900 hover:bg-blue-800 text-white px-6 py-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105"
+            className="relative z-50 bg-blue-900 hover:bg-blue-800 text-white px-6 py-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105"
             type="button"
-            style={{ pointerEvents: 'auto' }}
+            style={{ pointerEvents: 'auto', position: 'relative', zIndex: 9999 }}
           >
             {creating ? 'Creating...' : 'Create Customer'}
           </button>
