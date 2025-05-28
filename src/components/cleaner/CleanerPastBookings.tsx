@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { CalendarDays, Clock, MapPin, User, Banknote, Camera, Search, Filter, X, Upload } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface PastBooking {
   id: number;
@@ -35,6 +37,7 @@ interface Filters {
 
 const CleanerPastBookings = () => {
   const { cleanerId, loading: authLoading } = useAuth();
+  const isMobile = useIsMobile();
   const [bookings, setBookings] = useState<PastBooking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<PastBooking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -182,13 +185,73 @@ const CleanerPastBookings = () => {
   // Calculate total earnings for current period
   const totalEarnings = filteredBookings.reduce((sum, booking) => sum + (booking.cleaner_pay || 0), 0);
 
+  const MobileBookingCard = ({ booking }: { booking: PastBooking }) => (
+    <Card className="mb-4">
+      <CardContent className="p-4">
+        <div className="space-y-3">
+          {/* Date and Time */}
+          <div className="flex items-center space-x-2">
+            <CalendarDays className="h-4 w-4 text-gray-400" />
+            <div className="text-sm font-medium">
+              {booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy HH:mm') : 'No date'}
+            </div>
+          </div>
+
+          {/* Customer */}
+          <div className="flex items-start space-x-2">
+            <User className="h-4 w-4 text-gray-400 mt-0.5" />
+            <div className="flex-1">
+              <div className="font-medium text-sm">{booking.first_name} {booking.last_name}</div>
+              <div className="text-xs text-gray-500">{booking.email}</div>
+              <div className="text-xs text-gray-500">{booking.phone_number}</div>
+            </div>
+          </div>
+
+          {/* Address */}
+          <div className="flex items-start space-x-2">
+            <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
+            <div className="flex-1 text-sm text-gray-700">
+              <div>{booking.address}</div>
+              {booking.postcode && (
+                <div className="text-gray-500 font-medium">{booking.postcode}</div>
+              )}
+            </div>
+          </div>
+
+          {/* Service and Earnings */}
+          <div className="flex justify-between items-center">
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              {booking.form_name || 'Standard Cleaning'}
+            </span>
+            <div className="flex items-center space-x-1">
+              <Banknote className="h-4 w-4 text-green-600" />
+              <span className="font-semibold text-green-600 text-sm">
+                £{booking.cleaner_pay?.toFixed(2) || '0.00'}
+              </span>
+            </div>
+          </div>
+
+          {/* Upload Button */}
+          <Button 
+            onClick={() => handleUploadPhotos(booking.id)}
+            size="sm"
+            className="w-full flex items-center gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            Upload Photos
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-700">
+            <CardTitle className="text-xs sm:text-sm font-medium text-green-700">
               Total Earnings - {filters.timePeriod === 'current-month' ? 'Current Month' : 
                               filters.timePeriod === 'last-month' ? 'Last Month' :
                               filters.timePeriod === 'last-3-months' ? 'Last 3 Months' :
@@ -197,14 +260,14 @@ const CleanerPastBookings = () => {
             <Banknote className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-900">£{totalEarnings.toFixed(2)}</div>
+            <div className="text-xl sm:text-2xl font-bold text-green-900">£{totalEarnings.toFixed(2)}</div>
             <p className="text-xs text-green-600">From completed bookings</p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-blue-700">
+            <CardTitle className="text-xs sm:text-sm font-medium text-blue-700">
               Completed Bookings - {filters.timePeriod === 'current-month' ? 'Current Month' : 
                                   filters.timePeriod === 'last-month' ? 'Last Month' :
                                   filters.timePeriod === 'last-3-months' ? 'Last 3 Months' :
@@ -213,7 +276,7 @@ const CleanerPastBookings = () => {
             <CalendarDays className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-900">{filteredBookings.length}</div>
+            <div className="text-xl sm:text-2xl font-bold text-blue-900">{filteredBookings.length}</div>
             <p className="text-xs text-blue-600">Total bookings completed</p>
           </CardContent>
         </Card>
@@ -222,14 +285,15 @@ const CleanerPastBookings = () => {
       {/* Time Period Filter Buttons */}
       <Card className="shadow-sm">
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Time Period</CardTitle>
+          <CardTitle className="text-base sm:text-lg">Time Period</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
             <Button
               variant={filters.timePeriod === 'current-month' ? 'default' : 'outline'}
               onClick={() => setFilters({...filters, timePeriod: 'current-month'})}
               size="sm"
+              className="text-xs sm:text-sm"
             >
               Current Month
             </Button>
@@ -237,6 +301,7 @@ const CleanerPastBookings = () => {
               variant={filters.timePeriod === 'last-month' ? 'default' : 'outline'}
               onClick={() => setFilters({...filters, timePeriod: 'last-month'})}
               size="sm"
+              className="text-xs sm:text-sm"
             >
               Last Month
             </Button>
@@ -244,6 +309,7 @@ const CleanerPastBookings = () => {
               variant={filters.timePeriod === 'last-3-months' ? 'default' : 'outline'}
               onClick={() => setFilters({...filters, timePeriod: 'last-3-months'})}
               size="sm"
+              className="text-xs sm:text-sm"
             >
               Last 3 Months
             </Button>
@@ -251,6 +317,7 @@ const CleanerPastBookings = () => {
               variant={filters.timePeriod === 'last-6-months' ? 'default' : 'outline'}
               onClick={() => setFilters({...filters, timePeriod: 'last-6-months'})}
               size="sm"
+              className="text-xs sm:text-sm"
             >
               Last 6 Months
             </Button>
@@ -258,6 +325,7 @@ const CleanerPastBookings = () => {
               variant={filters.timePeriod === 'all' ? 'default' : 'outline'}
               onClick={() => setFilters({...filters, timePeriod: 'all'})}
               size="sm"
+              className="text-xs sm:text-sm col-span-2 sm:col-span-1"
             >
               All Time
             </Button>
@@ -268,33 +336,35 @@ const CleanerPastBookings = () => {
       {/* Additional Filters */}
       <Card className="shadow-sm">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Filter className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Filter className="h-4 w-5" />
             Additional Filters
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="dateFrom" className="text-sm font-medium">Date From</Label>
-              <Input
-                id="dateFrom"
-                type="date"
-                value={filters.dateFrom}
-                onChange={(e) => setFilters({...filters, dateFrom: e.target.value})}
-                className="h-9"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="dateTo" className="text-sm font-medium">Date To</Label>
-              <Input
-                id="dateTo"
-                type="date"
-                value={filters.dateTo}
-                onChange={(e) => setFilters({...filters, dateTo: e.target.value})}
-                className="h-9"
-              />
+          <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="dateFrom" className="text-sm font-medium">Date From</Label>
+                <Input
+                  id="dateFrom"
+                  type="date"
+                  value={filters.dateFrom}
+                  onChange={(e) => setFilters({...filters, dateFrom: e.target.value})}
+                  className="h-9"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="dateTo" className="text-sm font-medium">Date To</Label>
+                <Input
+                  id="dateTo"
+                  type="date"
+                  value={filters.dateTo}
+                  onChange={(e) => setFilters({...filters, dateTo: e.target.value})}
+                  className="h-9"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -311,21 +381,19 @@ const CleanerPastBookings = () => {
               </div>
             </div>
 
-            <div className="flex items-end">
-              <Button onClick={clearFilters} variant="outline" className="h-9">
-                <X className="mr-2 h-4 w-4" />
-                Clear Filters
-              </Button>
-            </div>
+            <Button onClick={clearFilters} variant="outline" className="h-9 w-full sm:w-auto">
+              <X className="mr-2 h-4 w-4" />
+              Clear Filters
+            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Past Bookings Table */}
+      {/* Past Bookings */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
           <div>
-            <CardTitle>My Past Bookings</CardTitle>
+            <CardTitle className="text-base sm:text-lg">My Past Bookings</CardTitle>
             <p className="text-sm text-gray-600">
               {filteredBookings.length} completed booking{filteredBookings.length !== 1 ? 's' : ''}
             </p>
@@ -337,90 +405,102 @@ const CleanerPastBookings = () => {
               No past bookings found
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Address</TableHead>
-                    <TableHead>Service</TableHead>
-                    <TableHead>Earnings</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+            <>
+              {/* Mobile view */}
+              {isMobile ? (
+                <div className="space-y-4">
                   {filteredBookings.map((booking) => (
-                    <TableRow key={booking.id}>
-                      <TableCell>
-                        <div className="flex items-start space-x-3">
-                          <div className="flex flex-col items-center space-y-1">
-                            <CalendarDays className="h-4 w-4 text-gray-400" />
-                            <Clock className="h-4 w-4 text-gray-400" />
-                          </div>
-                          <div>
-                            <div className="font-medium">
-                              {booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : 'No date'}
-                            </div>
-                            <div className="text-gray-500 text-sm">
-                              {booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'No time'}
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="font-medium flex items-center">
-                            <User className="h-3 w-3 mr-2 text-gray-400" />
-                            {booking.first_name} {booking.last_name}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {booking.email}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {booking.phone_number}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-start space-x-2 max-w-48">
-                          <MapPin className="h-3 w-3 mt-0.5 text-gray-400 flex-shrink-0" />
-                          <div className="text-sm text-gray-700 leading-tight">
-                            <div>{booking.address}</div>
-                            {booking.postcode && (
-                              <div className="text-gray-500 font-medium">{booking.postcode}</div>
-                            )}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                          {booking.form_name || 'Standard Cleaning'}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Banknote className="h-4 w-4 text-green-600" />
-                          <span className="font-semibold text-green-600">
-                            £{booking.cleaner_pay?.toFixed(2) || '0.00'}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Button 
-                          onClick={() => handleUploadPhotos(booking.id)}
-                          size="sm"
-                          className="flex items-center gap-2"
-                        >
-                          <Upload className="h-4 w-4" />
-                          Upload Photos
-                        </Button>
-                      </TableCell>
-                    </TableRow>
+                    <MobileBookingCard key={booking.id} booking={booking} />
                   ))}
-                </TableBody>
-              </Table>
-            </div>
+                </div>
+              ) : (
+                /* Desktop view */
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Address</TableHead>
+                        <TableHead>Service</TableHead>
+                        <TableHead>Earnings</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredBookings.map((booking) => (
+                        <TableRow key={booking.id}>
+                          <TableCell>
+                            <div className="flex items-start space-x-3">
+                              <div className="flex flex-col items-center space-y-1">
+                                <CalendarDays className="h-4 w-4 text-gray-400" />
+                                <Clock className="h-4 w-4 text-gray-400" />
+                              </div>
+                              <div>
+                                <div className="font-medium">
+                                  {booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : 'No date'}
+                                </div>
+                                <div className="text-gray-500 text-sm">
+                                  {booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'No time'}
+                                </div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="font-medium flex items-center">
+                                <User className="h-3 w-3 mr-2 text-gray-400" />
+                                {booking.first_name} {booking.last_name}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {booking.email}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {booking.phone_number}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-start space-x-2 max-w-48">
+                              <MapPin className="h-3 w-3 mt-0.5 text-gray-400 flex-shrink-0" />
+                              <div className="text-sm text-gray-700 leading-tight">
+                                <div>{booking.address}</div>
+                                {booking.postcode && (
+                                  <div className="text-gray-500 font-medium">{booking.postcode}</div>
+                                )}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                              {booking.form_name || 'Standard Cleaning'}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <Banknote className="h-4 w-4 text-green-600" />
+                              <span className="font-semibold text-green-600">
+                                £{booking.cleaner_pay?.toFixed(2) || '0.00'}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Button 
+                              onClick={() => handleUploadPhotos(booking.id)}
+                              size="sm"
+                              className="flex items-center gap-2"
+                            >
+                              <Upload className="h-4 w-4" />
+                              Upload Photos
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
