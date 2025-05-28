@@ -217,14 +217,14 @@ export type Database = {
             columns: ["cleaner"]
             isOneToOne: false
             referencedRelation: "cleaners"
-            referencedColumns: ["frontly_id"]
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "bookings_customer_fkey"
             columns: ["customer"]
             isOneToOne: false
             referencedRelation: "customers"
-            referencedColumns: ["frontly_id"]
+            referencedColumns: ["id"]
           },
         ]
       }
