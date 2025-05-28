@@ -6,6 +6,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CalendarIcon, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -76,11 +77,27 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
   onSuccess,
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date>();
-  const [selectedTime, setSelectedTime] = useState('');
+  const [selectedHour, setSelectedHour] = useState('');
+  const [selectedMinute, setSelectedMinute] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // Generate hour options (0-23)
+  const hourOptions = Array.from({ length: 24 }, (_, i) => {
+    const hour = i.toString().padStart(2, '0');
+    return { value: hour, label: hour };
+  });
+
+  // Generate minute options (00, 15, 30, 45)
+  const minuteOptions = [
+    { value: '00', label: '00' },
+    { value: '15', label: '15' },
+    { value: '30', label: '30' },
+    { value: '45', label: '45' }
+  ];
+
   const handleDuplicate = async () => {
-    if (!booking || !selectedDate || !selectedTime) {
+    if (!booking || !selectedDate || !selectedHour || !selectedMinute) {
+      console.log('Missing required fields:', { booking: !!booking, selectedDate, selectedHour, selectedMinute });
       return;
     }
 
@@ -88,9 +105,10 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
 
     try {
       // Combine date and time
-      const [hours, minutes] = selectedTime.split(':').map(Number);
       const newDateTime = new Date(selectedDate);
-      newDateTime.setHours(hours, minutes, 0, 0);
+      newDateTime.setHours(parseInt(selectedHour), parseInt(selectedMinute), 0, 0);
+
+      console.log('Creating duplicate booking with date:', newDateTime.toISOString());
 
       // Create duplicate booking data (excluding id and date_time)
       const { id, date_time, ...bookingData } = booking;
@@ -103,6 +121,8 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
         cleaner_pay: null, // Reset cleaner pay
         booking_status: null, // Reset booking status
       };
+
+      console.log('Inserting duplicate booking data:', duplicateData);
 
       const { error } = await supabase
         .from('bookings')
@@ -119,7 +139,8 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
       
       // Reset form
       setSelectedDate(undefined);
-      setSelectedTime('');
+      setSelectedHour('');
+      setSelectedMinute('');
     } catch (error) {
       console.error('Error duplicating booking:', error);
     } finally {
@@ -127,7 +148,7 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
     }
   };
 
-  const isFormValid = selectedDate && selectedTime;
+  const isFormValid = selectedDate && selectedHour && selectedMinute;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -178,17 +199,46 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="time">New Time</Label>
-            <div className="relative">
-              <Clock className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-              <Input
-                type="time"
-                value={selectedTime}
-                onChange={(e) => setSelectedTime(e.target.value)}
-                className="pl-10"
-                placeholder="Select time"
-              />
+            <Label>New Time</Label>
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-1">
+                <Clock className="h-4 w-4 text-gray-400" />
+                <Select value={selectedHour} onValueChange={setSelectedHour}>
+                  <SelectTrigger className="w-20">
+                    <SelectValue placeholder="Hour" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {hourOptions.map((hour) => (
+                      <SelectItem key={hour.value} value={hour.value}>
+                        {hour.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <span className="text-gray-500">:</span>
+              
+              <div>
+                <Select value={selectedMinute} onValueChange={setSelectedMinute}>
+                  <SelectTrigger className="w-20">
+                    <SelectValue placeholder="Min" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {minuteOptions.map((minute) => (
+                      <SelectItem key={minute.value} value={minute.value}>
+                        {minute.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+            {selectedHour && selectedMinute && (
+              <p className="text-xs text-gray-500 mt-1">
+                Selected time: {selectedHour}:{selectedMinute}
+              </p>
+            )}
           </div>
         </div>
 
