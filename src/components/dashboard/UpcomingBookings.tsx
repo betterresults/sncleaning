@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -20,7 +21,8 @@ interface Booking {
   address: string;
   postcode: string;
   form_name: string;
-  total_cost: string;
+  total_cost: number; // Changed from string to number to match database
+  booking_status: string; // Added missing property
   cleaner: number | null;
   cleaners?: {
     id: number;
@@ -156,9 +158,9 @@ const UpcomingBookings = () => {
   };
 
   useEffect(() => {
-    // Calculate total revenue
+    // Calculate total revenue - now handling number type correctly
     const total = filteredBookings.reduce(
-      (sum, booking) => sum + parseFloat(booking.total_cost),
+      (sum, booking) => sum + Number(booking.total_cost),
       0
     );
     setTotalRevenue(total);
@@ -222,68 +224,68 @@ const UpcomingBookings = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center p-8">
-        <div className="text-lg">Loading upcoming bookings...</div>
+      <div className="flex justify-center items-center p-4 sm:p-8">
+        <div className="text-sm sm:text-lg">Loading upcoming bookings...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center p-8">
-        <div className="text-red-600 mb-4">{error}</div>
-        <Button onClick={fetchData}>Retry</Button>
+      <div className="text-center p-4 sm:p-8">
+        <div className="text-red-600 mb-4 text-sm sm:text-base">{error}</div>
+        <Button onClick={fetchData} size="sm">Retry</Button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-3 sm:space-y-4 lg:space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
         <Card>
-          <CardContent className="p-3 sm:p-6">
+          <CardContent className="p-3 sm:p-4 lg:p-6">
             <div className="flex items-center space-x-2">
-              <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+              <CalendarDays className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-blue-600" />
               <div>
                 <p className="text-xs sm:text-sm font-medium text-gray-600">Total Bookings</p>
-                <p className="text-lg sm:text-2xl font-bold">{filteredBookings.length}</p>
+                <p className="text-sm sm:text-lg lg:text-2xl font-bold">{filteredBookings.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-3 sm:p-6">
+          <CardContent className="p-3 sm:p-4 lg:p-6">
             <div className="flex items-center space-x-2">
-              <Banknote className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+              <Banknote className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-green-600" />
               <div>
                 <p className="text-xs sm:text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-lg sm:text-2xl font-bold">£{totalRevenue.toFixed(2)}</p>
+                <p className="text-sm sm:text-lg lg:text-2xl font-bold">£{totalRevenue.toFixed(2)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-3 sm:p-6">
+          <CardContent className="p-3 sm:p-4 lg:p-6">
             <div className="flex items-center space-x-2">
-              <User className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+              <User className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-green-600" />
               <div>
                 <p className="text-xs sm:text-sm font-medium text-gray-600">Assigned</p>
-                <p className="text-lg sm:text-2xl font-bold">{assignedBookings}</p>
+                <p className="text-sm sm:text-lg lg:text-2xl font-bold">{assignedBookings}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-3 sm:p-6">
+          <CardContent className="p-3 sm:p-4 lg:p-6">
             <div className="flex items-center space-x-2">
-              <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
+              <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-red-600" />
               <div>
                 <p className="text-xs sm:text-sm font-medium text-gray-600">Unassigned</p>
-                <p className="text-lg sm:text-2xl font-bold text-red-600">{unassignedBookings}</p>
+                <p className="text-sm sm:text-lg lg:text-2xl font-bold text-red-600">{unassignedBookings}</p>
               </div>
             </div>
           </CardContent>
@@ -292,14 +294,14 @@ const UpcomingBookings = () => {
 
       {/* Filters */}
       <Card>
-        <CardHeader className="pb-3 sm:pb-4">
-          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-            <Filter className="h-4 w-4 sm:h-5 sm:w-5" />
+        <CardHeader className="pb-2 sm:pb-3 lg:pb-4">
+          <CardTitle className="text-sm sm:text-base lg:text-lg flex items-center gap-2">
+            <Filter className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
             Filters
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 sm:space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4">
             <div>
               <Label htmlFor="dateFrom" className="text-xs sm:text-sm">Date From</Label>
               <Input
@@ -329,7 +331,7 @@ const UpcomingBookings = () => {
                   placeholder="Name or email..."
                   value={filters.customerSearch}
                   onChange={(e) => setFilters({ ...filters, customerSearch: e.target.value })}
-                  className="pl-7 sm:pl-8 text-xs sm:text-sm"
+                  className="pl-6 sm:pl-8 text-xs sm:text-sm"
                 />
               </div>
             </div>
@@ -363,7 +365,7 @@ const UpcomingBookings = () => {
       </Card>
 
       {/* Table Controls */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
           <div className="flex items-center gap-2">
             <Label htmlFor="itemsPerPage" className="text-xs sm:text-sm">Show:</Label>
@@ -371,7 +373,7 @@ const UpcomingBookings = () => {
               value={itemsPerPage.toString()}
               onValueChange={(value) => handleItemsPerPageChange(Number(value))}
             >
-              <SelectTrigger className="w-20 text-xs sm:text-sm">
+              <SelectTrigger className="w-16 sm:w-20 text-xs sm:text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -388,7 +390,7 @@ const UpcomingBookings = () => {
               value={sortOrder}
               onValueChange={(value: 'asc' | 'desc') => handleSortOrderChange(value)}
             >
-              <SelectTrigger className="w-32 text-xs sm:text-sm">
+              <SelectTrigger className="w-28 sm:w-32 text-xs sm:text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -412,8 +414,8 @@ const UpcomingBookings = () => {
                 <TableRow>
                   <TableHead className="text-xs sm:text-sm">Date & Time</TableHead>
                   <TableHead className="text-xs sm:text-sm">Customer</TableHead>
-                  <TableHead className="text-xs sm:text-sm">Address</TableHead>
-                  <TableHead className="text-xs sm:text-sm">Service</TableHead>
+                  <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Address</TableHead>
+                  <TableHead className="text-xs sm:text-sm hidden lg:table-cell">Service</TableHead>
                   <TableHead className="text-xs sm:text-sm">Cleaner</TableHead>
                   <TableHead className="text-xs sm:text-sm">Cost</TableHead>
                   <TableHead className="text-xs sm:text-sm">Actions</TableHead>
@@ -422,7 +424,7 @@ const UpcomingBookings = () => {
               <TableBody>
                 {paginatedBookings.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-sm sm:text-base text-gray-500">
+                    <TableCell colSpan={7} className="text-center py-4 sm:py-8 text-xs sm:text-sm text-gray-500">
                       No upcoming bookings found
                     </TableCell>
                   </TableRow>
@@ -435,20 +437,20 @@ const UpcomingBookings = () => {
                       <TableRow 
                         key={booking.id} 
                         className={isUnassigned 
-                          ? "hover:bg-red-50 transition-colors bg-red-50/50 border-l-4 border-red-500" 
+                          ? "hover:bg-red-50 transition-colors bg-red-50/50 border-l-2 sm:border-l-4 border-red-500" 
                           : "hover:bg-gray-50 transition-colors"
                         }
                       >
                         <TableCell className="text-xs sm:text-sm">
                           <div className="flex flex-col space-y-1">
-                            <div className="flex items-center space-x-2">
-                              <CalendarDays className="h-3 w-3 text-gray-400" />
+                            <div className="flex items-center space-x-1 sm:space-x-2">
+                              <CalendarDays className="h-2 w-2 sm:h-3 sm:w-3 text-gray-400" />
                               <span className="font-medium">
                                 {format(new Date(booking.date_time), 'dd/MM/yyyy')}
                               </span>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <Clock className="h-3 w-3 text-gray-400" />
+                            <div className="flex items-center space-x-1 sm:space-x-2">
+                              <Clock className="h-2 w-2 sm:h-3 sm:w-3 text-gray-400" />
                               <span className="text-gray-600">
                                 {format(new Date(booking.date_time), 'HH:mm')}
                               </span>
@@ -457,32 +459,32 @@ const UpcomingBookings = () => {
                         </TableCell>
                         <TableCell className="text-xs sm:text-sm">
                           <div className="space-y-1">
-                            <div className="flex items-center space-x-2">
-                              <User className="h-3 w-3 text-gray-400" />
+                            <div className="flex items-center space-x-1 sm:space-x-2">
+                              <User className="h-2 w-2 sm:h-3 sm:w-3 text-gray-400" />
                               <span className="font-medium">
                                 {booking.first_name} {booking.last_name}
                               </span>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <Mail className="h-3 w-3 text-gray-400" />
+                            <div className="flex items-center space-x-1 sm:space-x-2 sm:hidden lg:flex">
+                              <Mail className="h-2 w-2 sm:h-3 sm:w-3 text-gray-400" />
                               <span className="text-gray-600 truncate">{booking.email}</span>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <Phone className="h-3 w-3 text-gray-400" />
+                            <div className="flex items-center space-x-1 sm:space-x-2 sm:hidden lg:flex">
+                              <Phone className="h-2 w-2 sm:h-3 sm:w-3 text-gray-400" />
                               <span className="text-gray-600">{booking.phone_number}</span>
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="text-xs sm:text-sm">
-                          <div className="flex items-center space-x-2">
-                            <MapPin className="h-3 w-3 text-gray-400" />
+                        <TableCell className="text-xs sm:text-sm hidden sm:table-cell">
+                          <div className="flex items-center space-x-1 sm:space-x-2">
+                            <MapPin className="h-2 w-2 sm:h-3 sm:w-3 text-gray-400" />
                             <div>
                               <div className="font-medium">{booking.address}</div>
                               <div className="text-gray-600">{booking.postcode}</div>
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="text-xs sm:text-sm">
+                        <TableCell className="text-xs sm:text-sm hidden lg:table-cell">
                           <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
                             {booking.form_name}
                           </span>
@@ -490,23 +492,23 @@ const UpcomingBookings = () => {
                         <TableCell className="text-xs sm:text-sm">
                           {isUnassigned ? (
                             <div className="space-y-1">
-                              <div className="flex items-center space-x-2 bg-red-100 px-3 py-2 rounded-lg border border-red-200">
-                                <AlertTriangle className="h-4 w-4 text-red-600" />
-                                <span className="text-sm font-semibold text-red-700">Unassigned</span>
+                              <div className="flex items-center space-x-1 sm:space-x-2 bg-red-100 px-2 sm:px-3 py-1 sm:py-2 rounded-lg border border-red-200">
+                                <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-red-600" />
+                                <span className="text-xs sm:text-sm font-semibold text-red-700">Unassigned</span>
                               </div>
-                              <div className="text-xs text-red-600 font-medium flex items-center pl-2">
-                                <Banknote className="h-3 w-3 mr-2" />
+                              <div className="text-xs text-red-600 font-medium flex items-center pl-1 sm:pl-2">
+                                <Banknote className="h-2 w-2 sm:h-3 sm:w-3 mr-1 sm:mr-2" />
                                 Pay: £{cleanerInfo.pay.toFixed(2)}
                               </div>
                             </div>
                           ) : (
                             <div className="space-y-1">
-                              <div className="flex items-center space-x-2">
-                                <User className="h-3 w-3 text-gray-400" />
+                              <div className="flex items-center space-x-1 sm:space-x-2">
+                                <User className="h-2 w-2 sm:h-3 sm:w-3 text-gray-400" />
                                 <span className="font-medium">{cleanerInfo.name}</span>
                               </div>
                               <div className="text-xs text-green-600 font-medium flex items-center">
-                                <Banknote className="h-3 w-3 mr-2" />
+                                <Banknote className="h-2 w-2 sm:h-3 sm:w-3 mr-1 sm:mr-2" />
                                 Pay: £{cleanerInfo.pay.toFixed(2)}
                               </div>
                             </div>
@@ -514,14 +516,14 @@ const UpcomingBookings = () => {
                         </TableCell>
                         <TableCell className="text-xs sm:text-sm">
                           <span className="font-semibold text-green-600">
-                            £{parseFloat(booking.total_cost).toFixed(2)}
+                            £{Number(booking.total_cost).toFixed(2)}
                           </span>
                         </TableCell>
                         <TableCell className="text-xs sm:text-sm">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
+                              <Button variant="ghost" size="sm" className="h-6 w-6 sm:h-8 sm:w-8 p-0">
+                                <MoreHorizontal className="h-3 w-3 sm:h-4 sm:w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
@@ -555,7 +557,7 @@ const UpcomingBookings = () => {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-4">
           <div className="text-xs sm:text-sm text-gray-600">
             Page {currentPage} of {totalPages}
           </div>
