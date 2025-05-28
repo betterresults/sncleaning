@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -8,6 +7,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import { AppSidebar } from '@/components/AppSidebar';
 import DashboardStats from '@/components/admin/DashboardStats';
 import BookingsTable from '@/components/admin/BookingsTable';
+import CreateCleanerUsersUtility from '@/components/admin/CreateCleanerUsersUtility';
 
 const AdminDashboard = () => {
   const { user, userRole, loading } = useAuth();
@@ -44,6 +44,8 @@ const AdminDashboard = () => {
             <div className="space-y-6 sm:space-y-8">
               <DashboardStats />
               
+              <CreateCleanerUsersUtility />
+              
               <Card>
                 <CardHeader className="pb-3 sm:pb-6">
                   <CardTitle className="text-lg sm:text-xl">Upcoming Bookings Management</CardTitle>
@@ -61,4 +63,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-
