@@ -23,8 +23,17 @@ const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
   });
   const { toast } = useToast();
 
-  const createUser = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    if (!newUser.email || !newUser.password || !newUser.firstName || !newUser.lastName) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please fill in all required fields',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     try {
       setCreating(true);
@@ -87,7 +96,7 @@ const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
         </AlertDescription>
       </Alert>
 
-      <form onSubmit={createUser} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="userFirstName">First Name</Label>
@@ -129,6 +138,7 @@ const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
               onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
               placeholder="Enter password"
               required
+              minLength={6}
             />
           </div>
         </div>
@@ -150,9 +160,10 @@ const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
         </div>
         <Button 
           type="submit" 
-          disabled={creating || !newUser.email || !newUser.password || !newUser.firstName || !newUser.lastName}
+          disabled={creating}
+          className="w-full"
         >
-          {creating ? 'Creating...' : 'Create User'}
+          {creating ? 'Creating User...' : 'Create User'}
         </Button>
       </form>
     </div>
