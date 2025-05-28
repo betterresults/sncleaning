@@ -300,15 +300,18 @@ const UpcomingBookings = () => {
 
       if (error) {
         console.error('Error deleting booking:', error);
+        setError('Failed to delete booking: ' + error.message);
         return;
       }
 
       console.log('Booking deleted successfully');
-      fetchData(); // Refresh the data
       setDeleteDialogOpen(false);
       setSelectedBookingForDelete(null);
+      // Refresh the data after successful deletion
+      await fetchData();
     } catch (error) {
       console.error('Error deleting booking:', error);
+      setError('An unexpected error occurred while deleting');
     }
   };
 
@@ -357,55 +360,54 @@ const UpcomingBookings = () => {
 
   return (
     <div className="space-y-3 sm:space-y-4 lg:space-y-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
-        <Card>
-          <CardContent className="p-3 sm:p-4 lg:p-6">
-            <div className="flex items-center space-x-2">
-              <CalendarDays className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-blue-600" />
+      {/* Enhanced Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200 shadow-lg">
+          <CardContent className="p-4 lg:p-6">
+            <div className="flex items-center space-x-3">
+              <div className="bg-blue-500 p-3 rounded-full">
+                <CalendarDays className="h-6 w-6 text-white" />
+              </div>
               <div>
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Total Bookings</p>
-                <p className="text-sm sm:text-lg lg:text-2xl font-bold">{filteredBookings.length}</p>
+                <p className="text-sm font-medium text-blue-700">Total Bookings</p>
+                <p className="text-3xl font-bold text-blue-900">{filteredBookings.length}</p>
+                <p className="text-xs text-blue-600">Upcoming bookings</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-3 sm:p-4 lg:p-6">
-            <div className="flex items-center space-x-2">
-              <Banknote className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-green-600" />
+        <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200 shadow-lg">
+          <CardContent className="p-4 lg:p-6">
+            <div className="flex items-center space-x-3">
+              <div className="bg-green-500 p-3 rounded-full">
+                <Banknote className="h-6 w-6 text-white" />
+              </div>
               <div>
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-sm sm:text-lg lg:text-2xl font-bold">£{totalRevenue.toFixed(2)}</p>
+                <p className="text-sm font-medium text-green-700">Total Revenue</p>
+                <p className="text-3xl font-bold text-green-900">£{totalRevenue.toFixed(2)}</p>
+                <p className="text-xs text-green-600">Expected revenue</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-3 sm:p-4 lg:p-6">
-            <div className="flex items-center space-x-2">
-              <User className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-green-600" />
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Assigned</p>
-                <p className="text-sm sm:text-lg lg:text-2xl font-bold">{assignedBookings}</p>
+        {unassignedBookings > 0 && (
+          <Card className="bg-gradient-to-r from-red-50 to-red-100 border-red-200 shadow-lg">
+            <CardContent className="p-4 lg:p-6">
+              <div className="flex items-center space-x-3">
+                <div className="bg-red-500 p-3 rounded-full">
+                  <AlertTriangle className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-red-700">Unassigned</p>
+                  <p className="text-3xl font-bold text-red-900">{unassignedBookings}</p>
+                  <p className="text-xs text-red-600">Need cleaner assignment</p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-3 sm:p-4 lg:p-6">
-            <div className="flex items-center space-x-2">
-              <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-red-600" />
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-gray-600">Unassigned</p>
-                <p className="text-sm sm:text-lg lg:text-2xl font-bold text-red-600">{unassignedBookings}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Filters */}
@@ -738,7 +740,7 @@ const UpcomingBookings = () => {
                             <div className="space-y-1">
                               <button
                                 onClick={() => handleAssignCleaner(booking.id)}
-                                className="flex items-center space-x-2 bg-red-100 hover:bg-red-200 px-3 py-2 rounded-lg border border-red-200 transition-colors cursor-pointer w-full text-left group"
+                                className="flex items-center space-x-2 bg-red-100 hover:bg-red-200 px-3 py-2 rounded-lg border border-red-200 transition-colors cursor-pointer w-full text-left group min-h-[44px]"
                               >
                                 <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0" />
                                 <div className="flex-1">
