@@ -184,30 +184,40 @@ const CleanerPastBookings = () => {
 
   return (
     <div className="space-y-6">
-      {/* Statistics Card */}
-      <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-green-700">
-            Earnings & Bookings - {filters.timePeriod === 'current-month' ? 'Current Month' : 
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-green-700">
+              Total Earnings - {filters.timePeriod === 'current-month' ? 'Current Month' : 
                               filters.timePeriod === 'last-month' ? 'Last Month' :
                               filters.timePeriod === 'last-3-months' ? 'Last 3 Months' :
                               filters.timePeriod === 'last-6-months' ? 'Last 6 Months' : 'All Time'}
-          </CardTitle>
-          <Banknote className="h-4 w-4 text-green-600" />
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <div className="text-2xl font-bold text-green-900">£{totalEarnings.toFixed(2)}</div>
-              <p className="text-xs text-green-600">Total Earnings</p>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-green-900">{filteredBookings.length}</div>
-              <p className="text-xs text-green-600">Completed Bookings</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardTitle>
+            <Banknote className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-900">£{totalEarnings.toFixed(2)}</div>
+            <p className="text-xs text-green-600">From completed bookings</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-blue-700">
+              Completed Bookings - {filters.timePeriod === 'current-month' ? 'Current Month' : 
+                                  filters.timePeriod === 'last-month' ? 'Last Month' :
+                                  filters.timePeriod === 'last-3-months' ? 'Last 3 Months' :
+                                  filters.timePeriod === 'last-6-months' ? 'Last 6 Months' : 'All Time'}
+            </CardTitle>
+            <CalendarDays className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-900">{filteredBookings.length}</div>
+            <p className="text-xs text-blue-600">Total bookings completed</p>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Time Period Filter Buttons */}
       <Card className="shadow-sm">

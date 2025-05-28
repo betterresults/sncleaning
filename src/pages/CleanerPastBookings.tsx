@@ -35,20 +35,12 @@ const CleanerPastBookingsPage = () => {
           <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
             <SidebarTrigger className="-ml-1" />
             <div className="flex-1" />
-            <div className="text-sm text-gray-600">
-              Past Bookings - {user.email}
+            <div className="text-lg font-semibold">
+              Hello {firstName}! 👋
             </div>
           </header>
           
-          <main className="flex-1 space-y-4 p-8 pt-6">
-            {/* Friendly Greeting */}
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold tracking-tight">Hello {firstName}! 👋</h1>
-              <p className="text-muted-foreground">
-                View your completed booking history.
-              </p>
-            </div>
-            
+          <main className="flex-1 space-y-4 p-8 pt-6">            
             <CleanerPastBookings />
           </main>
         </SidebarInset>
