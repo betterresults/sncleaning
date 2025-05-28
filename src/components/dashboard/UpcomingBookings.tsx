@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -21,162 +20,98 @@ interface Booking {
   address: string;
   postcode: string;
   form_name: string;
-  total_cost: number;
-  cleaner: number;
-  customer: number;
-  cleaner_pay: number;
+  total_cost: string;
+  cleaner: number | null;
   cleaners?: {
     id: number;
-    first_name: string;
-    last_name: string;
     full_name: string;
-  };
-  customers?: {
-    id: number;
     first_name: string;
     last_name: string;
   };
-}
-
-interface Filters {
-  dateFrom: string;
-  dateTo: string;
-  cleanerId: string;
-  customerId: string;
-  customerSearch: string;
-}
-
-interface Stats {
-  totalBookings: number;
-  uniqueCustomers: number;
-  totalRevenue: number;
 }
 
 const UpcomingBookings = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
-  const [cleaners, setCleaners] = useState<any[]>([]);
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [stats, setStats] = useState<Stats>({
-    totalBookings: 0,
-    uniqueCustomers: 0,
-    totalRevenue: 0
-  });
+  const [cleaners, setCleaners] = useState<
+    { id: number; name: string; pay: number }[]
+  >([]);
+  const [uniqueCleaners, setUniqueCleaners] = useState<
+    { id: number; name: string }[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(20);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [filters, setFilters] = useState<Filters>({
+  const [filters, setFilters] = useState({
     dateFrom: '',
     dateTo: '',
-    cleanerId: 'all',
-    customerId: 'all',
     customerSearch: '',
+    status: 'all',
+    cleaner: 'all',
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [assignedBookings, setAssignedBookings] = useState(0);
+  const [unassignedBookings, setUnassignedBookings] = useState(0);
+
+  useEffect(() => {
+    fetchData();
+  }, [filters, sortOrder]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [bookings, filters]);
 
   const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+
     try {
-      setLoading(true);
-      setError(null);
-
-      console.log('🔍 DEBUG: Starting fetchData...');
-
-      console.log('🔍 DEBUG: Fetching cleaners...');
-      const { data: cleanersData, error: cleanersError } = await supabase
-        .from('cleaners')
-        .select('*');
-
-      console.log('🔍 DEBUG: Cleaners query result:', {
-        data: cleanersData,
-        error: cleanersError,
-        count: cleanersData?.length || 0
-      });
-
-      if (cleanersError) {
-        console.error('❌ DEBUG: Error fetching cleaners:', cleanersError);
-        setError('Failed to fetch cleaners: ' + cleanersError.message);
-        return;
-      }
-
-      console.log('🔍 DEBUG: Fetching customers...');
-      const { data: customersData, error: customersError } = await supabase
-        .from('customers')
-        .select('*');
-
-      console.log('🔍 DEBUG: Customers query result:', {
-        data: customersData,
-        error: customersError,
-        count: customersData?.length || 0
-      });
-
-      if (customersError) {
-        console.error('❌ DEBUG: Error fetching customers:', customersError);
-      }
-
-      console.log('🔍 DEBUG: Fetching bookings...');
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
-        .select(`
-          *,
-          cleaners!bookings_cleaner_fkey (
-            id,
-            first_name,
-            last_name,
-            full_name
-          ),
-          customers!bookings_customer_fkey (
-            id,
-            first_name,
-            last_name,
-            full_name
-          )
-        `)
+        .select('*')
         .gte('date_time', new Date().toISOString())
         .order('date_time', { ascending: sortOrder === 'asc' });
 
-      console.log('🔍 DEBUG: Bookings query result:', {
-        data: bookingsData,
-        error: bookingsError,
-        count: bookingsData?.length || 0
-      });
-
       if (bookingsError) {
-        console.error('❌ DEBUG: Error fetching bookings:', bookingsError);
-        setError('Failed to fetch bookings: ' + bookingsError.message);
+        console.error('Error fetching bookings:', bookingsError);
+        setError('Failed to fetch bookings');
         return;
       }
 
-      // Debug each booking's cleaner data
-      if (bookingsData && bookingsData.length > 0) {
-        console.log('🔍 DEBUG: Analyzing booking cleaner data:');
-        bookingsData.forEach((booking, index) => {
-          console.log(`🔍 DEBUG: Booking ${index + 1} (ID: ${booking.id}):`, {
-            cleaner_id: booking.cleaner,
-            cleaner_join_data: booking.cleaners,
-            cleaner_pay: booking.cleaner_pay
-          });
-        });
+      setBookings(bookingsData || []);
+
+      // Fetch cleaners
+      const { data: cleanersData, error: cleanersError } = await supabase
+        .from('cleaners')
+        .select('id, full_name, hourly_rate');
+
+      if (cleanersError) {
+        console.error('Error fetching cleaners:', cleanersError);
+        setError('Failed to fetch cleaners');
+        return;
       }
 
-      setBookings(bookingsData || []);
-      setCleaners(cleanersData || []);
-      setCustomers(customersData || []);
+      const formattedCleaners = cleanersData
+        ? cleanersData.map((cleaner) => ({
+            id: cleaner.id,
+            name: cleaner.full_name,
+            pay: cleaner.hourly_rate,
+          }))
+        : [];
+      setCleaners(formattedCleaners);
 
-      console.log('✅ DEBUG: Data loaded successfully:', {
-        cleaners: cleanersData?.length || 0,
-        customers: customersData?.length || 0,
-        bookings: bookingsData?.length || 0
-      });
-
-      console.log('🔍 DEBUG: Final state will be:', {
-        cleanersArray: cleanersData,
-        bookingsArray: bookingsData
-      });
-
+      // Extract unique cleaners for filter dropdown
+      const unique = [
+        ...new Map(
+          formattedCleaners.map((item) => [item.id, item])
+        ).values(),
+      ];
+      setUniqueCleaners(unique);
     } catch (error) {
-      console.error('❌ DEBUG: Error in fetchData:', error);
-      setError('An unexpected error occurred: ' + (error as Error).message);
+      console.error('Error in fetchData:', error);
+      setError('An unexpected error occurred');
     } finally {
       setLoading(false);
     }
@@ -185,573 +120,103 @@ const UpcomingBookings = () => {
   const applyFilters = () => {
     let filtered = [...bookings];
 
-    // Date filters
     if (filters.dateFrom) {
-      filtered = filtered.filter(booking => 
-        new Date(booking.date_time) >= new Date(filters.dateFrom)
+      filtered = filtered.filter(
+        (booking) => new Date(booking.date_time) >= new Date(filters.dateFrom)
       );
     }
     if (filters.dateTo) {
-      filtered = filtered.filter(booking => 
-        new Date(booking.date_time) <= new Date(filters.dateTo)
+      filtered = filtered.filter(
+        (booking) => new Date(booking.date_time) <= new Date(filters.dateTo)
       );
     }
-
-    // Cleaner filter
-    if (filters.cleanerId && filters.cleanerId !== 'all') {
-      filtered = filtered.filter(booking => 
-        booking.cleaner === parseInt(filters.cleanerId)
-      );
-    }
-
-    // Customer filter
-    if (filters.customerId && filters.customerId !== 'all') {
-      filtered = filtered.filter(booking => 
-        booking.customer === parseInt(filters.customerId)
-      );
-    }
-
-    // Customer search
     if (filters.customerSearch) {
-      filtered = filtered.filter(booking => 
-        `${booking.first_name} ${booking.last_name}`.toLowerCase()
-          .includes(filters.customerSearch.toLowerCase()) ||
-        booking.email.toLowerCase().includes(filters.customerSearch.toLowerCase())
+      filtered = filtered.filter(
+        (booking) =>
+          `${booking.first_name} ${booking.last_name}`
+            .toLowerCase()
+            .includes(filters.customerSearch.toLowerCase()) ||
+          booking.email.toLowerCase().includes(filters.customerSearch.toLowerCase())
+      );
+    }
+    if (filters.status !== 'all') {
+      filtered = filtered.filter(
+        (booking) => booking.booking_status === filters.status
+      );
+    }
+    if (filters.cleaner !== 'all') {
+      filtered = filtered.filter(
+        (booking) =>
+          (booking.cleaner ? booking.cleaner.toString() : 'unassigned') ===
+          filters.cleaner
       );
     }
 
     setFilteredBookings(filtered);
-    setCurrentPage(1);
-
-    // Calculate stats for filtered bookings
-    const uniqueCustomers = new Set(filtered.map(booking => booking.customer)).size;
-    const totalRevenue = filtered.reduce((sum, booking) => sum + (booking.total_cost || 0), 0);
-    
-    setStats({
-      totalBookings: filtered.length,
-      uniqueCustomers,
-      totalRevenue
-    });
   };
+
+  useEffect(() => {
+    // Calculate total revenue
+    const total = filteredBookings.reduce(
+      (sum, booking) => sum + parseFloat(booking.total_cost),
+      0
+    );
+    setTotalRevenue(total);
+
+    // Count assigned and unassigned bookings
+    const assigned = filteredBookings.filter((booking) => booking.cleaner).length;
+    const unassigned = filteredBookings.length - assigned;
+    setAssignedBookings(assigned);
+    setUnassignedBookings(unassigned);
+  }, [filteredBookings]);
 
   const clearFilters = () => {
     setFilters({
       dateFrom: '',
       dateTo: '',
-      cleanerId: 'all',
-      customerId: 'all',
       customerSearch: '',
+      status: 'all',
+      cleaner: 'all',
     });
   };
 
-  const handleEdit = (bookingId: number) => {
-    console.log('Edit booking:', bookingId);
-    // TODO: Implement edit functionality
+  const handleItemsPerPageChange = (value: number) => {
+    setItemsPerPage(value);
+    setCurrentPage(1);
   };
 
-  const handleDelete = async (bookingId: number) => {
-    if (window.confirm('Are you sure you want to delete this booking?')) {
-      try {
-        const { error } = await supabase
-          .from('bookings')
-          .delete()
-          .eq('id', bookingId);
-
-        if (error) {
-          console.error('Error deleting booking:', error);
-          return;
-        }
-
-        fetchData();
-      } catch (error) {
-        console.error('Error deleting booking:', error);
-      }
-    }
-  };
-
-  const handleDuplicate = async (booking: Booking) => {
-    try {
-      const { id, ...bookingData } = booking;
-      const { error } = await supabase
-        .from('bookings')
-        .insert([bookingData]);
-
-      if (error) {
-        console.error('Error duplicating booking:', error);
-        return;
-      }
-
-      fetchData();
-    } catch (error) {
-      console.error('Error duplicating booking:', error);
-    }
+  const handleSortOrderChange = (value: 'asc' | 'desc') => {
+    setSortOrder(value);
   };
 
   const getCleanerInfo = (booking: Booking) => {
-    console.log(`🔍 DEBUG: getCleanerInfo called for booking ${booking.id}:`, {
-      booking_cleaner_id: booking.cleaner,
-      booking_cleaners_join: booking.cleaners,
-      cleaners_array_length: cleaners.length,
-      cleaners_array: cleaners
-    });
-
-    // First try to use the cleaner data from the booking join
-    if (booking.cleaners) {
-      const name = booking.cleaners.full_name || 
-                   `${booking.cleaners.first_name || ''} ${booking.cleaners.last_name || ''}`.trim() || 
-                   'Unknown Cleaner';
-      console.log(`✅ DEBUG: Found cleaner via join for booking ${booking.id}:`, name);
-      return {
-        name,
-        pay: booking.cleaner_pay || 0
-      };
-    }
-    
-    // Fallback to cleaners array lookup if join data is missing
-    if (booking.cleaner && cleaners.length > 0) {
-      console.log(`🔍 DEBUG: Looking up cleaner ${booking.cleaner} in cleaners array for booking ${booking.id}`);
-      const cleaner = cleaners.find(c => c.id === booking.cleaner);
-      
-      if (cleaner) {
-        const name = cleaner.full_name || 
-                     `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim() || 
-                     `Cleaner ${cleaner.id}`;
-        console.log(`✅ DEBUG: Found cleaner via array lookup for booking ${booking.id}:`, name);
-        return {
-          name,
-          pay: booking.cleaner_pay || 0
-        };
-      } else {
-        console.log(`❌ DEBUG: Cleaner ${booking.cleaner} not found in cleaners array for booking ${booking.id}`);
-      }
-    }
-    
-    // If no cleaner is assigned
     if (!booking.cleaner) {
-      console.log(`🔍 DEBUG: No cleaner assigned to booking ${booking.id}`);
-      return {
-        name: 'Unassigned',
-        pay: 0
-      };
+      return { name: 'Unassigned', pay: 0 };
     }
-    
-    // If we have a cleaner ID but no cleaner data found
-    console.log(`❌ DEBUG: Cleaner ${booking.cleaner} not found anywhere for booking ${booking.id}`);
-    return {
-      name: `Cleaner not found (ID: ${booking.cleaner})`,
-      pay: booking.cleaner_pay || 0
-    };
+
+    const cleaner = cleaners.find((c) => c.id === booking.cleaner);
+    if (cleaner) {
+      return { name: cleaner.name, pay: cleaner.pay };
+    }
+
+    return { name: 'Unknown', pay: 0 };
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [sortOrder]);
+  // Placeholder functions
+  const handleEdit = (booking: Booking) => {
+    console.log('Edit booking', booking.id);
+  };
 
-  useEffect(() => {
-    applyFilters();
-  }, [bookings, filters]);
+  const handleCopy = (bookingId: number) => {
+    console.log('Copy booking ID', bookingId);
+  };
 
-  // Pagination
-  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
+  const handleDelete = (bookingId: number) => {
+    console.log('Delete booking', bookingId);
+  };
+
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedBookings = filteredBookings.slice(startIndex, startIndex + itemsPerPage);
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedBookings = filteredBookings.slice(startIndex, endIndex);
+  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-8">
-        <div className="text-lg">Loading bookings...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-8">
-        <div className="text-red-600 mb-4">{error}</div>
-        <button 
-          onClick={fetchData}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-blue-700">Total Bookings</CardTitle>
-            <CalendarDays className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-900">{stats.totalBookings}</div>
-            <p className="text-xs text-blue-600">Upcoming bookings</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-700">Unique Customers</CardTitle>
-            <User className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-900">{stats.uniqueCustomers}</div>
-            <p className="text-xs text-green-600">From upcoming bookings</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">Expected Revenue</CardTitle>
-            <span className="text-purple-600 font-bold">£</span>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-900">£{stats.totalRevenue.toFixed(2)}</div>
-            <p className="text-xs text-purple-600">From upcoming bookings</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Modern Filters */}
-      <Card className="shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Filter className="h-5 w-5" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="dateFrom" className="text-sm font-medium">Date From</Label>
-              <Input
-                id="dateFrom"
-                type="date"
-                value={filters.dateFrom}
-                onChange={(e) => setFilters({...filters, dateFrom: e.target.value})}
-                className="h-9"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="dateTo" className="text-sm font-medium">Date To</Label>
-              <Input
-                id="dateTo"
-                type="date"
-                value={filters.dateTo}
-                onChange={(e) => setFilters({...filters, dateTo: e.target.value})}
-                className="h-9"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="cleaner" className="text-sm font-medium">Cleaner</Label>
-              <Select value={filters.cleanerId} onValueChange={(value) => setFilters({...filters, cleanerId: value})}>
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="Select cleaner" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All cleaners</SelectItem>
-                  {cleaners.length > 0 ? (
-                    cleaners.map((cleaner) => {
-                      const cleanerName = cleaner.full_name || 
-                                         `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim() || 
-                                         `Cleaner ${cleaner.id}`;
-                      const cleanerId = cleaner.id?.toString() || `cleaner-${Date.now()}-${Math.random()}`;
-                      return (
-                        <SelectItem key={cleaner.id} value={cleanerId}>
-                          {cleanerName}
-                        </SelectItem>
-                      );
-                    })
-                  ) : (
-                    <SelectItem value="no-cleaners-found" disabled>No cleaners found</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="customer" className="text-sm font-medium">Customer</Label>
-              <Select value={filters.customerId} onValueChange={(value) => setFilters({...filters, customerId: value})}>
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="Select customer" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All customers</SelectItem>
-                  {customers.length > 0 ? (
-                    customers.map((customer) => {
-                      const customerId = customer.id?.toString() || `customer-${Date.now()}-${Math.random()}`;
-                      return (
-                        <SelectItem key={customer.id} value={customerId}>
-                          {customer.first_name} {customer.last_name}
-                        </SelectItem>
-                      );
-                    })
-                  ) : (
-                    <SelectItem value="no-customers-found" disabled>No customers found</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="customerSearch" className="text-sm font-medium">Search Customer</Label>
-              <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-                <Input
-                  id="customerSearch"
-                  placeholder="Search by name or email"
-                  value={filters.customerSearch}
-                  onChange={(e) => setFilters({...filters, customerSearch: e.target.value})}
-                  className="pl-8 h-9"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-end">
-              <Button onClick={clearFilters} variant="outline" className="h-9">
-                Clear Filters
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Table Controls */}
-      <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <Label htmlFor="itemsPerPage" className="text-sm font-medium">Show:</Label>
-            <Select value={itemsPerPage.toString()} onValueChange={(value) => {
-              setItemsPerPage(parseInt(value));
-              setCurrentPage(1);
-            }}>
-              <SelectTrigger className="w-20 h-8">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="20">20</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-                <SelectItem value="100">100</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Label htmlFor="sortOrder" className="text-sm font-medium">Sort:</Label>
-            <Select value={sortOrder} onValueChange={(value: 'asc' | 'desc') => setSortOrder(value)}>
-              <SelectTrigger className="w-32 h-8">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="asc">Earliest first</SelectItem>
-                <SelectItem value="desc">Latest first</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="text-sm text-gray-600">
-          Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredBookings.length)} of {filteredBookings.length} bookings
-        </div>
-      </div>
-
-      {/* Modern Table */}
-      <Card className="shadow-sm">
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-gray-50">
-                  <TableHead className="font-semibold text-base">Date & Time</TableHead>
-                  <TableHead className="font-semibold text-base">Customer</TableHead>
-                  <TableHead className="font-semibold text-base">Address</TableHead>
-                  <TableHead className="font-semibold text-base">Service</TableHead>
-                  <TableHead className="font-semibold text-base">Cleaner</TableHead>
-                  <TableHead className="font-semibold text-base">Cost</TableHead>
-                  <TableHead className="font-semibold text-center text-base">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedBookings.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-gray-500 text-base">
-                      No bookings found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  paginatedBookings.map((booking) => {
-                    const cleanerInfo = getCleanerInfo(booking);
-                    const isUnassigned = cleanerInfo.name === 'Unassigned';
-                    
-                    return (
-                      <TableRow 
-                        key={booking.id} 
-                        className={isUnassigned 
-                          ? "hover:bg-red-50 transition-colors bg-red-50/50 border-l-4 border-red-500" 
-                          : "hover:bg-gray-50 transition-colors"
-                        }
-                      >
-                        <TableCell>
-                          <div className="flex items-start space-x-3">
-                            <div className="flex flex-col items-center space-y-1">
-                              <CalendarDays className="h-4 w-4 text-gray-400" />
-                              <Clock className="h-4 w-4 text-gray-400" />
-                            </div>
-                            <div>
-                              <div className="font-medium text-base">
-                                {booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : 'No date'}
-                              </div>
-                              <div className="text-gray-500 text-sm">
-                                {booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'No time'}
-                              </div>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <div className="font-medium text-base flex items-center">
-                              <User className="h-3 w-3 mr-2 text-gray-400" />
-                              {booking.first_name} {booking.last_name}
-                            </div>
-                            <div className="text-sm text-gray-500 flex items-center">
-                              <Mail className="h-3 w-3 mr-2" />
-                              {booking.email}
-                            </div>
-                            <div className="text-sm text-gray-500 flex items-center">
-                              <Phone className="h-3 w-3 mr-2" />
-                              {booking.phone_number}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-start space-x-2 max-w-48">
-                            <MapPin className="h-3 w-3 mt-0.5 text-gray-400 flex-shrink-0" />
-                            <div className="text-sm text-gray-700 leading-tight">
-                              <div>{booking.address}</div>
-                              {booking.postcode && (
-                                <div className="text-gray-500 font-medium">{booking.postcode}</div>
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                            {booking.form_name || 'Standard Cleaning'}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          {isUnassigned ? (
-                            <div className="space-y-1">
-                              <div className="flex items-center space-x-2 bg-red-100 px-3 py-2 rounded-lg border border-red-200">
-                                <AlertTriangle className="h-4 w-4 text-red-600" />
-                                <span className="text-base font-semibold text-red-700">Unassigned</span>
-                              </div>
-                              <div className="text-sm text-red-600 font-medium flex items-center pl-2">
-                                <Banknote className="h-3 w-3 mr-2" />
-                                Pay: £{cleanerInfo.pay.toFixed(2)}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="space-y-1">
-                              <div className="flex items-center space-x-2">
-                                <User className="h-3 w-3 text-gray-400" />
-                                <span className="text-base font-medium">{cleanerInfo.name}</span>
-                              </div>
-                              <div className="text-sm text-green-600 font-medium flex items-center">
-                                <Banknote className="h-3 w-3 mr-2" />
-                                Pay: £{cleanerInfo.pay.toFixed(2)}
-                              </div>
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-semibold text-green-600 text-base">
-                            £{booking.total_cost?.toFixed(2) || '0.00'}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex justify-center">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-gray-100">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-40">
-                                <DropdownMenuItem onClick={() => handleEdit(booking.id)} className="cursor-pointer">
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDuplicate(booking)} className="cursor-pointer">
-                                  <Copy className="mr-2 h-4 w-4" />
-                                  Duplicate
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  onClick={() => handleDelete(booking.id)}
-                                  className="text-red-600 cursor-pointer"
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Modern Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center space-x-2 py-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-          >
-            Previous
-          </Button>
-          
-          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-            const pageNum = i + 1;
-            return (
-              <Button
-                key={pageNum}
-                variant={currentPage === pageNum ? "default" : "outline"}
-                size="sm"
-                onClick={() => setCurrentPage(pageNum)}
-              >
-                {pageNum}
-              </Button>
-            );
-          })}
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages}
-          >
-            Next
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default UpcomingBookings;

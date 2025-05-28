@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -38,20 +39,20 @@ const Dashboard = () => {
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+          <header className="flex h-12 sm:h-16 shrink-0 items-center gap-2 border-b px-3 sm:px-4">
             <SidebarTrigger className="-ml-1" />
             <div className="flex-1" />
-            <div className="text-sm text-gray-600">
+            <div className="text-xs sm:text-sm text-gray-600">
               Hello, {firstName}
             </div>
           </header>
           
-          <main className="flex-1 space-y-4 p-8 pt-6">
+          <main className="flex-1 space-y-3 sm:space-y-4 p-3 sm:p-6 lg:p-8 pt-3 sm:pt-6">
             <Card>
-              <CardHeader>
-                <CardTitle>Upcoming Bookings</CardTitle>
+              <CardHeader className="pb-3 sm:pb-6">
+                <CardTitle className="text-lg sm:text-xl">Upcoming Bookings</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 sm:p-6">
                 <UpcomingBookings />
               </CardContent>
             </Card>
@@ -63,3 +64,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+

@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -33,15 +34,15 @@ const CleanerDashboard = () => {
       <div className="min-h-screen flex w-full">
         <CleanerSidebar />
         <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+          <header className="flex h-12 sm:h-16 shrink-0 items-center gap-2 border-b px-3 sm:px-4">
             <SidebarTrigger className="-ml-1" />
             <div className="flex-1" />
-            <div className="text-lg font-semibold">
+            <div className="text-sm sm:text-lg font-semibold">
               Hello {firstName}! 👋
             </div>
           </header>
           
-          <main className="flex-1 space-y-4 p-8 pt-6">
+          <main className="flex-1 space-y-3 sm:space-y-4 p-3 sm:p-6 lg:p-8 pt-3 sm:pt-6">
             <CleanerUpcomingBookings />
           </main>
         </SidebarInset>
@@ -51,3 +52,4 @@ const CleanerDashboard = () => {
 };
 
 export default CleanerDashboard;
+
