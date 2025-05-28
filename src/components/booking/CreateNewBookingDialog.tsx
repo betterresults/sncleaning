@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import NewBookingForm from './NewBookingForm';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface CreateNewBookingDialogProps {
   children?: React.ReactNode;
@@ -11,10 +12,15 @@ interface CreateNewBookingDialogProps {
 
 const CreateNewBookingDialog = ({ children }: CreateNewBookingDialogProps) => {
   const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const handleBookingCreated = () => {
     setOpen(false);
-    // Optionally refresh the bookings list or show a success message
+    // Refresh all booking-related queries
+    queryClient.invalidateQueries({ queryKey: ['bookings'] });
+    queryClient.invalidateQueries({ queryKey: ['upcoming-bookings'] });
+    queryClient.invalidateQueries({ queryKey: ['past-bookings'] });
+    queryClient.invalidateQueries({ queryKey: ['available-bookings'] });
   };
 
   return (

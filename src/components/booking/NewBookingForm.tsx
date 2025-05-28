@@ -8,10 +8,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { CalendarDays, User, MapPin, Clock, Banknote, Home } from 'lucide-react';
+import { CalendarDays, User, MapPin, Clock, Banknote, Home, Calendar as CalendarIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import CustomerSelector from './CustomerSelector';
 import CleanerSelector from './CleanerSelector';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface NewBookingFormProps {
   onBookingCreated: () => void;
@@ -29,7 +33,8 @@ interface BookingData {
   cleanerId: number | null;
   
   // Booking details
-  dateTime: string;
+  selectedDate: Date | undefined;
+  selectedTime: string;
   address: string;
   postcode: string;
   
@@ -55,6 +60,10 @@ interface BookingData {
   paymentMethod: string;
   paymentStatus: string;
   
+  // Cleaner rate overrides
+  cleanerHourlyRate: number;
+  cleanerPercentage: number;
+  
   // Additional details
   propertyDetails: string;
   additionalDetails: string;
@@ -70,7 +79,8 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
     email: '',
     phoneNumber: '',
     cleanerId: null,
-    dateTime: '',
+    selectedDate: undefined,
+    selectedTime: '09:00',
     address: '',
     postcode: '',
     serviceType: '',
@@ -87,6 +97,8 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
     cleanerPay: 0,
     paymentMethod: 'Cash',
     paymentStatus: 'Unpaid',
+    cleanerHourlyRate: 0,
+    cleanerPercentage: 70,
     propertyDetails: '',
     additionalDetails: ''
   });
@@ -112,6 +124,17 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
     { value: 'other', label: 'Other arrangement' }
   ];
 
+  const timeOptions = [
+    '12:00 AM', '12:30 AM', '01:00 AM', '01:30 AM', '02:00 AM', '02:30 AM',
+    '03:00 AM', '03:30 AM', '04:00 AM', '04:30 AM', '05:00 AM', '05:30 AM',
+    '06:00 AM', '06:30 AM', '07:00 AM', '07:30 AM', '08:00 AM', '08:30 AM',
+    '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+    '12:00 PM', '12:30 PM', '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM',
+    '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM', '05:00 PM', '05:30 PM',
+    '06:00 PM', '06:30 PM', '07:00 PM', '07:30 PM', '08:00 PM', '08:30 PM',
+    '09:00 PM', '09:30 PM', '10:00 PM', '10:30 PM', '11:00 PM', '11:30 PM'
+  ];
+
   // Check if service type requires hourly input
   const requiresHours = ['domestic', 'commercial', 'airbnb'].includes(formData.serviceType);
   
@@ -124,7 +147,7 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
   // Check if service type shows additional cleaning items
   const showCleaningItems = ['end_of_tenancy', 'deep_cleaning', 'carpet_cleaning'].includes(formData.serviceType);
 
-  const handleInputChange = (field: keyof BookingData, value: string | number | boolean) => {
+  const handleInputChange = (field: keyof BookingData, value: string | number | boolean | Date) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -139,6 +162,18 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
       hoursRequired: 0,
       cleaningTime: ''
     }));
+  };
+
+  const convertTo24Hour = (time12h: string): string => {
+    const [time, modifier] = time12h.split(' ');
+    let [hours, minutes] = time.split(':');
+    if (hours === '12') {
+      hours = '00';
+    }
+    if (modifier === 'PM') {
+      hours = String(parseInt(hours, 10) + 12);
+    }
+    return `${hours}:${minutes}`;
   };
 
   const handleCustomerSelect = (customer: any) => {
@@ -169,12 +204,16 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
     if (cleaner) {
       setFormData(prev => ({
         ...prev,
-        cleanerId: cleaner.id
+        cleanerId: cleaner.id,
+        cleanerHourlyRate: cleaner.hourly_rate || 0,
+        cleanerPercentage: cleaner.presentage_rate || 70
       }));
     } else {
       setFormData(prev => ({
         ...prev,
-        cleanerId: null
+        cleanerId: null,
+        cleanerHourlyRate: 0,
+        cleanerPercentage: 70
       }));
     }
   };
@@ -188,7 +227,13 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
   };
 
   const calculateCleanerPay = () => {
-    const cleanerPay = formData.totalCost * 0.7;
+    let cleanerPay = 0;
+    if (requiresHours && formData.hoursRequired > 0 && formData.cleanerHourlyRate > 0) {
+      cleanerPay = formData.hoursRequired * formData.cleanerHourlyRate;
+    } else if (formData.cleanerPercentage > 0) {
+      cleanerPay = formData.totalCost * (formData.cleanerPercentage / 100);
+    }
+    
     setFormData(prev => ({
       ...prev,
       cleanerPay: cleanerPay
@@ -197,13 +242,29 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
 
   useEffect(() => {
     calculateCleanerPay();
-  }, [formData.totalCost]);
+  }, [formData.totalCost, formData.hoursRequired, formData.cleanerHourlyRate, formData.cleanerPercentage]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      if (!formData.selectedDate) {
+        toast({
+          title: "Error",
+          description: "Please select a date.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Combine date and time
+      const time24h = convertTo24Hour(formData.selectedTime);
+      const [hours, minutes] = time24h.split(':');
+      const dateTime = new Date(formData.selectedDate);
+      dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
       // Determine form_name based on service type and sub type
       let formName = '';
       if (showSubCategory && formData.cleaningSubType) {
@@ -273,13 +334,15 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
         last_name: formData.lastName,
         email: formData.email,
         phone_number: formData.phoneNumber,
-        date_time: formData.dateTime,
+        date_time: dateTime.toISOString(),
         address: formData.address,
         postcode: formData.postcode,
         hours_required: requiresHours ? formData.hoursRequired : null,
         cleaning_time: requiresCleaningTime ? parseFloat(formData.cleaningTime) || null : null,
         total_cost: formData.totalCost,
         cleaner_pay: formData.cleanerPay,
+        cleaner_rate: formData.cleanerHourlyRate || null,
+        cleaner_percentage: formData.cleanerPercentage || null,
         form_name: formName,
         cleaning_type: cleaningType,
         property_details: formData.propertyDetails,
@@ -379,6 +442,64 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
         </CardContent>
       </Card>
 
+      {/* Date & Time Selection */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CalendarDays className="h-5 w-5" />
+            Date & Time
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Date *</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.selectedDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.selectedDate ? format(formData.selectedDate, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.selectedDate}
+                    onSelect={(date) => handleInputChange('selectedDate', date)}
+                    disabled={(date) => date < new Date()}
+                    initialFocus
+                    className="p-4 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div>
+              <Label>Time *</Label>
+              <div className="grid grid-cols-4 gap-1 max-h-40 overflow-y-auto border rounded-md p-2">
+                {timeOptions.map((time) => (
+                  <Button
+                    key={time}
+                    type="button"
+                    variant={formData.selectedTime === time ? "default" : "outline"}
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => handleInputChange('selectedTime', time)}
+                  >
+                    {time}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Service Details */}
       <Card>
         <CardHeader>
@@ -450,17 +571,6 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
                 />
               </div>
             )}
-
-            <div>
-              <Label htmlFor="dateTime">Date & Time *</Label>
-              <Input
-                id="dateTime"
-                type="datetime-local"
-                value={formData.dateTime}
-                onChange={(e) => handleInputChange('dateTime', e.target.value)}
-                required
-              />
-            </div>
           </div>
 
           {showCleaningItems && (
@@ -630,6 +740,44 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
               </Select>
             </div>
           </div>
+
+          {/* Cleaner Rate Override Section */}
+          {formData.cleanerId && (
+            <div className="space-y-4 border-t pt-4">
+              <h4 className="font-medium">Cleaner Rate Override (Optional)</h4>
+              <div className="grid grid-cols-2 gap-4">
+                {requiresHours && (
+                  <div>
+                    <Label htmlFor="cleanerHourlyRate">Cleaner Hourly Rate (£)</Label>
+                    <Input
+                      id="cleanerHourlyRate"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.cleanerHourlyRate}
+                      onChange={(e) => handleInputChange('cleanerHourlyRate', parseFloat(e.target.value) || 0)}
+                      placeholder="Override hourly rate"
+                    />
+                  </div>
+                )}
+                {!requiresHours && (
+                  <div>
+                    <Label htmlFor="cleanerPercentage">Cleaner Percentage (%)</Label>
+                    <Input
+                      id="cleanerPercentage"
+                      type="number"
+                      step="1"
+                      min="0"
+                      max="100"
+                      value={formData.cleanerPercentage}
+                      onChange={(e) => handleInputChange('cleanerPercentage', parseFloat(e.target.value) || 0)}
+                      placeholder="Override percentage"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
