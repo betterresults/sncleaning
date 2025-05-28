@@ -2,7 +2,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useLocation } from 'react-router-dom';
-import { Calendar, Users, Dashboard, Plus, User } from 'lucide-react';
+import { Calendar, Users, LayoutDashboard, Plus, User } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -32,7 +32,7 @@ export function AppSidebar() {
     {
       title: "Dashboard",
       url: "/dashboard",
-      icon: Dashboard,
+      icon: LayoutDashboard,
     },
     {
       title: "Bookings",
