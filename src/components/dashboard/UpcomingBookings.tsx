@@ -78,67 +78,27 @@ const UpcomingBookings = () => {
       setLoading(true);
       setError(null);
 
-      console.log('=== STARTING DATA FETCH ===');
-
-      // First, let's check if we can access cleaners at all
-      console.log('Testing cleaners table access...');
-      const { count: cleanersCount, error: cleanersCountError } = await supabase
-        .from('cleaners')
-        .select('*', { count: 'exact', head: true });
-
-      console.log('Cleaners count check:', {
-        count: cleanersCount,
-        error: cleanersCountError
-      });
-
-      // Fetch cleaners with detailed error logging
-      console.log('Fetching ALL cleaners with NO filters...');
+      console.log('Fetching cleaners...');
       const { data: cleanersData, error: cleanersError } = await supabase
         .from('cleaners')
         .select('*');
 
-      console.log('RAW cleaners query result:', {
-        data: cleanersData,
-        error: cleanersError,
-        count: cleanersData?.length || 0,
-        errorDetails: cleanersError ? {
-          message: cleanersError.message,
-          details: cleanersError.details,
-          hint: cleanersError.hint,
-          code: cleanersError.code
-        } : null
-      });
-
       if (cleanersError) {
-        console.error('CLEANERS ERROR DETAILS:', cleanersError);
-        setError('Failed to fetch cleaners: ' + cleanersError.message + (cleanersError.hint ? ` (${cleanersError.hint})` : ''));
+        console.error('Error fetching cleaners:', cleanersError);
+        setError('Failed to fetch cleaners: ' + cleanersError.message);
         return;
       }
 
-      // Check if cleaners table is actually empty
-      if (!cleanersData || cleanersData.length === 0) {
-        console.warn('⚠️ CLEANERS TABLE IS EMPTY OR INACCESSIBLE');
-        setError('No cleaners found in database. This could be due to Row Level Security policies or an empty table.');
-      }
-
-      // Fetch customers with NO FILTERS
-      console.log('Fetching ALL customers with NO filters...');
+      console.log('Fetching customers...');
       const { data: customersData, error: customersError } = await supabase
         .from('customers')
         .select('*');
 
-      console.log('RAW customers query result:', {
-        data: customersData,
-        error: customersError,
-        count: customersData?.length || 0
-      });
-
       if (customersError) {
-        console.error('CUSTOMERS ERROR:', customersError);
+        console.error('Error fetching customers:', customersError);
       }
 
-      // Fetch bookings with proper joins - INCLUDING full_name
-      console.log('Fetching bookings with joins...');
+      console.log('Fetching bookings...');
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
         .select(`
@@ -159,44 +119,24 @@ const UpcomingBookings = () => {
         .gte('date_time', new Date().toISOString())
         .order('date_time', { ascending: sortOrder === 'asc' });
 
-      console.log('RAW bookings query result:', {
-        data: bookingsData,
-        error: bookingsError,
-        count: bookingsData?.length || 0
-      });
-
       if (bookingsError) {
-        console.error('BOOKINGS ERROR:', bookingsError);
+        console.error('Error fetching bookings:', bookingsError);
         setError('Failed to fetch bookings: ' + bookingsError.message);
         return;
       }
 
-      // Set state with fetched data
       setBookings(bookingsData || []);
       setCleaners(cleanersData || []);
       setCustomers(customersData || []);
 
-      console.log('=== FINAL STATE SET ===');
-      console.log('Cleaners available:', cleanersData?.length || 0);
-      console.log('Customers available:', customersData?.length || 0);
-      console.log('Bookings available:', bookingsData?.length || 0);
-
-      // Log a sample cleaner and booking for debugging
-      if (cleanersData && cleanersData.length > 0) {
-        console.log('Sample cleaner:', cleanersData[0]);
-      } else {
-        console.log('❌ NO CLEANERS AVAILABLE - this will cause "Data Missing" in cleaner info');
-      }
-      if (bookingsData && bookingsData.length > 0) {
-        console.log('Sample booking with cleaner join:', {
-          id: bookingsData[0].id,
-          cleaner_id: bookingsData[0].cleaner,
-          cleaners_join: bookingsData[0].cleaners
-        });
-      }
+      console.log('Data loaded successfully:', {
+        cleaners: cleanersData?.length || 0,
+        customers: customersData?.length || 0,
+        bookings: bookingsData?.length || 0
+      });
 
     } catch (error) {
-      console.error('CATCH ERROR in fetchData:', error);
+      console.error('Error in fetchData:', error);
       setError('An unexpected error occurred: ' + (error as Error).message);
     } finally {
       setLoading(false);
@@ -309,15 +249,8 @@ const UpcomingBookings = () => {
   };
 
   const getCleanerInfo = (booking: Booking) => {
-    console.log('=== GETTING CLEANER INFO ===');
-    console.log('Booking ID:', booking.id);
-    console.log('Booking cleaner ID:', booking.cleaner);
-    console.log('Booking cleaners join object:', booking.cleaners);
-    console.log('Total cleaners available:', cleaners.length);
-    
     // First try to use the cleaner data from the booking join
     if (booking.cleaners) {
-      console.log('✅ Using cleaner from booking.cleaners join');
       const name = booking.cleaners.full_name || 
                    `${booking.cleaners.first_name || ''} ${booking.cleaners.last_name || ''}`.trim() || 
                    'Unknown Cleaner';
@@ -330,10 +263,8 @@ const UpcomingBookings = () => {
     // Fallback to cleaners array lookup if join data is missing
     if (booking.cleaner && cleaners.length > 0) {
       const cleaner = cleaners.find(c => c.id === booking.cleaner);
-      console.log('Looking for cleaner ID:', booking.cleaner, 'Found:', cleaner);
       
       if (cleaner) {
-        console.log('✅ Using cleaner from cleaners array');
         const name = cleaner.full_name || 
                      `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim() || 
                      `Cleaner ${cleaner.id}`;
@@ -346,14 +277,12 @@ const UpcomingBookings = () => {
     
     // If we have a cleaner ID but no cleaner data, it means the relationship is broken
     if (booking.cleaner) {
-      console.log('❌ Cleaner ID exists but no cleaner data found');
       return {
         name: `Cleaner ID: ${booking.cleaner} (Data Missing)`,
         pay: booking.cleaner_pay || 0
       };
     }
     
-    console.log('❌ No cleaner assigned to this booking');
     return {
       name: 'No Cleaner Assigned',
       pay: 0
@@ -489,9 +418,6 @@ const UpcomingBookings = () => {
                   )}
                 </SelectContent>
               </Select>
-              <div className="text-xs text-gray-500">
-                Found {cleaners.length} cleaners
-              </div>
             </div>
 
             <div className="space-y-2">
@@ -513,9 +439,6 @@ const UpcomingBookings = () => {
                   )}
                 </SelectContent>
               </Select>
-              {customers.length === 0 && (
-                <p className="text-xs text-red-500">No customers loaded. Check console for errors.</p>
-              )}
             </div>
 
             <div className="space-y-2">
