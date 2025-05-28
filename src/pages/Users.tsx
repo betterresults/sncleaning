@@ -1,12 +1,13 @@
 
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Navigate, Link } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { AppSidebar } from '@/components/AppSidebar';
 import UserManagementTabs from '@/components/UserManagementTabs';
 
 const Users = () => {
-  const { user, userRole, signOut, loading } = useAuth();
+  const { user, userRole, loading } = useAuth();
 
   if (loading) {
     return (
@@ -20,49 +21,26 @@ const Users = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
   const refreshUsers = () => {
     window.location.reload();
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <h1 className="text-xl font-semibold text-gray-900">USER MANAGEMENT</h1>
-            <div className="flex items-center space-x-4">
-              <Link to="/dashboard">
-                <Button variant="outline">
-                  Back to Dashboard
-                </Button>
-              </Link>
-              <Link to="/admin">
-                <Button variant="outline">
-                  Analytics & Bookings
-                </Button>
-              </Link>
-              <Button onClick={handleSignOut} variant="outline">
-                Sign Out
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content - ONLY User Management */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <UserManagementTabs refreshUsers={refreshUsers} />
-      </main>
-    </div>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <AppSidebar />
+        <SidebarInset>
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="-ml-1" />
+            <div className="flex-1" />
+          </header>
+          
+          <main className="flex-1 space-y-4 p-8 pt-6">
+            <UserManagementTabs refreshUsers={refreshUsers} />
+          </main>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
 };
 
