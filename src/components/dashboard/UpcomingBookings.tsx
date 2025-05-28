@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -409,14 +408,15 @@ const UpcomingBookings = () => {
                       const cleanerName = cleaner.full_name || 
                                          `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim() || 
                                          `Cleaner ${cleaner.id}`;
+                      const cleanerId = cleaner.id?.toString() || `cleaner-${Date.now()}-${Math.random()}`;
                       return (
-                        <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
+                        <SelectItem key={cleaner.id} value={cleanerId}>
                           {cleanerName}
                         </SelectItem>
                       );
                     })
                   ) : (
-                    <SelectItem value="no-cleaners" disabled>No cleaners found</SelectItem>
+                    <SelectItem value="no-cleaners-found" disabled>No cleaners found</SelectItem>
                   )}
                 </SelectContent>
               </Select>
@@ -431,13 +431,16 @@ const UpcomingBookings = () => {
                 <SelectContent>
                   <SelectItem value="all">All customers</SelectItem>
                   {customers.length > 0 ? (
-                    customers.map((customer) => (
-                      <SelectItem key={customer.id} value={customer.id.toString()}>
-                        {customer.first_name} {customer.last_name}
-                      </SelectItem>
-                    ))
+                    customers.map((customer) => {
+                      const customerId = customer.id?.toString() || `customer-${Date.now()}-${Math.random()}`;
+                      return (
+                        <SelectItem key={customer.id} value={customerId}>
+                          {customer.first_name} {customer.last_name}
+                        </SelectItem>
+                      );
+                    })
                   ) : (
-                    <SelectItem value="no-customers" disabled>No customers found</SelectItem>
+                    <SelectItem value="no-customers-found" disabled>No customers found</SelectItem>
                   )}
                 </SelectContent>
               </Select>
