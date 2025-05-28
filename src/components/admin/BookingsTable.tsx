@@ -104,6 +104,7 @@ const BookingsTable = () => {
         .select('id, first_name, last_name')
         .order('first_name');
 
+      console.log('Fetched bookings:', bookingsData);
       setBookings(bookingsData || []);
       setCleaners(cleanersData || []);
       setCustomers(customersData || []);
@@ -236,23 +237,28 @@ const BookingsTable = () => {
   };
 
   const getCleanerName = (booking: Booking) => {
+    console.log('Getting cleaner name for booking:', booking.id, 'cleaner ID:', booking.cleaner);
+    
     // If no cleaner is assigned
     if (!booking.cleaner) {
+      console.log('No cleaner assigned');
       return 'Unsigned';
     }
 
     // Check if we have cleaner data from the join
     if (booking.cleaners) {
+      console.log('Found cleaner from join:', booking.cleaners);
       return `${booking.cleaners.first_name} ${booking.cleaners.last_name}`;
     }
 
     // Fallback to cleaners array lookup
     const cleaner = cleaners.find(c => c.id === booking.cleaner);
     if (cleaner) {
+      console.log('Found cleaner from array:', cleaner);
       return `${cleaner.first_name} ${cleaner.last_name}`;
     }
 
-    // If we have a cleaner ID but no data found, still show as unsigned
+    console.log('No cleaner found for ID:', booking.cleaner);
     return 'Unsigned';
   };
 
@@ -444,7 +450,7 @@ const BookingsTable = () => {
                     return (
                       <TableRow 
                         key={booking.id} 
-                        className={isUnsigned ? "bg-red-50 hover:bg-red-100" : "hover:bg-gray-50"}
+                        className={isUnsigned ? "bg-red-50 hover:bg-red-100 border-l-4 border-red-500" : "hover:bg-gray-50"}
                       >
                         <TableCell>
                           <div className="text-sm">
@@ -478,11 +484,11 @@ const BookingsTable = () => {
                         <TableCell>{booking.cleaning_type || 'N/A'}</TableCell>
                         <TableCell>
                           {isUnsigned ? (
-                            <Badge variant="destructive">
+                            <Badge variant="destructive" className="bg-red-600 text-white">
                               Unsigned
                             </Badge>
                           ) : (
-                            <span>{cleanerName}</span>
+                            <span className="text-green-700 font-medium">{cleanerName}</span>
                           )}
                         </TableCell>
                         <TableCell className="font-medium">
