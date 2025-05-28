@@ -188,7 +188,7 @@ const CleanerPastBookings = () => {
       <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium text-green-700">
-            Total Earnings - {filters.timePeriod === 'current-month' ? 'Current Month' : 
+            Earnings & Bookings - {filters.timePeriod === 'current-month' ? 'Current Month' : 
                               filters.timePeriod === 'last-month' ? 'Last Month' :
                               filters.timePeriod === 'last-3-months' ? 'Last 3 Months' :
                               filters.timePeriod === 'last-6-months' ? 'Last 6 Months' : 'All Time'}
@@ -196,8 +196,16 @@ const CleanerPastBookings = () => {
           <Banknote className="h-4 w-4 text-green-600" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-green-900">£{totalEarnings.toFixed(2)}</div>
-          <p className="text-xs text-green-600">{filteredBookings.length} completed jobs</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div className="text-2xl font-bold text-green-900">£{totalEarnings.toFixed(2)}</div>
+              <p className="text-xs text-green-600">Total Earnings</p>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-green-900">{filteredBookings.length}</div>
+              <p className="text-xs text-green-600">Completed Bookings</p>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
