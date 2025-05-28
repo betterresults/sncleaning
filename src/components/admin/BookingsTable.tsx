@@ -322,18 +322,6 @@ const BookingsTable = () => {
         />
       )}
 
-      {/* Bulk Edit Button - Make it prominent and visible */}
-      <div className="flex justify-end mb-4">
-        <Button 
-          onClick={() => setBulkEditOpen(true)}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
-          size="lg"
-        >
-          <Settings className="h-5 w-5" />
-          Bulk Edit Bookings
-        </Button>
-      </div>
-
       {/* Filters */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -455,6 +443,15 @@ const BookingsTable = () => {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Bulk Edit Button - Added next to sort controls */}
+          <Button 
+            onClick={() => setBulkEditOpen(true)}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Settings className="h-4 w-4" />
+            Bulk Edit
+          </Button>
         </div>
 
         <div className="text-sm text-gray-600">
