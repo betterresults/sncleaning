@@ -281,6 +281,7 @@ const UpcomingBookings = () => {
   };
 
   const handleEdit = (booking: Booking) => {
+    console.log('Edit booking clicked:', booking);
     setSelectedBookingForEdit(booking);
     setEditDialogOpen(true);
   };
