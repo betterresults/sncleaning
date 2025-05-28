@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -21,8 +20,8 @@ interface Booking {
   address: string;
   postcode: string;
   form_name: string;
-  total_cost: number; // Changed from string to number to match database
-  booking_status: string; // Added missing property
+  total_cost: number;
+  booking_status: string;
   cleaner: number | null;
   cleaners?: {
     id: number;
@@ -294,13 +293,13 @@ const UpcomingBookings = () => {
 
       {/* Filters */}
       <Card>
-        <CardHeader className="pb-2 sm:pb-3 lg:pb-4">
+        <CardHeader className="pb-2 sm:pb-3 lg:pb-4 px-3 sm:px-6 pt-3 sm:pt-6">
           <CardTitle className="text-sm sm:text-base lg:text-lg flex items-center gap-2">
             <Filter className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
             Filters
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 sm:space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6 pb-3 sm:pb-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4">
             <div>
               <Label htmlFor="dateFrom" className="text-xs sm:text-sm">Date From</Label>
@@ -309,7 +308,7 @@ const UpcomingBookings = () => {
                 type="date"
                 value={filters.dateFrom}
                 onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
-                className="text-xs sm:text-sm"
+                className="text-xs sm:text-sm h-8 sm:h-9"
               />
             </div>
             <div>
@@ -319,19 +318,19 @@ const UpcomingBookings = () => {
                 type="date"
                 value={filters.dateTo}
                 onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
-                className="text-xs sm:text-sm"
+                className="text-xs sm:text-sm h-8 sm:h-9"
               />
             </div>
             <div>
               <Label htmlFor="customerSearch" className="text-xs sm:text-sm">Customer Search</Label>
               <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
+                <Search className="absolute left-2 top-2 sm:top-2.5 h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
                 <Input
                   id="customerSearch"
                   placeholder="Name or email..."
                   value={filters.customerSearch}
                   onChange={(e) => setFilters({ ...filters, customerSearch: e.target.value })}
-                  className="pl-6 sm:pl-8 text-xs sm:text-sm"
+                  className="pl-6 sm:pl-8 text-xs sm:text-sm h-8 sm:h-9"
                 />
               </div>
             </div>
@@ -341,7 +340,7 @@ const UpcomingBookings = () => {
                 value={filters.cleaner}
                 onValueChange={(value) => setFilters({ ...filters, cleaner: value })}
               >
-                <SelectTrigger className="text-xs sm:text-sm">
+                <SelectTrigger className="text-xs sm:text-sm h-8 sm:h-9">
                   <SelectValue placeholder="All Cleaners" />
                 </SelectTrigger>
                 <SelectContent>
@@ -356,7 +355,7 @@ const UpcomingBookings = () => {
               </Select>
             </div>
             <div className="flex items-end">
-              <Button onClick={clearFilters} variant="outline" className="w-full text-xs sm:text-sm">
+              <Button onClick={clearFilters} variant="outline" className="w-full text-xs sm:text-sm h-8 sm:h-9">
                 Clear Filters
               </Button>
             </div>
@@ -365,15 +364,15 @@ const UpcomingBookings = () => {
       </Card>
 
       {/* Table Controls */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 bg-gray-50 p-3 sm:p-4 rounded-lg">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
           <div className="flex items-center gap-2">
-            <Label htmlFor="itemsPerPage" className="text-xs sm:text-sm">Show:</Label>
+            <Label htmlFor="itemsPerPage" className="text-xs sm:text-sm whitespace-nowrap">Show:</Label>
             <Select
               value={itemsPerPage.toString()}
               onValueChange={(value) => handleItemsPerPageChange(Number(value))}
             >
-              <SelectTrigger className="w-16 sm:w-20 text-xs sm:text-sm">
+              <SelectTrigger className="w-16 sm:w-20 text-xs sm:text-sm h-7 sm:h-8">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -385,12 +384,12 @@ const UpcomingBookings = () => {
             </Select>
           </div>
           <div className="flex items-center gap-2">
-            <Label htmlFor="sortOrder" className="text-xs sm:text-sm">Sort:</Label>
+            <Label htmlFor="sortOrder" className="text-xs sm:text-sm whitespace-nowrap">Sort:</Label>
             <Select
               value={sortOrder}
               onValueChange={(value: 'asc' | 'desc') => handleSortOrderChange(value)}
             >
-              <SelectTrigger className="w-28 sm:w-32 text-xs sm:text-sm">
+              <SelectTrigger className="w-28 sm:w-32 text-xs sm:text-sm h-7 sm:h-8">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -400,15 +399,139 @@ const UpcomingBookings = () => {
             </Select>
           </div>
         </div>
-        <div className="text-xs sm:text-sm text-gray-600">
+        <div className="text-xs sm:text-sm text-gray-600 w-full sm:w-auto text-left sm:text-right">
           Showing {startIndex + 1}-{Math.min(endIndex, filteredBookings.length)} of {filteredBookings.length} bookings
         </div>
       </div>
 
-      {/* Table */}
+      {/* Mobile Card View for small screens, Table for larger screens */}
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          {/* Mobile Card View */}
+          <div className="block lg:hidden">
+            {paginatedBookings.length === 0 ? (
+              <div className="text-center py-8 text-gray-500 text-sm">
+                No upcoming bookings found
+              </div>
+            ) : (
+              <div className="space-y-3 p-3">
+                {paginatedBookings.map((booking) => {
+                  const cleanerInfo = getCleanerInfo(booking);
+                  const isUnassigned = cleanerInfo.name === 'Unassigned';
+                  
+                  return (
+                    <Card key={booking.id} className={`border ${isUnassigned ? 'border-red-200 bg-red-50/30' : 'border-gray-200'}`}>
+                      <CardContent className="p-3">
+                        <div className="space-y-3">
+                          {/* Date and Time */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <CalendarDays className="h-4 w-4 text-gray-400" />
+                              <div>
+                                <div className="font-medium text-sm">
+                                  {format(new Date(booking.date_time), 'dd/MM/yyyy')}
+                                </div>
+                                <div className="text-gray-500 text-xs">
+                                  {format(new Date(booking.date_time), 'HH:mm')}
+                                </div>
+                              </div>
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-gray-100">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem onClick={() => handleEdit(booking)}>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleCopy(booking.id)}>
+                                  <Copy className="mr-2 h-4 w-4" />
+                                  Copy ID
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => handleDelete(booking.id)}
+                                  className="text-red-600"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+
+                          {/* Customer Info */}
+                          <div className="space-y-1">
+                            <div className="font-medium text-sm flex items-center">
+                              <User className="h-3 w-3 mr-2 text-gray-400" />
+                              {booking.first_name} {booking.last_name}
+                            </div>
+                            <div className="text-xs text-gray-500 flex items-center">
+                              <Mail className="h-3 w-3 mr-2" />
+                              {booking.email}
+                            </div>
+                            <div className="text-xs text-gray-500 flex items-center">
+                              <Phone className="h-3 w-3 mr-2" />
+                              {booking.phone_number}
+                            </div>
+                          </div>
+
+                          {/* Address */}
+                          <div className="flex items-start space-x-2">
+                            <MapPin className="h-3 w-3 mt-0.5 text-gray-400 flex-shrink-0" />
+                            <div className="text-xs text-gray-700 leading-tight">
+                              <div>{booking.address}</div>
+                              {booking.postcode && (
+                                <div className="text-gray-500 font-medium">{booking.postcode}</div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Service and Cleaner */}
+                          <div className="flex flex-wrap gap-2">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {booking.form_name || 'Standard Cleaning'}
+                            </span>
+                          </div>
+
+                          {/* Cleaner and Cost */}
+                          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                            <div className="flex-1">
+                              {isUnassigned ? (
+                                <div className="flex items-center space-x-1 bg-red-100 px-2 py-1 rounded-lg border border-red-200">
+                                  <AlertTriangle className="h-3 w-3 text-red-600" />
+                                  <span className="text-xs font-semibold text-red-700">Unassigned</span>
+                                </div>
+                              ) : (
+                                <div className="text-xs">
+                                  <span className="text-gray-500">Cleaner: </span>
+                                  <span className="font-medium">{cleanerInfo.name}</span>
+                                </div>
+                              )}
+                              <div className="text-xs text-green-600 font-medium flex items-center mt-1">
+                                <Banknote className="h-3 w-3 mr-1" />
+                                Pay: £{cleanerInfo.pay.toFixed(2)}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <span className="font-semibold text-green-600 text-sm">
+                                £{Number(booking.total_cost).toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden lg:block overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -557,30 +680,43 @@ const UpcomingBookings = () => {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-4">
-          <div className="text-xs sm:text-sm text-gray-600">
-            Page {currentPage} of {totalPages}
+        <div className="flex flex-col sm:flex-row justify-center items-center space-y-2 sm:space-y-0 sm:space-x-2 py-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="w-full sm:w-auto text-xs sm:text-sm"
+          >
+            Previous
+          </Button>
+          
+          <div className="flex space-x-1 sm:space-x-2">
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const pageNum = i + 1;
+              return (
+                <Button
+                  key={pageNum}
+                  variant={currentPage === pageNum ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(pageNum)}
+                  className="w-8 h-8 sm:w-auto sm:h-auto text-xs sm:text-sm"
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="text-xs sm:text-sm"
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="text-xs sm:text-sm"
-            >
-              Next
-            </Button>
-          </div>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="w-full sm:w-auto text-xs sm:text-sm"
+          >
+            Next
+          </Button>
         </div>
       )}
     </div>

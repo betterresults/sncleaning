@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -38,7 +37,7 @@ const Dashboard = () => {
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <AppSidebar />
-        <SidebarInset>
+        <SidebarInset className="flex-1">
           <header className="flex h-12 sm:h-16 shrink-0 items-center gap-2 border-b px-3 sm:px-4">
             <SidebarTrigger className="-ml-1" />
             <div className="flex-1" />
@@ -47,15 +46,17 @@ const Dashboard = () => {
             </div>
           </header>
           
-          <main className="flex-1 space-y-3 sm:space-y-4 p-3 sm:p-6 lg:p-8 pt-3 sm:pt-6">
-            <Card>
-              <CardHeader className="pb-3 sm:pb-6">
-                <CardTitle className="text-lg sm:text-xl">Upcoming Bookings</CardTitle>
-              </CardHeader>
-              <CardContent className="p-3 sm:p-6">
-                <UpcomingBookings />
-              </CardContent>
-            </Card>
+          <main className="flex-1 p-3 sm:p-4 lg:p-6 xl:p-8">
+            <div className="max-w-full">
+              <Card className="mb-4 sm:mb-6">
+                <CardHeader className="pb-3 sm:pb-4 px-4 sm:px-6 pt-4 sm:pt-6">
+                  <CardTitle className="text-lg sm:text-xl lg:text-2xl">Upcoming Bookings</CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+                  <UpcomingBookings />
+                </CardContent>
+              </Card>
+            </div>
           </main>
         </SidebarInset>
       </div>
@@ -64,4 +65,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
