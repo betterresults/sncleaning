@@ -97,22 +97,41 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   });
 
   useEffect(() => {
-    if (booking) {
-      setFormData({
-        date_time: format(new Date(booking.date_time), "yyyy-MM-dd'T'HH:mm"),
-        first_name: booking.first_name,
-        last_name: booking.last_name,
-        email: booking.email,
-        phone_number: booking.phone_number,
-        address: booking.address,
+    console.log('Booking data received:', booking);
+    if (booking && open) {
+      const formattedDateTime = booking.date_time 
+        ? format(new Date(booking.date_time), "yyyy-MM-dd'T'HH:mm")
+        : '';
+      
+      console.log('Setting form data with:', {
+        date_time: formattedDateTime,
+        first_name: booking.first_name || '',
+        last_name: booking.last_name || '',
+        email: booking.email || '',
+        phone_number: booking.phone_number || '',
+        address: booking.address || '',
         postcode: booking.postcode || '',
-        total_cost: Number(booking.total_cost),
+        total_cost: Number(booking.total_cost) || 0,
+        cleaner: booking.cleaner,
+        payment_status: booking.payment_status || 'unpaid',
+        additional_details: booking.additional_details || '',
+      });
+
+      setFormData({
+        date_time: formattedDateTime,
+        first_name: booking.first_name || '',
+        last_name: booking.last_name || '',
+        email: booking.email || '',
+        phone_number: booking.phone_number || '',
+        address: booking.address || '',
+        postcode: booking.postcode || '',
+        total_cost: Number(booking.total_cost) || 0,
         cleaner: booking.cleaner,
         payment_status: booking.payment_status || 'unpaid',
         additional_details: booking.additional_details || '',
       });
     }
-  }, [booking]);
+  }, [booking, open]);
 
   useEffect(() => {
     const fetchCleaners = async () => {
