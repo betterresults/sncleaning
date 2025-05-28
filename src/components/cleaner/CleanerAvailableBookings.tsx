@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,24 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { CalendarDays, Clock, MapPin, User, Banknote, UserPlus, UserX } from 'lucide-react';
+import { CalendarDays, Clock, MapPin, User, Banknote, UserPlus } from 'lucide-react';
 import { Booking } from './types';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 
 const CleanerAvailableBookings = () => {
   const { cleanerId } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [dropOffBookingId, setDropOffBookingId] = useState<number | null>(null);
 
   console.log('CleanerAvailableBookings - cleanerId:', cleanerId);
 
@@ -95,56 +85,9 @@ const CleanerAvailableBookings = () => {
     },
   });
 
-  const dropOffMutation = useMutation({
-    mutationFn: async (bookingId: number) => {
-      console.log('Dropping off booking:', bookingId);
-      
-      const { data, error } = await supabase
-        .from('bookings')
-        .update({ cleaner: null })
-        .eq('id', bookingId)
-        .select();
-
-      if (error) {
-        console.error('Error dropping off booking:', error);
-        throw error;
-      }
-
-      console.log('Successfully dropped off booking:', data);
-      return data;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Booking dropped off successfully",
-        description: "The booking is now available for other cleaners to pick up.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['available-bookings'] });
-      queryClient.invalidateQueries({ queryKey: ['cleaner-bookings'] });
-      setDropOffBookingId(null);
-    },
-    onError: (error) => {
-      console.error('Drop off mutation error:', error);
-      toast({
-        title: "Error dropping off booking",
-        description: "There was an error dropping off the booking. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
   const handleAssignBooking = (bookingId: number) => {
     console.log('Assigning booking:', bookingId, 'to cleaner:', cleanerId);
     assignBookingMutation.mutate(bookingId);
-  };
-
-  const handleDropOffClick = (bookingId: number) => {
-    setDropOffBookingId(bookingId);
-  };
-
-  const handleConfirmDropOff = () => {
-    if (dropOffBookingId) {
-      dropOffMutation.mutate(dropOffBookingId);
-    }
   };
 
   if (isLoading) {
@@ -281,27 +224,6 @@ const CleanerAvailableBookings = () => {
           ))}
         </div>
       )}
-
-      <AlertDialog open={dropOffBookingId !== null} onOpenChange={() => setDropOffBookingId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Drop Off Booking</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to drop off this booking? It will no longer be assigned to you and will become available for other cleaners to pick up.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDropOff}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              <UserX className="h-4 w-4 mr-2" />
-              Drop Off Booking
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };
