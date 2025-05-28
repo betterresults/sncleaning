@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -7,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Edit, Trash2, Copy, Filter, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail } from 'lucide-react';
+import { Edit, Trash2, Copy, Filter, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail, Banknote } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Booking {
@@ -511,19 +512,19 @@ const UpcomingBookings = () => {
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-50">
-                  <TableHead className="font-semibold">Date & Time</TableHead>
-                  <TableHead className="font-semibold">Customer</TableHead>
-                  <TableHead className="font-semibold">Address</TableHead>
-                  <TableHead className="font-semibold">Service</TableHead>
-                  <TableHead className="font-semibold">Cleaner</TableHead>
-                  <TableHead className="font-semibold">Cost</TableHead>
-                  <TableHead className="font-semibold text-center">Actions</TableHead>
+                  <TableHead className="font-semibold text-base">Date & Time</TableHead>
+                  <TableHead className="font-semibold text-base">Customer</TableHead>
+                  <TableHead className="font-semibold text-base">Address</TableHead>
+                  <TableHead className="font-semibold text-base">Service</TableHead>
+                  <TableHead className="font-semibold text-base">Cleaner</TableHead>
+                  <TableHead className="font-semibold text-base">Cost</TableHead>
+                  <TableHead className="font-semibold text-center text-base">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paginatedBookings.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={7} className="text-center py-8 text-gray-500 text-base">
                       No bookings found
                     </TableCell>
                   </TableRow>
@@ -533,14 +534,16 @@ const UpcomingBookings = () => {
                     return (
                       <TableRow key={booking.id} className="hover:bg-gray-50 transition-colors">
                         <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <CalendarDays className="h-4 w-4 text-gray-400" />
+                          <div className="flex items-start space-x-3">
+                            <div className="flex flex-col items-center space-y-1">
+                              <CalendarDays className="h-4 w-4 text-gray-400" />
+                              <Clock className="h-4 w-4 text-gray-400" />
+                            </div>
                             <div>
-                              <div className="font-medium text-sm">
+                              <div className="font-medium text-base">
                                 {booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : 'No date'}
                               </div>
-                              <div className="text-gray-500 text-xs flex items-center">
-                                <Clock className="h-3 w-3 mr-1" />
+                              <div className="text-gray-500 text-sm">
                                 {booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'No time'}
                               </div>
                             </div>
@@ -548,44 +551,50 @@ const UpcomingBookings = () => {
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
-                            <div className="font-medium text-sm flex items-center">
-                              <User className="h-3 w-3 mr-1 text-gray-400" />
+                            <div className="font-medium text-base flex items-center">
+                              <User className="h-3 w-3 mr-2 text-gray-400" />
                               {booking.first_name} {booking.last_name}
                             </div>
-                            <div className="text-xs text-gray-500 flex items-center">
-                              <Mail className="h-3 w-3 mr-1" />
+                            <div className="text-sm text-gray-500 flex items-center">
+                              <Mail className="h-3 w-3 mr-2" />
                               {booking.email}
                             </div>
-                            <div className="text-xs text-gray-500 flex items-center">
-                              <Phone className="h-3 w-3 mr-1" />
+                            <div className="text-sm text-gray-500 flex items-center">
+                              <Phone className="h-3 w-3 mr-2" />
                               {booking.phone_number}
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-start space-x-1 max-w-48">
+                          <div className="flex items-start space-x-2 max-w-48">
                             <MapPin className="h-3 w-3 mt-0.5 text-gray-400 flex-shrink-0" />
-                            <span className="text-sm text-gray-700 leading-tight">{booking.address}</span>
+                            <div className="text-sm text-gray-700 leading-tight">
+                              <div>{booking.address}</div>
+                              {booking.postcode && (
+                                <div className="text-gray-500 font-medium">{booking.postcode}</div>
+                              )}
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                             {booking.form_name || 'Standard Cleaning'}
                           </span>
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
-                            <div className="flex items-center space-x-1">
+                            <div className="flex items-center space-x-2">
                               <User className="h-3 w-3 text-gray-400" />
-                              <span className="text-sm font-medium">{cleanerInfo.name}</span>
+                              <span className="text-base font-medium">{cleanerInfo.name}</span>
                             </div>
-                            <div className="text-xs text-green-600 font-medium">
+                            <div className="text-sm text-green-600 font-medium flex items-center">
+                              <Banknote className="h-3 w-3 mr-2" />
                               Pay: £{cleanerInfo.pay.toFixed(2)}
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="font-semibold text-green-600">
+                          <span className="font-semibold text-green-600 text-base">
                             £{booking.total_cost?.toFixed(2) || '0.00'}
                           </span>
                         </TableCell>
