@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarDays, DollarSign, TrendingUp, Clock, Calendar } from 'lucide-react';
+import { CalendarDays, DollarSign, TrendingUp, Clock, Calendar, CreditCard } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subMonths, addMonths, subDays, isAfter, startOfYear } from 'date-fns';
 
 interface EarningsData {
@@ -275,130 +274,144 @@ const CleanerEarnings = () => {
   const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Cleaner';
 
   return (
-    <div className="space-y-6">
-      {/* Friendly Greeting */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Hello {firstName}! 👋</h1>
-      </div>
-
-      {/* Upcoming Payment */}
-      <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
-        <CardHeader>
-          <CardTitle className="text-blue-800 flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Upcoming Payment
+    <div className="space-y-8">
+      {/* Upcoming Payment - Modern Design */}
+      <Card className="relative overflow-hidden bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 border-0 text-white">
+        <div className="absolute inset-0 bg-black/10"></div>
+        <CardHeader className="relative z-10 pb-4">
+          <CardTitle className="flex items-center gap-3 text-white">
+            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+              <CreditCard className="h-6 w-6" />
+            </div>
+            <div>
+              <div className="text-sm font-medium opacity-90">Next Payment</div>
+              <div className="text-xs opacity-70">{earnings.upcomingPayment.paymentDate}</div>
+            </div>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <div className="text-2xl font-bold text-blue-900">£{earnings.upcomingPayment.amount.toFixed(2)}</div>
-            <div className="text-sm text-blue-700">
-              Payment on: <span className="font-semibold">{earnings.upcomingPayment.paymentDate}</span>
+        <CardContent className="relative z-10 pt-0">
+          <div className="space-y-3">
+            <div className="text-4xl font-bold tracking-tight">
+              £{earnings.upcomingPayment.amount.toFixed(2)}
             </div>
-            <div className="text-xs text-blue-600">
-              For period: {earnings.upcomingPayment.periodStart} - {earnings.upcomingPayment.periodEnd}
+            <div className="flex items-center gap-2 text-sm bg-white/10 rounded-full px-3 py-1 backdrop-blur-sm w-fit">
+              <Calendar className="h-4 w-4" />
+              <span>{earnings.upcomingPayment.periodStart} - {earnings.upcomingPayment.periodEnd}</span>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Earnings Overview with Period Selector */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Earnings Overview</span>
-            <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Select period" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="current">Current Month</SelectItem>
-                <SelectItem value="lastMonth">Last Month</SelectItem>
-                <SelectItem value="last3Months">Last 3 Months</SelectItem>
-                <SelectItem value="last6Months">Last 6 Months</SelectItem>
-                <SelectItem value="allTime">All Time</SelectItem>
-              </SelectContent>
-            </Select>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-purple-700">Total Earnings</CardTitle>
-                <DollarSign className="h-4 w-4 text-purple-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-purple-900">
-                  £{periodData.totalEarnings.toFixed(2)}
-                </div>
-                <p className="text-xs text-purple-600">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-semibold tracking-tight">Earnings Overview</h2>
+          <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
+            <SelectTrigger className="w-48 bg-white border-gray-200 shadow-sm">
+              <SelectValue placeholder="Select period" />
+            </SelectTrigger>
+            <SelectContent className="bg-white border-gray-200 shadow-lg">
+              <SelectItem value="current">Current Month</SelectItem>
+              <SelectItem value="lastMonth">Last Month</SelectItem>
+              <SelectItem value="last3Months">Last 3 Months</SelectItem>
+              <SelectItem value="last6Months">Last 6 Months</SelectItem>
+              <SelectItem value="allTime">All Time</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Total Earnings Card */}
+          <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-emerald-50 to-teal-50">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-400/20 to-teal-400/20 rounded-full -mr-16 -mt-16"></div>
+            <CardHeader className="relative z-10 flex flex-row items-center justify-between space-y-0 pb-3">
+              <div>
+                <CardTitle className="text-sm font-medium text-emerald-700">Total Earnings</CardTitle>
+                <p className="text-xs text-emerald-600 mt-1">
                   {selectedPeriod === 'current' ? 'This month' : 
                    selectedPeriod === 'lastMonth' ? 'Last month' :
                    selectedPeriod === 'last3Months' ? 'Last 3 months' :
                    selectedPeriod === 'last6Months' ? 'Last 6 months' : 'All time'}
                 </p>
-              </CardContent>
-            </Card>
+              </div>
+              <div className="p-3 bg-emerald-100 rounded-xl">
+                <DollarSign className="h-6 w-6 text-emerald-600" />
+              </div>
+            </CardHeader>
+            <CardContent className="relative z-10">
+              <div className="text-3xl font-bold text-emerald-900 mb-2">
+                £{periodData.totalEarnings.toFixed(2)}
+              </div>
+              <div className="flex items-center gap-1 text-sm text-emerald-600">
+                <TrendingUp className="h-4 w-4" />
+                <span>Earnings tracked</span>
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          {/* Completed Jobs Card */}
+          <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/20 to-indigo-400/20 rounded-full -mr-16 -mt-16"></div>
+            <CardHeader className="relative z-10 flex flex-row items-center justify-between space-y-0 pb-3">
+              <div>
                 <CardTitle className="text-sm font-medium text-blue-700">Completed Jobs</CardTitle>
-                <CalendarDays className="h-4 w-4 text-blue-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-blue-900">
-                  {periodData.completedJobs}
-                </div>
-                <p className="text-xs text-blue-600">Jobs completed</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-orange-700">Average per Job</CardTitle>
-                <Clock className="h-4 w-4 text-orange-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-orange-900">
-                  £{periodData.averagePerJob.toFixed(2)}
-                </div>
-                <p className="text-xs text-orange-600">Per completed job</p>
-              </CardContent>
-            </Card>
-          </div>
-        </CardContent>
-      </Card>
+                <p className="text-xs text-blue-600 mt-1">
+                  Jobs completed successfully
+                </p>
+              </div>
+              <div className="p-3 bg-blue-100 rounded-xl">
+                <CalendarDays className="h-6 w-6 text-blue-600" />
+              </div>
+            </CardHeader>
+            <CardContent className="relative z-10">
+              <div className="text-3xl font-bold text-blue-900 mb-2">
+                {periodData.completedJobs}
+              </div>
+              <div className="flex items-center gap-1 text-sm text-blue-600">
+                <Clock className="h-4 w-4" />
+                <span>£{periodData.averagePerJob.toFixed(2)} avg per job</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       {/* Recent Jobs */}
-      <Card>
+      <Card className="border-0 shadow-lg">
         <CardHeader>
-          <CardTitle>Recent Jobs</CardTitle>
+          <CardTitle className="text-xl font-semibold">Recent Jobs</CardTitle>
         </CardHeader>
         <CardContent>
           {earnings.recentJobs.length === 0 ? (
-            <p className="text-gray-500 text-center py-4">No recent jobs found</p>
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CalendarDays className="h-8 w-8 text-gray-400" />
+              </div>
+              <p className="text-gray-500">No recent jobs found</p>
+            </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {earnings.recentJobs.map((job) => (
-                <div key={job.id} className="flex justify-between items-center p-4 border rounded-lg">
+                <div key={job.id} className="flex justify-between items-center p-4 border border-gray-100 rounded-xl hover:shadow-md transition-shadow">
                   <div className="flex-1">
-                    <div className="font-medium">
+                    <div className="font-semibold text-gray-900">
                       {job.first_name} {job.last_name}
                     </div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-gray-600 mt-1">
                       {job.form_name || 'Standard Cleaning'}
                     </div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-xs text-gray-500 mt-1">
                       {format(new Date(job.date_time), 'dd/MM/yyyy')}
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <Badge variant="default" className="bg-green-100 text-green-800">
+                  <div className="flex items-center space-x-4">
+                    <Badge variant="default" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100">
                       {job.booking_status}
                     </Badge>
-                    <div className="font-semibold text-green-600">
-                      £{Number(job.cleaner_pay)?.toFixed(2) || '0.00'}
+                    <div className="text-right">
+                      <div className="font-bold text-lg text-green-600">
+                        £{Number(job.cleaner_pay)?.toFixed(2) || '0.00'}
+                      </div>
                     </div>
                   </div>
                 </div>
