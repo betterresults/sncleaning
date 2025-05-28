@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Search } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Booking {
@@ -43,15 +44,37 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [selectedBookings, setSelectedBookings] = useState<number[]>([]);
   const [editType, setEditType] = useState<'cost' | 'cleaner_pay'>('cost');
   const [newValue, setNewValue] = useState<number>(0);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     if (open) {
       fetchBookings();
+      setSearchTerm('');
+      setSelectedBookings([]);
     }
   }, [open]);
+
+  useEffect(() => {
+    // Filter bookings based on search term
+    if (!searchTerm.trim()) {
+      setFilteredBookings(bookings);
+    } else {
+      const filtered = bookings.filter(booking => {
+        const customerName = `${booking.first_name} ${booking.last_name}`.toLowerCase();
+        const cleanerName = booking.cleaners?.full_name?.toLowerCase() || '';
+        const dateString = booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : '';
+        
+        return customerName.includes(searchTerm.toLowerCase()) ||
+               cleanerName.includes(searchTerm.toLowerCase()) ||
+               dateString.includes(searchTerm.toLowerCase());
+      });
+      setFilteredBookings(filtered);
+    }
+  }, [bookings, searchTerm]);
 
   const fetchBookings = async () => {
     try {
@@ -93,7 +116,7 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedBookings(bookings.map(b => b.id));
+      setSelectedBookings(filteredBookings.map(b => b.id));
     } else {
       setSelectedBookings([]);
     }
@@ -131,6 +154,7 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
       onOpenChange(false);
       setSelectedBookings([]);
       setNewValue(0);
+      setSearchTerm('');
     } catch (error) {
       console.error('Error updating bookings:', error);
       alert('An unexpected error occurred');
@@ -145,11 +169,22 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Bulk Edit Bookings</DialogTitle>
           <DialogDescription>
-            Select bookings and apply changes to their cost or cleaner pay
+            Search and select bookings to apply changes to their cost or cleaner pay
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
+          {/* Search Filter */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search by customer name, cleaner, or date..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
           {/* Bulk Edit Controls */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
             <div>
@@ -188,6 +223,23 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
             </div>
           </div>
 
+          {/* Results Summary */}
+          {searchTerm && (
+            <div className="text-sm text-gray-600">
+              Showing {filteredBookings.length} of {bookings.length} bookings
+              {filteredBookings.length !== bookings.length && (
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={() => setSearchTerm('')}
+                  className="p-0 h-auto ml-2 text-blue-600"
+                >
+                  Clear filter
+                </Button>
+              )}
+            </div>
+          )}
+
           {/* Bookings Table */}
           <div className="border rounded-lg overflow-hidden">
             <Table>
@@ -195,7 +247,7 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
                 <TableRow>
                   <TableHead className="w-12">
                     <Checkbox
-                      checked={selectedBookings.length === bookings.length && bookings.length > 0}
+                      checked={selectedBookings.length === filteredBookings.length && filteredBookings.length > 0}
                       onCheckedChange={handleSelectAll}
                     />
                   </TableHead>
@@ -207,14 +259,14 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {bookings.length === 0 ? (
+                {filteredBookings.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8">
-                      No upcoming bookings found
+                      {searchTerm ? 'No bookings match your search' : 'No upcoming bookings found'}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  bookings.map((booking) => (
+                  filteredBookings.map((booking) => (
                     <TableRow key={booking.id}>
                       <TableCell>
                         <Checkbox
