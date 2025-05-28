@@ -14,6 +14,9 @@ export interface Booking {
   customer: number;
   cleaner_pay: number;
   booking_status: string;
+  total_hours?: number;
+  cleaning_type?: string;
+  additional_details?: string;
   cleaners?: {
     id: number;
     first_name: string;
