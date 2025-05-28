@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -226,9 +225,26 @@ const BookingsTable = () => {
     }
   };
 
-  const getCleanerName = (cleanerId: number) => {
-    const cleaner = cleaners.find(c => c.id === cleanerId);
-    return cleaner ? `${cleaner.first_name} ${cleaner.last_name}` : 'N/A';
+  const getCleanerName = (booking: Booking) => {
+    // If no cleaner is assigned
+    if (!booking.cleaner) {
+      return 'Not Assigned';
+    }
+
+    // Check if we have cleaner data from the join
+    if (booking.cleaners && booking.cleaners.length > 0) {
+      const cleaner = booking.cleaners[0];
+      return `${cleaner.first_name} ${cleaner.last_name}`;
+    }
+
+    // Fallback to cleaners array lookup
+    const cleaner = cleaners.find(c => c.id === booking.cleaner);
+    if (cleaner) {
+      return `${cleaner.first_name} ${cleaner.last_name}`;
+    }
+
+    // If we have a cleaner ID but no data found
+    return `Cleaner ID: ${booking.cleaner}`;
   };
 
   const getCustomerName = (customerId: number) => {
@@ -444,7 +460,7 @@ const BookingsTable = () => {
                         {booking.address}
                       </TableCell>
                       <TableCell>{booking.cleaning_type || 'N/A'}</TableCell>
-                      <TableCell>{getCleanerName(booking.cleaner)}</TableCell>
+                      <TableCell>{getCleanerName(booking)}</TableCell>
                       <TableCell className="font-medium">
                         £{booking.total_cost?.toFixed(2) || '0.00'}
                       </TableCell>
