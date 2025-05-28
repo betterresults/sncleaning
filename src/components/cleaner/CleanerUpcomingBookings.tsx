@@ -6,7 +6,9 @@ import UpcomingBookingsStats from './UpcomingBookingsStats';
 import TableControls from './TableControls';
 import BookingsTable from './BookingsTable';
 import BookingsPagination from './BookingsPagination';
+import BookingFilters from './BookingFilters';
 import { Booking, Stats } from './types';
+import { isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 
 const CleanerUpcomingBookings = () => {
   const { cleanerId, loading: authLoading } = useAuth();
@@ -21,6 +23,12 @@ const CleanerUpcomingBookings = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  // Filter states
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const fetchData = async () => {
     if (!cleanerId) {
@@ -69,7 +77,45 @@ const CleanerUpcomingBookings = () => {
   };
 
   const applyFilters = () => {
-    const filtered = [...bookings];
+    let filtered = [...bookings];
+
+    // Date range filter
+    if (dateFrom || dateTo) {
+      filtered = filtered.filter(booking => {
+        if (!booking.date_time) return false;
+        const bookingDate = new Date(booking.date_time);
+        
+        if (dateFrom && dateTo) {
+          return isWithinInterval(bookingDate, {
+            start: startOfDay(dateFrom),
+            end: endOfDay(dateTo)
+          });
+        } else if (dateFrom) {
+          return bookingDate >= startOfDay(dateFrom);
+        } else if (dateTo) {
+          return bookingDate <= endOfDay(dateTo);
+        }
+        return true;
+      });
+    }
+
+    // Customer search filter
+    if (customerSearch.trim()) {
+      const searchTerm = customerSearch.toLowerCase();
+      filtered = filtered.filter(booking => 
+        booking.first_name?.toLowerCase().includes(searchTerm) ||
+        booking.last_name?.toLowerCase().includes(searchTerm) ||
+        booking.email?.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    // Status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(booking => 
+        booking.booking_status?.toLowerCase() === statusFilter.toLowerCase()
+      );
+    }
+
     setFilteredBookings(filtered);
     setCurrentPage(1);
 
@@ -79,6 +125,13 @@ const CleanerUpcomingBookings = () => {
       totalBookings: filtered.length,
       totalEarnings
     });
+  };
+
+  const handleClearFilters = () => {
+    setDateFrom(undefined);
+    setDateTo(undefined);
+    setCustomerSearch('');
+    setStatusFilter('all');
   };
 
   const handleDropOff = async (bookingId: number) => {
@@ -150,7 +203,7 @@ const CleanerUpcomingBookings = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [bookings]);
+  }, [bookings, dateFrom, dateTo, customerSearch, statusFilter]);
 
   // Pagination
   const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
@@ -182,6 +235,18 @@ const CleanerUpcomingBookings = () => {
   return (
     <div className="space-y-6">
       <UpcomingBookingsStats stats={stats} />
+
+      <BookingFilters
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        customerSearch={customerSearch}
+        statusFilter={statusFilter}
+        onDateFromChange={setDateFrom}
+        onDateToChange={setDateTo}
+        onCustomerSearchChange={setCustomerSearch}
+        onStatusFilterChange={setStatusFilter}
+        onClearFilters={handleClearFilters}
+      />
 
       <TableControls
         itemsPerPage={itemsPerPage}

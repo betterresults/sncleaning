@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
+import { format, isToday, differenceInHours } from 'date-fns';
 import { CalendarDays, Clock, MapPin, User, Banknote, UserX, CheckCircle2 } from 'lucide-react';
 import { Booking } from './types';
 
@@ -32,6 +32,21 @@ const BookingsTable: React.FC<BookingsTableProps> = ({
       default:
         return <Badge variant="outline">Unknown</Badge>;
     }
+  };
+
+  const shouldShowCompleteButton = (booking: Booking) => {
+    if (!booking.date_time) return false;
+    const bookingDate = new Date(booking.date_time);
+    return isToday(bookingDate);
+  };
+
+  const shouldShowDropOffButton = (booking: Booking) => {
+    if (!booking.date_time) return false;
+    const bookingDate = new Date(booking.date_time);
+    const now = new Date();
+    const hoursUntilBooking = differenceInHours(bookingDate, now);
+    // Show drop off button only if booking is more than 24 hours away
+    return hoursUntilBooking >= 24;
   };
 
   return (
@@ -120,23 +135,27 @@ const BookingsTable: React.FC<BookingsTableProps> = ({
                     </TableCell>
                     <TableCell>
                       <div className="flex justify-center space-x-2">
-                        <Button
-                          onClick={() => onMarkAsCompleted(booking.id)}
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700 text-white"
-                        >
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Complete
-                        </Button>
-                        <Button
-                          onClick={() => onDropOff(booking.id)}
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 border-red-300 hover:bg-red-50"
-                        >
-                          <UserX className="h-3 w-3 mr-1" />
-                          Drop Off
-                        </Button>
+                        {shouldShowCompleteButton(booking) && (
+                          <Button
+                            onClick={() => onMarkAsCompleted(booking.id)}
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            Complete
+                          </Button>
+                        )}
+                        {shouldShowDropOffButton(booking) && (
+                          <Button
+                            onClick={() => onDropOff(booking.id)}
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600 border-red-300 hover:bg-red-50"
+                          >
+                            <UserX className="h-3 w-3 mr-1" />
+                            Drop Off
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
