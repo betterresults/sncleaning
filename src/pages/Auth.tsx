@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,10 +17,32 @@ const Auth = () => {
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, userRole, cleanerId, loading: authLoading } = useAuth();
+
+  console.log('Auth - Current auth state:', { user: !!user, userRole, cleanerId, authLoading });
 
   // Redirect if already authenticated
-  if (user) {
+  useEffect(() => {
+    if (!authLoading && user) {
+      console.log('Auth - User authenticated, checking redirect...');
+      // Don't redirect immediately, let the user role determination complete
+    }
+  }, [user, userRole, cleanerId, authLoading]);
+
+  if (!authLoading && user) {
+    console.log('Auth - Redirecting authenticated user:', { userRole, cleanerId });
+    
+    // Redirect cleaners to cleaner dashboard
+    if (userRole === 'user' && cleanerId) {
+      return <Navigate to="/cleaner-dashboard" replace />;
+    }
+    
+    // Redirect admins to admin dashboard
+    if (userRole === 'admin') {
+      return <Navigate to="/admin" replace />;
+    }
+    
+    // Default redirect to main dashboard
     return <Navigate to="/dashboard" replace />;
   }
 
