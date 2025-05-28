@@ -2,7 +2,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useLocation } from 'react-router-dom';
-import { Calendar, History, DollarSign, User } from 'lucide-react';
+import { Calendar, History, DollarSign, User, Briefcase } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -33,6 +33,11 @@ export function CleanerSidebar() {
       title: "My Bookings",
       url: "/cleaner-dashboard",
       icon: Calendar,
+    },
+    {
+      title: "Available Bookings",
+      url: "/cleaner-available-bookings",
+      icon: Briefcase,
     },
     {
       title: "Past Bookings",

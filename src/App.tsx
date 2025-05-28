@@ -14,6 +14,7 @@ import PastBookings from "./pages/PastBookings";
 import CleanerDashboard from "./pages/CleanerDashboard";
 import CleanerPastBookings from "./pages/CleanerPastBookings";
 import CleanerEarnings from "./pages/CleanerEarnings";
+import CleanerAvailableBookings from "./pages/CleanerAvailableBookings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/users" element={<Users />} />
             <Route path="/past-bookings" element={<PastBookings />} />
             <Route path="/cleaner-dashboard" element={<CleanerDashboard />} />
+            <Route path="/cleaner-available-bookings" element={<CleanerAvailableBookings />} />
             <Route path="/cleaner-past-bookings" element={<CleanerPastBookings />} />
             <Route path="/cleaner-earnings" element={<CleanerEarnings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
