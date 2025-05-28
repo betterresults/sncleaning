@@ -1,17 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Filter, CalendarDays, MapPin, Clock, User, Phone, Mail, Banknote, UserX, CheckCircle, MoreHorizontal } from 'lucide-react';
-import { format, differenceInHours, isSameDay } from 'date-fns';
-import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
+import { CalendarDays, Clock, MapPin, User, Banknote, UserX, CheckCircle2 } from 'lucide-react';
 
 interface Booking {
   id: number;
@@ -36,19 +33,13 @@ interface Booking {
   };
 }
 
-interface Filters {
-  dateFrom: string;
-  dateTo: string;
-}
-
 interface Stats {
   totalBookings: number;
   totalEarnings: number;
 }
 
 const CleanerUpcomingBookings = () => {
-  const { cleanerId } = useAuth();
-  const { toast } = useToast();
+  const { cleanerId, loading: authLoading } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [stats, setStats] = useState<Stats>({
@@ -58,16 +49,12 @@ const CleanerUpcomingBookings = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [filters, setFilters] = useState<Filters>({
-    dateFrom: '',
-    dateTo: '',
-  });
 
   const fetchData = async () => {
     if (!cleanerId) {
-      setError('Cleaner ID not found');
+      setError('No cleaner ID found');
       setLoading(false);
       return;
     }
@@ -112,22 +99,11 @@ const CleanerUpcomingBookings = () => {
   };
 
   const applyFilters = () => {
-    let filtered = [...bookings];
-
-    if (filters.dateFrom) {
-      filtered = filtered.filter(booking => 
-        new Date(booking.date_time) >= new Date(filters.dateFrom)
-      );
-    }
-    if (filters.dateTo) {
-      filtered = filtered.filter(booking => 
-        new Date(booking.date_time) <= new Date(filters.dateTo)
-      );
-    }
-
+    const filtered = [...bookings];
     setFilteredBookings(filtered);
     setCurrentPage(1);
 
+    // Calculate stats for filtered bookings
     const totalEarnings = filtered.reduce((sum, booking) => sum + (booking.cleaner_pay || 0), 0);
     
     setStats({
@@ -136,15 +112,13 @@ const CleanerUpcomingBookings = () => {
     });
   };
 
-  const clearFilters = () => {
-    setFilters({
-      dateFrom: '',
-      dateTo: '',
-    });
-  };
-
   const handleDropOff = async (bookingId: number) => {
-    if (window.confirm('Are you sure you want to drop off this booking? This action cannot be undone.')) {
+    if (!cleanerId) {
+      console.error('No cleaner ID available');
+      return;
+    }
+
+    if (window.confirm('Are you sure you want to drop off this booking?')) {
       try {
         const { error } = await supabase
           .from('bookings')
@@ -154,32 +128,37 @@ const CleanerUpcomingBookings = () => {
 
         if (error) {
           console.error('Error dropping off booking:', error);
-          toast({
-            title: "Error",
-            description: "Failed to drop off booking",
-            variant: "destructive",
-          });
           return;
         }
 
-        toast({
-          title: "Success",
-          description: "Booking dropped off successfully",
-        });
-        
         fetchData();
       } catch (error) {
         console.error('Error dropping off booking:', error);
-        toast({
-          title: "Error",
-          description: "Failed to drop off booking",
-          variant: "destructive",
-        });
       }
     }
   };
 
-  const handleMarkCompleted = async (bookingId: number) => {
+  const getStatusBadge = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'confirmed':
+        return <Badge variant="default" className="bg-green-100 text-green-800">Confirmed</Badge>;
+      case 'pending':
+        return <Badge variant="secondary">Pending</Badge>;
+      case 'completed':
+        return <Badge variant="default" className="bg-blue-100 text-blue-800">Completed</Badge>;
+      case 'cancelled':
+        return <Badge variant="destructive">Cancelled</Badge>;
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
+    }
+  };
+
+  const handleMarkAsCompleted = async (bookingId: number) => {
+    if (!cleanerId) {
+      console.error('No cleaner ID available');
+      return;
+    }
+
     if (window.confirm('Are you sure you want to mark this booking as completed?')) {
       try {
         const { error } = await supabase
@@ -190,61 +169,35 @@ const CleanerUpcomingBookings = () => {
 
         if (error) {
           console.error('Error marking booking as completed:', error);
-          toast({
-            title: "Error",
-            description: "Failed to mark booking as completed",
-            variant: "destructive",
-          });
           return;
         }
 
-        toast({
-          title: "Success",
-          description: "Booking marked as completed",
-        });
-        
         fetchData();
       } catch (error) {
         console.error('Error marking booking as completed:', error);
-        toast({
-          title: "Error",
-          description: "Failed to mark booking as completed",
-          variant: "destructive",
-        });
       }
     }
   };
 
-  const canDropOff = (dateTime: string) => {
-    const bookingDate = new Date(dateTime);
-    const hoursUntilBooking = differenceInHours(bookingDate, new Date());
-    return hoursUntilBooking >= 48;
-  };
-
-  const canMarkCompleted = (dateTime: string) => {
-    const bookingDate = new Date(dateTime);
-    const today = new Date();
-    return isSameDay(bookingDate, today) || bookingDate < today;
-  };
-
   useEffect(() => {
-    if (cleanerId) {
+    if (!authLoading && cleanerId) {
       fetchData();
     }
-  }, [cleanerId, sortOrder]);
+  }, [cleanerId, authLoading, sortOrder]);
 
   useEffect(() => {
     applyFilters();
-  }, [bookings, filters]);
+  }, [bookings]);
 
+  // Pagination
   const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedBookings = filteredBookings.slice(startIndex, startIndex + itemsPerPage);
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="flex justify-center py-8">
-        <div className="text-lg">Loading your bookings...</div>
+        <div className="text-lg">Loading upcoming bookings...</div>
       </div>
     );
   }
@@ -253,9 +206,12 @@ const CleanerUpcomingBookings = () => {
     return (
       <div className="text-center py-8">
         <div className="text-red-600 mb-4">{error}</div>
-        <Button onClick={fetchData}>
+        <button 
+          onClick={fetchData}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
           Retry
-        </Button>
+        </button>
       </div>
     );
   }
@@ -271,13 +227,13 @@ const CleanerUpcomingBookings = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-900">{stats.totalBookings}</div>
-            <p className="text-xs text-blue-600">Assigned to you</p>
+            <p className="text-xs text-blue-600">Scheduled bookings</p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-700">Potential Earnings</CardTitle>
+            <CardTitle className="text-sm font-medium text-green-700">Expected Earnings</CardTitle>
             <Banknote className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
@@ -287,52 +243,11 @@ const CleanerUpcomingBookings = () => {
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card className="shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Filter className="h-5 w-5" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="dateFrom" className="text-sm font-medium">Date From</Label>
-              <Input
-                id="dateFrom"
-                type="date"
-                value={filters.dateFrom}
-                onChange={(e) => setFilters({...filters, dateFrom: e.target.value})}
-                className="h-9"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="dateTo" className="text-sm font-medium">Date To</Label>
-              <Input
-                id="dateTo"
-                type="date"
-                value={filters.dateTo}
-                onChange={(e) => setFilters({...filters, dateTo: e.target.value})}
-                className="h-9"
-              />
-            </div>
-
-            <div className="flex items-end">
-              <Button onClick={clearFilters} variant="outline" className="h-9">
-                Clear Filters
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Table Controls */}
       <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
-            <Label htmlFor="itemsPerPage" className="text-sm font-medium">Show:</Label>
+            <span className="text-sm font-medium">Show:</span>
             <Select value={itemsPerPage.toString()} onValueChange={(value) => {
               setItemsPerPage(parseInt(value));
               setCurrentPage(1);
@@ -341,6 +256,7 @@ const CleanerUpcomingBookings = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="5">5</SelectItem>
                 <SelectItem value="10">10</SelectItem>
                 <SelectItem value="20">20</SelectItem>
                 <SelectItem value="50">50</SelectItem>
@@ -349,7 +265,7 @@ const CleanerUpcomingBookings = () => {
           </div>
 
           <div className="flex items-center space-x-2">
-            <Label htmlFor="sortOrder" className="text-sm font-medium">Sort:</Label>
+            <span className="text-sm font-medium">Sort:</span>
             <Select value={sortOrder} onValueChange={(value: 'asc' | 'desc') => setSortOrder(value)}>
               <SelectTrigger className="w-32 h-8">
                 <SelectValue />
@@ -367,7 +283,7 @@ const CleanerUpcomingBookings = () => {
         </div>
       </div>
 
-      {/* Table */}
+      {/* Bookings Table */}
       <Card className="shadow-sm">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -414,12 +330,10 @@ const CleanerUpcomingBookings = () => {
                             <User className="h-3 w-3 mr-2 text-gray-400" />
                             {booking.first_name} {booking.last_name}
                           </div>
-                          <div className="text-sm text-gray-500 flex items-center">
-                            <Mail className="h-3 w-3 mr-2" />
+                          <div className="text-sm text-gray-500">
                             {booking.email}
                           </div>
-                          <div className="text-sm text-gray-500 flex items-center">
-                            <Phone className="h-3 w-3 mr-2" />
+                          <div className="text-sm text-gray-500">
                             {booking.phone_number}
                           </div>
                         </div>
@@ -436,49 +350,42 @@ const CleanerUpcomingBookings = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                          {booking.form_name || 'Standard Cleaning'}
-                        </span>
+                        <div className="space-y-1">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                            {booking.form_name || 'Standard Cleaning'}
+                          </span>
+                          {booking.booking_status && (
+                            <div>{getStatusBadge(booking.booking_status)}</div>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
-                        <span className="font-semibold text-green-600 text-base">
-                          £{booking.cleaner_pay?.toFixed(2) || '0.00'}
-                        </span>
+                        <div className="flex items-center space-x-2">
+                          <Banknote className="h-4 w-4 text-green-600" />
+                          <span className="font-semibold text-green-600 text-base">
+                            £{booking.cleaner_pay?.toFixed(2) || '0.00'}
+                          </span>
+                        </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex justify-center">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-gray-100">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40">
-                              {canDropOff(booking.date_time) && (
-                                <DropdownMenuItem 
-                                  onClick={() => handleDropOff(booking.id)}
-                                  className="text-orange-600 cursor-pointer"
-                                >
-                                  <UserX className="mr-2 h-4 w-4" />
-                                  Drop Off
-                                </DropdownMenuItem>
-                              )}
-                              {canMarkCompleted(booking.date_time) && booking.booking_status !== 'Completed' && (
-                                <DropdownMenuItem 
-                                  onClick={() => handleMarkCompleted(booking.id)}
-                                  className="text-green-600 cursor-pointer"
-                                >
-                                  <CheckCircle className="mr-2 h-4 w-4" />
-                                  Mark Completed
-                                </DropdownMenuItem>
-                              )}
-                              {!canDropOff(booking.date_time) && !canMarkCompleted(booking.date_time) && (
-                                <DropdownMenuItem disabled>
-                                  No actions available
-                                </DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                        <div className="flex justify-center space-x-2">
+                          <Button
+                            onClick={() => handleMarkAsCompleted(booking.id)}
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            Complete
+                          </Button>
+                          <Button
+                            onClick={() => handleDropOff(booking.id)}
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600 border-red-300 hover:bg-red-50"
+                          >
+                            <UserX className="h-3 w-3 mr-1" />
+                            Drop Off
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
