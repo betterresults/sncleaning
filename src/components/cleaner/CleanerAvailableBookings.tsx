@@ -37,7 +37,7 @@ const CleanerAvailableBookings = () => {
     const { data, error } = await supabase
       .from('bookings')
       .select('*')
-      .eq('cleaner', null)
+      .is('cleaner', null)  // Changed from .eq('cleaner', null) to .is('cleaner', null)
       .order('date_time', { ascending: true });
 
     if (error) {
