@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -24,6 +25,42 @@ interface Booking {
   total_cost: number;
   booking_status: string;
   cleaner: number | null;
+  cleaning_type: string;
+  payment_status: string;
+  customer: number;
+  additional_details?: string;
+  property_details?: string;
+  frequently?: string;
+  first_cleaning?: string;
+  occupied?: string;
+  hours_required?: number;
+  total_hours?: number;
+  ironing_hours?: number;
+  cleaning_time?: number;
+  carpet_items?: string;
+  exclude_areas?: string;
+  upholstery_items?: string;
+  mattress_items?: string;
+  extras?: string;
+  linens?: string;
+  ironing?: string;
+  parking_details?: string;
+  key_collection?: string;
+  access?: string;
+  agency?: string;
+  record_message?: string;
+  video_message?: string;
+  cost_deduction?: string;
+  cleaning_cost_per_visit?: string;
+  cleaning_cost_per_hour?: number;
+  steam_cleaning_cost?: string;
+  deposit?: number;
+  oven_size?: string;
+  payment_method?: string;
+  payment_term?: string;
+  cleaner_pay?: number;
+  cleaner_rate?: number;
+  cleaner_percentage?: number;
   cleaners?: {
     id: number;
     full_name: string;
