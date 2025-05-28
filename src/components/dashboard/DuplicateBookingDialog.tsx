@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -64,6 +63,11 @@ interface Booking {
   frontly_id?: number;
 }
 
+interface Cleaner {
+  id: number;
+  full_name: string;
+}
+
 interface DuplicateBookingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -81,7 +85,35 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
   const [selectedHour, setSelectedHour] = useState('');
   const [selectedMinute, setSelectedMinute] = useState('');
   const [selectedPeriod, setSelectedPeriod] = useState('AM');
+  const [cleanerOption, setCleanerOption] = useState('same'); // 'same', 'unassigned', 'different'
+  const [selectedCleaner, setSelectedCleaner] = useState<number | null>(null);
+  const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch cleaners when dialog opens
+  React.useEffect(() => {
+    if (open) {
+      fetchCleaners();
+    }
+  }, [open]);
+
+  const fetchCleaners = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('cleaners')
+        .select('id, full_name')
+        .order('full_name');
+
+      if (error) {
+        console.error('Error fetching cleaners:', error);
+        return;
+      }
+
+      setCleaners(data || []);
+    } catch (error) {
+      console.error('Error fetching cleaners:', error);
+    }
+  };
 
   // Generate hour options (1-12 for 12-hour format)
   const hourOptions = Array.from({ length: 12 }, (_, i) => {
@@ -120,13 +152,20 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
 
       console.log('Creating duplicate booking with date:', newDateTime.toISOString());
 
+      // Determine cleaner assignment
+      let assignedCleaner: number | null = null;
+      if (cleanerOption === 'same') {
+        assignedCleaner = booking.cleaner;
+      } else if (cleanerOption === 'different') {
+        assignedCleaner = selectedCleaner;
+      }
+      // 'unassigned' keeps assignedCleaner as null
+
       // Create duplicate booking data, excluding generated fields and auto-increment fields
       const { 
         id, 
         date_time, 
         frontly_id, 
-        invoice_id, 
-        invoice_link, 
         ...bookingData 
       } = booking;
       
@@ -134,7 +173,7 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
         ...bookingData,
         date_time: newDateTime.toISOString(),
         payment_status: 'Unpaid', // Reset payment status for new booking
-        cleaner: null, // Reset cleaner assignment
+        cleaner: assignedCleaner, // Use determined cleaner assignment
         cleaner_pay: null, // Reset cleaner pay
         booking_status: null, // Reset booking status
       };
@@ -159,6 +198,8 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
       setSelectedHour('');
       setSelectedMinute('');
       setSelectedPeriod('AM');
+      setCleanerOption('same');
+      setSelectedCleaner(null);
     } catch (error) {
       console.error('Error duplicating booking:', error);
     } finally {
@@ -166,7 +207,8 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
     }
   };
 
-  const isFormValid = selectedDate && selectedHour && selectedMinute;
+  const isFormValid = selectedDate && selectedHour && selectedMinute && 
+    (cleanerOption !== 'different' || selectedCleaner !== null);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -268,6 +310,37 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
               <p className="text-xs text-gray-500 mt-1">
                 Selected time: {selectedHour}:{selectedMinute} {selectedPeriod}
               </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Cleaner Assignment</Label>
+            <Select value={cleanerOption} onValueChange={setCleanerOption}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="same">Same Cleaner</SelectItem>
+                <SelectItem value="unassigned">Leave Unassigned</SelectItem>
+                <SelectItem value="different">Different Cleaner</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {cleanerOption === 'different' && (
+              <div className="mt-2">
+                <Select value={selectedCleaner?.toString() || ''} onValueChange={(value) => setSelectedCleaner(parseInt(value))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a cleaner" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cleaners.map((cleaner) => (
+                      <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
+                        {cleaner.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
           </div>
         </div>

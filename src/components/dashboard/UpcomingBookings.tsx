@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Edit, Trash2, Copy, Filter, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail, Banknote, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import DuplicateBookingDialog from './DuplicateBookingDialog';
+import AssignCleanerDialog from './AssignCleanerDialog';
 
 interface Booking {
   id: number;
@@ -95,6 +95,26 @@ const UpcomingBookings = () => {
   const [unassignedBookings, setUnassignedBookings] = useState(0);
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
   const [selectedBookingForDuplicate, setSelectedBookingForDuplicate] = useState<Booking | null>(null);
+  const [assignCleanerDialogOpen, setAssignCleanerDialogOpen] = useState(false);
+  const [selectedBookingForAssignment, setSelectedBookingForAssignment] = useState<number | null>(null);
+
+  // Debounced search
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Update filters when debounced search term changes
+  useEffect(() => {
+    setFilters(prev => ({ ...prev, customerSearch: debouncedSearchTerm }));
+  }, [debouncedSearchTerm]);
 
   useEffect(() => {
     fetchData();
@@ -219,6 +239,7 @@ const UpcomingBookings = () => {
       status: 'all',
       cleaner: 'all',
     });
+    setSearchTerm('');
   };
 
   const handleItemsPerPageChange = (value: number) => {
@@ -264,6 +285,16 @@ const UpcomingBookings = () => {
   const handleDuplicateSuccess = () => {
     fetchData();
     setSelectedBookingForDuplicate(null);
+  };
+
+  const handleAssignCleaner = (bookingId: number) => {
+    setSelectedBookingForAssignment(bookingId);
+    setAssignCleanerDialogOpen(true);
+  };
+
+  const handleAssignCleanerSuccess = () => {
+    fetchData();
+    setSelectedBookingForAssignment(null);
   };
 
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -378,8 +409,8 @@ const UpcomingBookings = () => {
                 <Input
                   id="customerSearch"
                   placeholder="Name or email..."
-                  value={filters.customerSearch}
-                  onChange={(e) => setFilters({ ...filters, customerSearch: e.target.value })}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-6 sm:pl-8 text-xs sm:text-sm h-8 sm:h-9"
                 />
               </div>
@@ -776,6 +807,14 @@ const UpcomingBookings = () => {
         onOpenChange={setDuplicateDialogOpen}
         booking={selectedBookingForDuplicate}
         onSuccess={handleDuplicateSuccess}
+      />
+
+      {/* Assign Cleaner Dialog */}
+      <AssignCleanerDialog
+        open={assignCleanerDialogOpen}
+        onOpenChange={setAssignCleanerDialogOpen}
+        bookingId={selectedBookingForAssignment}
+        onSuccess={handleAssignCleanerSuccess}
       />
     </div>
   );
