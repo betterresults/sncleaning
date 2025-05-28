@@ -55,6 +55,7 @@ const UpcomingBookings = () => {
         return;
       }
 
+      console.log('Fetched bookings data:', data);
       setBookings(data || []);
     } catch (error) {
       console.error('Error:', error);
@@ -76,7 +77,7 @@ const UpcomingBookings = () => {
       return `${booking.cleaners.first_name} ${booking.cleaners.last_name}`;
     }
 
-    return 'Loading...';
+    return 'Unknown Cleaner';
   };
 
   if (loading) {

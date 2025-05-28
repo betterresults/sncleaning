@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import UpcomingBookings from '@/components/dashboard/UpcomingBookings';
+import DashboardStats from '@/components/admin/DashboardStats';
 
 const Dashboard = () => {
   const { user, userRole, cleanerId, loading } = useAuth();
@@ -47,6 +48,8 @@ const Dashboard = () => {
           </header>
           
           <main className="flex-1 space-y-4 p-8 pt-6">
+            <DashboardStats />
+            
             <Card>
               <CardHeader>
                 <CardTitle>Upcoming Bookings</CardTitle>
