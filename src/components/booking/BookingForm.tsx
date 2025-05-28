@@ -79,21 +79,40 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
   };
 
   const handleCustomerSelect = (customer: any) => {
-    setFormData(prev => ({
-      ...prev,
-      customerId: customer.id,
-      firstName: customer.first_name || '',
-      lastName: customer.last_name || '',
-      email: customer.email || '',
-      phoneNumber: customer.phone || ''
-    }));
+    if (customer) {
+      setFormData(prev => ({
+        ...prev,
+        customerId: customer.id,
+        firstName: customer.first_name || '',
+        lastName: customer.last_name || '',
+        email: customer.email || '',
+        phoneNumber: customer.phone || ''
+      }));
+    } else {
+      // Reset customer fields when no customer is selected
+      setFormData(prev => ({
+        ...prev,
+        customerId: null,
+        firstName: '',
+        lastName: '',
+        email: '',
+        phoneNumber: ''
+      }));
+    }
   };
 
   const handleCleanerSelect = (cleaner: any) => {
-    setFormData(prev => ({
-      ...prev,
-      cleanerId: cleaner.id
-    }));
+    if (cleaner) {
+      setFormData(prev => ({
+        ...prev,
+        cleanerId: cleaner.id
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        cleanerId: null
+      }));
+    }
   };
 
   const calculateCleanerPay = () => {
