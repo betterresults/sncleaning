@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,11 +7,13 @@ import { RefreshCw } from 'lucide-react';
 import UsersSection from './UsersSection';
 import CustomersSection from './CustomersSection';
 
-interface UserManagementTabsProps {
-  refreshUsers: () => void;
-}
+const UserManagementTabs = () => {
+  const [refreshKey, setRefreshKey] = useState(0);
 
-const UserManagementTabs = ({ refreshUsers }: UserManagementTabsProps) => {
+  const refreshUsers = () => {
+    setRefreshKey(prev => prev + 1);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -36,7 +38,7 @@ const UserManagementTabs = ({ refreshUsers }: UserManagementTabsProps) => {
           </TabsList>
           
           <TabsContent value="users">
-            <UsersSection />
+            <UsersSection key={refreshKey} />
           </TabsContent>
           
           <TabsContent value="customers">

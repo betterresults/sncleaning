@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, AlertCircle, Link2, Unlink } from 'lucide-react';
+import { UserPlus, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import CreateUserForm from './CreateUserForm';
 
@@ -22,7 +23,11 @@ interface UserData {
   customer_name?: string;
 }
 
-const UsersSection = () => {
+interface UsersSectionProps {
+  key?: number;
+}
+
+const UsersSection = ({ key }: UsersSectionProps) => {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateUserForm, setShowCreateUserForm] = useState(false);
@@ -199,64 +204,6 @@ const UsersSection = () => {
     }
   };
 
-  const linkUserToRecord = async (userId: string, recordType: 'cleaner' | 'customer', recordId: number) => {
-    try {
-      const updateData = recordType === 'cleaner' 
-        ? { cleaner_id: recordId }
-        : { customer_id: recordId };
-
-      const { error } = await supabase
-        .from('profiles')
-        .update(updateData)
-        .eq('user_id', userId);
-
-      if (error) throw error;
-
-      toast({
-        title: 'Success',
-        description: `User linked to ${recordType} successfully!`,
-      });
-
-      fetchUsers();
-    } catch (error: any) {
-      console.error(`Error linking user to ${recordType}:`, error);
-      toast({
-        title: 'Error',
-        description: `Failed to link user to ${recordType}`,
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const unlinkUserFromRecord = async (userId: string, recordType: 'cleaner' | 'customer') => {
-    try {
-      const updateData = recordType === 'cleaner' 
-        ? { cleaner_id: null }
-        : { customer_id: null };
-
-      const { error } = await supabase
-        .from('profiles')
-        .update(updateData)
-        .eq('user_id', userId);
-
-      if (error) throw error;
-
-      toast({
-        title: 'Success',
-        description: `User unlinked from ${recordType} successfully!`,
-      });
-
-      fetchUsers();
-    } catch (error: any) {
-      console.error(`Error unlinking user from ${recordType}:`, error);
-      toast({
-        title: 'Error',
-        description: `Failed to unlink user from ${recordType}`,
-        variant: 'destructive',
-      });
-    }
-  };
-
   const getRoleDisplayName = (role: string) => {
     switch (role) {
       case 'guest':
@@ -285,7 +232,7 @@ const UsersSection = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [key]);
 
   return (
     <div className="space-y-6">
@@ -331,7 +278,6 @@ const UsersSection = () => {
                         {user.user_metadata.first_name} {user.user_metadata.last_name}
                       </div>
                       <div className="text-sm text-gray-500">{user.email}</div>
-                      <div className="text-xs text-gray-400">ID: {user.id}</div>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role || 'guest')}`}>
@@ -346,55 +292,6 @@ const UsersSection = () => {
                         <option value="user">Cleaner</option>
                         <option value="admin">Administrator</option>
                       </select>
-                    </div>
-                  </div>
-
-                  {/* Relationship Status */}
-                  <div className="flex items-center gap-4 text-sm">
-                    {/* Cleaner Relationship */}
-                    <div className="flex items-center gap-2">
-                      <Link2 className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600">Cleaner:</span>
-                      {user.cleaner_id ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-green-600 font-medium">
-                            {user.cleaner_name || `ID: ${user.cleaner_id}`}
-                          </span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => unlinkUserFromRecord(user.id, 'cleaner')}
-                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                          >
-                            <Unlink className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <span className="text-gray-400">Not linked</span>
-                      )}
-                    </div>
-
-                    {/* Customer Relationship */}
-                    <div className="flex items-center gap-2">
-                      <Link2 className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600">Customer:</span>
-                      {user.customer_id ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-green-600 font-medium">
-                            {user.customer_name || `ID: ${user.customer_id}`}
-                          </span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => unlinkUserFromRecord(user.id, 'customer')}
-                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                          >
-                            <Unlink className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <span className="text-gray-400">Not linked</span>
-                      )}
                     </div>
                   </div>
                 </div>

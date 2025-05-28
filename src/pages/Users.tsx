@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -22,10 +21,6 @@ const Users = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const refreshUsers = () => {
-    window.location.reload();
-  };
-
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -37,7 +32,7 @@ const Users = () => {
           </header>
           
           <main className="flex-1 space-y-3 sm:space-y-4 p-3 sm:p-6 lg:p-8 pt-3 sm:pt-6">
-            <UserManagementTabs refreshUsers={refreshUsers} />
+            <UserManagementTabs />
           </main>
         </SidebarInset>
       </div>
@@ -46,4 +41,3 @@ const Users = () => {
 };
 
 export default Users;
-
