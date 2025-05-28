@@ -238,7 +238,7 @@ const BookingsTable = () => {
   const getCleanerName = (booking: Booking) => {
     // If no cleaner is assigned
     if (!booking.cleaner) {
-      return 'Not Assigned';
+      return 'Unsigned';
     }
 
     // Check if we have cleaner data from the join
@@ -252,8 +252,8 @@ const BookingsTable = () => {
       return `${cleaner.first_name} ${cleaner.last_name}`;
     }
 
-    // If we have a cleaner ID but no data found
-    return `Cleaner ID: ${booking.cleaner}`;
+    // If we have a cleaner ID but no data found, still show as unsigned
+    return 'Unsigned';
   };
 
   const getCustomerName = (customerId: number) => {
@@ -437,75 +437,91 @@ const BookingsTable = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  paginatedBookings.map((booking) => (
-                    <TableRow key={booking.id}>
-                      <TableCell>
-                        <div className="text-sm">
-                          <div className="font-medium">
-                            {format(new Date(booking.date_time), 'dd/MM/yyyy')}
+                  paginatedBookings.map((booking) => {
+                    const isUnsigned = !booking.cleaner;
+                    const cleanerName = getCleanerName(booking);
+                    
+                    return (
+                      <TableRow 
+                        key={booking.id} 
+                        className={isUnsigned ? "bg-red-50 hover:bg-red-100" : "hover:bg-gray-50"}
+                      >
+                        <TableCell>
+                          <div className="text-sm">
+                            <div className="font-medium">
+                              {format(new Date(booking.date_time), 'dd/MM/yyyy')}
+                            </div>
+                            <div className="text-gray-500">
+                              {format(new Date(booking.date_time), 'HH:mm')}
+                            </div>
                           </div>
-                          <div className="text-gray-500">
-                            {format(new Date(booking.date_time), 'HH:mm')}
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <div className="font-medium">
+                              {booking.first_name} {booking.last_name}
+                            </div>
+                            <div className="text-gray-500">
+                              ID: {booking.customer}
+                            </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <div className="font-medium">
-                            {booking.first_name} {booking.last_name}
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <div>{booking.email}</div>
+                            <div className="text-gray-500">{booking.phone_number}</div>
                           </div>
-                          <div className="text-gray-500">
-                            ID: {booking.customer}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <div>{booking.email}</div>
-                          <div className="text-gray-500">{booking.phone_number}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="max-w-32 truncate">
-                        {booking.address}
-                      </TableCell>
-                      <TableCell>{booking.cleaning_type || 'N/A'}</TableCell>
-                      <TableCell>{getCleanerName(booking)}</TableCell>
-                      <TableCell className="font-medium">
-                        £{booking.total_cost?.toFixed(2) || '0.00'}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getPaymentStatusColor(booking.payment_status)}>
-                          {booking.payment_status || 'Unpaid'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              ⋮
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEdit(booking.id)}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDuplicate(booking)}>
-                              Duplicate
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleDelete(booking.id)}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                        </TableCell>
+                        <TableCell className="max-w-32 truncate">
+                          {booking.address}
+                        </TableCell>
+                        <TableCell>{booking.cleaning_type || 'N/A'}</TableCell>
+                        <TableCell>
+                          {isUnsigned ? (
+                            <Badge variant="destructive">
+                              Unsigned
+                            </Badge>
+                          ) : (
+                            <span>{cleanerName}</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          £{booking.total_cost?.toFixed(2) || '0.00'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getPaymentStatusColor(booking.payment_status)}>
+                            {booking.payment_status || 'Unpaid'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                ⋮
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleEdit(booking.id)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDuplicate(booking)}>
+                                Duplicate
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleDelete(booking.id)}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
