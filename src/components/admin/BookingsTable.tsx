@@ -27,6 +27,16 @@ interface Booking {
   customer: number;
   cleaner_name?: string;
   customer_name?: string;
+  cleaners?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+  }[];
+  customers?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+  }[];
 }
 
 interface Filters {
