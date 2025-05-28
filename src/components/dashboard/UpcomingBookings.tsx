@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -7,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Edit, Trash2, Copy, Filter, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail, Banknote } from 'lucide-react';
+import { Edit, Trash2, Copy, Filter, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail, Banknote, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Booking {
@@ -329,7 +330,7 @@ const UpcomingBookings = () => {
     if (!booking.cleaner) {
       console.log(`🔍 DEBUG: No cleaner assigned to booking ${booking.id}`);
       return {
-        name: 'No Cleaner Assigned',
+        name: 'Unassigned',
         pay: 0
       };
     }
@@ -587,8 +588,16 @@ const UpcomingBookings = () => {
                 ) : (
                   paginatedBookings.map((booking) => {
                     const cleanerInfo = getCleanerInfo(booking);
+                    const isUnassigned = cleanerInfo.name === 'Unassigned';
+                    
                     return (
-                      <TableRow key={booking.id} className="hover:bg-gray-50 transition-colors">
+                      <TableRow 
+                        key={booking.id} 
+                        className={isUnassigned 
+                          ? "hover:bg-red-50 transition-colors bg-red-50/50 border-l-4 border-red-500" 
+                          : "hover:bg-gray-50 transition-colors"
+                        }
+                      >
                         <TableCell>
                           <div className="flex items-start space-x-3">
                             <div className="flex flex-col items-center space-y-1">
@@ -638,16 +647,29 @@ const UpcomingBookings = () => {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <div className="space-y-1">
-                            <div className="flex items-center space-x-2">
-                              <User className="h-3 w-3 text-gray-400" />
-                              <span className="text-base font-medium">{cleanerInfo.name}</span>
+                          {isUnassigned ? (
+                            <div className="space-y-1">
+                              <div className="flex items-center space-x-2 bg-red-100 px-3 py-2 rounded-lg border border-red-200">
+                                <AlertTriangle className="h-4 w-4 text-red-600" />
+                                <span className="text-base font-semibold text-red-700">Unassigned</span>
+                              </div>
+                              <div className="text-sm text-red-600 font-medium flex items-center pl-2">
+                                <Banknote className="h-3 w-3 mr-2" />
+                                Pay: £{cleanerInfo.pay.toFixed(2)}
+                              </div>
                             </div>
-                            <div className="text-sm text-green-600 font-medium flex items-center">
-                              <Banknote className="h-3 w-3 mr-2" />
-                              Pay: £{cleanerInfo.pay.toFixed(2)}
+                          ) : (
+                            <div className="space-y-1">
+                              <div className="flex items-center space-x-2">
+                                <User className="h-3 w-3 text-gray-400" />
+                                <span className="text-base font-medium">{cleanerInfo.name}</span>
+                              </div>
+                              <div className="text-sm text-green-600 font-medium flex items-center">
+                                <Banknote className="h-3 w-3 mr-2" />
+                                Pay: £{cleanerInfo.pay.toFixed(2)}
+                              </div>
                             </div>
-                          </div>
+                          )}
                         </TableCell>
                         <TableCell>
                           <span className="font-semibold text-green-600 text-base">
