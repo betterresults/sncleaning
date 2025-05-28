@@ -54,6 +54,7 @@ const CleanerUpcomingBookings = () => {
 
   const fetchData = async () => {
     if (!cleanerId) {
+      console.log('No cleaner ID found, cannot fetch bookings');
       setError('No cleaner ID found');
       setLoading(false);
       return;
@@ -87,7 +88,9 @@ const CleanerUpcomingBookings = () => {
         return;
       }
 
-      console.log('Fetched bookings for cleaner:', bookingsData?.length || 0);
+      console.log('Fetched bookings for cleaner:', bookingsData?.length || 0, 'bookings');
+      console.log('Bookings data:', bookingsData);
+      
       setBookings(bookingsData || []);
 
     } catch (error) {
@@ -99,6 +102,8 @@ const CleanerUpcomingBookings = () => {
   };
 
   const applyFilters = () => {
+    // Since we're already filtering by cleaner ID in the query, 
+    // we don't need additional filtering here
     const filtered = [...bookings];
     setFilteredBookings(filtered);
     setCurrentPage(1);
