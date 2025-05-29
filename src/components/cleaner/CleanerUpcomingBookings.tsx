@@ -182,23 +182,21 @@ const CleanerUpcomingBookings = () => {
       return;
     }
 
-    if (window.confirm('Are you sure you want to mark this booking as completed?')) {
-      try {
-        const { error } = await supabase
-          .from('bookings')
-          .update({ booking_status: 'Completed' })
-          .eq('id', bookingId)
-          .eq('cleaner', cleanerId);
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ booking_status: 'Completed' })
+        .eq('id', bookingId)
+        .eq('cleaner', cleanerId);
 
-        if (error) {
-          console.error('Error marking booking as completed:', error);
-          return;
-        }
-
-        fetchData();
-      } catch (error) {
+      if (error) {
         console.error('Error marking booking as completed:', error);
+        return;
       }
+
+      fetchData();
+    } catch (error) {
+      console.error('Error marking booking as completed:', error);
     }
   };
 

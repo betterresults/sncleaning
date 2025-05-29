@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,7 @@ const BookingsTable: React.FC<BookingsTableProps> = ({
   onDropOff,
 }) => {
   const [dropOffBookingId, setDropOffBookingId] = useState<number | null>(null);
+  const [completeBookingId, setCompleteBookingId] = useState<number | null>(null);
   const isMobile = useIsMobile();
 
   const getStatusBadge = (status: string) => {
@@ -82,10 +84,21 @@ const BookingsTable: React.FC<BookingsTableProps> = ({
     setDropOffBookingId(bookingId);
   };
 
+  const handleCompleteClick = (bookingId: number) => {
+    setCompleteBookingId(bookingId);
+  };
+
   const handleConfirmDropOff = () => {
     if (dropOffBookingId) {
       onDropOff(dropOffBookingId);
       setDropOffBookingId(null);
+    }
+  };
+
+  const handleConfirmComplete = () => {
+    if (completeBookingId) {
+      onMarkAsCompleted(completeBookingId);
+      setCompleteBookingId(null);
     }
   };
 
@@ -147,7 +160,7 @@ const BookingsTable: React.FC<BookingsTableProps> = ({
           <div className="flex flex-col space-y-2">
             {shouldShowCompleteButton(booking) && (
               <Button
-                onClick={() => onMarkAsCompleted(booking.id)}
+                onClick={() => handleCompleteClick(booking.id)}
                 size="sm"
                 className="bg-green-600 hover:bg-green-700 text-white w-full"
               >
@@ -276,7 +289,7 @@ const BookingsTable: React.FC<BookingsTableProps> = ({
                           <div className="flex justify-center space-x-2">
                             {shouldShowCompleteButton(booking) && (
                               <Button
-                                onClick={() => onMarkAsCompleted(booking.id)}
+                                onClick={() => handleCompleteClick(booking.id)}
                                 size="sm"
                                 className="bg-green-600 hover:bg-green-700 text-white"
                               >
@@ -307,6 +320,7 @@ const BookingsTable: React.FC<BookingsTableProps> = ({
         </CardContent>
       </Card>
 
+      {/* Drop Off Confirmation Dialog */}
       <AlertDialog open={dropOffBookingId !== null} onOpenChange={() => setDropOffBookingId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -323,6 +337,28 @@ const BookingsTable: React.FC<BookingsTableProps> = ({
             >
               <UserX className="h-4 w-4 mr-2" />
               Drop Off Booking
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Mark as Completed Confirmation Dialog */}
+      <AlertDialog open={completeBookingId !== null} onOpenChange={() => setCompleteBookingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark as Completed</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to mark this booking as completed? This action will update the booking status and cannot be easily undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmComplete}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <CheckCircle2 className="h-4 w-4 mr-2" />
+              Mark as Completed
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

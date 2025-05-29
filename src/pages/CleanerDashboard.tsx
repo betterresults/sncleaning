@@ -5,6 +5,7 @@ import { Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { CleanerSidebar } from '@/components/CleanerSidebar';
 import CleanerUpcomingBookings from '@/components/cleaner/CleanerUpcomingBookings';
+import InstallPrompt from '@/components/InstallPrompt';
 
 const CleanerDashboard = () => {
   const { user, userRole, cleanerId, loading } = useAuth();
@@ -29,24 +30,27 @@ const CleanerDashboard = () => {
   const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Cleaner';
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
-        <CleanerSidebar />
-        <SidebarInset className="flex-1">
-          <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-white px-4 shadow-sm">
-            <SidebarTrigger className="-ml-1 p-2" />
-            <div className="flex-1" />
-            <div className="text-base font-semibold text-gray-900 truncate">
-              Hello {firstName}! 👋
-            </div>
-          </header>
-          
-          <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
-            <CleanerUpcomingBookings />
-          </main>
-        </SidebarInset>
-      </div>
-    </SidebarProvider>
+    <>
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-gray-50">
+          <CleanerSidebar />
+          <SidebarInset className="flex-1">
+            <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-white px-4 shadow-sm">
+              <SidebarTrigger className="-ml-1 p-2" />
+              <div className="flex-1" />
+              <div className="text-base font-semibold text-gray-900 truncate">
+                Hello {firstName}! 👋
+              </div>
+            </header>
+            
+            <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
+              <CleanerUpcomingBookings />
+            </main>
+          </SidebarInset>
+        </div>
+      </SidebarProvider>
+      <InstallPrompt />
+    </>
   );
 };
 
