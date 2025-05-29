@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format, isToday, differenceInHours } from 'date-fns';
 import { CalendarDays, Clock, MapPin, User, Banknote, UserX, CheckCircle2 } from 'lucide-react';
@@ -59,18 +58,14 @@ const BookingsTable: React.FC<BookingsTableProps> = ({
     const bookingDate = new Date(booking.date_time);
     const now = new Date();
     const hoursUntilBooking = differenceInHours(bookingDate, now);
-    // Show drop off button only if booking is more than 24 hours away
     return hoursUntilBooking >= 24;
   };
 
   const formatPhoneForWhatsApp = (phone: string) => {
-    // Remove all non-digit characters
     const cleaned = phone.replace(/\D/g, '');
-    // If it starts with 0, replace with 44 (UK country code)
     if (cleaned.startsWith('0')) {
       return '44' + cleaned.substring(1);
     }
-    // If it doesn't start with country code, assume UK
     if (!cleaned.startsWith('44')) {
       return '44' + cleaned;
     }
@@ -96,19 +91,24 @@ const BookingsTable: React.FC<BookingsTableProps> = ({
 
   const MobileBookingCard = ({ booking }: { booking: Booking }) => (
     <Card className="mb-4">
-      <CardContent className="p-4">
-        <div className="space-y-3">
-          {/* Date and Time */}
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="flex space-x-1">
-              <CalendarDays className="h-4 w-4 text-gray-400" />
-              <Clock className="h-4 w-4 text-gray-400" />
-            </div>
+            <CalendarDays className="h-4 w-4 text-gray-400" />
             <div className="text-sm font-medium">
               {booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy HH:mm') : 'No date/time'}
             </div>
           </div>
-
+          <div className="flex items-center space-x-1">
+            <Banknote className="h-4 w-4 text-green-600" />
+            <span className="font-semibold text-green-600 text-sm">
+              £{booking.cleaner_pay?.toFixed(2) || '0.00'}
+            </span>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="space-y-3">
           {/* Customer */}
           <div className="flex items-start space-x-2">
             <User className="h-4 w-4 text-gray-400 mt-0.5" />
@@ -140,14 +140,6 @@ const BookingsTable: React.FC<BookingsTableProps> = ({
           <div className="flex flex-col space-y-2">
             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 w-fit">
               {booking.form_name || 'Standard Cleaning'}
-            </span>
-          </div>
-
-          {/* Earnings */}
-          <div className="flex items-center space-x-2">
-            <Banknote className="h-4 w-4 text-green-600" />
-            <span className="font-semibold text-green-600 text-sm">
-              £{booking.cleaner_pay?.toFixed(2) || '0.00'}
             </span>
           </div>
 
