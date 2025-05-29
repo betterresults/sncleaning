@@ -11,6 +11,7 @@ import { Navigate } from 'react-router-dom';
 
 const Index = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -58,7 +59,19 @@ const Index = () => {
     setLoading(true);
 
     try {
-      if (isLogin) {
+      if (isForgotPassword) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/`,
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: 'Password Reset Email Sent',
+          description: 'Check your email for a link to reset your password.',
+        });
+        setIsForgotPassword(false);
+      } else if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -102,6 +115,22 @@ const Index = () => {
     }
   };
 
+  const getCardTitle = () => {
+    if (isForgotPassword) return 'Reset Password';
+    return isLogin ? 'Welcome Back' : 'Create Account';
+  };
+
+  const getCardDescription = () => {
+    if (isForgotPassword) return 'Enter your email to receive a password reset link';
+    return isLogin ? 'Sign in to your account' : 'Sign up for SN Cleaning';
+  };
+
+  const getButtonText = () => {
+    if (loading) return 'Loading...';
+    if (isForgotPassword) return 'Send Reset Email';
+    return isLogin ? 'Sign In' : 'Sign Up';
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="text-center max-w-md mx-auto">
@@ -113,15 +142,15 @@ const Index = () => {
         <Card className="w-full">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">
-              {isLogin ? 'Welcome Back' : 'Create Account'}
+              {getCardTitle()}
             </CardTitle>
             <CardDescription>
-              {isLogin ? 'Sign in to your account' : 'Sign up for SN Cleaning'}
+              {getCardDescription()}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {!isLogin && (
+              {!isLogin && !isForgotPassword && (
                 <>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -157,28 +186,52 @@ const Index = () => {
                   required
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
+              {!isForgotPassword && (
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Loading...' : (isLogin ? 'Sign In' : 'Sign Up')}
+                {getButtonText()}
               </Button>
             </form>
-            <div className="mt-4 text-center">
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-sm text-blue-600 hover:underline"
-              >
-                {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
-              </button>
+            
+            <div className="mt-4 text-center space-y-2">
+              {!isForgotPassword ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setIsLogin(!isLogin)}
+                    className="text-sm text-blue-600 hover:underline block w-full"
+                  >
+                    {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+                  </button>
+                  {isLogin && (
+                    <button
+                      type="button"
+                      onClick={() => setIsForgotPassword(true)}
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      Forgot password?
+                    </button>
+                  )}
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsForgotPassword(false)}
+                  className="text-sm text-blue-600 hover:underline"
+                >
+                  Back to login
+                </button>
+              )}
             </div>
           </CardContent>
         </Card>
