@@ -65,16 +65,17 @@ export function CleanerSidebar() {
             <SidebarMenu className="space-y-1">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild
-                    isActive={location.pathname === item.url}
-                    className="w-full h-12 px-3 py-2 text-sm"
-                  >
-                    <Link to={item.url} className="flex items-center gap-3 w-full">
-                      <item.icon className="h-5 w-5 flex-shrink-0" />
-                      <span className="font-medium truncate">{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
+                  <Link to={item.url} className="block w-full">
+                    <SidebarMenuButton 
+                      isActive={location.pathname === item.url}
+                      className="w-full h-12 px-3 py-2 text-sm"
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        <item.icon className="h-5 w-5 flex-shrink-0" />
+                        <span className="font-medium truncate">{item.title}</span>
+                      </div>
+                    </SidebarMenuButton>
+                  </Link>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
