@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
+import InstallPrompt from '@/components/InstallPrompt';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -222,6 +222,8 @@ const Auth = () => {
           </div>
         </CardContent>
       </Card>
+      
+      <InstallPrompt />
     </div>
   );
 };

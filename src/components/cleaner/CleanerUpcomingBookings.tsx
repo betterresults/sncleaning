@@ -57,7 +57,7 @@ const CleanerUpcomingBookings = () => {
           )
         `)
         .eq('cleaner', cleanerId)
-        .gte('date_time', new Date().toISOString())
+        .gte('date_time', startOfDay(new Date()).toISOString())
         .order('date_time', { ascending: sortOrder === 'asc' });
 
       if (bookingsError) {
