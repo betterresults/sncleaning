@@ -28,11 +28,11 @@ const Index = () => {
         <div className="space-y-4">
           <Link to="/auth">
             <Button size="lg" className="w-full">
-              Sign In / Sign Up
+              Sign In
             </Button>
           </Link>
           <p className="text-sm text-gray-500">
-            Create an account or sign in to access your cleaning dashboard
+            Don't have an account? You can create one after clicking Sign In
           </p>
         </div>
       </div>
