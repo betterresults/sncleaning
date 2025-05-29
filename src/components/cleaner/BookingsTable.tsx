@@ -63,6 +63,26 @@ const BookingsTable: React.FC<BookingsTableProps> = ({
     return hoursUntilBooking >= 24;
   };
 
+  const formatPhoneForWhatsApp = (phone: string) => {
+    // Remove all non-digit characters
+    const cleaned = phone.replace(/\D/g, '');
+    // If it starts with 0, replace with 44 (UK country code)
+    if (cleaned.startsWith('0')) {
+      return '44' + cleaned.substring(1);
+    }
+    // If it doesn't start with country code, assume UK
+    if (!cleaned.startsWith('44')) {
+      return '44' + cleaned;
+    }
+    return cleaned;
+  };
+
+  const handlePhoneClick = (phone: string) => {
+    const whatsappNumber = formatPhoneForWhatsApp(phone);
+    const whatsappUrl = `https://wa.me/${whatsappNumber}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
   const handleDropOffClick = (bookingId: number) => {
     setDropOffBookingId(bookingId);
   };
@@ -94,8 +114,14 @@ const BookingsTable: React.FC<BookingsTableProps> = ({
             <User className="h-4 w-4 text-gray-400 mt-0.5" />
             <div className="flex-1">
               <div className="font-medium text-sm">{booking.first_name} {booking.last_name}</div>
-              <div className="text-xs text-gray-500">{booking.email}</div>
-              <div className="text-xs text-gray-500">{booking.phone_number}</div>
+              {booking.phone_number && (
+                <button 
+                  onClick={() => handlePhoneClick(booking.phone_number)}
+                  className="text-xs text-blue-600 hover:text-blue-800 underline mt-1"
+                >
+                  {booking.phone_number}
+                </button>
+              )}
             </div>
           </div>
 
@@ -110,14 +136,11 @@ const BookingsTable: React.FC<BookingsTableProps> = ({
             </div>
           </div>
 
-          {/* Service and Status */}
+          {/* Service */}
           <div className="flex flex-col space-y-2">
             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 w-fit">
               {booking.form_name || 'Standard Cleaning'}
             </span>
-            {booking.booking_status && (
-              <div className="w-fit">{getStatusBadge(booking.booking_status)}</div>
-            )}
           </div>
 
           {/* Earnings */}
@@ -218,12 +241,14 @@ const BookingsTable: React.FC<BookingsTableProps> = ({
                               <User className="h-3 w-3 mr-2 text-gray-400" />
                               {booking.first_name} {booking.last_name}
                             </div>
-                            <div className="text-sm text-gray-500">
-                              {booking.email}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {booking.phone_number}
-                            </div>
+                            {booking.phone_number && (
+                              <button 
+                                onClick={() => handlePhoneClick(booking.phone_number)}
+                                className="text-sm text-blue-600 hover:text-blue-800 underline"
+                              >
+                                {booking.phone_number}
+                              </button>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>

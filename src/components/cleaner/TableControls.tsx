@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface TableControlsProps {
   itemsPerPage: number;
@@ -19,6 +20,31 @@ const TableControls: React.FC<TableControlsProps> = ({
   onItemsPerPageChange,
   onSortOrderChange,
 }) => {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return (
+      <div className="bg-gray-50 p-3 rounded-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Select value={sortOrder} onValueChange={onSortOrderChange}>
+              <SelectTrigger className="w-32 h-8 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="asc">Earliest first</SelectItem>
+                <SelectItem value="desc">Latest first</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="text-xs text-gray-600">
+            {totalBookings} bookings
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col space-y-3 sm:flex-row sm:justify-between sm:items-center sm:space-y-0 bg-gray-50 p-3 sm:p-4 rounded-lg">
       <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
