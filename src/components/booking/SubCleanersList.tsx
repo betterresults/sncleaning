@@ -66,7 +66,13 @@ const SubCleanersList = ({ bookingId, onSubCleanerRemoved }: SubCleanersListProp
         return;
       }
 
-      setSubCleaners(data || []);
+      // Type assertion to ensure payment_method is properly typed
+      const typedData = (data || []).map(item => ({
+        ...item,
+        payment_method: item.payment_method as 'hourly' | 'percentage'
+      }));
+
+      setSubCleaners(typedData);
     } catch (error) {
       console.error('Error fetching sub-cleaners:', error);
     } finally {

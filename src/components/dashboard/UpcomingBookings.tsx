@@ -125,7 +125,13 @@ const UpcomingBookings = () => {
         return;
       }
 
-      setCleaners(data || []);
+      // Convert phone from number to string
+      const typedCleaners = (data || []).map(cleaner => ({
+        ...cleaner,
+        phone: cleaner.phone?.toString() || ''
+      }));
+
+      setCleaners(typedCleaners);
     } catch (error) {
       console.error('Error fetching cleaners:', error);
     }
@@ -225,7 +231,7 @@ const UpcomingBookings = () => {
         <div className="flex gap-2">
           {selectedBookings.length > 0 && (
             <BulkEditBookingsDialog 
-              selectedBookingIds={selectedBookings}
+              selectedBookings={selectedBookings}
               onBookingsUpdated={() => {
                 fetchBookings();
                 setSelectedBookings([]);

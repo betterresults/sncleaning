@@ -85,7 +85,7 @@ const Dashboard = () => {
                   <CardTitle className="text-lg sm:text-xl lg:text-2xl">Upcoming Bookings</CardTitle>
                 </CardHeader>
                 <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-                  <UpcomingBookings selectedTimeRange={selectedTimeRange} />
+                  <UpcomingBookings />
                 </CardContent>
               </Card>
             </div>
