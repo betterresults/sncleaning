@@ -7,7 +7,6 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import { AppSidebar } from '@/components/AppSidebar';
 import DashboardStats from '@/components/admin/DashboardStats';
 import BookingsTable from '@/components/admin/BookingsTable';
-import CreateCleanerUsersUtility from '@/components/admin/CreateCleanerUsersUtility';
 
 const AdminDashboard = () => {
   const { user, userRole, loading } = useAuth();
@@ -43,8 +42,6 @@ const AdminDashboard = () => {
           <main className="flex-1 space-y-3 sm:space-y-6 lg:space-y-8 p-3 sm:p-6 lg:p-8 pt-3 sm:pt-6">
             <div className="space-y-6 sm:space-y-8">
               <DashboardStats />
-              
-              <CreateCleanerUsersUtility />
               
               <Card>
                 <CardHeader className="pb-3 sm:pb-6">

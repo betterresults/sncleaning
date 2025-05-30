@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Edit, Trash2, Filter, Search, Settings } from 'lucide-react';
+import { Edit, Trash2, Filter, Search, Settings, Copy, X } from 'lucide-react';
 import { format } from 'date-fns';
 import DashboardStats from './DashboardStats';
 import BulkEditBookingsDialog from '../dashboard/BulkEditBookingsDialog';
@@ -256,6 +256,24 @@ const BookingsTable = () => {
       fetchData();
     } catch (error) {
       console.error('Error duplicating booking:', error);
+    }
+  };
+
+  const handleCancel = async (bookingId: number) => {
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ booking_status: 'Cancelled' })
+        .eq('id', bookingId);
+
+      if (error) {
+        console.error('Error cancelling booking:', error);
+        return;
+      }
+
+      fetchData();
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
     }
   };
 
@@ -555,7 +573,12 @@ const BookingsTable = () => {
                                 Edit
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleDuplicate(booking)}>
+                                <Copy className="mr-2 h-4 w-4" />
                                 Duplicate
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleCancel(booking.id)}>
+                                <X className="mr-2 h-4 w-4" />
+                                Cancel
                               </DropdownMenuItem>
                               <DropdownMenuItem 
                                 onClick={() => handleDelete(booking.id)}
