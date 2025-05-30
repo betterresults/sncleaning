@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { format } from 'date-fns';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 
 interface Booking {
   id: number;
@@ -83,7 +82,7 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [cleaners, setCleaners] = useState<{ id: number; full_name: string }[]>([]);
   const [formData, setFormData] = useState({
-    date_time: '',
+    date_time: null as Date | null,
     first_name: '',
     last_name: '',
     email: '',
@@ -99,9 +98,7 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   useEffect(() => {
     console.log('Booking data received in EditBookingDialog:', booking);
     if (booking && open) {
-      const formattedDateTime = booking.date_time 
-        ? format(new Date(booking.date_time), "yyyy-MM-dd'T'HH:mm")
-        : '';
+      const bookingDateTime = booking.date_time ? new Date(booking.date_time) : null;
       
       // Map payment status correctly
       let mappedPaymentStatus = 'unpaid';
@@ -113,7 +110,7 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       }
       
       const newFormData = {
-        date_time: formattedDateTime,
+        date_time: bookingDateTime,
         first_name: booking.first_name || '',
         last_name: booking.last_name || '',
         email: booking.email || '',
@@ -152,13 +149,14 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     e.preventDefault();
     if (!booking) return;
 
+    console.log('Submitting edit booking with data:', formData);
     setLoading(true);
 
     try {
       const { error } = await supabase
         .from('bookings')
         .update({
-          date_time: formData.date_time,
+          date_time: formData.date_time?.toISOString(),
           first_name: formData.first_name,
           last_name: formData.last_name,
           email: formData.email,
@@ -174,7 +172,7 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
 
       if (error) {
         console.error('Error updating booking:', error);
-        return;
+        throw error;
       }
 
       console.log('Booking updated successfully');
@@ -264,19 +262,6 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
             </div>
             
             <div>
-              <Label htmlFor="date_time">Date & Time</Label>
-              <Input
-                id="date_time"
-                type="datetime-local"
-                value={formData.date_time}
-                onChange={(e) => setFormData({ ...formData, date_time: e.target.value })}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
               <Label htmlFor="total_cost">Total Cost (£)</Label>
               <Input
                 id="total_cost"
@@ -287,7 +272,18 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                 required
               />
             </div>
-            
+          </div>
+
+          <div>
+            <Label>Date & Time</Label>
+            <DateTimePicker
+              value={formData.date_time || undefined}
+              onChange={(date) => setFormData({ ...formData, date_time: date || null })}
+              placeholder="Select date and time"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="payment_status">Payment Status</Label>
               <Select 
@@ -304,26 +300,26 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          <div>
-            <Label htmlFor="cleaner">Assign Cleaner</Label>
-            <Select 
-              value={formData.cleaner?.toString() || 'no-cleaner'} 
-              onValueChange={(value) => setFormData({ ...formData, cleaner: value === 'no-cleaner' ? null : Number(value) })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a cleaner" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="no-cleaner">No cleaner assigned</SelectItem>
-                {cleaners.map((cleaner) => (
-                  <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
-                    {cleaner.full_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            
+            <div>
+              <Label htmlFor="cleaner">Assign Cleaner</Label>
+              <Select 
+                value={formData.cleaner?.toString() || 'no-cleaner'} 
+                onValueChange={(value) => setFormData({ ...formData, cleaner: value === 'no-cleaner' ? null : Number(value) })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a cleaner" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="no-cleaner">No cleaner assigned</SelectItem>
+                  {cleaners.map((cleaner) => (
+                    <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
+                      {cleaner.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div>

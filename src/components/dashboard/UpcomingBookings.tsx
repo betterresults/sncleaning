@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Edit, Trash2, Copy, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail, Banknote, AlertTriangle, UserPlus, Settings, Filter } from 'lucide-react';
+import { Edit, Trash2, Copy, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail, Banknote, AlertTriangle, UserPlus, Settings, Users, X } from 'lucide-react';
 import { format, addDays, startOfDay, endOfDay } from 'date-fns';
 import DuplicateBookingDialog from './DuplicateBookingDialog';
 import AssignCleanerDialog from './AssignCleanerDialog';
@@ -116,6 +116,8 @@ const UpcomingBookings = ({ selectedTimeRange }: UpcomingBookingsProps) => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<Booking | null>(null);
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [selectedBookingForCancel, setSelectedBookingForCancel] = useState<number | null>(null);
 
   // Debounced search
   const [searchTerm, setSearchTerm] = useState('');
@@ -318,6 +320,40 @@ const UpcomingBookings = ({ selectedTimeRange }: UpcomingBookingsProps) => {
     setDeleteDialogOpen(true);
   };
 
+  const handleCancel = (bookingId: number) => {
+    setSelectedBookingForCancel(bookingId);
+    setCancelDialogOpen(true);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!selectedBookingForCancel) return;
+
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ booking_status: 'Cancelled' })
+        .eq('id', selectedBookingForCancel);
+
+      if (error) {
+        console.error('Error cancelling booking:', error);
+        setError('Failed to cancel booking: ' + error.message);
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: "Booking cancelled successfully",
+      });
+
+      setCancelDialogOpen(false);
+      setSelectedBookingForCancel(null);
+      await fetchData();
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      setError('An unexpected error occurred while cancelling');
+    }
+  };
+
   const handleConfirmDelete = async () => {
     if (!selectedBookingForDelete) return;
 
@@ -350,6 +386,29 @@ const UpcomingBookings = ({ selectedTimeRange }: UpcomingBookingsProps) => {
   const handleDuplicateSuccess = () => {
     fetchData();
     setSelectedBookingForDuplicate(null);
+  };
+
+  const handleCleanerAssignment = async (bookingId: number, cleanerId: number | null) => {
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ cleaner: cleanerId })
+        .eq('id', bookingId);
+
+      if (error) {
+        console.error('Error updating cleaner assignment:', error);
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: cleanerId ? "Cleaner assigned successfully" : "Booking unassigned successfully",
+      });
+
+      await fetchData(); // Refresh data
+    } catch (error) {
+      console.error('Error updating cleaner assignment:', error);
+    }
   };
 
   const handleAssignCleaner = (bookingId: number) => {
@@ -476,28 +535,26 @@ const UpcomingBookings = ({ selectedTimeRange }: UpcomingBookingsProps) => {
 
       {/* Simplified Filters */}
       <Card>
-        <CardHeader className="pb-2 sm:pb-3 lg:pb-4 px-3 sm:px-6 pt-3 sm:pt-6">
-          <CardTitle className="text-sm sm:text-base lg:text-lg flex items-center gap-2">
-            <Filter className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6 pb-3 sm:pb-6">
+        <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6 py-3 sm:py-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
             <div>
-              <Label htmlFor="customerSearch" className="text-xs sm:text-sm">Customer Search</Label>
-              <div className="relative">
-                <Search className="absolute left-2 top-2 sm:top-2.5 h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
-                <Input
-                  id="customerSearch"
-                  placeholder="Name or email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-6 sm:pl-8 text-xs sm:text-sm h-8 sm:h-9"
-                />
-              </div>
+              <Label htmlFor="customerSearch" className="text-xs sm:text-sm flex items-center gap-2">
+                <Search className="h-3 w-3 sm:h-4 sm:w-4" />
+                Customer Search
+              </Label>
+              <Input
+                id="customerSearch"
+                placeholder="Name or email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="text-xs sm:text-sm h-8 sm:h-9"
+              />
             </div>
             <div>
-              <Label htmlFor="cleaner" className="text-xs sm:text-sm">Cleaner</Label>
+              <Label htmlFor="cleaner" className="text-xs sm:text-sm flex items-center gap-2">
+                <Users className="h-3 w-3 sm:h-4 sm:w-4" />
+                Cleaner
+              </Label>
               <Select
                 value={filters.cleaner}
                 onValueChange={(value) => setFilters({ ...filters, cleaner: value })}
@@ -622,6 +679,10 @@ const UpcomingBookings = ({ selectedTimeRange }: UpcomingBookingsProps) => {
                                   <Copy className="mr-2 h-4 w-4" />
                                   Duplicate
                                 </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleCancel(booking.id)}>
+                                  <X className="mr-2 h-4 w-4" />
+                                  Cancel
+                                </DropdownMenuItem>
                                 <DropdownMenuItem 
                                   onClick={() => handleDelete(booking.id)}
                                   className="text-red-600"
@@ -666,34 +727,37 @@ const UpcomingBookings = ({ selectedTimeRange }: UpcomingBookingsProps) => {
                             </div>
                           </div>
 
-                          {/* Service and Cleaner */}
+                          {/* Service */}
                           <div className="flex flex-wrap gap-2">
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            <span className="inline-flex items-center px-3 py-1 rounded text-xs font-medium bg-slate-100 text-slate-700">
                               {booking.form_name || 'Standard Cleaning'}
                             </span>
                           </div>
 
-                          {/* Cleaner and Cost with clickable cleaner assignment */}
+                          {/* Cleaner Dropdown and Cost */}
                           <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                             <div className="flex-1">
-                              {isUnassigned ? (
-                                <button
-                                  onClick={() => handleCleanerClick(booking.id)}
-                                  className="flex items-center space-x-2 bg-red-100 hover:bg-red-200 px-3 py-2 rounded-lg border border-red-200 transition-colors cursor-pointer w-full text-left"
-                                >
-                                  <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0" />
-                                  <span className="text-sm font-semibold text-red-700">Click to Assign Cleaner</span>
-                                  <UserPlus className="h-3 w-3 text-red-600 ml-auto" />
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => handleCleanerClick(booking.id)}
-                                  className="text-xs hover:bg-gray-100 p-1 rounded cursor-pointer"
-                                >
-                                  <span className="text-gray-500">Cleaner: </span>
-                                  <span className="font-medium text-blue-600 hover:text-blue-800">{cleanerInfo.name}</span>
-                                </button>
-                              )}
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="outline" size="sm" className="text-xs">
+                                    <Users className="h-3 w-3 mr-1" />
+                                    {isUnassigned ? "Unassigned" : cleanerInfo.name}
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                  <DropdownMenuItem onClick={() => handleCleanerAssignment(booking.id, null)}>
+                                    Unassigned
+                                  </DropdownMenuItem>
+                                  {cleaners.map((cleaner) => (
+                                    <DropdownMenuItem 
+                                      key={cleaner.id}
+                                      onClick={() => handleCleanerAssignment(booking.id, cleaner.id)}
+                                    >
+                                      {cleaner.name}
+                                    </DropdownMenuItem>
+                                  ))}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                               <div className="text-xs text-gray-600 font-medium flex items-center mt-1">
                                 <Banknote className="h-3 w-3 mr-1" />
                                 Pay: £{cleanerInfo.pay.toFixed(2)}
@@ -803,48 +867,47 @@ const UpcomingBookings = ({ selectedTimeRange }: UpcomingBookingsProps) => {
                           </div>
                         </TableCell>
 
-                        {/* Service */}
+                        {/* Service with improved styling */}
                         <TableCell className="text-xs sm:text-sm hidden lg:table-cell">
-                          <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                          <span className="inline-block bg-slate-100 text-slate-700 px-3 py-1 rounded font-medium">
                             {booking.form_name}
                           </span>
                         </TableCell>
 
-                        {/* Cleaner with clickable assignment */}
+                        {/* Cleaner Dropdown */}
                         <TableCell className="text-xs sm:text-sm">
-                          {isUnassigned ? (
-                            <div className="space-y-1">
-                              <button
-                                onClick={() => handleCleanerClick(booking.id)}
-                                className="flex items-center space-x-2 bg-red-100 hover:bg-red-200 px-3 py-2 rounded-lg border border-red-200 transition-colors cursor-pointer w-full text-left group min-h-[44px]"
-                              >
-                                <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0" />
-                                <div className="flex-1">
-                                  <span className="text-sm font-semibold text-red-700 block">Unassigned</span>
-                                  <span className="text-xs text-red-600 group-hover:text-red-700">Click to assign</span>
-                                </div>
-                                <UserPlus className="h-3 w-3 text-red-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-                              </button>
-                              <div className="text-xs text-gray-600 font-medium flex items-center pl-1 sm:pl-2">
-                                <Banknote className="h-2 w-2 sm:h-3 sm:w-3 mr-1 sm:mr-2" />
-                                Pay: £{cleanerInfo.pay.toFixed(2)}
-                              </div>
+                          <div className="space-y-1">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className={`text-xs ${isUnassigned ? 'text-red-600 border-red-200' : 'text-blue-600'}`}
+                                >
+                                  <Users className="h-3 w-3 mr-1" />
+                                  {isUnassigned ? "" : cleanerInfo.name}
+                                  {isUnassigned && <span className="text-red-600">Unassigned</span>}
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                <DropdownMenuItem onClick={() => handleCleanerAssignment(booking.id, null)}>
+                                  Unassigned
+                                </DropdownMenuItem>
+                                {cleaners.map((cleaner) => (
+                                  <DropdownMenuItem 
+                                    key={cleaner.id}
+                                    onClick={() => handleCleanerAssignment(booking.id, cleaner.id)}
+                                  >
+                                    {cleaner.name}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                            <div className="text-xs text-gray-600 font-medium flex items-center">
+                              <Banknote className="h-2 w-2 sm:h-3 sm:w-3 mr-1 sm:mr-2" />
+                              Pay: £{cleanerInfo.pay.toFixed(2)}
                             </div>
-                          ) : (
-                            <div className="space-y-1">
-                              <button
-                                onClick={() => handleCleanerClick(booking.id)}
-                                className="flex items-center space-x-1 sm:space-x-2 hover:bg-gray-100 p-1 rounded cursor-pointer"
-                              >
-                                <User className="h-2 w-2 sm:h-3 sm:w-3 text-gray-400" />
-                                <span className="font-medium text-blue-600 hover:text-blue-800">{cleanerInfo.name}</span>
-                              </button>
-                              <div className="text-xs text-gray-600 font-medium flex items-center">
-                                <Banknote className="h-2 w-2 sm:h-3 sm:w-3 mr-1 sm:mr-2" />
-                                Pay: £{cleanerInfo.pay.toFixed(2)}
-                              </div>
-                            </div>
-                          )}
+                          </div>
                         </TableCell>
 
                         {/* Cost */}
@@ -870,6 +933,10 @@ const UpcomingBookings = ({ selectedTimeRange }: UpcomingBookingsProps) => {
                               <DropdownMenuItem onClick={() => handleDuplicate(booking)}>
                                 <Copy className="h-4 w-4 mr-2" />
                                 Duplicate
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleCancel(booking.id)}>
+                                <X className="h-4 w-4 mr-2" />
+                                Cancel
                               </DropdownMenuItem>
                               <DropdownMenuItem 
                                 onClick={() => handleDelete(booking.id)}
@@ -963,6 +1030,28 @@ const UpcomingBookings = ({ selectedTimeRange }: UpcomingBookingsProps) => {
         onOpenChange={setBulkEditOpen}
         onSuccess={fetchData}
       />
+
+      {/* Cancel Confirmation Dialog */}
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Booking</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel this booking? This will set the booking status to cancelled.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmCancel}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Cancel Booking
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

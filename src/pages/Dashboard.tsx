@@ -11,7 +11,7 @@ import { Calendar, Clock, CalendarDays, CalendarClock } from 'lucide-react';
 
 const Dashboard = () => {
   const { user, userRole, cleanerId, loading } = useAuth();
-  const [selectedTimeRange, setSelectedTimeRange] = useState<'today' | '3days' | '7days' | '30days'>('today');
+  const [selectedTimeRange, setSelectedTimeRange] = useState<'today' | '3days' | '7days' | '30days'>('3days');
 
   console.log('Dashboard - Auth state:', { user: !!user, userRole, cleanerId, loading });
 
