@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -81,6 +80,11 @@ const UpcomingBookings = () => {
   const [cleanerFilter, setCleanerFilter] = useState('all');
   const [selectedBookings, setSelectedBookings] = useState<number[]>([]);
   const [expandedBookings, setExpandedBookings] = useState<Set<number>>(new Set());
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
+  const [bulkEditDialogOpen, setBulkEditDialogOpen] = useState(false);
+  const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<Booking | null>(null);
   const { toast } = useToast();
 
   const fetchBookings = useCallback(async () => {
@@ -210,6 +214,25 @@ const UpcomingBookings = () => {
     });
   };
 
+  const handleEditBooking = (booking: Booking) => {
+    setSelectedBookingForEdit(booking);
+    setEditDialogOpen(true);
+  };
+
+  const handleAssignCleaner = (booking: Booking) => {
+    setSelectedBookingForEdit(booking);
+    setAssignDialogOpen(true);
+  };
+
+  const handleDuplicateBooking = (booking: Booking) => {
+    setSelectedBookingForEdit(booking);
+    setDuplicateDialogOpen(true);
+  };
+
+  const handleBulkEdit = () => {
+    setBulkEditDialogOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -230,13 +253,9 @@ const UpcomingBookings = () => {
         </div>
         <div className="flex gap-2">
           {selectedBookings.length > 0 && (
-            <BulkEditBookingsDialog 
-              selectedBookings={selectedBookings}
-              onBookingsUpdated={() => {
-                fetchBookings();
-                setSelectedBookings([]);
-              }}
-            />
+            <Button onClick={handleBulkEdit}>
+              Bulk Edit ({selectedBookings.length})
+            </Button>
           )}
           <CreateNewBookingDialog>
             <Button>
@@ -421,24 +440,21 @@ const UpcomingBookings = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-center space-x-1">
-                            <EditBookingDialog 
-                              booking={booking} 
-                              onBookingUpdated={fetchBookings}
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => handleEditBooking(booking)}
                             >
-                              <Button size="sm" variant="outline">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </EditBookingDialog>
+                              <Edit className="h-4 w-4" />
+                            </Button>
                             
-                            <AssignCleanerDialog 
-                              booking={booking} 
-                              cleaners={cleaners}
-                              onBookingUpdated={fetchBookings}
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => handleAssignCleaner(booking)}
                             >
-                              <Button size="sm" variant="outline">
-                                <Users className="h-4 w-4" />
-                              </Button>
-                            </AssignCleanerDialog>
+                              <Users className="h-4 w-4" />
+                            </Button>
                             
                             <AddSubCleanerDialog
                               bookingId={booking.id}
@@ -449,14 +465,13 @@ const UpcomingBookings = () => {
                               </Button>
                             </AddSubCleanerDialog>
                             
-                            <DuplicateBookingDialog 
-                              booking={booking} 
-                              onBookingDuplicated={fetchBookings}
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => handleDuplicateBooking(booking)}
                             >
-                              <Button size="sm" variant="outline">
-                                <Copy className="h-4 w-4" />
-                              </Button>
-                            </DuplicateBookingDialog>
+                              <Copy className="h-4 w-4" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -480,6 +495,37 @@ const UpcomingBookings = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Dialog Components */}
+      <EditBookingDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        booking={selectedBookingForEdit}
+        onSuccess={fetchBookings}
+      />
+
+      <AssignCleanerDialog
+        open={assignDialogOpen}
+        onOpenChange={setAssignDialogOpen}
+        bookingId={selectedBookingForEdit?.id || null}
+        onSuccess={fetchBookings}
+      />
+
+      <DuplicateBookingDialog
+        open={duplicateDialogOpen}
+        onOpenChange={setDuplicateDialogOpen}
+        booking={selectedBookingForEdit}
+        onSuccess={fetchBookings}
+      />
+
+      <BulkEditBookingsDialog
+        open={bulkEditDialogOpen}
+        onOpenChange={setBulkEditDialogOpen}
+        onSuccess={() => {
+          fetchBookings();
+          setSelectedBookings([]);
+        }}
+      />
     </div>
   );
 };
