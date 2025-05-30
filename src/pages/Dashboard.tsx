@@ -80,14 +80,7 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              <Card className="mb-4 sm:mb-6">
-                <CardHeader className="pb-3 sm:pb-4 px-4 sm:px-6 pt-4 sm:pt-6">
-                  <CardTitle className="text-lg sm:text-xl lg:text-2xl">Upcoming Bookings</CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-                  <UpcomingBookings />
-                </CardContent>
-              </Card>
+              <UpcomingBookings selectedTimeRange={selectedTimeRange} />
             </div>
           </main>
         </SidebarInset>
