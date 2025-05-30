@@ -7,12 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Edit, Trash2, Copy, Filter, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail, Banknote, AlertTriangle, UserPlus, Settings } from 'lucide-react';
-import { format } from 'date-fns';
+import { Edit, Trash2, Copy, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail, Banknote, AlertTriangle, UserPlus, Settings, Filter } from 'lucide-react';
+import { format, addDays, startOfDay, endOfDay } from 'date-fns';
 import DuplicateBookingDialog from './DuplicateBookingDialog';
 import AssignCleanerDialog from './AssignCleanerDialog';
 import EditBookingDialog from './EditBookingDialog';
 import BulkEditBookingsDialog from './BulkEditBookingsDialog';
+import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -81,7 +82,11 @@ interface Booking {
   };
 }
 
-const UpcomingBookings = () => {
+interface UpcomingBookingsProps {
+  selectedTimeRange: 'today' | '3days' | '7days' | '30days';
+}
+
+const UpcomingBookings = ({ selectedTimeRange }: UpcomingBookingsProps) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [cleaners, setCleaners] = useState<
@@ -93,10 +98,7 @@ const UpcomingBookings = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState({
-    dateFrom: '',
-    dateTo: '',
     customerSearch: '',
-    status: 'all',
     cleaner: 'all',
   });
   const [currentPage, setCurrentPage] = useState(1);
@@ -119,6 +121,8 @@ const UpcomingBookings = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
+  const { toast } = useToast();
+
   // Debounce search term
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -133,23 +137,42 @@ const UpcomingBookings = () => {
     setFilters(prev => ({ ...prev, customerSearch: debouncedSearchTerm }));
   }, [debouncedSearchTerm]);
 
-  useEffect(() => {
-    fetchData();
-  }, [filters, sortOrder]);
-
-  useEffect(() => {
-    applyFilters();
-  }, [bookings, filters]);
+  const getDateRangeFilter = () => {
+    const today = startOfDay(new Date());
+    let endDate;
+    
+    switch (selectedTimeRange) {
+      case 'today':
+        endDate = endOfDay(new Date());
+        break;
+      case '3days':
+        endDate = endOfDay(addDays(new Date(), 3));
+        break;
+      case '7days':
+        endDate = endOfDay(addDays(new Date(), 7));
+        break;
+      case '30days':
+        endDate = endOfDay(addDays(new Date(), 30));
+        break;
+      default:
+        endDate = endOfDay(addDays(new Date(), 30));
+    }
+    
+    return { startDate: today, endDate };
+  };
 
   const fetchData = async () => {
     setLoading(true);
     setError(null);
 
     try {
+      const { startDate, endDate } = getDateRangeFilter();
+
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
         .select('*')
-        .gte('date_time', new Date().toISOString())
+        .gte('date_time', startDate.toISOString())
+        .lte('date_time', endDate.toISOString())
         .order('date_time', { ascending: sortOrder === 'asc' });
 
       if (bookingsError) {
@@ -198,16 +221,6 @@ const UpcomingBookings = () => {
   const applyFilters = () => {
     let filtered = [...bookings];
 
-    if (filters.dateFrom) {
-      filtered = filtered.filter(
-        (booking) => new Date(booking.date_time) >= new Date(filters.dateFrom)
-      );
-    }
-    if (filters.dateTo) {
-      filtered = filtered.filter(
-        (booking) => new Date(booking.date_time) <= new Date(filters.dateTo)
-      );
-    }
     if (filters.customerSearch) {
       filtered = filtered.filter(
         (booking) =>
@@ -215,11 +228,6 @@ const UpcomingBookings = () => {
             .toLowerCase()
             .includes(filters.customerSearch.toLowerCase()) ||
           booking.email.toLowerCase().includes(filters.customerSearch.toLowerCase())
-      );
-    }
-    if (filters.status !== 'all') {
-      filtered = filtered.filter(
-        (booking) => booking.booking_status === filters.status
       );
     }
     if (filters.cleaner !== 'all') {
@@ -232,6 +240,14 @@ const UpcomingBookings = () => {
 
     setFilteredBookings(filtered);
   };
+
+  useEffect(() => {
+    fetchData();
+  }, [filters, sortOrder, selectedTimeRange]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [bookings, filters]);
 
   useEffect(() => {
     // Calculate total revenue - now handling number type correctly
@@ -250,10 +266,7 @@ const UpcomingBookings = () => {
 
   const clearFilters = () => {
     setFilters({
-      dateFrom: '',
-      dateTo: '',
       customerSearch: '',
-      status: 'all',
       cleaner: 'all',
     });
     setSearchTerm('');
@@ -283,12 +296,15 @@ const UpcomingBookings = () => {
   };
 
   const handleEdit = (booking: Booking) => {
-    console.log('Edit booking clicked:', booking);
     setSelectedBookingForEdit(booking);
     setEditDialogOpen(true);
   };
 
   const handleEditSuccess = () => {
+    toast({
+      title: "Success",
+      description: "Booking updated successfully",
+    });
     fetchData();
     setSelectedBookingForEdit(null);
   };
@@ -317,10 +333,8 @@ const UpcomingBookings = () => {
         return;
       }
 
-      console.log('Booking deleted successfully');
       setDeleteDialogOpen(false);
       setSelectedBookingForDelete(null);
-      // Refresh the data after successful deletion
       await fetchData();
     } catch (error) {
       console.error('Error deleting booking:', error);
@@ -329,7 +343,6 @@ const UpcomingBookings = () => {
   };
 
   const handleDuplicate = (booking: Booking) => {
-    console.log('Duplicate booking', booking.id);
     setSelectedBookingForDuplicate(booking);
     setDuplicateDialogOpen(true);
   };
@@ -345,10 +358,29 @@ const UpcomingBookings = () => {
   };
 
   const handleAssignCleanerSuccess = () => {
+    toast({
+      title: "Success", 
+      description: "Cleaner assigned successfully",
+    });
     fetchData();
     setSelectedBookingForAssignment(null);
   };
 
+  const handleCleanerClick = (bookingId: number) => {
+    setSelectedBookingForAssignment(bookingId);
+    setAssignCleanerDialogOpen(true);
+  };
+
+  const handlePhoneClick = (phoneNumber: string) => {
+    const cleanPhone = phoneNumber.replace(/\D/g, '');
+    window.open(`https://wa.me/${cleanPhone}`, '_blank');
+  };
+
+  const handleEmailClick = (email: string) => {
+    window.open(`mailto:${email}`, '_blank');
+  };
+
+  // Pagination
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedBookings = filteredBookings.slice(startIndex, endIndex);
@@ -373,6 +405,25 @@ const UpcomingBookings = () => {
 
   return (
     <div className="space-y-3 sm:space-y-4 lg:space-y-6">
+      {/* Unassigned Bookings Alert */}
+      {unassignedBookings > 0 && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+              <div>
+                <div className="font-semibold text-red-800">
+                  You have {unassignedBookings} unassigned booking{unassignedBookings > 1 ? 's' : ''}
+                </div>
+                <div className="text-sm text-red-600">
+                  Click on "Unassigned" in the bookings below to assign cleaners
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Enhanced Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
         <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200 shadow-lg">
@@ -423,36 +474,15 @@ const UpcomingBookings = () => {
         )}
       </div>
 
-      {/* Filters */}
+      {/* Simplified Filters */}
       <Card>
         <CardHeader className="pb-2 sm:pb-3 lg:pb-4 px-3 sm:px-6 pt-3 sm:pt-6">
           <CardTitle className="text-sm sm:text-base lg:text-lg flex items-center gap-2">
             <Filter className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
-            Filters
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6 pb-3 sm:pb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4">
-            <div>
-              <Label htmlFor="dateFrom" className="text-xs sm:text-sm">Date From</Label>
-              <Input
-                id="dateFrom"
-                type="date"
-                value={filters.dateFrom}
-                onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
-                className="text-xs sm:text-sm h-8 sm:h-9"
-              />
-            </div>
-            <div>
-              <Label htmlFor="dateTo" className="text-xs sm:text-sm">Date To</Label>
-              <Input
-                id="dateTo"
-                type="date"
-                value={filters.dateTo}
-                onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
-                className="text-xs sm:text-sm h-8 sm:h-9"
-              />
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
             <div>
               <Label htmlFor="customerSearch" className="text-xs sm:text-sm">Customer Search</Label>
               <div className="relative">
@@ -603,20 +633,26 @@ const UpcomingBookings = () => {
                             </DropdownMenu>
                           </div>
 
-                          {/* Customer Info */}
+                          {/* Customer Info with clickable phone and email */}
                           <div className="space-y-1">
                             <div className="font-medium text-sm flex items-center">
                               <User className="h-3 w-3 mr-2 text-gray-400" />
                               {booking.first_name} {booking.last_name}
                             </div>
-                            <div className="text-xs text-gray-500 flex items-center">
+                            <button 
+                              onClick={() => handleEmailClick(booking.email)}
+                              className="text-xs text-blue-600 hover:text-blue-800 flex items-center cursor-pointer"
+                            >
                               <Mail className="h-3 w-3 mr-2" />
                               {booking.email}
-                            </div>
-                            <div className="text-xs text-gray-500 flex items-center">
+                            </button>
+                            <button 
+                              onClick={() => handlePhoneClick(booking.phone_number)}
+                              className="text-xs text-green-600 hover:text-green-800 flex items-center cursor-pointer"
+                            >
                               <Phone className="h-3 w-3 mr-2" />
                               {booking.phone_number}
-                            </div>
+                            </button>
                           </div>
 
                           {/* Address */}
@@ -637,12 +673,12 @@ const UpcomingBookings = () => {
                             </span>
                           </div>
 
-                          {/* Cleaner and Cost */}
+                          {/* Cleaner and Cost with clickable cleaner assignment */}
                           <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                             <div className="flex-1">
                               {isUnassigned ? (
                                 <button
-                                  onClick={() => handleAssignCleaner(booking.id)}
+                                  onClick={() => handleCleanerClick(booking.id)}
                                   className="flex items-center space-x-2 bg-red-100 hover:bg-red-200 px-3 py-2 rounded-lg border border-red-200 transition-colors cursor-pointer w-full text-left"
                                 >
                                   <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0" />
@@ -650,10 +686,13 @@ const UpcomingBookings = () => {
                                   <UserPlus className="h-3 w-3 text-red-600 ml-auto" />
                                 </button>
                               ) : (
-                                <div className="text-xs">
+                                <button
+                                  onClick={() => handleCleanerClick(booking.id)}
+                                  className="text-xs hover:bg-gray-100 p-1 rounded cursor-pointer"
+                                >
                                   <span className="text-gray-500">Cleaner: </span>
-                                  <span className="font-medium">{cleanerInfo.name}</span>
-                                </div>
+                                  <span className="font-medium text-blue-600 hover:text-blue-800">{cleanerInfo.name}</span>
+                                </button>
                               )}
                               <div className="text-xs text-gray-600 font-medium flex items-center mt-1">
                                 <Banknote className="h-3 w-3 mr-1" />
@@ -727,7 +766,7 @@ const UpcomingBookings = () => {
                           </div>
                         </TableCell>
 
-                        {/* Customer */}
+                        {/* Customer with clickable phone and email */}
                         <TableCell className="text-xs sm:text-sm">
                           <div className="space-y-1">
                             <div className="flex items-center space-x-1 sm:space-x-2">
@@ -736,14 +775,20 @@ const UpcomingBookings = () => {
                                 {booking.first_name} {booking.last_name}
                               </span>
                             </div>
-                            <div className="flex items-center space-x-1 sm:space-x-2 sm:hidden lg:flex">
-                              <Mail className="h-2 w-2 sm:h-3 sm:w-3 text-gray-400" />
+                            <button 
+                              onClick={() => handleEmailClick(booking.email)}
+                              className="flex items-center space-x-1 sm:space-x-2 sm:hidden lg:flex text-blue-600 hover:text-blue-800 cursor-pointer"
+                            >
+                              <Mail className="h-2 w-2 sm:h-3 sm:w-3" />
                               <span className="text-gray-600 truncate">{booking.email}</span>
-                            </div>
-                            <div className="flex items-center space-x-1 sm:space-x-2 sm:hidden lg:flex">
-                              <Phone className="h-2 w-2 sm:h-3 sm:w-3 text-gray-400" />
+                            </button>
+                            <button 
+                              onClick={() => handlePhoneClick(booking.phone_number)}
+                              className="flex items-center space-x-1 sm:space-x-2 sm:hidden lg:flex text-green-600 hover:text-green-800 cursor-pointer"
+                            >
+                              <Phone className="h-2 w-2 sm:h-3 sm:w-3" />
                               <span className="text-gray-600">{booking.phone_number}</span>
-                            </div>
+                            </button>
                           </div>
                         </TableCell>
 
@@ -765,12 +810,12 @@ const UpcomingBookings = () => {
                           </span>
                         </TableCell>
 
-                        {/* Cleaner */}
+                        {/* Cleaner with clickable assignment */}
                         <TableCell className="text-xs sm:text-sm">
                           {isUnassigned ? (
                             <div className="space-y-1">
                               <button
-                                onClick={() => handleAssignCleaner(booking.id)}
+                                onClick={() => handleCleanerClick(booking.id)}
                                 className="flex items-center space-x-2 bg-red-100 hover:bg-red-200 px-3 py-2 rounded-lg border border-red-200 transition-colors cursor-pointer w-full text-left group min-h-[44px]"
                               >
                                 <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0" />
@@ -787,10 +832,13 @@ const UpcomingBookings = () => {
                             </div>
                           ) : (
                             <div className="space-y-1">
-                              <div className="flex items-center space-x-1 sm:space-x-2">
+                              <button
+                                onClick={() => handleCleanerClick(booking.id)}
+                                className="flex items-center space-x-1 sm:space-x-2 hover:bg-gray-100 p-1 rounded cursor-pointer"
+                              >
                                 <User className="h-2 w-2 sm:h-3 sm:w-3 text-gray-400" />
-                                <span className="font-medium">{cleanerInfo.name}</span>
-                              </div>
+                                <span className="font-medium text-blue-600 hover:text-blue-800">{cleanerInfo.name}</span>
+                              </button>
                               <div className="text-xs text-gray-600 font-medium flex items-center">
                                 <Banknote className="h-2 w-2 sm:h-3 sm:w-3 mr-1 sm:mr-2" />
                                 Pay: £{cleanerInfo.pay.toFixed(2)}
