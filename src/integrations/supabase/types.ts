@@ -848,6 +848,60 @@ export type Database = {
         }
         Relationships: []
       }
+      sub_bookings: {
+        Row: {
+          cleaner_id: number
+          cleaner_pay: number | null
+          created_at: string | null
+          hourly_rate: number | null
+          hours_assigned: number | null
+          id: number
+          payment_method: string
+          percentage_rate: number | null
+          primary_booking_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          cleaner_id: number
+          cleaner_pay?: number | null
+          created_at?: string | null
+          hourly_rate?: number | null
+          hours_assigned?: number | null
+          id?: number
+          payment_method: string
+          percentage_rate?: number | null
+          primary_booking_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          cleaner_id?: number
+          cleaner_pay?: number | null
+          created_at?: string | null
+          hourly_rate?: number | null
+          hours_assigned?: number | null
+          id?: number
+          payment_method?: string
+          percentage_rate?: number | null
+          primary_booking_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sub_bookings_cleaner_id_fkey"
+            columns: ["cleaner_id"]
+            isOneToOne: false
+            referencedRelation: "cleaners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sub_bookings_primary_booking_id_fkey"
+            columns: ["primary_booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: number
@@ -898,6 +952,10 @@ export type Database = {
         Returns: string
       }
       move_past_bookings: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      move_sub_bookings_to_past: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }

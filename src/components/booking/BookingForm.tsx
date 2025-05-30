@@ -28,6 +28,9 @@ interface BookingData {
   
   // Cleaner info
   cleanerId: number | null;
+  cleanerPaymentMethod: 'hourly' | 'percentage';
+  cleanerHourlyRate: number;
+  cleanerPercentageRate: number;
   
   // Booking details
   dateTime: string;
@@ -59,6 +62,9 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
     email: '',
     phoneNumber: '',
     cleanerId: null,
+    cleanerPaymentMethod: 'percentage',
+    cleanerHourlyRate: 0,
+    cleanerPercentageRate: 70,
     dateTime: '',
     address: '',
     postcode: '',
@@ -108,7 +114,9 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
     if (cleaner) {
       setFormData(prev => ({
         ...prev,
-        cleanerId: cleaner.id
+        cleanerId: cleaner.id,
+        cleanerHourlyRate: cleaner.hourly_rate || 0,
+        cleanerPercentageRate: cleaner.presentage_rate || 70
       }));
     } else {
       setFormData(prev => ({
@@ -119,8 +127,14 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
   };
 
   const calculateCleanerPay = () => {
-    // Calculate 70% of total cost as cleaner pay
-    const cleanerPay = formData.totalCost * 0.7;
+    let cleanerPay = 0;
+    
+    if (formData.cleanerPaymentMethod === 'hourly') {
+      cleanerPay = formData.hoursRequired * formData.cleanerHourlyRate;
+    } else if (formData.cleanerPaymentMethod === 'percentage') {
+      cleanerPay = (formData.totalCost * formData.cleanerPercentageRate) / 100;
+    }
+    
     setFormData(prev => ({
       ...prev,
       cleanerPay: cleanerPay
@@ -129,7 +143,7 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
 
   useEffect(() => {
     calculateCleanerPay();
-  }, [formData.totalCost]);
+  }, [formData.totalCost, formData.hoursRequired, formData.cleanerPaymentMethod, formData.cleanerHourlyRate, formData.cleanerPercentageRate]);
 
   const showCarpetCleaningOption = formData.formName === 'Deep Cleaning' || formData.formName === 'End of Tenancy';
 
@@ -149,8 +163,11 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
         address: formData.address,
         postcode: formData.postcode,
         hours_required: formData.hoursRequired,
+        total_hours: formData.hoursRequired,
         total_cost: formData.totalCost,
         cleaner_pay: formData.cleanerPay,
+        cleaner_rate: formData.cleanerPaymentMethod === 'hourly' ? formData.cleanerHourlyRate : null,
+        cleaner_percentage: formData.cleanerPaymentMethod === 'percentage' ? formData.cleanerPercentageRate : null,
         form_name: formData.formName,
         cleaning_type: formData.cleaningType,
         property_details: formData.propertyDetails,
@@ -396,7 +413,6 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
                 type="number"
                 step="0.01"
                 value={formData.cleanerPay}
-                onChange={(e) => handleInputChange('cleanerPay', parseFloat(e.target.value) || 0)}
                 readOnly
                 className="bg-gray-50"
               />
@@ -437,7 +453,7 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
         </CardContent>
       </Card>
 
-      {/* Cleaner Selection - At the end */}
+      {/* Cleaner Assignment */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -445,8 +461,57 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
             Cleaner Assignment
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <CleanerSelector onCleanerSelect={handleCleanerSelect} />
+          
+          {formData.cleanerId && (
+            <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+              <div>
+                <Label htmlFor="cleanerPaymentMethod">Payment Method</Label>
+                <Select 
+                  value={formData.cleanerPaymentMethod} 
+                  onValueChange={(value: 'hourly' | 'percentage') => handleInputChange('cleanerPaymentMethod', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hourly">Hourly Rate</SelectItem>
+                    <SelectItem value="percentage">Percentage of Total</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                {formData.cleanerPaymentMethod === 'hourly' ? (
+                  <div>
+                    <Label htmlFor="cleanerHourlyRate">Hourly Rate (£)</Label>
+                    <Input
+                      id="cleanerHourlyRate"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.cleanerHourlyRate}
+                      onChange={(e) => handleInputChange('cleanerHourlyRate', parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <Label htmlFor="cleanerPercentageRate">Percentage (%)</Label>
+                    <Input
+                      id="cleanerPercentageRate"
+                      type="number"
+                      step="1"
+                      min="0"
+                      max="100"
+                      value={formData.cleanerPercentageRate}
+                      onChange={(e) => handleInputChange('cleanerPercentageRate', parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
