@@ -483,8 +483,8 @@ const UpcomingBookings = ({ selectedTimeRange }: UpcomingBookingsProps) => {
         </Card>
       )}
 
-      {/* Enhanced Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+      {/* Enhanced Stats Cards - Dynamic grid based on unassigned bookings */}
+      <div className={`grid gap-4 lg:gap-6 ${unassignedBookings > 0 ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 md:grid-cols-2'}`}>
         <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200 shadow-lg">
           <CardContent className="p-4 lg:p-6">
             <div className="flex items-center space-x-3">
@@ -529,7 +529,7 @@ const UpcomingBookings = ({ selectedTimeRange }: UpcomingBookingsProps) => {
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </div>
         )}
       </div>
 

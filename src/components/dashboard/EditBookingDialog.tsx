@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -304,14 +305,14 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
             <div>
               <Label htmlFor="cleaner">Assign Cleaner</Label>
               <Select 
-                value={formData.cleaner?.toString() || 'no-cleaner'} 
-                onValueChange={(value) => setFormData({ ...formData, cleaner: value === 'no-cleaner' ? null : Number(value) })}
+                value={formData.cleaner === null ? 'unassigned' : formData.cleaner.toString()} 
+                onValueChange={(value) => setFormData({ ...formData, cleaner: value === 'unassigned' ? null : Number(value) })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a cleaner" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="no-cleaner">No cleaner assigned</SelectItem>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
                   {cleaners.map((cleaner) => (
                     <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
                       {cleaner.full_name}
