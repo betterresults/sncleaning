@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -563,7 +562,6 @@ const UpcomingBookings = () => {
       <BulkEditBookingsDialog
         open={bulkEditDialogOpen}
         onOpenChange={setBulkEditDialogOpen}
-        selectedBookings={selectedBookings}
         onSuccess={() => {
           fetchBookings();
           setSelectedBookings([]);
