@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -19,7 +20,10 @@ import {
   Copy,
   UserPlus,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  MoreHorizontal,
+  Trash,
+  X
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import EditBookingDialog from './EditBookingDialog';
@@ -29,6 +33,7 @@ import BulkEditBookingsDialog from './BulkEditBookingsDialog';
 import CreateNewBookingDialog from '@/components/booking/CreateNewBookingDialog';
 import AddSubCleanerDialog from '@/components/booking/AddSubCleanerDialog';
 import SubCleanersList from '@/components/booking/SubCleanersList';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface Booking {
   id: number;
@@ -152,25 +157,6 @@ const UpcomingBookings = () => {
     return cleaner ? (cleaner.full_name || `${cleaner.first_name} ${cleaner.last_name}`) : 'Unknown';
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'confirmed': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      case 'completed': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getPaymentStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'paid': return 'bg-green-100 text-green-800';
-      case 'unpaid': return 'bg-red-100 text-red-800';
-      case 'partial': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   const filteredBookings = bookings.filter(booking => {
     const matchesSearch = !searchTerm || 
       booking.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -219,14 +205,102 @@ const UpcomingBookings = () => {
     setEditDialogOpen(true);
   };
 
-  const handleAssignCleaner = (booking: Booking) => {
-    setSelectedBookingForEdit(booking);
-    setAssignDialogOpen(true);
+  const handleAssignCleaner = async (bookingId: number, cleanerId: number | null) => {
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ cleaner: cleanerId })
+        .eq('id', bookingId);
+
+      if (error) {
+        console.error('Error assigning cleaner:', error);
+        toast({
+          title: "Error",
+          description: "Failed to assign cleaner",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: "Cleaner assigned successfully",
+      });
+
+      fetchBookings();
+    } catch (error) {
+      console.error('Error assigning cleaner:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDuplicateBooking = (booking: Booking) => {
     setSelectedBookingForEdit(booking);
     setDuplicateDialogOpen(true);
+  };
+
+  const handleCancelBooking = async (bookingId: number) => {
+    if (!confirm('Are you sure you want to cancel this booking?')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ booking_status: 'Cancelled' })
+        .eq('id', bookingId);
+
+      if (error) {
+        console.error('Error cancelling booking:', error);
+        toast({
+          title: "Error",
+          description: "Failed to cancel booking",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: "Booking cancelled successfully",
+      });
+
+      fetchBookings();
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+    }
+  };
+
+  const handleDeleteBooking = async (bookingId: number) => {
+    if (!confirm('Are you sure you want to delete this booking? This action cannot be undone.')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('id', bookingId);
+
+      if (error) {
+        console.error('Error deleting booking:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete booking",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: "Booking deleted successfully",
+      });
+
+      fetchBookings();
+    } catch (error) {
+      console.error('Error deleting booking:', error);
+    }
   };
 
   const handleBulkEdit = () => {
@@ -316,185 +390,153 @@ const UpcomingBookings = () => {
         </CardContent>
       </Card>
 
-      {/* Bookings Table */}
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">
-                    <input
-                      type="checkbox"
-                      checked={selectedBookings.length === filteredBookings.length && filteredBookings.length > 0}
-                      onChange={handleSelectAll}
-                      className="rounded"
-                    />
-                  </TableHead>
-                  <TableHead>Date & Time</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Address</TableHead>
-                  <TableHead>Service</TableHead>
-                  <TableHead>Cleaner</TableHead>
-                  <TableHead>Cost</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-center">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredBookings.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">
-                      <div className="text-gray-500">
-                        {searchTerm || statusFilter !== 'all' || cleanerFilter !== 'all' 
-                          ? 'No bookings match your filters' 
-                          : 'No upcoming bookings found'
-                        }
+      {/* Bookings Grid */}
+      <div className="grid gap-4">
+        {filteredBookings.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-8">
+              <div className="text-gray-500">
+                {searchTerm || statusFilter !== 'all' || cleanerFilter !== 'all' 
+                  ? 'No bookings match your filters' 
+                  : 'No upcoming bookings found'
+                }
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          filteredBookings.map((booking) => (
+            <Card key={booking.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 space-y-3">
+                    {/* Date and Time */}
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="h-4 w-4 text-gray-400" />
+                      <span className="font-medium">
+                        {booking.date_time ? format(parseISO(booking.date_time), 'dd/MM/yyyy') : 'No date'}
+                      </span>
+                      <Clock className="h-4 w-4 text-gray-400 ml-4" />
+                      <span className="text-gray-600">
+                        {booking.date_time ? format(parseISO(booking.date_time), 'HH:mm') : 'No time'}
+                      </span>
+                    </div>
+
+                    {/* Customer Info */}
+                    <div>
+                      <div className="font-semibold text-lg">
+                        {booking.first_name} {booking.last_name}
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredBookings.map((booking) => (
-                    <React.Fragment key={booking.id}>
-                      <TableRow className="hover:bg-gray-50">
-                        <TableCell>
-                          <input
-                            type="checkbox"
-                            checked={selectedBookings.includes(booking.id)}
-                            onChange={() => handleSelectBooking(booking.id)}
-                            className="rounded"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() => toggleExpandBooking(booking.id)}
-                              className="text-gray-400 hover:text-gray-600"
-                            >
-                              {expandedBookings.has(booking.id) ? 
-                                <ChevronDown className="h-4 w-4" /> : 
-                                <ChevronRight className="h-4 w-4" />
-                              }
-                            </button>
-                            <div>
-                              <div className="font-medium flex items-center">
-                                <Calendar className="h-4 w-4 mr-1 text-gray-400" />
-                                {booking.date_time ? format(parseISO(booking.date_time), 'dd/MM/yyyy') : 'No date'}
-                              </div>
-                              <div className="text-sm text-gray-500 flex items-center">
-                                <Clock className="h-4 w-4 mr-1" />
-                                {booking.date_time ? format(parseISO(booking.date_time), 'HH:mm') : 'No time'}
-                              </div>
+                      <div className="text-gray-600">{booking.phone_number}</div>
+                    </div>
+
+                    {/* Address */}
+                    <div className="flex items-start space-x-2">
+                      <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
+                      <div>
+                        <div>{booking.address}</div>
+                        <div className="text-gray-600">{booking.postcode}</div>
+                      </div>
+                    </div>
+
+                    {/* Service and Cost */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Badge variant="outline" className="mb-1">
+                          {booking.form_name || 'Standard Cleaning'}
+                        </Badge>
+                        <div className="text-sm text-gray-500">
+                          {booking.hours_required}h • {booking.cleaning_type}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-semibold text-lg">£{booking.total_cost?.toFixed(2) || '0.00'}</div>
+                      </div>
+                    </div>
+
+                    {/* Cleaner Assignment */}
+                    <div className="border-t pt-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <Select 
+                            value={booking.cleaner?.toString() || 'unassigned'} 
+                            onValueChange={(value) => handleAssignCleaner(booking.id, value === 'unassigned' ? null : parseInt(value))}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select cleaner" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="unassigned">Unassigned</SelectItem>
+                              {cleaners.map((cleaner) => (
+                                <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
+                                  {cleaner.full_name || `${cleaner.first_name} ${cleaner.last_name}`}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {booking.cleaner && (
+                            <div className="text-sm text-gray-500 mt-1">
+                              Pay: £{booking.cleaner_pay?.toFixed(2) || '0.00'}
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{booking.first_name} {booking.last_name}</div>
-                            <div className="text-sm text-gray-500">{booking.phone_number}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-start space-x-2 max-w-xs">
-                            <MapPin className="h-4 w-4 mt-0.5 text-gray-400 flex-shrink-0" />
-                            <div className="text-sm">
-                              <div className="truncate">{booking.address}</div>
-                              <div className="text-gray-500">{booking.postcode}</div>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <Badge variant="outline" className="mb-1">
-                              {booking.form_name || 'Standard Cleaning'}
-                            </Badge>
-                            <div className="text-sm text-gray-500">
-                              {booking.hours_required}h • {booking.cleaning_type}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                              booking.cleaner ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {getCleanerName(booking.cleaner)}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-right">
-                            <div className="font-semibold">£{booking.total_cost?.toFixed(2) || '0.00'}</div>
-                            <div className="text-sm text-gray-500">Pay: £{booking.cleaner_pay?.toFixed(2) || '0.00'}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <Badge className={getStatusColor(booking.booking_status)} variant="secondary">
-                              {booking.booking_status || 'Unknown'}
-                            </Badge>
-                            <Badge className={getPaymentStatusColor(booking.payment_status)} variant="secondary">
-                              {booking.payment_status || 'Unknown'}
-                            </Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-center space-x-1">
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={() => handleEditBooking(booking)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={() => handleAssignCleaner(booking)}
-                            >
-                              <Users className="h-4 w-4" />
-                            </Button>
-                            
-                            <AddSubCleanerDialog
-                              bookingId={booking.id}
-                              onSubCleanerAdded={fetchBookings}
-                            >
-                              <Button size="sm" variant="outline">
-                                <UserPlus className="h-4 w-4" />
-                              </Button>
-                            </AddSubCleanerDialog>
-                            
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={() => handleDuplicateBooking(booking)}
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                      {expandedBookings.has(booking.id) && (
-                        <TableRow>
-                          <TableCell colSpan={9} className="bg-gray-50 p-0">
-                            <div className="p-4">
-                              <SubCleanersList 
-                                bookingId={booking.id}
-                                onSubCleanerRemoved={fetchBookings}
-                              />
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </React.Fragment>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                          )}
+                        </div>
+                        
+                        <AddSubCleanerDialog
+                          bookingId={booking.id}
+                          onSubCleanerAdded={fetchBookings}
+                        >
+                          <Button size="sm" variant="outline" className="ml-2">
+                            <UserPlus className="h-4 w-4" />
+                          </Button>
+                        </AddSubCleanerDialog>
+                      </div>
+                      
+                      {/* Sub Cleaners List */}
+                      <div className="mt-2">
+                        <SubCleanersList 
+                          bookingId={booking.id}
+                          onSubCleanerRemoved={fetchBookings}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions Menu */}
+                  <div className="ml-4">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-white border shadow-lg">
+                        <DropdownMenuItem onClick={() => handleEditBooking(booking)}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDuplicateBooking(booking)}>
+                          <Copy className="h-4 w-4 mr-2" />
+                          Duplicate
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleCancelBooking(booking.id)}>
+                          <X className="h-4 w-4 mr-2" />
+                          Cancel
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleDeleteBooking(booking.id)}
+                          className="text-red-600"
+                        >
+                          <Trash className="h-4 w-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
 
       {/* Dialog Components */}
       <EditBookingDialog
@@ -521,6 +563,7 @@ const UpcomingBookings = () => {
       <BulkEditBookingsDialog
         open={bulkEditDialogOpen}
         onOpenChange={setBulkEditDialogOpen}
+        selectedBookings={selectedBookings}
         onSuccess={() => {
           fetchBookings();
           setSelectedBookings([]);
