@@ -509,7 +509,7 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
           <Table>
             <TableHeader>
               <TableRow className="bg-gradient-to-r from-gray-50 to-gray-100 border-b">
-                <TableHead className="w-[50px]">
+                <TableHead className="w-[50px] font-bold text-gray-800 text-base">
                   <input
                     type="checkbox"
                     checked={selectedBookings.length === filteredBookings.length && filteredBookings.length > 0}
@@ -517,13 +517,13 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
                     className="rounded border-gray-300"
                   />
                 </TableHead>
-                <TableHead className="font-semibold text-gray-700">Date & Time</TableHead>
-                <TableHead className="font-semibold text-gray-700">Customer</TableHead>
-                <TableHead className="font-semibold text-gray-700">Address</TableHead>
-                <TableHead className="font-semibold text-gray-700">Service</TableHead>
-                <TableHead className="font-semibold text-gray-700">Cleaner</TableHead>
-                <TableHead className="font-semibold text-gray-700 text-right">Cost</TableHead>
-                <TableHead className="font-semibold text-gray-700 text-center">Actions</TableHead>
+                <TableHead className="font-bold text-gray-800 text-base">Date & Time</TableHead>
+                <TableHead className="font-bold text-gray-800 text-base">Customer</TableHead>
+                <TableHead className="font-bold text-gray-800 text-base">Address</TableHead>
+                <TableHead className="font-bold text-gray-800 text-base">Service</TableHead>
+                <TableHead className="font-bold text-gray-800 text-base">Cleaner</TableHead>
+                <TableHead className="font-bold text-gray-800 text-base text-right">Cost</TableHead>
+                <TableHead className="font-bold text-gray-800 text-base text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -550,20 +550,20 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="font-medium text-gray-900 text-base">
+                          <div className="font-bold text-gray-900 text-base">
                             {booking.date_time ? format(parseISO(booking.date_time), 'EEE do MMM') : 'No date'}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-gray-500 font-medium">
                             {booking.date_time ? format(parseISO(booking.date_time), 'HH:mm') : 'No time'}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="font-medium text-gray-900 text-base">
+                          <div className="font-bold text-gray-900 text-base">
                             {booking.first_name} {booking.last_name}
                           </div>
-                          <div className="text-sm text-gray-500">{booking.phone_number}</div>
+                          <div className="text-sm text-gray-500 font-medium">{booking.phone_number}</div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -576,10 +576,10 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="text-sm text-gray-900 font-medium">
+                          <div className="text-gray-900 font-bold text-base">
                             {booking.form_name || 'Standard Cleaning'}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-sm text-gray-500 font-medium">
                             {booking.hours_required}h
                           </div>
                         </div>
@@ -630,7 +630,7 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
                           </div>
                           
                           {booking.cleaner && (
-                            <div className="text-sm text-gray-600 bg-blue-50 px-2 py-1 rounded">
+                            <div className="text-sm text-gray-600 bg-blue-50 px-2 py-1 rounded font-medium">
                               Pay: £{booking.cleaner_pay?.toFixed(2) || '0.00'}
                             </div>
                           )}
