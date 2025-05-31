@@ -257,9 +257,16 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
 
   const handleAssignCleaner = async (bookingId: number, cleanerId: number | null) => {
     try {
+      // Calculate cleaner pay as 75% of total cost when assigning a cleaner
+      const booking = bookings.find(b => b.id === bookingId);
+      const cleanerPay = cleanerId && booking ? (booking.total_cost * 0.75) : null;
+
       const { error } = await supabase
         .from('bookings')
-        .update({ cleaner: cleanerId })
+        .update({ 
+          cleaner: cleanerId,
+          cleaner_pay: cleanerPay
+        })
         .eq('id', bookingId);
 
       if (error) {
@@ -373,40 +380,42 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
   return (
     <div className="space-y-6">
       {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
+      <div className={`grid grid-cols-1 gap-4 ${unassignedBookings > 0 ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-indigo-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-blue-700">Total Bookings</CardTitle>
+            <Calendar className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalBookings}</div>
+            <div className="text-2xl font-bold text-blue-900">{totalBookings}</div>
           </CardContent>
         </Card>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Unassigned</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{unassignedBookings}</div>
-          </CardContent>
-        </Card>
+        {unassignedBookings > 0 && (
+          <Card className="shadow-lg border-0 bg-gradient-to-br from-red-50 to-rose-100 border-red-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-red-700">Unassigned</CardTitle>
+              <Users className="h-4 w-4 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-900">{unassignedBookings}</div>
+            </CardContent>
+          </Card>
+        )}
         
-        <Card>
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-emerald-50 to-green-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-emerald-700">Total Revenue</CardTitle>
+            <Clock className="h-4 w-4 text-emerald-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">£{totalRevenue.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-emerald-900">£{totalRevenue.toFixed(2)}</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card className="shadow-lg">
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
@@ -462,11 +471,11 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
       </Card>
 
       {/* Bookings Table */}
-      <Card>
+      <Card className="shadow-lg">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="bg-gray-50">
                 <TableHead className="w-[50px]">
                   <input
                     type="checkbox"
@@ -474,13 +483,13 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
                     onChange={handleSelectAll}
                   />
                 </TableHead>
-                <TableHead>Date & Time</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Address</TableHead>
-                <TableHead>Service</TableHead>
-                <TableHead>Cleaner</TableHead>
-                <TableHead>Cost</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="font-semibold">Date & Time</TableHead>
+                <TableHead className="font-semibold">Customer</TableHead>
+                <TableHead className="font-semibold">Address</TableHead>
+                <TableHead className="font-semibold">Service</TableHead>
+                <TableHead className="font-semibold">Cleaner</TableHead>
+                <TableHead className="font-semibold text-right">Cost</TableHead>
+                <TableHead className="font-semibold text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -496,7 +505,7 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
               ) : (
                 filteredBookings.map((booking) => (
                   <React.Fragment key={booking.id}>
-                    <TableRow className="hover:bg-gray-50">
+                    <TableRow className="hover:bg-gray-50 border-b">
                       <TableCell>
                         <input
                           type="checkbox"
@@ -506,7 +515,7 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="font-medium">
+                          <div className="font-medium text-gray-900">
                             {booking.date_time ? format(parseISO(booking.date_time), 'EEEE dd MMM') : 'No date'}
                           </div>
                           <div className="text-sm text-gray-500">
@@ -516,7 +525,7 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="font-medium">
+                          <div className="font-medium text-gray-900">
                             {booking.first_name} {booking.last_name}
                           </div>
                           <div className="text-sm text-gray-500">{booking.phone_number}</div>
@@ -524,80 +533,78 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div>{booking.address}</div>
+                          <div className="text-gray-900">{booking.address}</div>
                           <div className="text-sm text-gray-500">{booking.postcode}</div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <Badge variant="outline">
-                            {booking.form_name || 'Standard Cleaning'}
-                          </Badge>
-                          <div className="text-sm text-gray-500">
-                            {booking.hours_required}h • {booking.cleaning_type}
+                          <div className="text-sm text-gray-900">
+                            {booking.hours_required}h
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="space-y-2">
-                          <Select 
-                            value={booking.cleaner?.toString() || 'unassigned'} 
-                            onValueChange={(value) => handleAssignCleaner(booking.id, value === 'unassigned' ? null : parseInt(value))}
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select cleaner" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="unassigned">Unassigned</SelectItem>
-                              {cleaners.map((cleaner) => (
-                                <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
-                                  {cleaner.full_name || `${cleaner.first_name} ${cleaner.last_name}`}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div className="flex items-center gap-2">
+                            <Select 
+                              value={booking.cleaner?.toString() || 'unassigned'} 
+                              onValueChange={(value) => handleAssignCleaner(booking.id, value === 'unassigned' ? null : parseInt(value))}
+                            >
+                              <SelectTrigger className="w-full min-w-[120px]">
+                                <SelectValue placeholder="Select cleaner" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="unassigned">Unassigned</SelectItem>
+                                {cleaners.map((cleaner) => (
+                                  <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
+                                    {cleaner.full_name || `${cleaner.first_name} ${cleaner.last_name}`}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {booking.cleaner && (
+                              <AddSubCleanerDialog
+                                bookingId={booking.id}
+                                onSubCleanerAdded={fetchBookings}
+                              >
+                                <Button size="sm" variant="outline">
+                                  <UserPlus className="h-4 w-4" />
+                                </Button>
+                              </AddSubCleanerDialog>
+                            )}
+                          </div>
+                          
                           {booking.cleaner && (
-                            <div className="text-sm text-gray-500">
+                            <div className="text-sm text-gray-600">
                               Pay: £{booking.cleaner_pay?.toFixed(2) || '0.00'}
                             </div>
                           )}
-                          <div className="flex items-center gap-2">
-                            <AddSubCleanerDialog
-                              bookingId={booking.id}
-                              onSubCleanerAdded={fetchBookings}
-                            >
-                              <Button size="sm" variant="outline">
-                                <UserPlus className="h-4 w-4" />
+                          
+                          {booking.cleaner && (
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => toggleSubCleaners(booking.id)}
+                                className="p-1"
+                              >
+                                {expandedSubCleaners.has(booking.id) ? (
+                                  <ChevronDown className="h-4 w-4" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4" />
+                                )}
                               </Button>
-                            </AddSubCleanerDialog>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => toggleSubCleaners(booking.id)}
-                            >
-                              {expandedSubCleaners.has(booking.id) ? (
-                                <ChevronDown className="h-4 w-4" />
-                              ) : (
-                                <ChevronRight className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </div>
-                          {expandedSubCleaners.has(booking.id) && (
-                            <div className="mt-2">
-                              <SubCleanersList 
-                                bookingId={booking.id}
-                                onSubCleanerRemoved={fetchBookings}
-                              />
                             </div>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="font-semibold">
+                      <TableCell className="text-right">
+                        <div className="font-semibold text-green-600 text-lg">
                           £{booking.total_cost?.toFixed(2) || '0.00'}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-center">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm">
@@ -628,6 +635,21 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
                         </DropdownMenu>
                       </TableCell>
                     </TableRow>
+                    
+                    {/* Sub-cleaners row */}
+                    {expandedSubCleaners.has(booking.id) && booking.cleaner && (
+                      <TableRow className="bg-blue-50">
+                        <TableCell colSpan={8} className="p-4">
+                          <div className="bg-white rounded-lg p-4 shadow-sm">
+                            <h4 className="font-medium text-gray-900 mb-3">Additional Cleaners</h4>
+                            <SubCleanersList 
+                              bookingId={booking.id}
+                              onSubCleanerRemoved={fetchBookings}
+                            />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </React.Fragment>
                 ))
               )}
