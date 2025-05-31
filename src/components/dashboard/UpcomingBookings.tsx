@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -518,13 +517,13 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
                     className="rounded border-gray-300"
                   />
                 </TableHead>
-                <TableHead className="font-semibold text-gray-700">📅 Date & Time</TableHead>
-                <TableHead className="font-semibold text-gray-700">👤 Customer</TableHead>
-                <TableHead className="font-semibold text-gray-700">📍 Address</TableHead>
-                <TableHead className="font-semibold text-gray-700">🔧 Service</TableHead>
-                <TableHead className="font-semibold text-gray-700">🧹 Cleaner</TableHead>
-                <TableHead className="font-semibold text-gray-700 text-right">💰 Cost</TableHead>
-                <TableHead className="font-semibold text-gray-700 text-center">⚙️ Actions</TableHead>
+                <TableHead className="font-semibold text-gray-700">Date & Time</TableHead>
+                <TableHead className="font-semibold text-gray-700">Customer</TableHead>
+                <TableHead className="font-semibold text-gray-700">Address</TableHead>
+                <TableHead className="font-semibold text-gray-700">Service</TableHead>
+                <TableHead className="font-semibold text-gray-700">Cleaner</TableHead>
+                <TableHead className="font-semibold text-gray-700 text-right">Cost</TableHead>
+                <TableHead className="font-semibold text-gray-700 text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -551,19 +550,17 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="font-medium text-gray-900 flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-blue-500" />
+                          <div className="font-medium text-gray-900 text-base">
                             {booking.date_time ? format(parseISO(booking.date_time), 'EEE do MMM') : 'No date'}
                           </div>
-                          <div className="text-sm text-gray-500 flex items-center gap-2">
-                            <Clock className="h-3 w-3 text-gray-400" />
+                          <div className="text-sm text-gray-500">
                             {booking.date_time ? format(parseISO(booking.date_time), 'HH:mm') : 'No time'}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="font-medium text-gray-900">
+                          <div className="font-medium text-gray-900 text-base">
                             {booking.first_name} {booking.last_name}
                           </div>
                           <div className="text-sm text-gray-500">{booking.phone_number}</div>
@@ -571,11 +568,10 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="text-gray-900 flex items-center gap-2">
-                            <MapPin className="h-3 w-3 text-gray-400" />
+                          <div className="text-gray-900 font-bold text-base">
                             {booking.address}
                           </div>
-                          <div className="text-sm text-gray-500">{booking.postcode}</div>
+                          <div className="text-sm text-gray-500 font-medium">{booking.postcode}</div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -641,7 +637,7 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="font-semibold text-green-600 text-lg">
+                        <div className="font-bold text-green-600 text-lg">
                           £{booking.total_cost?.toFixed(2) || '0.00'}
                         </div>
                       </TableCell>
