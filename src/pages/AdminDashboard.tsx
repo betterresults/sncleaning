@@ -13,8 +13,8 @@ const AdminDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <div className="text-lg text-gray-600">Loading...</div>
       </div>
     );
   }
@@ -28,26 +28,35 @@ const AdminDashboard = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 via-white to-purple-50">
         <AppSidebar />
         <SidebarInset>
-          <header className="flex h-12 sm:h-16 shrink-0 items-center gap-2 border-b bg-white/80 backdrop-blur-sm px-3 sm:px-4">
-            <SidebarTrigger className="-ml-1" />
+          <header className="flex h-16 shrink-0 items-center gap-4 border-b bg-white/80 backdrop-blur-lg px-6 shadow-sm">
+            <SidebarTrigger className="-ml-1 hover:bg-blue-50 rounded-lg p-2 transition-colors" />
             <div className="flex-1" />
-            <div className="text-xs sm:text-sm text-gray-600 font-medium">
-              Hello, {firstName}
+            <div className="text-sm text-gray-700 font-medium bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Welcome back, {firstName}
             </div>
           </header>
           
-          <main className="flex-1 space-y-6 p-3 sm:p-6 lg:p-8">
-            <div className="space-y-6 sm:space-y-8">
+          <main className="flex-1 space-y-8 p-6 lg:p-8">
+            <div className="space-y-8">
+              <div className="space-y-2">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                  Dashboard
+                </h1>
+                <p className="text-gray-600">Overview of your cleaning business</p>
+              </div>
+              
               <DashboardStats />
               
-              <Card className="shadow-lg border-0 bg-white/70 backdrop-blur-sm">
-                <CardHeader className="pb-3 sm:pb-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-lg">
-                  <CardTitle className="text-lg sm:text-xl font-bold">Bookings Management</CardTitle>
+              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white">
+                  <CardTitle className="text-xl font-bold flex items-center gap-2">
+                    📋 Bookings Management
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="p-3 sm:p-6">
+                <CardContent className="p-6">
                   <BookingsTable />
                 </CardContent>
               </Card>

@@ -261,6 +261,8 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
       const booking = bookings.find(b => b.id === bookingId);
       const cleanerPay = cleanerId && booking ? (booking.total_cost * 0.75) : null;
 
+      console.log('Assigning cleaner:', { bookingId, cleanerId, totalCost: booking?.total_cost, calculatedPay: cleanerPay });
+
       const { error } = await supabase
         .from('bookings')
         .update({ 
@@ -379,12 +381,40 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
 
   return (
     <div className="space-y-6">
+      {/* Time Range Buttons */}
+      <div className="flex flex-wrap gap-3">
+        {[
+          { key: 'today', label: 'Today', icon: '📅' },
+          { key: '3days', label: 'Next 3 Days', icon: '📊' },
+          { key: '7days', label: 'Next 7 Days', icon: '📈' },
+          { key: '30days', label: 'Next 30 Days', icon: '📋' }
+        ].map((range) => (
+          <Button
+            key={range.key}
+            variant={selectedTimeRange === range.key ? "default" : "outline"}
+            onClick={() => {/* This would be handled by parent component */}}
+            className={`
+              transition-all duration-200 font-medium
+              ${selectedTimeRange === range.key 
+                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transform scale-105' 
+                : 'bg-white hover:bg-blue-50 text-gray-700 border-gray-200 hover:border-blue-300'
+              }
+            `}
+          >
+            <span className="mr-2">{range.icon}</span>
+            {range.label}
+          </Button>
+        ))}
+      </div>
+
       {/* Statistics */}
-      <div className={`grid grid-cols-1 gap-4 ${unassignedBookings > 0 ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
-        <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-indigo-100">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <div className={`grid grid-cols-1 gap-6 ${unassignedBookings > 0 ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-indigo-100 hover:shadow-xl transition-all duration-300">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
             <CardTitle className="text-sm font-medium text-blue-700">Total Bookings</CardTitle>
-            <Calendar className="h-4 w-4 text-blue-600" />
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Calendar className="h-4 w-4 text-blue-600" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-900">{totalBookings}</div>
@@ -392,10 +422,12 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
         </Card>
         
         {unassignedBookings > 0 && (
-          <Card className="shadow-lg border-0 bg-gradient-to-br from-red-50 to-rose-100 border-red-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <Card className="shadow-lg border-0 bg-gradient-to-br from-red-50 to-rose-100 border-red-200 hover:shadow-xl transition-all duration-300">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <CardTitle className="text-sm font-medium text-red-700">Unassigned</CardTitle>
-              <Users className="h-4 w-4 text-red-600" />
+              <div className="p-2 bg-red-100 rounded-lg animate-pulse">
+                <Users className="h-4 w-4 text-red-600" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-900">{unassignedBookings}</div>
@@ -403,10 +435,12 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
           </Card>
         )}
         
-        <Card className="shadow-lg border-0 bg-gradient-to-br from-emerald-50 to-green-100">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-emerald-50 to-green-100 hover:shadow-xl transition-all duration-300">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
             <CardTitle className="text-sm font-medium text-emerald-700">Total Revenue</CardTitle>
-            <Clock className="h-4 w-4 text-emerald-600" />
+            <div className="p-2 bg-emerald-100 rounded-lg">
+              <Clock className="h-4 w-4 text-emerald-600" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-emerald-900">£{totalRevenue.toFixed(2)}</div>
@@ -415,7 +449,7 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
       </div>
 
       {/* Filters */}
-      <Card className="shadow-lg">
+      <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
@@ -425,13 +459,13 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
                   placeholder="Search by name, address, or postcode..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 border-gray-200 focus:border-blue-400 focus:ring-blue-400"
                 />
               </div>
             </div>
             <div className="flex gap-2">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-[140px] border-gray-200">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -445,7 +479,7 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
               </Select>
 
               <Select value={cleanerFilter} onValueChange={setCleanerFilter}>
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-[140px] border-gray-200">
                   <Users className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Cleaner" />
                 </SelectTrigger>
@@ -461,7 +495,7 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
               </Select>
 
               {selectedBookings.length > 0 && (
-                <Button onClick={handleBulkEdit}>
+                <Button onClick={handleBulkEdit} className="bg-blue-600 hover:bg-blue-700">
                   Bulk Edit ({selectedBookings.length})
                 </Button>
               )}
@@ -471,25 +505,26 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
       </Card>
 
       {/* Bookings Table */}
-      <Card className="shadow-lg">
+      <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow className="bg-gray-50">
+              <TableRow className="bg-gradient-to-r from-gray-50 to-gray-100 border-b">
                 <TableHead className="w-[50px]">
                   <input
                     type="checkbox"
                     checked={selectedBookings.length === filteredBookings.length && filteredBookings.length > 0}
                     onChange={handleSelectAll}
+                    className="rounded border-gray-300"
                   />
                 </TableHead>
-                <TableHead className="font-semibold">Date & Time</TableHead>
-                <TableHead className="font-semibold">Customer</TableHead>
-                <TableHead className="font-semibold">Address</TableHead>
-                <TableHead className="font-semibold">Service</TableHead>
-                <TableHead className="font-semibold">Cleaner</TableHead>
-                <TableHead className="font-semibold text-right">Cost</TableHead>
-                <TableHead className="font-semibold text-center">Actions</TableHead>
+                <TableHead className="font-semibold text-gray-700">📅 Date & Time</TableHead>
+                <TableHead className="font-semibold text-gray-700">👤 Customer</TableHead>
+                <TableHead className="font-semibold text-gray-700">📍 Address</TableHead>
+                <TableHead className="font-semibold text-gray-700">🔧 Service</TableHead>
+                <TableHead className="font-semibold text-gray-700">🧹 Cleaner</TableHead>
+                <TableHead className="font-semibold text-gray-700 text-right">💰 Cost</TableHead>
+                <TableHead className="font-semibold text-gray-700 text-center">⚙️ Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -505,20 +540,23 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
               ) : (
                 filteredBookings.map((booking) => (
                   <React.Fragment key={booking.id}>
-                    <TableRow className="hover:bg-gray-50 border-b">
+                    <TableRow className="hover:bg-blue-50/50 border-b transition-colors">
                       <TableCell>
                         <input
                           type="checkbox"
                           checked={selectedBookings.includes(booking.id)}
                           onChange={() => handleSelectBooking(booking.id)}
+                          className="rounded border-gray-300"
                         />
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="font-medium text-gray-900">
-                            {booking.date_time ? format(parseISO(booking.date_time), 'EEEE dd MMM') : 'No date'}
+                          <div className="font-medium text-gray-900 flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-blue-500" />
+                            {booking.date_time ? format(parseISO(booking.date_time), 'EEE do MMM') : 'No date'}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-gray-500 flex items-center gap-2">
+                            <Clock className="h-3 w-3 text-gray-400" />
                             {booking.date_time ? format(parseISO(booking.date_time), 'HH:mm') : 'No time'}
                           </div>
                         </div>
@@ -533,13 +571,19 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="text-gray-900">{booking.address}</div>
+                          <div className="text-gray-900 flex items-center gap-2">
+                            <MapPin className="h-3 w-3 text-gray-400" />
+                            {booking.address}
+                          </div>
                           <div className="text-sm text-gray-500">{booking.postcode}</div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="text-sm text-gray-900">
+                          <div className="text-sm text-gray-900 font-medium">
+                            {booking.form_name || 'Standard Cleaning'}
+                          </div>
+                          <div className="text-xs text-gray-500">
                             {booking.hours_required}h
                           </div>
                         </div>
@@ -551,7 +595,7 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
                               value={booking.cleaner?.toString() || 'unassigned'} 
                               onValueChange={(value) => handleAssignCleaner(booking.id, value === 'unassigned' ? null : parseInt(value))}
                             >
-                              <SelectTrigger className="w-full min-w-[120px]">
+                              <SelectTrigger className="w-full min-w-[120px] border-gray-200">
                                 <SelectValue placeholder="Select cleaner" />
                               </SelectTrigger>
                               <SelectContent>
@@ -564,37 +608,34 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
                               </SelectContent>
                             </Select>
                             {booking.cleaner && (
-                              <AddSubCleanerDialog
-                                bookingId={booking.id}
-                                onSubCleanerAdded={fetchBookings}
-                              >
-                                <Button size="sm" variant="outline">
-                                  <UserPlus className="h-4 w-4" />
+                              <>
+                                <AddSubCleanerDialog
+                                  bookingId={booking.id}
+                                  onSubCleanerAdded={fetchBookings}
+                                >
+                                  <Button size="sm" variant="outline" className="border-gray-200 hover:bg-blue-50">
+                                    <UserPlus className="h-4 w-4" />
+                                  </Button>
+                                </AddSubCleanerDialog>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => toggleSubCleaners(booking.id)}
+                                  className="p-1 hover:bg-blue-50"
+                                >
+                                  {expandedSubCleaners.has(booking.id) ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                  ) : (
+                                    <ChevronRight className="h-4 w-4" />
+                                  )}
                                 </Button>
-                              </AddSubCleanerDialog>
+                              </>
                             )}
                           </div>
                           
                           {booking.cleaner && (
-                            <div className="text-sm text-gray-600">
+                            <div className="text-sm text-gray-600 bg-blue-50 px-2 py-1 rounded">
                               Pay: £{booking.cleaner_pay?.toFixed(2) || '0.00'}
-                            </div>
-                          )}
-                          
-                          {booking.cleaner && (
-                            <div className="flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => toggleSubCleaners(booking.id)}
-                                className="p-1"
-                              >
-                                {expandedSubCleaners.has(booking.id) ? (
-                                  <ChevronDown className="h-4 w-4" />
-                                ) : (
-                                  <ChevronRight className="h-4 w-4" />
-                                )}
-                              </Button>
                             </div>
                           )}
                         </div>
@@ -607,7 +648,7 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
                       <TableCell className="text-center">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" className="hover:bg-blue-50">
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -636,12 +677,15 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
                       </TableCell>
                     </TableRow>
                     
-                    {/* Sub-cleaners row */}
+                    {/* Sub-cleaners row - only show if expanded and has cleaner */}
                     {expandedSubCleaners.has(booking.id) && booking.cleaner && (
-                      <TableRow className="bg-blue-50">
-                        <TableCell colSpan={8} className="p-4">
-                          <div className="bg-white rounded-lg p-4 shadow-sm">
-                            <h4 className="font-medium text-gray-900 mb-3">Additional Cleaners</h4>
+                      <TableRow className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                        <TableCell colSpan={8} className="p-6">
+                          <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-100">
+                            <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                              <Users className="h-4 w-4 text-blue-500" />
+                              Additional Cleaners
+                            </h4>
                             <SubCleanersList 
                               bookingId={booking.id}
                               onSubCleanerRemoved={fetchBookings}

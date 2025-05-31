@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, DollarSign, AlertTriangle } from 'lucide-react';
+import { Calendar, DollarSign, AlertTriangle, TrendingUp } from 'lucide-react';
 
 interface Stats {
   upcomingBookings: number;
@@ -98,10 +98,10 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {[1, 2, 3].map((i) => (
-          <Card key={i} className="shadow-lg">
+          <Card key={i} className="shadow-lg border-0 bg-gradient-to-br from-gray-50 to-gray-100">
             <CardContent className="p-6">
               <div className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2 mb-3"></div>
                 <div className="h-8 bg-gray-200 rounded w-3/4"></div>
               </div>
             </CardContent>
@@ -115,68 +115,76 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
   
   return (
     <div className={`grid grid-cols-1 gap-6 ${hasUnassigned ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
-      <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-indigo-100 hover:shadow-xl transition-all duration-300">
+      <Card className="shadow-xl border-0 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 text-white hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-          <CardTitle className="text-sm font-medium text-blue-700">
+          <CardTitle className="text-sm font-medium opacity-90">
             {filters ? 'Filtered' : 'Upcoming'} Bookings
           </CardTitle>
-          <Calendar className="h-5 w-5 text-blue-600" />
+          <div className="p-2 bg-white/20 rounded-lg">
+            <Calendar className="h-5 w-5" />
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold text-blue-900">
+          <div className="text-3xl font-bold mb-1">
             {filters ? stats.filteredBookings : stats.upcomingBookings}
           </div>
-          <p className="text-xs text-blue-600 mt-1">
+          <p className="text-xs opacity-80">
             {filters ? 'Based on current filters' : 'Next 30 days'}
           </p>
         </CardContent>
       </Card>
 
-      <Card className="shadow-lg border-0 bg-gradient-to-br from-emerald-50 to-green-100 hover:shadow-xl transition-all duration-300">
+      <Card className="shadow-xl border-0 bg-gradient-to-br from-emerald-500 via-green-600 to-teal-700 text-white hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-          <CardTitle className="text-sm font-medium text-emerald-700">
+          <CardTitle className="text-sm font-medium opacity-90">
             {filters ? 'Filtered' : 'Expected'} Revenue
           </CardTitle>
-          <DollarSign className="h-5 w-5 text-emerald-600" />
+          <div className="p-2 bg-white/20 rounded-lg">
+            <DollarSign className="h-5 w-5" />
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold text-emerald-900">
+          <div className="text-3xl font-bold mb-1">
             £{((filters ? stats.filteredRevenue : stats.expectedRevenue) || 0).toFixed(2)}
           </div>
-          <p className="text-xs text-emerald-600 mt-1">
+          <p className="text-xs opacity-80">
             {filters ? 'From filtered bookings' : 'From upcoming bookings'}
           </p>
         </CardContent>
       </Card>
 
       {hasUnassigned && (
-        <Card className="shadow-lg border-0 bg-gradient-to-br from-red-50 to-rose-100 hover:shadow-xl transition-all duration-300 border-red-200">
+        <Card className="shadow-xl border-0 bg-gradient-to-br from-red-500 via-red-600 to-rose-700 text-white hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-red-700">
+            <CardTitle className="text-sm font-medium opacity-90">
               Unassigned Jobs
             </CardTitle>
-            <AlertTriangle className="h-5 w-5 text-red-600" />
+            <div className="p-2 bg-white/20 rounded-lg animate-pulse">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-red-900">
+            <div className="text-3xl font-bold mb-1">
               {stats.unassignedBookings}
             </div>
-            <p className="text-xs text-red-600 mt-1">
-              Require cleaner assignment
+            <p className="text-xs opacity-80">
+              Require immediate attention
             </p>
           </CardContent>
         </Card>
       )}
 
       {!hasUnassigned && (
-        <Card className="shadow-lg border-0 bg-gradient-to-br from-purple-50 to-violet-100 hover:shadow-xl transition-all duration-300">
+        <Card className="shadow-xl border-0 bg-gradient-to-br from-purple-500 via-violet-600 to-purple-700 text-white hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-purple-700">Total Customers</CardTitle>
-            <Calendar className="h-5 w-5 text-purple-600" />
+            <CardTitle className="text-sm font-medium opacity-90">Total Customers</CardTitle>
+            <div className="p-2 bg-white/20 rounded-lg">
+              <TrendingUp className="h-5 w-5" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-purple-900">{stats.totalCustomers}</div>
-            <p className="text-xs text-purple-600 mt-1">Active customers</p>
+            <div className="text-3xl font-bold mb-1">{stats.totalCustomers}</div>
+            <p className="text-xs opacity-80">Active customers</p>
           </CardContent>
         </Card>
       )}
