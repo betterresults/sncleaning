@@ -181,7 +181,7 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
     }
   }, []);
 
-  const useEffect = (() => {
+  useEffect(() => {
     fetchBookings();
     fetchCleaners();
   }, [fetchBookings, fetchCleaners]);
@@ -380,6 +380,32 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
 
   return (
     <div className="space-y-6">
+      {/* Time Range Buttons */}
+      <div className="flex flex-wrap gap-3">
+        {[
+          { key: 'today', label: 'Today', icon: '📅' },
+          { key: '3days', label: 'Next 3 Days', icon: '📊' },
+          { key: '7days', label: 'Next 7 Days', icon: '📈' },
+          { key: '30days', label: 'Next 30 Days', icon: '📋' }
+        ].map((range) => (
+          <Button
+            key={range.key}
+            variant={selectedTimeRange === range.key ? "default" : "outline"}
+            onClick={() => {/* This would be handled by parent component */}}
+            className={`
+              transition-all duration-200 font-medium
+              ${selectedTimeRange === range.key 
+                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transform scale-105' 
+                : 'bg-white hover:bg-blue-50 text-gray-700 border-gray-200 hover:border-blue-300'
+              }
+            `}
+          >
+            <span className="mr-2">{range.icon}</span>
+            {range.label}
+          </Button>
+        ))}
+      </div>
+
       {/* Statistics */}
       <div className={`grid grid-cols-1 gap-6 ${unassignedBookings > 0 ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
         <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-indigo-100 hover:shadow-xl transition-all duration-300">
@@ -524,36 +550,36 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="font-semibold text-gray-900 text-sm">
+                          <div className="font-bold text-gray-900 text-base">
                             {booking.date_time ? format(parseISO(booking.date_time), 'EEE do MMM') : 'No date'}
                           </div>
-                          <div className="text-xs text-gray-500 font-medium">
+                          <div className="text-sm text-gray-500 font-medium">
                             {booking.date_time ? format(parseISO(booking.date_time), 'HH:mm') : 'No time'}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="font-semibold text-gray-900 text-sm">
+                          <div className="font-bold text-gray-900 text-base">
                             {booking.first_name} {booking.last_name}
                           </div>
-                          <div className="text-xs text-gray-500 font-medium">{booking.phone_number}</div>
+                          <div className="text-sm text-gray-500 font-medium">{booking.phone_number}</div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="text-gray-900 font-semibold text-sm">
+                          <div className="text-gray-900 font-bold text-base">
                             {booking.address}
                           </div>
-                          <div className="text-xs text-gray-500 font-medium">{booking.postcode}</div>
+                          <div className="text-sm text-gray-500 font-medium">{booking.postcode}</div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="text-gray-900 font-semibold text-sm">
+                          <div className="text-gray-900 font-bold text-base">
                             {booking.form_name || 'Standard Cleaning'}
                           </div>
-                          <div className="text-xs text-gray-500 font-medium">
+                          <div className="text-sm text-gray-500 font-medium">
                             {booking.hours_required}h
                           </div>
                         </div>
@@ -604,14 +630,14 @@ const UpcomingBookings = ({ selectedTimeRange = '3days' }: UpcomingBookingsProps
                           </div>
                           
                           {booking.cleaner && (
-                            <div className="text-xs text-gray-600 bg-blue-50 px-2 py-1 rounded font-medium">
+                            <div className="text-sm text-gray-600 bg-blue-50 px-2 py-1 rounded font-medium">
                               Pay: £{booking.cleaner_pay?.toFixed(2) || '0.00'}
                             </div>
                           )}
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="font-semibold text-green-600 text-sm">
+                        <div className="font-bold text-green-600 text-lg">
                           £{booking.total_cost?.toFixed(2) || '0.00'}
                         </div>
                       </TableCell>
