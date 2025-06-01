@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -342,7 +341,7 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
                 <Checkbox
                   id="isSameDayCleaning"
                   checked={isSameDayCleaning}
-                  onCheckedChange={setIsSameDayCleaning}
+                  onCheckedChange={(checked) => setIsSameDayCleaning(checked === true)}
                   className="border-2 border-blue-300 data-[state=checked]:bg-blue-600"
                 />
                 <Label htmlFor="isSameDayCleaning" className="text-sm font-medium text-gray-700 cursor-pointer">
