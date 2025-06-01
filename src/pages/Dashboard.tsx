@@ -36,13 +36,6 @@ const Dashboard = () => {
   // Extract first name from email (before @)
   const firstName = user.email?.split('@')[0] || 'User';
 
-  const timeRangeButtons = [
-    { key: 'today', label: 'Today', icon: Clock },
-    { key: '3days', label: 'Next 3 Days', icon: Calendar },
-    { key: '7days', label: 'Next 7 Days', icon: CalendarDays },
-    { key: '30days', label: 'Next 30 Days', icon: CalendarClock },
-  ] as const;
-
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -58,29 +51,10 @@ const Dashboard = () => {
           
           <main className="flex-1 p-3 sm:p-4 lg:p-6 xl:p-8">
             <div className="max-w-full">
-              {/* Time Range Filter Buttons */}
-              <div className="mb-4 sm:mb-6">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-                  {timeRangeButtons.map(({ key, label, icon: Icon }) => (
-                    <Button
-                      key={key}
-                      variant={selectedTimeRange === key ? "default" : "outline"}
-                      onClick={() => setSelectedTimeRange(key)}
-                      className="flex items-center gap-1 sm:gap-2 h-10 sm:h-12 text-xs sm:text-sm"
-                    >
-                      <Icon className="h-3 w-3 sm:h-4 sm:w-4" />
-                      <span className="hidden sm:inline">{label}</span>
-                      <span className="sm:hidden">
-                        {key === 'today' ? 'Today' : 
-                         key === '3days' ? '3D' : 
-                         key === '7days' ? '7D' : '30D'}
-                      </span>
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              <UpcomingBookings selectedTimeRange={selectedTimeRange} />
+              <UpcomingBookings 
+                selectedTimeRange={selectedTimeRange} 
+                onTimeRangeChange={setSelectedTimeRange}
+              />
             </div>
           </main>
         </SidebarInset>
