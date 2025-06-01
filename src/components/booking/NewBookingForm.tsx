@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -16,6 +15,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface NewBookingFormProps {
   onBookingCreated: () => void;
@@ -41,8 +41,11 @@ interface BookingData {
   // Service details
   serviceType: string; // domestic, commercial, airbnb, end_of_tenancy, deep_cleaning, carpet_cleaning
   cleaningSubType: string; // standard_cleaning, deep_cleaning (only for domestic/commercial/airbnb)
-  hoursRequired: number; // only for domestic/commercial/airbnb
+  totalHours: number; // changed from hoursRequired to totalHours
   cleaningTime: string; // only for end_of_tenancy/deep_cleaning/carpet_cleaning
+  
+  // Airbnb specific
+  isSameDayCleaning: boolean;
   
   // Additional cleaning items (for end_of_tenancy/deep_cleaning/carpet_cleaning)
   carpetCleaningItems: string;
@@ -80,13 +83,14 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
     phoneNumber: '',
     cleanerId: null,
     selectedDate: undefined,
-    selectedTime: '09:00',
+    selectedTime: '09:00 AM',
     address: '',
     postcode: '',
     serviceType: '',
     cleaningSubType: '',
-    hoursRequired: 0,
+    totalHours: 0,
     cleaningTime: '',
+    isSameDayCleaning: false,
     carpetCleaningItems: '',
     mattressCleaningItems: '',
     upholsteryCleaningItems: '',
@@ -147,6 +151,9 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
   // Check if service type shows additional cleaning items
   const showCleaningItems = ['end_of_tenancy', 'deep_cleaning', 'carpet_cleaning'].includes(formData.serviceType);
 
+  // Check if Airbnb service type
+  const isAirbnbService = formData.serviceType === 'airbnb';
+
   const handleInputChange = (field: keyof BookingData, value: string | number | boolean | Date) => {
     setFormData(prev => ({
       ...prev,
@@ -159,11 +166,13 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
       ...prev,
       serviceType: value,
       cleaningSubType: '', // Reset subcategory when service type changes
-      hoursRequired: 0,
-      cleaningTime: ''
+      totalHours: 0,
+      cleaningTime: '',
+      isSameDayCleaning: false // Reset same day cleaning when service type changes
     }));
   };
 
+  // Convert 12-hour time to 24-hour time
   const convertTo24Hour = (time12h: string): string => {
     const [time, modifier] = time12h.split(' ');
     let [hours, minutes] = time.split(':');
@@ -228,8 +237,8 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
 
   const calculateCleanerPay = () => {
     let cleanerPay = 0;
-    if (requiresHours && formData.hoursRequired > 0 && formData.cleanerHourlyRate > 0) {
-      cleanerPay = formData.hoursRequired * formData.cleanerHourlyRate;
+    if (requiresHours && formData.totalHours > 0 && formData.cleanerHourlyRate > 0) {
+      cleanerPay = formData.totalHours * formData.cleanerHourlyRate;
     } else if (formData.cleanerPercentage > 0) {
       cleanerPay = formData.totalCost * (formData.cleanerPercentage / 100);
     }
@@ -242,7 +251,7 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
 
   useEffect(() => {
     calculateCleanerPay();
-  }, [formData.totalCost, formData.hoursRequired, formData.cleanerHourlyRate, formData.cleanerPercentage]);
+  }, [formData.totalCost, formData.totalHours, formData.cleanerHourlyRate, formData.cleanerPercentage]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -327,6 +336,12 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
           `${accessInfo}${keyInfo}`;
       }
 
+      // Set frequently field for Airbnb same day cleaning
+      let frequently = null;
+      if (isAirbnbService && formData.isSameDayCleaning) {
+        frequently = 'Same Day';
+      }
+
       const bookingData = {
         customer: formData.customerId,
         cleaner: formData.cleanerId,
@@ -337,7 +352,7 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
         date_time: dateTime.toISOString(),
         address: formData.address,
         postcode: formData.postcode,
-        hours_required: requiresHours ? formData.hoursRequired : null,
+        total_hours: requiresHours ? formData.totalHours : null, // changed from hours_required to total_hours
         cleaning_time: requiresCleaningTime ? parseFloat(formData.cleaningTime) || null : null,
         total_cost: formData.totalCost,
         cleaner_pay: formData.cleanerPay,
@@ -349,7 +364,8 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
         additional_details: additionalDetails,
         payment_method: formData.paymentMethod,
         payment_status: formData.paymentStatus,
-        booking_status: 'Confirmed'
+        booking_status: 'Confirmed',
+        frequently: frequently
       };
 
       const { error } = await supabase
@@ -543,17 +559,28 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
             </div>
           )}
 
+          {isAirbnbService && (
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="isSameDayCleaning"
+                checked={formData.isSameDayCleaning}
+                onCheckedChange={(checked) => handleInputChange('isSameDayCleaning', checked)}
+              />
+              <Label htmlFor="isSameDayCleaning">Same Day Cleaning</Label>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             {requiresHours && (
               <div>
-                <Label htmlFor="hoursRequired">Hours Required *</Label>
+                <Label htmlFor="totalHours">Total Hours *</Label>
                 <Input
-                  id="hoursRequired"
+                  id="totalHours"
                   type="number"
                   step="0.5"
                   min="1"
-                  value={formData.hoursRequired}
-                  onChange={(e) => handleInputChange('hoursRequired', parseFloat(e.target.value) || 0)}
+                  value={formData.totalHours}
+                  onChange={(e) => handleInputChange('totalHours', parseFloat(e.target.value) || 0)}
                   required
                 />
               </div>
