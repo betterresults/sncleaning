@@ -24,7 +24,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { CalendarIcon, User, MapPin, Home, Banknote, UserCheck } from 'lucide-react';
+import { CalendarIcon, User, MapPin, Home, Banknote, UserCheck, Plus } from 'lucide-react';
 
 interface Booking {
   id: number;
@@ -84,6 +84,76 @@ interface EditBookingDialogProps {
   onSuccess: () => void;
 }
 
+interface SelectWithAddProps {
+  value: string;
+  onValueChange: (value: string) => void;
+  options: { value: string; label: string }[];
+  placeholder: string;
+  onAddOption?: (newOption: string) => void;
+}
+
+const SelectWithAdd: React.FC<SelectWithAddProps> = ({ value, onValueChange, options, placeholder, onAddOption }) => {
+  const [showAddInput, setShowAddInput] = useState(false);
+  const [newOption, setNewOption] = useState('');
+
+  const handleAddOption = () => {
+    if (newOption.trim() && onAddOption) {
+      onAddOption(newOption.trim());
+      onValueChange(newOption.trim());
+      setNewOption('');
+      setShowAddInput(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <Select value={value} onValueChange={onValueChange}>
+        <SelectTrigger className="h-11 border-2 border-gray-200 focus:border-blue-500 rounded-lg bg-white shadow-sm">
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent className="bg-white border-2 border-gray-200 rounded-lg shadow-lg">
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value} className="hover:bg-blue-50">
+              {option.label}
+            </SelectItem>
+          ))}
+          {onAddOption && (
+            <div className="border-t p-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAddInput(true)}
+                className="w-full text-blue-600 hover:bg-blue-50"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Custom Option
+              </Button>
+            </div>
+          )}
+        </SelectContent>
+      </Select>
+      
+      {showAddInput && (
+        <div className="flex gap-2">
+          <Input
+            value={newOption}
+            onChange={(e) => setNewOption(e.target.value)}
+            placeholder="Enter custom option"
+            className="h-9"
+            onKeyPress={(e) => e.key === 'Enter' && handleAddOption()}
+          />
+          <Button onClick={handleAddOption} size="sm" className="bg-blue-600 hover:bg-blue-700">
+            Add
+          </Button>
+          <Button onClick={() => setShowAddInput(false)} variant="outline" size="sm">
+            Cancel
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   open,
   onOpenChange,
@@ -94,6 +164,13 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   const [cleaners, setCleaners] = useState<{ id: number; full_name: string }[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState('09:00');
+  
+  // Custom options state
+  const [customServiceTypes, setCustomServiceTypes] = useState<{ value: string; label: string }[]>([]);
+  const [customCleaningTypes, setCustomCleaningTypes] = useState<{ value: string; label: string }[]>([]);
+  const [customAccessOptions, setCustomAccessOptions] = useState<{ value: string; label: string }[]>([]);
+  const [customPaymentMethods, setCustomPaymentMethods] = useState<{ value: string; label: string }[]>([]);
+
   const [formData, setFormData] = useState({
     // Customer info
     first_name: '',
@@ -156,13 +233,15 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     { value: 'Deep Cleaning', label: 'Deep Cleaning' },
     { value: 'End of Tenancy', label: 'End of Tenancy' },
     { value: 'Office Cleaning', label: 'Office Cleaning' },
-    { value: 'Carpet Cleaning', label: 'Carpet Cleaning' }
+    { value: 'Carpet Cleaning', label: 'Carpet Cleaning' },
+    ...customServiceTypes
   ];
 
   const cleaningTypes = [
     { value: 'Domestic', label: 'Domestic' },
     { value: 'Commercial', label: 'Commercial' },
-    { value: 'Air BnB', label: 'Air BnB' }
+    { value: 'Air BnB', label: 'Air BnB' },
+    ...customCleaningTypes
   ];
 
   const accessOptions = [
@@ -170,7 +249,16 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     { value: 'key_left', label: 'Key will be left' },
     { value: 'keybox', label: 'Access via keybox' },
     { value: 'estate_agent', label: 'Pick up keys from estate agent' },
-    { value: 'other', label: 'Other arrangement' }
+    { value: 'other', label: 'Other arrangement' },
+    ...customAccessOptions
+  ];
+
+  const paymentMethods = [
+    { value: 'Cash', label: 'Cash' },
+    { value: 'Card', label: 'Card' },
+    { value: 'Bank Transfer', label: 'Bank Transfer' },
+    { value: 'Online', label: 'Online' },
+    ...customPaymentMethods
   ];
 
   // Check if service is hourly-based
@@ -197,6 +285,8 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
 
   useEffect(() => {
     if (booking && open) {
+      console.log('Loading booking data:', booking);
+      
       const bookingDateTime = booking.date_time ? new Date(booking.date_time) : undefined;
       
       if (bookingDateTime) {
@@ -359,115 +449,113 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Edit Booking</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto bg-gradient-to-br from-slate-50 to-blue-50 border-0 shadow-2xl">
+        <DialogHeader className="pb-6 border-b border-gray-200">
+          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Edit Booking
+          </DialogTitle>
+          <DialogDescription className="text-gray-600 text-lg">
             Update booking details for {booking?.first_name} {booking?.last_name}
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
-          <Accordion type="multiple" defaultValue={["customer", "datetime", "address", "cleaning", "payment", "cleaner"]} className="w-full">
+          <Accordion type="multiple" className="w-full space-y-4">
             
             {/* Customer Information */}
-            <AccordionItem value="customer">
-              <AccordionTrigger className="text-lg font-semibold">
-                <div className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Customer Information
+            <AccordionItem value="customer" className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <AccordionTrigger className="px-6 py-4 hover:bg-blue-50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <User className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <span className="text-lg font-semibold text-gray-800">Customer Information</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="space-y-4 pt-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="first_name">First Name</Label>
+              <AccordionContent className="px-6 pb-6 space-y-6">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="first_name" className="text-sm font-medium text-gray-700">First Name</Label>
                     <Input
                       id="first_name"
                       value={formData.first_name}
                       onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                      className="h-11 border-2 border-gray-200 focus:border-blue-500 rounded-lg bg-white shadow-sm"
                       required
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="last_name">Last Name</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="last_name" className="text-sm font-medium text-gray-700">Last Name</Label>
                     <Input
                       id="last_name"
                       value={formData.last_name}
                       onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                      className="h-11 border-2 border-gray-200 focus:border-blue-500 rounded-lg bg-white shadow-sm"
                       required
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="email">Email</Label>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
                     <Input
                       id="email"
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="h-11 border-2 border-gray-200 focus:border-blue-500 rounded-lg bg-white shadow-sm"
                       required
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="phone_number">Phone Number</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone_number" className="text-sm font-medium text-gray-700">Phone Number</Label>
                     <Input
                       id="phone_number"
                       value={formData.phone_number}
                       onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+                      className="h-11 border-2 border-gray-200 focus:border-blue-500 rounded-lg bg-white shadow-sm"
                       required
                     />
                   </div>
                 </div>
-              </AccordionContent>
-            </AccordionItem>
 
-            {/* Date & Time */}
-            <AccordionItem value="datetime">
-              <AccordionTrigger className="text-lg font-semibold">
-                <div className="flex items-center gap-2">
-                  <CalendarIcon className="h-5 w-5" />
-                  Date & Time
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="space-y-4 pt-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Date</Label>
+                {/* Date & Time */}
+                <div className="grid grid-cols-2 gap-6 pt-4 border-t border-gray-100">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Date</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
                           variant={"outline"}
                           className={cn(
-                            "w-full justify-start text-left font-normal",
+                            "w-full h-11 justify-start text-left font-normal border-2 border-gray-200 focus:border-blue-500 rounded-lg bg-white shadow-sm hover:bg-gray-50",
                             !selectedDate && "text-muted-foreground"
                           )}
                         >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                          <CalendarIcon className="mr-3 h-5 w-5 text-blue-600" />
+                          {selectedDate ? format(selectedDate, "EEEE, MMMM do, yyyy") : <span>Pick a date</span>}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0 bg-white border-2 border-gray-200 rounded-xl shadow-lg" align="start">
                         <Calendar
                           mode="single"
                           selected={selectedDate}
                           onSelect={setSelectedDate}
                           initialFocus
-                          className="p-4 pointer-events-auto"
+                          className="p-4 pointer-events-auto rounded-xl"
                         />
                       </PopoverContent>
                     </Popover>
                   </div>
-                  <div>
-                    <Label>Time</Label>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Time</Label>
                     <Select value={selectedTime} onValueChange={setSelectedTime}>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-11 border-2 border-gray-200 focus:border-blue-500 rounded-lg bg-white shadow-sm">
                         <SelectValue placeholder="Select time" />
                       </SelectTrigger>
-                      <SelectContent className="max-h-60">
+                      <SelectContent className="max-h-60 bg-white border-2 border-gray-200 rounded-lg shadow-lg">
                         {timeOptions.map((time) => (
-                          <SelectItem key={time} value={time}>
+                          <SelectItem key={time} value={time} className="hover:bg-blue-50">
                             {time}
                           </SelectItem>
                         ))}
@@ -479,254 +567,261 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
             </AccordionItem>
 
             {/* Address & Access */}
-            <AccordionItem value="address">
-              <AccordionTrigger className="text-lg font-semibold">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Address & Access
+            <AccordionItem value="address" className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <AccordionTrigger className="px-6 py-4 hover:bg-green-50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <MapPin className="h-5 w-5 text-green-600" />
+                  </div>
+                  <span className="text-lg font-semibold text-gray-800">Address & Access</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="space-y-4 pt-4">
-                <div>
-                  <Label htmlFor="address">Address</Label>
+              <AccordionContent className="px-6 pb-6 space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="address" className="text-sm font-medium text-gray-700">Address</Label>
                   <Input
                     id="address"
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    className="h-11 border-2 border-gray-200 focus:border-green-500 rounded-lg bg-white shadow-sm"
                     required
                   />
                 </div>
-                <div>
-                  <Label htmlFor="postcode">Postcode</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="postcode" className="text-sm font-medium text-gray-700">Postcode</Label>
                   <Input
                     id="postcode"
                     value={formData.postcode}
                     onChange={(e) => setFormData({ ...formData, postcode: e.target.value })}
+                    className="h-11 border-2 border-gray-200 focus:border-green-500 rounded-lg bg-white shadow-sm"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="access">Property Access</Label>
-                  <Select value={formData.access} onValueChange={(value) => setFormData({ ...formData, access: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select access method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {accessOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-2">
+                  <Label htmlFor="access" className="text-sm font-medium text-gray-700">Property Access</Label>
+                  <SelectWithAdd
+                    value={formData.access}
+                    onValueChange={(value) => setFormData({ ...formData, access: value })}
+                    options={accessOptions}
+                    placeholder="Select access method"
+                    onAddOption={(newOption) => setCustomAccessOptions(prev => [...prev, { value: newOption, label: newOption }])}
+                  />
                 </div>
-                <div>
-                  <Label htmlFor="key_collection">Key Collection Details</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="key_collection" className="text-sm font-medium text-gray-700">Key Collection Details</Label>
                   <Textarea
                     id="key_collection"
                     value={formData.key_collection}
                     onChange={(e) => setFormData({ ...formData, key_collection: e.target.value })}
                     placeholder="Key collection instructions..."
+                    className="min-h-[100px] border-2 border-gray-200 focus:border-green-500 rounded-lg bg-white shadow-sm resize-none"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="parking_details">Parking Details</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="parking_details" className="text-sm font-medium text-gray-700">Parking Details</Label>
                   <Textarea
                     id="parking_details"
                     value={formData.parking_details}
                     onChange={(e) => setFormData({ ...formData, parking_details: e.target.value })}
                     placeholder="Parking information..."
+                    className="min-h-[100px] border-2 border-gray-200 focus:border-green-500 rounded-lg bg-white shadow-sm resize-none"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="additional_details">Additional Notes</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="additional_details" className="text-sm font-medium text-gray-700">Additional Notes</Label>
                   <Textarea
                     id="additional_details"
                     value={formData.additional_details}
                     onChange={(e) => setFormData({ ...formData, additional_details: e.target.value })}
                     placeholder="Any additional notes..."
+                    className="min-h-[100px] border-2 border-gray-200 focus:border-green-500 rounded-lg bg-white shadow-sm resize-none"
                   />
                 </div>
               </AccordionContent>
             </AccordionItem>
 
             {/* Cleaning Details */}
-            <AccordionItem value="cleaning">
-              <AccordionTrigger className="text-lg font-semibold">
-                <div className="flex items-center gap-2">
-                  <Home className="h-5 w-5" />
-                  Cleaning Details
+            <AccordionItem value="cleaning" className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <AccordionTrigger className="px-6 py-4 hover:bg-purple-50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <Home className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <span className="text-lg font-semibold text-gray-800">Cleaning Details</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="space-y-4 pt-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="form_name">Service Type</Label>
-                    <Select value={formData.form_name} onValueChange={(value) => setFormData({ ...formData, form_name: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select service type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {serviceTypes.map((service) => (
-                          <SelectItem key={service.value} value={service.value}>
-                            {service.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+              <AccordionContent className="px-6 pb-6 space-y-6">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="form_name" className="text-sm font-medium text-gray-700">Service Type</Label>
+                    <SelectWithAdd
+                      value={formData.form_name}
+                      onValueChange={(value) => setFormData({ ...formData, form_name: value })}
+                      options={serviceTypes}
+                      placeholder="Select service type"
+                      onAddOption={(newOption) => setCustomServiceTypes(prev => [...prev, { value: newOption, label: newOption }])}
+                    />
                   </div>
-                  <div>
-                    <Label htmlFor="cleaning_type">Property Type</Label>
-                    <Select value={formData.cleaning_type} onValueChange={(value) => setFormData({ ...formData, cleaning_type: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select property type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {cleaningTypes.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="space-y-2">
+                    <Label htmlFor="cleaning_type" className="text-sm font-medium text-gray-700">Property Type</Label>
+                    <SelectWithAdd
+                      value={formData.cleaning_type}
+                      onValueChange={(value) => setFormData({ ...formData, cleaning_type: value })}
+                      options={cleaningTypes}
+                      placeholder="Select property type"
+                      onAddOption={(newOption) => setCustomCleaningTypes(prev => [...prev, { value: newOption, label: newOption }])}
+                    />
                   </div>
                 </div>
 
                 {isHourlyService() && (
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="hours_required">Hours Required</Label>
+                  <div className="grid grid-cols-3 gap-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="space-y-2">
+                      <Label htmlFor="hours_required" className="text-sm font-medium text-gray-700">Hours Required</Label>
                       <Input
                         id="hours_required"
                         type="number"
                         step="0.5"
                         value={formData.hours_required}
                         onChange={(e) => setFormData({ ...formData, hours_required: Number(e.target.value) })}
+                        className="h-11 border-2 border-blue-200 focus:border-blue-500 rounded-lg bg-white shadow-sm"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="cleaning_cost_per_hour">Cost per Hour (£)</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="cleaning_cost_per_hour" className="text-sm font-medium text-gray-700">Cost per Hour (£)</Label>
                       <Input
                         id="cleaning_cost_per_hour"
                         type="number"
                         step="0.01"
                         value={formData.cleaning_cost_per_hour}
                         onChange={(e) => setFormData({ ...formData, cleaning_cost_per_hour: Number(e.target.value) })}
+                        className="h-11 border-2 border-blue-200 focus:border-blue-500 rounded-lg bg-white shadow-sm"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="total_hours">Total Hours</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="total_hours" className="text-sm font-medium text-gray-700">Total Hours</Label>
                       <Input
                         id="total_hours"
                         type="number"
                         step="0.5"
                         value={formData.total_hours}
                         onChange={(e) => setFormData({ ...formData, total_hours: Number(e.target.value) })}
+                        className="h-11 border-2 border-blue-200 focus:border-blue-500 rounded-lg bg-white shadow-sm"
                       />
                     </div>
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="ironing_hours">Ironing Hours</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="property_details" className="text-sm font-medium text-gray-700">Property Details</Label>
+                  <Textarea
+                    id="property_details"
+                    value={formData.property_details}
+                    onChange={(e) => setFormData({ ...formData, property_details: e.target.value })}
+                    placeholder="Number of bedrooms, bathrooms, special requirements..."
+                    className="min-h-[100px] border-2 border-gray-200 focus:border-purple-500 rounded-lg bg-white shadow-sm resize-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="ironing_hours" className="text-sm font-medium text-gray-700">Ironing Hours</Label>
                     <Input
                       id="ironing_hours"
                       type="number"
                       step="0.5"
                       value={formData.ironing_hours}
                       onChange={(e) => setFormData({ ...formData, ironing_hours: Number(e.target.value) })}
+                      className="h-11 border-2 border-gray-200 focus:border-purple-500 rounded-lg bg-white shadow-sm"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="cleaning_time">Cleaning Time</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="cleaning_time" className="text-sm font-medium text-gray-700">Cleaning Time</Label>
                     <Input
                       id="cleaning_time"
                       type="number"
                       step="0.5"
                       value={formData.cleaning_time}
                       onChange={(e) => setFormData({ ...formData, cleaning_time: Number(e.target.value) })}
+                      className="h-11 border-2 border-gray-200 focus:border-purple-500 rounded-lg bg-white shadow-sm"
                     />
                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="property_details">Property Details</Label>
-                  <Textarea
-                    id="property_details"
-                    value={formData.property_details}
-                    onChange={(e) => setFormData({ ...formData, property_details: e.target.value })}
-                    placeholder="Number of bedrooms, bathrooms, special requirements..."
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="carpet_items">Carpet Items</Label>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="carpet_items" className="text-sm font-medium text-gray-700">Carpet Items</Label>
                     <Textarea
                       id="carpet_items"
                       value={formData.carpet_items}
                       onChange={(e) => setFormData({ ...formData, carpet_items: e.target.value })}
                       placeholder="Carpet cleaning details..."
+                      className="h-20 border-2 border-gray-200 focus:border-purple-500 rounded-lg bg-white shadow-sm resize-none"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="upholstery_items">Upholstery Items</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="upholstery_items" className="text-sm font-medium text-gray-700">Upholstery Items</Label>
                     <Textarea
                       id="upholstery_items"
                       value={formData.upholstery_items}
                       onChange={(e) => setFormData({ ...formData, upholstery_items: e.target.value })}
                       placeholder="Upholstery cleaning details..."
+                      className="h-20 border-2 border-gray-200 focus:border-purple-500 rounded-lg bg-white shadow-sm resize-none"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="mattress_items">Mattress Items</Label>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="mattress_items" className="text-sm font-medium text-gray-700">Mattress Items</Label>
                     <Textarea
                       id="mattress_items"
                       value={formData.mattress_items}
                       onChange={(e) => setFormData({ ...formData, mattress_items: e.target.value })}
                       placeholder="Mattress cleaning details..."
+                      className="h-20 border-2 border-gray-200 focus:border-purple-500 rounded-lg bg-white shadow-sm resize-none"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="exclude_areas">Exclude Areas</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="exclude_areas" className="text-sm font-medium text-gray-700">Exclude Areas</Label>
                     <Textarea
                       id="exclude_areas"
                       value={formData.exclude_areas}
                       onChange={(e) => setFormData({ ...formData, exclude_areas: e.target.value })}
                       placeholder="Areas to exclude from cleaning..."
+                      className="h-20 border-2 border-gray-200 focus:border-purple-500 rounded-lg bg-white shadow-sm resize-none"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="extras">Extras</Label>
+                <div className="grid grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="extras" className="text-sm font-medium text-gray-700">Extras</Label>
                     <Input
                       id="extras"
                       value={formData.extras}
                       onChange={(e) => setFormData({ ...formData, extras: e.target.value })}
                       placeholder="Extra services..."
+                      className="h-11 border-2 border-gray-200 focus:border-purple-500 rounded-lg bg-white shadow-sm"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="linens">Linens</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="linens" className="text-sm font-medium text-gray-700">Linens</Label>
                     <Input
                       id="linens"
                       value={formData.linens}
                       onChange={(e) => setFormData({ ...formData, linens: e.target.value })}
                       placeholder="Linen requirements..."
+                      className="h-11 border-2 border-gray-200 focus:border-purple-500 rounded-lg bg-white shadow-sm"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="oven_size">Oven Size</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="oven_size" className="text-sm font-medium text-gray-700">Oven Size</Label>
                     <Input
                       id="oven_size"
                       value={formData.oven_size}
                       onChange={(e) => setFormData({ ...formData, oven_size: e.target.value })}
                       placeholder="Single, Double, etc."
+                      className="h-11 border-2 border-gray-200 focus:border-purple-500 rounded-lg bg-white shadow-sm"
                     />
                   </div>
                 </div>
@@ -734,17 +829,19 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
             </AccordionItem>
 
             {/* Payment */}
-            <AccordionItem value="payment">
-              <AccordionTrigger className="text-lg font-semibold">
-                <div className="flex items-center gap-2">
-                  <Banknote className="h-5 w-5" />
-                  Payment
+            <AccordionItem value="payment" className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <AccordionTrigger className="px-6 py-4 hover:bg-yellow-50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-yellow-100 rounded-lg">
+                    <Banknote className="h-5 w-5 text-yellow-600" />
+                  </div>
+                  <span className="text-lg font-semibold text-gray-800">Payment</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="space-y-4 pt-4">
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="total_cost">Total Cost (£)</Label>
+              <AccordionContent className="px-6 pb-6 space-y-6">
+                <div className="grid grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="total_cost" className="text-sm font-medium text-gray-700">Total Cost (£)</Label>
                     <Input
                       id="total_cost"
                       type="number"
@@ -752,83 +849,82 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                       value={formData.total_cost}
                       onChange={(e) => setFormData({ ...formData, total_cost: Number(e.target.value) })}
                       readOnly={isHourlyService()}
-                      className={isHourlyService() ? "bg-gray-100" : ""}
+                      className={cn(
+                        "h-11 border-2 border-gray-200 focus:border-yellow-500 rounded-lg shadow-sm",
+                        isHourlyService() ? "bg-gray-100 text-gray-600" : "bg-white"
+                      )}
                     />
                     {isHourlyService() && (
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-sm text-blue-600 font-medium">
                         Auto-calculated: {formData.hours_required} hours × £{formData.cleaning_cost_per_hour}/hour
                       </p>
                     )}
                   </div>
-                  <div>
-                    <Label htmlFor="deposit">Deposit (£)</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="deposit" className="text-sm font-medium text-gray-700">Deposit (£)</Label>
                     <Input
                       id="deposit"
                       type="number"
                       step="0.01"
                       value={formData.deposit}
                       onChange={(e) => setFormData({ ...formData, deposit: Number(e.target.value) })}
+                      className="h-11 border-2 border-gray-200 focus:border-yellow-500 rounded-lg bg-white shadow-sm"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="payment_status">Payment Status</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="payment_status" className="text-sm font-medium text-gray-700">Payment Status</Label>
                     <Select 
                       value={formData.payment_status} 
                       onValueChange={(value) => setFormData({ ...formData, payment_status: value })}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="h-11 border-2 border-gray-200 focus:border-yellow-500 rounded-lg bg-white shadow-sm">
                         <SelectValue placeholder="Select payment status" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="paid">Paid</SelectItem>
-                        <SelectItem value="unpaid">Unpaid</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
+                      <SelectContent className="bg-white border-2 border-gray-200 rounded-lg shadow-lg">
+                        <SelectItem value="paid" className="hover:bg-yellow-50">Paid</SelectItem>
+                        <SelectItem value="unpaid" className="hover:bg-yellow-50">Unpaid</SelectItem>
+                        <SelectItem value="pending" className="hover:bg-yellow-50">Pending</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
-                <div>
-                  <Label htmlFor="payment_method">Payment Method</Label>
-                  <Select 
-                    value={formData.payment_method} 
+                <div className="space-y-2">
+                  <Label htmlFor="payment_method" className="text-sm font-medium text-gray-700">Payment Method</Label>
+                  <SelectWithAdd
+                    value={formData.payment_method}
                     onValueChange={(value) => setFormData({ ...formData, payment_method: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select payment method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Cash">Cash</SelectItem>
-                      <SelectItem value="Card">Card</SelectItem>
-                      <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                      <SelectItem value="Online">Online</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    options={paymentMethods}
+                    placeholder="Select payment method"
+                    onAddOption={(newOption) => setCustomPaymentMethods(prev => [...prev, { value: newOption, label: newOption }])}
+                  />
                 </div>
               </AccordionContent>
             </AccordionItem>
 
             {/* Cleaner & Cleaner Pay */}
-            <AccordionItem value="cleaner">
-              <AccordionTrigger className="text-lg font-semibold">
-                <div className="flex items-center gap-2">
-                  <UserCheck className="h-5 w-5" />
-                  Cleaner & Payment
+            <AccordionItem value="cleaner" className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <AccordionTrigger className="px-6 py-4 hover:bg-indigo-50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-indigo-100 rounded-lg">
+                    <UserCheck className="h-5 w-5 text-indigo-600" />
+                  </div>
+                  <span className="text-lg font-semibold text-gray-800">Cleaner & Payment</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="space-y-4 pt-4">
-                <div>
-                  <Label htmlFor="cleaner">Assign Cleaner</Label>
+              <AccordionContent className="px-6 pb-6 space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="cleaner" className="text-sm font-medium text-gray-700">Assign Cleaner</Label>
                   <Select 
                     value={formData.cleaner === null ? 'unassigned' : formData.cleaner.toString()} 
                     onValueChange={(value) => setFormData({ ...formData, cleaner: value === 'unassigned' ? null : Number(value) })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-11 border-2 border-gray-200 focus:border-indigo-500 rounded-lg bg-white shadow-sm">
                       <SelectValue placeholder="Select a cleaner" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="unassigned">Unassigned</SelectItem>
+                    <SelectContent className="bg-white border-2 border-gray-200 rounded-lg shadow-lg">
+                      <SelectItem value="unassigned" className="hover:bg-indigo-50">Unassigned</SelectItem>
                       {cleaners.map((cleaner) => (
-                        <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
+                        <SelectItem key={cleaner.id} value={cleaner.id.toString()} className="hover:bg-indigo-50">
                           {cleaner.full_name}
                         </SelectItem>
                       ))}
@@ -836,29 +932,31 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                   </Select>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="cleaner_pay">Cleaner Pay (£)</Label>
+                <div className="grid grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="cleaner_pay" className="text-sm font-medium text-gray-700">Cleaner Pay (£)</Label>
                     <Input
                       id="cleaner_pay"
                       type="number"
                       step="0.01"
                       value={formData.cleaner_pay}
                       onChange={(e) => setFormData({ ...formData, cleaner_pay: Number(e.target.value) })}
+                      className="h-11 border-2 border-gray-200 focus:border-indigo-500 rounded-lg bg-white shadow-sm"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="cleaner_rate">Cleaner Rate (£/hour)</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="cleaner_rate" className="text-sm font-medium text-gray-700">Cleaner Rate (£/hour)</Label>
                     <Input
                       id="cleaner_rate"
                       type="number"
                       step="0.01"
                       value={formData.cleaner_rate}
                       onChange={(e) => setFormData({ ...formData, cleaner_rate: Number(e.target.value) })}
+                      className="h-11 border-2 border-gray-200 focus:border-indigo-500 rounded-lg bg-white shadow-sm"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="cleaner_percentage">Cleaner Percentage (%)</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="cleaner_percentage" className="text-sm font-medium text-gray-700">Cleaner Percentage (%)</Label>
                     <Input
                       id="cleaner_percentage"
                       type="number"
@@ -867,6 +965,7 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                       max="100"
                       value={formData.cleaner_percentage}
                       onChange={(e) => setFormData({ ...formData, cleaner_percentage: Number(e.target.value) })}
+                      className="h-11 border-2 border-gray-200 focus:border-indigo-500 rounded-lg bg-white shadow-sm"
                     />
                   </div>
                 </div>
@@ -875,13 +974,24 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
 
           </Accordion>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Updating...' : 'Update Booking'}
-            </Button>
+          <DialogFooter className="pt-6 border-t border-gray-200">
+            <div className="flex gap-4 w-full justify-center">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => onOpenChange(false)}
+                className="px-8 py-3 h-12 border-2 border-gray-300 hover:bg-gray-50 rounded-lg font-medium"
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={loading}
+                className="px-12 py-3 h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-medium shadow-lg disabled:opacity-50"
+              >
+                {loading ? 'Updating...' : 'Update Booking'}
+              </Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>
