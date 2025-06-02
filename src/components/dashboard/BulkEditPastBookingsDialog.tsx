@@ -314,7 +314,7 @@ const BulkEditPastBookingsDialog: React.FC<BulkEditPastBookingsDialogProps> = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="Paid">Paid</SelectItem>
-            <SelectItem value="Not Paid">Not Paid</SelectItem>
+            <SelectItem value="Unpaid">Unpaid</SelectItem>
             <SelectItem value="Collecting">Collecting</SelectItem>
             <SelectItem value="Partially Paid">Partially Paid</SelectItem>
             <SelectItem value="Refunded">Refunded</SelectItem>
@@ -397,7 +397,7 @@ const BulkEditPastBookingsDialog: React.FC<BulkEditPastBookingsDialogProps> = ({
                   <SelectContent>
                     <SelectItem value="all">All</SelectItem>
                     <SelectItem value="Paid">Paid</SelectItem>
-                    <SelectItem value="Not Paid">Not Paid</SelectItem>
+                    <SelectItem value="Unpaid">Unpaid</SelectItem>
                     <SelectItem value="Collecting">Collecting</SelectItem>
                     <SelectItem value="Partially Paid">Partially Paid</SelectItem>
                     <SelectItem value="Refunded">Refunded</SelectItem>
@@ -558,7 +558,7 @@ const BulkEditPastBookingsDialog: React.FC<BulkEditPastBookingsDialogProps> = ({
                           booking.payment_status === 'Collecting' ? 'bg-blue-100 text-blue-800' :
                           'bg-red-100 text-red-800'
                         }`}>
-                          {booking.payment_status || 'Not Paid'}
+                          {booking.payment_status || 'Unpaid'}
                         </span>
                       </TableCell>
                       <TableCell>
