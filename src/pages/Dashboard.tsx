@@ -37,6 +37,40 @@ const Dashboard = () => {
   // Extract first name from email (before @)
   const firstName = user.email?.split('@')[0] || 'User';
 
+  // Calculate date range based on selected time range
+  const getDateRange = () => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    switch (selectedTimeRange) {
+      case 'today':
+        return {
+          dateFrom: today.toISOString(),
+          dateTo: new Date(today.getTime() + 24 * 60 * 60 * 1000 - 1).toISOString()
+        };
+      case '3days':
+        return {
+          dateFrom: today.toISOString(),
+          dateTo: new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString()
+        };
+      case '7days':
+        return {
+          dateFrom: today.toISOString(),
+          dateTo: new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        };
+      case '30days':
+        return {
+          dateFrom: today.toISOString(),
+          dateTo: new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        };
+      default:
+        return {
+          dateFrom: today.toISOString(),
+          dateTo: new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString()
+        };
+    }
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -78,7 +112,7 @@ const Dashboard = () => {
                 ))}
               </div>
 
-              <DashboardStats />
+              <DashboardStats filters={getDateRange()} />
               <UpcomingBookings 
                 selectedTimeRange={selectedTimeRange} 
                 onTimeRangeChange={setSelectedTimeRange}
