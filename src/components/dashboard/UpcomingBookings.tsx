@@ -77,9 +77,10 @@ interface UpcomingBookingsProps {
   selectedTimeRange?: 'today' | '3days' | '7days' | '30days';
   onTimeRangeChange?: (timeRange: 'today' | '3days' | '7days' | '30days') => void;
   hideTimeRangeButtons?: boolean;
+  hideStatistics?: boolean;
 }
 
-const UpcomingBookings = ({ selectedTimeRange = '3days', onTimeRangeChange, hideTimeRangeButtons = false }: UpcomingBookingsProps) => {
+const UpcomingBookings = ({ selectedTimeRange = '3days', onTimeRangeChange, hideTimeRangeButtons = false, hideStatistics = false }: UpcomingBookingsProps) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [cleaners, setCleaners] = useState<CleanerInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -410,46 +411,48 @@ const UpcomingBookings = ({ selectedTimeRange = '3days', onTimeRangeChange, hide
         </div>
       )}
 
-      {/* Statistics */}
-      <div className={`grid grid-cols-1 gap-6 ${unassignedBookings > 0 ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
-        <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-indigo-100 hover:shadow-xl transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-blue-700">Total Bookings</CardTitle>
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Calendar className="h-4 w-4 text-blue-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-900">{totalBookings}</div>
-          </CardContent>
-        </Card>
-        
-        {unassignedBookings > 0 && (
-          <Card className="shadow-lg border-0 bg-gradient-to-br from-red-50 to-rose-100 border-red-200 hover:shadow-xl transition-all duration-300">
+      {/* Statistics - Only show if not hidden */}
+      {!hideStatistics && (
+        <div className={`grid grid-cols-1 gap-6 ${unassignedBookings > 0 ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+          <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-indigo-100 hover:shadow-xl transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-medium text-red-700">Unassigned</CardTitle>
-              <div className="p-2 bg-red-100 rounded-lg animate-pulse">
-                <Users className="h-4 w-4 text-red-600" />
+              <CardTitle className="text-sm font-medium text-blue-700">Total Bookings</CardTitle>
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Calendar className="h-4 w-4 text-blue-600" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-900">{unassignedBookings}</div>
+              <div className="text-2xl font-bold text-blue-900">{totalBookings}</div>
             </CardContent>
           </Card>
-        )}
-        
-        <Card className="shadow-lg border-0 bg-gradient-to-br from-emerald-50 to-green-100 hover:shadow-xl transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-emerald-700">Total Revenue</CardTitle>
-            <div className="p-2 bg-emerald-100 rounded-lg">
-              <Clock className="h-4 w-4 text-emerald-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-emerald-900">£{totalRevenue.toFixed(2)}</div>
-          </CardContent>
-        </Card>
-      </div>
+          
+          {unassignedBookings > 0 && (
+            <Card className="shadow-lg border-0 bg-gradient-to-br from-red-50 to-rose-100 border-red-200 hover:shadow-xl transition-all duration-300">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                <CardTitle className="text-sm font-medium text-red-700">Unassigned</CardTitle>
+                <div className="p-2 bg-red-100 rounded-lg animate-pulse">
+                  <Users className="h-4 w-4 text-red-600" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-900">{unassignedBookings}</div>
+              </CardContent>
+            </Card>
+          )}
+          
+          <Card className="shadow-lg border-0 bg-gradient-to-br from-emerald-50 to-green-100 hover:shadow-xl transition-all duration-300">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-emerald-700">Total Revenue</CardTitle>
+              <div className="p-2 bg-emerald-100 rounded-lg">
+                <Clock className="h-4 w-4 text-emerald-600" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-emerald-900">£{totalRevenue.toFixed(2)}</div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Filters */}
       <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">

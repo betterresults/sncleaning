@@ -86,7 +86,7 @@ const Dashboard = () => {
           
           <main className="flex-1 p-3 sm:p-4 lg:p-6 xl:p-8">
             <div className="max-w-full space-y-6">
-              {/* Time Range Buttons - Moved to top */}
+              {/* Time Range Buttons - At the top */}
               <div className="grid grid-cols-4 gap-3">
                 {[
                   { key: 'today' as const, label: 'Today', icon: '📅' },
@@ -112,11 +112,15 @@ const Dashboard = () => {
                 ))}
               </div>
 
+              {/* Main Statistics - filtered by time range */}
               <DashboardStats filters={getDateRange()} />
+              
+              {/* Bookings List - with duplicate statistics removed */}
               <UpcomingBookings 
                 selectedTimeRange={selectedTimeRange} 
                 onTimeRangeChange={setSelectedTimeRange}
                 hideTimeRangeButtons={true}
+                hideStatistics={true}
               />
             </div>
           </main>
