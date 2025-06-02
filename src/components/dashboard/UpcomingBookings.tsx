@@ -76,9 +76,10 @@ interface CleanerInfo {
 interface UpcomingBookingsProps {
   selectedTimeRange?: 'today' | '3days' | '7days' | '30days';
   onTimeRangeChange?: (timeRange: 'today' | '3days' | '7days' | '30days') => void;
+  hideTimeRangeButtons?: boolean;
 }
 
-const UpcomingBookings = ({ selectedTimeRange = '3days', onTimeRangeChange }: UpcomingBookingsProps) => {
+const UpcomingBookings = ({ selectedTimeRange = '3days', onTimeRangeChange, hideTimeRangeButtons = false }: UpcomingBookingsProps) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [cleaners, setCleaners] = useState<CleanerInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -381,31 +382,33 @@ const UpcomingBookings = ({ selectedTimeRange = '3days', onTimeRangeChange }: Up
 
   return (
     <div className="space-y-6">
-      {/* Time Range Buttons - Full Width */}
-      <div className="grid grid-cols-4 gap-3">
-        {[
-          { key: 'today' as const, label: 'Today', icon: '📅' },
-          { key: '3days' as const, label: 'Next 3 Days', icon: '📊' },
-          { key: '7days' as const, label: 'Next 7 Days', icon: '📈' },
-          { key: '30days' as const, label: 'Next 30 Days', icon: '📋' }
-        ].map((range) => (
-          <Button
-            key={range.key}
-            variant={selectedTimeRange === range.key ? "default" : "outline"}
-            onClick={() => onTimeRangeChange?.(range.key)}
-            className={`
-              w-full transition-all duration-200 font-medium py-3
-              ${selectedTimeRange === range.key 
-                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transform scale-105' 
-                : 'bg-white hover:bg-blue-50 text-gray-700 border-gray-200 hover:border-blue-300'
-              }
-            `}
-          >
-            <span className="mr-2">{range.icon}</span>
-            {range.label}
-          </Button>
-        ))}
-      </div>
+      {/* Time Range Buttons - Only show if not hidden */}
+      {!hideTimeRangeButtons && (
+        <div className="grid grid-cols-4 gap-3">
+          {[
+            { key: 'today' as const, label: 'Today', icon: '📅' },
+            { key: '3days' as const, label: 'Next 3 Days', icon: '📊' },
+            { key: '7days' as const, label: 'Next 7 Days', icon: '📈' },
+            { key: '30days' as const, label: 'Next 30 Days', icon: '📋' }
+          ].map((range) => (
+            <Button
+              key={range.key}
+              variant={selectedTimeRange === range.key ? "default" : "outline"}
+              onClick={() => onTimeRangeChange?.(range.key)}
+              className={`
+                w-full transition-all duration-200 font-medium py-3
+                ${selectedTimeRange === range.key 
+                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transform scale-105' 
+                  : 'bg-white hover:bg-blue-50 text-gray-700 border-gray-200 hover:border-blue-300'
+                }
+              `}
+            >
+              <span className="mr-2">{range.icon}</span>
+              {range.label}
+            </Button>
+          ))}
+        </div>
+      )}
 
       {/* Statistics */}
       <div className={`grid grid-cols-1 gap-6 ${unassignedBookings > 0 ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>

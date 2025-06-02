@@ -2,14 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, DollarSign, AlertTriangle, TrendingUp, Banknote } from 'lucide-react';
+import { Calendar, DollarSign, AlertTriangle, Banknote } from 'lucide-react';
 
 interface Stats {
   upcomingBookings: number;
   expectedRevenue: number;
   totalCleanerPay: number;
   totalProfit: number;
-  totalCustomers: number;
   unassignedBookings: number;
   filteredBookings?: number;
   filteredRevenue?: number;
@@ -32,7 +31,6 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
     expectedRevenue: 0,
     totalCleanerPay: 0,
     totalProfit: 0,
-    totalCustomers: 0,
     unassignedBookings: 0,
   });
   const [loading, setLoading] = useState(true);
@@ -68,11 +66,6 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
         return;
       }
 
-      // Get total customers count
-      const { count: customersCount } = await supabase
-        .from('customers')
-        .select('*', { count: 'exact', head: true });
-
       // Calculate stats
       const upcomingBookings = bookings?.length || 0;
       const unassignedBookings = bookings?.filter(booking => !booking.cleaner).length || 0;
@@ -89,7 +82,6 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
         expectedRevenue,
         totalCleanerPay,
         totalProfit,
-        totalCustomers: customersCount || 0,
         unassignedBookings,
         filteredBookings: filters ? upcomingBookings : undefined,
         filteredRevenue: filters ? expectedRevenue : undefined,
@@ -110,7 +102,7 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
           <Card key={i} className="shadow-lg border-0 bg-gradient-to-br from-gray-50 to-gray-100">
             <CardContent className="p-6">
@@ -128,7 +120,7 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
   const hasUnassigned = stats.unassignedBookings > 0;
   
   return (
-    <div className={`grid grid-cols-1 gap-6 ${hasUnassigned ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-3'}`}>
+    <div className={`grid grid-cols-1 gap-6 ${hasUnassigned ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-3 lg:grid-cols-3'}`}>
       <Card className="shadow-xl border-0 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 text-white hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
           <CardTitle className="text-sm font-medium opacity-90">
@@ -139,12 +131,9 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold mb-1">
+          <div className="text-3xl font-bold">
             {filters ? stats.filteredBookings : stats.upcomingBookings}
           </div>
-          <p className="text-xs opacity-80">
-            {filters ? 'Based on current filters' : 'Next 30 days'}
-          </p>
         </CardContent>
       </Card>
 
@@ -158,12 +147,9 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold mb-1">
+          <div className="text-3xl font-bold">
             £{((filters ? stats.filteredRevenue : stats.expectedRevenue) || 0).toFixed(2)}
           </div>
-          <p className="text-xs opacity-80">
-            {filters ? 'From filtered bookings' : 'From upcoming bookings'}
-          </p>
         </CardContent>
       </Card>
 
@@ -177,12 +163,9 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold mb-1">
+          <div className="text-3xl font-bold">
             £{((filters ? stats.filteredProfit : stats.totalProfit) || 0).toFixed(2)}
           </div>
-          <p className="text-xs opacity-80">
-            Revenue minus cleaner pay
-          </p>
         </CardContent>
       </Card>
 
@@ -197,27 +180,9 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold mb-1">
+            <div className="text-3xl font-bold">
               {stats.unassignedBookings}
             </div>
-            <p className="text-xs opacity-80">
-              Require immediate attention
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {!hasUnassigned && (
-        <Card className="shadow-xl border-0 bg-gradient-to-br from-purple-500 via-violet-600 to-purple-700 text-white hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium opacity-90">Total Customers</CardTitle>
-            <div className="p-2 bg-white/20 rounded-lg">
-              <TrendingUp className="h-5 w-5" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold mb-1">{stats.totalCustomers}</div>
-            <p className="text-xs opacity-80">Active customers</p>
           </CardContent>
         </Card>
       )}

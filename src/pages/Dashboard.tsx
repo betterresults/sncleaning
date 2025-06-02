@@ -52,10 +52,37 @@ const Dashboard = () => {
           
           <main className="flex-1 p-3 sm:p-4 lg:p-6 xl:p-8">
             <div className="max-w-full space-y-6">
+              {/* Time Range Buttons - Moved to top */}
+              <div className="grid grid-cols-4 gap-3">
+                {[
+                  { key: 'today' as const, label: 'Today', icon: '📅' },
+                  { key: '3days' as const, label: 'Next 3 Days', icon: '📊' },
+                  { key: '7days' as const, label: 'Next 7 Days', icon: '📈' },
+                  { key: '30days' as const, label: 'Next 30 Days', icon: '📋' }
+                ].map((range) => (
+                  <Button
+                    key={range.key}
+                    variant={selectedTimeRange === range.key ? "default" : "outline"}
+                    onClick={() => setSelectedTimeRange(range.key)}
+                    className={`
+                      w-full transition-all duration-200 font-medium py-3
+                      ${selectedTimeRange === range.key 
+                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transform scale-105' 
+                        : 'bg-white hover:bg-blue-50 text-gray-700 border-gray-200 hover:border-blue-300'
+                      }
+                    `}
+                  >
+                    <span className="mr-2">{range.icon}</span>
+                    {range.label}
+                  </Button>
+                ))}
+              </div>
+
               <DashboardStats />
               <UpcomingBookings 
                 selectedTimeRange={selectedTimeRange} 
                 onTimeRangeChange={setSelectedTimeRange}
+                hideTimeRangeButtons={true}
               />
             </div>
           </main>
