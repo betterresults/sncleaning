@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import UpcomingBookings from '@/components/dashboard/UpcomingBookings';
+import DashboardStats from '@/components/admin/DashboardStats';
 import { Calendar, Clock, CalendarDays, CalendarClock } from 'lucide-react';
 
 const Dashboard = () => {
@@ -50,7 +51,8 @@ const Dashboard = () => {
           </header>
           
           <main className="flex-1 p-3 sm:p-4 lg:p-6 xl:p-8">
-            <div className="max-w-full">
+            <div className="max-w-full space-y-6">
+              <DashboardStats />
               <UpcomingBookings 
                 selectedTimeRange={selectedTimeRange} 
                 onTimeRangeChange={setSelectedTimeRange}

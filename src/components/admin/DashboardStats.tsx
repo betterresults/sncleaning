@@ -2,15 +2,19 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, DollarSign, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Calendar, DollarSign, AlertTriangle, TrendingUp, Banknote } from 'lucide-react';
 
 interface Stats {
   upcomingBookings: number;
   expectedRevenue: number;
+  totalCleanerPay: number;
+  totalProfit: number;
   totalCustomers: number;
   unassignedBookings: number;
   filteredBookings?: number;
   filteredRevenue?: number;
+  filteredCleanerPay?: number;
+  filteredProfit?: number;
 }
 
 interface DashboardStatsProps {
@@ -26,6 +30,8 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
   const [stats, setStats] = useState<Stats>({
     upcomingBookings: 0,
     expectedRevenue: 0,
+    totalCleanerPay: 0,
+    totalProfit: 0,
     totalCustomers: 0,
     unassignedBookings: 0,
   });
@@ -38,7 +44,7 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
       // Base query for upcoming bookings
       let bookingsQuery = supabase
         .from('bookings')
-        .select('total_cost, payment_status, customer, cleaner')
+        .select('total_cost, cleaner_pay, payment_status, customer, cleaner')
         .gte('date_time', new Date().toISOString());
 
       // Apply filters if provided
@@ -73,14 +79,22 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
       const expectedRevenue = bookings?.reduce((sum, booking) => {
         return sum + (parseFloat(String(booking.total_cost)) || 0);
       }, 0) || 0;
+      const totalCleanerPay = bookings?.reduce((sum, booking) => {
+        return sum + (parseFloat(String(booking.cleaner_pay)) || 0);
+      }, 0) || 0;
+      const totalProfit = expectedRevenue - totalCleanerPay;
 
       setStats({
         upcomingBookings,
         expectedRevenue,
+        totalCleanerPay,
+        totalProfit,
         totalCustomers: customersCount || 0,
         unassignedBookings,
         filteredBookings: filters ? upcomingBookings : undefined,
         filteredRevenue: filters ? expectedRevenue : undefined,
+        filteredCleanerPay: filters ? totalCleanerPay : undefined,
+        filteredProfit: filters ? totalProfit : undefined,
       });
 
     } catch (error) {
@@ -96,8 +110,8 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[1, 2, 3].map((i) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[1, 2, 3, 4].map((i) => (
           <Card key={i} className="shadow-lg border-0 bg-gradient-to-br from-gray-50 to-gray-100">
             <CardContent className="p-6">
               <div className="animate-pulse">
@@ -114,7 +128,7 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
   const hasUnassigned = stats.unassignedBookings > 0;
   
   return (
-    <div className={`grid grid-cols-1 gap-6 ${hasUnassigned ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+    <div className={`grid grid-cols-1 gap-6 ${hasUnassigned ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-3'}`}>
       <Card className="shadow-xl border-0 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 text-white hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
           <CardTitle className="text-sm font-medium opacity-90">
@@ -149,6 +163,25 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
           </div>
           <p className="text-xs opacity-80">
             {filters ? 'From filtered bookings' : 'From upcoming bookings'}
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-xl border-0 bg-gradient-to-br from-yellow-500 via-amber-600 to-orange-700 text-white hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+          <CardTitle className="text-sm font-medium opacity-90">
+            {filters ? 'Filtered' : 'Total'} Profit
+          </CardTitle>
+          <div className="p-2 bg-white/20 rounded-lg">
+            <Banknote className="h-5 w-5" />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="text-3xl font-bold mb-1">
+            £{((filters ? stats.filteredProfit : stats.totalProfit) || 0).toFixed(2)}
+          </div>
+          <p className="text-xs opacity-80">
+            Revenue minus cleaner pay
           </p>
         </CardContent>
       </Card>

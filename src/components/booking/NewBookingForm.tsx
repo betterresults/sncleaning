@@ -195,7 +195,8 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
         email: customer.email || '',
         phoneNumber: customer.phone || '',
         address: prev.useClientAddress ? (customer.address || '') : prev.address,
-        postcode: prev.useClientAddress ? (customer.postcode || '') : prev.postcode
+        postcode: prev.useClientAddress ? (customer.postcode || '') : prev.postcode,
+        keyPickupAddress: prev.useClientAddress ? `${customer.address || ''}, ${customer.postcode || ''}` : prev.keyPickupAddress
       }));
     } else {
       setFormData(prev => ({
@@ -228,11 +229,21 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
   };
 
   const handleUseClientAddress = (checked: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      useClientAddress: checked,
-      keyPickupAddress: checked && prev.customerId ? `${prev.address}, ${prev.postcode}` : ''
-    }));
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        useClientAddress: checked
+      };
+      
+      // If checked and we have a customer selected, auto-fill the key pickup address
+      if (checked && prev.customerId) {
+        newData.keyPickupAddress = `${prev.address}, ${prev.postcode}`;
+      } else if (!checked) {
+        newData.keyPickupAddress = '';
+      }
+      
+      return newData;
+    });
   };
 
   const calculateCleanerPay = () => {
