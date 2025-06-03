@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -47,6 +46,7 @@ interface BookingData {
   cleaningSubType: string;
   totalHours: number;
   cleaningTime: string;
+  costPerHour: number;
   
   // Airbnb specific
   isSameDayCleaning: boolean;
@@ -98,6 +98,7 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
     cleaningSubType: '',
     totalHours: 0,
     cleaningTime: '',
+    costPerHour: 0,
     isSameDayCleaning: false,
     carpetCleaningItems: '',
     mattressCleaningItems: '',
@@ -188,7 +189,9 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
       cleaningSubType: '',
       totalHours: 0,
       cleaningTime: '',
-      isSameDayCleaning: false
+      isSameDayCleaning: false,
+      costPerHour: 0,
+      totalCost: 0
     }));
   };
 
@@ -274,6 +277,17 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
       }));
     }
   };
+
+  // Calculate total cost for hourly services
+  useEffect(() => {
+    if (requiresHours && formData.totalHours > 0 && formData.costPerHour > 0) {
+      const calculatedCost = formData.totalHours * formData.costPerHour;
+      setFormData(prev => ({
+        ...prev,
+        totalCost: calculatedCost
+      }));
+    }
+  }, [formData.totalHours, formData.costPerHour, requiresHours]);
 
   const calculateCleanerPay = () => {
     let cleanerPay = 0;
@@ -406,7 +420,8 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
         payment_status: formData.paymentStatus,
         booking_status: 'Confirmed',
         frequently: frequently,
-        key_collection: formData.keyCollectionNotes || null
+        key_collection: formData.keyCollectionNotes || null,
+        cleaning_cost_per_hour: requiresHours ? formData.costPerHour : null
       };
 
       const { error } = await supabase
@@ -671,21 +686,36 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {requiresHours && (
-                <div className="space-y-2">
-                  <Label htmlFor="totalHours" className="text-sm font-semibold text-gray-700">Total Hours *</Label>
-                  <Input
-                    id="totalHours"
-                    type="number"
-                    step="0.5"
-                    min="1"
-                    value={formData.totalHours}
-                    onChange={(e) => handleInputChange('totalHours', parseFloat(e.target.value) || 0)}
-                    className="border-2 border-gray-200 focus:border-green-500 transition-colors"
-                    required
-                  />
-                </div>
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="totalHours" className="text-sm font-semibold text-gray-700">Total Hours *</Label>
+                    <Input
+                      id="totalHours"
+                      type="number"
+                      step="0.5"
+                      min="1"
+                      value={formData.totalHours}
+                      onChange={(e) => handleInputChange('totalHours', parseFloat(e.target.value) || 0)}
+                      className="border-2 border-gray-200 focus:border-green-500 transition-colors"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="costPerHour" className="text-sm font-semibold text-gray-700">Cost per Hour (£) *</Label>
+                    <Input
+                      id="costPerHour"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.costPerHour}
+                      onChange={(e) => handleInputChange('costPerHour', parseFloat(e.target.value) || 0)}
+                      className="border-2 border-gray-200 focus:border-green-500 transition-colors"
+                      required
+                    />
+                  </div>
+                </>
               )}
 
               {requiresCleaningTime && (
@@ -876,7 +906,9 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
           <CardContent className="space-y-6 p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="totalCost" className="text-sm font-semibold text-gray-700">Total Cost (£) *</Label>
+                <Label htmlFor="totalCost" className="text-sm font-semibold text-gray-700">
+                  Total Cost (£) {requiresHours ? '(Auto-calculated)' : '*'}
+                </Label>
                 <Input
                   id="totalCost"
                   type="number"
@@ -884,8 +916,12 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
                   min="0"
                   value={formData.totalCost}
                   onChange={(e) => handleInputChange('totalCost', parseFloat(e.target.value) || 0)}
-                  className="border-2 border-gray-200 focus:border-indigo-500 transition-colors"
-                  required
+                  className={cn(
+                    "border-2 border-gray-200 focus:border-indigo-500 transition-colors",
+                    requiresHours && "bg-gray-50"
+                  )}
+                  readOnly={requiresHours}
+                  required={!requiresHours}
                 />
               </div>
               <div className="space-y-2">
