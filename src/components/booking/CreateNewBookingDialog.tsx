@@ -16,11 +16,14 @@ const CreateNewBookingDialog = ({ children }: CreateNewBookingDialogProps) => {
 
   const handleBookingCreated = () => {
     setOpen(false);
-    // Refresh all booking-related queries
+    // Refresh all booking-related queries to show the new booking instantly
     queryClient.invalidateQueries({ queryKey: ['bookings'] });
     queryClient.invalidateQueries({ queryKey: ['upcoming-bookings'] });
     queryClient.invalidateQueries({ queryKey: ['past-bookings'] });
     queryClient.invalidateQueries({ queryKey: ['available-bookings'] });
+    
+    // Force refetch of any components that might be displaying bookings
+    window.location.reload();
   };
 
   return (

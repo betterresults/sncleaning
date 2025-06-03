@@ -130,10 +130,11 @@ const UpcomingBookings = ({ selectedTimeRange = '3days', onTimeRangeChange, hide
     }
   };
 
-  const fetchBookings = useCallback(async () => {
+  // Enhanced fetchBookings with auto-refresh
+  const fetchBookings = useCallback(async (forceRefresh = false) => {
     try {
       setLoading(true);
-      console.log('Fetching upcoming bookings...');
+      console.log('Fetching upcoming bookings...', forceRefresh ? '(forced refresh)' : '');
       
       const { data, error } = await supabase
         .from('bookings')
@@ -187,6 +188,13 @@ const UpcomingBookings = ({ selectedTimeRange = '3days', onTimeRangeChange, hide
   useEffect(() => {
     fetchBookings();
     fetchCleaners();
+
+    // Set up periodic refresh to catch new bookings
+    const interval = setInterval(() => {
+      fetchBookings(true);
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
   }, [fetchBookings, fetchCleaners]);
 
   const getCleanerName = (cleanerId: number | null) => {
