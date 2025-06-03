@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -459,13 +460,6 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
       <form onSubmit={handleSubmit} className="max-w-6xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-            Create New Booking
-          </h1>
-          <p className="text-gray-600">Fill in the details to create a new cleaning booking</p>
-        </div>
 
         {/* Customer Selection */}
         <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
@@ -904,7 +898,7 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6 p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="totalCost" className="text-sm font-semibold text-gray-700">
                   Total Cost (£) {requiresHours ? '(Auto-calculated)' : '*'}
