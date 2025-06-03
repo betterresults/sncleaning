@@ -925,18 +925,6 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="cleanerPay" className="text-sm font-semibold text-gray-700">Cleaner Pay (£)</Label>
-                <Input
-                  id="cleanerPay"
-                  type="number"
-                  step="0.01"
-                  value={formData.cleanerPay}
-                  onChange={(e) => handleInputChange('cleanerPay', parseFloat(e.target.value) || 0)}
-                  className="bg-gray-50 border-2 border-gray-200"
-                  readOnly
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="paymentMethod" className="text-sm font-semibold text-gray-700">Payment Method</Label>
                 <Select value={formData.paymentMethod} onValueChange={(value) => handleInputChange('paymentMethod', value)}>
                   <SelectTrigger className="border-2 border-gray-200 focus:border-indigo-500">
@@ -951,46 +939,6 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
                 </Select>
               </div>
             </div>
-
-            {/* Cleaner Rate Override Section */}
-            {formData.cleanerId && (
-              <div className="space-y-6 p-6 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border-2 border-indigo-200">
-                <h4 className="font-bold text-lg text-indigo-700">Cleaner Rate Override (Optional)</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {requiresHours && (
-                    <div className="space-y-2">
-                      <Label htmlFor="cleanerHourlyRate" className="text-sm font-semibold text-gray-700">Cleaner Hourly Rate (£)</Label>
-                      <Input
-                        id="cleanerHourlyRate"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={formData.cleanerHourlyRate}
-                        onChange={(e) => handleInputChange('cleanerHourlyRate', parseFloat(e.target.value) || 0)}
-                        placeholder="Override hourly rate"
-                        className="border-2 border-gray-200 focus:border-indigo-500 transition-colors"
-                      />
-                    </div>
-                  )}
-                  {!requiresHours && (
-                    <div className="space-y-2">
-                      <Label htmlFor="cleanerPercentage" className="text-sm font-semibold text-gray-700">Cleaner Percentage (%)</Label>
-                      <Input
-                        id="cleanerPercentage"
-                        type="number"
-                        step="1"
-                        min="0"
-                        max="100"
-                        value={formData.cleanerPercentage}
-                        onChange={(e) => handleInputChange('cleanerPercentage', parseFloat(e.target.value) || 0)}
-                        placeholder="Override percentage"
-                        className="border-2 border-gray-200 focus:border-indigo-500 transition-colors"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
 
@@ -1022,8 +970,59 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
               Cleaner Assignment (Optional)
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className="space-y-6 p-6">
             <CleanerSelector onCleanerSelect={handleCleanerSelect} />
+            
+            {formData.cleanerId && (
+              <div className="space-y-6 p-6 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-lg border-2 border-cyan-200">
+                <h4 className="font-bold text-lg text-cyan-700">Cleaner Payment & Rate</h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {requiresHours && (
+                    <div className="space-y-2">
+                      <Label htmlFor="cleanerHourlyRate" className="text-sm font-semibold text-gray-700">Cleaner Hourly Rate (£)</Label>
+                      <Input
+                        id="cleanerHourlyRate"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.cleanerHourlyRate}
+                        onChange={(e) => handleInputChange('cleanerHourlyRate', parseFloat(e.target.value) || 0)}
+                        className="border-2 border-gray-200 focus:border-cyan-500 transition-colors"
+                      />
+                    </div>
+                  )}
+                  {!requiresHours && (
+                    <div className="space-y-2">
+                      <Label htmlFor="cleanerPercentage" className="text-sm font-semibold text-gray-700">Cleaner Percentage (%)</Label>
+                      <Input
+                        id="cleanerPercentage"
+                        type="number"
+                        step="1"
+                        min="0"
+                        max="100"
+                        value={formData.cleanerPercentage}
+                        onChange={(e) => handleInputChange('cleanerPercentage', parseFloat(e.target.value) || 0)}
+                        className="border-2 border-gray-200 focus:border-cyan-500 transition-colors"
+                      />
+                    </div>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="cleanerPay" className="text-sm font-semibold text-gray-700">Cleaner Pay (£)</Label>
+                    <Input
+                      id="cleanerPay"
+                      type="number"
+                      step="0.01"
+                      value={formData.cleanerPay}
+                      onChange={(e) => handleInputChange('cleanerPay', parseFloat(e.target.value) || 0)}
+                      className="bg-gray-50 border-2 border-gray-200"
+                      readOnly
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
