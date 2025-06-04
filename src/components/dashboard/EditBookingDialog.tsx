@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -24,7 +23,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { CalendarIcon, User, MapPin, Home, Banknote, UserCheck, Plus } from 'lucide-react';
+import { CalendarIcon, User, MapPin, Home, Banknote, UserCheck, Plus, Clock } from 'lucide-react';
 
 interface Booking {
   id: number;
@@ -276,12 +275,20 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     return formData.total_cost;
   };
 
-  useEffect(() => {
+  // Memoize the calculated cost to prevent unnecessary re-renders
+  const calculatedCost = React.useMemo(() => {
     if (isHourlyService()) {
-      const calculatedCost = calculateTotalCost();
+      return calculateTotalCost();
+    }
+    return formData.total_cost;
+  }, [formData.hours_required, formData.cleaning_cost_per_hour, formData.cleaning_type, formData.total_cost]);
+
+  // Update total cost only when calculated cost changes
+  useEffect(() => {
+    if (isHourlyService() && calculatedCost !== formData.total_cost) {
       setFormData(prev => ({ ...prev, total_cost: calculatedCost }));
     }
-  }, [formData.hours_required, formData.cleaning_cost_per_hour, formData.cleaning_type]);
+  }, [calculatedCost, isHourlyService]);
 
   useEffect(() => {
     if (booking && open) {
@@ -518,9 +525,21 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                     />
                   </div>
                 </div>
+              </AccordionContent>
+            </AccordionItem>
 
-                {/* Date & Time */}
-                <div className="grid grid-cols-2 gap-6 pt-4 border-t border-gray-100">
+            {/* Date & Time - New separate section */}
+            <AccordionItem value="datetime" className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <AccordionTrigger className="px-6 py-4 hover:bg-orange-50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-orange-100 rounded-lg">
+                    <Clock className="h-5 w-5 text-orange-600" />
+                  </div>
+                  <span className="text-lg font-semibold text-gray-800">Date & Time</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-6 pb-6 space-y-6">
+                <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-gray-700">Date</Label>
                     <Popover>
@@ -528,11 +547,11 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                         <Button
                           variant={"outline"}
                           className={cn(
-                            "w-full h-11 justify-start text-left font-normal border-2 border-gray-200 focus:border-blue-500 rounded-lg bg-white shadow-sm hover:bg-gray-50",
+                            "w-full h-11 justify-start text-left font-normal border-2 border-gray-200 focus:border-orange-500 rounded-lg bg-white shadow-sm hover:bg-gray-50",
                             !selectedDate && "text-muted-foreground"
                           )}
                         >
-                          <CalendarIcon className="mr-3 h-5 w-5 text-blue-600" />
+                          <CalendarIcon className="mr-3 h-5 w-5 text-orange-600" />
                           {selectedDate ? format(selectedDate, "EEEE, MMMM do, yyyy") : <span>Pick a date</span>}
                         </Button>
                       </PopoverTrigger>
@@ -550,12 +569,12 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-gray-700">Time</Label>
                     <Select value={selectedTime} onValueChange={setSelectedTime}>
-                      <SelectTrigger className="h-11 border-2 border-gray-200 focus:border-blue-500 rounded-lg bg-white shadow-sm">
+                      <SelectTrigger className="h-11 border-2 border-gray-200 focus:border-orange-500 rounded-lg bg-white shadow-sm">
                         <SelectValue placeholder="Select time" />
                       </SelectTrigger>
                       <SelectContent className="max-h-60 bg-white border-2 border-gray-200 rounded-lg shadow-lg">
                         {timeOptions.map((time) => (
-                          <SelectItem key={time} value={time} className="hover:bg-blue-50">
+                          <SelectItem key={time} value={time} className="hover:bg-orange-50">
                             {time}
                           </SelectItem>
                         ))}
