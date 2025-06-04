@@ -1,13 +1,13 @@
-
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format, isToday, differenceInHours } from 'date-fns';
-import { CalendarDays, Clock, MapPin, User, Banknote, UserX, CheckCircle2 } from 'lucide-react';
+import { CalendarDays, Clock, MapPin, User, Banknote, UserX, CheckCircle2, Eye } from 'lucide-react';
 import { Booking } from './types';
 import { useIsMobile } from '@/hooks/use-mobile';
+import ViewBookingDialog from './ViewBookingDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +32,8 @@ const BookingsTable: React.FC<BookingsTableProps> = ({
 }) => {
   const [dropOffBookingId, setDropOffBookingId] = useState<number | null>(null);
   const [completeBookingId, setCompleteBookingId] = useState<number | null>(null);
+  const [viewBookingDialogOpen, setViewBookingDialogOpen] = useState(false);
+  const [selectedBookingForView, setSelectedBookingForView] = useState<Booking | null>(null);
   const isMobile = useIsMobile();
 
   const getStatusBadge = (status: string) => {
@@ -102,6 +104,11 @@ const BookingsTable: React.FC<BookingsTableProps> = ({
     }
   };
 
+  const handleViewBooking = (booking: Booking) => {
+    setSelectedBookingForView(booking);
+    setViewBookingDialogOpen(true);
+  };
+
   const MobileBookingCard = ({ booking }: { booking: Booking }) => (
     <Card className="mb-4">
       <CardHeader className="pb-3">
@@ -158,6 +165,15 @@ const BookingsTable: React.FC<BookingsTableProps> = ({
 
           {/* Actions */}
           <div className="flex flex-col space-y-2">
+            <Button
+              onClick={() => handleViewBooking(booking)}
+              size="sm"
+              variant="outline"
+              className="w-full"
+            >
+              <Eye className="h-3 w-3 mr-2" />
+              View Details
+            </Button>
             {shouldShowCompleteButton(booking) && (
               <Button
                 onClick={() => handleCompleteClick(booking.id)}
@@ -287,6 +303,15 @@ const BookingsTable: React.FC<BookingsTableProps> = ({
                         </TableCell>
                         <TableCell>
                           <div className="flex justify-center space-x-2">
+                            <Button
+                              onClick={() => handleViewBooking(booking)}
+                              size="sm"
+                              variant="outline"
+                              className="border-blue-300 hover:bg-blue-50"
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              View
+                            </Button>
                             {shouldShowCompleteButton(booking) && (
                               <Button
                                 onClick={() => handleCompleteClick(booking.id)}
@@ -319,6 +344,13 @@ const BookingsTable: React.FC<BookingsTableProps> = ({
           )}
         </CardContent>
       </Card>
+
+      {/* View Booking Dialog */}
+      <ViewBookingDialog
+        open={viewBookingDialogOpen}
+        onOpenChange={setViewBookingDialogOpen}
+        booking={selectedBookingForView}
+      />
 
       {/* Drop Off Confirmation Dialog */}
       <AlertDialog open={dropOffBookingId !== null} onOpenChange={() => setDropOffBookingId(null)}>
