@@ -163,6 +163,7 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   const [cleaners, setCleaners] = useState<{ id: number; full_name: string }[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState('09:00');
+  const [isManualCostEdit, setIsManualCostEdit] = useState(false);
   
   // Custom options state
   const [customServiceTypes, setCustomServiceTypes] = useState<{ value: string; label: string }[]>([]);
@@ -277,18 +278,18 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
 
   // Memoize the calculated cost to prevent unnecessary re-renders
   const calculatedCost = React.useMemo(() => {
-    if (isHourlyService()) {
+    if (isHourlyService() && !isManualCostEdit) {
       return calculateTotalCost();
     }
     return formData.total_cost;
-  }, [formData.hours_required, formData.cleaning_cost_per_hour, formData.cleaning_type, formData.total_cost]);
+  }, [formData.hours_required, formData.cleaning_cost_per_hour, formData.cleaning_type, formData.total_cost, isManualCostEdit]);
 
-  // Update total cost only when calculated cost changes
+  // Update total cost only when calculated cost changes and user hasn't manually edited
   useEffect(() => {
-    if (isHourlyService() && calculatedCost !== formData.total_cost) {
+    if (isHourlyService() && !isManualCostEdit && calculatedCost !== formData.total_cost) {
       setFormData(prev => ({ ...prev, total_cost: calculatedCost }));
     }
-  }, [calculatedCost, isHourlyService]);
+  }, [calculatedCost, isHourlyService, isManualCostEdit]);
 
   useEffect(() => {
     if (booking && open) {
@@ -351,6 +352,9 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
         cleaner_rate: Number(booking.cleaner_rate) || 0,
         cleaner_percentage: Number(booking.cleaner_percentage) || 70,
       });
+
+      // Reset manual edit flag when loading new booking
+      setIsManualCostEdit(false);
     }
   }, [booking, open]);
 
@@ -452,6 +456,12 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleTotalCostChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newCost = Number(e.target.value);
+    setFormData({ ...formData, total_cost: newCost });
+    setIsManualCostEdit(true);
   };
 
   return (
@@ -701,7 +711,10 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                         type="number"
                         step="0.5"
                         value={formData.hours_required}
-                        onChange={(e) => setFormData({ ...formData, hours_required: Number(e.target.value) })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, hours_required: Number(e.target.value) });
+                          setIsManualCostEdit(false); // Allow auto-calculation when hours change
+                        }}
                         className="h-11 border-2 border-blue-200 focus:border-blue-500 rounded-lg bg-white shadow-sm"
                       />
                     </div>
@@ -712,7 +725,10 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                         type="number"
                         step="0.01"
                         value={formData.cleaning_cost_per_hour}
-                        onChange={(e) => setFormData({ ...formData, cleaning_cost_per_hour: Number(e.target.value) })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, cleaning_cost_per_hour: Number(e.target.value) });
+                          setIsManualCostEdit(false); // Allow auto-calculation when rate changes
+                        }}
                         className="h-11 border-2 border-blue-200 focus:border-blue-500 rounded-lg bg-white shadow-sm"
                       />
                     </div>
@@ -866,16 +882,17 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                       type="number"
                       step="0.01"
                       value={formData.total_cost}
-                      onChange={(e) => setFormData({ ...formData, total_cost: Number(e.target.value) })}
-                      readOnly={isHourlyService()}
-                      className={cn(
-                        "h-11 border-2 border-gray-200 focus:border-yellow-500 rounded-lg shadow-sm",
-                        isHourlyService() ? "bg-gray-100 text-gray-600" : "bg-white"
-                      )}
+                      onChange={handleTotalCostChange}
+                      className="h-11 border-2 border-gray-200 focus:border-yellow-500 rounded-lg bg-white shadow-sm"
                     />
-                    {isHourlyService() && (
+                    {isHourlyService() && !isManualCostEdit && (
                       <p className="text-sm text-blue-600 font-medium">
                         Auto-calculated: {formData.hours_required} hours × £{formData.cleaning_cost_per_hour}/hour
+                      </p>
+                    )}
+                    {isHourlyService() && isManualCostEdit && (
+                      <p className="text-sm text-orange-600 font-medium">
+                        Manually edited - auto-calculation disabled
                       </p>
                     )}
                   </div>
