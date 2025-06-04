@@ -109,22 +109,22 @@ const UpcomingBookings = ({ selectedTimeRange = '3days', onTimeRangeChange, hide
         };
       case '3days':
         return {
-          start: today,
+          start: now, // Start from current time for future ranges
           end: addDays(today, 3)
         };
       case '7days':
         return {
-          start: today,
+          start: now, // Start from current time for future ranges
           end: addDays(today, 7)
         };
       case '30days':
         return {
-          start: today,
+          start: now, // Start from current time for future ranges
           end: addDays(today, 30)
         };
       default:
         return {
-          start: today,
+          start: now,
           end: addDays(today, 3)
         };
     }
@@ -136,10 +136,16 @@ const UpcomingBookings = ({ selectedTimeRange = '3days', onTimeRangeChange, hide
       setLoading(true);
       console.log('Fetching upcoming bookings...', forceRefresh ? '(forced refresh)' : '');
       
+      // For 'today' view, get all bookings from today regardless of time
+      // For other views, get future bookings from current time
+      const startTime = selectedTimeRange === 'today' 
+        ? new Date().toISOString().split('T')[0] // Start of today (YYYY-MM-DD format)
+        : new Date().toISOString(); // Current time for future bookings
+
       const { data, error } = await supabase
         .from('bookings')
         .select('*')
-        .gte('date_time', new Date().toISOString())
+        .gte('date_time', startTime)
         .order('date_time', { ascending: true });
 
       if (error) {
@@ -159,7 +165,7 @@ const UpcomingBookings = ({ selectedTimeRange = '3days', onTimeRangeChange, hide
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, selectedTimeRange]);
 
   const fetchCleaners = useCallback(async () => {
     try {
@@ -205,12 +211,22 @@ const UpcomingBookings = ({ selectedTimeRange = '3days', onTimeRangeChange, hide
 
   // Filter bookings by date range and other filters
   const filteredBookings = bookings.filter(booking => {
-    // Date range filter
+    // Date range filter - for 'today' show all bookings for today, for others show future bookings
     if (booking.date_time) {
       const bookingDate = parseISO(booking.date_time);
       const { start, end } = getDateRange();
-      if (!isWithinInterval(bookingDate, { start, end })) {
-        return false;
+      
+      if (selectedTimeRange === 'today') {
+        // For today view, check if booking is on the same day
+        const today = new Date();
+        if (!isSameDay(bookingDate, today)) {
+          return false;
+        }
+      } else {
+        // For other views, check if booking is within the time range
+        if (!isWithinInterval(bookingDate, { start, end })) {
+          return false;
+        }
       }
     }
 
@@ -407,7 +423,7 @@ const UpcomingBookings = ({ selectedTimeRange = '3days', onTimeRangeChange, hide
               className={`
                 w-full transition-all duration-200 font-medium py-3
                 ${selectedTimeRange === range.key 
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transform scale-105' 
+                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg transform scale-105 hover:from-blue-600 hover:to-blue-700' 
                   : 'bg-white hover:bg-blue-50 text-gray-700 border-gray-200 hover:border-blue-300'
                 }
               `}
@@ -509,7 +525,7 @@ const UpcomingBookings = ({ selectedTimeRange = '3days', onTimeRangeChange, hide
               </Select>
 
               {selectedBookings.length > 0 && (
-                <Button onClick={handleBulkEdit} className="bg-blue-600 hover:bg-blue-700">
+                <Button onClick={handleBulkEdit} className="bg-blue-500 hover:bg-blue-600 text-white">
                   Bulk Edit ({selectedBookings.length})
                 </Button>
               )}

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -48,7 +49,7 @@ const Index = () => {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50">
         <div className="text-xl">Loading...</div>
       </div>
     );
@@ -132,84 +133,94 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="text-center max-w-md mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-4 text-gray-900">SN Cleaning</h1>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 px-4">
+      <div className="w-full max-w-2xl">
+        <div className="text-center mb-8">
+          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            SN Cleaning
+          </h1>
           <p className="text-xl text-gray-600">Professional cleaning services</p>
         </div>
         
-        <Card className="w-full">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">
+        <Card className="w-full shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
+          <CardHeader className="text-center pb-8 pt-8">
+            <CardTitle className="text-3xl font-bold text-gray-800">
               {getCardTitle()}
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-lg text-gray-600 mt-2">
               {getCardDescription()}
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <CardContent className="px-8 pb-8">
+            <form onSubmit={handleSubmit} className="space-y-6">
               {!isLogin && !isForgotPassword && (
                 <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">First Name</Label>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <Label htmlFor="firstName" className="text-base font-medium text-gray-700">First Name</Label>
                       <Input
                         id="firstName"
                         type="text"
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
+                        className="h-12 text-base border-gray-200 focus:border-blue-400 focus:ring-blue-400"
                         required
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Last Name</Label>
+                    <div className="space-y-3">
+                      <Label htmlFor="lastName" className="text-base font-medium text-gray-700">Last Name</Label>
                       <Input
                         id="lastName"
                         type="text"
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
+                        className="h-12 text-base border-gray-200 focus:border-blue-400 focus:ring-blue-400"
                         required
                       />
                     </div>
                   </div>
                 </>
               )}
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+              <div className="space-y-3">
+                <Label htmlFor="email" className="text-base font-medium text-gray-700">Email</Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="h-12 text-base border-gray-200 focus:border-blue-400 focus:ring-blue-400"
                   required
                 />
               </div>
               {!isForgotPassword && (
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="password" className="text-base font-medium text-gray-700">Password</Label>
                   <Input
                     id="password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    className="h-12 text-base border-gray-200 focus:border-blue-400 focus:ring-blue-400"
                     required
                   />
                 </div>
               )}
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button 
+                type="submit" 
+                className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg transition-all duration-200 transform hover:scale-[1.02]" 
+                disabled={loading}
+              >
                 {getButtonText()}
               </Button>
             </form>
             
-            <div className="mt-4 text-center space-y-2">
+            <div className="mt-8 text-center space-y-4">
               {!isForgotPassword ? (
                 <>
                   <button
                     type="button"
                     onClick={() => setIsLogin(!isLogin)}
-                    className="text-sm text-blue-600 hover:underline block w-full"
+                    className="text-base text-blue-600 hover:text-blue-800 hover:underline block w-full font-medium transition-colors"
                   >
                     {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
                   </button>
@@ -217,7 +228,7 @@ const Index = () => {
                     <button
                       type="button"
                       onClick={() => setIsForgotPassword(true)}
-                      className="text-sm text-blue-600 hover:underline"
+                      className="text-base text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors"
                     >
                       Forgot password?
                     </button>
@@ -227,7 +238,7 @@ const Index = () => {
                 <button
                   type="button"
                   onClick={() => setIsForgotPassword(false)}
-                  className="text-sm text-blue-600 hover:underline"
+                  className="text-base text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors"
                 >
                   Back to login
                 </button>
