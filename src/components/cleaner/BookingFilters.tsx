@@ -164,32 +164,22 @@ const BookingFilters: React.FC<BookingFiltersProps> = ({
     </div>
   );
 
-  if (isMobile) {
-    return (
-      <Card>
-        <CardContent className="p-0">
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="filters" className="border-0">
-              <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                <div className="flex items-center space-x-2">
-                  <Filter className="h-4 w-4" />
-                  <span className="font-medium">Filters</span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-4 pb-4">
-                <FilterContent />
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card>
-      <CardContent className="p-4">
-        <FilterContent />
+      <CardContent className="p-0">
+        <Accordion type="single" collapsible className="w-full">
+          <AccordionItem value="filters" className="border-0">
+            <AccordionTrigger className="px-4 py-3 hover:no-underline">
+              <div className="flex items-center space-x-2">
+                <Filter className="h-4 w-4" />
+                <span className="font-medium">Filters</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4">
+              <FilterContent />
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </CardContent>
     </Card>
   );

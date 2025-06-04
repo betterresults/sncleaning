@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { CalendarDays, Clock, MapPin, User, Banknote, Camera, Search, Filter, X, Upload } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -202,7 +202,6 @@ const CleanerPastBookings = () => {
             <User className="h-4 w-4 text-gray-400 mt-0.5" />
             <div className="flex-1">
               <div className="font-medium text-sm">{booking.first_name} {booking.last_name}</div>
-              <div className="text-xs text-gray-500">{booking.email}</div>
               <div className="text-xs text-gray-500">{booking.phone_number}</div>
             </div>
           </div>
@@ -333,59 +332,65 @@ const CleanerPastBookings = () => {
         </CardContent>
       </Card>
 
-      {/* Additional Filters */}
+      {/* Additional Filters - Now Collapsed */}
       <Card className="shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Filter className="h-4 w-5" />
-            Additional Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 gap-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="dateFrom" className="text-sm font-medium">Date From</Label>
-                <Input
-                  id="dateFrom"
-                  type="date"
-                  value={filters.dateFrom}
-                  onChange={(e) => setFilters({...filters, dateFrom: e.target.value})}
-                  className="h-9"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="dateTo" className="text-sm font-medium">Date To</Label>
-                <Input
-                  id="dateTo"
-                  type="date"
-                  value={filters.dateTo}
-                  onChange={(e) => setFilters({...filters, dateTo: e.target.value})}
-                  className="h-9"
-                />
-              </div>
-            </div>
+        <CardContent className="p-0">
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="filters" className="border-0">
+              <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                <div className="flex items-center space-x-2">
+                  <Filter className="h-4 w-4" />
+                  <span className="font-medium">Additional Filters</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="dateFrom" className="text-sm font-medium">Date From</Label>
+                      <Input
+                        id="dateFrom"
+                        type="date"
+                        value={filters.dateFrom}
+                        onChange={(e) => setFilters({...filters, dateFrom: e.target.value})}
+                        className="h-9"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="dateTo" className="text-sm font-medium">Date To</Label>
+                      <Input
+                        id="dateTo"
+                        type="date"
+                        value={filters.dateTo}
+                        onChange={(e) => setFilters({...filters, dateTo: e.target.value})}
+                        className="h-9"
+                      />
+                    </div>
+                  </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="customerSearch" className="text-sm font-medium">Search Customer</Label>
-              <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-                <Input
-                  id="customerSearch"
-                  placeholder="Search by name or email"
-                  value={filters.customerSearch}
-                  onChange={(e) => setFilters({...filters, customerSearch: e.target.value})}
-                  className="pl-8 h-9"
-                />
-              </div>
-            </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="customerSearch" className="text-sm font-medium">Search Customer</Label>
+                    <div className="relative">
+                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="customerSearch"
+                        placeholder="Search by name or email"
+                        value={filters.customerSearch}
+                        onChange={(e) => setFilters({...filters, customerSearch: e.target.value})}
+                        className="pl-8 h-9"
+                      />
+                    </div>
+                  </div>
 
-            <Button onClick={clearFilters} variant="outline" className="h-9 w-full sm:w-auto">
-              <X className="mr-2 h-4 w-4" />
-              Clear Filters
-            </Button>
-          </div>
+                  <Button onClick={clearFilters} variant="outline" className="h-9 w-full sm:w-auto">
+                    <X className="mr-2 h-4 w-4" />
+                    Clear Filters
+                  </Button>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </CardContent>
       </Card>
 
@@ -451,9 +456,6 @@ const CleanerPastBookings = () => {
                               <div className="font-medium flex items-center">
                                 <User className="h-3 w-3 mr-2 text-gray-400" />
                                 {booking.first_name} {booking.last_name}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {booking.email}
                               </div>
                               <div className="text-sm text-gray-500">
                                 {booking.phone_number}
