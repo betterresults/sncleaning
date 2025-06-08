@@ -15,6 +15,10 @@ import CleanerDashboard from "./pages/CleanerDashboard";
 import CleanerPastBookings from "./pages/CleanerPastBookings";
 import CleanerEarnings from "./pages/CleanerEarnings";
 import CleanerAvailableBookings from "./pages/CleanerAvailableBookings";
+import CustomerDashboard from "./pages/CustomerDashboard";
+import CustomerCompletedBookings from "./pages/CustomerCompletedBookings";
+import CustomerSettings from "./pages/CustomerSettings";
+import CustomerAddBooking from "./pages/CustomerAddBooking";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +41,10 @@ const App = () => (
             <Route path="/cleaner-available-bookings" element={<CleanerAvailableBookings />} />
             <Route path="/cleaner-past-bookings" element={<CleanerPastBookings />} />
             <Route path="/cleaner-earnings" element={<CleanerEarnings />} />
+            <Route path="/customer-dashboard" element={<CustomerDashboard />} />
+            <Route path="/customer-completed-bookings" element={<CustomerCompletedBookings />} />
+            <Route path="/customer-settings" element={<CustomerSettings />} />
+            <Route path="/customer-add-booking" element={<CustomerAddBooking />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
