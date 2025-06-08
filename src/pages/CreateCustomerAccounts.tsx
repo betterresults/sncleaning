@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import AppSidebar from '@/components/AppSidebar';
+import { AppSidebar } from '@/components/AppSidebar';
 import CustomerAccountCreator from '@/components/CustomerAccountCreator';
 
 const CreateCustomerAccounts = () => {
