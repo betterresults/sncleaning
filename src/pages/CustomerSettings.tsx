@@ -3,7 +3,9 @@ import React from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import CustomerSidebar from '@/components/CustomerSidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, User, MapPin, CreditCard } from 'lucide-react';
+import { CreditCard } from 'lucide-react';
+import PersonalInfoEditor from '@/components/customer/PersonalInfoEditor';
+import AddressManager from '@/components/customer/AddressManager';
 
 const CustomerSettings = () => {
   return (
@@ -17,43 +19,15 @@ const CustomerSettings = () => {
               <p className="text-muted-foreground">Manage your account settings and preferences</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6">
               {/* Personal Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    Personal Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8 text-muted-foreground">
-                    <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Personal information settings</p>
-                    <p className="text-sm">Edit your name, email, and phone number</p>
-                  </div>
-                </CardContent>
-              </Card>
+              <PersonalInfoEditor />
 
               {/* Addresses */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5" />
-                    Addresses
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8 text-muted-foreground">
-                    <MapPin className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Manage your addresses</p>
-                    <p className="text-sm">Add, edit, or remove service addresses</p>
-                  </div>
-                </CardContent>
-              </Card>
+              <AddressManager />
 
               {/* Payment Details */}
-              <Card className="md:col-span-2">
+              <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <CreditCard className="h-5 w-5" />
