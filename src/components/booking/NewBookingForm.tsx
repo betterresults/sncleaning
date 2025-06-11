@@ -1155,5 +1155,3 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
 };
 
 export default NewBookingForm;
-
-}
