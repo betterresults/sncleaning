@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -428,6 +427,7 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
                   <SelectItem value="Card">Card</SelectItem>
                   <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
                   <SelectItem value="Online">Online</SelectItem>
+                  <SelectItem value="Invoiless">Invoiless</SelectItem>
                 </SelectContent>
               </Select>
             </div>

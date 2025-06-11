@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { CalendarDays, User, MapPin, Clock, Banknote, Home, Calendar as CalendarIcon, Key } from 'lucide-react';
+import { CalendarDays, User, MapPin, Clock, Banknote, Home, Calendar as CalendarIcon, Key, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import CustomerSelector from './CustomerSelector';
 import CleanerSelector from './CleanerSelector';
@@ -17,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 interface NewBookingFormProps {
   onBookingCreated: () => void;
@@ -118,6 +118,11 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
     additionalDetails: ''
   });
 
+  const [showAddPropertyAccessDialog, setShowAddPropertyAccessDialog] = useState(false);
+  const [newPropertyAccess, setNewPropertyAccess] = useState({ label: '', value: '', icon: '' });
+  const [showAddPaymentMethodDialog, setShowAddPaymentMethodDialog] = useState(false);
+  const [newPaymentMethod, setNewPaymentMethod] = useState('');
+
   const serviceTypes = [
     { value: 'domestic', label: 'Domestic Cleaning', color: 'from-blue-500 to-cyan-500' },
     { value: 'commercial', label: 'Commercial Cleaning', color: 'from-purple-500 to-pink-500' },
@@ -132,13 +137,21 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
     { value: 'deep_cleaning', label: 'Deep Cleaning' }
   ];
 
-  const propertyAccessOptions = [
+  const [propertyAccessOptions, setPropertyAccessOptions] = useState([
     { value: 'customer_present', label: 'Customer will be present', icon: '👤' },
     { value: 'key_left', label: 'Key will be left', icon: '🗝️' },
     { value: 'keybox_access', label: 'Keybox access', icon: '📦' },
     { value: 'estate_agent', label: 'Pick up keys from estate agent', icon: '🏢' },
     { value: 'other', label: 'Other arrangement', icon: '📝' }
-  ];
+  ]);
+
+  const [paymentMethods, setPaymentMethods] = useState([
+    'Cash',
+    'Card',
+    'Bank Transfer',
+    'Online',
+    'Invoiless'
+  ]);
 
   const hours = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
   const minutes = ['00', '15', '30', '45'];
@@ -307,6 +320,34 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
   useEffect(() => {
     calculateCleanerPay();
   }, [formData.totalCost, formData.totalHours, formData.cleanerHourlyRate, formData.cleanerPercentage]);
+
+  const handleAddPropertyAccess = () => {
+    if (newPropertyAccess.label && newPropertyAccess.value) {
+      setPropertyAccessOptions(prev => [...prev, {
+        value: newPropertyAccess.value.toLowerCase().replace(/\s+/g, '_'),
+        label: newPropertyAccess.label,
+        icon: newPropertyAccess.icon || '📝'
+      }]);
+      setNewPropertyAccess({ label: '', value: '', icon: '' });
+      setShowAddPropertyAccessDialog(false);
+      toast({
+        title: "Success",
+        description: "New property access option added!",
+      });
+    }
+  };
+
+  const handleAddPaymentMethod = () => {
+    if (newPaymentMethod.trim()) {
+      setPaymentMethods(prev => [...prev, newPaymentMethod.trim()]);
+      setNewPaymentMethod('');
+      setShowAddPaymentMethodDialog(false);
+      toast({
+        title: "Success",
+        description: "New payment method added!",
+      });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -824,7 +865,45 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
             </div>
 
             <div className="space-y-4">
-              <Label className="text-sm font-semibold text-gray-700">Property Access *</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold text-gray-700">Property Access *</Label>
+                <Dialog open={showAddPropertyAccessDialog} onOpenChange={setShowAddPropertyAccessDialog}>
+                  <DialogTrigger asChild>
+                    <Button type="button" variant="outline" size="sm" className="text-orange-600 border-orange-300 hover:border-orange-400">
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add New
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add New Property Access Option</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="accessLabel">Label</Label>
+                        <Input
+                          id="accessLabel"
+                          value={newPropertyAccess.label}
+                          onChange={(e) => setNewPropertyAccess(prev => ({ ...prev, label: e.target.value }))}
+                          placeholder="e.g., Concierge service"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="accessIcon">Icon (emoji)</Label>
+                        <Input
+                          id="accessIcon"
+                          value={newPropertyAccess.icon}
+                          onChange={(e) => setNewPropertyAccess(prev => ({ ...prev, icon: e.target.value }))}
+                          placeholder="e.g., 🏨"
+                        />
+                      </div>
+                      <Button onClick={handleAddPropertyAccess} className="w-full">
+                        Add Option
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {propertyAccessOptions.map((option) => (
                   <div
@@ -919,16 +998,46 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="paymentMethod" className="text-sm font-semibold text-gray-700">Payment Method</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="paymentMethod" className="text-sm font-semibold text-gray-700">Payment Method</Label>
+                  <Dialog open={showAddPaymentMethodDialog} onOpenChange={setShowAddPaymentMethodDialog}>
+                    <DialogTrigger asChild>
+                      <Button type="button" variant="outline" size="sm" className="text-indigo-600 border-indigo-300 hover:border-indigo-400">
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add New
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add New Payment Method</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="paymentMethodName">Payment Method Name</Label>
+                          <Input
+                            id="paymentMethodName"
+                            value={newPaymentMethod}
+                            onChange={(e) => setNewPaymentMethod(e.target.value)}
+                            placeholder="e.g., PayPal, Cryptocurrency"
+                          />
+                        </div>
+                        <Button onClick={handleAddPaymentMethod} className="w-full">
+                          Add Payment Method
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
                 <Select value={formData.paymentMethod} onValueChange={(value) => handleInputChange('paymentMethod', value)}>
                   <SelectTrigger className="border-2 border-gray-200 focus:border-indigo-500">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Cash">Cash</SelectItem>
-                    <SelectItem value="Card">Card</SelectItem>
-                    <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                    <SelectItem value="Online">Online</SelectItem>
+                    {paymentMethods.map((method) => (
+                      <SelectItem key={method} value={method}>
+                        {method}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -1046,3 +1155,5 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
 };
 
 export default NewBookingForm;
+
+}
