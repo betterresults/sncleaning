@@ -734,7 +734,7 @@ const UpcomingBookings = ({ selectedTimeRange = '3days', onTimeRangeChange, hide
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         booking={selectedBookingForEdit}
-        onSuccess={fetchBookings}
+        onBookingUpdated={fetchBookings}
       />
 
       <AssignCleanerDialog
