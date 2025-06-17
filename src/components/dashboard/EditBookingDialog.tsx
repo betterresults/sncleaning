@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -482,14 +481,14 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                     <div>
                       <Label htmlFor="cleanerId" className="text-sm font-medium">Assigned Cleaner</Label>
                       <Select 
-                        value={formData.cleanerId?.toString() || ''} 
-                        onValueChange={(value) => handleInputChange('cleanerId', value ? parseInt(value) : null)}
+                        value={formData.cleanerId?.toString() || 'none'} 
+                        onValueChange={(value) => handleInputChange('cleanerId', value === 'none' ? null : parseInt(value))}
                       >
                         <SelectTrigger className="mt-1">
                           <SelectValue placeholder="Select cleaner" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">No cleaner assigned</SelectItem>
+                          <SelectItem value="none">No cleaner assigned</SelectItem>
                           {cleaners.map((cleaner) => (
                             <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
                               {cleaner.first_name} {cleaner.last_name}
