@@ -433,7 +433,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                         />
                       </div>
                       <div>
-                        <Label htmlFor="paymentMethod" className="text-sm font-medium">Payment Method</Label>
+                        <Label htmlFor="paymentMethod" className="text-sm font-medium">Payment Type</Label>
                         <Select value={formData.paymentMethod} onValueChange={(value) => handleInputChange('paymentMethod', value)}>
                           <SelectTrigger className="mt-1">
                             <SelectValue />
@@ -444,6 +444,10 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                             <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
                             <SelectItem value="Online">Online</SelectItem>
                             <SelectItem value="Invoiless">Invoiless</SelectItem>
+                            <SelectItem value="PayPal">PayPal</SelectItem>
+                            <SelectItem value="Stripe">Stripe</SelectItem>
+                            <SelectItem value="Direct Debit">Direct Debit</SelectItem>
+                            <SelectItem value="Cheque">Cheque</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
