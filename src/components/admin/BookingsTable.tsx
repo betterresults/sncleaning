@@ -12,6 +12,7 @@ import { Edit, Trash2, Filter, Search, Settings, Copy, X } from 'lucide-react';
 import { format } from 'date-fns';
 import DashboardStats from './DashboardStats';
 import BulkEditBookingsDialog from '../dashboard/BulkEditBookingsDialog';
+import EditBookingDialog from '../dashboard/EditBookingDialog';
 
 interface Booking {
   id: number;
@@ -76,6 +77,8 @@ const BookingsTable = () => {
     customerSearch: '',
   });
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<Booking | null>(null);
 
   const fetchData = async () => {
     try {
@@ -218,7 +221,11 @@ const BookingsTable = () => {
   };
 
   const handleEdit = (bookingId: number) => {
-    console.log('Edit booking:', bookingId);
+    const booking = bookings.find(b => b.id === bookingId);
+    if (booking) {
+      setSelectedBookingForEdit(booking);
+      setEditDialogOpen(true);
+    }
   };
 
   const handleDelete = async (bookingId: number) => {
@@ -638,6 +645,13 @@ const BookingsTable = () => {
         open={bulkEditOpen}
         onOpenChange={setBulkEditOpen}
         onSuccess={fetchData}
+      />
+
+      <EditBookingDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        booking={selectedBookingForEdit}
+        onBookingUpdated={fetchData}
       />
     </div>
   );

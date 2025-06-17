@@ -277,6 +277,7 @@ const UpcomingBookings = ({ selectedTimeRange = '3days', onTimeRangeChange, hide
   };
 
   const handleEditBooking = (booking: Booking) => {
+    console.log('Opening edit dialog for booking:', booking.id);
     setSelectedBookingForEdit(booking);
     setEditDialogOpen(true);
   };
