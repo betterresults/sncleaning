@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -52,11 +53,34 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
     cleaningType: '',
     formName: '',
     additionalDetails: '',
-    propertyDetails: ''
+    propertyDetails: '',
+    deposit: 0
   });
 
+  // Format datetime for input field
+  const formatDateTimeForInput = (dateTimeString: string) => {
+    if (!dateTimeString) return '';
+    try {
+      const date = new Date(dateTimeString);
+      if (isNaN(date.getTime())) return '';
+      
+      // Format as YYYY-MM-DDTHH:MM for datetime-local input
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return '';
+    }
+  };
+
   useEffect(() => {
-    if (booking) {
+    if (booking && open) {
+      console.log('Setting form data for booking:', booking);
       setFormData({
         firstName: booking.first_name || '',
         lastName: booking.last_name || '',
@@ -64,7 +88,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         phoneNumber: booking.phone_number || '',
         address: booking.address || '',
         postcode: booking.postcode || '',
-        dateTime: booking.date_time || '',
+        dateTime: formatDateTimeForInput(booking.date_time),
         hoursRequired: booking.hours_required || 0,
         totalCost: booking.total_cost || 0,
         cleanerPay: booking.cleaner_pay || 0,
@@ -77,10 +101,11 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         cleaningType: booking.cleaning_type || '',
         formName: booking.form_name || '',
         additionalDetails: booking.additional_details || '',
-        propertyDetails: booking.property_details || ''
+        propertyDetails: booking.property_details || '',
+        deposit: booking.deposit || 0
       });
     }
-  }, [booking]);
+  }, [booking, open]);
 
   useEffect(() => {
     const fetchCleaners = async () => {
@@ -94,8 +119,10 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
       }
     };
 
-    fetchCleaners();
-  }, []);
+    if (open) {
+      fetchCleaners();
+    }
+  }, [open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,7 +152,8 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
           cleaning_type: formData.cleaningType,
           form_name: formData.formName,
           additional_details: formData.additionalDetails,
-          property_details: formData.propertyDetails
+          property_details: formData.propertyDetails,
+          deposit: formData.deposit
         })
         .eq('id', booking.id);
 
@@ -195,6 +223,8 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
     }
   };
 
+  if (!open) return null;
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-4xl">
@@ -214,7 +244,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         
         <ScrollArea className="h-[calc(100vh-140px)] pr-4">
           <form onSubmit={handleSubmit} className="space-y-6 py-6">
-            <Accordion type="multiple" defaultValue={["customer", "booking", "appointment", "cleaner"]} className="space-y-4">
+            <Accordion type="single" collapsible className="space-y-4">
               
               {/* Customer Details Section */}
               <AccordionItem value="customer" className="border rounded-lg">
@@ -420,7 +450,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                       <CreditCard className="h-4 w-4" />
                       Client Payment Details
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                       <div>
                         <Label htmlFor="totalCost" className="text-sm font-medium">Total Cost (£)</Label>
                         <Input
@@ -429,6 +459,17 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                           step="0.01"
                           value={formData.totalCost}
                           onChange={(e) => handleInputChange('totalCost', parseFloat(e.target.value) || 0)}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="deposit" className="text-sm font-medium">Deposit (£)</Label>
+                        <Input
+                          id="deposit"
+                          type="number"
+                          step="0.01"
+                          value={formData.deposit}
+                          onChange={(e) => handleInputChange('deposit', parseFloat(e.target.value) || 0)}
                           className="mt-1"
                         />
                       </div>
