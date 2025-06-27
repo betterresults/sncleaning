@@ -61,7 +61,14 @@ interface Filters {
   customerSearch: string;
 }
 
-const UpcomingBookings = () => {
+interface UpcomingBookingsProps {
+  dashboardDateFilter?: {
+    dateFrom: string;
+    dateTo: string;
+  };
+}
+
+const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
@@ -91,7 +98,8 @@ const UpcomingBookings = () => {
       setLoading(true);
       setError(null);
 
-      const { data: bookingsData, error: bookingsError } = await supabase
+      // Build the query with date filtering
+      let bookingsQuery = supabase
         .from('bookings')
         .select(`
           *,
@@ -105,8 +113,18 @@ const UpcomingBookings = () => {
             first_name,
             last_name
           )
-        `)
-        .gte('date_time', new Date().toISOString())
+        `);
+
+      // Apply dashboard date filter if provided, otherwise use current date
+      if (dashboardDateFilter) {
+        bookingsQuery = bookingsQuery
+          .gte('date_time', dashboardDateFilter.dateFrom)
+          .lte('date_time', dashboardDateFilter.dateTo);
+      } else {
+        bookingsQuery = bookingsQuery.gte('date_time', new Date().toISOString());
+      }
+
+      const { data: bookingsData, error: bookingsError } = await bookingsQuery
         .order('date_time', { ascending: sortOrder === 'asc' });
 
       if (bookingsError) {
@@ -115,6 +133,7 @@ const UpcomingBookings = () => {
         return;
       }
 
+      // Fetch cleaners and customers
       const { data: cleanersData, error: cleanersError } = await supabase
         .from('cleaners')
         .select('id, first_name, last_name')
@@ -274,7 +293,7 @@ const UpcomingBookings = () => {
 
   useEffect(() => {
     fetchData();
-  }, [sortOrder]);
+  }, [sortOrder, dashboardDateFilter]);
 
   useEffect(() => {
     applyFilters();

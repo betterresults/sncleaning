@@ -71,6 +71,8 @@ const Dashboard = () => {
     }
   };
 
+  const dateRange = getDateRange();
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -113,10 +115,12 @@ const Dashboard = () => {
               </div>
 
               {/* Main Statistics - filtered by time range */}
-              <DashboardStats filters={getDateRange()} />
+              <DashboardStats filters={dateRange} />
               
-              {/* Bookings List - without any props that don't exist */}
-              <UpcomingBookings />
+              {/* Bookings List - with time range filter */}
+              <UpcomingBookings 
+                dashboardDateFilter={dateRange}
+              />
             </div>
           </main>
         </SidebarInset>
