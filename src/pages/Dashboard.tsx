@@ -115,13 +115,8 @@ const Dashboard = () => {
               {/* Main Statistics - filtered by time range */}
               <DashboardStats filters={getDateRange()} />
               
-              {/* Bookings List - with duplicate statistics removed */}
-              <UpcomingBookings 
-                selectedTimeRange={selectedTimeRange} 
-                onTimeRangeChange={setSelectedTimeRange}
-                hideTimeRangeButtons={true}
-                hideStatistics={true}
-              />
+              {/* Bookings List - without any props that don't exist */}
+              <UpcomingBookings />
             </div>
           </main>
         </SidebarInset>

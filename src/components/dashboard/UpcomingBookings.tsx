@@ -643,14 +643,14 @@ const UpcomingBookings = () => {
         bookingId={selectedBookingId}
         open={assignCleanerOpen}
         onOpenChange={setAssignCleanerOpen}
-        onBookingUpdated={fetchData}
+        onSuccess={fetchData}
       />
 
       <DuplicateBookingDialog
         booking={selectedBookingForDuplicate}
         open={duplicateDialogOpen}
         onOpenChange={setDuplicateDialogOpen}
-        onBookingCreated={fetchData}
+        onSuccess={fetchData}
       />
     </div>
   );
