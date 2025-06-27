@@ -570,7 +570,7 @@ const UpcomingBookings = ({ selectedTimeRange = '3days', onTimeRangeChange, hide
                 </TableRow>
               ) : (
                 filteredBookings.map((booking) => (
-                  <React.Fragment key={booking.id}>
+                  <div key={booking.id}>
                     <TableRow className="hover:bg-blue-50/50 border-b transition-colors">
                       <TableCell>
                         <input
@@ -722,7 +722,7 @@ const UpcomingBookings = ({ selectedTimeRange = '3days', onTimeRangeChange, hide
                         </TableCell>
                       </TableRow>
                     )}
-                  </React.Fragment>
+                  </div>
                 ))
               )}
             </TableBody>
