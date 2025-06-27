@@ -592,7 +592,11 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
                       mode="single"
                       selected={formData.selectedDate}
                       onSelect={(date) => handleInputChange('selectedDate', date)}
-                      disabled={(date) => date < new Date()}
+                      disabled={(date) => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        return date < today;
+                      }}
                       initialFocus
                       className="p-4 pointer-events-auto"
                     />
