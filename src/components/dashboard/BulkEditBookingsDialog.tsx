@@ -29,6 +29,7 @@ interface Booking {
   total_hours: number;
   cleaner_rate: number;
   cleaner_percentage: number;
+  payment_status: string;
   cleaners?: {
     full_name: string;
   } | null;
@@ -49,8 +50,8 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [selectedBookings, setSelectedBookings] = useState<number[]>([]);
-  const [editType, setEditType] = useState<'cost' | 'cleaner_pay' | 'hourly_rate' | 'percentage'>('cost');
-  const [newValue, setNewValue] = useState<number>(0);
+  const [editType, setEditType] = useState<'cost' | 'cleaner_pay' | 'hourly_rate' | 'percentage' | 'payment_status'>('cost');
+  const [newValue, setNewValue] = useState<number | string>(0);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -58,8 +59,14 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
       fetchBookings();
       setSearchTerm('');
       setSelectedBookings([]);
+      setNewValue(editType === 'payment_status' ? 'Paid' : 0);
     }
   }, [open]);
+
+  useEffect(() => {
+    // Reset newValue when editType changes
+    setNewValue(editType === 'payment_status' ? 'Paid' : 0);
+  }, [editType]);
 
   useEffect(() => {
     // Filter bookings based on search term
@@ -94,6 +101,7 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
           total_hours,
           cleaner_rate,
           cleaner_percentage,
+          payment_status,
           cleaners!bookings_cleaner_fkey (
             full_name
           )
@@ -134,8 +142,13 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
       return;
     }
 
-    if (!newValue || newValue <= 0) {
+    if (editType !== 'payment_status' && (!newValue || Number(newValue) <= 0)) {
       alert('Please enter a valid value.');
+      return;
+    }
+
+    if (editType === 'payment_status' && !newValue) {
+      alert('Please select a payment status.');
       return;
     }
 
@@ -146,16 +159,19 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
       
       switch (editType) {
         case 'cost':
-          updateData = { total_cost: newValue };
+          updateData = { total_cost: Number(newValue) };
           break;
         case 'cleaner_pay':
-          updateData = { cleaner_pay: newValue };
+          updateData = { cleaner_pay: Number(newValue) };
           break;
         case 'hourly_rate':
-          updateData = { cleaner_rate: newValue };
+          updateData = { cleaner_rate: Number(newValue) };
           break;
         case 'percentage':
-          updateData = { cleaner_percentage: newValue };
+          updateData = { cleaner_percentage: Number(newValue) };
+          break;
+        case 'payment_status':
+          updateData = { payment_status: newValue };
           break;
       }
       
@@ -174,7 +190,7 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
       onSuccess();
       onOpenChange(false);
       setSelectedBookings([]);
-      setNewValue(0);
+      setNewValue(editType === 'payment_status' ? 'Paid' : 0);
       setSearchTerm('');
     } catch (error) {
       console.error('Error updating bookings:', error);
@@ -190,6 +206,7 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
       case 'cleaner_pay': return 'Cleaner Pay';
       case 'hourly_rate': return 'Hourly Rate';
       case 'percentage': return 'Percentage';
+      case 'payment_status': return 'Payment Status';
       default: return 'Value';
     }
   };
@@ -197,8 +214,39 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
   const getFieldUnit = () => {
     switch (editType) {
       case 'percentage': return '%';
+      case 'payment_status': return '';
       default: return '£';
     }
+  };
+
+  const renderValueInput = () => {
+    if (editType === 'payment_status') {
+      return (
+        <Select value={newValue as string} onValueChange={(value) => setNewValue(value)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select payment status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Paid">Paid</SelectItem>
+            <SelectItem value="Unpaid">Unpaid</SelectItem>
+            <SelectItem value="Not Paid">Not Paid</SelectItem>
+            <SelectItem value="Pending">Pending</SelectItem>
+            <SelectItem value="Refunded">Refunded</SelectItem>
+          </SelectContent>
+        </Select>
+      );
+    }
+
+    return (
+      <Input
+        id="newValue"
+        type="number"
+        step={editType === 'percentage' ? '1' : '0.01'}
+        value={newValue}
+        onChange={(e) => setNewValue(Number(e.target.value))}
+        placeholder={`Enter new ${getFieldLabel().toLowerCase()}`}
+      />
+    );
   };
 
   return (
@@ -207,7 +255,7 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Bulk Edit Bookings</DialogTitle>
           <DialogDescription>
-            Search and select bookings to apply changes to their cost, cleaner pay, hourly rate, or percentage
+            Search and select bookings to apply changes to their cost, cleaner pay, hourly rate, percentage, or payment status
           </DialogDescription>
         </DialogHeader>
         
@@ -227,7 +275,7 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
             <div>
               <Label htmlFor="editType">What to update</Label>
-              <Select value={editType} onValueChange={(value: 'cost' | 'cleaner_pay' | 'hourly_rate' | 'percentage') => setEditType(value)}>
+              <Select value={editType} onValueChange={(value: 'cost' | 'cleaner_pay' | 'hourly_rate' | 'percentage' | 'payment_status') => setEditType(value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -236,20 +284,14 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
                   <SelectItem value="cleaner_pay">Cleaner Pay</SelectItem>
                   <SelectItem value="hourly_rate">Hourly Rate</SelectItem>
                   <SelectItem value="percentage">Percentage</SelectItem>
+                  <SelectItem value="payment_status">Payment Status</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
             <div>
-              <Label htmlFor="newValue">New {getFieldLabel()} ({getFieldUnit()})</Label>
-              <Input
-                id="newValue"
-                type="number"
-                step={editType === 'percentage' ? '1' : '0.01'}
-                value={newValue}
-                onChange={(e) => setNewValue(Number(e.target.value))}
-                placeholder={`Enter new ${getFieldLabel().toLowerCase()}`}
-              />
+              <Label htmlFor="newValue">New {getFieldLabel()} {getFieldUnit() && `(${getFieldUnit()})`}</Label>
+              {renderValueInput()}
             </div>
 
             <div className="flex items-end">
@@ -298,12 +340,13 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
                   <TableHead>Current Cleaner Pay</TableHead>
                   <TableHead>Hourly Rate</TableHead>
                   <TableHead>Percentage</TableHead>
+                  <TableHead>Payment Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredBookings.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={9} className="text-center py-8">
                       {searchTerm ? 'No bookings match your search' : 'No upcoming bookings found'}
                     </TableCell>
                   </TableRow>
@@ -345,6 +388,15 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
                       </TableCell>
                       <TableCell className="font-medium">
                         {booking.cleaner_percentage || '0'}%
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          booking.payment_status?.toLowerCase() === 'paid' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {booking.payment_status || 'Unpaid'}
+                        </span>
                       </TableCell>
                     </TableRow>
                   ))
