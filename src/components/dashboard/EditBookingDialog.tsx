@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -41,7 +40,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
     address: '',
     postcode: '',
     dateTime: '',
-    hoursRequired: 0,
+    totalHours: 0,
     totalCost: 0,
     cleanerPay: 0,
     cleanerId: null as number | null,
@@ -89,7 +88,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         address: booking.address || '',
         postcode: booking.postcode || '',
         dateTime: formatDateTimeForInput(booking.date_time),
-        hoursRequired: booking.hours_required || 0,
+        totalHours: booking.total_hours || 0,
         totalCost: booking.total_cost || 0,
         cleanerPay: booking.cleaner_pay || 0,
         cleanerId: booking.cleaner || null,
@@ -139,8 +138,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
           address: formData.address,
           postcode: formData.postcode,
           date_time: formData.dateTime,
-          hours_required: formData.hoursRequired,
-          total_hours: formData.hoursRequired,
+          total_hours: formData.totalHours,
           total_cost: formData.totalCost,
           cleaner_pay: formData.cleanerPay,
           cleaner: formData.cleanerId,
@@ -244,7 +242,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         
         <ScrollArea className="h-[calc(100vh-140px)] pr-4">
           <form onSubmit={handleSubmit} className="space-y-6 py-6">
-            <Accordion type="single" collapsible className="space-y-4">
+            <Accordion type="single" collapsible className="space-y-4" defaultValue="">
               
               {/* Customer Details Section */}
               <AccordionItem value="customer" className="border rounded-lg">
@@ -418,13 +416,13 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                       />
                     </div>
                     <div>
-                      <Label htmlFor="hoursRequired" className="text-sm font-medium">Hours Required</Label>
+                      <Label htmlFor="totalHours" className="text-sm font-medium">Total Hours</Label>
                       <Input
-                        id="hoursRequired"
+                        id="totalHours"
                         type="number"
                         step="0.5"
-                        value={formData.hoursRequired}
-                        onChange={(e) => handleInputChange('hoursRequired', parseFloat(e.target.value) || 0)}
+                        value={formData.totalHours}
+                        onChange={(e) => handleInputChange('totalHours', parseFloat(e.target.value) || 0)}
                         className="mt-1"
                       />
                     </div>

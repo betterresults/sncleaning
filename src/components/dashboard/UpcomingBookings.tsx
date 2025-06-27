@@ -43,7 +43,7 @@ interface Booking {
   postcode: string;
   total_cost: number;
   cleaner_pay: number;
-  hours_required: number;
+  total_hours: number;
   form_name: string;
   cleaning_type: string;
   booking_status: string;
@@ -570,7 +570,7 @@ const UpcomingBookings = ({ selectedTimeRange = '3days', onTimeRangeChange, hide
                 </TableRow>
               ) : (
                 filteredBookings.map((booking) => (
-                  <div key={booking.id}>
+                  <React.Fragment key={booking.id}>
                     <TableRow className="hover:bg-blue-50/50 border-b transition-colors">
                       <TableCell>
                         <input
@@ -612,7 +612,7 @@ const UpcomingBookings = ({ selectedTimeRange = '3days', onTimeRangeChange, hide
                             {booking.form_name || 'Standard Cleaning'}
                           </div>
                           <div className="text-sm text-gray-500 font-medium">
-                            {booking.hours_required}h
+                            {booking.total_hours}h
                           </div>
                         </div>
                       </TableCell>
@@ -722,7 +722,7 @@ const UpcomingBookings = ({ selectedTimeRange = '3days', onTimeRangeChange, hide
                         </TableCell>
                       </TableRow>
                     )}
-                  </div>
+                  </React.Fragment>
                 ))
               )}
             </TableBody>
