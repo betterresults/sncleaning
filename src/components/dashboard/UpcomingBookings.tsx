@@ -119,13 +119,15 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
       const hasLocalDateFilters = filters.dateFrom || filters.dateTo;
       
       if (dashboardDateFilter && !hasLocalDateFilters) {
+        // Apply dashboard time range filter
         bookingsQuery = bookingsQuery
           .gte('date_time', dashboardDateFilter.dateFrom)
           .lte('date_time', dashboardDateFilter.dateTo);
       } else if (!hasLocalDateFilters) {
+        // Default: only show future bookings
         bookingsQuery = bookingsQuery.gte('date_time', new Date().toISOString());
       }
-      // If local date filters are active, fetch all bookings to allow filtering
+      // If hasLocalDateFilters is true, fetch ALL bookings (no date restrictions)
 
       const { data: bookingsData, error: bookingsError } = await bookingsQuery
         .order('date_time', { ascending: sortOrder === 'asc' });
