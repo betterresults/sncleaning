@@ -115,14 +115,17 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
           )
         `);
 
-      // Apply dashboard date filter if provided, otherwise use current date
-      if (dashboardDateFilter) {
+      // Only apply dashboard date filter if no local filters are active
+      const hasLocalDateFilters = filters.dateFrom || filters.dateTo;
+      
+      if (dashboardDateFilter && !hasLocalDateFilters) {
         bookingsQuery = bookingsQuery
           .gte('date_time', dashboardDateFilter.dateFrom)
           .lte('date_time', dashboardDateFilter.dateTo);
-      } else {
+      } else if (!hasLocalDateFilters) {
         bookingsQuery = bookingsQuery.gte('date_time', new Date().toISOString());
       }
+      // If local date filters are active, fetch all bookings to allow filtering
 
       const { data: bookingsData, error: bookingsError } = await bookingsQuery
         .order('date_time', { ascending: sortOrder === 'asc' });
@@ -293,7 +296,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
 
   useEffect(() => {
     fetchData();
-  }, [sortOrder, dashboardDateFilter]);
+  }, [sortOrder, dashboardDateFilter, filters.dateFrom, filters.dateTo]);
 
   useEffect(() => {
     applyFilters();
