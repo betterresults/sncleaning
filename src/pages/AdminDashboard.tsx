@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import DashboardStats from '@/components/admin/DashboardStats';
-import BookingsTable from '@/components/admin/BookingsTable';
+import UpcomingBookings from '@/components/dashboard/UpcomingBookings';
 
 const AdminDashboard = () => {
   const { user, userRole, loading } = useAuth();
@@ -57,7 +57,7 @@ const AdminDashboard = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
-                  <BookingsTable />
+                  <UpcomingBookings />
                 </CardContent>
               </Card>
             </div>
