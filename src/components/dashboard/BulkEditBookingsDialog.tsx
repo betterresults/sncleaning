@@ -463,13 +463,6 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
         { value: 'Cancelled', label: 'Cancelled' },
         { value: 'Completed', label: 'Completed' }
       ],
-      cleaning_type: [
-        { value: 'Regular Cleaning', label: 'Regular Cleaning' },
-        { value: 'Deep Cleaning', label: 'Deep Cleaning' },
-        { value: 'End of Tenancy', label: 'End of Tenancy' },
-        { value: 'One-off Cleaning', label: 'One-off Cleaning' },
-        { value: 'After Builders', label: 'After Builders' }
-      ],
       occupied: [
         { value: 'Yes', label: 'Yes' },
         { value: 'No', label: 'No' }
