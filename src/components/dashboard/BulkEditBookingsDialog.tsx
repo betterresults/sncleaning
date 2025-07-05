@@ -768,15 +768,13 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
                   <TableHead>Email</TableHead>
                   <TableHead>Cleaner</TableHead>
                   <TableHead>Total Cost</TableHead>
-                  <TableHead>Payment Status</TableHead>
-                  <TableHead>Booking Status</TableHead>
                   {editType && <TableHead className="bg-blue-50 font-semibold">{getFieldLabel()}</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredBookings.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={editType ? 9 : 8} className="text-center py-8">
+                    <TableCell colSpan={editType ? 6 : 5} className="text-center py-8">
                       {Object.values(filters).some(f => f && f !== 'all') ? 'No bookings match your filters' : 'No upcoming bookings found'}
                     </TableCell>
                   </TableRow>
@@ -812,25 +810,6 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
                       </TableCell>
                       <TableCell className="font-medium">
                         £{booking.total_cost?.toFixed(2) || '0.00'}
-                      </TableCell>
-                      <TableCell>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          booking.payment_status === 'Paid' ? 'bg-green-100 text-green-800' :
-                          booking.payment_status === 'Partially Paid' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {booking.payment_status || 'Unpaid'}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          booking.booking_status === 'Confirmed' ? 'bg-green-100 text-green-800' :
-                          booking.booking_status === 'Completed' ? 'bg-blue-100 text-blue-800' :
-                          booking.booking_status === 'Cancelled' ? 'bg-red-100 text-red-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {booking.booking_status || 'Pending'}
-                        </span>
                       </TableCell>
                       {editType && (
                         <TableCell className="bg-blue-50 font-medium">
