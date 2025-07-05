@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Edit, Trash2, Filter, Search, Settings, Copy, X, UserPlus } from 'lucide-react';
+import { Edit, Trash2, Filter, Search, Settings, Copy, X, UserPlus, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 import DashboardStats from '../admin/DashboardStats';
 import BulkEditBookingsDialog from './BulkEditBookingsDialog';
@@ -568,9 +568,20 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                           £{booking.total_cost?.toFixed(2) || '0.00'}
                         </TableCell>
                         <TableCell>
-                          <Badge className={getPaymentStatusColor(booking.payment_status)}>
-                            {booking.payment_status || 'Unpaid'}
-                          </Badge>
+                          <div 
+                            className="flex justify-center" 
+                            title={booking.payment_status || 'Unpaid'}
+                          >
+                            <DollarSign 
+                              className={`h-5 w-5 ${
+                                booking.payment_status?.toLowerCase() === 'paid' 
+                                  ? 'text-green-600' 
+                                  : booking.payment_status?.toLowerCase() === 'collecting'
+                                  ? 'text-orange-500'
+                                  : 'text-red-600'
+                              }`}
+                            />
+                          </div>
                         </TableCell>
                         <TableCell>
                           <DropdownMenu>
