@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -15,30 +15,67 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search } from 'lucide-react';
+import { Search, Filter, X } from 'lucide-react';
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 interface Booking {
   id: number;
   date_time: string;
   first_name: string;
   last_name: string;
+  email: string;
+  phone_number: string;
+  address: string;
+  postcode: string;
   total_cost: number;
   cleaner_pay: number;
   cleaner: number | null;
   total_hours: number;
+  hours_required: number;
+  cleaning_time: number;
+  ironing_hours: number;
   cleaner_rate: number;
   cleaner_percentage: number;
   payment_status: string;
+  booking_status: string;
+  cleaning_type: string;
+  occupied: string;
+  frequently: string;
+  extras: string;
+  linens: string;
+  ironing: string;
+  property_details: string;
+  additional_details: string;
+  parking_details: string;
+  key_collection: string;
+  access: string;
+  agency: string;
   cleaners?: {
-    full_name: string;
+    id: number;
+    first_name: string;
+    last_name: string;
   } | null;
+}
+
+interface Cleaner {
+  id: number;
+  first_name: string;
+  last_name: string;
 }
 
 interface BulkEditBookingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+}
+
+interface Filters {
+  dateFrom: string;
+  dateTo: string;
+  paymentStatus: string;
+  bookingStatus: string;
+  customerSearch: string;
 }
 
 const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
@@ -50,41 +87,38 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [selectedBookings, setSelectedBookings] = useState<number[]>([]);
-  const [editType, setEditType] = useState<'cost' | 'cleaner_pay' | 'hourly_rate' | 'percentage' | 'payment_status'>('cost');
-  const [newValue, setNewValue] = useState<number | string>(0);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [cleaners, setCleaners] = useState<Cleaner[]>([]);
+  const [editType, setEditType] = useState<string>('total_cost');
+  const [newValue, setNewValue] = useState<string>('');
+  const [filters, setFilters] = useState<Filters>({
+    dateFrom: '',
+    dateTo: '',
+    paymentStatus: 'all',
+    bookingStatus: 'all',
+    customerSearch: '',
+  });
+
+  const { toast } = useToast();
 
   useEffect(() => {
     if (open) {
       fetchBookings();
-      setSearchTerm('');
+      fetchCleaners();
+      setFilters({
+        dateFrom: '',
+        dateTo: '',
+        paymentStatus: 'all',
+        bookingStatus: 'all',
+        customerSearch: '',
+      });
       setSelectedBookings([]);
-      setNewValue(editType === 'payment_status' ? 'Paid' : 0);
+      setNewValue('');
     }
   }, [open]);
 
   useEffect(() => {
-    // Reset newValue when editType changes
-    setNewValue(editType === 'payment_status' ? 'Paid' : 0);
-  }, [editType]);
-
-  useEffect(() => {
-    // Filter bookings based on search term
-    if (!searchTerm.trim()) {
-      setFilteredBookings(bookings);
-    } else {
-      const filtered = bookings.filter(booking => {
-        const customerName = `${booking.first_name} ${booking.last_name}`.toLowerCase();
-        const cleanerName = booking.cleaners?.full_name?.toLowerCase() || '';
-        const dateString = booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : '';
-        
-        return customerName.includes(searchTerm.toLowerCase()) ||
-               cleanerName.includes(searchTerm.toLowerCase()) ||
-               dateString.includes(searchTerm.toLowerCase());
-      });
-      setFilteredBookings(filtered);
-    }
-  }, [bookings, searchTerm]);
+    applyFilters();
+  }, [bookings, filters]);
 
   const fetchBookings = async () => {
     try {
@@ -95,15 +129,37 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
           date_time,
           first_name,
           last_name,
+          email,
+          phone_number,
+          address,
+          postcode,
           total_cost,
           cleaner_pay,
           cleaner,
           total_hours,
+          hours_required,
+          cleaning_time,
+          ironing_hours,
           cleaner_rate,
           cleaner_percentage,
           payment_status,
+          booking_status,
+          cleaning_type,
+          occupied,
+          frequently,
+          extras,
+          linens,
+          ironing,
+          property_details,
+          additional_details,
+          parking_details,
+          key_collection,
+          access,
+          agency,
           cleaners!bookings_cleaner_fkey (
-            full_name
+            id,
+            first_name,
+            last_name
           )
         `)
         .gte('date_time', new Date().toISOString())
@@ -118,6 +174,81 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
     } catch (error) {
       console.error('Error fetching bookings:', error);
     }
+  };
+
+  const fetchCleaners = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('cleaners')
+        .select('id, first_name, last_name')
+        .order('first_name');
+
+      if (error) {
+        console.error('Error fetching cleaners:', error);
+        return;
+      }
+
+      setCleaners(data || []);
+    } catch (error) {
+      console.error('Error fetching cleaners:', error);
+    }
+  };
+
+  const applyFilters = () => {
+    let filtered = [...bookings];
+
+    // Date filters
+    if (filters.dateFrom) {
+      filtered = filtered.filter(booking => 
+        new Date(booking.date_time) >= new Date(filters.dateFrom)
+      );
+    }
+    if (filters.dateTo) {
+      filtered = filtered.filter(booking => 
+        new Date(booking.date_time) <= new Date(filters.dateTo)
+      );
+    }
+
+    // Payment status filter
+    if (filters.paymentStatus !== 'all') {
+      filtered = filtered.filter(booking => 
+        booking.payment_status === filters.paymentStatus
+      );
+    }
+
+    // Booking status filter
+    if (filters.bookingStatus !== 'all') {
+      filtered = filtered.filter(booking => 
+        booking.booking_status === filters.bookingStatus
+      );
+    }
+
+    // Customer search
+    if (filters.customerSearch) {
+      filtered = filtered.filter(booking => {
+        const customerName = `${booking.first_name} ${booking.last_name}`.toLowerCase();
+        const cleanerName = booking.cleaners ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}`.toLowerCase() : '';
+        const dateString = booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : '';
+        
+        return customerName.includes(filters.customerSearch.toLowerCase()) ||
+               cleanerName.includes(filters.customerSearch.toLowerCase()) ||
+               dateString.includes(filters.customerSearch.toLowerCase()) ||
+               booking.email?.toLowerCase().includes(filters.customerSearch.toLowerCase()) ||
+               booking.address?.toLowerCase().includes(filters.customerSearch.toLowerCase());
+      });
+    }
+
+    setFilteredBookings(filtered);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      dateFrom: '',
+      dateTo: '',
+      paymentStatus: 'all',
+      bookingStatus: 'all',
+      customerSearch: '',
+    });
   };
 
   const handleBookingSelect = (bookingId: number, checked: boolean) => {
@@ -138,17 +269,20 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
 
   const handleBulkUpdate = async () => {
     if (selectedBookings.length === 0) {
-      alert('Please select at least one booking to update.');
+      toast({
+        title: "No Selection",
+        description: "Please select at least one booking to update.",
+        variant: "destructive",
+      });
       return;
     }
 
-    if (editType !== 'payment_status' && (!newValue || Number(newValue) <= 0)) {
-      alert('Please enter a valid value.');
-      return;
-    }
-
-    if (editType === 'payment_status' && !newValue) {
-      alert('Please select a payment status.');
+    if (!newValue || newValue.trim() === '') {
+      toast({
+        title: "Invalid Value",
+        description: "Please enter a valid value.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -157,21 +291,44 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
     try {
       let updateData: any = {};
       
+      // Handle different field types
       switch (editType) {
-        case 'cost':
-          updateData = { total_cost: Number(newValue) };
-          break;
+        case 'total_cost':
         case 'cleaner_pay':
-          updateData = { cleaner_pay: Number(newValue) };
+        case 'cleaner_rate':
+        case 'cleaner_percentage':
+        case 'total_hours':
+        case 'hours_required':
+        case 'cleaning_time':
+        case 'ironing_hours':
+          const numValue = parseFloat(newValue);
+          if (isNaN(numValue) || numValue < 0) {
+            toast({
+              title: "Invalid Number",
+              description: "Please enter a valid number.",
+              variant: "destructive",
+            });
+            setLoading(false);
+            return;
+          }
+          updateData = { [editType]: numValue };
           break;
-        case 'hourly_rate':
-          updateData = { cleaner_rate: Number(newValue) };
+        case 'cleaner':
+          const cleanerId = parseInt(newValue);
+          if (isNaN(cleanerId)) {
+            toast({
+              title: "Invalid Cleaner",
+              description: "Please select a valid cleaner.",
+              variant: "destructive",
+            });
+            setLoading(false);
+            return;
+          }
+          updateData = { cleaner: cleanerId };
           break;
-        case 'percentage':
-          updateData = { cleaner_percentage: Number(newValue) };
-          break;
-        case 'payment_status':
-          updateData = { payment_status: newValue };
+        default:
+          // Text fields
+          updateData = { [editType]: newValue };
           break;
       }
       
@@ -182,68 +339,186 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
 
       if (error) {
         console.error('Error updating bookings:', error);
-        alert('Error updating bookings: ' + error.message);
+        toast({
+          title: "Update Failed",
+          description: "Error updating bookings: " + error.message,
+          variant: "destructive",
+        });
         return;
       }
 
       console.log(`Successfully updated ${selectedBookings.length} bookings`);
+      
+      toast({
+        title: "Update Successful",
+        description: `Successfully updated ${selectedBookings.length} booking${selectedBookings.length !== 1 ? 's' : ''}`,
+      });
+      
+      // Refresh the bookings data
+      await fetchBookings();
       onSuccess();
-      onOpenChange(false);
+      
+      // Clear selections and reset form, but keep dialog open
       setSelectedBookings([]);
-      setNewValue(editType === 'payment_status' ? 'Paid' : 0);
-      setSearchTerm('');
+      setNewValue('');
+      
     } catch (error) {
       console.error('Error updating bookings:', error);
-      alert('An unexpected error occurred');
+      toast({
+        title: "Unexpected Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const getFieldLabel = () => {
-    switch (editType) {
-      case 'cost': return 'Total Cost';
-      case 'cleaner_pay': return 'Cleaner Pay';
-      case 'hourly_rate': return 'Hourly Rate';
-      case 'percentage': return 'Percentage';
-      case 'payment_status': return 'Payment Status';
-      default: return 'Value';
-    }
-  };
-
-  const getFieldUnit = () => {
-    switch (editType) {
-      case 'percentage': return '%';
-      case 'payment_status': return '';
-      default: return '£';
-    }
+    const labels: Record<string, string> = {
+      total_cost: 'Total Cost',
+      cleaner_pay: 'Cleaner Pay',
+      cleaner_rate: 'Hourly Rate',
+      cleaner_percentage: 'Percentage',
+      total_hours: 'Total Hours',
+      hours_required: 'Hours Required',
+      cleaning_time: 'Cleaning Time',
+      ironing_hours: 'Ironing Hours',
+      payment_status: 'Payment Status',
+      booking_status: 'Booking Status',
+      cleaning_type: 'Cleaning Type',
+      occupied: 'Occupied',
+      frequently: 'Frequency',
+      extras: 'Extras',
+      linens: 'Linens',
+      ironing: 'Ironing',
+      first_name: 'First Name',
+      last_name: 'Last Name',
+      email: 'Email',
+      phone_number: 'Phone Number',
+      address: 'Address',
+      postcode: 'Postcode',
+      property_details: 'Property Details',
+      additional_details: 'Additional Details',
+      parking_details: 'Parking Details',
+      key_collection: 'Key Collection',
+      access: 'Access',
+      agency: 'Agency',
+      cleaner: 'Cleaner'
+    };
+    return labels[editType] || 'Value';
   };
 
   const renderValueInput = () => {
-    if (editType === 'payment_status') {
+    const selectFields = {
+      payment_status: [
+        { value: 'Paid', label: 'Paid' },
+        { value: 'Unpaid', label: 'Unpaid' },
+        { value: 'Not Paid', label: 'Not Paid' },
+        { value: 'Pending', label: 'Pending' },
+        { value: 'Partially Paid', label: 'Partially Paid' },
+        { value: 'Refunded', label: 'Refunded' }
+      ],
+      booking_status: [
+        { value: 'Confirmed', label: 'Confirmed' },
+        { value: 'Pending', label: 'Pending' },
+        { value: 'Cancelled', label: 'Cancelled' },
+        { value: 'Completed', label: 'Completed' }
+      ],
+      cleaning_type: [
+        { value: 'Regular Cleaning', label: 'Regular Cleaning' },
+        { value: 'Deep Cleaning', label: 'Deep Cleaning' },
+        { value: 'End of Tenancy', label: 'End of Tenancy' },
+        { value: 'One-off Cleaning', label: 'One-off Cleaning' },
+        { value: 'After Builders', label: 'After Builders' }
+      ],
+      occupied: [
+        { value: 'Yes', label: 'Yes' },
+        { value: 'No', label: 'No' }
+      ],
+      frequently: [
+        { value: 'Weekly', label: 'Weekly' },
+        { value: 'Bi-weekly', label: 'Bi-weekly' },
+        { value: 'Monthly', label: 'Monthly' },
+        { value: 'One-off', label: 'One-off' }
+      ],
+      linens: [
+        { value: 'Yes', label: 'Yes' },
+        { value: 'No', label: 'No' }
+      ],
+      ironing: [
+        { value: 'Yes', label: 'Yes' },
+        { value: 'No', label: 'No' }
+      ]
+    };
+
+    if (editType === 'cleaner') {
       return (
-        <Select value={newValue as string} onValueChange={(value) => setNewValue(value)}>
+        <Select value={newValue} onValueChange={setNewValue}>
           <SelectTrigger>
-            <SelectValue placeholder="Select payment status" />
+            <SelectValue placeholder="Select cleaner" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Paid">Paid</SelectItem>
-            <SelectItem value="Unpaid">Unpaid</SelectItem>
-            <SelectItem value="Not Paid">Not Paid</SelectItem>
-            <SelectItem value="Pending">Pending</SelectItem>
-            <SelectItem value="Refunded">Refunded</SelectItem>
+            <SelectItem value="">No cleaner</SelectItem>
+            {cleaners.map((cleaner) => (
+              <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
+                {cleaner.first_name} {cleaner.last_name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       );
     }
 
+    if (selectFields[editType as keyof typeof selectFields]) {
+      const options = selectFields[editType as keyof typeof selectFields];
+      return (
+        <Select value={newValue} onValueChange={setNewValue}>
+          <SelectTrigger>
+            <SelectValue placeholder={`Select ${getFieldLabel().toLowerCase()}`} />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+
+    const numberFields = ['total_cost', 'cleaner_pay', 'cleaner_rate', 'cleaner_percentage', 'total_hours', 'hours_required', 'cleaning_time', 'ironing_hours'];
+    const textareaFields = ['property_details', 'additional_details', 'parking_details'];
+
+    if (numberFields.includes(editType)) {
+      return (
+        <Input
+          type="number"
+          step={editType === 'cleaner_percentage' ? '1' : '0.01'}
+          value={newValue}
+          onChange={(e) => setNewValue(e.target.value)}
+          placeholder={`Enter new ${getFieldLabel().toLowerCase()}`}
+        />
+      );
+    }
+
+    if (textareaFields.includes(editType)) {
+      return (
+        <Textarea
+          value={newValue}
+          onChange={(e) => setNewValue(e.target.value)}
+          placeholder={`Enter new ${getFieldLabel().toLowerCase()}`}
+          rows={3}
+        />
+      );
+    }
+
     return (
       <Input
-        id="newValue"
-        type="number"
-        step={editType === 'percentage' ? '1' : '0.01'}
+        type="text"
         value={newValue}
-        onChange={(e) => setNewValue(Number(e.target.value))}
+        onChange={(e) => setNewValue(e.target.value)}
         placeholder={`Enter new ${getFieldLabel().toLowerCase()}`}
       />
     );
@@ -251,46 +526,144 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Bulk Edit Bookings</DialogTitle>
           <DialogDescription>
-            Search and select bookings to apply changes to their cost, cleaner pay, hourly rate, percentage, or payment status
+            Filter and select bookings to update any field in bulk
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
-          {/* Search Filter */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search by customer name, cleaner, or date..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+          {/* Filters Section */}
+          <div className="p-4 bg-gray-50 rounded-lg space-y-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Filter className="h-4 w-4" />
+              <h3 className="font-medium">Filters</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="dateFrom">Date From</Label>
+                <Input
+                  id="dateFrom"
+                  type="date"
+                  value={filters.dateFrom}
+                  onChange={(e) => setFilters({...filters, dateFrom: e.target.value})}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="dateTo">Date To</Label>
+                <Input
+                  id="dateTo"
+                  type="date"
+                  value={filters.dateTo}
+                  onChange={(e) => setFilters({...filters, dateTo: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="paymentStatus">Payment Status</Label>
+                <Select value={filters.paymentStatus} onValueChange={(value) => setFilters({...filters, paymentStatus: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="Paid">Paid</SelectItem>
+                    <SelectItem value="Unpaid">Unpaid</SelectItem>
+                    <SelectItem value="Not Paid">Not Paid</SelectItem>
+                    <SelectItem value="Pending">Pending</SelectItem>
+                    <SelectItem value="Partially Paid">Partially Paid</SelectItem>
+                    <SelectItem value="Refunded">Refunded</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="bookingStatus">Booking Status</Label>
+                <Select value={filters.bookingStatus} onValueChange={(value) => setFilters({...filters, bookingStatus: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="Confirmed">Confirmed</SelectItem>
+                    <SelectItem value="Pending">Pending</SelectItem>
+                    <SelectItem value="Cancelled">Cancelled</SelectItem>
+                    <SelectItem value="Completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="customerSearch">Search</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="customerSearch"
+                    placeholder="Search customer, cleaner, email, address..."
+                    value={filters.customerSearch}
+                    onChange={(e) => setFilters({...filters, customerSearch: e.target.value})}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-end">
+                <Button onClick={clearFilters} variant="outline" className="w-full">
+                  <X className="mr-2 h-4 w-4" />
+                  Clear Filters
+                </Button>
+              </div>
+            </div>
           </div>
 
           {/* Bulk Edit Controls */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
             <div>
               <Label htmlFor="editType">What to update</Label>
-              <Select value={editType} onValueChange={(value: 'cost' | 'cleaner_pay' | 'hourly_rate' | 'percentage' | 'payment_status') => setEditType(value)}>
+              <Select value={editType} onValueChange={setEditType}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cost">Total Cost</SelectItem>
+                <SelectContent className="max-h-64">
+                  <SelectItem value="total_cost">Total Cost</SelectItem>
                   <SelectItem value="cleaner_pay">Cleaner Pay</SelectItem>
-                  <SelectItem value="hourly_rate">Hourly Rate</SelectItem>
-                  <SelectItem value="percentage">Percentage</SelectItem>
+                  <SelectItem value="cleaner_rate">Hourly Rate</SelectItem>
+                  <SelectItem value="cleaner_percentage">Percentage</SelectItem>
+                  <SelectItem value="total_hours">Total Hours</SelectItem>
+                  <SelectItem value="hours_required">Hours Required</SelectItem>
+                  <SelectItem value="cleaning_time">Cleaning Time</SelectItem>
+                  <SelectItem value="ironing_hours">Ironing Hours</SelectItem>
                   <SelectItem value="payment_status">Payment Status</SelectItem>
+                  <SelectItem value="booking_status">Booking Status</SelectItem>
+                  <SelectItem value="cleaning_type">Cleaning Type</SelectItem>
+                  <SelectItem value="occupied">Occupied</SelectItem>
+                  <SelectItem value="frequently">Frequency</SelectItem>
+                  <SelectItem value="extras">Extras</SelectItem>
+                  <SelectItem value="linens">Linens</SelectItem>
+                  <SelectItem value="ironing">Ironing</SelectItem>
+                  <SelectItem value="first_name">First Name</SelectItem>
+                  <SelectItem value="last_name">Last Name</SelectItem>
+                  <SelectItem value="email">Email</SelectItem>
+                  <SelectItem value="phone_number">Phone Number</SelectItem>
+                  <SelectItem value="address">Address</SelectItem>
+                  <SelectItem value="postcode">Postcode</SelectItem>
+                  <SelectItem value="property_details">Property Details</SelectItem>
+                  <SelectItem value="additional_details">Additional Details</SelectItem>
+                  <SelectItem value="parking_details">Parking Details</SelectItem>
+                  <SelectItem value="key_collection">Key Collection</SelectItem>
+                  <SelectItem value="access">Access</SelectItem>
+                  <SelectItem value="agency">Agency</SelectItem>
+                  <SelectItem value="cleaner">Cleaner</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
             <div>
-              <Label htmlFor="newValue">New {getFieldLabel()} {getFieldUnit() && `(${getFieldUnit()})`}</Label>
+              <Label htmlFor="newValue">New {getFieldLabel()}</Label>
               {renderValueInput()}
             </div>
 
@@ -306,21 +679,19 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
           </div>
 
           {/* Results Summary */}
-          {searchTerm && (
-            <div className="text-sm text-gray-600">
-              Showing {filteredBookings.length} of {bookings.length} bookings
-              {filteredBookings.length !== bookings.length && (
-                <Button
-                  variant="link"
-                  size="sm"
-                  onClick={() => setSearchTerm('')}
-                  className="p-0 h-auto ml-2 text-blue-600"
-                >
-                  Clear filter
-                </Button>
-              )}
-            </div>
-          )}
+          <div className="text-sm text-gray-600">
+            Showing {filteredBookings.length} of {bookings.length} bookings
+            {filteredBookings.length !== bookings.length && (
+              <Button
+                variant="link"
+                size="sm"
+                onClick={clearFilters}
+                className="p-0 h-auto ml-2 text-blue-600"
+              >
+                Clear filters
+              </Button>
+            )}
+          </div>
 
           {/* Bookings Table */}
           <div className="border rounded-lg overflow-hidden">
@@ -335,19 +706,18 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
                   </TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Customer</TableHead>
+                  <TableHead>Email</TableHead>
                   <TableHead>Cleaner</TableHead>
-                  <TableHead>Current Cost</TableHead>
-                  <TableHead>Current Cleaner Pay</TableHead>
-                  <TableHead>Hourly Rate</TableHead>
-                  <TableHead>Percentage</TableHead>
+                  <TableHead>Total Cost</TableHead>
                   <TableHead>Payment Status</TableHead>
+                  <TableHead>Booking Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredBookings.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">
-                      {searchTerm ? 'No bookings match your search' : 'No upcoming bookings found'}
+                    <TableCell colSpan={8} className="text-center py-8">
+                      {Object.values(filters).some(f => f && f !== 'all') ? 'No bookings match your filters' : 'No upcoming bookings found'}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -374,28 +744,32 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
                           {booking.first_name} {booking.last_name}
                         </div>
                       </TableCell>
+                      <TableCell className="text-sm">
+                        {booking.email}
+                      </TableCell>
                       <TableCell>
-                        {booking.cleaners?.full_name || 'No cleaner assigned'}
+                        {booking.cleaners ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}` : 'No cleaner assigned'}
                       </TableCell>
                       <TableCell className="font-medium">
                         £{booking.total_cost?.toFixed(2) || '0.00'}
                       </TableCell>
-                      <TableCell className="font-medium">
-                        £{booking.cleaner_pay?.toFixed(2) || '0.00'}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        £{booking.cleaner_rate?.toFixed(2) || '0.00'}/hr
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {booking.cleaner_percentage || '0'}%
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          booking.payment_status?.toLowerCase() === 'paid' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
+                      <TableCell>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          booking.payment_status === 'Paid' ? 'bg-green-100 text-green-800' :
+                          booking.payment_status === 'Partially Paid' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
                         }`}>
                           {booking.payment_status || 'Unpaid'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          booking.booking_status === 'Confirmed' ? 'bg-green-100 text-green-800' :
+                          booking.booking_status === 'Completed' ? 'bg-blue-100 text-blue-800' :
+                          booking.booking_status === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {booking.booking_status || 'Pending'}
                         </span>
                       </TableCell>
                     </TableRow>
@@ -408,7 +782,7 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            Close
           </Button>
         </DialogFooter>
       </DialogContent>
