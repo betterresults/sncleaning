@@ -447,6 +447,27 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
     ];
   };
 
+  const getCurrentFieldValue = (booking: Booking, fieldType: string) => {
+    if (fieldType === 'cleaner') {
+      return booking.cleaners ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}` : 'No cleaner assigned';
+    }
+    
+    const value = (booking as any)[fieldType];
+    
+    if (value === null || value === undefined) {
+      return 'Not set';
+    }
+    
+    if (typeof value === 'number') {
+      if (fieldType.includes('cost') || fieldType.includes('pay')) {
+        return `£${value.toFixed(2)}`;
+      }
+      return value.toString();
+    }
+    
+    return value.toString() || 'Not set';
+  };
+
   const renderValueInput = () => {
     const selectFields = {
       payment_status: [
@@ -749,12 +770,13 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
                   <TableHead>Total Cost</TableHead>
                   <TableHead>Payment Status</TableHead>
                   <TableHead>Booking Status</TableHead>
+                  {editType && <TableHead className="bg-blue-50 font-semibold">{getFieldLabel()}</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredBookings.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={editType ? 9 : 8} className="text-center py-8">
                       {Object.values(filters).some(f => f && f !== 'all') ? 'No bookings match your filters' : 'No upcoming bookings found'}
                     </TableCell>
                   </TableRow>
@@ -810,6 +832,13 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
                           {booking.booking_status || 'Pending'}
                         </span>
                       </TableCell>
+                      {editType && (
+                        <TableCell className="bg-blue-50 font-medium">
+                          <div className="px-2 py-1 bg-white rounded border">
+                            {getCurrentFieldValue(booking, editType)}
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))
                 )}
