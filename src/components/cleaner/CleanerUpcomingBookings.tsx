@@ -72,8 +72,8 @@ const CleanerUpcomingBookings = () => {
       // Extract unique service types for filter dropdown
       const uniqueServiceTypes = [...new Set(
         (bookingsData || [])
-          .map(booking => booking.form_name)
-          .filter(formName => formName && formName.trim() !== '')
+          .map(booking => booking.cleaning_type)
+          .filter(cleaningType => cleaningType && cleaningType.trim() !== '')
       )].sort();
       
       setServiceTypes(uniqueServiceTypes);
@@ -129,7 +129,7 @@ const CleanerUpcomingBookings = () => {
     // Service type filter
     if (serviceTypeFilter !== 'all') {
       filtered = filtered.filter(booking => 
-        booking.form_name === serviceTypeFilter
+        booking.cleaning_type === serviceTypeFilter
       );
     }
 

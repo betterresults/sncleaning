@@ -155,7 +155,7 @@ const ViewBookingDialog: React.FC<ViewBookingDialogProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1">
                   <div className="text-sm font-medium text-gray-500">Service Type</div>
-                  <div className="font-medium">{booking.form_name || 'Standard Cleaning'}</div>
+                  <div className="font-medium">{booking.cleaning_type || 'Standard Cleaning'}</div>
                 </div>
                 
                 {booking.hours_required && (

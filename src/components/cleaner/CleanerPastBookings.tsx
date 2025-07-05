@@ -21,7 +21,7 @@ interface PastBooking {
   phone_number: string;
   address: string;
   postcode: string;
-  form_name: string;
+  cleaning_type: string;
   total_cost: string;
   cleaner_pay: number;
   payment_status: string;
@@ -220,7 +220,7 @@ const CleanerPastBookings = () => {
           {/* Service and Earnings */}
           <div className="flex justify-between items-center">
             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              {booking.form_name || 'Standard Cleaning'}
+              {booking.cleaning_type || 'Standard Cleaning'}
             </span>
             <div className="flex items-center space-x-1">
               <Banknote className="h-4 w-4 text-green-600" />
@@ -475,7 +475,7 @@ const CleanerPastBookings = () => {
                           </TableCell>
                           <TableCell>
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                              {booking.form_name || 'Standard Cleaning'}
+                              {booking.cleaning_type || 'Standard Cleaning'}
                             </span>
                           </TableCell>
                           <TableCell>

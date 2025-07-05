@@ -27,7 +27,7 @@ interface BookingEarning {
   id: number;
   date_time: string;
   cleaner_pay: number;
-  form_name: string;
+  cleaning_type: string;
   booking_status: string;
   first_name: string;
   last_name: string;
@@ -398,7 +398,7 @@ const CleanerEarnings = () => {
                       {job.first_name} {job.last_name}
                     </div>
                     <div className="text-sm text-gray-600 mt-1">
-                      {job.form_name || 'Standard Cleaning'}
+                      {job.cleaning_type || 'Standard Cleaning'}
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
                       {format(new Date(job.date_time), 'dd/MM/yyyy')}

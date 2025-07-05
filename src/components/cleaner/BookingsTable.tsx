@@ -145,7 +145,7 @@ const BookingsTable: React.FC<BookingsTableProps> = ({
           {/* Service */}
           <div className="flex flex-col space-y-2">
             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 w-fit">
-              {booking.form_name || 'Standard Cleaning'}
+              {booking.cleaning_type || 'Standard Cleaning'}
             </span>
           </div>
 
@@ -271,7 +271,7 @@ const BookingsTable: React.FC<BookingsTableProps> = ({
                         </TableCell>
                         <TableCell>
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                            {booking.form_name || 'Standard Cleaning'}
+                            {booking.cleaning_type || 'Standard Cleaning'}
                           </span>
                         </TableCell>
                         <TableCell>

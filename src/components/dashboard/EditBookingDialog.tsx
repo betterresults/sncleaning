@@ -97,8 +97,8 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         paymentMethod: booking.payment_method || 'Cash',
         paymentStatus: booking.payment_status || 'Unpaid',
         bookingStatus: booking.booking_status || 'Confirmed',
-        cleaningType: booking.cleaning_type || '',
-        formName: booking.form_name || '',
+        cleaningType: booking.service_type || '',
+        formName: booking.cleaning_type || '',
         additionalDetails: booking.additional_details || '',
         propertyDetails: booking.property_details || '',
         deposit: booking.deposit || 0
@@ -147,8 +147,8 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
           payment_method: formData.paymentMethod,
           payment_status: formData.paymentStatus,
           booking_status: formData.bookingStatus,
-          cleaning_type: formData.cleaningType,
-          form_name: formData.formName,
+          service_type: formData.cleaningType,
+          cleaning_type: formData.formName,
           additional_details: formData.additionalDetails,
           property_details: formData.propertyDetails,
           deposit: formData.deposit

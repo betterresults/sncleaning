@@ -22,7 +22,7 @@ interface PastBooking {
   phone_number: string;
   address: string;
   postcode: string;
-  form_name: string;
+  cleaning_type: string;
   total_cost: string; // Changed from number to string to match database
   cleaner: number;
   customer: number;
@@ -365,7 +365,7 @@ const PastBookingsTable = () => {
         hours_required: selectedBooking.hours_required,
         total_cost: typeof selectedBooking.total_cost === 'string' ? parseFloat(selectedBooking.total_cost) : selectedBooking.total_cost,
         cleaner_pay: selectedBooking.cleaner_pay,
-        form_name: selectedBooking.form_name,
+        cleaning_type: selectedBooking.cleaning_type,
         property_details: selectedBooking.property_details,
         additional_details: selectedBooking.additional_details,
         payment_method: 'Cash', // Default for new booking
@@ -769,7 +769,7 @@ const PastBookingsTable = () => {
                           {/* Service and Cleaner */}
                           <div className="flex flex-wrap gap-2">
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              {booking.form_name || 'Standard Cleaning'}
+                              {booking.cleaning_type || 'Standard Cleaning'}
                             </span>
                             <div className="text-xs">
                               <span className="text-gray-500">Cleaner: </span>
@@ -867,7 +867,7 @@ const PastBookingsTable = () => {
                         </TableCell>
                         <TableCell>
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                            {booking.form_name || 'Standard Cleaning'}
+                            {booking.cleaning_type || 'Standard Cleaning'}
                           </span>
                         </TableCell>
                         <TableCell>

@@ -261,7 +261,7 @@ const CleanerAvailableBookings = () => {
                   <div className="space-y-3">
                     <div>
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {booking.form_name || 'Standard Cleaning'}
+                        {booking.cleaning_type || 'Standard Cleaning'}
                       </span>
                     </div>
                     

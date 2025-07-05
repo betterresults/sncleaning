@@ -25,7 +25,6 @@ interface Booking {
   payment_status: string;
   cleaner: number | null;
   customer: number;
-  form_name?: string;
   postcode?: string;
   additional_details?: string;
   property_details?: string;
@@ -239,7 +238,7 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
                 Original Booking
               </h4>
               <p className="text-gray-700 font-medium">
-                {booking.first_name} {booking.last_name} - {booking.form_name || 'Cleaning Service'}
+                {booking.first_name} {booking.last_name} - {booking.cleaning_type || 'Cleaning Service'}
               </p>
               <p className="text-gray-500 text-sm">
                 {format(new Date(booking.date_time), 'EEEE, MMMM do, yyyy \'at\' HH:mm')}
