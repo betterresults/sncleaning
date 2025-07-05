@@ -82,7 +82,6 @@ export type Database = {
           extras: string | null
           first_cleaning: string | null
           first_name: string | null
-          form_name: string | null
           frequently: string | null
           frontly_id: number | null
           hours_required: number | null
@@ -108,6 +107,7 @@ export type Database = {
           record_message: string | null
           remaining_days: string | null
           result_page: string | null
+          service_type: string | null
           steam_cleaning_cost: string | null
           time_only: string | null
           total_cost: number | null
@@ -149,7 +149,6 @@ export type Database = {
           extras?: string | null
           first_cleaning?: string | null
           first_name?: string | null
-          form_name?: string | null
           frequently?: string | null
           frontly_id?: number | null
           hours_required?: number | null
@@ -175,6 +174,7 @@ export type Database = {
           record_message?: string | null
           remaining_days?: string | null
           result_page?: string | null
+          service_type?: string | null
           steam_cleaning_cost?: string | null
           time_only?: string | null
           total_cost?: number | null
@@ -216,7 +216,6 @@ export type Database = {
           extras?: string | null
           first_cleaning?: string | null
           first_name?: string | null
-          form_name?: string | null
           frequently?: string | null
           frontly_id?: number | null
           hours_required?: number | null
@@ -242,6 +241,7 @@ export type Database = {
           record_message?: string | null
           remaining_days?: string | null
           result_page?: string | null
+          service_type?: string | null
           steam_cleaning_cost?: string | null
           time_only?: string | null
           total_cost?: number | null
@@ -420,7 +420,6 @@ export type Database = {
           extras: string | null
           first_cleaning: string | null
           first_name: string | null
-          form_name: string | null
           frequently: string | null
           frontly_id: number | null
           hours_required: number | null
@@ -446,6 +445,7 @@ export type Database = {
           property_details: string | null
           record_message: string | null
           result_page: string | null
+          service_type: string | null
           steam_cleaning_cost: string | null
           terms: string | null
           total_cost: string | null
@@ -486,7 +486,6 @@ export type Database = {
           extras?: string | null
           first_cleaning?: string | null
           first_name?: string | null
-          form_name?: string | null
           frequently?: string | null
           frontly_id?: number | null
           hours_required?: number | null
@@ -512,6 +511,7 @@ export type Database = {
           property_details?: string | null
           record_message?: string | null
           result_page?: string | null
+          service_type?: string | null
           steam_cleaning_cost?: string | null
           terms?: string | null
           total_cost?: string | null
@@ -552,7 +552,6 @@ export type Database = {
           extras?: string | null
           first_cleaning?: string | null
           first_name?: string | null
-          form_name?: string | null
           frequently?: string | null
           frontly_id?: number | null
           hours_required?: number | null
@@ -578,6 +577,7 @@ export type Database = {
           property_details?: string | null
           record_message?: string | null
           result_page?: string | null
+          service_type?: string | null
           steam_cleaning_cost?: string | null
           terms?: string | null
           total_cost?: string | null

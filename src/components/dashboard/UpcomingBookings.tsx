@@ -504,14 +504,13 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                   <TableHead>Cleaning Type</TableHead>
                   <TableHead>Cleaner</TableHead>
                   <TableHead>Cost</TableHead>
-                  <TableHead>Payment</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paginatedBookings.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">
+                    <TableCell colSpan={8} className="text-center py-8">
                       No bookings found
                     </TableCell>
                   </TableRow>
@@ -568,55 +567,67 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                           £{booking.total_cost?.toFixed(2) || '0.00'}
                         </TableCell>
                         <TableCell>
-                          <div 
-                            className="flex justify-center" 
-                            title={booking.payment_status || 'Unpaid'}
-                          >
-                            <DollarSign 
-                              className={`h-5 w-5 ${
-                                booking.payment_status?.toLowerCase() === 'paid' 
-                                  ? 'text-green-600' 
-                                  : booking.payment_status?.toLowerCase() === 'collecting'
-                                  ? 'text-orange-500'
-                                  : 'text-red-600'
-                              }`}
-                            />
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleEdit(booking.id)}
+                              title="Edit"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleDuplicate(booking)}
+                              title="Duplicate"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleAssignCleaner(booking.id)}
+                              title="Assign Cleaner"
+                            >
+                              <UserPlus className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleCancel(booking.id)}
+                              title="Cancel"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                              onClick={() => handleDelete(booking.id)}
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                            <div
+                              className="flex items-center justify-center h-8 w-8"
+                              title={booking.payment_status || 'Unpaid'}
+                            >
+                              <DollarSign 
+                                className={`h-4 w-4 ${
+                                  booking.payment_status?.toLowerCase() === 'paid' 
+                                    ? 'text-green-600' 
+                                    : booking.payment_status?.toLowerCase() === 'collecting'
+                                    ? 'text-orange-500'
+                                    : 'text-red-600'
+                                }`}
+                              />
+                            </div>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
-                                ⋮
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleEdit(booking.id)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleDuplicate(booking)}>
-                                <Copy className="mr-2 h-4 w-4" />
-                                Duplicate
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleAssignCleaner(booking.id)}>
-                                <UserPlus className="mr-2 h-4 w-4" />
-                                Assign Cleaner
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleCancel(booking.id)}>
-                                <X className="mr-2 h-4 w-4" />
-                                Cancel
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => handleDelete(booking.id)}
-                                className="text-red-600"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     );
