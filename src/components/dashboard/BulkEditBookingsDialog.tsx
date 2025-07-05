@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Check, ChevronsUpDown } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -90,6 +93,7 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [editType, setEditType] = useState<string>('total_cost');
   const [newValue, setNewValue] = useState<string>('');
+  const [editTypeOpen, setEditTypeOpen] = useState(false);
   const [filters, setFilters] = useState<Filters>({
     dateFrom: '',
     dateTo: '',
@@ -409,6 +413,40 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
     return labels[editType] || 'Value';
   };
 
+  const getEditTypeOptions = () => {
+    return [
+      { value: 'total_cost', label: 'Total Cost' },
+      { value: 'cleaner_pay', label: 'Cleaner Pay' },
+      { value: 'cleaner_rate', label: 'Hourly Rate' },
+      { value: 'cleaner_percentage', label: 'Percentage' },
+      { value: 'total_hours', label: 'Total Hours' },
+      { value: 'hours_required', label: 'Hours Required' },
+      { value: 'cleaning_time', label: 'Cleaning Time' },
+      { value: 'ironing_hours', label: 'Ironing Hours' },
+      { value: 'payment_status', label: 'Payment Status' },
+      { value: 'booking_status', label: 'Booking Status' },
+      { value: 'cleaning_type', label: 'Cleaning Type' },
+      { value: 'occupied', label: 'Occupied' },
+      { value: 'frequently', label: 'Frequency' },
+      { value: 'extras', label: 'Extras' },
+      { value: 'linens', label: 'Linens' },
+      { value: 'ironing', label: 'Ironing' },
+      { value: 'first_name', label: 'First Name' },
+      { value: 'last_name', label: 'Last Name' },
+      { value: 'email', label: 'Email' },
+      { value: 'phone_number', label: 'Phone Number' },
+      { value: 'address', label: 'Address' },
+      { value: 'postcode', label: 'Postcode' },
+      { value: 'property_details', label: 'Property Details' },
+      { value: 'additional_details', label: 'Additional Details' },
+      { value: 'parking_details', label: 'Parking Details' },
+      { value: 'key_collection', label: 'Key Collection' },
+      { value: 'access', label: 'Access' },
+      { value: 'agency', label: 'Agency' },
+      { value: 'cleaner', label: 'Cleaner' }
+    ];
+  };
+
   const renderValueInput = () => {
     const selectFields = {
       payment_status: [
@@ -624,42 +662,49 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
             <div>
               <Label htmlFor="editType">What to update</Label>
-              <Select value={editType} onValueChange={setEditType}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="max-h-64">
-                  <SelectItem value="total_cost">Total Cost</SelectItem>
-                  <SelectItem value="cleaner_pay">Cleaner Pay</SelectItem>
-                  <SelectItem value="cleaner_rate">Hourly Rate</SelectItem>
-                  <SelectItem value="cleaner_percentage">Percentage</SelectItem>
-                  <SelectItem value="total_hours">Total Hours</SelectItem>
-                  <SelectItem value="hours_required">Hours Required</SelectItem>
-                  <SelectItem value="cleaning_time">Cleaning Time</SelectItem>
-                  <SelectItem value="ironing_hours">Ironing Hours</SelectItem>
-                  <SelectItem value="payment_status">Payment Status</SelectItem>
-                  <SelectItem value="booking_status">Booking Status</SelectItem>
-                  <SelectItem value="cleaning_type">Cleaning Type</SelectItem>
-                  <SelectItem value="occupied">Occupied</SelectItem>
-                  <SelectItem value="frequently">Frequency</SelectItem>
-                  <SelectItem value="extras">Extras</SelectItem>
-                  <SelectItem value="linens">Linens</SelectItem>
-                  <SelectItem value="ironing">Ironing</SelectItem>
-                  <SelectItem value="first_name">First Name</SelectItem>
-                  <SelectItem value="last_name">Last Name</SelectItem>
-                  <SelectItem value="email">Email</SelectItem>
-                  <SelectItem value="phone_number">Phone Number</SelectItem>
-                  <SelectItem value="address">Address</SelectItem>
-                  <SelectItem value="postcode">Postcode</SelectItem>
-                  <SelectItem value="property_details">Property Details</SelectItem>
-                  <SelectItem value="additional_details">Additional Details</SelectItem>
-                  <SelectItem value="parking_details">Parking Details</SelectItem>
-                  <SelectItem value="key_collection">Key Collection</SelectItem>
-                  <SelectItem value="access">Access</SelectItem>
-                  <SelectItem value="agency">Agency</SelectItem>
-                  <SelectItem value="cleaner">Cleaner</SelectItem>
-                </SelectContent>
-              </Select>
+              <Popover open={editTypeOpen} onOpenChange={setEditTypeOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={editTypeOpen}
+                    className="w-full justify-between"
+                  >
+                    {editType
+                      ? getEditTypeOptions().find((option) => option.value === editType)?.label
+                      : "Select field to update..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0 z-50 bg-white border shadow-lg">
+                  <Command>
+                    <CommandInput placeholder="Search field to update..." />
+                    <CommandList>
+                      <CommandEmpty>No field found.</CommandEmpty>
+                      <CommandGroup>
+                        {getEditTypeOptions().map((option) => (
+                          <CommandItem
+                            key={option.value}
+                            value={option.value}
+                            onSelect={(currentValue) => {
+                              setEditType(currentValue === editType ? "" : currentValue);
+                              setEditTypeOpen(false);
+                              setNewValue(''); // Reset value when changing field type
+                            }}
+                          >
+                            <Check
+                              className={`mr-2 h-4 w-4 ${
+                                editType === option.value ? "opacity-100" : "opacity-0"
+                              }`}
+                            />
+                            {option.label}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             
             <div>
