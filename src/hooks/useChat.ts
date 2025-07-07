@@ -3,8 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Chat, ChatMessage, ChatWithLastMessage, ChatType } from '@/types/chat';
 import { useAuth } from '@/contexts/AuthContext';
 
-export const useChat = () => {
+export const useChat = (selectedCleanerId?: number) => {
   const { user, userRole, customerId, cleanerId } = useAuth();
+  // Use selectedCleanerId for admin viewing, otherwise use authenticated cleaner's ID
+  const effectiveCleanerId = userRole === 'admin' ? selectedCleanerId : cleanerId;
   const [chats, setChats] = useState<ChatWithLastMessage[]>([]);
   const [activeChat, setActiveChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -30,9 +32,13 @@ export const useChat = () => {
 
       // Filter based on user role
       if (userRole === 'admin') {
-        // Admins see all chats
-      } else if (userRole === 'user' && cleanerId) {
-        query = query.eq('cleaner_id', cleanerId);
+        // If admin is viewing as a specific cleaner, filter by that cleaner
+        if (selectedCleanerId) {
+          query = query.eq('cleaner_id', selectedCleanerId);
+        }
+        // Otherwise admins see all chats (no additional filter)
+      } else if (userRole === 'user' && effectiveCleanerId) {
+        query = query.eq('cleaner_id', effectiveCleanerId);
       } else if (customerId) {
         query = query.eq('customer_id', customerId);
       }
@@ -74,7 +80,7 @@ export const useChat = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, userRole, customerId, cleanerId]);
+  }, [user, userRole, customerId, effectiveCleanerId, selectedCleanerId]);
 
   // Fetch messages for a specific chat
   const fetchMessages = useCallback(async (chatId: string) => {
@@ -117,8 +123,8 @@ export const useChat = () => {
       if (userRole === 'admin') {
         senderId = parseInt(user.id); // Use auth user ID for admin
         senderType = 'admin';
-      } else if (cleanerId) {
-        senderId = cleanerId;
+      } else if (effectiveCleanerId) {
+        senderId = effectiveCleanerId;
         senderType = 'cleaner';
       } else if (customerId) {
         senderId = customerId;
@@ -147,7 +153,7 @@ export const useChat = () => {
     } finally {
       setSendingMessage(false);
     }
-  }, [user, userRole, customerId, cleanerId, fetchMessages]);
+  }, [user, userRole, customerId, effectiveCleanerId, fetchMessages]);
 
   // Create a new chat
   const createChat = useCallback(async (
