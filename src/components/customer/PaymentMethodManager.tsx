@@ -175,6 +175,10 @@ const PaymentMethodManager = () => {
     console.log('PaymentMethodManager: Fetching payment methods for customer:', activeCustomerId);
     
     try {
+      console.log('PaymentMethodManager: About to query with activeCustomerId:', activeCustomerId);
+      console.log('PaymentMethodManager: User role:', userRole);
+      console.log('PaymentMethodManager: Auth user:', user?.id);
+      
       const { data, error } = await supabase
         .from('customer_payment_methods')
         .select('*')
