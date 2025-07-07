@@ -239,7 +239,7 @@ const CustomerUpcomingBookings = () => {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                <MapPin className="h-5 w-5 text-red-600" />
+                <User className="h-5 w-5 text-red-600" />
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Needs Payment</p>
@@ -265,36 +265,37 @@ const CustomerUpcomingBookings = () => {
               <div key={booking.id} className="group relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card to-card/80 p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/30">
                 
                 {/* Header with Service Type and Cost */}
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between mb-4">
                   <h3 className="text-xl font-bold text-foreground tracking-tight">{booking.service_type}</h3>
                   <div className="text-right">
                     <div className="text-2xl font-bold text-primary">£{booking.total_cost}</div>
+                    {booking.cleaner && (
+                      <div className="text-sm text-muted-foreground mt-1">
+                        <span className="font-medium text-green-600 dark:text-green-400">{booking.cleaner.first_name} {booking.cleaner.last_name}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 
                 {/* Date, Time, and Hours in a compact row */}
-                <div className="flex items-center gap-6 mb-3 text-sm">
+                <div className="flex items-center gap-6 mb-4 text-sm">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="h-4 w-4 text-primary" />
-                    <span className="font-medium">{new Date(booking.date_time).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Clock className="h-4 w-4 text-primary" />
-                    <span className="font-medium">{new Date(booking.date_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span className="font-medium">{new Date(booking.date_time).toLocaleDateString('en-GB', { 
+                      day: 'numeric', 
+                      month: 'long', 
+                      year: 'numeric' 
+                    })}, {new Date(booking.date_time).toLocaleTimeString('en-GB', { 
+                      hour: 'numeric', 
+                      minute: '2-digit',
+                      hour12: true 
+                    })}</span>
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Clock className="h-4 w-4 text-orange-500" />
-                    <span className="font-medium">{booking.total_hours} hours</span>
+                    <span className="font-medium">{booking.total_hours}h</span>
                   </div>
                 </div>
-                
-                {/* Cleaner Info */}
-                {booking.cleaner && (
-                  <div className="flex items-center gap-2 text-sm mb-3 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/30 rounded-lg">
-                    <User className="h-4 w-4 text-green-600" />
-                    <span className="text-muted-foreground">Cleaner: <span className="font-semibold text-green-700 dark:text-green-400">{booking.cleaner.first_name} {booking.cleaner.last_name}</span></span>
-                  </div>
-                )}
                 
                 {/* Address */}
                 <div className="flex items-center gap-2 text-sm mb-4 text-muted-foreground">
@@ -307,7 +308,9 @@ const CustomerUpcomingBookings = () => {
                   <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${
                     booking.booking_status === 'Confirmed' 
                       ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
-                      : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                      : booking.booking_status === 'Pending'
+                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                      : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
                   }`}>
                     {booking.booking_status}
                   </span>
