@@ -397,7 +397,7 @@ const CleanerEarnings = () => {
       {/* Recent Jobs */}
       <Card className="border-0 shadow-lg">
         <CardHeader>
-          <CardTitle className="text-xl font-semibold">Recent Jobs</CardTitle>
+          <CardTitle className="text-xl font-semibold">Completed Jobs</CardTitle>
         </CardHeader>
         <CardContent>
           {earnings.recentJobs.length === 0 ? (
@@ -405,24 +405,22 @@ const CleanerEarnings = () => {
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CalendarDays className="h-8 w-8 text-gray-400" />
               </div>
-              <p className="text-gray-500">No recent jobs found</p>
+              <p className="text-gray-500">No completed jobs found</p>
             </div>
           ) : (
             <div className="space-y-2">
               {earnings.recentJobs.map((job) => (
-                <div key={job.id} className="flex justify-between items-center p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className="font-medium text-gray-900">
-                      {job.first_name} {job.last_name}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {format(new Date(job.date_time), 'dd/MM/yyyy')}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {job.cleaning_type || 'Standard Cleaning'}
-                    </div>
+                <div key={job.id} className="flex items-center p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+                  <div className="flex-1 font-medium text-gray-900">
+                    {job.first_name} {job.last_name}
                   </div>
-                  <div className="font-bold text-green-600">
+                  <div className="flex-1 text-sm text-gray-500 text-center">
+                    {format(new Date(job.date_time), 'dd/MM/yyyy')}
+                  </div>
+                  <div className="flex-1 text-sm text-gray-600 text-center">
+                    {job.cleaning_type || 'Standard Cleaning'}
+                  </div>
+                  <div className="flex-1 font-bold text-green-600 text-right">
                     £{Number(job.cleaner_pay)?.toFixed(2) || '0.00'}
                   </div>
                 </div>

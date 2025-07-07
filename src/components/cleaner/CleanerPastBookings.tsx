@@ -217,7 +217,7 @@ const CleanerPastBookings = () => {
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2 text-muted-foreground">
             <CalendarDays className="h-4 w-4 text-primary" />
-            <span className="font-medium">{booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy HH:mm') : 'No date'}</span>
+            <span className="font-medium">{booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : 'No date'}</span>
           </div>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -227,8 +227,8 @@ const CleanerPastBookings = () => {
       </div>
       
       {/* Address and Actions */}
-      <div className="flex items-center justify-between pt-3 border-t border-border/40">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground flex-1 min-w-0">
+      <div className="flex items-center pt-3 border-t border-border/40">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground flex-1 min-w-0 mr-4">
           <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
           <a
             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(booking.postcode)}`}
@@ -240,17 +240,15 @@ const CleanerPastBookings = () => {
           </a>
         </div>
         
-        <div className="flex items-center gap-2 ml-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleUploadPhotos(booking.id)}
-            className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/30"
-          >
-            <Upload className="h-4 w-4" />
-            <span className="ml-1 hidden sm:inline">Upload Photos</span>
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleUploadPhotos(booking.id)}
+          className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/30"
+        >
+          <Upload className="h-4 w-4" />
+          <span className="ml-1 hidden sm:inline">Upload Photos</span>
+        </Button>
       </div>
     </div>
   );
@@ -408,17 +406,12 @@ const CleanerPastBookings = () => {
       {/* Past Bookings */}
       <Card>
         <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
-          <div>
-            <CardTitle className="text-base sm:text-lg">My Past Bookings</CardTitle>
-            <p className="text-sm text-gray-600">
-              {filteredBookings.length} completed booking{filteredBookings.length !== 1 ? 's' : ''}
-            </p>
-          </div>
+          <CardTitle className="text-base sm:text-lg">Completed Bookings</CardTitle>
         </CardHeader>
         <CardContent>
           {filteredBookings.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              No past bookings found
+              No completed bookings found
             </div>
           ) : (
             <>

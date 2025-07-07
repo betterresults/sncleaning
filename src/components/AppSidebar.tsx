@@ -36,7 +36,7 @@ export function AppSidebar() {
       icon: LayoutDashboard,
     },
     {
-      title: "Past Bookings",
+      title: "Completed Bookings",
       url: "/past-bookings",
       icon: History,
     },

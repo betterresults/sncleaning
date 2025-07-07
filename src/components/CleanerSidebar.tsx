@@ -40,7 +40,7 @@ export function CleanerSidebar() {
       icon: Briefcase,
     },
     {
-      title: "Past Bookings",
+      title: "Completed Bookings",
       url: "/cleaner-past-bookings",
       icon: History,
     },
