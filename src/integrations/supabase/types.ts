@@ -277,6 +277,114 @@ export type Database = {
           },
         ]
       }
+      chat_messages: {
+        Row: {
+          chat_id: string
+          created_at: string
+          edited_at: string | null
+          file_url: string | null
+          id: string
+          is_deleted: boolean
+          is_read: boolean
+          message: string
+          message_type: Database["public"]["Enums"]["message_type"]
+          sender_id: number
+          sender_type: Database["public"]["Enums"]["sender_type"]
+        }
+        Insert: {
+          chat_id: string
+          created_at?: string
+          edited_at?: string | null
+          file_url?: string | null
+          id?: string
+          is_deleted?: boolean
+          is_read?: boolean
+          message: string
+          message_type?: Database["public"]["Enums"]["message_type"]
+          sender_id: number
+          sender_type: Database["public"]["Enums"]["sender_type"]
+        }
+        Update: {
+          chat_id?: string
+          created_at?: string
+          edited_at?: string | null
+          file_url?: string | null
+          id?: string
+          is_deleted?: boolean
+          is_read?: boolean
+          message?: string
+          message_type?: Database["public"]["Enums"]["message_type"]
+          sender_id?: number
+          sender_type?: Database["public"]["Enums"]["sender_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "chats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chats: {
+        Row: {
+          booking_id: number | null
+          chat_type: Database["public"]["Enums"]["chat_type"]
+          cleaner_id: number | null
+          created_at: string
+          customer_id: number | null
+          id: string
+          is_active: boolean
+          last_message_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          booking_id?: number | null
+          chat_type: Database["public"]["Enums"]["chat_type"]
+          cleaner_id?: number | null
+          created_at?: string
+          customer_id?: number | null
+          id?: string
+          is_active?: boolean
+          last_message_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: number | null
+          chat_type?: Database["public"]["Enums"]["chat_type"]
+          cleaner_id?: number | null
+          created_at?: string
+          customer_id?: number | null
+          id?: string
+          is_active?: boolean
+          last_message_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chats_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chats_cleaner_id_fkey"
+            columns: ["cleaner_id"]
+            isOneToOne: false
+            referencedRelation: "cleaners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chats_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cleaner_tracking: {
         Row: {
           booking_id: number
@@ -962,6 +1070,9 @@ export type Database = {
         | "cleaners.write"
         | "admin.access"
       app_role: "admin" | "user" | "guest"
+      chat_type: "customer_office" | "customer_cleaner" | "office_cleaner"
+      message_type: "text" | "image" | "file"
+      sender_type: "customer" | "cleaner" | "admin"
       user_role: "admin" | "user" | "guest"
     }
     CompositeTypes: {
@@ -1101,6 +1212,9 @@ export const Constants = {
         "admin.access",
       ],
       app_role: ["admin", "user", "guest"],
+      chat_type: ["customer_office", "customer_cleaner", "office_cleaner"],
+      message_type: ["text", "image", "file"],
+      sender_type: ["customer", "cleaner", "admin"],
       user_role: ["admin", "user", "guest"],
     },
   },

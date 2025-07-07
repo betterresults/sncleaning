@@ -2,7 +2,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useLocation } from 'react-router-dom';
-import { Calendar, History, DollarSign, User, Briefcase, MapPin } from 'lucide-react';
+import { Calendar, History, DollarSign, User, Briefcase, MapPin, MessageCircle } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -38,6 +38,11 @@ export function CleanerSidebar() {
       title: "Today's Work",
       url: "/cleaner-today-bookings",
       icon: MapPin,
+    },
+    {
+      title: "Messages",
+      url: "/cleaner-messages",
+      icon: MessageCircle,
     },
     {
       title: "Available Bookings",

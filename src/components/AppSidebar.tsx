@@ -2,7 +2,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useLocation } from 'react-router-dom';
-import { Calendar, Users, LayoutDashboard, User, History, Eye } from 'lucide-react';
+import { Calendar, Users, LayoutDashboard, User, History, Eye, MessageCircle } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -44,6 +44,12 @@ export function AppSidebar() {
       title: "Bookings",
       url: "/admin",
       icon: Calendar,
+      adminOnly: true,
+    },
+    {
+      title: "Chat Management",
+      url: "/admin-chat-management",
+      icon: MessageCircle,
       adminOnly: true,
     },
     {

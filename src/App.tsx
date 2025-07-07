@@ -13,6 +13,9 @@ import Users from "./pages/Users";
 import PastBookings from "./pages/PastBookings";
 import CleanerDashboard from "./pages/CleanerDashboard";
 import CleanerTodayBookings from "./pages/CleanerTodayBookings";
+import CustomerMessages from "./pages/CustomerMessages";
+import CleanerMessages from "./pages/CleanerMessages";
+import AdminChatManagement from "./pages/AdminChatManagement";
 import CleanerPastBookings from "./pages/CleanerPastBookings";
 import CleanerEarnings from "./pages/CleanerEarnings";
 import CleanerAvailableBookings from "./pages/CleanerAvailableBookings";
@@ -45,7 +48,10 @@ const App = () => (
             <Route path="/users" element={<Users />} />
             <Route path="/past-bookings" element={<PastBookings />} />
             <Route path="/cleaner-dashboard" element={<CleanerDashboard />} />
-            <Route path="/cleaner-today-bookings" element={<CleanerTodayBookings />} />
+        <Route path="/cleaner-today-bookings" element={<CleanerTodayBookings />} />
+        <Route path="/customer-messages" element={<CustomerMessages />} />
+        <Route path="/cleaner-messages" element={<CleanerMessages />} />
+        <Route path="/admin-chat-management" element={<AdminChatManagement />} />
             <Route path="/cleaner-available-bookings" element={<CleanerAvailableBookings />} />
             <Route path="/cleaner-past-bookings" element={<CleanerPastBookings />} />
             <Route path="/cleaner-earnings" element={<CleanerEarnings />} />

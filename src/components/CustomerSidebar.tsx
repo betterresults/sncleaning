@@ -7,7 +7,8 @@ import {
   Plus, 
   Settings, 
   LogOut,
-  User
+  User,
+  MessageCircle
 } from 'lucide-react';
 import {
   Sidebar,
@@ -37,6 +38,11 @@ const CustomerSidebar = ({ customerId }: { customerId?: number }) => {
       title: "My Bookings",
       url: "/customer-dashboard",
       icon: Calendar,
+    },
+    {
+      title: "Messages",
+      url: "/customer-messages",
+      icon: MessageCircle,
     },
     {
       title: "Completed Bookings",
