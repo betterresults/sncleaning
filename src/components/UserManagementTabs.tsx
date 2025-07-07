@@ -28,25 +28,26 @@ const UserManagementTabs = ({
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle>User & Customer Management</CardTitle>
+      <CardHeader className="pb-4">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+          <CardTitle className="text-lg sm:text-xl">User & Customer Management</CardTitle>
           <Button
             onClick={refreshUsers}
             variant="outline"
             size="sm"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 self-start sm:self-auto"
           >
             <RefreshCw className="h-4 w-4" />
-            Refresh Users
+            <span className="hidden sm:inline">Refresh Users</span>
+            <span className="sm:hidden">Refresh</span>
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="customers">Customers</TabsTrigger>
+      <CardContent className="px-3 sm:px-6">
+        <Tabs defaultValue="users" className="space-y-4 sm:space-y-6">
+          <TabsList className="grid w-full grid-cols-2 h-auto">
+            <TabsTrigger value="users" className="text-sm">Users</TabsTrigger>
+            <TabsTrigger value="customers" className="text-sm">Customers</TabsTrigger>
           </TabsList>
           
           <TabsContent value="users">

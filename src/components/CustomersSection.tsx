@@ -197,67 +197,73 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
   }, []);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Customers</h3>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+        <h3 className="text-base sm:text-lg font-semibold">Customers</h3>
       </div>
 
-      {/* Create Customer Form - shown when showCreateForm is true */}
+      {/* Create Customer Form - Mobile Responsive */}
       {showCreateForm && (
-        <div className="p-4 border rounded-lg bg-gray-50">
-          <h4 className="font-semibold mb-4">Create New Customer</h4>
-          <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="p-3 sm:p-4 border rounded-lg bg-gray-50">
+          <h4 className="font-semibold mb-4 text-sm sm:text-base">Create New Customer</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
             <div>
-              <Label htmlFor="customerFirstName">First Name</Label>
+              <Label htmlFor="customerFirstName" className="text-sm">First Name</Label>
               <Input
                 id="customerFirstName"
                 value={newCustomer.firstName}
                 onChange={(e) => setNewCustomer({ ...newCustomer, firstName: e.target.value })}
+                className="text-sm"
               />
             </div>
             <div>
-              <Label htmlFor="customerLastName">Last Name</Label>
+              <Label htmlFor="customerLastName" className="text-sm">Last Name</Label>
               <Input
                 id="customerLastName"
                 value={newCustomer.lastName}
                 onChange={(e) => setNewCustomer({ ...newCustomer, lastName: e.target.value })}
+                className="text-sm"
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
             <div>
-              <Label htmlFor="customerEmail">Email</Label>
+              <Label htmlFor="customerEmail" className="text-sm">Email</Label>
               <Input
                 id="customerEmail"
                 type="email"
                 value={newCustomer.email}
                 onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                className="text-sm"
               />
             </div>
             <div>
-              <Label htmlFor="customerPhone">Phone</Label>
+              <Label htmlFor="customerPhone" className="text-sm">Phone</Label>
               <Input
                 id="customerPhone"
                 value={newCustomer.phone}
                 onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                className="text-sm"
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
             <div>
-              <Label htmlFor="customerAddress">Address</Label>
+              <Label htmlFor="customerAddress" className="text-sm">Address</Label>
               <Input
                 id="customerAddress"
                 value={newCustomer.address}
                 onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })}
+                className="text-sm"
               />
             </div>
             <div>
-              <Label htmlFor="customerPostcode">Postcode</Label>
+              <Label htmlFor="customerPostcode" className="text-sm">Postcode</Label>
               <Input
                 id="customerPostcode"
                 value={newCustomer.postcode}
                 onChange={(e) => setNewCustomer({ ...newCustomer, postcode: e.target.value })}
+                className="text-sm"
               />
             </div>
           </div>
@@ -267,69 +273,79 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
               if (onCreateSuccess) onCreateSuccess();
             }}
             disabled={creating}
-            className="bg-blue-900 hover:bg-blue-800 text-white"
+            className="bg-blue-900 hover:bg-blue-800 text-white text-sm w-full sm:w-auto"
+            size="sm"
           >
             {creating ? 'Creating...' : 'Create Customer'}
           </Button>
         </div>
       )}
 
-      {/* Customers List */}
+      {/* Customers List - Mobile Responsive */}
       <div>
         {loading ? (
-          <div className="text-center py-4">Loading customers...</div>
+          <div className="text-center py-8">Loading customers...</div>
         ) : (
           <div className="space-y-3">
             {customers.map((customer) => (
-              <div key={customer.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div key={customer.id} className="p-3 sm:p-4 border rounded-lg">
                 {editingCustomer === customer.id ? (
-                  <div className="flex-1 grid grid-cols-3 gap-4">
-                    <div>
-                      <Input
-                        placeholder="First Name"
-                        value={editCustomerData.first_name || ''}
-                        onChange={(e) => setEditCustomerData({ ...editCustomerData, first_name: e.target.value })}
-                      />
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      <div>
+                        <Input
+                          placeholder="First Name"
+                          value={editCustomerData.first_name || ''}
+                          onChange={(e) => setEditCustomerData({ ...editCustomerData, first_name: e.target.value })}
+                          className="text-sm"
+                        />
+                      </div>
+                      <div>
+                        <Input
+                          placeholder="Last Name"
+                          value={editCustomerData.last_name || ''}
+                          onChange={(e) => setEditCustomerData({ ...editCustomerData, last_name: e.target.value })}
+                          className="text-sm"
+                        />
+                      </div>
+                      <div>
+                        <Input
+                          placeholder="Email"
+                          value={editCustomerData.email || ''}
+                          onChange={(e) => setEditCustomerData({ ...editCustomerData, email: e.target.value })}
+                          className="text-sm"
+                        />
+                      </div>
+                      <div>
+                        <Input
+                          placeholder="Phone"
+                          value={editCustomerData.phone || ''}
+                          onChange={(e) => setEditCustomerData({ ...editCustomerData, phone: e.target.value })}
+                          className="text-sm"
+                        />
+                      </div>
+                      <div>
+                        <Input
+                          placeholder="Address"
+                          value={editCustomerData.address || ''}
+                          onChange={(e) => setEditCustomerData({ ...editCustomerData, address: e.target.value })}
+                          className="text-sm"
+                        />
+                      </div>
+                      <div>
+                        <Input
+                          placeholder="Postcode"
+                          value={editCustomerData.postcode || ''}
+                          onChange={(e) => setEditCustomerData({ ...editCustomerData, postcode: e.target.value })}
+                          className="text-sm"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <Input
-                        placeholder="Last Name"
-                        value={editCustomerData.last_name || ''}
-                        onChange={(e) => setEditCustomerData({ ...editCustomerData, last_name: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Input
-                        placeholder="Email"
-                        value={editCustomerData.email || ''}
-                        onChange={(e) => setEditCustomerData({ ...editCustomerData, email: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Input
-                        placeholder="Phone"
-                        value={editCustomerData.phone || ''}
-                        onChange={(e) => setEditCustomerData({ ...editCustomerData, phone: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Input
-                        placeholder="Address"
-                        value={editCustomerData.address || ''}
-                        onChange={(e) => setEditCustomerData({ ...editCustomerData, address: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Input
-                        placeholder="Postcode"
-                        value={editCustomerData.postcode || ''}
-                        onChange={(e) => setEditCustomerData({ ...editCustomerData, postcode: e.target.value })}
-                      />
-                    </div>
-                    <div className="col-span-3 flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <Button 
                         onClick={() => updateCustomer(customer.id)}
                         size="sm"
+                        className="text-sm w-full sm:w-auto"
                       >
                         Save
                       </Button>
@@ -337,52 +353,55 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
                         onClick={cancelEditing}
                         variant="outline"
                         size="sm"
+                        className="text-sm w-full sm:w-auto"
                       >
                         Cancel
                       </Button>
                     </div>
                   </div>
                 ) : (
-                  <>
-                    <div>
-                      <div className="font-medium">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="font-medium text-sm sm:text-base">
                         {customer.first_name} {customer.last_name}
                       </div>
-                      <div className="text-sm text-gray-500">{customer.email}</div>
-                      <div className="text-sm text-gray-500">{customer.phone}</div>
+                      <div className="text-xs sm:text-sm text-gray-500 break-all">{customer.email}</div>
+                      <div className="text-xs sm:text-sm text-gray-500">{customer.phone}</div>
                       <div className="text-xs text-gray-400">
                         {customer.address}, {customer.postcode}
                       </div>
                       <div className="text-xs text-gray-400">ID: {customer.id}</div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-2 lg:items-end">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium self-start ${
                         customer.client_status === 'Current' ? 'bg-green-100 text-green-800' : 
                         customer.client_status === 'New' ? 'bg-blue-100 text-blue-800' : 
                         'bg-gray-100 text-gray-800'
                       }`}>
                         {customer.client_status}
                       </span>
-                      <Button
-                        onClick={() => startEditingCustomer(customer)}
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center gap-1"
-                      >
-                        <Edit className="h-4 w-4" />
-                        Edit
-                      </Button>
-                      <Button
-                        onClick={() => deleteCustomer(customer.id)}
-                        variant="destructive"
-                        size="sm"
-                        className="flex items-center gap-1"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Delete
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => startEditingCustomer(customer)}
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center gap-1 text-xs flex-1 sm:flex-none"
+                        >
+                          <Edit className="h-3 w-3" />
+                          <span className="hidden sm:inline">Edit</span>
+                        </Button>
+                        <Button
+                          onClick={() => deleteCustomer(customer.id)}
+                          variant="destructive"
+                          size="sm"
+                          className="flex items-center gap-1 text-xs flex-1 sm:flex-none"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          <span className="hidden sm:inline">Delete</span>
+                        </Button>
+                      </div>
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
             ))}

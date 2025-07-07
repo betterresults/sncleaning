@@ -189,16 +189,16 @@ const UsersSection = ({ refreshKey, hideCreateButton }: UsersSectionProps) => {
   }, [refreshKey]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">System Users ({users.length})</h3>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+        <h3 className="text-base sm:text-lg font-semibold">System Users ({users.length})</h3>
       </div>
 
       {fetchError && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error fetching users</AlertTitle>
-          <AlertDescription>
+          <AlertDescription className="text-sm">
             {fetchError}
           </AlertDescription>
         </Alert>
@@ -206,29 +206,29 @@ const UsersSection = ({ refreshKey, hideCreateButton }: UsersSectionProps) => {
 
       <div>
         {loading ? (
-          <div className="text-center py-4">Loading users...</div>
+          <div className="text-center py-8">Loading users...</div>
         ) : (
           <div className="space-y-3">
             {users.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">No users found</div>
+              <div className="text-center py-8 text-gray-500">No users found</div>
             ) : (
               users.map((user) => (
-                <div key={user.id} className="p-4 border rounded-lg space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium">
+                <div key={user.id} className="p-3 sm:p-4 border rounded-lg space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="font-medium text-sm sm:text-base">
                         {user.user_metadata.first_name} {user.user_metadata.last_name}
                       </div>
-                      <div className="text-sm text-gray-500">{user.email}</div>
+                      <div className="text-xs sm:text-sm text-gray-500 break-all">{user.email}</div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role || 'guest')}`}>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium self-start ${getRoleColor(user.role || 'guest')}`}>
                         {getRoleDisplayName(user.role || 'guest')}
                       </span>
                       <select
                         value={user.role || 'guest'}
                         onChange={(e) => updateUserRole(user.id, e.target.value)}
-                        className="text-sm border rounded px-2 py-1"
+                        className="text-xs sm:text-sm border rounded px-2 py-1 w-full sm:w-auto"
                       >
                         <option value="guest">Customer</option>
                         <option value="user">Cleaner</option>
