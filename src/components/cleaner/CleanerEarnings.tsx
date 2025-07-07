@@ -318,23 +318,29 @@ const CleanerEarnings = () => {
         </CardContent>
       </Card>
 
-      {/* Earnings Overview with Period Selector */}
+      {/* Period Selector */}
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Time Period</h3>
+            <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
+              <SelectTrigger className="w-48 bg-white border-gray-200 shadow-sm">
+                <SelectValue placeholder="Select period" />
+              </SelectTrigger>
+              <SelectContent className="bg-white border-gray-200 shadow-lg">
+                <SelectItem value="current">Current Month</SelectItem>
+                <SelectItem value="lastMonth">Last Month</SelectItem>
+                <SelectItem value="last3Months">Last 3 Months</SelectItem>
+                <SelectItem value="last6Months">Last 6 Months</SelectItem>
+                <SelectItem value="allTime">All Time</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Earnings Overview */}
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold tracking-tight">Earnings Overview</h2>
-          <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
-            <SelectTrigger className="w-48 bg-white border-gray-200 shadow-sm">
-              <SelectValue placeholder="Select period" />
-            </SelectTrigger>
-            <SelectContent className="bg-white border-gray-200 shadow-lg">
-              <SelectItem value="current">Current Month</SelectItem>
-              <SelectItem value="lastMonth">Last Month</SelectItem>
-              <SelectItem value="last3Months">Last 3 Months</SelectItem>
-              <SelectItem value="last6Months">Last 6 Months</SelectItem>
-              <SelectItem value="allTime">All Time</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Total Earnings Card */}
