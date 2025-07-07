@@ -40,57 +40,85 @@ const Users = () => {
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <AppSidebar />
-        <SidebarInset>
-          <header className="flex h-12 sm:h-16 shrink-0 items-center gap-2 border-b px-3 sm:px-4">
-            <SidebarTrigger className="-ml-1" />
-            <div className="flex-1" />
+        <SidebarInset className="flex-1 flex flex-col min-w-0">
+          
+          {/* Mobile-First Header */}
+          <header className="flex h-14 shrink-0 items-center gap-3 border-b bg-white px-4 shadow-sm">
+            <SidebarTrigger className="lg:hidden" />
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg font-semibold text-gray-900 truncate">
+                User Management
+              </h1>
+            </div>
             
-            {/* Top Level Create Buttons - Mobile Responsive */}
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 z-50">
+            {/* Create Buttons - Fixed Positioning */}
+            <div className="flex gap-2">
               <button
                 onClick={() => setShowCreateUserForm(!showCreateUserForm)}
-                className="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200 cursor-pointer bg-blue-900 hover:bg-blue-800 text-white shadow-lg hover:shadow-xl hover:scale-105"
+                className="inline-flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                 type="button"
               >
                 <UserPlus className="h-4 w-4" />
-                <span className="hidden sm:inline">{showCreateUserForm ? 'Cancel User' : 'Create User'}</span>
-                <span className="sm:hidden">{showCreateUserForm ? 'Cancel' : 'User'}</span>
+                <span className="hidden sm:inline">
+                  {showCreateUserForm ? 'Cancel' : 'User'}
+                </span>
+                <span className="sm:hidden">+</span>
               </button>
               
               <button
                 onClick={() => setShowCreateCustomerForm(!showCreateCustomerForm)}
-                className="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200 cursor-pointer bg-blue-900 hover:bg-blue-800 text-white shadow-lg hover:shadow-xl hover:scale-105"
+                className="inline-flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
                 type="button"
               >
                 <UserPlus className="h-4 w-4" />
-                <span className="hidden sm:inline">{showCreateCustomerForm ? 'Cancel Customer' : 'Create Customer'}</span>
-                <span className="sm:hidden">{showCreateCustomerForm ? 'Cancel' : 'Customer'}</span>
+                <span className="hidden sm:inline">
+                  {showCreateCustomerForm ? 'Cancel' : 'Customer'}
+                </span>
+                <span className="sm:hidden">+</span>
               </button>
             </div>
           </header>
           
-          <main className="flex-1 space-y-3 sm:space-y-4 p-3 sm:p-6 lg:p-8 pt-3 sm:pt-6">
-            {/* Create Forms */}
-            {showCreateUserForm && (
-              <div className="mb-6">
-                <CreateUserForm onSuccess={handleCreateUserSuccess} />
-              </div>
-            )}
-            
-            {showCreateCustomerForm && (
-              <div className="mb-6 p-4 border rounded-lg bg-gray-50">
-                <h4 className="font-semibold mb-4">Create New Customer</h4>
-                {/* Customer creation form will be handled by passing props to UserManagementTabs */}
-              </div>
-            )}
-            
-            <UserManagementTabs 
-              refreshKey={refreshKey}
-              showCreateUserForm={showCreateUserForm}
-              showCreateCustomerForm={showCreateCustomerForm}
-              onCreateUserSuccess={handleCreateUserSuccess}
-              onCreateCustomerSuccess={handleCreateCustomerSuccess}
-            />
+          {/* Mobile-First Main Content */}
+          <main className="flex-1 overflow-auto">
+            <div className="p-4 space-y-6 max-w-full">
+              
+              {/* Create User Form */}
+              {showCreateUserForm && (
+                <div className="space-y-3">
+                  <h2 className="text-base font-semibold text-gray-900">
+                    Create New User
+                  </h2>
+                  <div className="bg-white border rounded-lg p-4">
+                    <CreateUserForm onSuccess={handleCreateUserSuccess} />
+                  </div>
+                </div>
+              )}
+              
+              {/* Create Customer Form */}
+              {showCreateCustomerForm && (
+                <div className="space-y-3">
+                  <h2 className="text-base font-semibold text-gray-900">
+                    Create New Customer
+                  </h2>
+                  <div className="bg-gray-50 border rounded-lg p-4">
+                    <p className="text-sm text-gray-600">
+                      Customer creation form will be handled in the tabs below.
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {/* User Management Tabs */}
+              <UserManagementTabs 
+                refreshKey={refreshKey}
+                showCreateUserForm={showCreateUserForm}
+                showCreateCustomerForm={showCreateCustomerForm}
+                onCreateUserSuccess={handleCreateUserSuccess}
+                onCreateCustomerSuccess={handleCreateCustomerSuccess}
+              />
+              
+            </div>
           </main>
         </SidebarInset>
       </div>
