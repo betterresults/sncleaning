@@ -19,6 +19,7 @@ export type Database = {
           address: string
           created_at: string
           customer_id: number
+          deatails: string | null
           id: string
           is_default: boolean | null
           postcode: string
@@ -28,6 +29,7 @@ export type Database = {
           address: string
           created_at?: string
           customer_id: number
+          deatails?: string | null
           id?: string
           is_default?: boolean | null
           postcode: string
@@ -37,6 +39,7 @@ export type Database = {
           address?: string
           created_at?: string
           customer_id?: number
+          deatails?: string | null
           id?: string
           is_default?: boolean | null
           postcode?: string

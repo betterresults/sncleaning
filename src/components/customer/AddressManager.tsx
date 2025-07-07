@@ -44,14 +44,21 @@ const AddressManager = () => {
   }, [activeCustomerId]);
 
   const fetchAddresses = async () => {
-    if (!activeCustomerId) return;
+    if (!activeCustomerId) {
+      console.log('AddressManager: No activeCustomerId');
+      return;
+    }
 
+    console.log('AddressManager: Fetching addresses for customer ID:', activeCustomerId);
+    
     try {
       const { data, error } = await supabase
         .from('addresses')
         .select('*')
         .eq('customer_id', activeCustomerId)
         .order('is_default', { ascending: false });
+
+      console.log('AddressManager: Query result:', { data, error });
 
       if (error) throw error;
       setAddresses(data || []);
