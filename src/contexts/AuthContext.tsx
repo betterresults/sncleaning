@@ -50,6 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (profileError && profileError.code !== 'PGRST116') {
         console.error('Error fetching profile:', profileError);
+        console.log('Setting role to guest due to profile error');
         setUserRole('guest');
         return;
       }
@@ -69,7 +70,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Setting user role and relationships:', {
         role: finalRole,
         cleanerId: profileData?.cleaner_id,
-        customerId: profileData?.customer_id
+        customerId: profileData?.customer_id,
+        rawUserRoleData: userRoleData,
+        rawProfileData: profileData
       });
       
       setUserRole(finalRole);
@@ -78,6 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
+      console.log('Setting role to guest due to catch error');
       setUserRole('guest');
       setCleanerId(null);
       setCustomerId(null);
