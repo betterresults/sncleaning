@@ -141,7 +141,7 @@ const CustomerContacts = ({
           chat: bookingChat,
           lastMessage: bookingChat?.last_message?.message,
           lastMessageTime: bookingChat?.last_message_at,
-          unreadCount: bookingChat?.total_count || bookingChat?.unread_count || 0
+          unreadCount: bookingChat?.unread_count || 0
         });
       });
 
@@ -299,18 +299,20 @@ const CustomerContacts = ({
                         <h4 className="font-medium text-foreground truncate">
                           {contact.name}
                         </h4>
-                        {contact.bookings && contact.bookings.length > 0 && (
-                          <div className="flex items-center">
-                            {contact.isExpanded ? (
-                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                            )}
-                            <Badge variant="outline" className="ml-1 text-xs">
-                              {contact.unreadCount || 0}
-                            </Badge>
-                          </div>
-                        )}
+                         {contact.bookings && contact.bookings.length > 0 && (
+                           <div className="flex items-center">
+                             {contact.isExpanded ? (
+                               <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                             ) : (
+                               <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                             )}
+                             {contact.unreadCount && contact.unreadCount > 0 && (
+                               <Badge variant="outline" className="ml-1 text-xs">
+                                 {contact.unreadCount}
+                               </Badge>
+                             )}
+                           </div>
+                         )}
                       </div>
                       <div className="flex items-center space-x-2 flex-shrink-0">
                         {contact.lastMessageTime && (

@@ -135,9 +135,9 @@ const CleanerContacts = ({
           customer_id: customer.id,
           bookings: bookingContacts,
           isExpanded: false,
-          // Calculate total message count for this customer (use total_count if available, fallback to unread)
+          // Calculate unread message count for this customer
           unreadCount: bookingContacts.reduce((sum, booking) => 
-            sum + (booking.chat?.total_count || booking.unreadCount || 0), 0
+            sum + (booking.unreadCount || 0), 0
           ),
           lastMessage: bookingContacts.find(b => b.lastMessage)?.lastMessage,
           lastMessageTime: bookingContacts.reduce((latest, booking) => {
@@ -247,18 +247,20 @@ const CleanerContacts = ({
                         <h4 className="font-medium text-foreground truncate">
                           {contact.name}
                         </h4>
-                        {contact.type === 'customer' && (
-                          <div className="flex items-center">
-                            {contact.isExpanded ? (
-                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                            )}
-                            <Badge variant="outline" className="ml-1 text-xs">
-                              {contact.unreadCount || 0}
-                            </Badge>
-                          </div>
-                        )}
+                         {contact.type === 'customer' && (
+                           <div className="flex items-center">
+                             {contact.isExpanded ? (
+                               <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                             ) : (
+                               <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                             )}
+                             {contact.unreadCount && contact.unreadCount > 0 && (
+                               <Badge variant="outline" className="ml-1 text-xs">
+                                 {contact.unreadCount}
+                               </Badge>
+                             )}
+                           </div>
+                         )}
                       </div>
                       <div className="flex items-center space-x-2 flex-shrink-0">
                         {contact.lastMessageTime && (
