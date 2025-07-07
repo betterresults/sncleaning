@@ -175,10 +175,23 @@ const PaymentMethodManager = () => {
     console.log('PaymentMethodManager: Fetching payment methods for customer:', activeCustomerId);
     
     try {
-      console.log('PaymentMethodManager: About to query with activeCustomerId:', activeCustomerId);
-      console.log('PaymentMethodManager: User role:', userRole);
-      console.log('PaymentMethodManager: Auth user:', user?.id);
-      
+      // First sync payment methods with Stripe to ensure data consistency
+      console.log('PaymentMethodManager: Syncing with Stripe...');
+      const { error: syncError } = await supabase.functions.invoke('sync-payment-methods', {
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+        body: {
+          customerId: activeCustomerId
+        }
+      });
+
+      if (syncError) {
+        console.warn('Sync warning:', syncError);
+        // Continue with fetch even if sync fails
+      }
+
+      // Now fetch the updated payment methods
       const { data, error } = await supabase
         .from('customer_payment_methods')
         .select('*')
