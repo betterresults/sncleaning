@@ -35,11 +35,13 @@ const Index = () => {
     
     // Redirect cleaners to cleaner dashboard
     if (userRole === 'user' && cleanerId) {
+      console.log('Index - Redirecting cleaner to /cleaner-dashboard');
       return <Navigate to="/cleaner-dashboard" replace />;
     }
     
     // Redirect admins to admin dashboard
     if (userRole === 'admin') {
+      console.log('Index - Redirecting admin to /admin');
       return <Navigate to="/admin" replace />;
     }
     

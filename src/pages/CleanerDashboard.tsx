@@ -14,9 +14,10 @@ const CleanerDashboard = () => {
   // Check if admin is viewing this dashboard
   const isAdminViewing = userRole === 'admin';
 
-  console.log('CleanerDashboard - Auth state:', { user: !!user, userRole, cleanerId, loading });
+  console.log('CleanerDashboard - Auth state:', { user: !!user, userRole, cleanerId, loading, isAdminViewing });
 
   if (loading) {
+    console.log('CleanerDashboard - Still loading...');
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-base">Loading cleaner dashboard...</div>
@@ -27,11 +28,14 @@ const CleanerDashboard = () => {
   // Allow users with role 'user' who have a cleanerId, or admins
   if (!user || (userRole !== 'user' && userRole !== 'admin') || (userRole === 'user' && !cleanerId)) {
     console.log('CleanerDashboard - Redirecting to auth. User:', !!user, 'Role:', userRole, 'CleanerId:', cleanerId);
+    console.log('CleanerDashboard - This is where we redirect to /auth');
     return <Navigate to="/auth" replace />;
   }
 
   // Get first name for greeting
   const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Cleaner';
+  
+  console.log('CleanerDashboard - About to render with firstName:', firstName);
 
   return (
     <>
