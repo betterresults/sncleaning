@@ -30,6 +30,7 @@ interface Booking {
   last_name: string | null;
   phone_number: string | null;
   email: string | null;
+  same_day: boolean;
   cleaner?: {
     first_name: string;
     last_name: string;
@@ -128,6 +129,7 @@ const CustomerUpcomingBookings = () => {
           last_name,
           phone_number,
           email,
+          same_day,
           cleaner:cleaners(first_name, last_name)
         `)
         .eq('customer', activeCustomerId)
@@ -326,14 +328,21 @@ const CustomerUpcomingBookings = () => {
                       {dayBookings.map(booking => (
                         <div
                           key={booking.id}
-                          className="text-xs p-1 mb-1 rounded bg-primary/10 text-primary truncate cursor-pointer hover:bg-primary/20"
-                          title={`${booking.service_type} - ${booking.address} - ${new Date(booking.date_time).toLocaleTimeString('en-GB', { 
+                          className={`text-xs p-1 mb-1 rounded truncate cursor-pointer transition-colors ${
+                            booking.same_day 
+                              ? 'bg-gradient-to-r from-orange-100 to-red-100 text-orange-800 hover:from-orange-200 hover:to-red-200 border border-orange-200 dark:from-orange-900/40 dark:to-red-900/40 dark:text-orange-300 dark:border-orange-700'
+                              : 'bg-primary/10 text-primary hover:bg-primary/20'
+                          }`}
+                          title={`${booking.service_type}${booking.same_day ? ' (Same Day)' : ''} - ${booking.address} - ${new Date(booking.date_time).toLocaleTimeString('en-GB', { 
                             hour: 'numeric', 
                             minute: '2-digit',
                             hour12: true 
                           })}`}
                         >
-                          <div className="font-medium">{booking.service_type}</div>
+                          <div className="font-medium flex items-center justify-between">
+                            <span>{booking.service_type}</span>
+                            {booking.same_day && <span className="text-[8px] font-bold">SD</span>}
+                          </div>
                           <div className="text-[10px] opacity-80">{booking.address}</div>
                         </div>
                       ))}
@@ -361,11 +370,22 @@ const CustomerUpcomingBookings = () => {
             ) : (
               <div className="space-y-4">
                 {bookings.map((booking) => (
-                  <div key={booking.id} className="group relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card to-card/80 p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/30">
+                  <div key={booking.id} className={`group relative overflow-hidden rounded-2xl border p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/30 ${
+                    booking.same_day 
+                      ? 'bg-gradient-to-br from-orange-50 to-red-50 border-orange-200 hover:shadow-orange-100 dark:from-orange-950/20 dark:to-red-950/20 dark:border-orange-800/30' 
+                      : 'border-border/60 bg-gradient-to-br from-card to-card/80 hover:shadow-primary/5'
+                  }`}>
                     
                     {/* Header with Service Type and Cost */}
                     <div className="flex items-start justify-between mb-4">
-                      <h3 className="text-xl font-bold text-foreground tracking-tight">{booking.service_type}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-xl font-bold text-foreground tracking-tight">{booking.service_type}</h3>
+                        {booking.same_day && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+                            Same Day
+                          </span>
+                        )}
+                      </div>
                       <div className="text-right">
                         <div className="text-2xl font-bold text-primary">£{booking.total_cost}</div>
                       </div>
