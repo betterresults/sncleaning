@@ -9,6 +9,7 @@ export interface Booking {
   address: string;
   postcode: string;
   cleaning_type: string;
+  service_type: string;
   total_cost: number;
   cleaner: number;
   customer: number;
@@ -16,7 +17,6 @@ export interface Booking {
   booking_status: string;
   total_hours?: number;
   hours_required?: number;
-  service_type?: string;
   additional_details?: string;
   property_details?: string;
   frequently?: string;

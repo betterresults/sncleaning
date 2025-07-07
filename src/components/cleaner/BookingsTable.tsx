@@ -5,21 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, MapPin, User, Upload, Eye } from 'lucide-react';
 import ViewBookingDialog from './ViewBookingDialog';
 import CleaningPhotosUploadDialog from './CleaningPhotosUploadDialog';
-
-interface Booking {
-  id: number;
-  date_time: string;
-  address: string;
-  postcode: string;
-  service_type: string;
-  total_hours: number;
-  total_cost: number;
-  booking_status: string;
-  customer: number;
-  cleaner: number;
-  first_name?: string;
-  last_name?: string;
-}
+import { Booking } from './types';
 
 interface BookingsTableProps {
   bookings: Booking[];
@@ -74,7 +60,7 @@ const BookingsTable = ({ bookings, title, type, onMarkCompleted, onAcceptBooking
                   }>
                     {booking.booking_status}
                   </Badge>
-                  <h3 className="font-semibold text-lg">{booking.service_type}</h3>
+                  <h3 className="font-semibold text-lg">{booking.service_type || booking.cleaning_type}</h3>
                   <span className="text-xl font-bold text-green-600">£{booking.total_cost}</span>
                 </div>
                 
@@ -95,7 +81,7 @@ const BookingsTable = ({ bookings, title, type, onMarkCompleted, onAcceptBooking
                         hour: 'numeric',
                         minute: '2-digit',
                         hour12: true
-                      })} ({booking.total_hours}h)
+                      })} ({booking.total_hours || booking.hours_required || 0}h)
                     </span>
                   </div>
                   

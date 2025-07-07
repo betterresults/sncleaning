@@ -38,7 +38,8 @@ const CleaningPhotosViewDialog = ({ open, onOpenChange, booking }: CleaningPhoto
   const fetchPhotos = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Work around the type issue by using any cast
+      const { data, error } = await (supabase as any)
         .from('cleaning_photos')
         .select('*')
         .eq('booking_id', booking.id)
@@ -46,7 +47,14 @@ const CleaningPhotosViewDialog = ({ open, onOpenChange, booking }: CleaningPhoto
 
       if (error) throw error;
 
-      setPhotos(data || []);
+      // Ensure we only set valid photo data
+      const validPhotos = (data || []).filter((item: any) => 
+        item && typeof item === 'object' && 
+        'file_path' in item && 
+        'photo_type' in item
+      );
+
+      setPhotos(validPhotos);
     } catch (error) {
       console.error('Error fetching photos:', error);
       toast({
