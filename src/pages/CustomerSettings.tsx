@@ -7,14 +7,20 @@ import { CreditCard } from 'lucide-react';
 import PersonalInfoEditor from '@/components/customer/PersonalInfoEditor';
 import AddressManager from '@/components/customer/AddressManager';
 import PaymentMethodManager from '@/components/customer/PaymentMethodManager';
+import { useAuth } from '@/contexts/AuthContext';
+import AdminCustomerSelector from '@/components/admin/AdminCustomerSelector';
 
 const CustomerSettings = () => {
+  const { userRole } = useAuth();
+  const isAdminViewing = userRole === 'admin';
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <CustomerSidebar />
         <main className="flex-1 p-6">
           <div className="max-w-7xl mx-auto">
+            {isAdminViewing && <AdminCustomerSelector />}
             <div className="mb-6">
               <h1 className="text-3xl font-bold">Settings</h1>
               <p className="text-muted-foreground">Manage your account settings and preferences</p>

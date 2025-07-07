@@ -52,12 +52,6 @@ export function AppSidebar() {
       icon: Users,
       adminOnly: true,
     },
-    {
-      title: "Customer Portal View",
-      url: "/admin-customer-portal",
-      icon: Eye,
-      adminOnly: true,
-    },
   ];
 
   const filteredItems = menuItems.filter(item => 

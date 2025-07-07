@@ -8,10 +8,15 @@ import { User, Edit, Save, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 
 const PersonalInfoEditor = () => {
-  const { user, customerId } = useAuth();
+  const { user, customerId, userRole } = useAuth();
+  const { selectedCustomerId } = useAdminCustomer();
   const { toast } = useToast();
+  
+  // Use selected customer ID if admin is viewing, otherwise use the logged-in user's customer ID
+  const activeCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [customerData, setCustomerData] = useState({
@@ -22,17 +27,17 @@ const PersonalInfoEditor = () => {
   });
 
   useEffect(() => {
-    if (customerId) {
+    if (activeCustomerId) {
       fetchCustomerData();
     }
-  }, [customerId]);
+  }, [activeCustomerId]);
 
   const fetchCustomerData = async () => {
     try {
       const { data, error } = await supabase
         .from('customers')
         .select('first_name, last_name, email, phone')
-        .eq('id', customerId)
+        .eq('id', activeCustomerId)
         .single();
 
       if (error) throw error;
@@ -56,7 +61,7 @@ const PersonalInfoEditor = () => {
   };
 
   const handleSave = async () => {
-    if (!customerId) return;
+    if (!activeCustomerId) return;
     
     setLoading(true);
     try {
@@ -68,7 +73,7 @@ const PersonalInfoEditor = () => {
           email: customerData.email,
           phone: customerData.phone
         })
-        .eq('id', customerId);
+        .eq('id', activeCustomerId);
 
       if (error) throw error;
 

@@ -20,8 +20,8 @@ import CustomerCompletedBookings from "./pages/CustomerCompletedBookings";
 import CustomerSettings from "./pages/CustomerSettings";
 import CustomerAddBooking from "./pages/CustomerAddBooking";
 import CreateCustomerAccounts from "./pages/CreateCustomerAccounts";
-import AdminCustomerPortalView from "./pages/AdminCustomerPortalView";
 import NotFound from "./pages/NotFound";
+import { AdminCustomerProvider } from "./contexts/AdminCustomerContext";
 
 const queryClient = new QueryClient();
 
@@ -32,7 +32,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
+          <AdminCustomerProvider>
+            <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
@@ -48,10 +49,10 @@ const App = () => (
             <Route path="/customer-settings" element={<CustomerSettings />} />
             <Route path="/customer-add-booking" element={<CustomerAddBooking />} />
             <Route path="/create-customer-accounts" element={<CreateCustomerAccounts />} />
-            <Route path="/admin-customer-portal" element={<AdminCustomerPortalView />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </AdminCustomerProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
