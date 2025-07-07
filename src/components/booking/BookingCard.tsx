@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -27,6 +28,7 @@ interface BookingCardProps<T extends BaseBooking> {
   onCancel?: (booking: T) => void;
   onDuplicate?: (booking: T) => void;
   onReview?: (booking: T) => void;
+  onSeePhotos?: (booking: T) => void;
   hasReview?: boolean;
 }
 
@@ -37,6 +39,7 @@ const BookingCard = <T extends BaseBooking>({
   onCancel,
   onDuplicate,
   onReview,
+  onSeePhotos,
   hasReview
 }: BookingCardProps<T>) => {
   return (
@@ -113,7 +116,7 @@ const BookingCard = <T extends BaseBooking>({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {/* TODO: Implement see photos functionality */}}
+              onClick={() => onSeePhotos?.(booking)}
               className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/30"
             >
               📷 See Photos

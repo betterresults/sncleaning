@@ -1,382 +1,183 @@
 
 import React, { useState } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { format, isToday, differenceInHours } from 'date-fns';
-import { CalendarDays, Clock, MapPin, User, Banknote, UserX, CheckCircle2, Eye } from 'lucide-react';
-import { Booking } from './types';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { Calendar, Clock, MapPin, User, Upload, Eye } from 'lucide-react';
 import ViewBookingDialog from './ViewBookingDialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import CleaningPhotosUploadDialog from './CleaningPhotosUploadDialog';
+
+interface Booking {
+  id: number;
+  date_time: string;
+  address: string;
+  postcode: string;
+  service_type: string;
+  total_hours: number;
+  total_cost: number;
+  booking_status: string;
+  customer: number;
+  cleaner: number;
+  first_name?: string;
+  last_name?: string;
+}
 
 interface BookingsTableProps {
   bookings: Booking[];
-  onMarkAsCompleted: (bookingId: number) => void;
-  onDropOff: (bookingId: number) => void;
+  title: string;
+  type: 'upcoming' | 'available' | 'past';
+  onMarkCompleted?: (bookingId: number) => void;
+  onAcceptBooking?: (bookingId: number) => void;
 }
 
-const BookingsTable: React.FC<BookingsTableProps> = ({
-  bookings,
-  onMarkAsCompleted,
-  onDropOff,
-}) => {
-  const [dropOffBookingId, setDropOffBookingId] = useState<number | null>(null);
-  const [completeBookingId, setCompleteBookingId] = useState<number | null>(null);
-  const [viewBookingDialogOpen, setViewBookingDialogOpen] = useState(false);
-  const [selectedBookingForView, setSelectedBookingForView] = useState<Booking | null>(null);
-  const isMobile = useIsMobile();
-
-  const shouldShowCompleteButton = (booking: Booking) => {
-    if (!booking.date_time) return false;
-    const bookingDate = new Date(booking.date_time);
-    return isToday(bookingDate);
-  };
-
-  const shouldShowDropOffButton = (booking: Booking) => {
-    if (!booking.date_time) return false;
-    const bookingDate = new Date(booking.date_time);
-    const now = new Date();
-    const hoursUntilBooking = differenceInHours(bookingDate, now);
-    return hoursUntilBooking >= 24;
-  };
-
-  const formatPhoneForWhatsApp = (phone: string) => {
-    const cleaned = phone.replace(/\D/g, '');
-    if (cleaned.startsWith('0')) {
-      return '44' + cleaned.substring(1);
-    }
-    if (!cleaned.startsWith('44')) {
-      return '44' + cleaned;
-    }
-    return cleaned;
-  };
-
-  const handlePhoneClick = (phone: string) => {
-    const whatsappNumber = formatPhoneForWhatsApp(phone);
-    const whatsappUrl = `https://wa.me/${whatsappNumber}`;
-    window.open(whatsappUrl, '_blank');
-  };
-
-  const handleDropOffClick = (bookingId: number) => {
-    setDropOffBookingId(bookingId);
-  };
-
-  const handleCompleteClick = (bookingId: number) => {
-    setCompleteBookingId(bookingId);
-  };
-
-  const handleConfirmDropOff = () => {
-    if (dropOffBookingId) {
-      onDropOff(dropOffBookingId);
-      setDropOffBookingId(null);
-    }
-  };
-
-  const handleConfirmComplete = () => {
-    if (completeBookingId) {
-      onMarkAsCompleted(completeBookingId);
-      setCompleteBookingId(null);
-    }
-  };
+const BookingsTable = ({ bookings, title, type, onMarkCompleted, onAcceptBooking }: BookingsTableProps) => {
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   const handleViewBooking = (booking: Booking) => {
-    setSelectedBookingForView(booking);
-    setViewBookingDialogOpen(true);
+    setSelectedBooking(booking);
+    setViewDialogOpen(true);
   };
 
-  const MobileBookingCard = ({ booking }: { booking: Booking }) => (
-    <Card className="mb-4">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <CalendarDays className="h-4 w-4 text-gray-400" />
-            <div className="text-sm font-medium">
-              {booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy HH:mm') : 'No date/time'}
-            </div>
-          </div>
-          <div className="flex items-center space-x-1">
-            <Banknote className="h-4 w-4 text-green-600" />
-            <span className="font-semibold text-green-600 text-sm">
-              £{booking.cleaner_pay?.toFixed(2) || '0.00'}
-            </span>
-          </div>
+  const handleUploadPhotos = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setUploadDialogOpen(true);
+  };
+
+  if (bookings.length === 0) {
+    return (
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-semibold mb-4">{title}</h2>
+        <div className="text-center py-8 text-gray-500">
+          <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <p>No {type} bookings found.</p>
         </div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="space-y-3">
-          {/* Customer */}
-          <div className="flex items-start space-x-2">
-            <User className="h-4 w-4 text-gray-400 mt-0.5" />
-            <div className="flex-1">
-              <div className="font-medium text-sm">{booking.first_name} {booking.last_name}</div>
-              {booking.phone_number && (
-                <button 
-                  onClick={() => handlePhoneClick(booking.phone_number)}
-                  className="text-xs text-blue-600 hover:text-blue-800 underline mt-1"
-                >
-                  {booking.phone_number}
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Address */}
-          <div className="flex items-start space-x-2">
-            <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
-            <div className="flex-1 text-sm text-gray-700">
-              <div>{booking.address}</div>
-              {booking.postcode && (
-                <div className="text-gray-500 font-medium">{booking.postcode}</div>
-              )}
-            </div>
-          </div>
-
-          {/* Service */}
-          <div className="flex flex-col space-y-2">
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 w-fit">
-              {booking.cleaning_type || 'Standard Cleaning'}
-            </span>
-          </div>
-
-          {/* Actions */}
-          <div className="flex flex-col space-y-2">
-            <Button
-              onClick={() => handleViewBooking(booking)}
-              size="sm"
-              variant="outline"
-              className="w-full"
-            >
-              <Eye className="h-3 w-3 mr-2" />
-              View Details
-            </Button>
-            {shouldShowCompleteButton(booking) && (
-              <Button
-                onClick={() => handleCompleteClick(booking.id)}
-                size="sm"
-                className="bg-green-600 hover:bg-green-700 text-white w-full"
-              >
-                <CheckCircle2 className="h-3 w-3 mr-2" />
-                Complete
-              </Button>
-            )}
-            {shouldShowDropOffButton(booking) && (
-              <Button
-                onClick={() => handleDropOffClick(booking.id)}
-                variant="outline"
-                size="sm"
-                className="text-red-600 border-red-300 hover:bg-red-50 w-full"
-              >
-                <UserX className="h-3 w-3 mr-2" />
-                Drop Off
-              </Button>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+      </div>
+    );
+  }
 
   return (
-    <>
-      <Card className="shadow-sm">
-        <CardContent className="p-0">
-          {isMobile ? (
-            <div className="p-4 space-y-4">
-              {bookings.length === 0 ? (
-                <div className="text-center py-8 text-gray-500 text-base">
-                  No upcoming bookings found
+    <div className="bg-white rounded-lg shadow">
+      <div className="p-6 border-b">
+        <h2 className="text-xl font-semibold">{title}</h2>
+      </div>
+      
+      <div className="divide-y">
+        {bookings.map((booking) => (
+          <div key={booking.id} className="p-6 hover:bg-gray-50 transition-colors">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-4 mb-3">
+                  <Badge variant={
+                    booking.booking_status === 'Confirmed' ? 'default' : 
+                    booking.booking_status === 'Pending' ? 'secondary' : 'outline'
+                  }>
+                    {booking.booking_status}
+                  </Badge>
+                  <h3 className="font-semibold text-lg">{booking.service_type}</h3>
+                  <span className="text-xl font-bold text-green-600">£{booking.total_cost}</span>
                 </div>
-              ) : (
-                bookings.map((booking) => (
-                  <MobileBookingCard key={booking.id} booking={booking} />
-                ))
-              )}
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-blue-500" />
+                    <span>{new Date(booking.date_time).toLocaleDateString('en-GB', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })}</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-orange-500" />
+                    <span>
+                      {new Date(booking.date_time).toLocaleTimeString('en-GB', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                      })} ({booking.total_hours}h)
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-red-500" />
+                    <span className="truncate">{booking.address}, {booking.postcode}</span>
+                  </div>
+                </div>
+
+                {booking.first_name && booking.last_name && (
+                  <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
+                    <User className="h-4 w-4 text-green-500" />
+                    <span>{booking.first_name} {booking.last_name}</span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-2 ml-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleViewBooking(booking)}
+                >
+                  <Eye className="h-4 w-4 mr-1" />
+                  View Details
+                </Button>
+
+                {type === 'upcoming' && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleUploadPhotos(booking)}
+                      className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border-blue-200"
+                    >
+                      <Upload className="h-4 w-4 mr-1" />
+                      Upload Photos
+                    </Button>
+                    
+                    {onMarkCompleted && (
+                      <Button
+                        size="sm"
+                        onClick={() => onMarkCompleted(booking.id)}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        Mark Complete
+                      </Button>
+                    )}
+                  </>
+                )}
+
+                {type === 'available' && onAcceptBooking && (
+                  <Button
+                    size="sm"
+                    onClick={() => onAcceptBooking(booking.id)}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    Accept Booking
+                  </Button>
+                )}
+              </div>
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-gray-50">
-                    <TableHead className="font-semibold text-base">Date & Time</TableHead>
-                    <TableHead className="font-semibold text-base">Customer</TableHead>
-                    <TableHead className="font-semibold text-base">Address</TableHead>
-                    <TableHead className="font-semibold text-base">Service</TableHead>
-                    <TableHead className="font-semibold text-base">Earnings</TableHead>
-                    <TableHead className="font-semibold text-center text-base">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {bookings.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-gray-500 text-base">
-                        No upcoming bookings found
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    bookings.map((booking) => (
-                      <TableRow key={booking.id} className="hover:bg-gray-50 transition-colors">
-                        <TableCell>
-                          <div className="flex items-start space-x-3">
-                            <div className="flex flex-col items-center space-y-1">
-                              <CalendarDays className="h-4 w-4 text-gray-400" />
-                              <Clock className="h-4 w-4 text-gray-400" />
-                            </div>
-                            <div>
-                              <div className="font-medium text-base">
-                                {booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : 'No date'}
-                              </div>
-                              <div className="text-gray-500 text-sm">
-                                {booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'No time'}
-                              </div>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <div className="font-medium text-base flex items-center">
-                              <User className="h-3 w-3 mr-2 text-gray-400" />
-                              {booking.first_name} {booking.last_name}
-                            </div>
-                            {booking.phone_number && (
-                              <button 
-                                onClick={() => handlePhoneClick(booking.phone_number)}
-                                className="text-sm text-blue-600 hover:text-blue-800 underline"
-                              >
-                                {booking.phone_number}
-                              </button>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-start space-x-2 max-w-48">
-                            <MapPin className="h-3 w-3 mt-0.5 text-gray-400 flex-shrink-0" />
-                            <div className="text-sm text-gray-700 leading-tight">
-                              <div>{booking.address}</div>
-                              {booking.postcode && (
-                                <div className="text-gray-500 font-medium">{booking.postcode}</div>
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                            {booking.cleaning_type || 'Standard Cleaning'}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Banknote className="h-4 w-4 text-green-600" />
-                            <span className="font-semibold text-green-600 text-base">
-                              £{booking.cleaner_pay?.toFixed(2) || '0.00'}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex justify-center space-x-2">
-                            <Button
-                              onClick={() => handleViewBooking(booking)}
-                              size="sm"
-                              variant="outline"
-                              className="border-blue-300 hover:bg-blue-50"
-                            >
-                              <Eye className="h-3 w-3 mr-1" />
-                              View
-                            </Button>
-                            {shouldShowCompleteButton(booking) && (
-                              <Button
-                                onClick={() => handleCompleteClick(booking.id)}
-                                size="sm"
-                                className="bg-green-600 hover:bg-green-700 text-white"
-                              >
-                                <CheckCircle2 className="h-3 w-3 mr-1" />
-                                Complete
-                              </Button>
-                            )}
-                            {shouldShowDropOffButton(booking) && (
-                              <Button
-                                onClick={() => handleDropOffClick(booking.id)}
-                                variant="outline"
-                                size="sm"
-                                className="text-red-600 border-red-300 hover:bg-red-50"
-                              >
-                                <UserX className="h-3 w-3 mr-1" />
-                                Drop Off
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        ))}
+      </div>
 
-      {/* View Booking Dialog */}
-      <ViewBookingDialog
-        open={viewBookingDialogOpen}
-        onOpenChange={setViewBookingDialogOpen}
-        booking={selectedBookingForView}
-      />
-
-      {/* Drop Off Confirmation Dialog */}
-      <AlertDialog open={dropOffBookingId !== null} onOpenChange={() => setDropOffBookingId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Drop Off Booking</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to drop off this booking? It will no longer be assigned to you and will become available for other cleaners to pick up.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDropOff}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              <UserX className="h-4 w-4 mr-2" />
-              Drop Off Booking
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Mark as Completed Confirmation Dialog */}
-      <AlertDialog open={completeBookingId !== null} onOpenChange={() => setCompleteBookingId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Mark as Completed</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to mark this booking as completed? This action will update the booking status and cannot be easily undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmComplete}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <CheckCircle2 className="h-4 w-4 mr-2" />
-              Mark as Completed
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+      {selectedBooking && (
+        <>
+          <ViewBookingDialog
+            open={viewDialogOpen}
+            onOpenChange={setViewDialogOpen}
+            booking={selectedBooking}
+          />
+          
+          <CleaningPhotosUploadDialog
+            open={uploadDialogOpen}
+            onOpenChange={setUploadDialogOpen}
+            booking={selectedBooking}
+          />
+        </>
+      )}
+    </div>
   );
 };
 

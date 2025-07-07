@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, Calendar, DollarSign, Star } from 'lucide-react';
@@ -6,6 +7,7 @@ import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import BookingCard from '@/components/booking/BookingCard';
+import CleaningPhotosViewDialog from './CleaningPhotosViewDialog';
 
 interface PastBooking {
   id: number;
@@ -32,6 +34,8 @@ const CustomerPastBookings = () => {
   const [bookings, setBookings] = useState<PastBooking[]>([]);
   const [reviews, setReviews] = useState<{[key: number]: boolean}>({});
   const [loading, setLoading] = useState(true);
+  const [selectedBooking, setSelectedBooking] = useState<PastBooking | null>(null);
+  const [photosDialogOpen, setPhotosDialogOpen] = useState(false);
   const [stats, setStats] = useState({
     totalBookings: 0,
     totalPaid: 0,
@@ -148,6 +152,11 @@ const CustomerPastBookings = () => {
     console.log('Review booking:', booking.id);
   };
 
+  const handleSeePhotos = (booking: PastBooking) => {
+    setSelectedBooking(booking);
+    setPhotosDialogOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -253,6 +262,7 @@ const CustomerPastBookings = () => {
                   }}
                   type="completed"
                   onReview={(b) => handleReview(booking)}
+                  onSeePhotos={(b) => handleSeePhotos(booking)}
                   hasReview={reviews[booking.id] || false}
                 />
               ))}
@@ -260,6 +270,20 @@ const CustomerPastBookings = () => {
           )}
         </CardContent>
       </Card>
+
+      {selectedBooking && (
+        <CleaningPhotosViewDialog
+          open={photosDialogOpen}
+          onOpenChange={setPhotosDialogOpen}
+          booking={{
+            id: selectedBooking.id,
+            postcode: selectedBooking.postcode,
+            date_time: selectedBooking.date_time,
+            address: selectedBooking.address,
+            service_type: selectedBooking.service_type
+          }}
+        />
+      )}
     </div>
   );
 };
