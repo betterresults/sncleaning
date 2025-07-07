@@ -60,7 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
       
       console.log('User role query result:', { userRoleData, roleError });
       
@@ -103,18 +103,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           // Use setTimeout to defer the async operation and prevent deadlock
-          setTimeout(() => {
+          setTimeout(async () => {
             if (mounted) {
-              fetchUserRole(session.user.id);
+              await fetchUserRole(session.user.id);
+              setLoading(false);
             }
           }, 0);
         } else {
           setUserRole(null);
           setCleanerId(null);
           setCustomerId(null);
+          setLoading(false);
         }
-        
-        setLoading(false);
       }
     );
 
