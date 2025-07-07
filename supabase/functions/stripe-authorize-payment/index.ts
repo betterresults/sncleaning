@@ -1,0 +1,143 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
+  }
+
+  try {
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    )
+
+    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY')
+    if (!stripeKey) {
+      throw new Error('Stripe secret key not configured')
+    }
+
+    const { bookingId } = await req.json()
+
+    if (!bookingId) {
+      throw new Error('Booking ID is required')
+    }
+
+    // Get booking details with customer info
+    const { data: booking, error: bookingError } = await supabaseClient
+      .from('bookings')
+      .select('*, customer:customers(*)')
+      .eq('id', bookingId)
+      .single()
+
+    if (bookingError || !booking) {
+      throw new Error('Booking not found')
+    }
+
+    // Get customer's default payment method
+    const { data: paymentMethod, error: pmError } = await supabaseClient
+      .from('customer_payment_methods')
+      .select('*')
+      .eq('customer_id', booking.customer)
+      .eq('is_default', true)
+      .single()
+
+    if (pmError || !paymentMethod) {
+      throw new Error('No default payment method found for customer')
+    }
+
+    // Create Payment Intent (authorization)
+    const paymentIntentResponse = await fetch('https://api.stripe.com/v1/payment_intents', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${stripeKey}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        amount: Math.round((booking.total_cost || 0) * 100).toString(), // Convert to cents
+        currency: 'gbp',
+        customer: paymentMethod.stripe_customer_id,
+        payment_method: paymentMethod.stripe_payment_method_id,
+        confirmation_method: 'manual',
+        confirm: 'true',
+        off_session: 'true',
+        capture_method: 'manual', // This creates an authorization, not a charge
+        description: `Cleaning service booking #${booking.id}`,
+        metadata: JSON.stringify({
+          booking_id: booking.id.toString(),
+          customer_id: booking.customer.toString(),
+        }),
+      }),
+    })
+
+    const paymentIntent = await paymentIntentResponse.json()
+    if (!paymentIntentResponse.ok) {
+      throw new Error(`Stripe error: ${paymentIntent.error?.message}`)
+    }
+
+    // Update booking with payment authorization details
+    const { error: updateError } = await supabaseClient
+      .from('bookings')
+      .update({
+        invoice_id: paymentIntent.id,
+        payment_status: 'collecting', // Your preferred status term
+        payment_method: 'stripe_card',
+      })
+      .eq('id', bookingId)
+
+    if (updateError) {
+      throw new Error(`Database update error: ${updateError.message}`)
+    }
+
+    console.log('Payment authorized for booking:', bookingId, 'Payment Intent:', paymentIntent.id)
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        paymentIntentId: paymentIntent.id,
+        status: paymentIntent.status,
+        amount: paymentIntent.amount,
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      }
+    )
+
+  } catch (error) {
+    console.error('Error authorizing payment:', error)
+    
+    // If authorization fails, update booking status
+    if (req.body) {
+      try {
+        const supabaseClient = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+        )
+        const { bookingId } = await req.json()
+        if (bookingId) {
+          await supabaseClient
+            .from('bookings')
+            .update({ payment_status: 'failed' })
+            .eq('id', bookingId)
+        }
+      } catch (updateError) {
+        console.error('Failed to update booking status:', updateError)
+      }
+    }
+
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      }
+    )
+  }
+})
