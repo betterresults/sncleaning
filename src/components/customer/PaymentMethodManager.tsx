@@ -81,22 +81,20 @@ const PaymentMethodManager = () => {
       const stripe = await stripePromise;
       if (!stripe) throw new Error('Stripe failed to initialize');
 
-      // Redirect to Stripe's hosted setup page
-      const { error: stripeError } = await stripe.redirectToCheckout({
-        sessionId: data.clientSecret.split('_secret_')[0] // Extract session ID from client secret
+      // Use confirmSetup for Setup Intent, not redirectToCheckout
+      const { error: confirmError } = await stripe.confirmSetup({
+        clientSecret: data.clientSecret,
+        confirmParams: {
+          return_url: `${window.location.origin}/customer-settings?payment_setup=success`,
+        },
       });
 
-      if (stripeError) {
-        // If redirect fails, show payment element inline
-        const { error: confirmError } = await stripe.confirmSetup({
-          clientSecret: data.clientSecret,
-          confirmParams: {
-            return_url: `${window.location.origin}/customer-settings?payment_setup=success`,
-          },
-        });
-
-        if (confirmError) throw confirmError;
+      if (confirmError) {
+        throw confirmError;
       }
+
+      // Refresh payment methods after successful setup
+      await fetchPaymentMethods();
     } catch (error) {
       console.error('Error adding payment method:', error);
       toast({
