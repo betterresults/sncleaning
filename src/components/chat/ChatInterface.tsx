@@ -59,7 +59,14 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
 
   const isOwnMessage = (message: ChatMessage) => {
     if (userRole === 'admin') {
-      // Admin messages always appear on the right side regardless of chat type
+      // Admin acting as the user in the chat
+      if (chat.chat_type === 'customer_cleaner' || chat.chat_type === 'customer_office') {
+        // In customer chats, admin acts as the customer
+        return message.sender_type === 'customer' && message.sender_id === chat.customer_id;
+      } else if (chat.chat_type === 'office_cleaner') {
+        // In cleaner chats, admin acts as the cleaner
+        return message.sender_type === 'cleaner' && message.sender_id === chat.cleaner_id;
+      }
       return message.sender_type === 'admin';
     }
     if (cleanerId) return message.sender_type === 'cleaner' && message.sender_id === cleanerId;
@@ -111,9 +118,7 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
               <div
                 className={`max-w-[70%] rounded-lg px-3 py-2 ${
                   isOwnMessage(message)
-                    ? message.sender_type === 'admin' 
-                      ? 'bg-orange-500 text-white' // Office messages in orange
-                      : 'bg-primary text-primary-foreground'
+                    ? 'bg-primary text-primary-foreground'
                     : 'bg-muted text-muted-foreground'
                 }`}
               >

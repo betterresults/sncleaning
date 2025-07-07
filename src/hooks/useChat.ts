@@ -127,9 +127,18 @@ export const useChat = (selectedCleanerId?: number, selectedCustomerId?: number)
       let senderType: 'customer' | 'cleaner' | 'admin';
 
       if (userRole === 'admin') {
-        // For admin, use a special ID (we'll use 0 or create a special admin record)
-        senderId = 999999; // Special admin sender ID
-        senderType = 'admin';
+        // Admin acts as the selected cleaner or customer, not as admin
+        if (effectiveCleanerId) {
+          senderId = effectiveCleanerId;
+          senderType = 'cleaner';
+        } else if (effectiveCustomerId) {
+          senderId = effectiveCustomerId;
+          senderType = 'customer';
+        } else {
+          // Fallback to admin if no specific user selected
+          senderId = 999999;
+          senderType = 'admin';
+        }
       } else if (effectiveCleanerId) {
         senderId = effectiveCleanerId;
         senderType = 'cleaner';
