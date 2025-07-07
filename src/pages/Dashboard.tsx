@@ -77,51 +77,83 @@ const Dashboard = () => {
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <AppSidebar />
-        <SidebarInset className="flex-1">
-          <header className="flex h-12 sm:h-16 shrink-0 items-center gap-2 border-b px-3 sm:px-4">
-            <SidebarTrigger className="-ml-1" />
-            <div className="flex-1" />
-            <div className="text-xs sm:text-sm text-gray-600">
-              Hello, {firstName}
+        <SidebarInset className="flex-1 flex flex-col min-w-0">
+          
+          {/* Mobile-First Header */}
+          <header className="flex h-14 shrink-0 items-center gap-3 border-b bg-white px-4 shadow-sm">
+            <SidebarTrigger className="lg:hidden" />
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg font-semibold text-gray-900 truncate">
+                Dashboard
+              </h1>
+            </div>
+            <div className="text-sm text-gray-600 font-medium">
+              {firstName}
             </div>
           </header>
           
-          <main className="flex-1 p-3 sm:p-4 lg:p-6 xl:p-8">
-            <div className="max-w-full space-y-6">
-              {/* Time Range Buttons - Mobile Responsive */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3">
-                {[
-                  { key: 'today' as const, label: 'Today', icon: '📅' },
-                  { key: '3days' as const, label: '3 Days', icon: '📊' },
-                  { key: '7days' as const, label: '7 Days', icon: '📈' },
-                  { key: '30days' as const, label: '30 Days', icon: '📋' }
-                ].map((range) => (
-                  <Button
-                    key={range.key}
-                    variant={selectedTimeRange === range.key ? "default" : "outline"}
-                    onClick={() => setSelectedTimeRange(range.key)}
-                    className={`
-                      w-full transition-all duration-200 font-medium py-2 px-2 text-xs sm:text-sm sm:py-3 sm:px-4
-                      ${selectedTimeRange === range.key 
-                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg' 
-                        : 'bg-white hover:bg-blue-50 text-gray-700 border-gray-200 hover:border-blue-300'
-                      }
-                    `}
-                  >
-                    <span className="mr-1 sm:mr-2">{range.icon}</span>
-                    <span className="hidden sm:inline">{range.label}</span>
-                    <span className="sm:hidden">{range.label.split(' ')[0]}</span>
-                  </Button>
-                ))}
+          {/* Mobile-First Main Content */}
+          <main className="flex-1 overflow-auto">
+            <div className="p-4 space-y-6 max-w-full">
+              
+              {/* Time Range Selector - Mobile Optimized */}
+              <div className="space-y-3">
+                <h2 className="text-base font-semibold text-gray-900">
+                  Filter by Time Period
+                </h2>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { key: 'today' as const, label: 'Today', icon: '📅', shortLabel: 'Today' },
+                    { key: '3days' as const, label: '3 Days', icon: '📊', shortLabel: '3D' },
+                    { key: '7days' as const, label: '7 Days', icon: '📈', shortLabel: '7D' },
+                    { key: '30days' as const, label: '30 Days', icon: '📋', shortLabel: '30D' }
+                  ].map((range) => (
+                    <Button
+                      key={range.key}
+                      variant={selectedTimeRange === range.key ? "default" : "outline"}
+                      onClick={() => setSelectedTimeRange(range.key)}
+                      className={`
+                        h-12 w-full text-sm font-medium transition-all
+                        ${selectedTimeRange === range.key 
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-md' 
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                        }
+                      `}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">{range.icon}</span>
+                        <span className="hidden sm:inline">{range.label}</span>
+                        <span className="sm:hidden">{range.shortLabel}</span>
+                      </div>
+                    </Button>
+                  ))}
+                </div>
               </div>
 
-              {/* Main Statistics - filtered by time range */}
-              <DashboardStats filters={dateRange} />
+              {/* Statistics Section - Mobile Optimized */}
+              <div className="space-y-3">
+                <h2 className="text-base font-semibold text-gray-900">
+                  Statistics
+                </h2>
+                <DashboardStats filters={dateRange} />
+              </div>
               
-              {/* Bookings List - with time range filter */}
-              <UpcomingBookings 
-                dashboardDateFilter={dateRange}
-              />
+              {/* Bookings Section - Mobile Optimized */}
+              <div className="space-y-3">
+                <h2 className="text-base font-semibold text-gray-900">
+                  Bookings Management
+                </h2>
+                
+                <Card className="border shadow-sm">
+                  <CardContent className="p-4">
+                    <UpcomingBookings 
+                      dashboardDateFilter={dateRange}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+              
             </div>
           </main>
         </SidebarInset>
