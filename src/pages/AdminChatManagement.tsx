@@ -27,6 +27,8 @@ const AdminChatManagement = () => {
     fetchChats
   } = useChat();
 
+  const [activeTab, setActiveTab] = useState('overview');
+
   const [chatStats, setChatStats] = useState({
     totalChats: 0,
     activeChats: 0,
@@ -34,6 +36,9 @@ const AdminChatManagement = () => {
     customerCleanerChats: 0,
     officeCleanerChats: 0
   });
+
+  const [recentMessages, setRecentMessages] = useState<any[]>([]);
+  const [selectedChatType, setSelectedChatType] = useState<string | null>(null);
 
   if (loading) {
     return (
@@ -80,9 +85,42 @@ const AdminChatManagement = () => {
     }
   };
 
-  useEffect(() => {
-    fetchChatStats();
-  }, [chats]);
+  const fetchRecentMessages = async () => {
+    try {
+      const { data: messages, error } = await supabase
+        .from('chat_messages')
+        .select(`
+          id,
+          message,
+          created_at,
+          sender_type,
+          sender_id,
+          chats!inner(
+            id,
+            chat_type,
+            customer:customers(first_name, last_name),
+            cleaner:cleaners(first_name, last_name)
+          )
+        `)
+        .eq('is_deleted', false)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      setRecentMessages(messages || []);
+    } catch (error) {
+      console.error('Error fetching recent messages:', error);
+    }
+  };
+
+  const handleCardClick = (chatType: string) => {
+    setSelectedChatType(chatType);
+    setActiveTab('management');
+  };
+
+  const filteredChats = selectedChatType 
+    ? chats.filter(chat => chat.chat_type === selectedChatType)
+    : chats;
 
   const getChatTypeDisplay = (chatType: string) => {
     switch (chatType) {
@@ -92,6 +130,11 @@ const AdminChatManagement = () => {
       default: return chatType;
     }
   };
+
+  useEffect(() => {
+    fetchChatStats();
+    fetchRecentMessages();
+  }, [chats]);
 
   return (
     <SidebarProvider>
@@ -107,7 +150,7 @@ const AdminChatManagement = () => {
           </header>
           
           <main className="flex-1 p-4">
-            <Tabs defaultValue="overview" className="space-y-4">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
               <TabsList>
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="conversations">Live Conversations</TabsTrigger>
@@ -116,50 +159,70 @@ const AdminChatManagement = () => {
 
               <TabsContent value="overview" className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                  <Card>
+                  <Card 
+                    className="cursor-pointer hover:bg-accent/50 transition-colors" 
+                    onClick={() => handleCardClick('all')}
+                  >
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Total Chats</CardTitle>
                       <MessageSquare className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">{chatStats.totalChats}</div>
+                      <p className="text-xs text-muted-foreground">Click to view all</p>
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  <Card 
+                    className="cursor-pointer hover:bg-accent/50 transition-colors" 
+                    onClick={() => handleCardClick('active')}
+                  >
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Active Chats</CardTitle>
                       <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">{chatStats.activeChats}</div>
+                      <p className="text-xs text-muted-foreground">Click to view active</p>
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  <Card 
+                    className="cursor-pointer hover:bg-accent/50 transition-colors" 
+                    onClick={() => handleCardClick('customer_office')}
+                  >
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Customer ↔ Office</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">{chatStats.customerOfficeChats}</div>
+                      <p className="text-xs text-muted-foreground">Click to view</p>
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  <Card 
+                    className="cursor-pointer hover:bg-accent/50 transition-colors" 
+                    onClick={() => handleCardClick('customer_cleaner')}
+                  >
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Customer ↔ Cleaner</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">{chatStats.customerCleanerChats}</div>
+                      <p className="text-xs text-muted-foreground">Click to view</p>
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  <Card 
+                    className="cursor-pointer hover:bg-accent/50 transition-colors" 
+                    onClick={() => handleCardClick('office_cleaner')}
+                  >
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Office ↔ Cleaner</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">{chatStats.officeCleanerChats}</div>
+                      <p className="text-xs text-muted-foreground">Click to view</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -170,27 +233,47 @@ const AdminChatManagement = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {chats.slice(0, 5).map((chat) => (
-                        <div key={chat.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      {recentMessages.slice(0, 5).map((msg) => (
+                        <div 
+                          key={msg.id} 
+                          className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors"
+                          onClick={() => {
+                            // Find the chat for this message and select it
+                            const chat = chats.find(c => c.id === msg.chats.id);
+                            if (chat) {
+                              handleSelectChat(chat);
+                              setActiveTab('conversations');
+                            }
+                          }}
+                        >
                           <div className="flex items-center space-x-3">
                             <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
                               <MessageSquare className="h-4 w-4 text-primary" />
                             </div>
-                            <div>
-                              <p className="font-medium">
-                                {chat.customer?.first_name} {chat.customer?.last_name}
-                                {chat.cleaner && ` ↔ ${chat.cleaner.first_name} ${chat.cleaner.last_name}`}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">
+                                {msg.chats.customer?.first_name} {msg.chats.customer?.last_name}
+                                {msg.chats.cleaner && ` ↔ ${msg.chats.cleaner.first_name} ${msg.chats.cleaner.last_name}`}
                               </p>
-                              <p className="text-sm text-muted-foreground">
-                                {getChatTypeDisplay(chat.chat_type)}
+                              <p className="text-sm text-muted-foreground truncate">
+                                <span className="font-medium">
+                                  {msg.sender_type === 'customer' ? 'Customer' : 
+                                   msg.sender_type === 'cleaner' ? 'Cleaner' : 'Office'}:
+                                </span> {msg.message}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(msg.created_at).toLocaleString()}
                               </p>
                             </div>
                           </div>
-                          <Badge variant={chat.is_active ? "default" : "secondary"}>
-                            {chat.is_active ? "Active" : "Inactive"}
+                          <Badge variant="outline">
+                            {getChatTypeDisplay(msg.chats.chat_type)}
                           </Badge>
                         </div>
                       ))}
+                      {recentMessages.length === 0 && (
+                        <p className="text-muted-foreground text-center py-4">No recent messages</p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -257,12 +340,27 @@ const AdminChatManagement = () => {
                 </Card>
 
                 <Card>
-                  <CardHeader>
-                    <CardTitle>All Conversations</CardTitle>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>
+                      {selectedChatType === 'all' ? 'All Conversations' :
+                       selectedChatType === 'active' ? 'Active Conversations' :
+                       selectedChatType === 'customer_office' ? 'Customer ↔ Office Conversations' :
+                       selectedChatType === 'customer_cleaner' ? 'Customer ↔ Cleaner Conversations' :
+                       selectedChatType === 'office_cleaner' ? 'Office ↔ Cleaner Conversations' :
+                       'All Conversations'} 
+                    </CardTitle>
+                    {selectedChatType && (
+                      <Button variant="outline" size="sm" onClick={() => setSelectedChatType(null)}>
+                        Clear Filter
+                      </Button>
+                    )}
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      {chats.map((chat) => (
+                      {(selectedChatType === 'active' ? 
+                        filteredChats.filter(chat => chat.is_active) : 
+                        filteredChats
+                      ).map((chat) => (
                         <div key={chat.id} className="flex items-center justify-between p-3 border rounded-lg">
                           <div className="flex items-center space-x-3">
                             <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
