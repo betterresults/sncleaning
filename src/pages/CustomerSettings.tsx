@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CreditCard } from 'lucide-react';
 import PersonalInfoEditor from '@/components/customer/PersonalInfoEditor';
 import AddressManager from '@/components/customer/AddressManager';
+import PaymentMethodManager from '@/components/customer/PaymentMethodManager';
 
 const CustomerSettings = () => {
   return (
@@ -26,22 +27,8 @@ const CustomerSettings = () => {
               {/* Addresses */}
               <AddressManager />
 
-              {/* Payment Details */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5" />
-                    Payment Details
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8 text-muted-foreground">
-                    <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Payment methods and billing</p>
-                    <p className="text-sm">Add, edit, or remove payment methods</p>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Payment Methods */}
+              <PaymentMethodManager />
             </div>
           </div>
         </main>
