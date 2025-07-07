@@ -181,29 +181,6 @@ const CleanerUpcomingBookings = () => {
     }
   };
 
-  const handleMarkAsCompleted = async (bookingId: number) => {
-    if (!effectiveCleanerId) {
-      console.error('No cleaner ID available');
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('bookings')
-        .update({ booking_status: 'Completed' })
-        .eq('id', bookingId)
-        .eq('cleaner', effectiveCleanerId);
-
-      if (error) {
-        console.error('Error marking booking as completed:', error);
-        return;
-      }
-
-      fetchData();
-    } catch (error) {
-      console.error('Error marking booking as completed:', error);
-    }
-  };
 
   const handleItemsPerPageChange = (value: number) => {
     setItemsPerPage(value);
@@ -283,7 +260,6 @@ const CleanerUpcomingBookings = () => {
         bookings={paginatedBookings}
         title="Upcoming Bookings"
         type="upcoming"
-        onMarkCompleted={handleMarkAsCompleted}
         onDropService={handleDropOff}
       />
 

@@ -9,7 +9,6 @@ interface CleanerBookingCardProps {
   type: 'upcoming' | 'past' | 'available';
   onViewDetails: (booking: Booking) => void;
   onUploadPhotos?: (booking: Booking) => void;
-  onMarkCompleted?: (booking: Booking) => void;
   onDropService?: (booking: Booking) => void;
   onAcceptBooking?: (booking: Booking) => void;
 }
@@ -19,7 +18,6 @@ const CleanerBookingCard = ({
   type,
   onViewDetails,
   onUploadPhotos,
-  onMarkCompleted,
   onDropService,
   onAcceptBooking
 }: CleanerBookingCardProps) => {
@@ -116,27 +114,16 @@ const CleanerBookingCard = ({
           {type === 'upcoming' && (
             <>
               {isToday() ? (
-                // Today's booking - Show Upload Photos and Mark Complete
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onUploadPhotos?.(booking)}
-                    className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/30"
-                  >
-                    <Upload className="h-4 w-4" />
-                    <span className="ml-1 hidden sm:inline">Photos</span>
-                  </Button>
-                  
-                  <Button
-                    size="sm"
-                    onClick={() => onMarkCompleted?.(booking)}
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    <CheckCircle className="h-4 w-4" />
-                    <span className="ml-1 hidden sm:inline">Complete</span>
-                  </Button>
-                </>
+                // Today's booking - Show Upload Photos only
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onUploadPhotos?.(booking)}
+                  className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/30"
+                >
+                  <Upload className="h-4 w-4" />
+                  <span className="ml-1 hidden sm:inline">Photos</span>
+                </Button>
               ) : (
                 // Future booking - Show Drop Service
                 <AlertDialog>

@@ -10,12 +10,11 @@ interface BookingsTableProps {
   bookings: Booking[];
   title: string;
   type: 'upcoming' | 'available' | 'past';
-  onMarkCompleted?: (bookingId: number) => void;
   onAcceptBooking?: (bookingId: number) => void;
   onDropService?: (bookingId: number) => void;
 }
 
-const BookingsTable = ({ bookings, title, type, onMarkCompleted, onAcceptBooking, onDropService }: BookingsTableProps) => {
+const BookingsTable = ({ bookings, title, type, onAcceptBooking, onDropService }: BookingsTableProps) => {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -30,11 +29,6 @@ const BookingsTable = ({ bookings, title, type, onMarkCompleted, onAcceptBooking
     setUploadDialogOpen(true);
   };
 
-  const handleMarkCompleted = (booking: Booking) => {
-    if (onMarkCompleted) {
-      onMarkCompleted(booking.id);
-    }
-  };
 
   const handleDropService = (booking: Booking) => {
     if (onDropService) {
@@ -74,7 +68,6 @@ const BookingsTable = ({ bookings, title, type, onMarkCompleted, onAcceptBooking
             type={type}
             onViewDetails={handleViewBooking}
             onUploadPhotos={handleUploadPhotos}
-            onMarkCompleted={handleMarkCompleted}
             onDropService={handleDropService}
             onAcceptBooking={handleAcceptBooking}
           />
