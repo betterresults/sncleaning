@@ -146,8 +146,8 @@ export const useChat = (selectedCleanerId?: number) => {
 
       if (error) throw error;
 
-      // Refresh messages
-      await fetchMessages(chatId);
+      // Refresh messages and chats
+      await Promise.all([fetchMessages(chatId), fetchChats()]);
 
     } catch (error) {
       console.error('Error sending message:', error);
@@ -205,7 +205,12 @@ export const useChat = (selectedCleanerId?: number) => {
           if (payload.eventType === 'INSERT') {
             const newMessage = payload.new as ChatMessage;
             if (activeChat && newMessage.chat_id === activeChat.id) {
-              setMessages(prev => [...prev, newMessage]);
+              // Check if message already exists to prevent duplicates
+              setMessages(prev => {
+                const exists = prev.some(msg => msg.id === newMessage.id);
+                if (exists) return prev;
+                return [...prev, newMessage];
+              });
             }
             fetchChats(); // Refresh chat list
           }
