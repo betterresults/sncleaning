@@ -40,11 +40,14 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
       return userRole === 'admin' ? `${chat.customer?.first_name} ${chat.customer?.last_name}` : 'SN Cleaning Office';
     } else if (chat.chat_type === 'customer_cleaner') {
       if (userRole === 'admin') {
-        return `${chat.customer?.first_name} ${chat.customer?.last_name} ↔ ${chat.cleaner?.first_name} ${chat.cleaner?.last_name}`;
+        const title = `${chat.customer?.first_name} ${chat.customer?.last_name} ↔ ${chat.cleaner?.first_name} ${chat.cleaner?.last_name}`;
+        return chat.booking ? `${title} - ${chat.booking.service_type}` : title;
       } else if (customerId) {
-        return `${chat.cleaner?.first_name} ${chat.cleaner?.last_name}`;
+        const title = `${chat.cleaner?.first_name} ${chat.cleaner?.last_name}`;
+        return chat.booking ? `${title} - ${chat.booking.service_type}` : title;
       } else {
-        return `${chat.customer?.first_name} ${chat.customer?.last_name}`;
+        const title = `${chat.customer?.first_name} ${chat.customer?.last_name}`;
+        return chat.booking ? `${title} - ${chat.booking.service_type}` : title;
       }
     } else if (chat.chat_type === 'office_cleaner') {
       return userRole === 'admin' ? `${chat.cleaner?.first_name} ${chat.cleaner?.last_name}` : 'SN Cleaning Office';
@@ -78,11 +81,16 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
           </div>
           <div>
             <h3 className="font-semibold text-foreground">{getChatTitle()}</h3>
-            {chat.booking && (
-              <p className="text-sm text-muted-foreground">
-                Booking: {chat.booking.service_type} - {new Date(chat.booking.date_time).toLocaleDateString()}
-              </p>
-            )}
+            <div className="text-sm text-muted-foreground space-y-1">
+              {chat.booking && (
+                <p>
+                  Booking: {new Date(chat.booking.date_time).toLocaleDateString()} at {chat.booking.address}
+                </p>
+              )}
+              {!chat.booking && chat.chat_type !== 'office_cleaner' && chat.chat_type !== 'customer_office' && (
+                <p>General conversation</p>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex items-center space-x-2">

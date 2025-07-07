@@ -46,30 +46,39 @@ const CleanerMessages = () => {
     // Admin needs to select a cleaner first
   }
 
-  const handleSelectContact = async (contact: any) => {
-    if (contact.chat) {
-      setActiveChat(contact.chat);
-      await fetchMessages(contact.chat.id);
+  const handleSelectContact = async (contact: any, booking?: any) => {
+    const chatToSelect = booking?.chat || contact.chat;
+    if (chatToSelect) {
+      setActiveChat(chatToSelect);
+      await fetchMessages(chatToSelect.id);
     }
   };
 
-  const handleCreateChat = async (contact: any) => {
+  const handleCreateChat = async (contact: any, booking?: any) => {
     if (!effectiveCleanerId) return;
 
     let chatType: ChatType;
     let customerId: number | undefined;
     let cleanerId: number | undefined;
+    let bookingId: number | undefined;
 
     if (contact.type === 'office') {
       chatType = 'office_cleaner';
       cleanerId = effectiveCleanerId;
+    } else if (booking) {
+      // Booking-specific chat
+      chatType = 'customer_cleaner';
+      customerId = contact.customer_id;
+      cleanerId = effectiveCleanerId;
+      bookingId = booking.bookingId;
     } else {
+      // General customer chat (fallback)
       chatType = 'customer_cleaner';
       customerId = contact.customer_id;
       cleanerId = effectiveCleanerId;
     }
 
-    const newChat = await createChat(chatType, customerId, cleanerId, contact.booking_id);
+    const newChat = await createChat(chatType, customerId, cleanerId, bookingId);
     if (newChat) {
       setActiveChat(newChat);
       await fetchMessages(newChat.id);
