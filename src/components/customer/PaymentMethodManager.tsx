@@ -35,34 +35,50 @@ const PaymentSetupForm = ({ clientSecret, onSuccess, onCancel }: {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    console.log('Form submitted, checking stripe and elements...');
 
     if (!stripe || !elements) {
+      console.log('Stripe or elements not ready:', { stripe: !!stripe, elements: !!elements });
       return;
     }
 
+    console.log('Starting payment setup...');
     setIsProcessing(true);
 
-    const { error } = await stripe.confirmSetup({
-      elements,
-      clientSecret,
-      confirmParams: {
-        return_url: `${window.location.origin}/customer-settings?payment_setup=success`,
-      },
-      redirect: 'if_required',
-    });
+    try {
+      const { error } = await stripe.confirmSetup({
+        elements,
+        clientSecret,
+        confirmParams: {
+          return_url: `${window.location.origin}/customer-settings?payment_setup=success`,
+        },
+        redirect: 'if_required',
+      });
 
-    if (error) {
+      console.log('Stripe confirmSetup result:', { error });
+
+      if (error) {
+        console.error('Stripe error:', error);
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        console.log('Payment setup successful!');
+        toast({
+          title: "Success",
+          description: "Payment method added successfully",
+        });
+        onSuccess();
+      }
+    } catch (err) {
+      console.error('Exception during confirmSetup:', err);
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Error", 
+        description: "An unexpected error occurred",
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Success",
-        description: "Payment method added successfully",
-      });
-      onSuccess();
     }
 
     setIsProcessing(false);
