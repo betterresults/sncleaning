@@ -132,7 +132,7 @@ const ViewBookingDialog: React.FC<ViewBookingDialogProps> = ({
                     <Home className="h-3 w-3 text-gray-400 mt-0.5" />
                     <div>
                       <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${booking.address}, ${booking.postcode}`)}`}
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(booking.postcode)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"

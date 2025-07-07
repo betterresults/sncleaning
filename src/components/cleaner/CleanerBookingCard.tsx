@@ -71,10 +71,12 @@ const CleanerBookingCard = ({
               hour12: true 
             })}</span>
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Clock className="h-4 w-4 text-orange-500" />
-            <span className="font-medium">{booking.total_hours || booking.hours_required || 0}h</span>
-          </div>
+          {(booking.total_hours || booking.hours_required) && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Clock className="h-4 w-4 text-orange-500" />
+              <span className="font-medium">{booking.total_hours || booking.hours_required}h</span>
+            </div>
+          )}
         </div>
         {booking.first_name && booking.last_name && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -89,7 +91,7 @@ const CleanerBookingCard = ({
         <div className="flex items-center gap-2 text-sm text-muted-foreground flex-1 min-w-0">
           <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
           <a
-            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${booking.address}, ${booking.postcode}`)}`}
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(booking.postcode)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="truncate text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"

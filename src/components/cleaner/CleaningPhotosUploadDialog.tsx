@@ -27,14 +27,14 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   const [uploading, setUploading] = useState(false);
   const [beforeFiles, setBeforeFiles] = useState<File[]>([]);
   const [afterFiles, setAfterFiles] = useState<File[]>([]);
-  const [damageFiles, setDamageFiles] = useState<File[]>([]);
-  const [damageDetails, setDamageDetails] = useState('');
-  const [showDamageTab, setShowDamageTab] = useState(false);
+  const [additionalFiles, setAdditionalFiles] = useState<File[]>([]);
+  const [additionalDetails, setAdditionalDetails] = useState('');
+  const [showAdditionalTab, setShowAdditionalTab] = useState(false);
 
   const bookingDate = new Date(booking.date_time).toISOString().split('T')[0];
   const folderPath = `${booking.postcode}_${bookingDate}_${booking.customer}`;
 
-  const handleFileSelect = (files: FileList | null, type: 'before' | 'after' | 'damage') => {
+  const handleFileSelect = (files: FileList | null, type: 'before' | 'after' | 'additional') => {
     if (!files) return;
     
     const fileArray = Array.from(files).filter(file => 
@@ -56,13 +56,13 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       case 'after':
         setAfterFiles(prev => [...prev, ...fileArray]);
         break;
-      case 'damage':
-        setDamageFiles(prev => [...prev, ...fileArray]);
+      case 'additional':
+        setAdditionalFiles(prev => [...prev, ...fileArray]);
         break;
     }
   };
 
-  const removeFile = (index: number, type: 'before' | 'after' | 'damage') => {
+  const removeFile = (index: number, type: 'before' | 'after' | 'additional') => {
     switch (type) {
       case 'before':
         setBeforeFiles(prev => prev.filter((_, i) => i !== index));
@@ -70,13 +70,13 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       case 'after':
         setAfterFiles(prev => prev.filter((_, i) => i !== index));
         break;
-      case 'damage':
-        setDamageFiles(prev => prev.filter((_, i) => i !== index));
+      case 'additional':
+        setAdditionalFiles(prev => prev.filter((_, i) => i !== index));
         break;
     }
   };
 
-  const uploadFiles = async (files: File[], photoType: 'before' | 'after' | 'damage') => {
+  const uploadFiles = async (files: File[], photoType: 'before' | 'after' | 'additional') => {
     const uploadPromises = files.map(async (file, index) => {
       const timestamp = Date.now();
       const fileName = `${timestamp}_${index}_${file.name}`;
@@ -102,7 +102,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
             photo_type: photoType,
             postcode: booking.postcode,
             booking_date: bookingDate,
-            damage_details: photoType === 'damage' ? damageDetails : null
+            damage_details: photoType === 'additional' ? additionalDetails : null
           });
         dbError = error;
       } catch (error) {
@@ -122,7 +122,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   };
 
   const handleUpload = async () => {
-    if (!beforeFiles.length && !afterFiles.length && !damageFiles.length) {
+    if (!beforeFiles.length && !afterFiles.length && !additionalFiles.length) {
       toast({
         title: 'No Files Selected',
         description: 'Please select at least one photo to upload.',
@@ -144,32 +144,32 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
         uploadPromises.push(uploadFiles(afterFiles, 'after'));
       }
 
-      if (damageFiles.length > 0) {
-        if (!damageDetails.trim()) {
+      if (additionalFiles.length > 0) {
+        if (!additionalDetails.trim()) {
           toast({
-            title: 'Damage Details Required',
-            description: 'Please provide details about the damage.',
+            title: 'Additional Details Required',
+            description: 'Please provide details about the additional information.',
             variant: 'destructive'
           });
           setUploading(false);
           return;
         }
-        uploadPromises.push(uploadFiles(damageFiles, 'damage'));
+        uploadPromises.push(uploadFiles(additionalFiles, 'additional'));
       }
 
       await Promise.all(uploadPromises);
 
       toast({
         title: 'Photos Uploaded Successfully',
-        description: `Uploaded ${beforeFiles.length + afterFiles.length + damageFiles.length} photos.`
+        description: `Uploaded ${beforeFiles.length + afterFiles.length + additionalFiles.length} photos.`
       });
 
       // Reset form
       setBeforeFiles([]);
       setAfterFiles([]);
-      setDamageFiles([]);
-      setDamageDetails('');
-      setShowDamageTab(false);
+      setAdditionalFiles([]);
+      setAdditionalDetails('');
+      setShowAdditionalTab(false);
       onOpenChange(false);
 
     } catch (error) {
@@ -185,7 +185,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   };
 
   const FileUploadArea = ({ type, files, onFileSelect, onRemove }: {
-    type: 'before' | 'after' | 'damage';
+    type: 'before' | 'after' | 'additional';
     files: File[];
     onFileSelect: (files: FileList | null) => void;
     onRemove: (index: number) => void;
@@ -251,11 +251,11 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
             <TabsTrigger value="before">Before Photos</TabsTrigger>
             <TabsTrigger value="after">After Photos</TabsTrigger>
             <TabsTrigger 
-              value="damage" 
-              className={showDamageTab ? "text-orange-600" : ""}
+              value="additional" 
+              className={showAdditionalTab ? "text-orange-600" : ""}
             >
               <AlertTriangle className="h-4 w-4 mr-1" />
-              Damage Report
+              Additional Info
             </TabsTrigger>
           </TabsList>
 
@@ -277,57 +277,57 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
             />
           </TabsContent>
 
-          <TabsContent value="damage" className="space-y-4">
+          <TabsContent value="additional" className="space-y-4">
             <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <AlertTriangle className="h-4 w-4 text-orange-600" />
-                <h4 className="font-medium text-orange-800">Damage Report</h4>
+                <h4 className="font-medium text-orange-800">Additional Information</h4>
               </div>
               <p className="text-sm text-orange-700">
-                Use this section only if you need to report any damages or issues found during cleaning.
+                Use this section to report damage, missing items, or any other additional information.
               </p>
             </div>
 
-            {!showDamageTab ? (
+            {!showAdditionalTab ? (
               <Button
                 variant="outline"
-                onClick={() => setShowDamageTab(true)}
+                onClick={() => setShowAdditionalTab(true)}
                 className="w-full border-orange-200 text-orange-600 hover:bg-orange-50"
               >
                 <AlertTriangle className="h-4 w-4 mr-2" />
-                Report Damage or Issues
+                Add Additional Information
               </Button>
             ) : (
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="damage-details">Damage Details *</Label>
+                  <Label htmlFor="additional-details">Additional Details *</Label>
                   <Textarea
-                    id="damage-details"
-                    placeholder="Describe the damage or issue in detail..."
-                    value={damageDetails}
-                    onChange={(e) => setDamageDetails(e.target.value)}
+                    id="additional-details"
+                    placeholder="Describe any damage, missing items, or other important information..."
+                    value={additionalDetails}
+                    onChange={(e) => setAdditionalDetails(e.target.value)}
                     className="mt-1"
                     rows={3}
                   />
                 </div>
 
                 <FileUploadArea
-                  type="damage"
-                  files={damageFiles}
-                  onFileSelect={(files) => handleFileSelect(files, 'damage')}
-                  onRemove={(index) => removeFile(index, 'damage')}
+                  type="additional"
+                  files={additionalFiles}
+                  onFileSelect={(files) => handleFileSelect(files, 'additional')}
+                  onRemove={(index) => removeFile(index, 'additional')}
                 />
 
                 <Button
                   variant="ghost"
                   onClick={() => {
-                    setShowDamageTab(false);
-                    setDamageFiles([]);
-                    setDamageDetails('');
+                    setShowAdditionalTab(false);
+                    setAdditionalFiles([]);
+                    setAdditionalDetails('');
                   }}
                   className="text-gray-500 hover:text-gray-700"
                 >
-                  Cancel Damage Report
+                  Cancel Additional Info
                 </Button>
               </div>
             )}
