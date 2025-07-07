@@ -333,7 +333,8 @@ const CustomerUpcomingBookings = () => {
                               ? 'bg-gradient-to-r from-orange-100 to-red-100 text-orange-800 hover:from-orange-200 hover:to-red-200 border border-orange-200 dark:from-orange-900/40 dark:to-red-900/40 dark:text-orange-300 dark:border-orange-700'
                               : 'bg-primary/10 text-primary hover:bg-primary/20'
                           }`}
-                          title={`${booking.service_type}${booking.same_day ? ' (Same Day)' : ''} - ${booking.address} - ${new Date(booking.date_time).toLocaleTimeString('en-GB', { 
+                          onClick={() => handleEditBooking(booking)}
+                          title={`Click to edit: ${booking.service_type}${booking.same_day ? ' (Same Day)' : ''} - ${booking.address} - ${new Date(booking.date_time).toLocaleTimeString('en-GB', { 
                             hour: 'numeric', 
                             minute: '2-digit',
                             hour12: true 

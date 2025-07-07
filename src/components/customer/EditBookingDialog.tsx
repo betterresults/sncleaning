@@ -250,10 +250,10 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
               onCheckedChange={(checked) => setIsSameDay(checked as boolean)}
             />
             <Label htmlFor="same-day" className="text-sm font-medium">
-              Same Day Booking
+              Same day check in/check out cleaning
             </Label>
             <span className="text-xs text-muted-foreground ml-2">
-              (Check if this is a same-day cleaning service)
+              (Check if this is same-day service)
             </span>
           </div>
 
