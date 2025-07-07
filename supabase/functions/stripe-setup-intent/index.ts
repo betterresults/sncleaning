@@ -66,7 +66,7 @@ serve(async (req) => {
       .select('stripe_customer_id')
       .eq('customer_id', targetCustomerId)
       .limit(1)
-      .single()
+      .maybeSingle()
 
     if (existingPaymentMethod) {
       stripeCustomerId = existingPaymentMethod.stripe_customer_id
