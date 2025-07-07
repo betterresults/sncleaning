@@ -277,6 +277,66 @@ export type Database = {
           },
         ]
       }
+      cleaner_tracking: {
+        Row: {
+          booking_id: number
+          check_in_location: string | null
+          check_in_time: string | null
+          check_out_location: string | null
+          check_out_time: string | null
+          cleaner_id: number
+          created_at: string
+          id: string
+          is_auto_checked_in: boolean | null
+          is_auto_checked_out: boolean | null
+          updated_at: string
+          work_duration: unknown | null
+        }
+        Insert: {
+          booking_id: number
+          check_in_location?: string | null
+          check_in_time?: string | null
+          check_out_location?: string | null
+          check_out_time?: string | null
+          cleaner_id: number
+          created_at?: string
+          id?: string
+          is_auto_checked_in?: boolean | null
+          is_auto_checked_out?: boolean | null
+          updated_at?: string
+          work_duration?: unknown | null
+        }
+        Update: {
+          booking_id?: number
+          check_in_location?: string | null
+          check_in_time?: string | null
+          check_out_location?: string | null
+          check_out_time?: string | null
+          cleaner_id?: number
+          created_at?: string
+          id?: string
+          is_auto_checked_in?: boolean | null
+          is_auto_checked_out?: boolean | null
+          updated_at?: string
+          work_duration?: unknown | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaner_tracking_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cleaner_tracking_cleaner_id_fkey"
+            columns: ["cleaner_id"]
+            isOneToOne: false
+            referencedRelation: "cleaners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cleaners: {
         Row: {
           address: string | null
