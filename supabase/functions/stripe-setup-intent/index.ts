@@ -57,6 +57,7 @@ serve(async (req) => {
     if (!stripeKey) {
       throw new Error('Stripe secret key not configured')
     }
+
     let stripeCustomerId = null;
 
     // Check if one exists for this customer
@@ -81,25 +82,24 @@ serve(async (req) => {
         throw new Error('Customer not found')
       }
 
-        const stripeCustomerResponse = await fetch('https://api.stripe.com/v1/customers', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${stripeKey}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams({
-            email: customer.email || '',
-            name: `${customer.first_name || ''} ${customer.last_name || ''}`.trim(),
-          }),
-        })
+      const stripeCustomerResponse = await fetch('https://api.stripe.com/v1/customers', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${stripeKey}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          email: customer.email || '',
+          name: `${customer.first_name || ''} ${customer.last_name || ''}`.trim(),
+        }),
+      })
 
-        const stripeCustomer = await stripeCustomerResponse.json()
-        if (!stripeCustomerResponse.ok) {
-          throw new Error(`Stripe error: ${stripeCustomer.error?.message}`)
-        }
-
-        stripeCustomerId = stripeCustomer.id
+      const stripeCustomer = await stripeCustomerResponse.json()
+      if (!stripeCustomerResponse.ok) {
+        throw new Error(`Stripe error: ${stripeCustomer.error?.message}`)
       }
+
+      stripeCustomerId = stripeCustomer.id
     }
 
     // Create Setup Intent
