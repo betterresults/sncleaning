@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdminCleaner } from '@/contexts/AdminCleanerContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,7 +37,8 @@ interface Filters {
 }
 
 const CleanerPastBookings = () => {
-  const { cleanerId, loading: authLoading } = useAuth();
+  const { cleanerId, userRole, loading: authLoading } = useAuth();
+  const { selectedCleanerId } = useAdminCleaner();
   const isMobile = useIsMobile();
   const [bookings, setBookings] = useState<PastBooking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<PastBooking[]>([]);
@@ -124,20 +126,23 @@ const CleanerPastBookings = () => {
   };
 
   const fetchPastBookings = async () => {
-    if (!cleanerId) {
-      setError('No cleaner ID found');
+    // For admin users, use selectedCleanerId, for regular cleaners use cleanerId
+    const currentCleanerId = userRole === 'admin' ? selectedCleanerId : cleanerId;
+    
+    if (!currentCleanerId) {
+      setError(userRole === 'admin' ? 'Please select a cleaner to view past bookings' : 'No cleaner ID found');
       setLoading(false);
       return;
     }
 
     try {
-      console.log('Fetching past bookings for cleaner ID:', cleanerId);
+      console.log('Fetching past bookings for cleaner ID:', currentCleanerId);
       
       // Only get past bookings that were assigned to this specific cleaner
       const { data, error } = await supabase
         .from('past_bookings')
         .select('*')
-        .eq('cleaner', cleanerId)
+        .eq('cleaner', currentCleanerId)
         .order('date_time', { ascending: false });
 
       if (error) {
@@ -157,10 +162,11 @@ const CleanerPastBookings = () => {
   };
 
   useEffect(() => {
-    if (!authLoading && cleanerId) {
+    const currentCleanerId = userRole === 'admin' ? selectedCleanerId : cleanerId;
+    if (!authLoading && currentCleanerId) {
       fetchPastBookings();
     }
-  }, [cleanerId, authLoading]);
+  }, [cleanerId, selectedCleanerId, userRole, authLoading]);
 
   useEffect(() => {
     applyFilters();
