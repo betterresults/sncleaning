@@ -365,7 +365,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             <div className="space-y-2">
               <Label htmlFor="dateFrom">Date From</Label>
               <Input
@@ -443,15 +443,15 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
         </CardContent>
       </Card>
 
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-4">
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
           <div className="flex items-center space-x-2">
-            <Label htmlFor="itemsPerPage">Show:</Label>
+            <Label htmlFor="itemsPerPage" className="text-sm whitespace-nowrap">Show:</Label>
             <Select value={itemsPerPage.toString()} onValueChange={(value) => {
               setItemsPerPage(parseInt(value));
               setCurrentPage(1);
             }}>
-              <SelectTrigger className="w-20">
+              <SelectTrigger className="w-16 sm:w-20">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -465,9 +465,9 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
           </div>
 
           <div className="flex items-center space-x-2">
-            <Label htmlFor="sortOrder">Sort:</Label>
+            <Label htmlFor="sortOrder" className="text-sm whitespace-nowrap">Sort:</Label>
             <Select value={sortOrder} onValueChange={(value: 'asc' | 'desc') => setSortOrder(value)}>
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-28 sm:w-32">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -479,22 +479,25 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
 
           <Button 
             onClick={() => setBulkEditOpen(true)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm"
+            size="sm"
           >
             <Settings className="h-4 w-4" />
-            Bulk Edit
+            <span className="hidden sm:inline">Bulk Edit</span>
+            <span className="sm:hidden">Edit</span>
           </Button>
         </div>
 
-        <div className="text-sm text-gray-600">
-          Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredBookings.length)} of {filteredBookings.length} bookings
+        <div className="text-xs sm:text-sm text-gray-600 text-center lg:text-right">
+          Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredBookings.length)} of {filteredBookings.length}
         </div>
       </div>
 
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
+          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300">
+            <Table className="min-w-full"
+            >
               <TableHeader>
                 <TableRow>
                   <TableHead>Date & Time</TableHead>

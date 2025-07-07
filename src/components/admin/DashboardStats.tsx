@@ -95,13 +95,13 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
           {[1, 2, 3].map((i) => (
             <Card key={i} className="shadow-lg border-0 bg-gradient-to-br from-gray-50 to-gray-100">
-              <CardContent className="p-6">
+              <CardContent className="p-4 lg:p-6">
                 <div className="animate-pulse">
-                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-3"></div>
-                  <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-3 lg:h-4 bg-gray-200 rounded w-1/2 mb-2 lg:mb-3"></div>
+                  <div className="h-6 lg:h-8 bg-gray-200 rounded w-3/4"></div>
                 </div>
               </CardContent>
             </Card>
@@ -116,50 +116,50 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
   
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
         <Card className="shadow-xl border-0 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 text-white hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium opacity-90">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 lg:pb-3">
+            <CardTitle className="text-xs sm:text-sm font-medium opacity-90">
               Bookings
             </CardTitle>
-            <div className="p-2 bg-white/20 rounded-lg">
-              <Calendar className="h-5 w-5" />
+            <div className="p-1.5 lg:p-2 bg-white/20 rounded-lg">
+              <Calendar className="h-4 w-4 lg:h-5 lg:w-5" />
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
+          <CardContent className="pb-4 lg:pb-6">
+            <div className="text-2xl sm:text-3xl font-bold">
               {stats.upcomingBookings}
             </div>
           </CardContent>
         </Card>
 
         <Card className="shadow-xl border-0 bg-gradient-to-br from-emerald-500 via-green-600 to-teal-700 text-white hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium opacity-90">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 lg:pb-3">
+            <CardTitle className="text-xs sm:text-sm font-medium opacity-90">
               Revenue
             </CardTitle>
-            <div className="p-2 bg-white/20 rounded-lg">
-              <DollarSign className="h-5 w-5" />
+            <div className="p-1.5 lg:p-2 bg-white/20 rounded-lg">
+              <DollarSign className="h-4 w-4 lg:h-5 lg:w-5" />
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
+          <CardContent className="pb-4 lg:pb-6">
+            <div className="text-xl sm:text-2xl lg:text-3xl font-bold">
               £{(stats.expectedRevenue || 0).toFixed(2)}
             </div>
           </CardContent>
         </Card>
 
         <Card className="shadow-xl border-0 bg-gradient-to-br from-yellow-500 via-amber-600 to-orange-700 text-white hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium opacity-90">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 lg:pb-3">
+            <CardTitle className="text-xs sm:text-sm font-medium opacity-90">
               Profit
             </CardTitle>
-            <div className="p-2 bg-white/20 rounded-lg">
-              <Banknote className="h-5 w-5" />
+            <div className="p-1.5 lg:p-2 bg-white/20 rounded-lg">
+              <Banknote className="h-4 w-4 lg:h-5 lg:w-5" />
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
+          <CardContent className="pb-4 lg:pb-6">
+            <div className="text-xl sm:text-2xl lg:text-3xl font-bold">
               £{(stats.totalProfit || 0).toFixed(2)}
             </div>
           </CardContent>

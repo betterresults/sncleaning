@@ -45,24 +45,26 @@ const Users = () => {
             <SidebarTrigger className="-ml-1" />
             <div className="flex-1" />
             
-            {/* Top Level Create Buttons */}
-            <div className="flex gap-3 z-50">
+            {/* Top Level Create Buttons - Mobile Responsive */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 z-50">
               <button
                 onClick={() => setShowCreateUserForm(!showCreateUserForm)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer bg-blue-900 hover:bg-blue-800 text-white shadow-lg hover:shadow-xl hover:scale-105"
+                className="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200 cursor-pointer bg-blue-900 hover:bg-blue-800 text-white shadow-lg hover:shadow-xl hover:scale-105"
                 type="button"
               >
                 <UserPlus className="h-4 w-4" />
-                {showCreateUserForm ? 'Cancel User' : 'Create User'}
+                <span className="hidden sm:inline">{showCreateUserForm ? 'Cancel User' : 'Create User'}</span>
+                <span className="sm:hidden">{showCreateUserForm ? 'Cancel' : 'User'}</span>
               </button>
               
               <button
                 onClick={() => setShowCreateCustomerForm(!showCreateCustomerForm)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer bg-blue-900 hover:bg-blue-800 text-white shadow-lg hover:shadow-xl hover:scale-105"
+                className="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200 cursor-pointer bg-blue-900 hover:bg-blue-800 text-white shadow-lg hover:shadow-xl hover:scale-105"
                 type="button"
               >
                 <UserPlus className="h-4 w-4" />
-                {showCreateCustomerForm ? 'Cancel Customer' : 'Create Customer'}
+                <span className="hidden sm:inline">{showCreateCustomerForm ? 'Cancel Customer' : 'Create Customer'}</span>
+                <span className="sm:hidden">{showCreateCustomerForm ? 'Cancel' : 'Customer'}</span>
               </button>
             </div>
           </header>
