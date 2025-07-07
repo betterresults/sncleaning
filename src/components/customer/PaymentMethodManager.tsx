@@ -46,6 +46,16 @@ const PaymentSetupForm = ({ clientSecret, onSuccess, onCancel }: {
     setIsProcessing(true);
 
     try {
+      // First submit the elements
+      console.log('Submitting elements...');
+      const { error: submitError } = await elements.submit();
+      
+      if (submitError) {
+        console.error('Elements submit error:', submitError);
+        throw submitError;
+      }
+
+      console.log('Elements submitted successfully, now confirming setup...');
       const { error } = await stripe.confirmSetup({
         elements,
         clientSecret,
