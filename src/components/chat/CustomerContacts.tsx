@@ -84,100 +84,73 @@ const CustomerContacts = ({
 
       if (error) throw error;
 
-      // Create office contact
-      const officeContact: Contact = {
-        id: 'office',
-        name: 'SN Cleaning Office',
-        type: 'office'
-      };
+      // Create individual booking contacts (show up to 5 recent bookings first)
+      const bookingContacts: Contact[] = [];
+      const processedBookings = new Set<number>();
 
-      // Group bookings by cleaner or create office bookings for unassigned ones
-      const cleanerBookingsMap = new Map();
-      const officeBookings: BookingContact[] = [];
+      // Sort bookings by date (most recent first) and process up to 5
+      const sortedBookings = (bookings || []).sort((a, b) => 
+        new Date(a.date_time).getTime() - new Date(b.date_time).getTime()
+      );
 
-      bookings?.forEach(booking => {
+      sortedBookings.slice(0, 5).forEach(booking => {
+        processedBookings.add(booking.id);
+        
+        // Determine chat type and find existing chat
+        let bookingChat;
+        let contactType: 'office' | 'cleaner' = 'office';
+        let contactName = 'SN Cleaning Office';
+        let cleanerId: number | undefined;
+
         if (booking.cleaner && booking.cleaners) {
-          // Booking has a cleaner
-          const cleanerId = booking.cleaner;
-          if (!cleanerBookingsMap.has(cleanerId)) {
-            cleanerBookingsMap.set(cleanerId, {
-              cleaner: booking.cleaners,
-              bookings: []
-            });
-          }
-          cleanerBookingsMap.get(cleanerId).bookings.push(booking);
+          // Has assigned cleaner
+          contactType = 'cleaner';
+          contactName = `${booking.cleaners.first_name} ${booking.cleaners.last_name}`;
+          cleanerId = booking.cleaner;
+          bookingChat = chats.find(chat => 
+            chat.chat_type === 'customer_cleaner' && 
+            chat.booking_id === booking.id
+          );
         } else {
-          // No cleaner assigned - office handles this
-          const bookingChat = chats.find(chat => 
+          // No cleaner assigned - office handles
+          bookingChat = chats.find(chat => 
             chat.chat_type === 'customer_office' && 
             chat.booking_id === booking.id
           );
-
-          officeBookings.push({
-            id: `booking-${booking.id}`,
-            bookingId: booking.id,
-            serviceType: booking.service_type || booking.cleaning_type || 'Cleaning',
-            dateTime: booking.date_time,
-            address: booking.address,
-            postcode: booking.postcode,
-            chat: bookingChat,
-            lastMessage: bookingChat?.last_message?.message,
-            lastMessageTime: bookingChat?.last_message_at,
-            unreadCount: bookingChat?.unread_count || 0
-          });
         }
-      });
 
-      // Add office bookings to office contact
-      if (officeBookings.length > 0) {
-        officeContact.bookings = officeBookings;
-        officeContact.isExpanded = false;
-      }
-
-      // Create cleaner contacts
-      const cleanerContacts = Array.from(cleanerBookingsMap.values()).map(({ cleaner, bookings: cleanerBookings }) => {
-        const bookingContacts: BookingContact[] = cleanerBookings.map((booking: any) => {
-          const bookingChat = chats.find(chat => 
-            chat.chat_type === 'customer_cleaner' && 
-            chat.cleaner_id === cleaner.id &&
-            chat.booking_id === booking.id
-          );
-
-          return {
+        bookingContacts.push({
+          id: `booking-${booking.id}`,
+          name: `${booking.service_type || booking.cleaning_type || 'Cleaning'} - ${new Date(booking.date_time).toLocaleDateString()}`,
+          type: contactType,
+          cleaner_id: cleanerId,
+          bookings: [{
             id: `booking-${booking.id}`,
             bookingId: booking.id,
             serviceType: booking.service_type || booking.cleaning_type || 'Cleaning',
             dateTime: booking.date_time,
             address: booking.address,
             postcode: booking.postcode,
-            cleanerId: cleaner.id,
-            cleanerName: `${cleaner.first_name} ${cleaner.last_name}`,
+            cleanerId: cleanerId,
+            cleanerName: contactType === 'cleaner' ? contactName : undefined,
             chat: bookingChat,
             lastMessage: bookingChat?.last_message?.message,
             lastMessageTime: bookingChat?.last_message_at,
             unreadCount: bookingChat?.unread_count || 0
-          };
+          }],
+          chat: bookingChat,
+          lastMessage: bookingChat?.last_message?.message,
+          lastMessageTime: bookingChat?.last_message_at,
+          unreadCount: bookingChat?.total_count || bookingChat?.unread_count || 0
         });
-
-        return {
-          id: `cleaner-${cleaner.id}`,
-          name: `${cleaner.first_name} ${cleaner.last_name}`,
-          type: 'cleaner' as const,
-          cleaner_id: cleaner.id,
-          bookings: bookingContacts,
-          isExpanded: false,
-          // Calculate total message count for this cleaner (use total_count if available, fallback to unread)
-          unreadCount: bookingContacts.reduce((sum, booking) => 
-            sum + (booking.chat?.total_count || booking.unreadCount || 0), 0
-          ),
-          lastMessage: bookingContacts.find(b => b.lastMessage)?.lastMessage,
-          lastMessageTime: bookingContacts.reduce((latest, booking) => {
-            if (!booking.lastMessageTime) return latest;
-            if (!latest) return booking.lastMessageTime;
-            return new Date(booking.lastMessageTime) > new Date(latest) ? booking.lastMessageTime : latest;
-          }, undefined as string | undefined)
-        };
       });
+
+      // Create office contact for general chat (non-booking specific)
+      const officeContact: Contact = {
+        id: 'office-general',
+        name: 'SN Cleaning Office',
+        type: 'office'
+      };
 
       // Match office contact with existing general chat
       const officeGeneralChat = chats.find(chat => 
@@ -190,7 +163,50 @@ const CustomerContacts = ({
         officeContact.unreadCount = officeGeneralChat.unread_count || 0;
       }
 
-      const allContacts = [officeContact, ...cleanerContacts];
+      // Show more bookings contact if there are more than 5
+      const moreBookingsContacts: Contact[] = [];
+      if (sortedBookings.length > 5) {
+        moreBookingsContacts.push({
+          id: 'more-bookings',
+          name: `Show ${sortedBookings.length - 5} More Bookings`,
+          type: 'office',
+          bookings: sortedBookings.slice(5).map(booking => {
+            let bookingChat;
+            let cleanerId: number | undefined;
+
+            if (booking.cleaner && booking.cleaners) {
+              cleanerId = booking.cleaner;
+              bookingChat = chats.find(chat => 
+                chat.chat_type === 'customer_cleaner' && 
+                chat.booking_id === booking.id
+              );
+            } else {
+              bookingChat = chats.find(chat => 
+                chat.chat_type === 'customer_office' && 
+                chat.booking_id === booking.id
+              );
+            }
+
+            return {
+              id: `booking-${booking.id}`,
+              bookingId: booking.id,
+              serviceType: booking.service_type || booking.cleaning_type || 'Cleaning',
+              dateTime: booking.date_time,
+              address: booking.address,
+              postcode: booking.postcode,
+              cleanerId: cleanerId,
+              cleanerName: booking.cleaners ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}` : undefined,
+              chat: bookingChat,
+              lastMessage: bookingChat?.last_message?.message,
+              lastMessageTime: bookingChat?.last_message_at,
+              unreadCount: bookingChat?.unread_count || 0
+            };
+          }),
+          isExpanded: false
+        });
+      }
+
+      const allContacts = [officeContact, ...bookingContacts, ...moreBookingsContacts];
       setContacts(allContacts);
     } catch (error) {
       console.error('Error fetching contacts:', error);
@@ -204,8 +220,8 @@ const CustomerContacts = ({
   }, [effectiveCustomerId, chats]);
 
   const handleContactClick = (contact: Contact, booking?: BookingContact) => {
-    if ((contact.type === 'office' || contact.type === 'cleaner') && !booking && contact.bookings) {
-      // Toggle expansion for contacts with bookings
+    if (contact.id === 'more-bookings' && !booking) {
+      // Toggle expansion for "Show More Bookings"
       setContacts(prev => prev.map(c => 
         c.id === contact.id 
           ? { ...c, isExpanded: !c.isExpanded }
@@ -214,11 +230,14 @@ const CustomerContacts = ({
       return;
     }
 
+    // For booking-specific contacts, use the first booking
+    const targetBooking = booking || (contact.bookings && contact.bookings[0]);
+    
     // Handle direct contact or booking contact
-    if (booking?.chat || contact.chat) {
-      onSelectContact(contact, booking);
+    if (targetBooking?.chat || contact.chat) {
+      onSelectContact(contact, targetBooking);
     } else {
-      onCreateChat(contact, booking);
+      onCreateChat(contact, targetBooking);
     }
   };
 
@@ -242,7 +261,7 @@ const CustomerContacts = ({
     <div className="flex flex-col h-full bg-card border-r border-border">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border">
-        <h2 className="text-lg font-semibold text-foreground">Contacts</h2>
+        <h2 className="text-lg font-semibold text-foreground">Chats</h2>
       </div>
 
       {/* Contacts List */}
@@ -258,10 +277,10 @@ const CustomerContacts = ({
             {contacts.map((contact) => (
               <div key={contact.id} className="space-y-1">
                 {/* Main Contact Item */}
-                <div
+                 <div
                   onClick={() => handleContactClick(contact)}
                   className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                    !contact.bookings && activeChat?.id === contact.chat?.id
+                    (activeChat?.id === contact.chat?.id || (contact.bookings?.[0] && activeChat?.booking_id === contact.bookings[0].bookingId))
                       ? 'bg-accent text-accent-foreground'
                       : 'hover:bg-accent/50'
                   }`}
