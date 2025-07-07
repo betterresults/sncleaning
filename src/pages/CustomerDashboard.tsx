@@ -19,12 +19,7 @@ const CustomerDashboard = () => {
         <main className="flex-1 p-6">
           <div className="max-w-7xl mx-auto">
             {isAdminViewing && <AdminCustomerSelector />}
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold">My Bookings</h1>
-              <p className="text-muted-foreground">View and manage your upcoming cleaning appointments</p>
-            </div>
-
-            {/* Placeholder content - will be implemented later */}
+            {/* Clean layout without unnecessary text */}
             <CustomerUpcomingBookings />
           </div>
         </main>

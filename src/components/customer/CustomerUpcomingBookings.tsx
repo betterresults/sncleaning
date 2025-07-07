@@ -198,15 +198,61 @@ const CustomerUpcomingBookings = () => {
     );
   }
 
+  // Calculate statistics
+  const totalBookings = bookings.length;
+  const unpaidBookings = bookings.filter(b => b.booking_status?.toLowerCase() !== 'paid').length;
+  const pendingBookings = bookings.filter(b => b.booking_status?.toLowerCase() === 'pending').length;
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="h-5 w-5" />
-          Upcoming Bookings
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div className="space-y-6">
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Calendar className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Upcoming Bookings</p>
+                <p className="text-2xl font-bold text-foreground">{totalBookings}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 dark:from-orange-950/20 dark:to-orange-900/20 dark:border-orange-800/30">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                <Clock className="h-5 w-5 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Pending</p>
+                <p className="text-2xl font-bold text-foreground">{pendingBookings}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200 dark:from-red-950/20 dark:to-red-900/20 dark:border-red-800/30">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                <MapPin className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Needs Payment</p>
+                <p className="text-2xl font-bold text-foreground">{unpaidBookings}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Bookings List */}
+      <Card>
+        <CardContent className="p-6">
         {bookings.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -214,79 +260,85 @@ const CustomerUpcomingBookings = () => {
             <p className="text-sm">Book a new cleaning service to get started.</p>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {bookings.map((booking) => (
-              <div key={booking.id} className="group relative overflow-hidden rounded-xl border border-border/50 bg-gradient-to-r from-card via-card to-card/95 p-6 shadow-sm transition-all duration-200 hover:shadow-md hover:border-border">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-foreground mb-2">{booking.service_type}</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Calendar className="h-4 w-4 text-primary" />
-                        <span>{new Date(booking.date_time).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Clock className="h-4 w-4 text-primary" />
-                        <span>{new Date(booking.date_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <MapPin className="h-4 w-4 text-primary" />
-                        <span className="truncate">{booking.address}, {booking.postcode}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-col items-end gap-2">
-                    <div className="text-right">
-                      <div className="text-xl font-bold text-foreground">£{booking.total_cost}</div>
-                      <div className="text-sm text-muted-foreground">{booking.total_hours} hours</div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEditBooking(booking)}
-                      className="opacity-70 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Edit className="h-4 w-4" />
-                      <span className="ml-1 hidden sm:inline">Edit</span>
-                    </Button>
+              <div key={booking.id} className="group relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card to-card/80 p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/30">
+                
+                {/* Header with Service Type and Cost */}
+                <div className="flex items-start justify-between mb-3">
+                  <h3 className="text-xl font-bold text-foreground tracking-tight">{booking.service_type}</h3>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-primary">£{booking.total_cost}</div>
                   </div>
                 </div>
                 
+                {/* Date, Time, and Hours in a compact row */}
+                <div className="flex items-center gap-6 mb-3 text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Calendar className="h-4 w-4 text-primary" />
+                    <span className="font-medium">{new Date(booking.date_time).toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Clock className="h-4 w-4 text-primary" />
+                    <span className="font-medium">{new Date(booking.date_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Clock className="h-4 w-4 text-orange-500" />
+                    <span className="font-medium">{booking.total_hours} hours</span>
+                  </div>
+                </div>
+                
+                {/* Cleaner Info */}
                 {booking.cleaner && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4 p-3 bg-muted/30 rounded-lg">
-                    <User className="h-4 w-4 text-primary" />
-                    <span>Assigned Cleaner: <span className="font-medium text-foreground">{booking.cleaner.first_name} {booking.cleaner.last_name}</span></span>
+                  <div className="flex items-center gap-2 text-sm mb-3 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/30 rounded-lg">
+                    <User className="h-4 w-4 text-green-600" />
+                    <span className="text-muted-foreground">Cleaner: <span className="font-semibold text-green-700 dark:text-green-400">{booking.cleaner.first_name} {booking.cleaner.last_name}</span></span>
                   </div>
                 )}
                 
-                <div className="flex items-center justify-between pt-4 border-t border-border/30">
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                {/* Address */}
+                <div className="flex items-center gap-2 text-sm mb-4 text-muted-foreground">
+                  <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
+                  <span className="truncate">{booking.address}, {booking.postcode}</span>
+                </div>
+                
+                {/* Status and Actions */}
+                <div className="flex items-center justify-between pt-3 border-t border-border/40">
+                  <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${
                     booking.booking_status === 'Confirmed' 
                       ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
-                      : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                      : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
                   }`}>
                     {booking.booking_status}
                   </span>
                   
                   <div className="flex items-center gap-2">
                     <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleCancelBooking(booking)}
+                      className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200 hover:border-red-300 dark:bg-red-950/20 dark:hover:bg-red-950/40 dark:text-red-400 dark:border-red-800/30"
+                    >
+                      <span className="mr-1">✕</span>
+                      <span className="hidden sm:inline">Cancel</span>
+                    </Button>
+                    <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleDuplicateBooking(booking)}
-                      className="text-primary hover:text-primary"
+                      className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/30"
                     >
                       <span className="mr-1">📋</span>
                       <span className="hidden sm:inline">Duplicate</span>
                     </Button>
                     <Button
-                      variant="destructive"
+                      variant="outline"
                       size="sm"
-                      onClick={() => handleCancelBooking(booking)}
-                      className="bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                      onClick={() => handleEditBooking(booking)}
+                      className="bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-700 border-gray-200 hover:border-gray-300 dark:bg-gray-950/20 dark:hover:bg-gray-950/40 dark:text-gray-400 dark:border-gray-800/30"
                     >
-                      <span className="mr-1">✕</span>
-                      <span className="hidden sm:inline">Cancel</span>
+                      <Edit className="h-4 w-4" />
+                      <span className="ml-1 hidden sm:inline">Edit</span>
                     </Button>
                   </div>
                 </div>
@@ -294,7 +346,8 @@ const CustomerUpcomingBookings = () => {
             ))}
           </div>
         )}
-      </CardContent>
+        </CardContent>
+      </Card>
       
       <EditBookingDialog
         booking={editingBooking}
@@ -302,7 +355,7 @@ const CustomerUpcomingBookings = () => {
         onOpenChange={setShowEditDialog}
         onBookingUpdated={handleBookingUpdated}
       />
-    </Card>
+    </div>
   );
 };
 
