@@ -89,24 +89,36 @@ const BookingCard = <T extends BaseBooking>({
         )}
       </div>
       
-      {/* Status and Actions with Address */}
+      {/* Status and Actions with Address/Photos */}
       <div className="flex items-center justify-between pt-3 border-t border-border/40">
         <div className="flex items-center gap-4">
-          <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${
-            type === 'completed'
-              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-              : booking.booking_status === 'Confirmed' 
-              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
-              : booking.booking_status === 'Pending'
-              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-              : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
-          }`}>
-            {type === 'completed' ? 'Completed' : booking.booking_status}
-          </span>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
-            <span className="truncate">{booking.address}</span>
-          </div>
+          {type === 'upcoming' && (
+            <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${
+              booking.booking_status === 'Confirmed' 
+                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                : booking.booking_status === 'Pending'
+                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
+            }`}>
+              {booking.booking_status}
+            </span>
+          )}
+          
+          {type === 'upcoming' ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
+              <span className="truncate">{booking.address}</span>
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {/* TODO: Implement see photos functionality */}}
+              className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/30"
+            >
+              📷 See Photos
+            </Button>
+          )}
         </div>
         
         <div className="flex items-center gap-2">
