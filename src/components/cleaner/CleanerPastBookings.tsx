@@ -260,10 +260,7 @@ const CleanerPastBookings = () => {
         <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-xs sm:text-sm font-medium text-green-700">
-              Total Earnings - {filters.timePeriod === 'current-month' ? 'Current Month' : 
-                              filters.timePeriod === 'last-month' ? 'Last Month' :
-                              filters.timePeriod === 'last-3-months' ? 'Last 3 Months' :
-                              filters.timePeriod === 'last-6-months' ? 'Last 6 Months' : 'All Time'}
+              Total Earnings
             </CardTitle>
             <Banknote className="h-4 w-4 text-green-600" />
           </CardHeader>
@@ -276,10 +273,7 @@ const CleanerPastBookings = () => {
         <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-xs sm:text-sm font-medium text-blue-700">
-              Completed Bookings - {filters.timePeriod === 'current-month' ? 'Current Month' : 
-                                  filters.timePeriod === 'last-month' ? 'Last Month' :
-                                  filters.timePeriod === 'last-3-months' ? 'Last 3 Months' :
-                                  filters.timePeriod === 'last-6-months' ? 'Last 6 Months' : 'All Time'}
+              Completed Bookings
             </CardTitle>
             <CalendarDays className="h-4 w-4 text-blue-600" />
           </CardHeader>
@@ -292,48 +286,40 @@ const CleanerPastBookings = () => {
 
       {/* Time Period Filter Buttons */}
       <Card className="shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base sm:text-lg">Time Period</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+        <CardContent className="p-4">
+          <div className="grid grid-cols-5 gap-2 w-full">
             <Button
               variant={filters.timePeriod === 'current-month' ? 'default' : 'outline'}
               onClick={() => setFilters({...filters, timePeriod: 'current-month'})}
-              size="sm"
-              className="text-xs sm:text-sm"
+              className="w-full text-xs sm:text-sm"
             >
               Current Month
             </Button>
             <Button
               variant={filters.timePeriod === 'last-month' ? 'default' : 'outline'}
               onClick={() => setFilters({...filters, timePeriod: 'last-month'})}
-              size="sm"
-              className="text-xs sm:text-sm"
+              className="w-full text-xs sm:text-sm"
             >
               Last Month
             </Button>
             <Button
               variant={filters.timePeriod === 'last-3-months' ? 'default' : 'outline'}
               onClick={() => setFilters({...filters, timePeriod: 'last-3-months'})}
-              size="sm"
-              className="text-xs sm:text-sm"
+              className="w-full text-xs sm:text-sm"
             >
               Last 3 Months
             </Button>
             <Button
               variant={filters.timePeriod === 'last-6-months' ? 'default' : 'outline'}
               onClick={() => setFilters({...filters, timePeriod: 'last-6-months'})}
-              size="sm"
-              className="text-xs sm:text-sm"
+              className="w-full text-xs sm:text-sm"
             >
               Last 6 Months
             </Button>
             <Button
               variant={filters.timePeriod === 'all' ? 'default' : 'outline'}
               onClick={() => setFilters({...filters, timePeriod: 'all'})}
-              size="sm"
-              className="text-xs sm:text-sm col-span-2 sm:col-span-1"
+              className="w-full text-xs sm:text-sm"
             >
               All Time
             </Button>
@@ -405,9 +391,6 @@ const CleanerPastBookings = () => {
 
       {/* Past Bookings */}
       <Card>
-        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
-          <CardTitle className="text-base sm:text-lg">Completed Bookings</CardTitle>
-        </CardHeader>
         <CardContent>
           {filteredBookings.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
