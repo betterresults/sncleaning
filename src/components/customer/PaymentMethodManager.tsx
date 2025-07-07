@@ -68,7 +68,11 @@ const PaymentSetupForm = ({ clientSecret, onSuccess, onCancel, customerId }: {
 
       console.log('Stripe confirmSetup result:', { error });
 
-      if (error) {
+      // Check if setup intent actually succeeded despite the error
+      const setupIntentSucceeded = error?.setup_intent?.status === 'succeeded';
+      const hasPaymentMethod = error?.setup_intent?.payment_method;
+
+      if (error && !setupIntentSucceeded) {
         console.error('Stripe error:', error);
         toast({
           title: "Error",
@@ -76,10 +80,12 @@ const PaymentSetupForm = ({ clientSecret, onSuccess, onCancel, customerId }: {
           variant: "destructive",
         });
       } else {
-        console.log('Payment setup successful! Now saving to database...');
-        
-        // Extract setup intent ID from client secret
-        const setupIntentId = clientSecret.split('_secret_')[0];
+        // Either no error, or error but setup intent succeeded
+        const setupIntentId = setupIntentSucceeded 
+          ? error.setup_intent.id 
+          : clientSecret.split('_secret_')[0];
+          
+        console.log('Payment setup successful! Now saving to database...', { setupIntentId });
         
         // Save payment method to our database
         try {
