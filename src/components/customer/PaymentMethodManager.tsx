@@ -9,7 +9,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 
 // Initialize Stripe with your publishable key
-const stripePromise = loadStripe('pk_test_51PZ9ZqA2n6DFbTnQYGCadMZLV2CQyJjGc6k6X2tiZFhM8AHqGaxuTDTQEZnXiY3Q48TN253yLVuoyQP4gcxhUUA03D9MJymb'); // Replace with your actual publishable key
+const stripePromise = loadStripe('pk_test_51PZ9ZqA2n6DFfbTrGY4CadMZLV2CQyTjgc6k6X2tiZFhW8aHwGaxuIDTOEZnXIY3Q48TNZS3yLVuoyQP4gcxhUUA00jD9Mjymb');
 
 interface PaymentMethod {
   id: string;
