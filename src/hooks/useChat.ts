@@ -89,7 +89,7 @@ export const useChat = (selectedCleanerId?: number, selectedCustomerId?: number)
   }, [user, userRole, effectiveCustomerId, effectiveCleanerId, selectedCleanerId, selectedCustomerId]);
 
   // Fetch messages for a specific chat
-  const fetchMessages = useCallback(async (chatId: string) => {
+  const fetchMessages = useCallback(async (chatId: string, limit: number = 50, offset: number = 0) => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -97,11 +97,18 @@ export const useChat = (selectedCleanerId?: number, selectedCustomerId?: number)
         .select('*')
         .eq('chat_id', chatId)
         .eq('is_deleted', false)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
 
       if (error) throw error;
 
-      setMessages(data || []);
+      if (offset === 0) {
+        // Initial load - replace all messages
+        setMessages((data || []).reverse());
+      } else {
+        // Load more - prepend older messages
+        setMessages(prev => [...(data || []).reverse(), ...prev]);
+      }
 
       // Mark messages as read
       await supabase

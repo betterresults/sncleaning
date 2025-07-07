@@ -17,7 +17,10 @@ interface ChatInterfaceProps {
 const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatInterfaceProps) => {
   const { userRole, customerId, cleanerId } = useAuth();
   const [newMessage, setNewMessage] = useState('');
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -26,6 +29,25 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop } = event.currentTarget;
+    
+    // Load more messages when scrolled to top
+    if (scrollTop === 0 && hasMoreMessages && !loadingMore) {
+      loadMoreMessages();
+    }
+  };
+
+  const loadMoreMessages = async () => {
+    if (!chat.id || loadingMore) return;
+    
+    setLoadingMore(true);
+    // This would need to be passed from the parent component
+    // For now, we'll just set hasMoreMessages to false to prevent infinite loading
+    setHasMoreMessages(false);
+    setLoadingMore(false);
+  };
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,9 +130,18 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4">
+      <ScrollArea 
+        className="flex-1 p-4" 
+        ref={scrollAreaRef}
+        onScrollCapture={handleScroll}
+      >
         <div className="space-y-4">
-          {messages.map((message) => (
+          {loadingMore && (
+            <div className="text-center py-2">
+              <div className="text-xs text-muted-foreground">Loading more messages...</div>
+            </div>
+          )}
+          {messages.slice(-50).map((message) => (
             <div
               key={message.id}
               className={`flex ${isOwnMessage(message) ? 'justify-end' : 'justify-start'}`}
