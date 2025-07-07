@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Clock, MapPin, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Calendar, Clock, MapPin, User, Edit } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import EditBookingDialog from './EditBookingDialog';
 
 interface Booking {
   id: number;
@@ -15,6 +17,15 @@ interface Booking {
   total_hours: number;
   total_cost: number;
   booking_status: string;
+  additional_details: string | null;
+  property_details: string | null;
+  parking_details: string | null;
+  key_collection: string | null;
+  access: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  phone_number: string | null;
+  email: string | null;
   cleaner?: {
     first_name: string;
     last_name: string;
@@ -27,6 +38,8 @@ const CustomerUpcomingBookings = () => {
   const { toast } = useToast();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   // Use selected customer ID if admin is viewing, otherwise use the logged-in user's customer ID
   const activeCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
@@ -39,6 +52,15 @@ const CustomerUpcomingBookings = () => {
       setLoading(false);
     }
   }, [activeCustomerId]);
+
+  const handleEditBooking = (booking: Booking) => {
+    setEditingBooking(booking);
+    setShowEditDialog(true);
+  };
+
+  const handleBookingUpdated = () => {
+    fetchUpcomingBookings();
+  };
 
   const fetchUpcomingBookings = async () => {
     if (!activeCustomerId) return;
@@ -55,6 +77,15 @@ const CustomerUpcomingBookings = () => {
           total_hours,
           total_cost,
           booking_status,
+          additional_details,
+          property_details,
+          parking_details,
+          key_collection,
+          access,
+          first_name,
+          last_name,
+          phone_number,
+          email,
           cleaner:cleaners(first_name, last_name)
         `)
         .eq('customer', activeCustomerId)
@@ -130,9 +161,18 @@ const CustomerUpcomingBookings = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-medium">£{booking.total_cost}</div>
-                    <div className="text-sm text-muted-foreground">{booking.total_hours}h</div>
+                  <div className="text-right flex items-center gap-2">
+                    <div>
+                      <div className="font-medium">£{booking.total_cost}</div>
+                      <div className="text-sm text-muted-foreground">{booking.total_hours}h</div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditBooking(booking)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
                 
@@ -157,6 +197,13 @@ const CustomerUpcomingBookings = () => {
           </div>
         )}
       </CardContent>
+      
+      <EditBookingDialog
+        booking={editingBooking}
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        onBookingUpdated={handleBookingUpdated}
+      />
     </Card>
   );
 };
