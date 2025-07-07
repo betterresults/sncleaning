@@ -33,48 +33,53 @@ serve(async (req) => {
       throw new Error('Unauthorized')
     }
 
-    // Get user's customer_id from profile
-    const { data: profile, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('customer_id')
-      .eq('user_id', user.id)
-      .single()
+    // Get request body
+    const { customerId: requestCustomerId } = await req.json()
 
-    if (profileError || !profile?.customer_id) {
-      throw new Error('Customer profile not found')
+    let targetCustomerId = requestCustomerId;
+
+    // If no customerId provided in request, get it from user's profile
+    if (!targetCustomerId) {
+      const { data: profile, error: profileError } = await supabaseClient
+        .from('profiles')
+        .select('customer_id')
+        .eq('user_id', user.id)
+        .single()
+
+      if (profileError || !profile?.customer_id) {
+        throw new Error('Customer profile not found')
+      }
+      
+      targetCustomerId = profile.customer_id;
     }
 
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY')
     if (!stripeKey) {
       throw new Error('Stripe secret key not configured')
     }
+    let stripeCustomerId = null;
 
-    const { customerId } = await req.json()
-    
-    let stripeCustomerId = customerId
+    // Check if one exists for this customer
+    const { data: existingPaymentMethod } = await supabaseClient
+      .from('customer_payment_methods')
+      .select('stripe_customer_id')
+      .eq('customer_id', targetCustomerId)
+      .limit(1)
+      .single()
 
-    // If no customerId provided, check if one exists for this customer
-    if (!stripeCustomerId) {
-      const { data: existingPaymentMethod } = await supabaseClient
-        .from('customer_payment_methods')
-        .select('stripe_customer_id')
-        .eq('customer_id', profile.customer_id)
-        .limit(1)
+    if (existingPaymentMethod) {
+      stripeCustomerId = existingPaymentMethod.stripe_customer_id
+    } else {
+      // Create new Stripe customer
+      const { data: customer } = await supabaseClient
+        .from('customers')
+        .select('email, first_name, last_name')
+        .eq('id', targetCustomerId)
         .single()
 
-      if (existingPaymentMethod) {
-        stripeCustomerId = existingPaymentMethod.stripe_customer_id
-      } else {
-        // Create new Stripe customer
-        const { data: customer } = await supabaseClient
-          .from('customers')
-          .select('email, first_name, last_name')
-          .eq('id', profile.customer_id)
-          .single()
-
-        if (!customer) {
-          throw new Error('Customer not found')
-        }
+      if (!customer) {
+        throw new Error('Customer not found')
+      }
 
         const stripeCustomerResponse = await fetch('https://api.stripe.com/v1/customers', {
           method: 'POST',

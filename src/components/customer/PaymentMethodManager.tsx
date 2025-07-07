@@ -71,6 +71,9 @@ const PaymentMethodManager = () => {
         headers: {
           Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
         },
+        body: {
+          customerId: activeCustomerId
+        }
       });
 
       if (error) throw error;
