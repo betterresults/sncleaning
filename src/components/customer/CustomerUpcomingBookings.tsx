@@ -185,10 +185,10 @@ const CustomerUpcomingBookings = () => {
     <div className="space-y-6">
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+        <Card className="bg-gradient-to-br from-primary/10 to-primary/20 border-primary/30">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
+              <div className="p-2 bg-primary/20 rounded-lg">
                 <Calendar className="h-5 w-5 text-primary" />
               </div>
               <div>
@@ -315,7 +315,7 @@ const CustomerUpcomingBookings = () => {
                     <div 
                       key={day.toISOString()} 
                       className={`min-h-[80px] p-1 border rounded-lg ${
-                        isCurrentMonth ? 'bg-card' : 'bg-muted/30'
+                        isCurrentMonth ? 'bg-card' : 'bg-primary/5'
                       } ${isToday ? 'ring-2 ring-primary' : ''}`}
                     >
                       <div className={`text-sm font-medium mb-1 ${
@@ -327,13 +327,14 @@ const CustomerUpcomingBookings = () => {
                         <div
                           key={booking.id}
                           className="text-xs p-1 mb-1 rounded bg-primary/10 text-primary truncate cursor-pointer hover:bg-primary/20"
-                          title={`${booking.service_type} - ${new Date(booking.date_time).toLocaleTimeString('en-GB', { 
+                          title={`${booking.service_type} - ${booking.address} - ${new Date(booking.date_time).toLocaleTimeString('en-GB', { 
                             hour: 'numeric', 
                             minute: '2-digit',
                             hour12: true 
                           })}`}
                         >
-                          {booking.service_type}
+                          <div className="font-medium">{booking.service_type}</div>
+                          <div className="text-[10px] opacity-80">{booking.address}</div>
                         </div>
                       ))}
                     </div>
