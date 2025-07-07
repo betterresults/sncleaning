@@ -408,22 +408,29 @@ const CleanerEarnings = () => {
               <p className="text-gray-500">No recent jobs found</p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {earnings.recentJobs.map((job) => (
-                <div key={job.id} className="flex justify-between items-center p-3 border border-gray-100 rounded-lg hover:shadow-sm transition-shadow">
-                  <div className="flex items-center gap-4 flex-1">
+                <div key={job.id} className="flex justify-between items-center p-4 border border-gray-100 rounded-xl hover:shadow-md transition-shadow">
+                  <div className="flex-1">
                     <div className="font-semibold text-gray-900">
                       {job.first_name} {job.last_name}
                     </div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-gray-600 mt-1">
                       {job.cleaning_type || 'Standard Cleaning'}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-gray-500 mt-1">
                       {format(new Date(job.date_time), 'dd/MM/yyyy')}
                     </div>
                   </div>
-                  <div className="font-bold text-lg text-green-600">
-                    £{Number(job.cleaner_pay)?.toFixed(2) || '0.00'}
+                  <div className="flex items-center space-x-4">
+                    <Badge variant="default" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100">
+                      {job.booking_status}
+                    </Badge>
+                    <div className="text-right">
+                      <div className="font-bold text-lg text-green-600">
+                        £{Number(job.cleaner_pay)?.toFixed(2) || '0.00'}
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
