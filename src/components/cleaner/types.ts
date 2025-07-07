@@ -27,6 +27,7 @@ export interface Booking {
   key_collection?: string;
   access?: string;
   parking_details?: string;
+  same_day?: boolean;
   cleaners?: {
     id: number;
     first_name: string;

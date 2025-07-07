@@ -284,6 +284,7 @@ const CleanerUpcomingBookings = () => {
         title="Upcoming Bookings"
         type="upcoming"
         onMarkCompleted={handleMarkAsCompleted}
+        onDropService={handleDropOff}
       />
 
       <BookingsPagination

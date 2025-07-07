@@ -1,10 +1,9 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, MapPin, User, Upload, Eye } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import ViewBookingDialog from './ViewBookingDialog';
 import CleaningPhotosUploadDialog from './CleaningPhotosUploadDialog';
+import CleanerBookingCard from './CleanerBookingCard';
 import { Booking } from './types';
 
 interface BookingsTableProps {
@@ -13,9 +12,10 @@ interface BookingsTableProps {
   type: 'upcoming' | 'available' | 'past';
   onMarkCompleted?: (bookingId: number) => void;
   onAcceptBooking?: (bookingId: number) => void;
+  onDropService?: (bookingId: number) => void;
 }
 
-const BookingsTable = ({ bookings, title, type, onMarkCompleted, onAcceptBooking }: BookingsTableProps) => {
+const BookingsTable = ({ bookings, title, type, onMarkCompleted, onAcceptBooking, onDropService }: BookingsTableProps) => {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -28,6 +28,24 @@ const BookingsTable = ({ bookings, title, type, onMarkCompleted, onAcceptBooking
   const handleUploadPhotos = (booking: Booking) => {
     setSelectedBooking(booking);
     setUploadDialogOpen(true);
+  };
+
+  const handleMarkCompleted = (booking: Booking) => {
+    if (onMarkCompleted) {
+      onMarkCompleted(booking.id);
+    }
+  };
+
+  const handleDropService = (booking: Booking) => {
+    if (onDropService) {
+      onDropService(booking.id);
+    }
+  };
+
+  const handleAcceptBooking = (booking: Booking) => {
+    if (onAcceptBooking) {
+      onAcceptBooking(booking.id);
+    }
   };
 
   if (bookings.length === 0) {
@@ -48,103 +66,18 @@ const BookingsTable = ({ bookings, title, type, onMarkCompleted, onAcceptBooking
         <h2 className="text-xl font-semibold">{title}</h2>
       </div>
       
-      <div className="divide-y">
+      <div className="p-6 space-y-4">
         {bookings.map((booking) => (
-          <div key={booking.id} className="p-6 hover:bg-gray-50 transition-colors">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-4 mb-3">
-                  <Badge variant={
-                    booking.booking_status === 'Confirmed' ? 'default' : 
-                    booking.booking_status === 'Pending' ? 'secondary' : 'outline'
-                  }>
-                    {booking.booking_status}
-                  </Badge>
-                  <h3 className="font-semibold text-lg">{booking.service_type || booking.cleaning_type}</h3>
-                  <span className="text-xl font-bold text-green-600">£{booking.total_cost}</span>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-blue-500" />
-                    <span>{new Date(booking.date_time).toLocaleDateString('en-GB', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric'
-                    })}</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-orange-500" />
-                    <span>
-                      {new Date(booking.date_time).toLocaleTimeString('en-GB', {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
-                      })} ({booking.total_hours || booking.hours_required || 0}h)
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-red-500" />
-                    <span className="truncate">{booking.address}, {booking.postcode}</span>
-                  </div>
-                </div>
-
-                {booking.first_name && booking.last_name && (
-                  <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
-                    <User className="h-4 w-4 text-green-500" />
-                    <span>{booking.first_name} {booking.last_name}</span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex items-center gap-2 ml-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleViewBooking(booking)}
-                >
-                  <Eye className="h-4 w-4 mr-1" />
-                  View Details
-                </Button>
-
-                {type === 'upcoming' && (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleUploadPhotos(booking)}
-                      className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border-blue-200"
-                    >
-                      <Upload className="h-4 w-4 mr-1" />
-                      Upload Photos
-                    </Button>
-                    
-                    {onMarkCompleted && (
-                      <Button
-                        size="sm"
-                        onClick={() => onMarkCompleted(booking.id)}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        Mark Complete
-                      </Button>
-                    )}
-                  </>
-                )}
-
-                {type === 'available' && onAcceptBooking && (
-                  <Button
-                    size="sm"
-                    onClick={() => onAcceptBooking(booking.id)}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    Accept Booking
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
+          <CleanerBookingCard
+            key={booking.id}
+            booking={booking}
+            type={type}
+            onViewDetails={handleViewBooking}
+            onUploadPhotos={handleUploadPhotos}
+            onMarkCompleted={handleMarkCompleted}
+            onDropService={handleDropService}
+            onAcceptBooking={handleAcceptBooking}
+          />
         ))}
       </div>
 
