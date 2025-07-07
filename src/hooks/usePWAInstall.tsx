@@ -19,15 +19,26 @@ export const usePWAInstall = () => {
     // Check if already installed
     const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches;
     const isIOSInstalled = (window.navigator as any).standalone === true;
-    setIsInstalled(isInStandaloneMode || isIOSInstalled);
+    const installed = isInStandaloneMode || isIOSInstalled;
+    
+    console.log('PWA Install Debug:', {
+      isInStandaloneMode,
+      isIOSInstalled,
+      installed,
+      userAgent: navigator.userAgent
+    });
+    
+    setIsInstalled(installed);
 
     const handleBeforeInstallPrompt = (e: Event) => {
+      console.log('PWA beforeinstallprompt event fired:', e);
       e.preventDefault();
       setInstallPrompt(e as BeforeInstallPromptEvent);
       setIsInstallable(true);
     };
 
     const handleAppInstalled = () => {
+      console.log('PWA app installed event fired');
       setIsInstalled(true);
       setIsInstallable(false);
       setInstallPrompt(null);

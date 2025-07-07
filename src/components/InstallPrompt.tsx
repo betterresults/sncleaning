@@ -10,6 +10,7 @@ const InstallPrompt = () => {
   const { isInstallable, isInstalled, install } = usePWAInstall();
   const isMobile = useIsMobile();
   const [isDismissed, setIsDismissed] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
 
   useEffect(() => {
     // Check if user has previously dismissed the prompt
@@ -17,7 +18,16 @@ const InstallPrompt = () => {
     if (dismissed === 'true') {
       setIsDismissed(true);
     }
-  }, []);
+    
+    // Debug info
+    console.log('InstallPrompt Debug:', {
+      isInstallable,
+      isInstalled,
+      isMobile,
+      isDismissed: dismissed === 'true',
+      userAgent: navigator.userAgent
+    });
+  }, [isInstallable, isInstalled, isMobile]);
 
   const handleInstall = async () => {
     const success = await install();
@@ -31,13 +41,32 @@ const InstallPrompt = () => {
     localStorage.setItem('pwa-install-dismissed', 'true');
   };
 
-  // Don't show if:
-  // - Not on mobile
-  // - Already installed
-  // - Not installable
-  // - User dismissed it
-  if (!isMobile || isInstalled || !isInstallable || isDismissed) {
-    return null;
+  const clearDismissal = () => {
+    localStorage.removeItem('pwa-install-dismissed');
+    setIsDismissed(false);
+  };
+
+  // Don't show if already installed or user dismissed it
+  // (Removed mobile-only restriction for testing)
+  if (isInstalled || (!isInstallable && isDismissed)) {
+    // Show debug info instead when conditions aren't met
+    if (showDebug) {
+      return (
+        <div className="fixed bottom-4 left-4 right-4 z-50 bg-gray-100 p-3 rounded text-xs">
+          <div>Debug: isInstallable={String(isInstallable)}, isInstalled={String(isInstalled)}, isMobile={String(isMobile)}, isDismissed={String(isDismissed)}</div>
+          <button onClick={() => setShowDebug(false)} className="mt-2 text-blue-600">Hide Debug</button>
+          {isDismissed && <button onClick={clearDismissal} className="mt-2 ml-2 text-green-600">Clear Dismissal</button>}
+        </div>
+      );
+    }
+    return (
+      <button 
+        onClick={() => setShowDebug(true)} 
+        className="fixed bottom-4 right-4 z-50 bg-gray-200 p-2 rounded text-xs opacity-50"
+      >
+        PWA Debug
+      </button>
+    );
   }
 
   return (
