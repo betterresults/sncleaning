@@ -37,6 +37,13 @@ const AddressManager = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newAddress, setNewAddress] = useState({ address: '', postcode: '' });
 
+  console.log('AddressManager: Component rendered with:', {
+    userRole,
+    customerId,
+    selectedCustomerId,
+    activeCustomerId
+  });
+
   useEffect(() => {
     if (activeCustomerId) {
       fetchAddresses();
