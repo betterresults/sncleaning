@@ -38,7 +38,17 @@ interface Filters {
 
 const CleanerPastBookings = () => {
   const { cleanerId, userRole, loading: authLoading } = useAuth();
-  const { selectedCleanerId } = useAdminCleaner();
+  
+  // Safely get admin cleaner context - it might not be available in all cases
+  let selectedCleanerId = null;
+  try {
+    const adminContext = useAdminCleaner();
+    selectedCleanerId = adminContext.selectedCleanerId;
+  } catch (error) {
+    // Context not available, which is fine for non-admin usage
+    console.log('AdminCleanerContext not available, continuing without it');
+  }
+  
   const isMobile = useIsMobile();
   const [bookings, setBookings] = useState<PastBooking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<PastBooking[]>([]);

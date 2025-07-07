@@ -42,7 +42,16 @@ interface PeriodData {
 
 const CleanerEarnings = () => {
   const { user, cleanerId, userRole, loading: authLoading } = useAuth();
-  const { selectedCleanerId } = useAdminCleaner();
+  
+  // Safely get admin cleaner context - it might not be available in all cases
+  let selectedCleanerId = null;
+  try {
+    const adminContext = useAdminCleaner();
+    selectedCleanerId = adminContext.selectedCleanerId;
+  } catch (error) {
+    // Context not available, which is fine for non-admin usage
+    console.log('AdminCleanerContext not available, continuing without it');
+  }
   const [earnings, setEarnings] = useState<EarningsData>({
     upcomingPayment: {
       paymentDate: '',
