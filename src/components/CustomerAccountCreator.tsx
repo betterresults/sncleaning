@@ -38,42 +38,17 @@ const CustomerAccountCreator = () => {
     fetchCustomers();
   }, []);
 
-  const createGabrielleAccount = async () => {
+  const createFrancesAccount = async () => {
     try {
       setLoading(true);
       
-      // First, check if Gabrielle Douglas exists in customers
-      let gabrielle = customers.find(c => 
-        c.first_name?.toLowerCase().includes('gabrielle') && 
-        c.last_name?.toLowerCase().includes('douglas')
-      );
-
-      if (!gabrielle) {
-        // Create customer record for Gabrielle Douglas
-        const { data: newCustomer, error: customerError } = await supabase
-          .from('customers')
-          .insert([{
-            first_name: 'Gabrielle',
-            last_name: 'Douglas',
-            email: 'gabrielle.douglas@email.com',
-            full_name: 'Gabrielle Douglas',
-            client_status: 'New'
-          }])
-          .select()
-          .single();
-
-        if (customerError) throw customerError;
-        gabrielle = newCustomer;
-        await fetchCustomers(); // Refresh the list
-      }
-
-      // Create user account
+      // Create user account for existing customer
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: {
-          email: gabrielle.email,
+          email: 'frances.douglasthomson@gmail.com',
           password: '123456',
-          firstName: gabrielle.first_name,
-          lastName: gabrielle.last_name,
+          firstName: 'Frances',
+          lastName: 'Douglas Thomson',
           role: 'guest'
         }
       });
@@ -86,11 +61,11 @@ const CustomerAccountCreator = () => {
 
       toast({
         title: 'Success',
-        description: 'Account created for Gabrielle Douglas! Email: gabrielle.douglas@email.com, Password: 123456',
+        description: 'Account created for Frances Douglas Thomson! Email: frances.douglasthomson@gmail.com, Password: 123456',
       });
 
     } catch (error: any) {
-      console.error('Error creating Gabrielle account:', error);
+      console.error('Error creating Frances account:', error);
       toast({
         title: 'Error',
         description: error.message || 'Failed to create account',
@@ -119,8 +94,8 @@ const CustomerAccountCreator = () => {
           Create Customer Accounts
         </CardTitle>
         <div className="flex gap-2">
-          <Button onClick={createGabrielleAccount} disabled={loading}>
-            Create Gabrielle Douglas Account (Test)
+          <Button onClick={createFrancesAccount} disabled={loading}>
+            Create Frances Account (Test)
           </Button>
         </div>
       </CardHeader>
