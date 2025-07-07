@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdminCleaner } from '@/contexts/AdminCleanerContext';
 import { supabase } from '@/integrations/supabase/client';
 import UpcomingBookingsStats from './UpcomingBookingsStats';
 import TableControls from './TableControls';
@@ -10,7 +11,11 @@ import { Booking, Stats } from './types';
 import { isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 
 const CleanerUpcomingBookings = () => {
-  const { cleanerId, loading: authLoading } = useAuth();
+  const { cleanerId, userRole, loading: authLoading } = useAuth();
+  const { selectedCleanerId } = useAdminCleaner();
+  
+  // Use selected cleaner ID if admin is viewing, otherwise use authenticated cleaner's ID
+  const effectiveCleanerId = userRole === 'admin' ? selectedCleanerId : cleanerId;
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [stats, setStats] = useState<Stats>({
@@ -32,9 +37,9 @@ const CleanerUpcomingBookings = () => {
   const [serviceTypes, setServiceTypes] = useState<string[]>([]);
 
   const fetchData = async () => {
-    if (!cleanerId) {
+    if (!effectiveCleanerId) {
       console.log('No cleaner ID found, cannot fetch bookings');
-      setError('No cleaner ID found');
+      setError(userRole === 'admin' ? 'Please select a cleaner to view' : 'No cleaner ID found');
       setLoading(false);
       return;
     }
@@ -43,7 +48,7 @@ const CleanerUpcomingBookings = () => {
       setLoading(true);
       setError(null);
 
-      console.log('Fetching upcoming bookings for cleaner ID:', cleanerId);
+      console.log('Fetching upcoming bookings for cleaner ID:', effectiveCleanerId);
       
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
@@ -56,7 +61,7 @@ const CleanerUpcomingBookings = () => {
             full_name
           )
         `)
-        .eq('cleaner', cleanerId)
+        .eq('cleaner', effectiveCleanerId)
         .gte('date_time', startOfDay(new Date()).toISOString())
         .order('date_time', { ascending: sortOrder === 'asc' });
 
@@ -153,7 +158,7 @@ const CleanerUpcomingBookings = () => {
   };
 
   const handleDropOff = async (bookingId: number) => {
-    if (!cleanerId) {
+    if (!effectiveCleanerId) {
       console.error('No cleaner ID available');
       return;
     }
@@ -163,7 +168,7 @@ const CleanerUpcomingBookings = () => {
         .from('bookings')
         .update({ cleaner: null, cleaner_pay: null })
         .eq('id', bookingId)
-        .eq('cleaner', cleanerId);
+        .eq('cleaner', effectiveCleanerId);
 
       if (error) {
         console.error('Error dropping off booking:', error);
@@ -177,7 +182,7 @@ const CleanerUpcomingBookings = () => {
   };
 
   const handleMarkAsCompleted = async (bookingId: number) => {
-    if (!cleanerId) {
+    if (!effectiveCleanerId) {
       console.error('No cleaner ID available');
       return;
     }
@@ -187,7 +192,7 @@ const CleanerUpcomingBookings = () => {
         .from('bookings')
         .update({ booking_status: 'Completed' })
         .eq('id', bookingId)
-        .eq('cleaner', cleanerId);
+        .eq('cleaner', effectiveCleanerId);
 
       if (error) {
         console.error('Error marking booking as completed:', error);
@@ -210,10 +215,10 @@ const CleanerUpcomingBookings = () => {
   };
 
   useEffect(() => {
-    if (!authLoading && cleanerId) {
+    if (!authLoading && effectiveCleanerId) {
       fetchData();
     }
-  }, [cleanerId, authLoading, sortOrder]);
+  }, [effectiveCleanerId, authLoading, sortOrder]);
 
   useEffect(() => {
     applyFilters();

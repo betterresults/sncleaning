@@ -5,10 +5,14 @@ import { Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { CleanerSidebar } from '@/components/CleanerSidebar';
 import CleanerUpcomingBookings from '@/components/cleaner/CleanerUpcomingBookings';
+import AdminCleanerSelector from '@/components/admin/AdminCleanerSelector';
 import InstallPrompt from '@/components/InstallPrompt';
 
 const CleanerDashboard = () => {
   const { user, userRole, cleanerId, loading } = useAuth();
+  
+  // Check if admin is viewing this dashboard
+  const isAdminViewing = userRole === 'admin';
 
   console.log('CleanerDashboard - Auth state:', { user: !!user, userRole, cleanerId, loading });
 
@@ -20,8 +24,8 @@ const CleanerDashboard = () => {
     );
   }
 
-  // Only allow users with role 'user' who have a cleanerId
-  if (!user || userRole !== 'user' || !cleanerId) {
+  // Allow users with role 'user' who have a cleanerId, or admins
+  if (!user || (userRole !== 'user' && userRole !== 'admin') || (userRole === 'user' && !cleanerId)) {
     console.log('CleanerDashboard - Redirecting to auth. User:', !!user, 'Role:', userRole, 'CleanerId:', cleanerId);
     return <Navigate to="/auth" replace />;
   }
@@ -44,7 +48,10 @@ const CleanerDashboard = () => {
             </header>
             
             <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
-              <CleanerUpcomingBookings />
+              <div className="max-w-7xl mx-auto">
+                {isAdminViewing && <AdminCleanerSelector />}
+                <CleanerUpcomingBookings />
+              </div>
             </main>
           </SidebarInset>
         </div>

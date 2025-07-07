@@ -6,9 +6,13 @@ import { Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { CleanerSidebar } from '@/components/CleanerSidebar';
 import CleanerAvailableBookings from '@/components/cleaner/CleanerAvailableBookings';
+import AdminCleanerSelector from '@/components/admin/AdminCleanerSelector';
 
 const CleanerAvailableBookingsPage = () => {
   const { user, userRole, cleanerId, loading } = useAuth();
+  
+  // Check if admin is viewing this dashboard
+  const isAdminViewing = userRole === 'admin';
 
   console.log('CleanerAvailableBookings - Auth state:', { user: !!user, userRole, cleanerId, loading });
 
@@ -20,7 +24,7 @@ const CleanerAvailableBookingsPage = () => {
     );
   }
 
-  if (!user || userRole !== 'user' || !cleanerId) {
+  if (!user || (userRole !== 'user' && userRole !== 'admin') || (userRole === 'user' && !cleanerId)) {
     console.log('CleanerAvailableBookings - Redirecting to auth. User:', !!user, 'Role:', userRole, 'CleanerId:', cleanerId);
     return <Navigate to="/auth" replace />;
   }
@@ -42,7 +46,10 @@ const CleanerAvailableBookingsPage = () => {
           </header>
           
           <main className="flex-1 space-y-3 sm:space-y-4 p-3 sm:p-6 lg:p-8 pt-3 sm:pt-6">
-            <CleanerAvailableBookings />
+            <div className="max-w-7xl mx-auto">
+              {isAdminViewing && <AdminCleanerSelector />}
+              <CleanerAvailableBookings />
+            </div>
           </main>
         </SidebarInset>
       </div>

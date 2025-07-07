@@ -22,6 +22,7 @@ import CustomerAddBooking from "./pages/CustomerAddBooking";
 import CreateCustomerAccounts from "./pages/CreateCustomerAccounts";
 import NotFound from "./pages/NotFound";
 import { AdminCustomerProvider } from "./contexts/AdminCustomerContext";
+import { AdminCleanerProvider } from "./contexts/AdminCleanerContext";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <AdminCustomerProvider>
+            <AdminCleanerProvider>
             <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
@@ -52,6 +54,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+            </AdminCleanerProvider>
           </AdminCustomerProvider>
         </AuthProvider>
       </BrowserRouter>
