@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdminCleaner } from '@/contexts/AdminCleanerContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -40,7 +41,8 @@ interface PeriodData {
 }
 
 const CleanerEarnings = () => {
-  const { user, cleanerId, loading: authLoading } = useAuth();
+  const { user, cleanerId, userRole, loading: authLoading } = useAuth();
+  const { selectedCleanerId } = useAdminCleaner();
   const [earnings, setEarnings] = useState<EarningsData>({
     upcomingPayment: {
       paymentDate: '',
@@ -157,9 +159,12 @@ const CleanerEarnings = () => {
   };
 
   const fetchEarningsData = async () => {
-    if (!cleanerId) {
+    // For admin users, use selectedCleanerId, for regular cleaners use cleanerId
+    const currentCleanerId = userRole === 'admin' ? selectedCleanerId : cleanerId;
+    
+    if (!currentCleanerId) {
       console.log('No cleaner ID found, cannot fetch earnings');
-      setError('No cleaner ID found');
+      setError(userRole === 'admin' ? 'Please select a cleaner to view earnings' : 'No cleaner ID found');
       setLoading(false);
       return;
     }
@@ -168,13 +173,13 @@ const CleanerEarnings = () => {
       setLoading(true);
       setError(null);
 
-      console.log('Fetching earnings for cleaner ID:', cleanerId);
+      console.log('Fetching earnings for cleaner ID:', currentCleanerId);
 
       // Get all completed bookings for this cleaner from past_bookings table
       const { data: pastBookingsData, error: pastBookingsError } = await supabase
         .from('past_bookings')
         .select('*')
-        .eq('cleaner', cleanerId)
+        .eq('cleaner', currentCleanerId)
         .order('date_time', { ascending: false });
 
       if (pastBookingsError) {
@@ -229,13 +234,16 @@ const CleanerEarnings = () => {
   const handlePeriodChange = async (value: string) => {
     setSelectedPeriod(value);
     
+    // For admin users, use selectedCleanerId, for regular cleaners use cleanerId
+    const currentCleanerId = userRole === 'admin' ? selectedCleanerId : cleanerId;
+    
     // Recalculate data for the selected period
-    if (earnings.recentJobs.length > 0) {
+    if (earnings.recentJobs.length > 0 && currentCleanerId) {
       // We need to get all bookings again to calculate for the new period
       const { data: pastBookingsData } = await supabase
         .from('past_bookings')
         .select('*')
-        .eq('cleaner', cleanerId)
+        .eq('cleaner', currentCleanerId)
         .order('date_time', { ascending: false });
 
       if (pastBookingsData) {
@@ -246,10 +254,11 @@ const CleanerEarnings = () => {
   };
 
   useEffect(() => {
-    if (!authLoading && cleanerId) {
+    const currentCleanerId = userRole === 'admin' ? selectedCleanerId : cleanerId;
+    if (!authLoading && currentCleanerId) {
       fetchEarningsData();
     }
-  }, [cleanerId, authLoading]);
+  }, [cleanerId, selectedCleanerId, userRole, authLoading]);
 
   if (authLoading || loading) {
     return (
