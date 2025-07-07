@@ -30,7 +30,9 @@ const InstallPrompt = () => {
   }, [isInstallable, isInstalled, isMobile]);
 
   const handleInstall = async () => {
+    console.log('Install button clicked');
     const success = await install();
+    console.log('Install result:', success);
     if (success) {
       setIsDismissed(true);
     }

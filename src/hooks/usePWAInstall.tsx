@@ -54,17 +54,30 @@ export const usePWAInstall = () => {
   }, []);
 
   const install = async () => {
-    if (!installPrompt) return false;
+    console.log('Install function called, installPrompt:', installPrompt);
+    
+    if (!installPrompt) {
+      console.error('No install prompt available');
+      return false;
+    }
 
     try {
+      console.log('Calling installPrompt.prompt()');
       await installPrompt.prompt();
+      
+      console.log('Waiting for user choice...');
       const result = await installPrompt.userChoice;
       
+      console.log('User choice result:', result);
+      
       if (result.outcome === 'accepted') {
+        console.log('User accepted installation');
         setIsInstalled(true);
         setIsInstallable(false);
         setInstallPrompt(null);
         return true;
+      } else {
+        console.log('User dismissed installation');
       }
       return false;
     } catch (error) {
