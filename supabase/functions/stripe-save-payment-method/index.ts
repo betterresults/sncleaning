@@ -44,10 +44,10 @@ serve(async (req) => {
       throw new Error('Customer profile not found')
     }
 
-    const { paymentMethodId, stripeCustomerId } = await req.json()
+    const { setupIntentId, customerId } = await req.json()
 
-    if (!paymentMethodId || !stripeCustomerId) {
-      throw new Error('Payment method ID and customer ID are required')
+    if (!setupIntentId || !customerId) {
+      throw new Error('Setup intent ID and customer ID are required')
     }
 
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY')
@@ -55,8 +55,28 @@ serve(async (req) => {
       throw new Error('Stripe secret key not configured')
     }
 
-    // Get payment method details from Stripe
-    const paymentMethodResponse = await fetch(`https://api.stripe.com/v1/payment_methods/${paymentMethodId}`, {
+    // Get setup intent details from Stripe
+    const setupIntentResponse = await fetch(`https://api.stripe.com/v1/setup_intents/${setupIntentId}`, {
+      headers: {
+        'Authorization': `Bearer ${stripeKey}`,
+      },
+    })
+
+    const setupIntent = await setupIntentResponse.json()
+    if (!setupIntentResponse.ok) {
+      throw new Error(`Stripe error: ${setupIntent.error?.message}`)
+    }
+
+    if (setupIntent.status !== 'succeeded') {
+      throw new Error('Setup intent not succeeded')
+    }
+
+    if (!setupIntent.payment_method) {
+      throw new Error('No payment method found')
+    }
+
+    // Get payment method details
+    const paymentMethodResponse = await fetch(`https://api.stripe.com/v1/payment_methods/${setupIntent.payment_method}`, {
       headers: {
         'Authorization': `Bearer ${stripeKey}`,
       },
@@ -71,7 +91,7 @@ serve(async (req) => {
     const { data: existingMethods } = await supabaseClient
       .from('customer_payment_methods')
       .select('id')
-      .eq('customer_id', profile.customer_id)
+      .eq('customer_id', customerId)
 
     const isFirstPaymentMethod = !existingMethods || existingMethods.length === 0
 
@@ -79,9 +99,9 @@ serve(async (req) => {
     const { data, error } = await supabaseClient
       .from('customer_payment_methods')
       .insert({
-        customer_id: profile.customer_id,
-        stripe_customer_id: stripeCustomerId,
-        stripe_payment_method_id: paymentMethodId,
+        customer_id: customerId,
+        stripe_customer_id: setupIntent.customer,
+        stripe_payment_method_id: setupIntent.payment_method,
         card_brand: paymentMethod.card?.brand,
         card_last4: paymentMethod.card?.last4,
         card_exp_month: paymentMethod.card?.exp_month,
@@ -94,7 +114,7 @@ serve(async (req) => {
       throw new Error(`Database error: ${error.message}`)
     }
 
-    console.log('Payment method saved:', paymentMethodId)
+    console.log('Payment method saved:', setupIntent.payment_method)
 
     return new Response(
       JSON.stringify({

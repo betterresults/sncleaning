@@ -23,10 +23,11 @@ interface PaymentMethod {
 }
 
 // Payment Setup Form Component
-const PaymentSetupForm = ({ clientSecret, onSuccess, onCancel }: {
+const PaymentSetupForm = ({ clientSecret, onSuccess, onCancel, customerId }: {
   clientSecret: string;
   onSuccess: () => void;
   onCancel: () => void;
+  customerId: number | null;
 }) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -75,12 +76,42 @@ const PaymentSetupForm = ({ clientSecret, onSuccess, onCancel }: {
           variant: "destructive",
         });
       } else {
-        console.log('Payment setup successful!');
-        toast({
-          title: "Success",
-          description: "Payment method added successfully",
-        });
-        onSuccess();
+        console.log('Payment setup successful! Now saving to database...');
+        
+        // Extract setup intent ID from client secret
+        const setupIntentId = clientSecret.split('_secret_')[0];
+        
+        // Save payment method to our database
+        try {
+          const { data: saveData, error: saveError } = await supabase.functions.invoke('stripe-save-payment-method', {
+            headers: {
+              Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+            },
+            body: {
+              setupIntentId,
+              customerId: customerId
+            }
+          });
+
+          if (saveError) {
+            console.error('Save error:', saveError);
+            throw saveError;
+          }
+
+          console.log('Payment method saved to database:', saveData);
+          toast({
+            title: "Success",
+            description: "Payment method added successfully",
+          });
+          onSuccess();
+        } catch (saveErr) {
+          console.error('Error saving payment method:', saveErr);
+          toast({
+            title: "Warning",
+            description: "Payment method was added to Stripe but failed to save locally. Please refresh the page.",
+            variant: "destructive",
+          });
+        }
       }
     } catch (err) {
       console.error('Exception during confirmSetup:', err);
@@ -356,6 +387,7 @@ const PaymentMethodManager = () => {
                   clientSecret={setupClientSecret}
                   onSuccess={handleSetupSuccess}
                   onCancel={() => setShowSetupDialog(false)}
+                  customerId={activeCustomerId}
                 />
               </Elements>
             )}
