@@ -134,7 +134,17 @@ const CleanerContacts = ({
           type: 'customer' as const,
           customer_id: customer.id,
           bookings: bookingContacts,
-          isExpanded: false
+          isExpanded: false,
+          // Calculate total message count for this customer (use total_count if available, fallback to unread)
+          unreadCount: bookingContacts.reduce((sum, booking) => 
+            sum + (booking.chat?.total_count || booking.unreadCount || 0), 0
+          ),
+          lastMessage: bookingContacts.find(b => b.lastMessage)?.lastMessage,
+          lastMessageTime: bookingContacts.reduce((latest, booking) => {
+            if (!booking.lastMessageTime) return latest;
+            if (!latest) return booking.lastMessageTime;
+            return new Date(booking.lastMessageTime) > new Date(latest) ? booking.lastMessageTime : latest;
+          }, undefined as string | undefined)
         };
       });
 
@@ -245,7 +255,7 @@ const CleanerContacts = ({
                               <ChevronRight className="h-4 w-4 text-muted-foreground" />
                             )}
                             <Badge variant="outline" className="ml-1 text-xs">
-                              {contact.bookings?.length || 0}
+                              {contact.unreadCount || 0}
                             </Badge>
                           </div>
                         )}
@@ -267,7 +277,7 @@ const CleanerContacts = ({
                     <div className="flex items-center justify-between">
                       <p className="text-sm text-muted-foreground truncate">
                         {contact.type === 'customer' 
-                          ? `${contact.bookings?.length || 0} bookings`
+                          ? (contact.lastMessage || 'Tap to expand bookings')
                           : contact.lastMessage || (contact.chat ? 'Tap to continue' : 'Tap to start chat')
                         }
                       </p>

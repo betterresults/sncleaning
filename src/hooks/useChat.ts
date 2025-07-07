@@ -72,10 +72,18 @@ export const useChat = (selectedCleanerId?: number, selectedCustomerId?: number)
             .eq('is_read', false)
             .eq('is_deleted', false);
 
+          // Get total message count for display
+          const { count: totalCount } = await supabase
+            .from('chat_messages')
+            .select('id', { count: 'exact' })
+            .eq('chat_id', chat.id)
+            .eq('is_deleted', false);
+
           return {
             ...chat,
             last_message: lastMessage,
-            unread_count: unreadCount || 0
+            unread_count: unreadCount || 0,
+            total_count: totalCount || 0
           };
         })
       );

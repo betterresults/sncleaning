@@ -52,4 +52,5 @@ export interface ChatMessage {
 export interface ChatWithLastMessage extends Chat {
   last_message?: ChatMessage;
   unread_count?: number;
+  total_count?: number;
 }

@@ -88,7 +88,7 @@ const CustomerMessages = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="h-screen flex w-full bg-background overflow-hidden">
         <CustomerSidebar />
         <SidebarInset className="flex-1">
           <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4 shadow-sm">
@@ -99,7 +99,7 @@ const CustomerMessages = () => {
             </div>
           </header>
           
-          <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <main className="flex-1 flex flex-col overflow-hidden">
             {/* Admin Customer Selector */}
             {isAdminViewing && (
               <div className="p-4 border-b border-border bg-muted/30">
