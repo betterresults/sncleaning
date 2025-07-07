@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CreditCard, Plus, Trash2, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { loadStripe } from '@stripe/stripe-js';
+import { loadStripe, StripeElementsOptions } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 
 // Initialize Stripe with your publishable key
@@ -20,6 +22,81 @@ interface PaymentMethod {
   is_default: boolean;
 }
 
+// Payment Setup Form Component
+const PaymentSetupForm = ({ clientSecret, onSuccess, onCancel }: {
+  clientSecret: string;
+  onSuccess: () => void;
+  onCancel: () => void;
+}) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const { toast } = useToast();
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!stripe || !elements) {
+      return;
+    }
+
+    setIsProcessing(true);
+
+    const { error } = await stripe.confirmSetup({
+      elements,
+      clientSecret,
+      confirmParams: {
+        return_url: `${window.location.origin}/customer-settings?payment_setup=success`,
+      },
+      redirect: 'if_required',
+    });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Payment method added successfully",
+      });
+      onSuccess();
+    }
+
+    setIsProcessing(false);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="p-4 border rounded-lg">
+        <CardElement 
+          options={{
+            style: {
+              base: {
+                fontSize: '16px',
+                color: '#424770',
+                '::placeholder': {
+                  color: '#aab7c4',
+                },
+              },
+            },
+          }}
+        />
+      </div>
+      <div className="flex gap-2 justify-end">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={!stripe || isProcessing}>
+          {isProcessing ? 'Processing...' : 'Add Payment Method'}
+        </Button>
+      </div>
+    </form>
+  );
+};
+
 const PaymentMethodManager = () => {
   const { user, customerId, userRole } = useAuth();
   const { selectedCustomerId } = useAdminCustomer();
@@ -29,7 +106,8 @@ const PaymentMethodManager = () => {
   const activeCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
-  const [addingCard, setAddingCard] = useState(false);
+  const [showSetupDialog, setShowSetupDialog] = useState(false);
+  const [setupClientSecret, setSetupClientSecret] = useState<string>('');
 
   useEffect(() => {
     if (activeCustomerId) {
@@ -64,7 +142,6 @@ const PaymentMethodManager = () => {
   const addPaymentMethod = async () => {
     if (!user) return;
     
-    setAddingCard(true);
     try {
       // Get Setup Intent from backend
       const { data, error } = await supabase.functions.invoke('stripe-setup-intent', {
@@ -78,23 +155,8 @@ const PaymentMethodManager = () => {
 
       if (error) throw error;
 
-      const stripe = await stripePromise;
-      if (!stripe) throw new Error('Stripe failed to initialize');
-
-      // Use confirmSetup for Setup Intent, not redirectToCheckout
-      const { error: confirmError } = await stripe.confirmSetup({
-        clientSecret: data.clientSecret,
-        confirmParams: {
-          return_url: `${window.location.origin}/customer-settings?payment_setup=success`,
-        },
-      });
-
-      if (confirmError) {
-        throw confirmError;
-      }
-
-      // Refresh payment methods after successful setup
-      await fetchPaymentMethods();
+      setSetupClientSecret(data.clientSecret);
+      setShowSetupDialog(true);
     } catch (error) {
       console.error('Error adding payment method:', error);
       toast({
@@ -102,9 +164,13 @@ const PaymentMethodManager = () => {
         description: "Failed to add payment method",
         variant: "destructive",
       });
-    } finally {
-      setAddingCard(false);
     }
+  };
+
+  const handleSetupSuccess = async () => {
+    setShowSetupDialog(false);
+    setSetupClientSecret('');
+    await fetchPaymentMethods();
   };
 
   const deletePaymentMethod = async (id: string) => {
@@ -247,15 +313,46 @@ const PaymentMethodManager = () => {
 
         <Button
           onClick={addPaymentMethod}
-          disabled={addingCard}
           className="w-full"
         >
           <Plus className="h-4 w-4 mr-2" />
-          {addingCard ? 'Setting up...' : 'Add Payment Method'}
+          Add Payment Method
         </Button>
+
+        {/* Payment Setup Dialog */}
+        <Dialog open={showSetupDialog} onOpenChange={setShowSetupDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add Payment Method</DialogTitle>
+            </DialogHeader>
+            {setupClientSecret && (
+              <Elements 
+                stripe={stripePromise} 
+                options={{ 
+                  clientSecret: setupClientSecret,
+                  appearance: { theme: 'stripe' }
+                }}
+              >
+                <PaymentSetupForm
+                  clientSecret={setupClientSecret}
+                  onSuccess={handleSetupSuccess}
+                  onCancel={() => setShowSetupDialog(false)}
+                />
+              </Elements>
+            )}
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
 };
 
-export default PaymentMethodManager;
+const PaymentMethodManagerWrapper = () => {
+  return (
+    <Elements stripe={stripePromise}>
+      <PaymentMethodManager />
+    </Elements>
+  );
+};
+
+export default PaymentMethodManagerWrapper;
