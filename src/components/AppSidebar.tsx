@@ -2,7 +2,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useLocation } from 'react-router-dom';
-import { Calendar, Users, LayoutDashboard, User, History } from 'lucide-react';
+import { Calendar, Users, LayoutDashboard, User, History, Eye } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -50,6 +50,12 @@ export function AppSidebar() {
       title: "Users",
       url: "/users",
       icon: Users,
+      adminOnly: true,
+    },
+    {
+      title: "Customer Portal View",
+      url: "/admin-customer-portal",
+      icon: Eye,
       adminOnly: true,
     },
   ];

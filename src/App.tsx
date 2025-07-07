@@ -20,6 +20,7 @@ import CustomerCompletedBookings from "./pages/CustomerCompletedBookings";
 import CustomerSettings from "./pages/CustomerSettings";
 import CustomerAddBooking from "./pages/CustomerAddBooking";
 import CreateCustomerAccounts from "./pages/CreateCustomerAccounts";
+import AdminCustomerPortalView from "./pages/AdminCustomerPortalView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const App = () => (
             <Route path="/customer-settings" element={<CustomerSettings />} />
             <Route path="/customer-add-booking" element={<CustomerAddBooking />} />
             <Route path="/create-customer-accounts" element={<CreateCustomerAccounts />} />
+            <Route path="/admin-customer-portal" element={<AdminCustomerPortalView />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
