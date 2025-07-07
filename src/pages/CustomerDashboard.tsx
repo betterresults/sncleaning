@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock, MapPin } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import AdminCustomerSelector from '@/components/admin/AdminCustomerSelector';
+import CustomerUpcomingBookings from '@/components/customer/CustomerUpcomingBookings';
 
 const CustomerDashboard = () => {
   const { userRole } = useAuth();
@@ -24,21 +25,7 @@ const CustomerDashboard = () => {
             </div>
 
             {/* Placeholder content - will be implemented later */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Upcoming Bookings
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No upcoming bookings found.</p>
-                  <p className="text-sm">Book a new cleaning service to get started.</p>
-                </div>
-              </CardContent>
-            </Card>
+            <CustomerUpcomingBookings />
           </div>
         </main>
       </div>

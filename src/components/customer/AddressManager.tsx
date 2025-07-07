@@ -8,6 +8,7 @@ import { MapPin, Plus, Edit, Trash2, Save, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 import {
   Dialog,
   DialogContent,
@@ -24,8 +25,12 @@ interface Address {
 }
 
 const AddressManager = () => {
-  const { customerId } = useAuth();
+  const { customerId, userRole } = useAuth();
+  const { selectedCustomerId } = useAdminCustomer();
   const { toast } = useToast();
+  
+  // Use selected customer ID if admin is viewing, otherwise use the logged-in user's customer ID
+  const activeCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -33,19 +38,19 @@ const AddressManager = () => {
   const [newAddress, setNewAddress] = useState({ address: '', postcode: '' });
 
   useEffect(() => {
-    if (customerId) {
+    if (activeCustomerId) {
       fetchAddresses();
     }
-  }, [customerId]);
+  }, [activeCustomerId]);
 
   const fetchAddresses = async () => {
-    if (!customerId) return;
+    if (!activeCustomerId) return;
 
     try {
       const { data, error } = await supabase
         .from('addresses')
         .select('*')
-        .eq('customer_id', customerId)
+        .eq('customer_id', activeCustomerId)
         .order('is_default', { ascending: false });
 
       if (error) throw error;
@@ -61,14 +66,14 @@ const AddressManager = () => {
   };
 
   const handleAddAddress = async () => {
-    if (!customerId || !newAddress.address || !newAddress.postcode) return;
+    if (!activeCustomerId || !newAddress.address || !newAddress.postcode) return;
 
     setLoading(true);
     try {
       const { error } = await supabase
         .from('addresses')
         .insert({
-          customer_id: customerId,
+          customer_id: activeCustomerId,
           address: newAddress.address,
           postcode: newAddress.postcode,
           is_default: addresses.length === 0 // First address becomes default

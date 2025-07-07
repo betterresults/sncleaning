@@ -23,10 +23,14 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 
 const CustomerSidebar = ({ customerId }: { customerId?: number }) => {
   const location = useLocation();
-  const { signOut, user } = useAuth();
+  const { signOut, user, userRole } = useAuth();
+  const { selectedCustomerId } = useAdminCustomer();
+  
+  const isAdminViewing = userRole === 'admin';
 
   const menuItems = [
     {
@@ -60,11 +64,15 @@ const CustomerSidebar = ({ customerId }: { customerId?: number }) => {
       <SidebarHeader className="border-b px-6 py-4">
         <div className="flex items-center gap-2">
           <User className="h-6 w-6 text-blue-600" />
-          <span className="text-lg font-semibold">Customer Portal</span>
+          <span className="text-lg font-semibold">
+            {isAdminViewing ? 'Admin View - Customer Portal' : 'Customer Portal'}
+          </span>
         </div>
-        {user?.email && (
+        {isAdminViewing && selectedCustomerId ? (
+          <p className="text-sm text-blue-600 mt-1">Viewing as Customer ID: {selectedCustomerId}</p>
+        ) : user?.email ? (
           <p className="text-sm text-muted-foreground mt-1">{user.email}</p>
-        )}
+        ) : null}
       </SidebarHeader>
       
       <SidebarContent>

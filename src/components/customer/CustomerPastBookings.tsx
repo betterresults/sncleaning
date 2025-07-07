@@ -1,0 +1,185 @@
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CheckCircle, Calendar, Clock, MapPin, User } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+
+interface PastBooking {
+  id: number;
+  date_time: string;
+  address: string;
+  postcode: string;
+  service_type: string;
+  total_hours: number;
+  total_cost: string;
+  booking_status: string;
+  cleaner?: {
+    first_name: string;
+    last_name: string;
+  } | null;
+  cleaner_id?: number;
+}
+
+const CustomerPastBookings = () => {
+  const { customerId, userRole } = useAuth();
+  const { selectedCustomerId } = useAdminCustomer();
+  const { toast } = useToast();
+  const [bookings, setBookings] = useState<PastBooking[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Use selected customer ID if admin is viewing, otherwise use the logged-in user's customer ID
+  const activeCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
+
+  useEffect(() => {
+    if (activeCustomerId) {
+      fetchPastBookings();
+    } else {
+      setBookings([]);
+      setLoading(false);
+    }
+  }, [activeCustomerId]);
+
+  const fetchPastBookings = async () => {
+    if (!activeCustomerId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('past_bookings')
+        .select(`
+          id,
+          date_time,
+          address,
+          postcode,
+          service_type,
+          total_hours,
+          total_cost,
+          booking_status,
+          cleaner
+        `)
+        .eq('customer', activeCustomerId)
+        .order('date_time', { ascending: false });
+
+      if (error) throw error;
+      
+      // Transform the data to include cleaner info from the cleaner ID
+      const bookingsWithCleanerInfo = await Promise.all(
+        (data || []).map(async (booking) => {
+          if (booking.cleaner) {
+            const { data: cleanerData } = await supabase
+              .from('cleaners')
+              .select('first_name, last_name')
+              .eq('id', booking.cleaner)
+              .single();
+            
+            return {
+              ...booking,
+              cleaner: cleanerData,
+              cleaner_id: booking.cleaner
+            };
+          }
+          return {
+            ...booking,
+            cleaner: null,
+            cleaner_id: booking.cleaner
+          };
+        })
+      );
+      
+      setBookings(bookingsWithCleanerInfo);
+    } catch (error) {
+      console.error('Error fetching past bookings:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load completed bookings',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CheckCircle className="h-5 w-5" />
+            Booking History
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            Loading booking history...
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <CheckCircle className="h-5 w-5" />
+          Booking History
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {bookings.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>No completed bookings found.</p>
+            <p className="text-sm">Your completed bookings will appear here.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {bookings.map((booking) => (
+              <div key={booking.id} className="border rounded-lg p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-medium">{booking.service_type}</h3>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        {booking.date_time ? new Date(booking.date_time).toLocaleDateString() : 'N/A'}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {booking.date_time ? new Date(booking.date_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4" />
+                        {booking.address}, {booking.postcode}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium">£{booking.total_cost || 0}</div>
+                    <div className="text-sm text-muted-foreground">{booking.total_hours || 0}h</div>
+                  </div>
+                </div>
+                
+                {booking.cleaner && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <User className="h-4 w-4" />
+                    <span>Cleaner: {booking.cleaner.first_name} {booking.cleaner.last_name}</span>
+                  </div>
+                )}
+                
+                <div className="flex items-center justify-between">
+                  <span className="inline-block px-2 py-1 rounded text-xs bg-green-100 text-green-800">
+                    Completed
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+export default CustomerPastBookings;

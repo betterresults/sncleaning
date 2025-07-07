@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import AdminCustomerSelector from '@/components/admin/AdminCustomerSelector';
+import CustomerPastBookings from '@/components/customer/CustomerPastBookings';
 
 const CustomerCompletedBookings = () => {
   const { userRole } = useAuth();
@@ -24,21 +25,7 @@ const CustomerCompletedBookings = () => {
             </div>
 
             {/* Placeholder content - will be implemented later */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5" />
-                  Booking History
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No completed bookings found.</p>
-                  <p className="text-sm">Your completed bookings will appear here.</p>
-                </div>
-              </CardContent>
-            </Card>
+            <CustomerPastBookings />
           </div>
         </main>
       </div>

@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { loadStripe } from '@stripe/stripe-js';
+import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 
 // Initialize Stripe with your publishable key
 const stripePromise = loadStripe('pk_test_51PZ9ZqA2n6DFbTnQYGCadMZLV2CQyJjGc6k6X2tiZFhM8AHqGaxuTDTQEZnXiY3Q48TN253yLVuoyQP4gcxhUUA03D9MJymb');
@@ -20,23 +21,30 @@ interface PaymentMethod {
 }
 
 const PaymentMethodManager = () => {
-  const { user } = useAuth();
+  const { user, customerId, userRole } = useAuth();
+  const { selectedCustomerId } = useAdminCustomer();
   const { toast } = useToast();
+  
+  // Use selected customer ID if admin is viewing, otherwise use the logged-in user's customer ID  
+  const activeCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingCard, setAddingCard] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (activeCustomerId) {
       fetchPaymentMethods();
     }
-  }, [user]);
+  }, [activeCustomerId]);
 
   const fetchPaymentMethods = async () => {
+    if (!activeCustomerId) return;
+    
     try {
       const { data, error } = await supabase
         .from('customer_payment_methods')
         .select('*')
+        .eq('customer_id', activeCustomerId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
