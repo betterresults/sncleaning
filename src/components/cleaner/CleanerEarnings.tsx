@@ -296,25 +296,23 @@ const CleanerEarnings = () => {
       {/* Upcoming Payment - Modern Design */}
       <Card className="relative overflow-hidden bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 border-0 text-white">
         <div className="absolute inset-0 bg-black/10"></div>
-        <CardHeader className="relative z-10 pb-4">
-          <CardTitle className="flex items-center gap-3 text-white">
-            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-              <CreditCard className="h-6 w-6" />
+        <CardContent className="relative z-10 p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                <CreditCard className="h-6 w-6" />
+              </div>
+              <div>
+                <div className="text-lg font-medium">Next Payment</div>
+                <div className="text-sm opacity-80">{earnings.upcomingPayment.paymentDate}</div>
+                <div className="flex items-center gap-2 text-sm bg-white/10 rounded-full px-3 py-1 backdrop-blur-sm w-fit mt-2">
+                  <Calendar className="h-4 w-4" />
+                  <span>{earnings.upcomingPayment.periodStart} - {earnings.upcomingPayment.periodEnd}</span>
+                </div>
+              </div>
             </div>
-            <div>
-              <div className="text-sm font-medium opacity-90">Next Payment</div>
-              <div className="text-xs opacity-70">{earnings.upcomingPayment.paymentDate}</div>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="relative z-10 pt-0">
-          <div className="space-y-3">
             <div className="text-4xl font-bold tracking-tight">
               £{earnings.upcomingPayment.amount.toFixed(2)}
-            </div>
-            <div className="flex items-center gap-2 text-sm bg-white/10 rounded-full px-3 py-1 backdrop-blur-sm w-fit">
-              <Calendar className="h-4 w-4" />
-              <span>{earnings.upcomingPayment.periodStart} - {earnings.upcomingPayment.periodEnd}</span>
             </div>
           </div>
         </CardContent>
@@ -345,12 +343,6 @@ const CleanerEarnings = () => {
             <CardHeader className="relative z-10 flex flex-row items-center justify-between space-y-0 pb-3">
               <div>
                 <CardTitle className="text-sm font-medium text-emerald-700">Total Earnings</CardTitle>
-                <p className="text-xs text-emerald-600 mt-1">
-                  {selectedPeriod === 'current' ? 'This month' : 
-                   selectedPeriod === 'lastMonth' ? 'Last month' :
-                   selectedPeriod === 'last3Months' ? 'Last 3 months' :
-                   selectedPeriod === 'last6Months' ? 'Last 6 months' : 'All time'}
-                </p>
               </div>
               <div className="p-3 bg-emerald-100 rounded-xl">
                 <DollarSign className="h-6 w-6 text-emerald-600" />
@@ -373,9 +365,6 @@ const CleanerEarnings = () => {
             <CardHeader className="relative z-10 flex flex-row items-center justify-between space-y-0 pb-3">
               <div>
                 <CardTitle className="text-sm font-medium text-blue-700">Completed Jobs</CardTitle>
-                <p className="text-xs text-blue-600 mt-1">
-                  Jobs completed successfully
-                </p>
               </div>
               <div className="p-3 bg-blue-100 rounded-xl">
                 <CalendarDays className="h-6 w-6 text-blue-600" />
