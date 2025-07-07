@@ -85,9 +85,9 @@ const CleanerMessages = () => {
     }
   };
 
-  const handleSendMessage = async (message: string) => {
+  const handleSendMessage = async (message: string, fileUrl?: string) => {
     if (activeChat) {
-      await sendMessage(activeChat.id, message);
+      await sendMessage(activeChat.id, message, fileUrl);
     }
   };
 

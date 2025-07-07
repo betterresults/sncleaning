@@ -133,7 +133,7 @@ export const useChat = (selectedCleanerId?: number, selectedCustomerId?: number)
   }, []);
 
   // Send a message
-  const sendMessage = useCallback(async (chatId: string, message: string) => {
+  const sendMessage = useCallback(async (chatId: string, message: string, fileUrl?: string) => {
     if (!user || !message.trim()) return;
 
     setSendingMessage(true);
@@ -171,7 +171,8 @@ export const useChat = (selectedCleanerId?: number, selectedCustomerId?: number)
           sender_type: senderType,
           sender_id: senderId,
           message: message.trim(),
-          message_type: 'text'
+          message_type: fileUrl ? 'file' : 'text',
+          file_url: fileUrl
         });
 
       if (error) throw error;
