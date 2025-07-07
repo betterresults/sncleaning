@@ -23,20 +23,61 @@ const CustomerAddBooking = () => {
               <p className="text-muted-foreground">Schedule a new cleaning service</p>
             </div>
 
-            {/* Placeholder content - will be implemented later */}
+            {/* Service Selection */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              <Card className="cursor-pointer hover:bg-accent/50 transition-colors border-2 hover:border-primary">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Plus className="h-5 w-5" />
+                    Airbnb Cleaning
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">Professional cleaning for short-term rentals</p>
+                  <p className="text-sm mt-2 font-medium">Standard • Mid-stay • Deep cleaning</p>
+                </CardContent>
+              </Card>
+
+              <Card className="cursor-pointer hover:bg-accent/50 transition-colors border-2 hover:border-primary opacity-50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Plus className="h-5 w-5" />
+                    Standard Cleaning
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">Regular house cleaning service</p>
+                  <p className="text-sm mt-2 text-muted-foreground">Coming Soon</p>
+                </CardContent>
+              </Card>
+
+              <Card className="cursor-pointer hover:bg-accent/50 transition-colors border-2 hover:border-primary opacity-50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Plus className="h-5 w-5" />
+                    Deep Cleaning
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">Thorough deep cleaning service</p>
+                  <p className="text-sm mt-2 text-muted-foreground">Coming Soon</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Airbnb Booking Form */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Plus className="h-5 w-5" />
-                  Book a Cleaning Service
+                  Airbnb Cleaning Booking
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-12 text-muted-foreground">
-                  <Plus className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                  <h3 className="text-lg font-medium mb-2">Booking Form Coming Soon</h3>
-                  <p>The booking form will be implemented here.</p>
-                  <p className="text-sm">You'll be able to select services, schedule appointments, and manage your bookings.</p>
+                <div className="text-center py-8 text-muted-foreground">
+                  <Plus className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <h3 className="text-lg font-medium mb-2">Airbnb Booking Form</h3>
+                  <p>Dynamic booking form with pricing calculator will be implemented here.</p>
                 </div>
               </CardContent>
             </Card>

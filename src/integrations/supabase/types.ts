@@ -556,6 +556,47 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_pricing_overrides: {
+        Row: {
+          created_at: string
+          customer_id: number
+          id: string
+          override_formula_config: Json | null
+          override_rate: number | null
+          service_type: string
+          sub_service_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: number
+          id?: string
+          override_formula_config?: Json | null
+          override_rate?: number | null
+          service_type: string
+          sub_service_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: number
+          id?: string
+          override_formula_config?: Json | null
+          override_rate?: number | null
+          service_type?: string
+          sub_service_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_pricing_overrides_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null
@@ -944,6 +985,42 @@ export type Database = {
           id?: number
           permission?: Database["public"]["Enums"]["app_permission"]
           role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
+      service_pricing_formulas: {
+        Row: {
+          base_hourly_rate: number | null
+          created_at: string
+          formula_config: Json
+          formula_name: string
+          id: string
+          is_active: boolean | null
+          service_type: string
+          sub_service_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          base_hourly_rate?: number | null
+          created_at?: string
+          formula_config: Json
+          formula_name: string
+          id?: string
+          is_active?: boolean | null
+          service_type: string
+          sub_service_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          base_hourly_rate?: number | null
+          created_at?: string
+          formula_config?: Json
+          formula_name?: string
+          id?: string
+          is_active?: boolean | null
+          service_type?: string
+          sub_service_type?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
