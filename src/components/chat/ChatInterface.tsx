@@ -104,7 +104,7 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
   };
 
   return (
-    <div className="flex flex-col h-full bg-card">
+    <div className="flex flex-col h-full bg-card overflow-hidden">
       {/* Chat Header */}
       <div className="flex items-center justify-between p-4 border-b border-border">
         <div className="flex items-center space-x-3">

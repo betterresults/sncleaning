@@ -99,7 +99,7 @@ const CustomerMessages = () => {
             </div>
           </header>
           
-          <main className="flex-1 flex flex-col h-[calc(100vh-3.5rem)]">
+          <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
             {/* Admin Customer Selector */}
             {isAdminViewing && (
               <div className="p-4 border-b border-border bg-muted/30">
@@ -119,9 +119,9 @@ const CustomerMessages = () => {
                 </div>
               </div>
             ) : (
-              <div className="flex-1 flex">
+              <div className="flex-1 flex min-h-0">
                 {/* Contacts List */}
-                <div className="w-80 flex-shrink-0">
+                <div className="w-80 flex-shrink-0 h-full overflow-hidden">
                   <CustomerContacts
                     chats={chats}
                     activeChat={activeChat}
@@ -133,7 +133,7 @@ const CustomerMessages = () => {
                 </div>
 
                 {/* Chat Interface */}
-                <div className="flex-1">
+                <div className="flex-1 min-h-0">
                   {activeChat ? (
                     <ChatInterface
                       chat={activeChat}
