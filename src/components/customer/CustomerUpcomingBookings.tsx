@@ -231,11 +231,6 @@ const CustomerUpcomingBookings = () => {
                   <h3 className="text-xl font-bold text-foreground tracking-tight">{booking.service_type}</h3>
                   <div className="text-right">
                     <div className="text-2xl font-bold text-primary">£{booking.total_cost}</div>
-                    {booking.cleaner && (
-                      <div className="text-sm text-muted-foreground mt-1">
-                        <span className="font-medium text-green-600 dark:text-green-400">{booking.cleaner.first_name} {booking.cleaner.last_name}</span>
-                      </div>
-                    )}
                   </div>
                 </div>
                 
