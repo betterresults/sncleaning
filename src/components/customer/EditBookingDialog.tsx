@@ -42,15 +42,13 @@ interface EditBookingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onBookingUpdated: () => void;
-  onDuplicateBooking?: (booking: Booking) => void;
 }
 
 const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   booking,
   open,
   onOpenChange,
-  onBookingUpdated,
-  onDuplicateBooking
+  onBookingUpdated
 }) => {
   const { userRole } = useAuth();
   const { selectedCustomerId } = useAdminCustomer();
@@ -173,42 +171,6 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     }
   };
 
-  const handleCancel = async () => {
-    if (!booking) return;
-
-    setLoading(true);
-    try {
-      const { error } = await supabase
-        .from('bookings')
-        .update({ booking_status: 'cancelled' })
-        .eq('id', booking.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Booking cancelled successfully",
-      });
-
-      onBookingUpdated();
-      onOpenChange(false);
-    } catch (error) {
-      console.error('Error cancelling booking:', error);
-      toast({
-        title: "Error",
-        description: "Failed to cancel booking",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDuplicate = async () => {
-    if (!booking || !onDuplicateBooking) return;
-    onDuplicateBooking(booking);
-    onOpenChange(false);
-  };
 
   if (!booking) return null;
 
@@ -347,42 +309,20 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
           </div>
         </div>
 
-        <div className="flex justify-between pt-4">
-          <div className="flex gap-2">
-            <Button
-              onClick={handleCancel}
-              variant="destructive"
-              disabled={loading}
-            >
-              Cancel Booking
-            </Button>
-            
-            {onDuplicateBooking && (
-              <Button
-                onClick={handleDuplicate}
-                variant="outline"
-                disabled={loading}
-              >
-                Duplicate Booking
-              </Button>
-            )}
-          </div>
-          
-          <div className="flex gap-2">
-            <Button
-              onClick={() => onOpenChange(false)}
-              variant="outline"
-              disabled={loading}
-            >
-              Close
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={loading}
-            >
-              {loading ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </div>
+        <div className="flex justify-end gap-2 pt-4">
+          <Button
+            onClick={() => onOpenChange(false)}
+            variant="outline"
+            disabled={loading}
+          >
+            Close
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={loading}
+          >
+            {loading ? 'Saving...' : 'Save Changes'}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
