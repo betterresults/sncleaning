@@ -80,11 +80,16 @@ serve(async (req) => {
     }
 
     // Check if this is the first payment method for this customer
-    const { data: existingMethods } = await supabaseClient
+    const { data: existingMethods, error: existingError } = await supabaseClient
       .from('customer_payment_methods')
       .select('id')
       .eq('customer_id', customerId)
 
+    if (existingError) {
+      console.error('Error checking existing methods:', existingError)
+    }
+
+    console.log('Existing methods check:', { customerId, existingMethods, count: existingMethods?.length })
     const isFirstPaymentMethod = !existingMethods || existingMethods.length === 0
 
     // Save payment method to database

@@ -167,7 +167,12 @@ const PaymentMethodManager = () => {
   }, [activeCustomerId]);
 
   const fetchPaymentMethods = async () => {
-    if (!activeCustomerId) return;
+    if (!activeCustomerId) {
+      console.log('PaymentMethodManager: No activeCustomerId, skipping fetch');
+      return;
+    }
+    
+    console.log('PaymentMethodManager: Fetching payment methods for customer:', activeCustomerId);
     
     try {
       const { data, error } = await supabase
@@ -175,6 +180,8 @@ const PaymentMethodManager = () => {
         .select('*')
         .eq('customer_id', activeCustomerId)
         .order('created_at', { ascending: false });
+
+      console.log('PaymentMethodManager: Fetch result:', { data, error, activeCustomerId });
 
       if (error) throw error;
       setPaymentMethods(data || []);
