@@ -24,7 +24,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 
-const CustomerSidebar = () => {
+const CustomerSidebar = ({ customerId }: { customerId?: number }) => {
   const location = useLocation();
   const { signOut, user } = useAuth();
 

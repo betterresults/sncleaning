@@ -38,43 +38,6 @@ const CustomerAccountCreator = () => {
     fetchCustomers();
   }, []);
 
-  const createFrancesAccount = async () => {
-    try {
-      setLoading(true);
-      
-      // Create user account for existing customer
-      const { data, error } = await supabase.functions.invoke('create-user', {
-        body: {
-          email: 'frances.douglasthomson@gmail.com',
-          password: '123456',
-          firstName: 'Frances',
-          lastName: 'Douglas Thomson',
-          role: 'guest'
-        }
-      });
-
-      if (error) throw error;
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to create user account');
-      }
-
-      toast({
-        title: 'Success',
-        description: 'Account created for Frances Douglas Thomson! Email: frances.douglasthomson@gmail.com, Password: 123456',
-      });
-
-    } catch (error: any) {
-      console.error('Error creating Frances account:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to create account',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filteredCustomers = customers.filter(customer =>
     customer.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -93,11 +56,6 @@ const CustomerAccountCreator = () => {
           <User className="h-5 w-5" />
           Create Customer Accounts
         </CardTitle>
-        <div className="flex gap-2">
-          <Button onClick={createFrancesAccount} disabled={loading}>
-            Create Frances Account (Test)
-          </Button>
-        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
