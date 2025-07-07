@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { 
   Calendar, 
   Clock, 
@@ -68,11 +68,15 @@ const ViewBookingDialog: React.FC<ViewBookingDialogProps> = ({
                   <Calendar className="h-4 w-4 text-blue-600" />
                   <div>
                     <div className="font-semibold">
-                      {booking.date_time ? format(new Date(booking.date_time), 'EEEE, do MMMM yyyy') : 'No date'}
+                      {booking.date_time && isValid(new Date(booking.date_time)) 
+                        ? format(new Date(booking.date_time), 'EEEE, do MMMM yyyy') 
+                        : 'Date not available'}
                     </div>
                     <div className="text-sm text-gray-500 flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      {booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'No time'}
+                      {booking.date_time && isValid(new Date(booking.date_time))
+                        ? format(new Date(booking.date_time), 'HH:mm') 
+                        : 'Time not available'}
                     </div>
                   </div>
                 </div>
@@ -102,7 +106,12 @@ const ViewBookingDialog: React.FC<ViewBookingDialogProps> = ({
                   {booking.phone_number && (
                     <div className="flex items-center gap-3">
                       <Phone className="h-3 w-3 text-gray-400" />
-                      <div className="text-sm">{booking.phone_number}</div>
+                      <a 
+                        href={`tel:${booking.phone_number}`}
+                        className="text-sm text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                      >
+                        {booking.phone_number}
+                      </a>
                     </div>
                   )}
                 </div>
@@ -122,7 +131,14 @@ const ViewBookingDialog: React.FC<ViewBookingDialogProps> = ({
                   <div className="flex items-start gap-3">
                     <Home className="h-3 w-3 text-gray-400 mt-0.5" />
                     <div>
-                      <div className="font-medium">{booking.address}</div>
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${booking.address}, ${booking.postcode}`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                      >
+                        {booking.address}
+                      </a>
                       {booking.postcode && (
                         <div className="text-sm text-gray-500 font-medium">{booking.postcode}</div>
                       )}

@@ -88,7 +88,14 @@ const CleanerBookingCard = ({
       <div className="flex items-center justify-between pt-3 border-t border-border/40">
         <div className="flex items-center gap-2 text-sm text-muted-foreground flex-1 min-w-0">
           <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
-          <span className="truncate">{booking.address}, {booking.postcode}</span>
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${booking.address}, ${booking.postcode}`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="truncate text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+          >
+            {booking.address}, {booking.postcode}
+          </a>
         </div>
         
         <div className="flex items-center gap-2 ml-4">
