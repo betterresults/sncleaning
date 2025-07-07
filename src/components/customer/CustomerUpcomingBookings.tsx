@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Clock, MapPin, User, Edit } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import EditBookingDialog from './EditBookingDialog';
+import DuplicateBookingDialog from './DuplicateBookingDialog';
 
 interface Booking {
   id: number;
@@ -41,6 +43,8 @@ const CustomerUpcomingBookings = () => {
   const [loading, setLoading] = useState(true);
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [duplicatingBooking, setDuplicatingBooking] = useState<Booking | null>(null);
 
   // Use selected customer ID if admin is viewing, otherwise use the logged-in user's customer ID
   const activeCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
@@ -84,51 +88,9 @@ const CustomerUpcomingBookings = () => {
     }
   };
 
-  const handleDuplicateBooking = async (booking: Booking) => {
-    try {
-      // Create a copy of the booking with a new date (next week)
-      const newDate = new Date(booking.date_time);
-      newDate.setDate(newDate.getDate() + 7);
-
-      const { error } = await supabase
-        .from('bookings')
-        .insert({
-          customer: activeCustomerId,
-          date_time: newDate.toISOString(),
-          address: booking.address,
-          postcode: booking.postcode,
-          service_type: booking.service_type,
-          total_hours: booking.total_hours,
-          total_cost: booking.total_cost,
-          cleaning_cost_per_hour: booking.cleaning_cost_per_hour,
-          additional_details: booking.additional_details,
-          property_details: booking.property_details,
-          parking_details: booking.parking_details,
-          key_collection: booking.key_collection,
-          access: booking.access,
-          first_name: booking.first_name,
-          last_name: booking.last_name,
-          phone_number: booking.phone_number,
-          email: booking.email,
-          booking_status: 'Pending'
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Booking duplicated successfully for next week",
-      });
-
-      fetchUpcomingBookings();
-    } catch (error) {
-      console.error('Error duplicating booking:', error);
-      toast({
-        title: "Error",
-        description: "Failed to duplicate booking",
-        variant: "destructive",
-      });
-    }
+  const handleDuplicateBooking = (booking: Booking) => {
+    setDuplicatingBooking(booking);
+    setShowDuplicateDialog(true);
   };
 
   const handleBookingUpdated = () => {
@@ -277,24 +239,32 @@ const CustomerUpcomingBookings = () => {
                   </div>
                 </div>
                 
-                {/* Date, Time, and Hours in a compact row */}
-                <div className="flex items-center gap-6 mb-4 text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="h-4 w-4 text-primary" />
-                    <span className="font-medium">{new Date(booking.date_time).toLocaleDateString('en-GB', { 
-                      day: 'numeric', 
-                      month: 'long', 
-                      year: 'numeric' 
-                    })}, {new Date(booking.date_time).toLocaleTimeString('en-GB', { 
-                      hour: 'numeric', 
-                      minute: '2-digit',
-                      hour12: true 
-                    })}</span>
+                {/* Date, Time, Hours and Cleaner in a compact row */}
+                <div className="flex items-center justify-between mb-4 text-sm">
+                  <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Calendar className="h-4 w-4 text-primary" />
+                      <span className="font-medium">{new Date(booking.date_time).toLocaleDateString('en-GB', { 
+                        day: 'numeric', 
+                        month: 'long', 
+                        year: 'numeric' 
+                      })}, {new Date(booking.date_time).toLocaleTimeString('en-GB', { 
+                        hour: 'numeric', 
+                        minute: '2-digit',
+                        hour12: true 
+                      })}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Clock className="h-4 w-4 text-orange-500" />
+                      <span className="font-medium">{booking.total_hours}h</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Clock className="h-4 w-4 text-orange-500" />
-                    <span className="font-medium">{booking.total_hours}h</span>
-                  </div>
+                  {booking.cleaner && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <User className="h-4 w-4 text-green-600" />
+                      <span className="font-medium text-green-600 dark:text-green-400">{booking.cleaner.first_name} {booking.cleaner.last_name}</span>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Address */}
@@ -316,15 +286,33 @@ const CustomerUpcomingBookings = () => {
                   </span>
                   
                   <div className="flex items-center gap-2">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleCancelBooking(booking)}
-                      className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200 hover:border-red-300 dark:bg-red-950/20 dark:hover:bg-red-950/40 dark:text-red-400 dark:border-red-800/30"
-                    >
-                      <span className="mr-1">✕</span>
-                      <span className="hidden sm:inline">Cancel</span>
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200 hover:border-red-300 dark:bg-red-950/20 dark:hover:bg-red-950/40 dark:text-red-400 dark:border-red-800/30"
+                        >
+                          <span className="mr-1">✕</span>
+                          <span className="hidden sm:inline">Cancel</span>
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Cancel Booking</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to cancel this booking? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>No, Keep Booking</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleCancelBooking(booking)} className="bg-red-600 hover:bg-red-700">
+                            Yes, Cancel Booking
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    
                     <Button
                       variant="outline"
                       size="sm"
@@ -357,6 +345,13 @@ const CustomerUpcomingBookings = () => {
         open={showEditDialog}
         onOpenChange={setShowEditDialog}
         onBookingUpdated={handleBookingUpdated}
+      />
+      
+      <DuplicateBookingDialog
+        booking={duplicatingBooking}
+        open={showDuplicateDialog}
+        onOpenChange={setShowDuplicateDialog}
+        onBookingCreated={fetchUpcomingBookings}
       />
     </div>
   );
