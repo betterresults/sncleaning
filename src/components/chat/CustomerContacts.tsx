@@ -33,6 +33,7 @@ interface Contact {
   lastMessage?: string;
   lastMessageTime?: string;
   unreadCount?: number;
+  showAll?: boolean;
   isExpanded?: boolean;
 }
 
@@ -211,6 +212,14 @@ const CustomerContacts = ({
     }
   };
 
+  const handleShowMore = (contactId: string) => {
+    setContacts(prev => prev.map(c => 
+      c.id === contactId 
+        ? { ...c, showAll: !c.showAll }
+        : c
+    ));
+  };
+
   if (loading || loadingContacts) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -307,7 +316,7 @@ const CustomerContacts = ({
                 {/* Expanded Bookings */}
                 {contact.isExpanded && contact.bookings && (
                   <div className="ml-6 space-y-1">
-                    {contact.bookings.map((booking) => (
+                    {contact.bookings.slice(0, contact.showAll ? undefined : 3).map((booking) => (
                       <div
                         key={booking.id}
                         onClick={(e) => {
@@ -365,6 +374,26 @@ const CustomerContacts = ({
                         </div>
                       </div>
                     ))}
+                    
+                    {/* Show More Button */}
+                    {contact.bookings.length > 3 && (
+                      <div className="ml-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleShowMore(contact.id);
+                          }}
+                          className="text-xs h-8"
+                        >
+                          {contact.showAll 
+                            ? `Show Less` 
+                            : `Show ${contact.bookings.length - 3} More`
+                          }
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

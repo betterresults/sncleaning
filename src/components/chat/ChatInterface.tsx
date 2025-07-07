@@ -59,10 +59,8 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
 
   const isOwnMessage = (message: ChatMessage) => {
     if (userRole === 'admin') {
-      // Admin messages appear on customer's side when viewing customer chats
-      if (customerId) return message.sender_type === 'admin' || message.sender_type === 'customer';
-      // Admin messages appear on cleaner's side when viewing cleaner chats  
-      return message.sender_type === 'admin' || message.sender_type === 'cleaner';
+      // Admin messages always appear on the right side regardless of chat type
+      return message.sender_type === 'admin';
     }
     if (cleanerId) return message.sender_type === 'cleaner' && message.sender_id === cleanerId;
     if (customerId) return message.sender_type === 'customer' && message.sender_id === customerId;
@@ -119,11 +117,10 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
                     : 'bg-muted text-muted-foreground'
                 }`}
               >
-                {!isOwnMessage(message) && (
-                  <p className="text-xs font-medium mb-1 opacity-70">
-                    {getSenderName(message)}
-                  </p>
-                )}
+                {/* Always show sender name for clarity */}
+                <p className="text-xs font-medium mb-1 opacity-70">
+                  {getSenderName(message)}
+                </p>
                 <p className="text-sm">{message.message}</p>
                 <p className={`text-xs mt-1 ${
                   isOwnMessage(message) ? 'text-primary-foreground/70' : 'text-muted-foreground/70'
