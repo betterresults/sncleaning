@@ -107,6 +107,7 @@ const AdminChatManagement = () => {
         .limit(10);
 
       if (error) throw error;
+      console.log('Recent messages fetched:', messages);
       setRecentMessages(messages || []);
     } catch (error) {
       console.error('Error fetching recent messages:', error);
