@@ -11,6 +11,8 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 
 interface Booking {
   id: number;
@@ -22,10 +24,17 @@ interface Booking {
   access: string | null;
   address: string | null;
   postcode: string | null;
-  first_name: string | null;
-  last_name: string | null;
-  phone_number: string | null;
-  email: string | null;
+  total_hours: number;
+  cleaning_cost_per_hour: number | null;
+  total_cost: number;
+}
+
+interface Address {
+  id: string;
+  address: string;
+  postcode: string;
+  deatails: string | null;
+  is_default: boolean;
 }
 
 interface EditBookingDialogProps {
@@ -33,69 +42,112 @@ interface EditBookingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onBookingUpdated: () => void;
+  onDuplicateBooking?: (booking: Booking) => void;
 }
 
 const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   booking,
   open,
   onOpenChange,
-  onBookingUpdated
+  onBookingUpdated,
+  onDuplicateBooking
 }) => {
+  const { userRole } = useAuth();
+  const { selectedCustomerId } = useAdminCustomer();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState('');
+  const [selectedAddressId, setSelectedAddressId] = useState('');
+  const [totalHours, setTotalHours] = useState(0);
   
   const [formData, setFormData] = useState({
     additional_details: '',
     property_details: '',
     parking_details: '',
     key_collection: '',
-    access: '',
-    address: '',
-    postcode: '',
-    first_name: '',
-    last_name: '',
-    phone_number: '',
-    email: ''
+    access: ''
   });
 
+  // Get active customer ID
+  const activeCustomerId = userRole === 'admin' ? selectedCustomerId : null;
+
+  // Fetch customer addresses
+  const fetchAddresses = async () => {
+    if (!activeCustomerId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('addresses')
+        .select('*')
+        .eq('customer_id', activeCustomerId)
+        .order('is_default', { ascending: false });
+
+      if (error) throw error;
+      setAddresses(data || []);
+    } catch (error) {
+      console.error('Error fetching addresses:', error);
+    }
+  };
+
   React.useEffect(() => {
-    if (booking) {
+    if (booking && open) {
       const bookingDate = new Date(booking.date_time);
       setSelectedDate(bookingDate);
       setSelectedTime(format(bookingDate, 'HH:mm'));
+      setTotalHours(booking.total_hours || 0);
+      
+      // Find matching address
+      const matchingAddress = addresses.find(addr => 
+        addr.address === booking.address && addr.postcode === booking.postcode
+      );
+      setSelectedAddressId(matchingAddress?.id || '');
       
       setFormData({
         additional_details: booking.additional_details || '',
         property_details: booking.property_details || '',
         parking_details: booking.parking_details || '',
         key_collection: booking.key_collection || '',
-        access: booking.access || '',
-        address: booking.address || '',
-        postcode: booking.postcode || '',
-        first_name: booking.first_name || '',
-        last_name: booking.last_name || '',
-        phone_number: booking.phone_number || '',
-        email: booking.email || ''
+        access: booking.access || ''
       });
     }
-  }, [booking]);
+  }, [booking, open, addresses]);
+
+  React.useEffect(() => {
+    if (open && activeCustomerId) {
+      fetchAddresses();
+    }
+  }, [open, activeCustomerId]);
 
   const handleSave = async () => {
-    if (!booking || !selectedDate) return;
+    if (!booking || !selectedDate || !selectedAddressId) return;
 
     setLoading(true);
     try {
+      // Get selected address details
+      const selectedAddress = addresses.find(addr => addr.id === selectedAddressId);
+      if (!selectedAddress) throw new Error('Selected address not found');
+
       // Combine date and time
       const [hours, minutes] = selectedTime.split(':').map(Number);
       const newDateTime = new Date(selectedDate);
       newDateTime.setHours(hours, minutes, 0, 0);
 
+      // Calculate new total cost if hours changed
+      let newTotalCost = booking.total_cost;
+      if (totalHours !== booking.total_hours && booking.cleaning_cost_per_hour) {
+        newTotalCost = totalHours * booking.cleaning_cost_per_hour;
+      }
+
       const { error } = await supabase
         .from('bookings')
         .update({
           date_time: newDateTime.toISOString(),
+          total_hours: totalHours,
+          total_cost: newTotalCost,
+          address: selectedAddress.address,
+          postcode: selectedAddress.postcode,
           ...formData
         })
         .eq('id', booking.id);
@@ -152,6 +204,12 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     }
   };
 
+  const handleDuplicate = async () => {
+    if (!booking || !onDuplicateBooking) return;
+    onDuplicateBooking(booking);
+    onOpenChange(false);
+  };
+
   if (!booking) return null;
 
   return (
@@ -162,8 +220,8 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Date and Time */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Date, Time and Hours */}
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <Label>Date</Label>
               <Popover>
@@ -203,60 +261,41 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                 />
               </div>
             </div>
-          </div>
 
-          {/* Contact Information */}
-          <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>First Name</Label>
+              <Label>Hours</Label>
               <Input
-                value={formData.first_name}
-                onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label>Last Name</Label>
-              <Input
-                value={formData.last_name}
-                onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
+                type="number"
+                min="1"
+                max="12"
+                step="0.5"
+                value={totalHours}
+                onChange={(e) => setTotalHours(parseFloat(e.target.value) || 0)}
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Phone Number</Label>
-              <Input
-                value={formData.phone_number}
-                onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label>Email</Label>
-              <Input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              />
-            </div>
-          </div>
-
-          {/* Address */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Address</Label>
-              <Input
-                value={formData.address}
-                onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label>Postcode</Label>
-              <Input
-                value={formData.postcode}
-                onChange={(e) => setFormData(prev => ({ ...prev, postcode: e.target.value }))}
-              />
-            </div>
+          {/* Address Selection */}
+          <div>
+            <Label>Address</Label>
+            <select
+              value={selectedAddressId}
+              onChange={(e) => setSelectedAddressId(e.target.value)}
+              className="w-full p-2 border border-input rounded-md bg-background"
+            >
+              <option value="">Select an address...</option>
+              {addresses.map((address) => (
+                <option key={address.id} value={address.id}>
+                  {address.address}, {address.postcode}
+                  {address.is_default ? ' (Default)' : ''}
+                </option>
+              ))}
+            </select>
+            {addresses.length === 0 && (
+              <p className="text-sm text-muted-foreground mt-1">
+                No addresses found. Please add an address in Settings first.
+              </p>
+            )}
           </div>
 
           {/* Details */}
@@ -309,13 +348,25 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
         </div>
 
         <div className="flex justify-between pt-4">
-          <Button
-            onClick={handleCancel}
-            variant="destructive"
-            disabled={loading}
-          >
-            Cancel Booking
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleCancel}
+              variant="destructive"
+              disabled={loading}
+            >
+              Cancel Booking
+            </Button>
+            
+            {onDuplicateBooking && (
+              <Button
+                onClick={handleDuplicate}
+                variant="outline"
+                disabled={loading}
+              >
+                Duplicate Booking
+              </Button>
+            )}
+          </div>
           
           <div className="flex gap-2">
             <Button

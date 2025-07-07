@@ -16,6 +16,7 @@ interface Booking {
   service_type: string;
   total_hours: number;
   total_cost: number;
+  cleaning_cost_per_hour: number | null;
   booking_status: string;
   additional_details: string | null;
   property_details: string | null;
@@ -58,6 +59,53 @@ const CustomerUpcomingBookings = () => {
     setShowEditDialog(true);
   };
 
+  const handleDuplicateBooking = async (booking: Booking) => {
+    try {
+      // Create a copy of the booking with a new date (next week)
+      const newDate = new Date(booking.date_time);
+      newDate.setDate(newDate.getDate() + 7);
+
+      const { error } = await supabase
+        .from('bookings')
+        .insert({
+          customer: activeCustomerId,
+          date_time: newDate.toISOString(),
+          address: booking.address,
+          postcode: booking.postcode,
+          service_type: booking.service_type,
+          total_hours: booking.total_hours,
+          total_cost: booking.total_cost,
+          cleaning_cost_per_hour: booking.cleaning_cost_per_hour,
+          additional_details: booking.additional_details,
+          property_details: booking.property_details,
+          parking_details: booking.parking_details,
+          key_collection: booking.key_collection,
+          access: booking.access,
+          first_name: booking.first_name,
+          last_name: booking.last_name,
+          phone_number: booking.phone_number,
+          email: booking.email,
+          booking_status: 'Pending'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Booking duplicated successfully for next week",
+      });
+
+      fetchUpcomingBookings();
+    } catch (error) {
+      console.error('Error duplicating booking:', error);
+      toast({
+        title: "Error",
+        description: "Failed to duplicate booking",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleBookingUpdated = () => {
     fetchUpcomingBookings();
   };
@@ -76,6 +124,7 @@ const CustomerUpcomingBookings = () => {
           service_type,
           total_hours,
           total_cost,
+          cleaning_cost_per_hour,
           booking_status,
           additional_details,
           property_details,
@@ -203,6 +252,7 @@ const CustomerUpcomingBookings = () => {
         open={showEditDialog}
         onOpenChange={setShowEditDialog}
         onBookingUpdated={handleBookingUpdated}
+        onDuplicateBooking={handleDuplicateBooking}
       />
     </Card>
   );
