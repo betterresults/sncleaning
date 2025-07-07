@@ -37,20 +37,22 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
 
   const getChatTitle = () => {
     if (chat.chat_type === 'customer_office') {
-      return userRole === 'admin' ? `${chat.customer?.first_name} ${chat.customer?.last_name}` : 'SN Cleaning Office';
+      return userRole === 'admin' ? `${chat.customer?.first_name || 'Customer'} ${chat.customer?.last_name || ''}`.trim() : 'SN Cleaning Office';
     } else if (chat.chat_type === 'customer_cleaner') {
       if (userRole === 'admin') {
-        const title = `${chat.customer?.first_name} ${chat.customer?.last_name} ↔ ${chat.cleaner?.first_name} ${chat.cleaner?.last_name}`;
+        const customerName = `${chat.customer?.first_name || 'Customer'} ${chat.customer?.last_name || ''}`.trim();
+        const cleanerName = `${chat.cleaner?.first_name || 'Cleaner'} ${chat.cleaner?.last_name || ''}`.trim();
+        const title = `${customerName} ↔ ${cleanerName}`;
         return chat.booking ? `${title} - ${chat.booking.service_type}` : title;
       } else if (customerId) {
-        const title = `${chat.cleaner?.first_name} ${chat.cleaner?.last_name}`;
+        const title = `${chat.cleaner?.first_name || 'Cleaner'} ${chat.cleaner?.last_name || ''}`.trim();
         return chat.booking ? `${title} - ${chat.booking.service_type}` : title;
       } else {
-        const title = `${chat.customer?.first_name} ${chat.customer?.last_name}`;
+        const title = `${chat.customer?.first_name || 'Customer'} ${chat.customer?.last_name || ''}`.trim();
         return chat.booking ? `${title} - ${chat.booking.service_type}` : title;
       }
     } else if (chat.chat_type === 'office_cleaner') {
-      return userRole === 'admin' ? `${chat.cleaner?.first_name} ${chat.cleaner?.last_name}` : 'SN Cleaning Office';
+      return userRole === 'admin' ? `${chat.cleaner?.first_name || 'Cleaner'} ${chat.cleaner?.last_name || ''}`.trim() : 'SN Cleaning Office';
     }
     return 'Chat';
   };
