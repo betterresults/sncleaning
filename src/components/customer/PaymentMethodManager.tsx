@@ -143,6 +143,7 @@ const PaymentMethodManager = () => {
     if (!user) return;
     
     try {
+      console.log('Starting payment method setup...');
       // Get Setup Intent from backend
       const { data, error } = await supabase.functions.invoke('stripe-setup-intent', {
         headers: {
@@ -153,8 +154,12 @@ const PaymentMethodManager = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Setup intent error:', error);
+        throw error;
+      }
 
+      console.log('Setup intent created:', data);
       setSetupClientSecret(data.clientSecret);
       setShowSetupDialog(true);
     } catch (error) {
@@ -347,12 +352,4 @@ const PaymentMethodManager = () => {
   );
 };
 
-const PaymentMethodManagerWrapper = () => {
-  return (
-    <Elements stripe={stripePromise}>
-      <PaymentMethodManager />
-    </Elements>
-  );
-};
-
-export default PaymentMethodManagerWrapper;
+export default PaymentMethodManager;
