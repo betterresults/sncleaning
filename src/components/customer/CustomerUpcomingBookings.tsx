@@ -185,10 +185,10 @@ const CustomerUpcomingBookings = () => {
     <div className="space-y-6">
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-gradient-to-br from-primary/10 to-primary/20 border-primary/30">
+        <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200 dark:from-gray-950/20 dark:to-gray-900/20 dark:border-gray-800/30">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/20 rounded-lg">
+              <div className="p-2 bg-primary/10 rounded-lg">
                 <Calendar className="h-5 w-5 text-primary" />
               </div>
               <div>
@@ -315,7 +315,7 @@ const CustomerUpcomingBookings = () => {
                     <div 
                       key={day.toISOString()} 
                       className={`min-h-[80px] p-1 border rounded-lg ${
-                        isCurrentMonth ? 'bg-card' : 'bg-primary/5'
+                        isCurrentMonth ? 'bg-card' : 'bg-muted/30'
                       } ${isToday ? 'ring-2 ring-primary' : ''}`}
                     >
                       <div className={`text-sm font-medium mb-1 ${
