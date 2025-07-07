@@ -58,14 +58,19 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
   };
 
   const isOwnMessage = (message: ChatMessage) => {
-    if (userRole === 'admin') return message.sender_type === 'admin';
+    if (userRole === 'admin') {
+      // Admin messages appear on customer's side when viewing customer chats
+      if (customerId) return message.sender_type === 'admin' || message.sender_type === 'customer';
+      // Admin messages appear on cleaner's side when viewing cleaner chats  
+      return message.sender_type === 'admin' || message.sender_type === 'cleaner';
+    }
     if (cleanerId) return message.sender_type === 'cleaner' && message.sender_id === cleanerId;
     if (customerId) return message.sender_type === 'customer' && message.sender_id === customerId;
     return false;
   };
 
   const getSenderName = (message: ChatMessage) => {
-    if (message.sender_type === 'admin') return 'Admin';
+    if (message.sender_type === 'admin') return 'Office';
     if (message.sender_type === 'customer') return chat.customer?.first_name || 'Customer';
     if (message.sender_type === 'cleaner') return chat.cleaner?.first_name || 'Cleaner';
     return 'Unknown';
@@ -108,7 +113,9 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
               <div
                 className={`max-w-[70%] rounded-lg px-3 py-2 ${
                   isOwnMessage(message)
-                    ? 'bg-primary text-primary-foreground'
+                    ? message.sender_type === 'admin' 
+                      ? 'bg-orange-500 text-white' // Office messages in orange
+                      : 'bg-primary text-primary-foreground'
                     : 'bg-muted text-muted-foreground'
                 }`}
               >

@@ -1,18 +1,23 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 import { Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import CustomerSidebar from '@/components/CustomerSidebar';
-import ChatList from '@/components/chat/ChatList';
+import CustomerContacts from '@/components/chat/CustomerContacts';
 import ChatInterface from '@/components/chat/ChatInterface';
+import AdminCustomerSelector from '@/components/admin/AdminCustomerSelector';
 import { useChat } from '@/hooks/useChat';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChatType } from '@/types/chat';
 
 const CustomerMessages = () => {
   const { user, userRole, customerId, loading } = useAuth();
+  const { selectedCustomerId } = useAdminCustomer();
+  
+  // Use selectedCustomerId for admin, otherwise use authenticated customer's ID
+  const effectiveCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
+  const isAdminViewing = userRole === 'admin';
+
   const {
     chats,
     activeChat,
@@ -23,10 +28,7 @@ const CustomerMessages = () => {
     fetchMessages,
     sendMessage,
     createChat
-  } = useChat();
-
-  const [createChatDialogOpen, setCreateChatDialogOpen] = useState(false);
-  const [newChatType, setNewChatType] = useState<ChatType>('customer_office');
+  } = useChat(undefined, effectiveCustomerId);
 
   if (loading) {
     return (
@@ -40,27 +42,46 @@ const CustomerMessages = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  const handleSelectChat = async (chat: any) => {
-    setActiveChat(chat);
-    await fetchMessages(chat.id);
+  const handleSelectContact = async (contact: any, booking?: any) => {
+    const chatToSelect = booking?.chat || contact.chat;
+    if (chatToSelect) {
+      setActiveChat(chatToSelect);
+      await fetchMessages(chatToSelect.id);
+    }
+  };
+
+  const handleCreateChat = async (contact: any, booking?: any) => {
+    if (!effectiveCustomerId) return;
+
+    let chatType: ChatType;
+    let customerId: number | undefined;
+    let cleanerId: number | undefined;
+    let bookingId: number | undefined;
+
+    if (contact.type === 'office') {
+      chatType = 'customer_office';
+      customerId = effectiveCustomerId;
+      bookingId = booking?.bookingId;
+    } else if (contact.type === 'cleaner') {
+      chatType = 'customer_cleaner';
+      customerId = effectiveCustomerId;
+      cleanerId = contact.cleaner_id;
+      bookingId = booking?.bookingId;
+    } else {
+      return;
+    }
+
+    const newChat = await createChat(chatType, customerId, cleanerId, bookingId);
+    if (newChat) {
+      setActiveChat(newChat);
+      await fetchMessages(newChat.id);
+    }
   };
 
   const handleSendMessage = async (message: string) => {
     if (activeChat) {
       await sendMessage(activeChat.id, message);
     }
-  };
-
-  const handleCreateChat = async () => {
-    if (!customerId) return;
-
-    if (newChatType === 'customer_office') {
-      await createChat('customer_office', customerId);
-    }
-    // For customer_cleaner chats, we'll need to select a cleaner from upcoming bookings
-    // This will be implemented when we add the booking-specific chat functionality
-
-    setCreateChatDialogOpen(false);
   };
 
   const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Customer';
@@ -74,80 +95,70 @@ const CustomerMessages = () => {
             <SidebarTrigger className="-ml-1 p-2" />
             <div className="flex-1" />
             <div className="text-base font-semibold text-foreground truncate">
-              Messages
+              {isAdminViewing ? 'Chat Management - Customer View' : 'Messages'}
             </div>
           </header>
           
-          <main className="flex-1 flex h-[calc(100vh-3.5rem)]">
-            {/* Chat List */}
-            <div className="w-80 flex-shrink-0">
-              <ChatList
-                chats={chats}
-                activeChat={activeChat}
-                onSelectChat={handleSelectChat}
-                onCreateChat={() => setCreateChatDialogOpen(true)}
-                loading={chatLoading}
-              />
-            </div>
+          <main className="flex-1 flex flex-col h-[calc(100vh-3.5rem)]">
+            {/* Admin Customer Selector */}
+            {isAdminViewing && (
+              <div className="p-4 border-b border-border bg-muted/30">
+                <AdminCustomerSelector />
+              </div>
+            )}
 
-            {/* Chat Interface */}
-            <div className="flex-1">
-              {activeChat ? (
-                <ChatInterface
-                  chat={activeChat}
-                  messages={messages}
-                  onSendMessage={handleSendMessage}
-                  sendingMessage={sendingMessage}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full bg-card">
-                  <div className="text-center">
-                    <h3 className="text-lg font-medium text-foreground mb-2">
-                      Welcome to Messages, {firstName}!
-                    </h3>
-                    <p className="text-muted-foreground mb-4">
-                      Select a conversation or start a new one to get help with your bookings
-                    </p>
-                    <Button onClick={() => setCreateChatDialogOpen(true)}>
-                      Start New Conversation
-                    </Button>
-                  </div>
+            {!effectiveCustomerId && isAdminViewing ? (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center">
+                  <h3 className="text-lg font-medium text-foreground mb-2">
+                    Select a Customer
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Choose a customer above to view their messages and contacts
+                  </p>
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex">
+                {/* Contacts List */}
+                <div className="w-80 flex-shrink-0">
+                  <CustomerContacts
+                    chats={chats}
+                    activeChat={activeChat}
+                    onSelectContact={handleSelectContact}
+                    onCreateChat={handleCreateChat}
+                    loading={chatLoading}
+                    customerId={effectiveCustomerId}
+                  />
+                </div>
+
+                {/* Chat Interface */}
+                <div className="flex-1">
+                  {activeChat ? (
+                    <ChatInterface
+                      chat={activeChat}
+                      messages={messages}
+                      onSendMessage={handleSendMessage}
+                      sendingMessage={sendingMessage}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full bg-card">
+                      <div className="text-center">
+                        <h3 className="text-lg font-medium text-foreground mb-2">
+                          Welcome to Messages, {firstName}!
+                        </h3>
+                        <p className="text-muted-foreground mb-4">
+                          Select a contact to start messaging with cleaners or the office
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </main>
         </SidebarInset>
       </div>
-
-      {/* Create Chat Dialog */}
-      <Dialog open={createChatDialogOpen} onOpenChange={setCreateChatDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Start New Conversation</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Chat with:</label>
-              <Select value={newChatType} onValueChange={(value: ChatType) => setNewChatType(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="customer_office">SN Cleaning Office</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setCreateChatDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleCreateChat}>
-                Start Chat
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </SidebarProvider>
   );
 };
