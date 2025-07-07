@@ -276,8 +276,9 @@ const CleanerUpcomingBookings = () => {
 
       <BookingsTable
         bookings={paginatedBookings}
-        onMarkAsCompleted={handleMarkAsCompleted}
-        onDropOff={handleDropOff}
+        title="Upcoming Bookings"
+        type="upcoming"
+        onMarkCompleted={handleMarkAsCompleted}
       />
 
       <BookingsPagination

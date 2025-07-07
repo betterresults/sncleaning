@@ -89,22 +89,11 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
 
       if (uploadError) throw uploadError;
 
-      // Save metadata to database using raw SQL to bypass type issues
-      const { error: dbError } = await supabase.rpc('exec', {
-        sql: `
-          INSERT INTO cleaning_photos (
-            booking_id, customer_id, cleaner_id, file_path, photo_type, 
-            postcode, booking_date, damage_details
-          ) VALUES (
-            ${booking.id}, ${booking.customer}, ${booking.cleaner}, 
-            '${filePath}', '${photoType}', '${booking.postcode}', 
-            '${bookingDate}', ${photoType === 'damage' ? `'${damageDetails}'` : 'NULL'}
-          )
-        `
-      }).catch(() => {
-        // If rpc doesn't work, try direct insert
-        return supabase
-          .from('cleaning_photos' as any)
+      // Save metadata to database - try direct insert with type workaround
+      let dbError = null;
+      try {
+        const { error } = await (supabase as any)
+          .from('cleaning_photos')
           .insert({
             booking_id: booking.id,
             customer_id: booking.customer,
@@ -115,7 +104,11 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
             booking_date: bookingDate,
             damage_details: photoType === 'damage' ? damageDetails : null
           });
-      });
+        dbError = error;
+      } catch (error) {
+        console.error('Database insert error:', error);
+        dbError = error;
+      }
 
       if (dbError) {
         console.error('Database error:', dbError);
