@@ -111,7 +111,7 @@ serve(async (req) => {
       },
       body: new URLSearchParams({
         customer: stripeCustomerId,
-        payment_method_types: 'card',
+        'payment_method_types[]': 'card',
         usage: 'off_session',
       }),
     })
