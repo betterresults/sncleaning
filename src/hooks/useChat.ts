@@ -65,12 +65,35 @@ export const useChat = (selectedCleanerId?: number, selectedCustomerId?: number)
             .limit(1)
             .single();
 
-          const { count: unreadCount } = await supabase
+          // Get unread count - exclude own messages
+          let unreadQuery = supabase
             .from('chat_messages')
             .select('id', { count: 'exact' })
             .eq('chat_id', chat.id)
             .eq('is_read', false)
             .eq('is_deleted', false);
+
+          // Exclude messages from current user
+          if (userRole === 'admin') {
+            // Admin can view as cleaner or customer
+            if (effectiveCleanerId) {
+              unreadQuery = unreadQuery.not('sender_type', 'eq', 'cleaner')
+                .not('sender_id', 'eq', effectiveCleanerId);
+            } else if (effectiveCustomerId) {
+              unreadQuery = unreadQuery.not('sender_type', 'eq', 'customer')
+                .not('sender_id', 'eq', effectiveCustomerId);
+            }
+          } else if (effectiveCleanerId) {
+            // Exclude messages from this cleaner
+            unreadQuery = unreadQuery.not('sender_type', 'eq', 'cleaner')
+              .not('sender_id', 'eq', effectiveCleanerId);
+          } else if (effectiveCustomerId) {
+            // Exclude messages from this customer
+            unreadQuery = unreadQuery.not('sender_type', 'eq', 'customer')
+              .not('sender_id', 'eq', effectiveCustomerId);
+          }
+
+          const { count: unreadCount } = await unreadQuery;
 
           // Get total message count for display
           const { count: totalCount } = await supabase
