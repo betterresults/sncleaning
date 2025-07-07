@@ -15,7 +15,8 @@ serve(async (req) => {
   try {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { persistSession: false } }
     )
 
     // Get the authorization header
@@ -33,16 +34,7 @@ serve(async (req) => {
       throw new Error('Unauthorized')
     }
 
-    // Get user's customer_id from profile
-    const { data: profile, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('customer_id')
-      .eq('user_id', user.id)
-      .single()
-
-    if (profileError || !profile?.customer_id) {
-      throw new Error('Customer profile not found')
-    }
+    console.log('Processing request for user:', user.id)
 
     const { setupIntentId, customerId } = await req.json()
 
