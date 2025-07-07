@@ -121,7 +121,8 @@ export const useChat = (selectedCleanerId?: number) => {
       let senderType: 'customer' | 'cleaner' | 'admin';
 
       if (userRole === 'admin') {
-        senderId = parseInt(user.id); // Use auth user ID for admin
+        // For admin, use a special ID (we'll use 0 or create a special admin record)
+        senderId = 999999; // Special admin sender ID
         senderType = 'admin';
       } else if (effectiveCleanerId) {
         senderId = effectiveCleanerId;

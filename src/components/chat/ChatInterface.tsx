@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Phone, Video, MoreVertical } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { Chat, ChatMessage } from '@/types/chat';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
@@ -42,7 +42,7 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
       if (userRole === 'admin') {
         const customerName = `${chat.customer?.first_name || 'Customer'} ${chat.customer?.last_name || ''}`.trim();
         const cleanerName = `${chat.cleaner?.first_name || 'Cleaner'} ${chat.cleaner?.last_name || ''}`.trim();
-        const title = `${customerName} ↔ ${cleanerName}`;
+        const title = `${customerName} → ${cleanerName}`;
         return chat.booking ? `${title} - ${chat.booking.service_type}` : title;
       } else if (customerId) {
         const title = `${chat.cleaner?.first_name || 'Cleaner'} ${chat.cleaner?.last_name || ''}`.trim();
@@ -94,17 +94,6 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
               )}
             </div>
           </div>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="sm">
-            <Phone className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="sm">
-            <Video className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="sm">
-            <MoreVertical className="h-4 w-4" />
-          </Button>
         </div>
       </div>
 
