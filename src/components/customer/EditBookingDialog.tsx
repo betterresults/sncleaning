@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon, Clock } from 'lucide-react';
@@ -27,6 +28,7 @@ interface Booking {
   total_hours: number;
   cleaning_cost_per_hour: number | null;
   total_cost: number;
+  same_day: boolean;
 }
 
 interface Address {
@@ -59,6 +61,7 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedAddressId, setSelectedAddressId] = useState('');
   const [totalHours, setTotalHours] = useState(0);
+  const [isSameDay, setIsSameDay] = useState(false);
   
   const [formData, setFormData] = useState({
     additional_details: '',
@@ -95,6 +98,7 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       setSelectedDate(bookingDate);
       setSelectedTime(format(bookingDate, 'HH:mm'));
       setTotalHours(booking.total_hours || 0);
+      setIsSameDay(booking.same_day || false);
       
       // Find matching address
       const matchingAddress = addresses.find(addr => 
@@ -146,6 +150,7 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
           total_cost: newTotalCost,
           address: selectedAddress.address,
           postcode: selectedAddress.postcode,
+          same_day: isSameDay,
           ...formData
         })
         .eq('id', booking.id);
@@ -235,6 +240,21 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                 onChange={(e) => setTotalHours(parseFloat(e.target.value) || 0)}
               />
             </div>
+          </div>
+
+          {/* Same Day Option */}
+          <div className="flex items-center space-x-2 p-4 border rounded-lg bg-orange-50 dark:bg-orange-950/20">
+            <Checkbox
+              id="same-day"
+              checked={isSameDay}
+              onCheckedChange={(checked) => setIsSameDay(checked as boolean)}
+            />
+            <Label htmlFor="same-day" className="text-sm font-medium">
+              Same Day Booking
+            </Label>
+            <span className="text-xs text-muted-foreground ml-2">
+              (Check if this is a same-day cleaning service)
+            </span>
           </div>
 
           {/* Address Selection */}
