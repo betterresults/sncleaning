@@ -151,30 +151,6 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
 
   return (
     <div className="flex flex-col h-full bg-card overflow-hidden">
-      {/* Chat Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-            <span className="text-primary font-semibold">
-              {getChatTitle().charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <div>
-            <h3 className="font-semibold text-foreground">{getChatTitle()}</h3>
-            <div className="text-sm text-muted-foreground space-y-1">
-              {chat.booking && (
-                <p>
-                  Booking: {new Date(chat.booking.date_time).toLocaleDateString()} at {chat.booking.address}
-                </p>
-              )}
-              {!chat.booking && chat.chat_type !== 'office_cleaner' && chat.chat_type !== 'customer_office' && (
-                <p>General conversation</p>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Messages */}
       <ScrollArea 
         className="flex-1 p-4" 
