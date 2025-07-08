@@ -11,7 +11,7 @@ const SplashScreen = () => {
       {/* Main content */}
       <div className="text-center">
         {/* Logo in white container - exactly like the reference */}
-        <div className="mb-16 transform animate-scale-in">
+        <div className="mb-16 transform transition-all duration-700 ease-out">
           <div className="bg-white rounded-3xl p-12 shadow-2xl mx-auto inline-block">
             <img 
               src="/sn-cleaning-logo.png" 
@@ -22,7 +22,7 @@ const SplashScreen = () => {
         </div>
         
         {/* Client-focused messaging that builds trust */}
-        <div className="space-y-8 animate-fade-in delay-300">
+        <div className="space-y-8 opacity-100 transition-opacity duration-1000 delay-300">
           <h1 className="text-3xl font-light text-white tracking-wider">
             PROFESSIONAL CLEANING
           </h1>
@@ -33,7 +33,7 @@ const SplashScreen = () => {
         </div>
         
         {/* Reassuring tagline */}
-        <div className="mt-16 animate-fade-in delay-500">
+        <div className="mt-16 opacity-100 transition-opacity duration-1000 delay-500">
           <p className="text-lg text-white/80 font-light italic">
             "Your home is in safe hands"
           </p>
@@ -41,7 +41,7 @@ const SplashScreen = () => {
       </div>
       
       {/* Loading dots */}
-      <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 animate-fade-in delay-700">
+      <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 opacity-100 transition-opacity duration-1000 delay-700">
         <div className="flex items-center space-x-2">
           <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse"></div>
           <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse delay-150"></div>
