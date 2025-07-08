@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { CalendarDays, DollarSign, TrendingUp, Clock, Calendar, CreditCard } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subMonths, addMonths, subDays, isAfter, startOfYear } from 'date-fns';
 
@@ -293,49 +294,89 @@ const CleanerEarnings = () => {
 
   return (
     <div className="space-y-8">
-      {/* Upcoming Payment - Modern Design */}
+      {/* Upcoming Payment - Mobile Friendly Design */}
       <Card className="relative overflow-hidden bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 border-0 text-white">
         <div className="absolute inset-0 bg-black/10"></div>
-        <CardContent className="relative z-10 p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
-                <CreditCard className="h-6 w-6" />
+        <CardContent className="relative z-10 p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="p-2 sm:p-3 bg-white/20 rounded-lg backdrop-blur-sm flex-shrink-0">
+                <CreditCard className="h-5 w-5 sm:h-6 sm:w-6" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <div className="text-lg font-medium">Next Payment</div>
-                <div className="text-sm opacity-80">{earnings.upcomingPayment.paymentDate}</div>
-                <div className="flex items-center gap-2 text-sm bg-white/10 rounded-full px-3 py-1 backdrop-blur-sm w-fit mt-2">
-                  <Calendar className="h-4 w-4" />
-                  <span>{earnings.upcomingPayment.periodStart} - {earnings.upcomingPayment.periodEnd}</span>
+                <div className="text-sm opacity-80 mb-2">{earnings.upcomingPayment.paymentDate}</div>
+                <div className="text-xs sm:text-sm bg-white/10 rounded-full px-2 py-1 sm:px-3 sm:py-1 backdrop-blur-sm inline-flex items-center gap-1 sm:gap-2">
+                  <Calendar className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="break-words">{earnings.upcomingPayment.periodStart} - {earnings.upcomingPayment.periodEnd}</span>
                 </div>
               </div>
             </div>
-            <div className="text-4xl font-bold tracking-tight">
+            <div className="text-3xl sm:text-4xl font-bold tracking-tight text-center sm:text-right">
               £{earnings.upcomingPayment.amount.toFixed(2)}
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Period Selector */}
-      <Card className="border-0 shadow-sm">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Time Period</h3>
-            <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
-              <SelectTrigger className="w-48 bg-white border-gray-200 shadow-sm">
-                <SelectValue placeholder="Select period" />
-              </SelectTrigger>
-              <SelectContent className="bg-white border-gray-200 shadow-lg">
-                <SelectItem value="current">Current Month</SelectItem>
-                <SelectItem value="lastMonth">Last Month</SelectItem>
-                <SelectItem value="last3Months">Last 3 Months</SelectItem>
-                <SelectItem value="last6Months">Last 6 Months</SelectItem>
-                <SelectItem value="allTime">All Time</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      {/* Period Selector - Consistent with Past Bookings */}
+      <Card className="shadow-sm">
+        <CardContent className="p-0">
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="period" className="border-0">
+              <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                <div className="flex items-center space-x-2">
+                  <CalendarDays className="h-4 w-4" />
+                  <span className="font-medium">
+                    {selectedPeriod === 'current' && 'Current Month'}
+                    {selectedPeriod === 'lastMonth' && 'Last Month'}
+                    {selectedPeriod === 'last3Months' && 'Last 3 Months'}
+                    {selectedPeriod === 'last6Months' && 'Last 6 Months'}
+                    {selectedPeriod === 'allTime' && 'All Time'}
+                  </span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                <div className="grid grid-cols-1 gap-2">
+                  <Button
+                    variant={selectedPeriod === 'current' ? 'default' : 'outline'}
+                    onClick={() => handlePeriodChange('current')}
+                    className="w-full justify-start"
+                  >
+                    Current Month
+                  </Button>
+                  <Button
+                    variant={selectedPeriod === 'lastMonth' ? 'default' : 'outline'}
+                    onClick={() => handlePeriodChange('lastMonth')}
+                    className="w-full justify-start"
+                  >
+                    Last Month
+                  </Button>
+                  <Button
+                    variant={selectedPeriod === 'last3Months' ? 'default' : 'outline'}
+                    onClick={() => handlePeriodChange('last3Months')}
+                    className="w-full justify-start"
+                  >
+                    Last 3 Months
+                  </Button>
+                  <Button
+                    variant={selectedPeriod === 'last6Months' ? 'default' : 'outline'}
+                    onClick={() => handlePeriodChange('last6Months')}
+                    className="w-full justify-start"
+                  >
+                    Last 6 Months
+                  </Button>
+                  <Button
+                    variant={selectedPeriod === 'allTime' ? 'default' : 'outline'}
+                    onClick={() => handlePeriodChange('allTime')}
+                    className="w-full justify-start"
+                  >
+                    All Time
+                  </Button>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </CardContent>
       </Card>
 
@@ -403,20 +444,39 @@ const CleanerEarnings = () => {
               <p className="text-gray-500">No completed jobs found</p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {earnings.recentJobs.map((job) => (
-                <div key={job.id} className="flex items-center p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className="flex-1 font-medium text-gray-900">
-                    {job.first_name} {job.last_name}
+                <div key={job.id} className="p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+                  {/* Mobile: Stack vertically */}
+                  <div className="block sm:hidden space-y-2">
+                    <div className="flex justify-between items-start">
+                      <div className="font-medium text-gray-900">
+                        {job.first_name} {job.last_name}
+                      </div>
+                      <div className="font-bold text-green-600">
+                        £{Number(job.cleaner_pay)?.toFixed(2) || '0.00'}
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-sm text-gray-500">
+                      <span>{format(new Date(job.date_time), 'dd/MM/yyyy')}</span>
+                      <span>{job.cleaning_type || 'Standard Cleaning'}</span>
+                    </div>
                   </div>
-                  <div className="flex-1 text-sm text-gray-500 text-center">
-                    {format(new Date(job.date_time), 'dd/MM/yyyy')}
-                  </div>
-                  <div className="flex-1 text-sm text-gray-600 text-center">
-                    {job.cleaning_type || 'Standard Cleaning'}
-                  </div>
-                  <div className="flex-1 font-bold text-green-600 text-right">
-                    £{Number(job.cleaner_pay)?.toFixed(2) || '0.00'}
+                  
+                  {/* Desktop: Single row */}
+                  <div className="hidden sm:flex sm:items-center">
+                    <div className="flex-1 font-medium text-gray-900">
+                      {job.first_name} {job.last_name}
+                    </div>
+                    <div className="flex-1 text-sm text-gray-500 text-center">
+                      {format(new Date(job.date_time), 'dd/MM/yyyy')}
+                    </div>
+                    <div className="flex-1 text-sm text-gray-600 text-center">
+                      {job.cleaning_type || 'Standard Cleaning'}
+                    </div>
+                    <div className="flex-1 font-bold text-green-600 text-right">
+                      £{Number(job.cleaner_pay)?.toFixed(2) || '0.00'}
+                    </div>
                   </div>
                 </div>
               ))}
