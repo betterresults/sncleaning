@@ -1,53 +1,56 @@
-
-
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
-import { CleanerSidebar } from '@/components/CleanerSidebar';
-import CleanerAvailableBookings from '@/components/cleaner/CleanerAvailableBookings';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { UnifiedSidebar } from '@/components/UnifiedSidebar';
+import { UnifiedHeader } from '@/components/UnifiedHeader';
+import { cleanerNavigation } from '@/lib/navigationItems';
+import { useAdminCleaner } from '@/contexts/AdminCleanerContext';
 import AdminCleanerSelector from '@/components/admin/AdminCleanerSelector';
+import CleanerAvailableBookings from '@/components/cleaner/CleanerAvailableBookings';
 
 const CleanerAvailableBookingsPage = () => {
-  const { user, userRole, cleanerId, loading } = useAuth();
-  
-  // Check if admin is viewing this dashboard
-  const isAdminViewing = userRole === 'admin';
+  const { user, userRole, cleanerId, loading, signOut } = useAuth();
 
-  console.log('CleanerAvailableBookings - Auth state:', { user: !!user, userRole, cleanerId, loading });
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading available bookings...</div>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-base">Loading available bookings...</div>
       </div>
     );
   }
 
+  // Allow users with role 'user' who have a cleanerId, or admins
   if (!user || (userRole !== 'user' && userRole !== 'admin') || (userRole === 'user' && !cleanerId)) {
-    console.log('CleanerAvailableBookings - Redirecting to auth. User:', !!user, 'Role:', userRole, 'CleanerId:', cleanerId);
     return <Navigate to="/auth" replace />;
   }
 
-  // Get first name for greeting
-  const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Cleaner';
-
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <CleanerSidebar />
-        <SidebarInset>
-          <header className="flex h-12 sm:h-16 shrink-0 items-center gap-2 border-b px-3 sm:px-4">
-            <SidebarTrigger className="-ml-1" />
-            <div className="flex-1" />
-            <div className="text-sm sm:text-lg font-semibold">
-              Hello {firstName}! 👋
-            </div>
-          </header>
+      <div className="min-h-screen flex w-full bg-gray-50">
+        <UnifiedSidebar 
+          navigationItems={cleanerNavigation}
+          user={user}
+          onSignOut={handleSignOut}
+        />
+        <SidebarInset className="flex-1">
+          <UnifiedHeader 
+            title="Available Bookings 💼"
+            user={user}
+            userRole={userRole}
+          />
           
-          <main className="flex-1 space-y-3 sm:space-y-4 p-3 sm:p-6 lg:p-8 pt-3 sm:pt-6">
+          <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
             <div className="max-w-7xl mx-auto">
-              {isAdminViewing && <AdminCleanerSelector />}
+              {userRole === 'admin' && <AdminCleanerSelector />}
               <CleanerAvailableBookings />
             </div>
           </main>
@@ -58,4 +61,3 @@ const CleanerAvailableBookingsPage = () => {
 };
 
 export default CleanerAvailableBookingsPage;
-

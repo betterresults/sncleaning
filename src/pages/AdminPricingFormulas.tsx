@@ -1,20 +1,22 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/AppSidebar';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { UnifiedSidebar } from '@/components/UnifiedSidebar';
+import { UnifiedHeader } from '@/components/UnifiedHeader';
+import { adminNavigation } from '@/lib/navigationItems';
 import PricingFormulasManager from '@/components/admin/PricingFormulasManager';
 
 const AdminPricingFormulas = () => {
-  const { user, userRole, loading } = useAuth();
+  const { user, userRole, signOut } = useAuth();
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-base">Loading pricing formulas...</div>
-      </div>
-    );
-  }
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   if (!user || userRole !== 'admin') {
     return <Navigate to="/auth" replace />;
@@ -22,19 +24,23 @@ const AdminPricingFormulas = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar />
+      <div className="min-h-screen flex w-full bg-gray-50">
+        <UnifiedSidebar 
+          navigationItems={adminNavigation}
+          user={user}
+          onSignOut={handleSignOut}
+        />
         <SidebarInset className="flex-1">
-          <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4 shadow-sm">
-            <SidebarTrigger className="-ml-1 p-2" />
-            <div className="flex-1" />
-            <div className="text-base font-semibold text-foreground truncate">
-              Pricing Management
-            </div>
-          </header>
+          <UnifiedHeader 
+            title="Pricing Formulas 📋"
+            user={user}
+            userRole={userRole}
+          />
           
-          <main className="flex-1 p-4">
-            <PricingFormulasManager />
+          <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
+            <div className="max-w-7xl mx-auto">
+              <PricingFormulasManager />
+            </div>
           </main>
         </SidebarInset>
       </div>

@@ -1,23 +1,48 @@
-
 import React from 'react';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/AppSidebar';
-import CustomerAccountCreator from '@/components/CustomerAccountCreator';
+import { useAuth } from '@/contexts/AuthContext';
+import { Navigate } from 'react-router-dom';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { UnifiedSidebar } from '@/components/UnifiedSidebar';
+import { UnifiedHeader } from '@/components/UnifiedHeader';
+import { adminNavigation } from '@/lib/navigationItems';
+import CreateCleanerUsersUtility from '@/components/admin/CreateCleanerUsersUtility';
 
 const CreateCustomerAccounts = () => {
+  const { user, userRole, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  if (!user || userRole !== 'admin') {
+    return <Navigate to="/auth" replace />;
+  }
+
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <AppSidebar />
-        <main className="flex-1 p-6">
-          <div className="max-w-4xl mx-auto">
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold">Create Customer Accounts</h1>
-              <p className="text-muted-foreground">Create system user accounts for existing customers</p>
+      <div className="min-h-screen flex w-full bg-gray-50">
+        <UnifiedSidebar 
+          navigationItems={adminNavigation}
+          user={user}
+          onSignOut={handleSignOut}
+        />
+        <SidebarInset className="flex-1">
+          <UnifiedHeader 
+            title="Create Customer Accounts ➕"
+            user={user}
+            userRole={userRole}
+          />
+          
+          <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
+            <div className="max-w-7xl mx-auto">
+              <CreateCleanerUsersUtility />
             </div>
-            <CustomerAccountCreator />
-          </div>
-        </main>
+          </main>
+        </SidebarInset>
       </div>
     </SidebarProvider>
   );

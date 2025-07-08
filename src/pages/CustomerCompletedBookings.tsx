@@ -1,33 +1,50 @@
-
 import React from 'react';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import CustomerSidebar from '@/components/CustomerSidebar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import AdminCustomerSelector from '@/components/admin/AdminCustomerSelector';
+import { Navigate } from 'react-router-dom';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { UnifiedSidebar } from '@/components/UnifiedSidebar';
+import { UnifiedHeader } from '@/components/UnifiedHeader';
+import { customerNavigation } from '@/lib/navigationItems';
 import CustomerPastBookings from '@/components/customer/CustomerPastBookings';
+import AdminCustomerSelector from '@/components/admin/AdminCustomerSelector';
 
 const CustomerCompletedBookings = () => {
-  const { userRole } = useAuth();
-  const isAdminViewing = userRole === 'admin';
+  const { user, userRole, customerId, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  if (!user || (!customerId && userRole !== 'admin')) {
+    return <Navigate to="/auth" replace />;
+  }
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <CustomerSidebar />
-        <main className="flex-1 p-6">
-          <div className="max-w-7xl mx-auto">
-            {isAdminViewing && <AdminCustomerSelector />}
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold">Completed Bookings</h1>
-              <p className="text-muted-foreground">View your booking history and past cleaning services</p>
+      <div className="min-h-screen flex w-full bg-gray-50">
+        <UnifiedSidebar 
+          navigationItems={customerNavigation}
+          user={user}
+          onSignOut={handleSignOut}
+        />
+        <SidebarInset className="flex-1">
+          <UnifiedHeader 
+            title="My Bookings 📋"
+            user={user}
+            userRole={userRole}
+          />
+          
+          <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
+            <div className="max-w-7xl mx-auto">
+              {userRole === 'admin' && <AdminCustomerSelector />}
+              <CustomerPastBookings />
             </div>
-
-            {/* Placeholder content - will be implemented later */}
-            <CustomerPastBookings />
-          </div>
-        </main>
+          </main>
+        </SidebarInset>
       </div>
     </SidebarProvider>
   );

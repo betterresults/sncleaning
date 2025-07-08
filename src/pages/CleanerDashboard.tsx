@@ -1,67 +1,63 @@
-
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
-import { CleanerSidebar } from '@/components/CleanerSidebar';
-import CleanerUpcomingBookings from '@/components/cleaner/CleanerUpcomingBookings';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { UnifiedSidebar } from '@/components/UnifiedSidebar';
+import { UnifiedHeader } from '@/components/UnifiedHeader';
+import { cleanerNavigation } from '@/lib/navigationItems';
+import { useAdminCleaner } from '@/contexts/AdminCleanerContext';
 import AdminCleanerSelector from '@/components/admin/AdminCleanerSelector';
-import InstallPrompt from '@/components/InstallPrompt';
+import CleanerUpcomingBookings from '@/components/cleaner/CleanerUpcomingBookings';
 
 const CleanerDashboard = () => {
-  const { user, userRole, cleanerId, loading } = useAuth();
+  const { user, userRole, cleanerId, loading, signOut } = useAuth();
+  const { selectedCleanerId } = useAdminCleaner();
   
-  // Check if admin is viewing this dashboard
-  const isAdminViewing = userRole === 'admin';
-
-  console.log('CleanerDashboard - Auth state:', { user: !!user, userRole, cleanerId, loading, isAdminViewing });
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   if (loading) {
-    console.log('CleanerDashboard - Still loading...');
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-base">Loading cleaner dashboard...</div>
+        <div className="text-base">Loading dashboard...</div>
       </div>
     );
   }
 
   // Allow users with role 'user' who have a cleanerId, or admins
   if (!user || (userRole !== 'user' && userRole !== 'admin') || (userRole === 'user' && !cleanerId)) {
-    console.log('CleanerDashboard - Redirecting to auth. User:', !!user, 'Role:', userRole, 'CleanerId:', cleanerId);
-    console.log('CleanerDashboard - This is where we redirect to /auth');
     return <Navigate to="/auth" replace />;
   }
 
-  // Get first name for greeting
-  const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Cleaner';
-  
-  console.log('CleanerDashboard - About to render with firstName:', firstName);
-
   return (
-    <>
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-gray-50">
-          <CleanerSidebar />
-          <SidebarInset className="flex-1 min-w-0">
-            <header className="sticky top-0 z-10 flex h-16 sm:h-14 shrink-0 items-center gap-3 border-b bg-white px-3 sm:px-4 shadow-sm">
-              <SidebarTrigger className="h-10 w-10 sm:h-8 sm:w-8 p-2 touch-manipulation" />
-              <div className="flex-1 min-w-0" />
-              <div className="text-sm sm:text-base font-semibold text-gray-900 truncate">
-                Hello {firstName}! 👋
-              </div>
-            </header>
-            
-            <main className="flex-1 p-2 sm:p-4 space-y-2 sm:space-y-4 w-full overflow-x-hidden">
-              <div className="w-full max-w-full">
-                {isAdminViewing && <AdminCleanerSelector />}
-                <CleanerUpcomingBookings />
-              </div>
-            </main>
-          </SidebarInset>
-        </div>
-      </SidebarProvider>
-      <InstallPrompt />
-    </>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-gray-50">
+        <UnifiedSidebar 
+          navigationItems={cleanerNavigation}
+          user={user}
+          onSignOut={handleSignOut}
+        />
+        <SidebarInset className="flex-1">
+          <UnifiedHeader 
+            title="My Bookings 📅"
+            user={user}
+            userRole={userRole}
+          />
+          
+          <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
+            <div className="max-w-7xl mx-auto">
+              {userRole === 'admin' && <AdminCleanerSelector />}
+              <CleanerUpcomingBookings />
+            </div>
+          </main>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
 };
 
