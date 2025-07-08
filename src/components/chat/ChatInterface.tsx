@@ -153,11 +153,11 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
     <div className="flex flex-col h-full bg-card overflow-hidden">
       {/* Messages */}
       <ScrollArea 
-        className="flex-1 p-4" 
+        className="flex-1 p-2 sm:p-4" 
         ref={scrollAreaRef}
         onScrollCapture={handleScroll}
       >
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {chat.id === 'pending' ? (
             <div className="flex flex-col items-center justify-center h-full p-8 text-center">
               <MessageCircle className="h-12 w-12 text-muted-foreground/40 mb-4" />
@@ -184,7 +184,7 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
                   className={`flex ${isOwnMessage(message) ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[70%] rounded-lg px-3 py-2 ${
+                    className={`max-w-[85%] sm:max-w-[70%] rounded-lg px-3 py-2 ${
                       isOwnMessage(message)
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted text-muted-foreground'
@@ -194,14 +194,14 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
                     <p className="text-xs font-medium mb-1 opacity-70">
                       {getSenderName(message)}
                     </p>
-                    <p className="text-sm">
+                    <p className="text-sm break-words">
                       {message.file_url ? (
                         message.file_url.includes('image') || message.message.includes('📷') ? (
                           <div>
                             <img 
                               src={message.file_url} 
                               alt="Shared image" 
-                              className="max-w-xs rounded cursor-pointer"
+                              className="max-w-full sm:max-w-xs rounded cursor-pointer"
                               onClick={() => window.open(message.file_url, '_blank')}
                             />
                             <p className="mt-1">{message.message}</p>
@@ -211,7 +211,7 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
                             href={message.file_url} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="underline hover:text-blue-600"
+                            className="underline hover:text-blue-600 break-all"
                           >
                             {message.message}
                           </a>
@@ -235,7 +235,7 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
       </ScrollArea>
 
       {/* Message Input */}
-      <form onSubmit={handleSendMessage} className="flex items-center space-x-2 p-4 border-t border-border">
+      <form onSubmit={handleSendMessage} className="flex items-center space-x-2 p-3 sm:p-4 border-t border-border bg-background">
         <input
           type="file"
           ref={fileInputRef}
