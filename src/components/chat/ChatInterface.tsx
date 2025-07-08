@@ -153,16 +153,16 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
     const distance = formatDistanceToNow(new Date(date), { addSuffix: false });
     return distance
       .replace('about ', '')
-      .replace(' hours', 'h')
-      .replace(' hour', 'h')
-      .replace(' minutes', 'm')
-      .replace(' minute', 'm')
-      .replace(' days', 'd')
-      .replace(' day', 'd')
-      .replace(' weeks', 'w')
-      .replace(' week', 'w')
-      .replace(' months', 'mo')
-      .replace(' month', 'mo');
+      .replace(' hours', 'h ago')
+      .replace(' hour', 'h ago')
+      .replace(' minutes', 'm ago')
+      .replace(' minute', 'm ago')
+      .replace(' days', 'd ago')
+      .replace(' day', 'd ago')
+      .replace(' weeks', 'w ago')
+      .replace(' week', 'w ago')
+      .replace(' months', 'mo ago')
+      .replace(' month', 'mo ago');
   };
 
   return (
@@ -200,7 +200,7 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
                   className={`flex ${isOwnMessage(message) ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[85%] md:max-w-[70%] rounded-lg px-3 py-2 ${
+                    className={`max-w-[85%] md:max-w-[70%] rounded-lg px-2 py-1.5 ${
                       isOwnMessage(message)
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted text-muted-foreground'
@@ -211,7 +211,7 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
                       <p className="text-xs font-medium opacity-70">
                         {getSenderName(message)}
                       </p>
-                      <p className={`text-xs opacity-60 ${
+                      <p className={`text-xs opacity-60 ml-2 ${
                         isOwnMessage(message) ? 'text-primary-foreground/60' : 'text-muted-foreground/60'
                       }`}>
                         {formatTimeAgo(message.created_at)}
