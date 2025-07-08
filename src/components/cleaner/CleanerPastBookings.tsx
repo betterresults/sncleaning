@@ -301,32 +301,41 @@ const CleanerPastBookings = () => {
       {/* Time Period Filter - Consistent Design */}
       <Card className="shadow-sm">
         <CardContent className="p-0">
-          <div className="px-4 py-3">
-            <div className="flex items-center space-x-2">
-              <CalendarDays className="h-4 w-4" />
-              <Select
-                value={filters.timePeriod}
-                onValueChange={(value) => setFilters({...filters, timePeriod: value})}
-              >
-                <SelectTrigger className="border-0 p-0 h-auto bg-transparent shadow-none focus:ring-0">
-                  <SelectValue className="font-medium">
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="period" className="border-0">
+              <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                <div className="flex items-center space-x-2">
+                  <CalendarDays className="h-4 w-4" />
+                  <span className="font-medium">
                     {filters.timePeriod === 'current-month' && 'Current Month'}
                     {filters.timePeriod === 'last-month' && 'Last Month'}
                     {filters.timePeriod === 'last-3-months' && 'Last 3 Months'}
                     {filters.timePeriod === 'last-6-months' && 'Last 6 Months'}
                     {filters.timePeriod === 'all' && 'All Time'}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="current-month">Current Month</SelectItem>
-                  <SelectItem value="last-month">Last Month</SelectItem>
-                  <SelectItem value="last-3-months">Last 3 Months</SelectItem>
-                  <SelectItem value="last-6-months">Last 6 Months</SelectItem>
-                  <SelectItem value="all">All Time</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+                  </span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                <div className="grid grid-cols-1 gap-2">
+                  <Select
+                    value={filters.timePeriod}
+                    onValueChange={(value) => setFilters({...filters, timePeriod: value})}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="current-month">Current Month</SelectItem>
+                      <SelectItem value="last-month">Last Month</SelectItem>
+                      <SelectItem value="last-3-months">Last 3 Months</SelectItem>
+                      <SelectItem value="last-6-months">Last 6 Months</SelectItem>
+                      <SelectItem value="all">All Time</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </CardContent>
       </Card>
 
