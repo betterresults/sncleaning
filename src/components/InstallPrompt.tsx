@@ -48,6 +48,12 @@ const InstallPrompt = () => {
     setIsDismissed(false);
   };
 
+  const forceShowPrompt = () => {
+    localStorage.removeItem('pwa-install-dismissed');
+    setIsDismissed(false);
+    setShowDebug(false);
+  };
+
   // Don't show if already installed or user dismissed it
   if (isInstalled || isDismissed) {
     return null;
@@ -58,10 +64,16 @@ const InstallPrompt = () => {
     // Show debug info only when needed
     if (showDebug) {
       return (
-        <div className="fixed bottom-4 left-4 right-4 z-50 bg-gray-100 p-3 rounded text-xs">
+        <div className="fixed bottom-4 left-4 right-4 z-50 bg-gray-100 p-3 rounded text-xs space-y-2">
           <div>Debug: isInstallable={String(isInstallable)}, isInstalled={String(isInstalled)}, isMobile={String(isMobile)}, isDismissed={String(isDismissed)}</div>
-          <button onClick={() => setShowDebug(false)} className="mt-2 text-blue-600">Hide Debug</button>
-          {isDismissed && <button onClick={clearDismissal} className="mt-2 ml-2 text-green-600">Clear Dismissal</button>}
+          <div className="flex gap-2">
+            <button onClick={() => setShowDebug(false)} className="text-blue-600 bg-blue-100 px-2 py-1 rounded">Hide Debug</button>
+            {isDismissed && <button onClick={clearDismissal} className="text-green-600 bg-green-100 px-2 py-1 rounded">Clear Dismissal</button>}
+            <button onClick={forceShowPrompt} className="text-purple-600 bg-purple-100 px-2 py-1 rounded">Force Show Install</button>
+          </div>
+          <div className="text-xs text-gray-600">
+            Tip: If install prompt not showing, try clearing browser cache or use incognito mode
+          </div>
         </div>
       );
     }
