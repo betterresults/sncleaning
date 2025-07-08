@@ -48,7 +48,7 @@ const CleanerUpcomingBookings = () => {
       setLoading(true);
       setError(null);
 
-      console.log('Fetching upcoming bookings for cleaner ID:', effectiveCleanerId);
+      console.log('CleanerUpcomingBookings - Fetching data for cleaner ID:', effectiveCleanerId);
       
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
@@ -72,6 +72,7 @@ const CleanerUpcomingBookings = () => {
       }
 
       console.log('Fetched bookings for cleaner:', bookingsData?.length || 0, 'bookings');
+      console.log('Sample booking data:', bookingsData?.[0]);
       setBookings(bookingsData || []);
 
       // Extract unique service types for filter dropdown
