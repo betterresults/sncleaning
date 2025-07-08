@@ -54,38 +54,40 @@ const CleanerBookingCard = ({
         </div>
       </div>
       
-      {/* Date, Time, Hours and Customer in a compact row */}
-      <div className="flex items-center justify-between mb-4 text-sm">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Calendar className="h-4 w-4 text-primary" />
-            <span className="font-medium">{new Date(booking.date_time).toLocaleDateString('en-GB', { 
-              day: 'numeric', 
-              month: 'long', 
-              year: 'numeric' 
-            })}, {new Date(booking.date_time).toLocaleTimeString('en-GB', { 
-              hour: 'numeric', 
-              minute: '2-digit',
-              hour12: true 
-            })}</span>
-          </div>
-          {(booking.total_hours || booking.hours_required) && (
+      {/* Date, Time, Hours and Customer - Mobile responsive */}
+      <div className="space-y-2 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
             <div className="flex items-center gap-2 text-muted-foreground">
-              <Clock className="h-4 w-4 text-orange-500" />
-              <span className="font-medium">{booking.total_hours || booking.hours_required}h</span>
+              <Calendar className="h-4 w-4 text-primary" />
+              <span className="font-medium">{new Date(booking.date_time).toLocaleDateString('en-GB', { 
+                day: 'numeric', 
+                month: 'short', 
+                year: 'numeric' 
+              })}, {new Date(booking.date_time).toLocaleTimeString('en-GB', { 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true 
+              })}</span>
+            </div>
+            {(booking.total_hours || booking.hours_required) && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Clock className="h-4 w-4 text-orange-500" />
+                <span className="font-medium">{booking.total_hours || booking.hours_required}h</span>
+              </div>
+            )}
+          </div>
+          {booking.first_name && booking.last_name && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <User className="h-4 w-4 text-blue-600" />
+              <span className="font-medium text-blue-600 dark:text-blue-400">{booking.first_name} {booking.last_name}</span>
             </div>
           )}
         </div>
-        {booking.first_name && booking.last_name && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <User className="h-4 w-4 text-blue-600" />
-            <span className="font-medium text-blue-600 dark:text-blue-400">{booking.first_name} {booking.last_name}</span>
-          </div>
-        )}
       </div>
       
-      {/* Address and Actions */}
-      <div className="flex items-center justify-between pt-3 border-t border-border/40">
+      {/* Address and Actions - Mobile responsive */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-border/40">
         <div className="flex items-center gap-2 text-sm text-muted-foreground flex-1 min-w-0">
           <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
           <a
@@ -98,7 +100,7 @@ const CleanerBookingCard = ({
           </a>
         </div>
         
-        <div className="flex items-center gap-2 ml-4">
+        <div className="flex items-center gap-2 sm:ml-4">
           {/* View Details - Always available */}
           <Button
             variant="outline"
