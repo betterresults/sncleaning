@@ -152,7 +152,7 @@ const Auth = () => {
                   placeholder="First Name"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className="h-12 bg-white/20 border-white/30 text-white placeholder:text-white/60 rounded-xl focus:bg-white/30 focus:border-white/50 focus:outline-none focus:ring-0"
+                  className="h-12 bg-white/20 border-white/30 text-white placeholder:text-white/60 rounded-xl focus:bg-white/30 focus:border-white/50 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
                   required
                 />
                 <Input
@@ -160,7 +160,7 @@ const Auth = () => {
                   placeholder="Last Name"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="h-12 bg-white/20 border-white/30 text-white placeholder:text-white/60 rounded-xl focus:bg-white/30 focus:border-white/50 focus:outline-none focus:ring-0"
+                  className="h-12 bg-white/20 border-white/30 text-white placeholder:text-white/60 rounded-xl focus:bg-white/30 focus:border-white/50 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
                   required
                 />
               </div>
@@ -171,7 +171,7 @@ const Auth = () => {
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="h-12 bg-white/20 border-white/30 text-white placeholder:text-white/60 rounded-xl focus:bg-white/30 focus:border-white/50 focus:outline-none focus:ring-0"
+              className="h-12 bg-white/20 border-white/30 text-white placeholder:text-white/60 rounded-xl focus:bg-white/30 focus:border-white/50 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
               required
             />
             
@@ -181,7 +181,7 @@ const Auth = () => {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="h-12 bg-white/20 border-white/30 text-white placeholder:text-white/60 rounded-xl focus:bg-white/30 focus:border-white/50 focus:outline-none focus:ring-0"
+                className="h-12 bg-white/20 border-white/30 text-white placeholder:text-white/60 rounded-xl focus:bg-white/30 focus:border-white/50 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 required
               />
             )}
