@@ -108,8 +108,9 @@ const BookingCard = <T extends BaseBooking>({
           )}
           
           {type === 'upcoming' ? (
-            <div className="text-sm text-[#185166]">
-              <span className="truncate">{booking.address}</span>
+            <div className="flex items-center gap-2 text-sm text-[#185166]">
+              <MapPin className="h-4 w-4 text-gray-600 flex-shrink-0" />
+              <span className="font-bold truncate">{booking.address}</span>
             </div>
           ) : (
             <Button
