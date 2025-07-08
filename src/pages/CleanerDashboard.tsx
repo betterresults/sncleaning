@@ -43,10 +43,10 @@ const CleanerDashboard = () => {
         <div className="min-h-screen flex w-full bg-gray-50">
           <CleanerSidebar />
           <SidebarInset className="flex-1">
-            <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-white px-4 shadow-sm">
-              <SidebarTrigger className="-ml-1 p-2" />
+            <header className="sticky top-0 z-10 flex h-16 sm:h-14 shrink-0 items-center gap-3 border-b bg-white px-3 sm:px-4 shadow-sm">
+              <SidebarTrigger className="h-10 w-10 sm:h-8 sm:w-8 p-2 touch-manipulation" />
               <div className="flex-1" />
-              <div className="text-base font-semibold text-gray-900 truncate">
+              <div className="text-sm sm:text-base font-semibold text-gray-900 truncate">
                 Hello {firstName}! 👋
               </div>
             </header>
