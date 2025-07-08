@@ -93,105 +93,110 @@ const BookingCard = <T extends BaseBooking>({
       </div>
       
       {/* Status and Actions with Address/Photos */}
-      <div className="flex items-center justify-between pt-3 border-t border-border/40">
-        <div className="flex items-center gap-4">
-          {type === 'upcoming' && (
-            <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${
-              booking.booking_status === 'Confirmed' 
-                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
-                : booking.booking_status === 'Pending'
-                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
-            }`}>
-              {booking.booking_status}
-            </span>
-          )}
-          
-          {type === 'upcoming' ? (
-            <div className="flex items-center gap-2 text-sm text-[#185166]">
-              <MapPin className="h-4 w-4 text-gray-600 flex-shrink-0" />
-              <span className="font-bold truncate">{booking.address}</span>
-            </div>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onSeePhotos?.(booking)}
-              className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/30"
-            >
-              📷 See Photos
-            </Button>
-          )}
-        </div>
+      <div className="pt-3 border-t border-border/40">
+        {/* Address row - aligned with other content */}
+        {type === 'upcoming' && (
+          <div className="flex items-center gap-2 text-sm text-[#185166] mb-3">
+            <MapPin className="h-4 w-4 text-gray-600 flex-shrink-0" />
+            <span className="font-bold truncate">{booking.address}</span>
+          </div>
+        )}
         
-        <div className="flex items-center gap-2">
-          {type === 'upcoming' && (
-            <>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200 hover:border-red-300 dark:bg-red-950/20 dark:hover:bg-red-950/40 dark:text-red-400 dark:border-red-800/30"
-                  >
-                    <span className="mr-1">✕</span>
-                    <span className="hidden sm:inline">Cancel</span>
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Cancel Booking</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to cancel this booking? This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>No, Keep Booking</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => onCancel?.(booking)} className="bg-red-600 hover:bg-red-700">
-                      Yes, Cancel Booking
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onDuplicate?.(booking)}
-                className="bg-white hover:bg-[#185166] text-[#185166] hover:text-white border-[#185166]"
-              >
-                <span className="mr-1">📋</span>
-                <span className="hidden sm:inline">Duplicate</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onEdit?.(booking)}
-                className="bg-[#185166] hover:bg-[#18A5A5] text-white border-[#185166] hover:border-[#18A5A5]"
-              >
-                <Edit className="h-4 w-4" />
-                <span className="ml-1 hidden sm:inline">Edit</span>
-              </Button>
-            </>
-          )}
-          
-          {type === 'completed' && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onReview?.(booking)}
-              className={`${
-                hasReview 
-                  ? 'bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 border-green-200 hover:border-green-300 dark:bg-green-950/20 dark:hover:bg-green-950/40 dark:text-green-400 dark:border-green-800/30'
-                  : 'bg-yellow-50 hover:bg-yellow-100 text-yellow-600 hover:text-yellow-700 border-yellow-200 hover:border-yellow-300 dark:bg-yellow-950/20 dark:hover:bg-yellow-950/40 dark:text-yellow-400 dark:border-yellow-800/30'
-              }`}
-            >
-              <Star className="h-4 w-4" />
-              <span className="ml-1 hidden sm:inline">
-                {hasReview ? 'View Review' : 'Leave Review'}
+        {/* Status and Actions row */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            {type === 'upcoming' && (
+              <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${
+                booking.booking_status === 'Confirmed' 
+                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                  : booking.booking_status === 'Pending'
+                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                  : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
+              }`}>
+                {booking.booking_status}
               </span>
-            </Button>
-          )}
+            )}
+            
+            {type === 'completed' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onSeePhotos?.(booking)}
+                className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/30"
+              >
+                📷 See Photos
+              </Button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {type === 'upcoming' && (
+              <>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200 hover:border-red-300 dark:bg-red-950/20 dark:hover:bg-red-950/40 dark:text-red-400 dark:border-red-800/30"
+                    >
+                      <span className="mr-1">✕</span>
+                      <span className="hidden sm:inline">Cancel</span>
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Cancel Booking</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to cancel this booking? This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>No, Keep Booking</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => onCancel?.(booking)} className="bg-red-600 hover:bg-red-700">
+                        Yes, Cancel Booking
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onDuplicate?.(booking)}
+                  className="bg-white hover:bg-[#185166] text-[#185166] hover:text-white border-[#185166]"
+                >
+                  <span className="mr-1">📋</span>
+                  <span className="hidden sm:inline">Duplicate</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onEdit?.(booking)}
+                  className="bg-[#185166] hover:bg-[#18A5A5] text-white border-[#185166] hover:border-[#18A5A5]"
+                >
+                  <Edit className="h-4 w-4" />
+                  <span className="ml-1 hidden sm:inline">Edit</span>
+                </Button>
+              </>
+            )}
+            
+            {type === 'completed' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onReview?.(booking)}
+                className={`${
+                  hasReview 
+                    ? 'bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 border-green-200 hover:border-green-300 dark:bg-green-950/20 dark:hover:bg-green-950/40 dark:text-green-400 dark:border-green-800/30'
+                    : 'bg-yellow-50 hover:bg-yellow-100 text-yellow-600 hover:text-yellow-700 border-yellow-200 hover:border-yellow-300 dark:bg-yellow-950/20 dark:hover:bg-yellow-950/40 dark:text-yellow-400 dark:border-yellow-800/30'
+                }`}
+              >
+                <Star className="h-4 w-4" />
+                <span className="ml-1 hidden sm:inline">
+                  {hasReview ? 'View Review' : 'Leave Review'}
+                </span>
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>
