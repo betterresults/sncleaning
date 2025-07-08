@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { User } from 'lucide-react';
+import { User, Menu } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -11,6 +11,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
@@ -33,17 +34,20 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
 
   return (
     <Sidebar className="border-r-0 bg-[#185166]" collapsible="icon">
-      <SidebarHeader className={`border-b border-white/10 ${open ? "px-6 py-6" : "px-4 py-6"}`}>
-        {open && (
-          <div className="text-lg font-bold text-white">
-            SN Cleaning
-          </div>
-        )}
-        {!open && (
-          <div className="text-sm font-bold text-white text-center">
-            SN
-          </div>
-        )}
+      <SidebarHeader className={`border-b border-white/10 bg-[#185166] ${open ? "px-6 py-6" : "px-4 py-6"} flex items-center justify-between`}>
+        <div>
+          {open && (
+            <div className="text-lg font-bold text-white">
+              SN Cleaning
+            </div>
+          )}
+          {!open && (
+            <div className="text-sm font-bold text-white text-center">
+              SN
+            </div>
+          )}
+        </div>
+        <SidebarTrigger className="text-white hover:bg-white/10 hover:text-white border-0 bg-transparent p-2" />
       </SidebarHeader>
       
       <SidebarContent className="p-0 bg-[#185166]">
@@ -56,20 +60,20 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton 
                       asChild 
-                      className={`h-12 transition-all duration-200 hover:bg-white/10 ${
+                      className={`h-12 transition-all duration-200 ${
                         isActive 
-                          ? "bg-white/20 text-white shadow-sm" 
-                          : "text-white/80 hover:text-white"
+                          ? "bg-white/20 text-white shadow-sm hover:bg-white/25 hover:text-white" 
+                          : "text-white/80 hover:text-white hover:bg-white/10"
                       } ${
                         open 
                           ? "justify-start px-4 rounded-lg mx-2" 
                           : "justify-center px-0 rounded-lg mx-3 w-10"
                       }`}
                     >
-                      <Link to={item.url} className="flex items-center w-full">
-                        <item.icon className={`${open ? "h-5 w-5" : "h-5 w-5"} flex-shrink-0`} />
+                      <Link to={item.url} className="flex items-center w-full text-inherit hover:text-inherit">
+                        <item.icon className={`${open ? "h-5 w-5" : "h-5 w-5"} flex-shrink-0 text-inherit`} />
                         {open && (
-                          <span className="ml-3 font-medium text-sm">
+                          <span className="ml-3 font-medium text-sm text-inherit">
                             {item.title}
                           </span>
                         )}
