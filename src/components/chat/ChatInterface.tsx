@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Paperclip, Image, FileText, MessageCircle } from 'lucide-react';
+import { Send, Paperclip, Image, FileText, MessageCircle, Check } from 'lucide-react';
 import { Chat, ChatMessage } from '@/types/chat';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
@@ -211,11 +211,23 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
                       <p className="text-xs font-medium opacity-70">
                         {getSenderName(message)}
                       </p>
-                      <p className={`text-xs opacity-60 ml-2 ${
-                        isOwnMessage(message) ? 'text-primary-foreground/60' : 'text-muted-foreground/60'
-                      }`}>
-                        {formatTimeAgo(message.created_at)}
-                      </p>
+                      <div className="flex items-center gap-1 ml-2">
+                        <p className={`text-xs opacity-60 ${
+                          isOwnMessage(message) ? 'text-primary-foreground/60' : 'text-muted-foreground/60'
+                        }`}>
+                          {formatTimeAgo(message.created_at)}
+                        </p>
+                        {/* Read receipt tick - only show for own messages */}
+                        {isOwnMessage(message) && (
+                          <Check className={`h-3 w-3 ${
+                            message.is_read 
+                              ? 'text-green-500' 
+                              : isOwnMessage(message) 
+                                ? 'text-primary-foreground/40' 
+                                : 'text-muted-foreground/40'
+                          }`} />
+                        )}
+                      </div>
                     </div>
                     
                     <p className="text-sm break-words">
