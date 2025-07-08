@@ -215,7 +215,7 @@ const CleanerPastBookings = () => {
   const totalEarnings = filteredBookings.reduce((sum, booking) => sum + (booking.cleaner_pay || 0), 0);
 
   const PastBookingCard = ({ booking }: { booking: PastBooking }) => (
-    <div className="group relative overflow-hidden rounded-2xl border p-3 sm:p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/30 border-border/60 bg-gradient-to-br from-card to-card/80 hover:shadow-primary/5">
+    <div className="group relative overflow-hidden rounded-2xl p-3 sm:p-5 shadow-sm transition-all duration-300 hover:shadow-lg bg-gradient-to-br from-card to-card/80 hover:shadow-primary/5">
       
       {/* Header with Service Type and Earnings */}
       <div className="flex items-start justify-between mb-3 sm:mb-4">
@@ -241,7 +241,7 @@ const CleanerPastBookings = () => {
       </div>
       
       {/* Address and Actions - Mobile responsive */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-border/40">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3">
         <div className="flex items-center gap-2 text-sm text-muted-foreground flex-1 min-w-0">
           <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
           <a
@@ -305,7 +305,7 @@ const CleanerPastBookings = () => {
             <AccordionItem value="period" className="border-0">
               <AccordionTrigger className="px-4 py-3 hover:no-underline">
                 <div className="flex items-center space-x-2">
-                  <CalendarDays className="h-4 w-4" />
+                  <Filter className="h-4 w-4" />
                   <span className="font-medium">Time Period</span>
                 </div>
               </AccordionTrigger>
