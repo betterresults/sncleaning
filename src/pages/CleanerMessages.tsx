@@ -5,16 +5,18 @@ import { Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { CleanerSidebar } from '@/components/CleanerSidebar';
-import CleanerContacts from '@/components/chat/CleanerContacts';
+import WhatsAppMessageList from '@/components/chat/WhatsAppMessageList';
+import WhatsAppContactList from '@/components/chat/WhatsAppContactList';
 import ChatInterface from '@/components/chat/ChatInterface';
 import AdminCleanerSelector from '@/components/admin/AdminCleanerSelector';
+import { MessageCircle, Users, ArrowLeft } from 'lucide-react';
 import { useChat } from '@/hooks/useChat';
 import { ChatType } from '@/types/chat';
 
 const CleanerMessages = () => {
   const { user, userRole, cleanerId, loading } = useAuth();
   const { selectedCleanerId } = useAdminCleaner();
-  const [showContacts, setShowContacts] = useState(true); // For mobile view toggle
+  const [currentView, setCurrentView] = useState<'messages' | 'contacts' | 'chat'>('messages');
   
   // Use selectedCleanerId for admin, otherwise use authenticated cleaner's ID
   const effectiveCleanerId = userRole === 'admin' ? selectedCleanerId : cleanerId;
@@ -44,17 +46,18 @@ const CleanerMessages = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  if (userRole === 'admin' && !selectedCleanerId) {
-    // Admin needs to select a cleaner first
-  }
+  const handleSelectChat = async (chat: any) => {
+    setActiveChat(chat);
+    await fetchMessages(chat.id);
+    setCurrentView('chat');
+  };
 
   const handleSelectContact = async (contact: any, booking?: any) => {
     const chatToSelect = booking?.chat || contact.chat;
     if (chatToSelect) {
       setActiveChat(chatToSelect);
       await fetchMessages(chatToSelect.id);
-      // On mobile, switch to chat view when contact is selected
-      setShowContacts(false);
+      setCurrentView('chat');
     }
   };
 
@@ -86,8 +89,7 @@ const CleanerMessages = () => {
     if (newChat) {
       setActiveChat(newChat);
       await fetchMessages(newChat.id);
-      // On mobile, switch to chat view when chat is created
-      setShowContacts(false);
+      setCurrentView('chat');
     }
   };
 
@@ -97,29 +99,61 @@ const CleanerMessages = () => {
     }
   };
 
-  const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Cleaner';
+  const handleBackToMessages = () => {
+    setCurrentView('messages');
+    setActiveChat(null);
+  };
+
+  const handleBackToContacts = () => {
+    setCurrentView('contacts');
+  };
 
   return (
     <SidebarProvider>
       <div className="h-screen flex w-full bg-background overflow-hidden">
         <CleanerSidebar />
         <SidebarInset className="flex-1">
+          {/* Header with navigation */}
           <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4 shadow-sm">
             <SidebarTrigger className="-ml-1 p-2" />
             
-            {/* Mobile: Back to contacts button */}
-            {!showContacts && activeChat && (
+            {/* Back button for chat and contacts view */}
+            {currentView === 'chat' && (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowContacts(true)}
-                className="sm:hidden"
+                onClick={handleBackToMessages}
+                className="p-2"
               >
-                ← Contacts
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
+            
+            {currentView === 'contacts' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBackToMessages}
+                className="p-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
               </Button>
             )}
             
             <div className="flex-1" />
+            
+            {/* Header actions */}
+            {currentView === 'messages' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setCurrentView('contacts')}
+                className="p-2"
+              >
+                <Users className="h-4 w-4" />
+              </Button>
+            )}
+            
             <div className="text-sm sm:text-base font-semibold text-foreground truncate">
               {isAdminViewing ? 'Chat Management - Cleaner View' : 'Messages'}
             </div>
@@ -145,59 +179,53 @@ const CleanerMessages = () => {
                 </div>
               </div>
             ) : (
-              <div className="flex-1 flex min-h-0">
-                {/* Mobile: Show contacts or chat based on state */}
-                <div className="flex-1 flex sm:hidden">
-                  {showContacts ? (
-                    <div className="w-full h-full">
-                      <CleanerContacts
-                        chats={chats}
-                        activeChat={activeChat}
-                        onSelectContact={handleSelectContact}
-                        onCreateChat={handleCreateChat}
-                        loading={chatLoading}
-                        cleanerId={effectiveCleanerId}
-                      />
-                    </div>
-                  ) : activeChat ? (
-                    <div className="w-full h-full">
-                      <ChatInterface
-                        chat={activeChat}
-                        messages={messages}
-                        onSendMessage={handleSendMessage}
-                        sendingMessage={sendingMessage}
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-full bg-card">
-                      <div className="text-center">
-                        <h3 className="text-lg font-medium text-foreground mb-2">
-                          Welcome to Messages, {firstName}!
-                        </h3>
-                        <p className="text-muted-foreground mb-4">
-                          Select a contact to start messaging with customers or the office
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Desktop: Side by side layout */}
-                <div className="hidden sm:flex flex-1 min-h-0">
-                  {/* Contacts List */}
-                  <div className="w-80 flex-shrink-0 h-full overflow-hidden">
-                    <CleanerContacts
+              <div className="flex-1 overflow-hidden">
+                {/* Mobile WhatsApp-like views */}
+                <div className="h-full sm:hidden">
+                  {currentView === 'messages' && (
+                    <WhatsAppMessageList
                       chats={chats}
                       activeChat={activeChat}
+                      onSelectChat={handleSelectChat}
+                      loading={chatLoading}
+                    />
+                  )}
+                  
+                  {currentView === 'contacts' && (
+                    <WhatsAppContactList
+                      chats={chats}
                       onSelectContact={handleSelectContact}
                       onCreateChat={handleCreateChat}
+                      onBack={handleBackToMessages}
                       loading={chatLoading}
                       cleanerId={effectiveCleanerId}
                     />
+                  )}
+                  
+                  {currentView === 'chat' && activeChat && (
+                    <ChatInterface
+                      chat={activeChat}
+                      messages={messages}
+                      onSendMessage={handleSendMessage}
+                      sendingMessage={sendingMessage}
+                    />
+                  )}
+                </div>
+
+                {/* Desktop: Split view */}
+                <div className="hidden sm:flex h-full">
+                  {/* Message List */}
+                  <div className="w-80 flex-shrink-0 h-full border-r border-border">
+                    <WhatsAppMessageList
+                      chats={chats}
+                      activeChat={activeChat}
+                      onSelectChat={handleSelectChat}
+                      loading={chatLoading}
+                    />
                   </div>
 
-                  {/* Chat Interface */}
-                  <div className="flex-1 min-h-0">
+                  {/* Chat Interface or Welcome */}
+                  <div className="flex-1 h-full">
                     {activeChat ? (
                       <ChatInterface
                         chat={activeChat}
@@ -206,15 +234,22 @@ const CleanerMessages = () => {
                         sendingMessage={sendingMessage}
                       />
                     ) : (
-                      <div className="flex items-center justify-center h-full bg-card">
-                        <div className="text-center">
-                          <h3 className="text-lg font-medium text-foreground mb-2">
-                            Welcome to Messages, {firstName}!
-                          </h3>
-                          <p className="text-muted-foreground mb-4">
-                            Select a contact to start messaging with customers or the office
-                          </p>
-                        </div>
+                      <div className="flex flex-col items-center justify-center h-full bg-card p-8 text-center">
+                        <MessageCircle className="h-16 w-16 text-muted-foreground/40 mb-4" />
+                        <h3 className="text-xl font-medium text-foreground mb-2">
+                          Welcome to Messages
+                        </h3>
+                        <p className="text-muted-foreground mb-4">
+                          Select a conversation to start messaging
+                        </p>
+                        <Button
+                          variant="outline"
+                          onClick={() => setCurrentView('contacts')}
+                          className="hidden sm:inline-flex"
+                        >
+                          <Users className="h-4 w-4 mr-2" />
+                          Browse Contacts
+                        </Button>
                       </div>
                     )}
                   </div>
