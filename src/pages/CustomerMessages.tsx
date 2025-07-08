@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 import { Navigate } from 'react-router-dom';
-import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
-import CustomerSidebar from '@/components/CustomerSidebar';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { UnifiedSidebar } from '@/components/UnifiedSidebar';
+import { UnifiedHeader } from '@/components/UnifiedHeader';
+import { customerNavigation } from '@/lib/navigationItems';
 import CustomerContacts from '@/components/chat/CustomerContacts';
 import ChatInterface from '@/components/chat/ChatInterface';
 import AdminCustomerSelector from '@/components/admin/AdminCustomerSelector';
@@ -11,12 +13,20 @@ import { useChat } from '@/hooks/useChat';
 import { ChatType } from '@/types/chat';
 
 const CustomerMessages = () => {
-  const { user, userRole, customerId, loading } = useAuth();
+  const { user, userRole, customerId, loading, signOut } = useAuth();
   const { selectedCustomerId } = useAdminCustomer();
   
   // Use selectedCustomerId for admin, otherwise use authenticated customer's ID
   const effectiveCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
   const isAdminViewing = userRole === 'admin';
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   const {
     chats,
@@ -88,16 +98,18 @@ const CustomerMessages = () => {
 
   return (
     <SidebarProvider>
-      <div className="h-screen flex w-full bg-background overflow-hidden">
-        <CustomerSidebar />
+      <div className="h-screen flex w-full bg-gray-50 overflow-hidden">
+        <UnifiedSidebar 
+          navigationItems={customerNavigation}
+          user={user}
+          onSignOut={handleSignOut}
+        />
         <SidebarInset className="flex-1">
-          <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4 shadow-sm">
-            <SidebarTrigger className="-ml-1 p-2" />
-            <div className="flex-1" />
-            <div className="text-base font-semibold text-foreground truncate">
-              {isAdminViewing ? 'Chat Management - Customer View' : 'Messages'}
-            </div>
-          </header>
+          <UnifiedHeader 
+            title="Messages 💬"
+            user={user}
+            userRole={userRole}
+          />
           
           <main className="flex-1 flex flex-col overflow-hidden">
             {/* Admin Customer Selector */}
