@@ -49,9 +49,9 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
       <SidebarContent className="p-2">
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="!space-y-0 !-space-y-1 !my-0 !gap-1">
-              {navigationItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
+             <SidebarMenu className="!space-y-0 !my-0 !p-0">
+               {navigationItems.map((item) => (
+                 <SidebarMenuItem key={item.title} className="!-my-1">
                   <SidebarMenuButton 
                     asChild
                     isActive={location.pathname === item.url}
