@@ -29,7 +29,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Sending test email to:', email);
 
     const emailResponse = await resend.emails.send({
-      from: "SN Cleaning <notifications@sncleaning.com>",
+      from: "SN Cleaning <onboarding@resend.dev>",
       to: [email],
       subject: `Your Cleaning Photos Are Ready! 📸`,
       html: `
