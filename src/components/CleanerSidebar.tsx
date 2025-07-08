@@ -64,61 +64,41 @@ export function CleanerSidebar() {
   ];
 
   return (
-    <Sidebar className="border-r border-border bg-card shadow-lg" collapsible="icon">
-      <SidebarHeader className={`border-b border-border bg-primary/5 ${open ? "px-6 py-6" : "px-4 py-6"}`}>
+    <Sidebar className="border-r border-border bg-card" collapsible="icon">
+      <SidebarHeader className={`border-b border-border ${open ? "px-6 py-4" : "px-4 py-4"}`}>
         {open && (
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">SN</span>
-            </div>
-            <div>
-              <div className="text-lg font-bold text-foreground">SN Cleaning</div>
-              <div className="text-xs text-muted-foreground">Services</div>
-            </div>
+          <div className="text-base font-medium text-foreground">
+            SN Cleaning
           </div>
         )}
         {!open && (
-          <div className="flex justify-center">
-            <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-md">
-              <span className="text-primary-foreground font-bold text-xl">SN</span>
-            </div>
+          <div className="text-sm font-medium text-foreground text-center">
+            SN
           </div>
         )}
       </SidebarHeader>
       
-      <SidebarContent className={open ? "px-4 py-6" : "px-3 py-6"}>
+      <SidebarContent className={open ? "px-6 py-6" : "px-6 py-6"}>
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-3">
+            <SidebarMenu className="space-y-2">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild
                     isActive={location.pathname === item.url}
-                    className={`transition-all duration-200 hover:bg-primary/10 group ${
+                    className={`transition-all duration-200 ${
                       open 
-                        ? "h-14 px-4 py-3 justify-start rounded-xl" 
-                        : "h-14 px-3 py-3 justify-center rounded-xl mx-auto w-12"
-                    } ${
-                      location.pathname === item.url 
-                        ? "bg-primary text-primary-foreground shadow-md hover:bg-primary/90" 
-                        : "hover:shadow-sm"
+                        ? "h-16 px-6 py-4 justify-start rounded-lg" 
+                        : "h-16 px-4 py-4 justify-center rounded-lg"
                     }`}
                   >
                     <Link to={item.url} className="flex items-center w-full">
-                      <item.icon className={`flex-shrink-0 transition-all duration-200 ${
-                        open ? "h-6 w-6" : "h-7 w-7"
-                      } ${
-                        location.pathname === item.url 
-                          ? "text-primary-foreground" 
-                          : "text-foreground group-hover:text-primary"
+                      <item.icon className={`flex-shrink-0 ${
+                        open ? "h-8 w-8" : "h-9 w-9"
                       }`} />
                       {open && (
-                        <span className={`ml-4 font-semibold truncate transition-colors duration-200 ${
-                          location.pathname === item.url 
-                            ? "text-primary-foreground" 
-                            : "text-foreground group-hover:text-primary"
-                        }`}>
+                        <span className="ml-6 font-medium truncate text-base">
                           {item.title}
                         </span>
                       )}
