@@ -207,6 +207,7 @@ const CleanerUpcomingBookings = () => {
   const paginatedBookings = filteredBookings.slice(startIndex, startIndex + itemsPerPage);
 
   if (authLoading || loading) {
+    console.log('CleanerUpcomingBookings - Loading state:', { authLoading, loading, effectiveCleanerId });
     return (
       <div className="flex justify-center py-8">
         <div className="text-base">Loading upcoming bookings...</div>
