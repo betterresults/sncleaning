@@ -12,7 +12,7 @@ export function UnifiedHeader({ title, user, userRole }: UnifiedHeaderProps) {
     const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'User';
     
     if (userRole === 'admin') {
-      return `Hello ${firstName} (Admin)`;
+      return `Hello ${firstName}`;
     } else if (userRole === 'user') {
       return `Hello ${firstName}`;
     } else {
