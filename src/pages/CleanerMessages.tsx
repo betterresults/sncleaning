@@ -59,43 +59,54 @@ const CleanerMessages = () => {
       await fetchMessages(chatToSelect.id);
       setCurrentView('chat');
     }
-  };
-
-  const handleCreateChat = async (contact: any, booking?: any) => {
-    if (!effectiveCleanerId) return;
-
-    let chatType: ChatType;
-    let customerId: number | undefined;
-    let cleanerId: number | undefined;
-    let bookingId: number | undefined;
-
-    if (contact.type === 'office') {
-      chatType = 'office_cleaner';
-      cleanerId = effectiveCleanerId;
-    } else if (booking) {
-      // Booking-specific chat
-      chatType = 'customer_cleaner';
-      customerId = contact.customer_id;
-      cleanerId = effectiveCleanerId;
-      bookingId = booking.bookingId;
-    } else {
-      // General customer chat (fallback)
-      chatType = 'customer_cleaner';
-      customerId = contact.customer_id;
-      cleanerId = effectiveCleanerId;
-    }
-
-    const newChat = await createChat(chatType, customerId, cleanerId, bookingId);
-    if (newChat) {
-      setActiveChat(newChat);
-      await fetchMessages(newChat.id);
+    // If no existing chat, store the contact/booking info for later chat creation when message is sent
+    else {
+      // Store contact info for creating chat when message is sent
+      setActiveChat({
+        id: 'pending',
+        chat_type: contact.type === 'office' ? 'office_cleaner' : 'customer_cleaner',
+        customer_id: contact.customer_id,
+        cleaner_id: effectiveCleanerId,
+        booking_id: booking?.bookingId,
+        customer: contact.type === 'customer' ? { first_name: contact.name.split(' ')[0], last_name: contact.name.split(' ')[1] || '' } : null,
+        booking: booking ? { service_type: booking.serviceType, date_time: booking.dateTime } : null,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        last_message_at: null
+      } as any);
       setCurrentView('chat');
     }
   };
 
   const handleSendMessage = async (message: string, fileUrl?: string) => {
     if (activeChat) {
-      await sendMessage(activeChat.id, message, fileUrl);
+      // If it's a pending chat (not yet created), create it first
+      if (activeChat.id === 'pending') {
+        let chatType: ChatType;
+        let customerId: number | undefined;
+        let cleanerId: number | undefined;
+        let bookingId: number | undefined;
+
+        if (activeChat.chat_type === 'office_cleaner') {
+          chatType = 'office_cleaner';
+          cleanerId = effectiveCleanerId;
+        } else {
+          chatType = 'customer_cleaner';
+          customerId = activeChat.customer_id;
+          cleanerId = effectiveCleanerId;
+          bookingId = activeChat.booking_id;
+        }
+
+        const newChat = await createChat(chatType, customerId, cleanerId, bookingId);
+        if (newChat) {
+          setActiveChat(newChat);
+          await sendMessage(newChat.id, message, fileUrl);
+          return;
+        }
+      } else {
+        await sendMessage(activeChat.id, message, fileUrl);
+      }
     }
   };
 
@@ -201,7 +212,6 @@ const CleanerMessages = () => {
                     <WhatsAppContactList
                       chats={chats}
                       onSelectContact={handleSelectContact}
-                      onCreateChat={handleCreateChat}
                       onSwitchToMessages={() => setCurrentView('messages')}
                       loading={chatLoading}
                       cleanerId={effectiveCleanerId}

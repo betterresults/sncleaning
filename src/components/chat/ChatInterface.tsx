@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Paperclip, Image, FileText } from 'lucide-react';
+import { Send, Paperclip, Image, FileText, MessageCircle } from 'lucide-react';
 import { Chat, ChatMessage } from '@/types/chat';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
@@ -158,62 +158,79 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
         onScrollCapture={handleScroll}
       >
         <div className="space-y-4">
-          {loadingMore && (
-            <div className="text-center py-2">
-              <div className="text-xs text-muted-foreground">Loading more messages...</div>
+          {chat.id === 'pending' ? (
+            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+              <MessageCircle className="h-12 w-12 text-muted-foreground/40 mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">Start a New Conversation</h3>
+              <p className="text-muted-foreground">
+                {chat.chat_type === 'office_cleaner' 
+                  ? 'Write your first message to SN Cleaning Office'
+                  : chat.booking 
+                    ? `Write your first message about the ${chat.booking.service_type} booking`
+                    : 'Write your first message to start this conversation'
+                }
+              </p>
             </div>
+          ) : (
+            <>
+              {loadingMore && (
+                <div className="text-center py-2">
+                  <div className="text-xs text-muted-foreground">Loading more messages...</div>
+                </div>
+              )}
+              {messages.slice(-50).map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${isOwnMessage(message) ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[70%] rounded-lg px-3 py-2 ${
+                      isOwnMessage(message)
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    {/* Always show sender name for clarity */}
+                    <p className="text-xs font-medium mb-1 opacity-70">
+                      {getSenderName(message)}
+                    </p>
+                    <p className="text-sm">
+                      {message.file_url ? (
+                        message.file_url.includes('image') || message.message.includes('📷') ? (
+                          <div>
+                            <img 
+                              src={message.file_url} 
+                              alt="Shared image" 
+                              className="max-w-xs rounded cursor-pointer"
+                              onClick={() => window.open(message.file_url, '_blank')}
+                            />
+                            <p className="mt-1">{message.message}</p>
+                          </div>
+                        ) : (
+                          <a 
+                            href={message.file_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="underline hover:text-blue-600"
+                          >
+                            {message.message}
+                          </a>
+                        )
+                      ) : (
+                        message.message
+                      )}
+                    </p>
+                    <p className={`text-xs mt-1 ${
+                      isOwnMessage(message) ? 'text-primary-foreground/70' : 'text-muted-foreground/70'
+                    }`}>
+                      {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </>
           )}
-          {messages.slice(-50).map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${isOwnMessage(message) ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-[70%] rounded-lg px-3 py-2 ${
-                  isOwnMessage(message)
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground'
-                }`}
-              >
-                {/* Always show sender name for clarity */}
-                <p className="text-xs font-medium mb-1 opacity-70">
-                  {getSenderName(message)}
-                </p>
-                <p className="text-sm">
-                  {message.file_url ? (
-                    message.file_url.includes('image') || message.message.includes('📷') ? (
-                      <div>
-                        <img 
-                          src={message.file_url} 
-                          alt="Shared image" 
-                          className="max-w-xs rounded cursor-pointer"
-                          onClick={() => window.open(message.file_url, '_blank')}
-                        />
-                        <p className="mt-1">{message.message}</p>
-                      </div>
-                    ) : (
-                      <a 
-                        href={message.file_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="underline hover:text-blue-600"
-                      >
-                        {message.message}
-                      </a>
-                    )
-                  ) : (
-                    message.message
-                  )}
-                </p>
-                <p className={`text-xs mt-1 ${
-                  isOwnMessage(message) ? 'text-primary-foreground/70' : 'text-muted-foreground/70'
-                }`}>
-                  {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
-                </p>
-              </div>
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
 

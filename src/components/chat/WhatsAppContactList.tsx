@@ -38,7 +38,6 @@ interface Contact {
 interface WhatsAppContactListProps {
   chats: ChatWithLastMessage[];
   onSelectContact: (contact: Contact, booking?: BookingContact) => void;
-  onCreateChat: (contact: Contact, booking?: BookingContact) => void;
   onSwitchToMessages: () => void;
   loading: boolean;
   cleanerId?: number;
@@ -47,7 +46,6 @@ interface WhatsAppContactListProps {
 const WhatsAppContactList = ({ 
   chats, 
   onSelectContact, 
-  onCreateChat, 
   onSwitchToMessages, 
   loading,
   cleanerId: selectedCleanerId 
@@ -180,12 +178,11 @@ const WhatsAppContactList = ({
       return;
     }
 
-    // Handle office or booking contact
+    // Only select existing chats, don't create new ones
     if (booking?.chat || contact.chat) {
       onSelectContact(contact, booking);
-    } else {
-      onCreateChat(contact, booking);
     }
+    // Remove automatic chat creation - only create when message is sent
   };
 
   const handleShowMore = (contactId: string) => {
@@ -276,7 +273,6 @@ const WhatsAppContactList = ({
                       <div className="flex items-center gap-2">
                         {contact.type === 'office' && !contact.chat && (
                           <Badge variant="outline" className="text-xs">
-                            <Plus className="h-3 w-3 mr-1" />
                             Start Chat
                           </Badge>
                         )}
@@ -288,7 +284,7 @@ const WhatsAppContactList = ({
                     
                     <p className="text-sm text-muted-foreground truncate">
                       {contact.type === 'office' 
-                        ? 'SN Cleaning Support Team'
+                        ? contact.chat ? 'Tap to continue chatting' : 'Tap to start new chat'
                         : contact.isExpanded 
                           ? 'Tap a booking to start chat'
                           : `${contact.bookings?.length || 0} upcoming booking${contact.bookings?.length !== 1 ? 's' : ''} - Tap to expand`
