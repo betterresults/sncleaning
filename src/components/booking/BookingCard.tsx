@@ -46,7 +46,7 @@ const BookingCard = <T extends BaseBooking>({
     <div className={`group relative overflow-hidden rounded-2xl border p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/30 ${
       booking.same_day 
         ? 'bg-gradient-to-br from-orange-50 to-red-50 border-orange-200 hover:shadow-orange-100 dark:from-orange-950/20 dark:to-red-950/20 dark:border-orange-800/30' 
-        : 'border-border/60 bg-gradient-to-br from-card to-card/80 hover:shadow-primary/5'
+        : 'border-border/60 bg-white hover:shadow-primary/5'
     }`}>
       
       {/* Header with Service Type and Cost */}
@@ -108,7 +108,7 @@ const BookingCard = <T extends BaseBooking>({
           )}
           
           {type === 'upcoming' ? (
-            <div className="flex items-center gap-2 text-sm text-[#185166]">
+            <div className="text-sm text-[#185166]">
               <span className="truncate">{booking.address}</span>
             </div>
           ) : (
@@ -157,7 +157,7 @@ const BookingCard = <T extends BaseBooking>({
                 variant="outline"
                 size="sm"
                 onClick={() => onDuplicate?.(booking)}
-                className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/30"
+                className="bg-white hover:bg-[#185166] text-[#185166] hover:text-white border-[#185166]"
               >
                 <span className="mr-1">📋</span>
                 <span className="hidden sm:inline">Duplicate</span>
