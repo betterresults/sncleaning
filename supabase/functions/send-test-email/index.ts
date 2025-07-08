@@ -60,7 +60,7 @@ const handler = async (req: Request): Promise<Response> => {
             <div style="background-color: #18A5A5; color: white; padding: 20px; border-radius: 8px; margin: 30px 0; text-align: center;">
               <h3 style="margin: 0 0 15px 0;">View Your Cleaning Photos</h3>
               <p style="margin: 0 0 20px 0;">Click the button below to access your before and after photos:</p>
-              <a href="https://dkomihipebixlegygnoy.supabase.co/storage/v1/object/public/cleaning.photos/" 
+              <a href="https://ffa08752-d853-4e87-8f4f-92b4f1e65779.lovableproject.com/customer-dashboard" 
                  style="display: inline-block; background-color: white; color: #18A5A5; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 10px;">
                 📸 View Photos
               </a>
