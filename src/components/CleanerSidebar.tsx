@@ -78,7 +78,7 @@ export function CleanerSidebar() {
         )}
       </SidebarHeader>
       
-      <SidebarContent className={open ? "px-6 py-6" : "px-6 py-6"}>
+      <SidebarContent className="p-4">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-2">
@@ -89,16 +89,14 @@ export function CleanerSidebar() {
                     isActive={location.pathname === item.url}
                     className={`transition-all duration-200 ${
                       open 
-                        ? "h-16 px-6 py-4 justify-start rounded-lg" 
-                        : "h-16 px-4 py-4 justify-center rounded-lg"
+                        ? "h-16 p-4 justify-start rounded-lg" 
+                        : "h-16 p-4 justify-center rounded-lg"
                     }`}
                   >
                     <Link to={item.url} className="flex items-center w-full">
-                      <item.icon className={`flex-shrink-0 ${
-                        open ? "h-8 w-8" : "h-9 w-9"
-                      }`} />
+                      <item.icon className="h-8 w-8 flex-shrink-0" />
                       {open && (
-                        <span className="ml-6 font-medium truncate text-base">
+                        <span className="ml-4 font-medium truncate text-base">
                           {item.title}
                         </span>
                       )}
