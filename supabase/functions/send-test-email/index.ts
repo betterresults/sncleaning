@@ -27,6 +27,8 @@ const handler = async (req: Request): Promise<Response> => {
     const { email, customerName = "Valued Customer", bookingDetails }: TestEmailRequest = await req.json();
 
     console.log('Sending test email to:', email);
+    console.log('Using Resend API key:', Deno.env.get("RESEND_API_KEY") ? 'API key present' : 'API key missing');
+    console.log('From email:', "SN Cleaning <notifications@sncleaningservices.co.uk>");
 
     const emailResponse = await resend.emails.send({
       from: "SN Cleaning <notifications@sncleaningservices.co.uk>",
