@@ -207,7 +207,6 @@ const CustomerPastBookings = () => {
       reviewedBookings
     });
   };
-  };
 
   const clearFilters = () => {
     setDateFrom(undefined);
