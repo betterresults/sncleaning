@@ -78,10 +78,10 @@ export function CleanerSidebar() {
         )}
       </SidebarHeader>
       
-      <SidebarContent className="p-4">
+      <SidebarContent className="p-2">
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-2">
+            <SidebarMenu className="space-y-1">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
@@ -89,14 +89,14 @@ export function CleanerSidebar() {
                     isActive={location.pathname === item.url}
                     className={`transition-all duration-200 ${
                       open 
-                        ? "h-16 px-6 py-4 justify-start rounded-lg" 
+                        ? "h-14 px-3 py-3 justify-start rounded-lg" 
                         : "h-20 px-3 py-6 justify-center rounded-lg"
                     }`}
                   >
                     <Link to={item.url} className="flex items-center w-full">
                       <item.icon className={open ? "h-8 w-8 flex-shrink-0" : "h-12 w-12 flex-shrink-0"} />
                       {open && (
-                        <span className="ml-4 font-medium truncate text-base">
+                        <span className="ml-3 font-medium truncate text-base">
                           {item.title}
                         </span>
                       )}
