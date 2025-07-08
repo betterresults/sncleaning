@@ -54,35 +54,37 @@ const CleanerBookingCard = ({
         </div>
       </div>
       
-      {/* Date, Time, Hours and Customer - Mobile responsive */}
+      {/* Date, Time, Hours - Keep on same line for compact mobile */}
       <div className="space-y-2 mb-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Calendar className="h-4 w-4 text-primary" />
-              <span className="font-medium">{new Date(booking.date_time).toLocaleDateString('en-GB', { 
-                day: 'numeric', 
-                month: 'short', 
-                year: 'numeric' 
-              })}, {new Date(booking.date_time).toLocaleTimeString('en-GB', { 
-                hour: 'numeric', 
-                minute: '2-digit',
-                hour12: true 
-              })}</span>
+        <div className="flex flex-col gap-2 text-sm">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-4 min-w-0 flex-1">
+              <div className="flex items-center gap-2 text-muted-foreground min-w-0">
+                <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
+                <span className="font-medium truncate">{new Date(booking.date_time).toLocaleDateString('en-GB', { 
+                  day: 'numeric', 
+                  month: 'short', 
+                  year: 'numeric' 
+                })}, {new Date(booking.date_time).toLocaleTimeString('en-GB', { 
+                  hour: 'numeric', 
+                  minute: '2-digit',
+                  hour12: true 
+                })}</span>
+              </div>
+              {(booking.total_hours || booking.hours_required) && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Clock className="h-4 w-4 text-orange-500 flex-shrink-0" />
+                  <span className="font-medium">{booking.total_hours || booking.hours_required}h</span>
+                </div>
+              )}
             </div>
-            {(booking.total_hours || booking.hours_required) && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Clock className="h-4 w-4 text-orange-500" />
-                <span className="font-medium">{booking.total_hours || booking.hours_required}h</span>
+            {booking.first_name && booking.last_name && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <User className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                <span className="font-medium text-blue-600 dark:text-blue-400">{booking.first_name} {booking.last_name}</span>
               </div>
             )}
           </div>
-          {booking.first_name && booking.last_name && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <User className="h-4 w-4 text-blue-600" />
-              <span className="font-medium text-blue-600 dark:text-blue-400">{booking.first_name} {booking.last_name}</span>
-            </div>
-          )}
         </div>
       </div>
       
