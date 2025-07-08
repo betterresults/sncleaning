@@ -31,15 +31,15 @@ const CustomerCompletedBookings = () => {
           user={user}
           onSignOut={handleSignOut}
         />
-        <SidebarInset className="flex-1">
+        <SidebarInset className="flex-1 flex flex-col">
           <UnifiedHeader 
             title="Completed Bookings 📋"
             user={user}
             userRole={userRole}
           />
           
-          <main className="flex-1 p-2 sm:p-4 space-y-4 max-w-full overflow-x-hidden">
-            <div className="max-w-7xl mx-auto px-2 sm:px-0 space-y-4">
+          <main className="flex-1 p-2 sm:p-4 lg:p-6 max-w-full overflow-x-hidden">
+            <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-6">
               {userRole === 'admin' && <AdminCustomerSelector />}
               <CustomerPastBookings />
             </div>

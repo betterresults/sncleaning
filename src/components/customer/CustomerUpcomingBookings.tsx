@@ -187,18 +187,18 @@ const CustomerUpcomingBookings = () => {
   const pendingBookings = bookings.filter(b => b.booking_status?.toLowerCase() === 'pending').length;
 
   return (
-    <div className="space-y-6">
+    <div className="w-full space-y-4 sm:space-y-6">
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         <Card className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
-                <Calendar className="h-5 w-5 text-primary" />
+                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">Upcoming Bookings</p>
-                <p className="text-2xl font-bold text-[#185166]">{totalBookings}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-500">Upcoming Bookings</p>
+                <p className="text-lg sm:text-2xl font-bold text-[#185166]">{totalBookings}</p>
               </div>
             </div>
           </CardContent>
@@ -208,28 +208,28 @@ const CustomerUpcomingBookings = () => {
           className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
           onClick={() => navigate('/customer-completed-bookings')}
         >
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="p-2 bg-green-100 rounded-lg">
-                <CheckCircle className="h-5 w-5 text-green-600" />
+                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">Completed</p>
-                <p className="text-2xl font-bold text-[#185166]">{completedBookingsCount}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-500">Completed</p>
+                <p className="text-lg sm:text-2xl font-bold text-[#185166]">{completedBookingsCount}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
+        <Card className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 sm:col-span-2 lg:col-span-1">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="p-2 bg-red-100 rounded-lg">
-                <User className="h-5 w-5 text-red-600" />
+                <User className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">Needs Payment</p>
-                <p className="text-2xl font-bold text-[#185166]">{unpaidBookings}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-500">Needs Payment</p>
+                <p className="text-lg sm:text-2xl font-bold text-[#185166]">{unpaidBookings}</p>
               </div>
             </div>
           </CardContent>
@@ -237,34 +237,36 @@ const CustomerUpcomingBookings = () => {
       </div>
 
       {/* View Toggle */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-[#185166]">Your Upcoming Bookings</h2>
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-[#185166]">Your Upcoming Bookings</h2>
+        <div className="flex items-center gap-2 sm:gap-3">
           <Button
             variant={viewMode === 'cards' ? 'default' : 'outline'}
-            size="lg"
+            size="sm"
             onClick={() => setViewMode('cards')}
-            className={`flex items-center gap-3 px-6 py-3 text-base font-semibold ${
+            className={`flex items-center gap-2 px-3 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-semibold ${
               viewMode === 'cards' 
                 ? 'bg-[#18A5A5] hover:bg-[#185166] text-white' 
                 : 'border-[#18A5A5] text-[#18A5A5] hover:bg-[#18A5A5] hover:text-white'
             }`}
           >
-            <Grid className="h-5 w-5" />
-            Cards View
+            <Grid className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="hidden sm:inline">Cards View</span>
+            <span className="sm:hidden">Cards</span>
           </Button>
           <Button
             variant={viewMode === 'calendar' ? 'default' : 'outline'}
-            size="lg"
+            size="sm"
             onClick={() => setViewMode('calendar')}
-            className={`flex items-center gap-3 px-6 py-3 text-base font-semibold ${
+            className={`flex items-center gap-2 px-3 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-semibold ${
               viewMode === 'calendar' 
                 ? 'bg-[#18A5A5] hover:bg-[#185166] text-white' 
                 : 'border-[#18A5A5] text-[#18A5A5] hover:bg-[#18A5A5] hover:text-white'
             }`}
           >
-            <Calendar className="h-5 w-5" />
-            Calendar View
+            <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="hidden sm:inline">Calendar View</span>
+            <span className="sm:hidden">Calendar</span>
           </Button>
         </div>
       </div>
@@ -372,7 +374,7 @@ const CustomerUpcomingBookings = () => {
       {/* Cards View */}
       {viewMode === 'cards' && (
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-3 sm:p-6">
             {bookings.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
