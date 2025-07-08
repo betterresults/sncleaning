@@ -301,81 +301,32 @@ const CleanerPastBookings = () => {
       {/* Time Period Filter - Consistent Design */}
       <Card className="shadow-sm">
         <CardContent className="p-0">
-          <Accordion type="single" collapsible className="w-full" defaultValue="period">
-            <AccordionItem value="period" className="border-0">
-              <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                <div className="flex items-center space-x-2">
-                  <CalendarDays className="h-4 w-4" />
-                  <span className="font-medium">
+          <div className="px-4 py-3">
+            <div className="flex items-center space-x-2">
+              <CalendarDays className="h-4 w-4" />
+              <Select
+                value={filters.timePeriod}
+                onValueChange={(value) => setFilters({...filters, timePeriod: value})}
+              >
+                <SelectTrigger className="border-0 p-0 h-auto bg-transparent shadow-none focus:ring-0">
+                  <SelectValue className="font-medium">
                     {filters.timePeriod === 'current-month' && 'Current Month'}
                     {filters.timePeriod === 'last-month' && 'Last Month'}
                     {filters.timePeriod === 'last-3-months' && 'Last 3 Months'}
                     {filters.timePeriod === 'last-6-months' && 'Last 6 Months'}
                     {filters.timePeriod === 'all' && 'All Time'}
-                  </span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-4 pb-4">
-                {/* Mobile: Dropdown */}
-                <div className="block sm:hidden">
-                  <Select
-                    value={filters.timePeriod}
-                    onValueChange={(value) => setFilters({...filters, timePeriod: value})}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="current-month">Current Month</SelectItem>
-                      <SelectItem value="last-month">Last Month</SelectItem>
-                      <SelectItem value="last-3-months">Last 3 Months</SelectItem>
-                      <SelectItem value="last-6-months">Last 6 Months</SelectItem>
-                      <SelectItem value="all">All Time</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {/* Desktop: Buttons */}
-                <div className="hidden sm:grid grid-cols-5 gap-2 w-full">
-                  <Button
-                    variant={filters.timePeriod === 'current-month' ? 'default' : 'outline'}
-                    onClick={() => setFilters({...filters, timePeriod: 'current-month'})}
-                    className="w-full text-xs sm:text-sm"
-                  >
-                    Current Month
-                  </Button>
-                  <Button
-                    variant={filters.timePeriod === 'last-month' ? 'default' : 'outline'}
-                    onClick={() => setFilters({...filters, timePeriod: 'last-month'})}
-                    className="w-full text-xs sm:text-sm"
-                  >
-                    Last Month
-                  </Button>
-                  <Button
-                    variant={filters.timePeriod === 'last-3-months' ? 'default' : 'outline'}
-                    onClick={() => setFilters({...filters, timePeriod: 'last-3-months'})}
-                    className="w-full text-xs sm:text-sm"
-                  >
-                    Last 3 Months
-                  </Button>
-                  <Button
-                    variant={filters.timePeriod === 'last-6-months' ? 'default' : 'outline'}
-                    onClick={() => setFilters({...filters, timePeriod: 'last-6-months'})}
-                    className="w-full text-xs sm:text-sm"
-                  >
-                    Last 6 Months
-                  </Button>
-                  <Button
-                    variant={filters.timePeriod === 'all' ? 'default' : 'outline'}
-                    onClick={() => setFilters({...filters, timePeriod: 'all'})}
-                    className="w-full text-xs sm:text-sm"
-                  >
-                    All Time
-                  </Button>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="current-month">Current Month</SelectItem>
+                  <SelectItem value="last-month">Last Month</SelectItem>
+                  <SelectItem value="last-3-months">Last 3 Months</SelectItem>
+                  <SelectItem value="last-6-months">Last 6 Months</SelectItem>
+                  <SelectItem value="all">All Time</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
