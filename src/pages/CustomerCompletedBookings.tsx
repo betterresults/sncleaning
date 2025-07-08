@@ -39,7 +39,7 @@ const CustomerCompletedBookings = () => {
           />
           
           <main className="flex-1 p-2 sm:p-4 space-y-4 max-w-full overflow-x-hidden">
-            <div className="max-w-7xl mx-auto px-2 sm:px-0">
+            <div className="max-w-7xl mx-auto px-2 sm:px-0 space-y-4">
               {userRole === 'admin' && <AdminCustomerSelector />}
               <CustomerPastBookings />
             </div>
