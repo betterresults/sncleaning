@@ -125,8 +125,8 @@ const CleanerMessages = () => {
         <CleanerSidebar />
         <SidebarInset className="flex-1">
           {/* Header with navigation */}
-          <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4 shadow-sm">
-            <SidebarTrigger className="-ml-1 p-2" />
+          <header className="sticky top-0 z-10 flex h-12 sm:h-14 shrink-0 items-center gap-2 border-b bg-background px-2 sm:px-4 shadow-sm">
+            <SidebarTrigger className="-ml-1 p-1 sm:p-2" />
             
             {/* Back button for chat view */}
             {currentView === 'chat' && activeChat && (
@@ -135,22 +135,22 @@ const CleanerMessages = () => {
                   variant="ghost"
                   size="sm"
                   onClick={handleBackToMessages}
-                  className="p-2"
+                  className="p-1 sm:p-2 min-h-8"
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
                 
                 {/* Chat header info */}
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-primary/10 rounded-full flex items-center justify-center">
                     {activeChat.chat_type === 'office_cleaner' ? (
-                      <Building2 className="h-4 w-4 text-primary" />
+                      <Building2 className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                     ) : (
-                      <User className="h-4 w-4 text-primary" />
+                      <User className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                     )}
                   </div>
-                  <div>
-                    <h3 className="font-medium text-foreground text-sm">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-medium text-foreground text-xs sm:text-sm truncate">
                       {activeChat.chat_type === 'office_cleaner' 
                         ? 'SN Cleaning Office'
                         : activeChat.customer 
@@ -159,7 +159,7 @@ const CleanerMessages = () => {
                       }
                     </h3>
                     {activeChat.booking && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground truncate">
                         {activeChat.booking.service_type} - {new Date(activeChat.booking.date_time).toLocaleDateString()}
                       </p>
                     )}
@@ -168,9 +168,7 @@ const CleanerMessages = () => {
               </>
             )}
             
-            <div className="flex-1" />
-            
-            <div className="text-sm sm:text-base font-semibold text-foreground truncate">
+            <div className="text-xs sm:text-sm font-semibold text-foreground truncate">
               {isAdminViewing ? 'Chat Management - Cleaner View' : 'Messages'}
             </div>
           </header>
@@ -178,7 +176,7 @@ const CleanerMessages = () => {
           <main className="flex-1 flex flex-col overflow-hidden">
             {/* Admin Cleaner Selector */}
             {isAdminViewing && (
-              <div className="p-4 border-b border-border bg-muted/30">
+              <div className="p-2 sm:p-4 border-b border-border bg-muted/30">
                 <AdminCleanerSelector />
               </div>
             )}

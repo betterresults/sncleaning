@@ -212,16 +212,16 @@ const WhatsAppContactList = ({
         <Button
           variant="ghost"
           onClick={onSwitchToMessages}
-          className="flex-1 h-12 rounded-none border-b-2 border-transparent hover:border-muted-foreground/20"
+          className="flex-1 h-10 sm:h-12 rounded-none border-b-2 border-transparent hover:border-muted-foreground/20 text-xs sm:text-sm"
         >
-          <MessageCircle className="h-4 w-4 mr-2" />
+          <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
           Messages
         </Button>
         <Button
           variant="ghost"
-          className="flex-1 h-12 rounded-none border-b-2 border-primary bg-primary/5"
+          className="flex-1 h-10 sm:h-12 rounded-none border-b-2 border-primary bg-primary/5 text-xs sm:text-sm"
         >
-          <Users className="h-4 w-4 mr-2" />
+          <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
           Contacts
         </Button>
       </div>
@@ -241,12 +241,12 @@ const WhatsAppContactList = ({
                 {/* Main Contact */}
                 <div
                   onClick={() => handleContactClick(contact)}
-                  className="flex items-center gap-3 p-4 cursor-pointer transition-colors hover:bg-muted/50"
+                  className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 cursor-pointer transition-colors hover:bg-muted/50"
                 >
-                  <Avatar className="h-12 w-12 flex-shrink-0">
-                    <AvatarFallback className="bg-primary/10 text-primary border border-primary/20">
+                  <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0">
+                    <AvatarFallback className="bg-primary/10 text-primary border border-primary/20 text-xs sm:text-sm">
                       {contact.type === 'office' ? (
-                        <Building2 className="h-5 w-5" />
+                        <Building2 className="h-4 w-4 sm:h-5 sm:w-5" />
                       ) : (
                         getInitials(contact.name)
                       )}
@@ -255,34 +255,34 @@ const WhatsAppContactList = ({
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-foreground truncate">
+                      <div className="flex items-center gap-1 sm:gap-2">
+                        <h3 className="font-medium text-foreground truncate text-sm sm:text-base">
                           {contact.name}
                         </h3>
                         {/* Chevron for customers with bookings */}
                         {contact.type === 'customer' && contact.bookings && contact.bookings.length > 0 && (
                           <div className="flex items-center">
                             {contact.isExpanded ? (
-                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                              <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                             ) : (
-                              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                              <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                             )}
                           </div>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 sm:gap-2">
                         {contact.type === 'office' && !contact.chat && (
                           <Badge variant="outline" className="text-xs">
                             Start Chat
                           </Badge>
                         )}
                         {contact.chat && (
-                          <MessageCircle className="h-4 w-4 text-muted-foreground" />
+                          <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                         )}
                       </div>
                     </div>
                     
-                    <p className="text-sm text-muted-foreground truncate">
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">
                       {contact.type === 'office' 
                         ? contact.chat ? 'Tap to continue chatting' : 'Tap to start new chat'
                         : contact.isExpanded 
@@ -295,46 +295,46 @@ const WhatsAppContactList = ({
 
                 {/* Customer Bookings - Only show when expanded */}
                 {contact.type === 'customer' && contact.isExpanded && contact.bookings && contact.bookings.length > 0 && (
-                  <div className="pl-8 border-l-2 border-muted ml-8">
+                  <div className="pl-4 sm:pl-8 border-l-2 border-muted ml-4 sm:ml-8">
                     {contact.bookings.slice(0, contact.showAll ? undefined : 3).map((booking) => (
                       <div
                         key={booking.id}
                         onClick={() => handleContactClick(contact, booking)}
-                        className="flex items-center gap-3 p-3 cursor-pointer transition-colors hover:bg-muted/30 border-b border-muted/50 last:border-b-0"
+                        className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 cursor-pointer transition-colors hover:bg-muted/30 border-b border-muted/50 last:border-b-0"
                       >
-                        <Avatar className="h-8 w-8 flex-shrink-0">
+                        <Avatar className="h-6 w-6 sm:h-8 sm:w-8 flex-shrink-0">
                           <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
-                            <Calendar className="h-4 w-4" />
+                            <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
                           </AvatarFallback>
                         </Avatar>
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
-                            <h4 className="font-medium text-sm text-foreground truncate">
+                            <h4 className="font-medium text-xs sm:text-sm text-foreground truncate">
                               {booking.serviceType}
                             </h4>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 sm:gap-2">
                               {!booking.chat && (
                                 <Badge variant="outline" className="text-xs">
-                                  <Plus className="h-3 w-3 mr-1" />
+                                  <Plus className="h-2 w-2 sm:h-3 sm:w-3 mr-1" />
                                   Start
                                 </Badge>
                               )}
                               {booking.chat && booking.unreadCount && booking.unreadCount > 0 && (
-                                <Badge variant="default" className="bg-primary text-primary-foreground h-4 min-w-4 text-xs">
+                                <Badge variant="default" className="bg-primary text-primary-foreground h-3 min-w-3 sm:h-4 sm:min-w-4 text-xs">
                                   {booking.unreadCount}
                                 </Badge>
                               )}
                             </div>
                           </div>
                           
-                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-2 sm:gap-3 text-xs text-muted-foreground">
                             <div className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
+                              <Calendar className="h-2 w-2 sm:h-3 sm:w-3" />
                               <span>{new Date(booking.dateTime).toLocaleDateString()}</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
+                              <MapPin className="h-2 w-2 sm:h-3 sm:w-3" />
                               <span className="truncate">{booking.postcode}</span>
                             </div>
                           </div>
@@ -350,7 +350,7 @@ const WhatsAppContactList = ({
                     
                     {/* Show More Button */}
                     {contact.bookings.length > 3 && (
-                      <div className="p-3 border-b border-muted/50">
+                      <div className="p-2 sm:p-3 border-b border-muted/50">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -358,7 +358,7 @@ const WhatsAppContactList = ({
                             e.stopPropagation();
                             handleShowMore(contact.id);
                           }}
-                          className="text-xs h-8 w-full"
+                          className="text-xs h-6 sm:h-8 w-full"
                         >
                           {contact.showAll 
                             ? `Show Less` 
