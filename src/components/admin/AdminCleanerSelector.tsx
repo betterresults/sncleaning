@@ -55,26 +55,27 @@ const AdminCleanerSelector = () => {
   }
 
   return (
-    <Card className="mb-6 border-green-200 bg-green-50">
-      <CardContent className="p-4">
-        <div className="flex items-center gap-4">
+    <Card className="mb-3 sm:mb-6 border-green-200 bg-green-50">
+      <CardContent className="p-2 sm:p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
           <div className="flex items-center gap-2">
-            <UserCheck className="h-5 w-5 text-green-600" />
-            <span className="font-medium text-green-900">Admin View - Select Cleaner:</span>
+            <UserCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+            <span className="text-sm sm:text-base font-medium text-green-900">Admin View - Select Cleaner:</span>
           </div>
           <Select 
             value={selectedCleanerId?.toString() || ""} 
             onValueChange={(value) => setSelectedCleanerId(value ? parseInt(value) : null)}
           >
-            <SelectTrigger className="w-80">
-              <SelectValue placeholder="Choose a cleaner to view as..." />
+            <SelectTrigger className="w-full sm:w-80">
+              <SelectValue placeholder="Choose a cleaner..." />
             </SelectTrigger>
             <SelectContent>
               {cleaners.map((cleaner) => (
                 <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
                   <div className="flex items-center gap-2">
                     <UserCheck className="h-4 w-4" />
-                    {cleaner.first_name} {cleaner.last_name} ({cleaner.email})
+                    <span className="hidden sm:inline">{cleaner.first_name} {cleaner.last_name} ({cleaner.email})</span>
+                    <span className="sm:hidden">{cleaner.first_name} {cleaner.last_name}</span>
                   </div>
                 </SelectItem>
               ))}
