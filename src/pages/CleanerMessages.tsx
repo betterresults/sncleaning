@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAdminCleaner } from '@/contexts/AdminCleanerContext';
 import { Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
 import { CleanerSidebar } from '@/components/CleanerSidebar';
 import CleanerContacts from '@/components/chat/CleanerContacts';
 import ChatInterface from '@/components/chat/ChatInterface';
@@ -13,6 +14,7 @@ import { ChatType } from '@/types/chat';
 const CleanerMessages = () => {
   const { user, userRole, cleanerId, loading } = useAuth();
   const { selectedCleanerId } = useAdminCleaner();
+  const [showContacts, setShowContacts] = useState(true); // For mobile view toggle
   
   // Use selectedCleanerId for admin, otherwise use authenticated cleaner's ID
   const effectiveCleanerId = userRole === 'admin' ? selectedCleanerId : cleanerId;
@@ -51,6 +53,8 @@ const CleanerMessages = () => {
     if (chatToSelect) {
       setActiveChat(chatToSelect);
       await fetchMessages(chatToSelect.id);
+      // On mobile, switch to chat view when contact is selected
+      setShowContacts(false);
     }
   };
 
@@ -82,6 +86,8 @@ const CleanerMessages = () => {
     if (newChat) {
       setActiveChat(newChat);
       await fetchMessages(newChat.id);
+      // On mobile, switch to chat view when chat is created
+      setShowContacts(false);
     }
   };
 
@@ -100,8 +106,21 @@ const CleanerMessages = () => {
         <SidebarInset className="flex-1">
           <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4 shadow-sm">
             <SidebarTrigger className="-ml-1 p-2" />
+            
+            {/* Mobile: Back to contacts button */}
+            {!showContacts && activeChat && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowContacts(true)}
+                className="sm:hidden"
+              >
+                ← Contacts
+              </Button>
+            )}
+            
             <div className="flex-1" />
-            <div className="text-base font-semibold text-foreground truncate">
+            <div className="text-sm sm:text-base font-semibold text-foreground truncate">
               {isAdminViewing ? 'Chat Management - Cleaner View' : 'Messages'}
             </div>
           </header>
@@ -127,27 +146,28 @@ const CleanerMessages = () => {
               </div>
             ) : (
               <div className="flex-1 flex min-h-0">
-                {/* Contacts List */}
-                <div className="w-80 flex-shrink-0 h-full overflow-hidden">
-                  <CleanerContacts
-                    chats={chats}
-                    activeChat={activeChat}
-                    onSelectContact={handleSelectContact}
-                    onCreateChat={handleCreateChat}
-                    loading={chatLoading}
-                    cleanerId={effectiveCleanerId}
-                  />
-                </div>
-
-                {/* Chat Interface */}
-                <div className="flex-1 min-h-0">
-                  {activeChat ? (
-                    <ChatInterface
-                      chat={activeChat}
-                      messages={messages}
-                      onSendMessage={handleSendMessage}
-                      sendingMessage={sendingMessage}
-                    />
+                {/* Mobile: Show contacts or chat based on state */}
+                <div className="flex-1 flex sm:hidden">
+                  {showContacts ? (
+                    <div className="w-full h-full">
+                      <CleanerContacts
+                        chats={chats}
+                        activeChat={activeChat}
+                        onSelectContact={handleSelectContact}
+                        onCreateChat={handleCreateChat}
+                        loading={chatLoading}
+                        cleanerId={effectiveCleanerId}
+                      />
+                    </div>
+                  ) : activeChat ? (
+                    <div className="w-full h-full">
+                      <ChatInterface
+                        chat={activeChat}
+                        messages={messages}
+                        onSendMessage={handleSendMessage}
+                        sendingMessage={sendingMessage}
+                      />
+                    </div>
                   ) : (
                     <div className="flex items-center justify-center h-full bg-card">
                       <div className="text-center">
@@ -160,6 +180,44 @@ const CleanerMessages = () => {
                       </div>
                     </div>
                   )}
+                </div>
+
+                {/* Desktop: Side by side layout */}
+                <div className="hidden sm:flex flex-1 min-h-0">
+                  {/* Contacts List */}
+                  <div className="w-80 flex-shrink-0 h-full overflow-hidden">
+                    <CleanerContacts
+                      chats={chats}
+                      activeChat={activeChat}
+                      onSelectContact={handleSelectContact}
+                      onCreateChat={handleCreateChat}
+                      loading={chatLoading}
+                      cleanerId={effectiveCleanerId}
+                    />
+                  </div>
+
+                  {/* Chat Interface */}
+                  <div className="flex-1 min-h-0">
+                    {activeChat ? (
+                      <ChatInterface
+                        chat={activeChat}
+                        messages={messages}
+                        onSendMessage={handleSendMessage}
+                        sendingMessage={sendingMessage}
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full bg-card">
+                        <div className="text-center">
+                          <h3 className="text-lg font-medium text-foreground mb-2">
+                            Welcome to Messages, {firstName}!
+                          </h3>
+                          <p className="text-muted-foreground mb-4">
+                            Select a contact to start messaging with customers or the office
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
