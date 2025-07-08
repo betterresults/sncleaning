@@ -157,37 +157,11 @@ const CleanerMessages = () => {
               </>
             )}
             
-            {/* Tab navigation for Messages and Contacts */}
-            {currentView !== 'chat' && (
-              <>
-                <div className="flex items-center gap-1 ml-2">
-                  <Button
-                    variant={currentView === 'messages' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setCurrentView('messages')}
-                    className="h-8 px-3"
-                  >
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    Messages
-                  </Button>
-                  <Button
-                    variant={currentView === 'contacts' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setCurrentView('contacts')}
-                    className="h-8 px-3"
-                  >
-                    <Users className="h-4 w-4 mr-2" />
-                    Contacts
-                  </Button>
-                </div>
-                
-                <div className="flex-1" />
-                
-                <div className="text-sm sm:text-base font-semibold text-foreground truncate">
-                  {isAdminViewing ? 'Chat Management - Cleaner View' : 'Messages'}
-                </div>
-              </>
-            )}
+            <div className="flex-1" />
+            
+            <div className="text-sm sm:text-base font-semibold text-foreground truncate">
+              {isAdminViewing ? 'Chat Management - Cleaner View' : 'Messages'}
+            </div>
           </header>
           
           <main className="flex-1 flex flex-col overflow-hidden">
@@ -218,6 +192,7 @@ const CleanerMessages = () => {
                       chats={chats}
                       activeChat={activeChat}
                       onSelectChat={handleSelectChat}
+                      onSwitchToContacts={() => setCurrentView('contacts')}
                       loading={chatLoading}
                     />
                   )}
@@ -227,7 +202,7 @@ const CleanerMessages = () => {
                       chats={chats}
                       onSelectContact={handleSelectContact}
                       onCreateChat={handleCreateChat}
-                      onBack={handleBackToMessages}
+                      onSwitchToMessages={() => setCurrentView('messages')}
                       loading={chatLoading}
                       cleanerId={effectiveCleanerId}
                     />
@@ -251,6 +226,7 @@ const CleanerMessages = () => {
                       chats={chats}
                       activeChat={activeChat}
                       onSelectChat={handleSelectChat}
+                      onSwitchToContacts={() => setCurrentView('contacts')}
                       loading={chatLoading}
                     />
                   </div>

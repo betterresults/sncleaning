@@ -1,8 +1,9 @@
 import React from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { MessageCircle, Building2, User, Clock } from 'lucide-react';
+import { MessageCircle, Building2, User, Clock, Users } from 'lucide-react';
 import { ChatWithLastMessage } from '@/types/chat';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -10,10 +11,11 @@ interface MessageListProps {
   chats: ChatWithLastMessage[];
   activeChat: ChatWithLastMessage | null;
   onSelectChat: (chat: ChatWithLastMessage) => void;
+  onSwitchToContacts: () => void;
   loading: boolean;
 }
 
-const WhatsAppMessageList = ({ chats, activeChat, onSelectChat, loading }: MessageListProps) => {
+const WhatsAppMessageList = ({ chats, activeChat, onSelectChat, onSwitchToContacts, loading }: MessageListProps) => {
   const getChatDisplayName = (chat: ChatWithLastMessage) => {
     if (chat.chat_type === 'customer_office') {
       return 'SN Cleaning Office';
@@ -53,9 +55,23 @@ const WhatsAppMessageList = ({ chats, activeChat, onSelectChat, loading }: Messa
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border bg-card">
-        <h1 className="text-xl font-semibold text-foreground">Messages</h1>
+      {/* Tabs */}
+      <div className="flex items-center border-b border-border bg-card">
+        <Button
+          variant="ghost"
+          className="flex-1 h-12 rounded-none border-b-2 border-primary bg-primary/5"
+        >
+          <MessageCircle className="h-4 w-4 mr-2" />
+          Messages
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={onSwitchToContacts}
+          className="flex-1 h-12 rounded-none border-b-2 border-transparent hover:border-muted-foreground/20"
+        >
+          <Users className="h-4 w-4 mr-2" />
+          Contacts
+        </Button>
       </div>
 
       {/* Message List */}

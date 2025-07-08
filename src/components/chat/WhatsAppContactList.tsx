@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ArrowLeft, Building2, User, Calendar, MapPin, MessageCircle, Plus } from 'lucide-react';
+import { ArrowLeft, Building2, User, Calendar, MapPin, MessageCircle, Plus, Users } from 'lucide-react';
 import { ChatWithLastMessage } from '@/types/chat';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,7 +37,7 @@ interface WhatsAppContactListProps {
   chats: ChatWithLastMessage[];
   onSelectContact: (contact: Contact, booking?: BookingContact) => void;
   onCreateChat: (contact: Contact, booking?: BookingContact) => void;
-  onBack: () => void;
+  onSwitchToMessages: () => void;
   loading: boolean;
   cleanerId?: number;
 }
@@ -46,7 +46,7 @@ const WhatsAppContactList = ({
   chats, 
   onSelectContact, 
   onCreateChat, 
-  onBack, 
+  onSwitchToMessages, 
   loading,
   cleanerId: selectedCleanerId 
 }: WhatsAppContactListProps) => {
@@ -187,17 +187,23 @@ const WhatsAppContactList = ({
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b border-border bg-card">
+      {/* Tabs */}
+      <div className="flex items-center border-b border-border bg-card">
         <Button
           variant="ghost"
-          size="sm"
-          onClick={onBack}
-          className="p-2"
+          onClick={onSwitchToMessages}
+          className="flex-1 h-12 rounded-none border-b-2 border-transparent hover:border-muted-foreground/20"
         >
-          <ArrowLeft className="h-5 w-5" />
+          <MessageCircle className="h-4 w-4 mr-2" />
+          Messages
         </Button>
-        <h1 className="text-xl font-semibold text-foreground">Select Contact</h1>
+        <Button
+          variant="ghost"
+          className="flex-1 h-12 rounded-none border-b-2 border-primary bg-primary/5"
+        >
+          <Users className="h-4 w-4 mr-2" />
+          Contacts
+        </Button>
       </div>
 
       {/* Contacts List */}
