@@ -1,18 +1,27 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/AppSidebar';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { UnifiedSidebar } from '@/components/UnifiedSidebar';
+import { UnifiedHeader } from '@/components/UnifiedHeader';
+import { adminNavigation } from '@/lib/navigationItems';
 import UpcomingBookings from '@/components/dashboard/UpcomingBookings';
 import DashboardStats from '@/components/admin/DashboardStats';
 import { Calendar, Clock, CalendarDays, CalendarClock } from 'lucide-react';
 
 const Dashboard = () => {
-  const { user, userRole, cleanerId, loading } = useAuth();
+  const { user, userRole, cleanerId, loading, signOut } = useAuth();
   const [selectedTimeRange, setSelectedTimeRange] = useState<'today' | '3days' | '7days' | '30days'>('3days');
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   console.log('Dashboard - Auth state:', { user: !!user, userRole, cleanerId, loading });
 
@@ -33,9 +42,6 @@ const Dashboard = () => {
     console.log('Dashboard - Redirecting cleaner to cleaner dashboard');
     return <Navigate to="/cleaner-dashboard" replace />;
   }
-
-  // Extract first name from email (before @)
-  const firstName = user.email?.split('@')[0] || 'User';
 
   // Calculate date range based on selected time range
   const getDateRange = () => {
@@ -75,28 +81,22 @@ const Dashboard = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <AppSidebar />
-        <SidebarInset className="flex-1 flex flex-col min-w-0">
+      <div className="min-h-screen flex w-full bg-gray-50">
+        <UnifiedSidebar 
+          navigationItems={adminNavigation}
+          user={user}
+          onSignOut={handleSignOut}
+        />
+        <SidebarInset className="flex-1">
+          <UnifiedHeader 
+            title="Admin Dashboard 📊"
+            user={user}
+            userRole={userRole}
+          />
           
-          {/* Mobile-First Header */}
-          <header className="flex h-14 shrink-0 items-center gap-3 border-b bg-white px-4 shadow-sm">
-            <SidebarTrigger className="lg:hidden" />
-            <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-semibold text-gray-900 truncate">
-                Dashboard
-              </h1>
-            </div>
-            <div className="text-sm text-gray-600 font-medium">
-              {firstName}
-            </div>
-          </header>
-          
-          {/* Mobile-First Main Content */}
-          <main className="flex-1 overflow-auto">
-            <div className="p-4 space-y-6 max-w-full">
-              
-              {/* Time Range Selector - Mobile Optimized */}
+          <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
+            <div className="max-w-7xl mx-auto space-y-6">
+              {/* Time Range Selector */}
               <div className="space-y-3">
                 <h2 className="text-base font-semibold text-gray-900">
                   Filter by Time Period
@@ -131,7 +131,7 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* Statistics Section - Mobile Optimized */}
+              {/* Statistics Section */}
               <div className="space-y-3">
                 <h2 className="text-base font-semibold text-gray-900">
                   Statistics
@@ -139,7 +139,7 @@ const Dashboard = () => {
                 <DashboardStats filters={dateRange} />
               </div>
               
-              {/* Bookings Section - Mobile Optimized */}
+              {/* Bookings Section */}
               <div className="space-y-3">
                 <h2 className="text-base font-semibold text-gray-900">
                   Bookings Management
@@ -153,7 +153,6 @@ const Dashboard = () => {
                   </CardContent>
                 </Card>
               </div>
-              
             </div>
           </main>
         </SidebarInset>
