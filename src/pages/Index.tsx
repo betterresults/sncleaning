@@ -135,16 +135,16 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 px-4">
-      <div className="w-full max-w-2xl">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-primary-light/10 px-4">
+      <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">
             SN Cleaning
           </h1>
-          <p className="text-xl text-gray-600">Professional cleaning services</p>
+          <p className="text-lg text-muted-foreground">Professional cleaning services</p>
         </div>
         
-        <Card className="w-full shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
+        <Card className="w-full shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
           <CardHeader className="text-center pb-8 pt-8">
             <CardTitle className="text-3xl font-bold text-gray-800">
               {getCardTitle()}
@@ -209,7 +209,7 @@ const Index = () => {
               )}
               <Button 
                 type="submit" 
-                className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg transition-all duration-200 transform hover:scale-[1.02]" 
+                className="w-full h-12 text-base font-semibold bg-gradient-to-r from-primary to-primary-light hover:from-primary-dark hover:to-primary text-primary-foreground shadow-lg transition-all duration-200 transform hover:scale-[1.02]" 
                 disabled={loading}
               >
                 {getButtonText()}
