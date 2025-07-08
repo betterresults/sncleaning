@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ArrowLeft, Building2, User, Calendar, MapPin, MessageCircle, Plus, Users } from 'lucide-react';
+import { ArrowLeft, Building2, User, Calendar, MapPin, MessageCircle, Plus, Users, ChevronDown, ChevronRight } from 'lucide-react';
 import { ChatWithLastMessage } from '@/types/chat';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,6 +31,8 @@ interface Contact {
   lastMessage?: string;
   lastMessageTime?: string;
   unreadCount?: number;
+  isExpanded?: boolean;
+  showAll?: boolean;
 }
 
 interface WhatsAppContactListProps {
@@ -131,6 +133,8 @@ const WhatsAppContactList = ({
           type: 'customer' as const,
           customer_id: customer.id,
           bookings: bookingContacts,
+          isExpanded: false, // Default to collapsed
+          showAll: false,
           unreadCount: bookingContacts.reduce((sum, booking) => 
             sum + (booking.unreadCount || 0), 0
           ),
@@ -166,11 +170,30 @@ const WhatsAppContactList = ({
   }, [effectiveCleanerId, chats]);
 
   const handleContactClick = (contact: Contact, booking?: BookingContact) => {
+    // If it's a customer contact without a specific booking, toggle expansion
+    if (contact.type === 'customer' && !booking) {
+      setContacts(prev => prev.map(c => 
+        c.id === contact.id 
+          ? { ...c, isExpanded: !c.isExpanded }
+          : c
+      ));
+      return;
+    }
+
+    // Handle office or booking contact
     if (booking?.chat || contact.chat) {
       onSelectContact(contact, booking);
     } else {
       onCreateChat(contact, booking);
     }
+  };
+
+  const handleShowMore = (contactId: string) => {
+    setContacts(prev => prev.map(c => 
+      c.id === contactId 
+        ? { ...c, showAll: !c.showAll }
+        : c
+    ));
   };
 
   const getInitials = (name: string) => {
@@ -235,11 +258,23 @@ const WhatsAppContactList = ({
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-medium text-foreground truncate">
-                        {contact.name}
-                      </h3>
                       <div className="flex items-center gap-2">
-                        {!contact.chat && (
+                        <h3 className="font-medium text-foreground truncate">
+                          {contact.name}
+                        </h3>
+                        {/* Chevron for customers with bookings */}
+                        {contact.type === 'customer' && contact.bookings && contact.bookings.length > 0 && (
+                          <div className="flex items-center">
+                            {contact.isExpanded ? (
+                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {contact.type === 'office' && !contact.chat && (
                           <Badge variant="outline" className="text-xs">
                             <Plus className="h-3 w-3 mr-1" />
                             Start Chat
@@ -254,16 +289,18 @@ const WhatsAppContactList = ({
                     <p className="text-sm text-muted-foreground truncate">
                       {contact.type === 'office' 
                         ? 'SN Cleaning Support Team'
-                        : `${contact.bookings?.length || 0} upcoming booking${contact.bookings?.length !== 1 ? 's' : ''}`
+                        : contact.isExpanded 
+                          ? 'Tap a booking to start chat'
+                          : `${contact.bookings?.length || 0} upcoming booking${contact.bookings?.length !== 1 ? 's' : ''} - Tap to expand`
                       }
                     </p>
                   </div>
                 </div>
 
-                {/* Customer Bookings */}
-                {contact.type === 'customer' && contact.bookings && contact.bookings.length > 0 && (
+                {/* Customer Bookings - Only show when expanded */}
+                {contact.type === 'customer' && contact.isExpanded && contact.bookings && contact.bookings.length > 0 && (
                   <div className="pl-8 border-l-2 border-muted ml-8">
-                    {contact.bookings.map((booking) => (
+                    {contact.bookings.slice(0, contact.showAll ? undefined : 3).map((booking) => (
                       <div
                         key={booking.id}
                         onClick={() => handleContactClick(contact, booking)}
@@ -314,6 +351,26 @@ const WhatsAppContactList = ({
                         </div>
                       </div>
                     ))}
+                    
+                    {/* Show More Button */}
+                    {contact.bookings.length > 3 && (
+                      <div className="p-3 border-b border-muted/50">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleShowMore(contact.id);
+                          }}
+                          className="text-xs h-8 w-full"
+                        >
+                          {contact.showAll 
+                            ? `Show Less` 
+                            : `Show ${contact.bookings.length - 3} More Booking${contact.bookings.length - 3 !== 1 ? 's' : ''}`
+                          }
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
