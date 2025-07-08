@@ -126,119 +126,125 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 px-4">
-      <div className="w-full max-w-2xl">
+    <div className="min-h-screen bg-gradient-to-br from-[#18A5A5] via-[#185166] to-[#18A5A5] flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Logo Section */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            SN Cleaning
+          <div className="w-20 h-20 mx-auto mb-4 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+            <img 
+              src="/sn-cleaning-logo.png" 
+              alt="SN Cleaning Services" 
+              className="w-12 h-12 object-contain"
+              onError={(e) => {
+                const target = e.currentTarget as HTMLImageElement;
+                const fallback = target.nextElementSibling as HTMLElement;
+                target.style.display = 'none';
+                if (fallback) fallback.style.display = 'block';
+              }}
+            />
+            <div className="hidden text-white font-bold text-xl">SN</div>
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-2">
+            SN Cleaning Services
           </h1>
-          <p className="text-xl text-gray-600">Professional cleaning services</p>
+          <p className="text-white/80">Professional cleaning solutions</p>
         </div>
-        
-        <Card className="w-full shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
-          <CardHeader className="text-center pb-8 pt-8">
-            <CardTitle className="text-3xl font-bold text-gray-800">
+
+        {/* Modern Glass Card */}
+        <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-white mb-2">
               {getCardTitle()}
-            </CardTitle>
-            <CardDescription className="text-lg text-gray-600 mt-2">
+            </h2>
+            <p className="text-white/80">
               {getCardDescription()}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="px-8 pb-8">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {!isLogin && !isForgotPassword && (
-                <>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-3">
-                      <Label htmlFor="firstName" className="text-base font-medium text-gray-700">First Name</Label>
-                      <Input
-                        id="firstName"
-                        type="text"
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        className="h-12 text-base border-gray-200 focus:border-blue-400 focus:ring-blue-400"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-3">
-                      <Label htmlFor="lastName" className="text-base font-medium text-gray-700">Last Name</Label>
-                      <Input
-                        id="lastName"
-                        type="text"
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        className="h-12 text-base border-gray-200 focus:border-blue-400 focus:ring-blue-400"
-                        required
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-              <div className="space-y-3">
-                <Label htmlFor="email" className="text-base font-medium text-gray-700">Email</Label>
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {!isLogin && !isForgotPassword && (
+              <div className="grid grid-cols-2 gap-4">
                 <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="h-12 text-base border-gray-200 focus:border-blue-400 focus:ring-blue-400"
+                  type="text"
+                  placeholder="First Name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="h-12 bg-white/20 border-white/30 text-white placeholder:text-white/60 rounded-xl focus:bg-white/30 focus:border-white/50"
+                  required
+                />
+                <Input
+                  type="text"
+                  placeholder="Last Name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="h-12 bg-white/20 border-white/30 text-white placeholder:text-white/60 rounded-xl focus:bg-white/30 focus:border-white/50"
                   required
                 />
               </div>
-              {!isForgotPassword && (
-                <div className="space-y-3">
-                  <Label htmlFor="password" className="text-base font-medium text-gray-700">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="h-12 text-base border-gray-200 focus:border-blue-400 focus:ring-blue-400"
-                    required
-                  />
-                </div>
-              )}
-              <Button 
-                type="submit" 
-                className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg transition-all duration-200 transform hover:scale-[1.02]" 
-                disabled={loading}
-              >
-                {getButtonText()}
-              </Button>
-            </form>
+            )}
             
-            <div className="mt-8 text-center space-y-4">
-              {!isForgotPassword ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setIsLogin(!isLogin)}
-                    className="text-base text-blue-600 hover:text-blue-800 hover:underline block w-full font-medium transition-colors"
-                  >
-                    {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
-                  </button>
-                  {isLogin && (
+            <Input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="h-12 bg-white/20 border-white/30 text-white placeholder:text-white/60 rounded-xl focus:bg-white/30 focus:border-white/50"
+              required
+            />
+            
+            {!isForgotPassword && (
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="h-12 bg-white/20 border-white/30 text-white placeholder:text-white/60 rounded-xl focus:bg-white/30 focus:border-white/50"
+                required
+              />
+            )}
+
+            <Button 
+              type="submit" 
+              className="w-full h-12 bg-white text-[#18A5A5] hover:bg-white/90 rounded-xl font-semibold text-lg shadow-lg transition-all duration-300 transform hover:scale-[1.02]" 
+              disabled={loading}
+            >
+              {getButtonText()}
+            </Button>
+          </form>
+          
+          <div className="mt-6 text-center space-y-3">
+            {!isForgotPassword ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsLogin(!isLogin)}
+                  className="text-white/80 hover:text-white transition-colors"
+                >
+                  {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+                </button>
+                {isLogin && (
+                  <div>
                     <button
                       type="button"
                       onClick={() => setIsForgotPassword(true)}
-                      className="text-base text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors"
+                      className="text-white/80 hover:text-white transition-colors text-sm"
                     >
                       Forgot password?
                     </button>
-                  )}
-                </>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setIsForgotPassword(false)}
-                  className="text-base text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors"
-                >
-                  Back to login
-                </button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                  </div>
+                )}
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsForgotPassword(false)}
+                className="text-white/80 hover:text-white transition-colors"
+              >
+                Back to login
+              </button>
+            )}
+          </div>
+        </div>
       </div>
       
       <InstallPrompt />
