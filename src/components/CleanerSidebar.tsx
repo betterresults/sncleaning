@@ -65,36 +65,36 @@ export function CleanerSidebar() {
 
   return (
     <Sidebar className="border-r border-border bg-background" collapsible="icon">
-      <SidebarHeader className={`border-b border-border ${open ? "px-4 py-3" : "px-2 py-3"}`}>
+      <SidebarHeader className={`border-b border-border ${open ? "px-4 py-4" : "px-4 py-4"}`}>
         {open && (
           <div className="text-lg font-semibold text-foreground">
             SN Cleaning
           </div>
         )}
         {!open && (
-          <div className="text-lg font-semibold text-primary text-center">
+          <div className="text-xl font-bold text-primary text-center">
             SN
           </div>
         )}
       </SidebarHeader>
       
-      <SidebarContent className={open ? "px-3 py-2" : "px-2 py-2"}>
+      <SidebarContent className={open ? "px-4 py-3" : "px-4 py-3"}>
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
+            <SidebarMenu className="space-y-2">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild
                     isActive={location.pathname === item.url}
                     className={`w-full transition-all duration-200 ${
-                      open ? "h-11 px-3 py-2 justify-start" : "h-11 px-2 py-2 justify-center"
+                      open ? "h-12 px-3 py-3 justify-start" : "h-12 px-3 py-3 justify-center"
                     }`}
                   >
                     <Link to={item.url} className="flex items-center">
-                      <item.icon className="h-5 w-5 flex-shrink-0" />
+                      <item.icon className={`flex-shrink-0 ${open ? "h-6 w-6" : "h-7 w-7"}`} />
                       {open && (
-                        <span className="ml-3 font-medium truncate">{item.title}</span>
+                        <span className="ml-4 font-medium truncate text-base">{item.title}</span>
                       )}
                     </Link>
                   </SidebarMenuButton>
@@ -105,18 +105,18 @@ export function CleanerSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className={`border-t border-border ${open ? "px-3 py-3" : "px-2 py-3"}`}>
-        <SidebarMenu className="space-y-2">
+      <SidebarFooter className={`border-t border-border ${open ? "px-4 py-4" : "px-4 py-4"}`}>
+        <SidebarMenu className="space-y-3">
           <SidebarMenuItem>
             <SidebarMenuButton 
               className={`h-auto transition-all duration-200 ${
-                open ? "justify-start px-2 py-2" : "justify-center px-1 py-2"
+                open ? "justify-start px-3 py-3" : "justify-center px-2 py-3"
               }`}
             >
-              <User className="h-4 w-4 flex-shrink-0" />
+              <User className={`flex-shrink-0 ${open ? "h-5 w-5" : "h-6 w-6"}`} />
               {open && (
-                <div className="ml-2 flex flex-col items-start min-w-0">
-                  <span className="text-xs text-muted-foreground truncate w-full">
+                <div className="ml-3 flex flex-col items-start min-w-0">
+                  <span className="text-sm text-muted-foreground truncate w-full">
                     {user?.email}
                   </span>
                 </div>

@@ -22,6 +22,8 @@ interface Booking {
   total_hours?: number;
   cleaning_type?: string;
   total_cost?: number;
+  cleaner_pay?: number;
+  cleaner_percentage?: number;
   booking_status?: string;
 }
 
@@ -278,6 +280,25 @@ const CleanerTodayBookingsList = () => {
     return duration;
   };
 
+  const calculateEarnings = (booking: Booking): number => {
+    // If cleaner_pay is set, use it directly
+    if (booking.cleaner_pay && booking.cleaner_pay > 0) {
+      return booking.cleaner_pay;
+    }
+    
+    // Otherwise calculate based on percentage or fallback
+    if (booking.total_cost && booking.cleaner_percentage) {
+      return (booking.total_cost * booking.cleaner_percentage) / 100;
+    }
+    
+    // Fallback to 70% if no specific percentage is set
+    if (booking.total_cost) {
+      return (booking.total_cost * 70) / 100;
+    }
+    
+    return 0;
+  };
+
   useEffect(() => {
     if (!authLoading && effectiveCleanerId) {
       fetchTodaysBookings();
@@ -378,8 +399,8 @@ const CleanerTodayBookingsList = () => {
                     <div>{booking.cleaning_type || 'Regular Cleaning'}</div>
                   </div>
                   <div>
-                    <span className="font-medium">Value:</span>
-                    <div>£{booking.total_cost || 0}</div>
+                    <span className="font-medium">My Earnings:</span>
+                    <div>£{calculateEarnings(booking).toFixed(2)}</div>
                   </div>
                 </div>
 
