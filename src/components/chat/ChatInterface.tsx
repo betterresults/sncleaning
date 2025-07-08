@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Paperclip, Image, FileText, MessageCircle, Check } from 'lucide-react';
+import { Send, Paperclip, Image, FileText, MessageCircle, Check, ArrowLeft } from 'lucide-react';
 import { Chat, ChatMessage } from '@/types/chat';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
@@ -13,9 +13,10 @@ interface ChatInterfaceProps {
   messages: ChatMessage[];
   onSendMessage: (message: string, fileUrl?: string) => void;
   sendingMessage: boolean;
+  onBack?: () => void;
 }
 
-const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatInterfaceProps) => {
+const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage, onBack }: ChatInterfaceProps) => {
   const { userRole, customerId, cleanerId } = useAuth();
   const [newMessage, setNewMessage] = useState('');
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
@@ -170,6 +171,16 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
     <div className="flex flex-col h-full bg-card overflow-hidden">
       {/* Chat Header */}
       <div className="flex items-center gap-3 p-3 border-b border-border bg-background">
+        {onBack && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onBack}
+            className="p-1"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        )}
         <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
           {chat.chat_type === 'office_cleaner' ? (
             <MessageCircle className="h-4 w-4 text-primary" />
@@ -244,9 +255,7 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
                           <Check className={`h-3 w-3 ${
                             message.is_read 
                               ? 'text-green-500' 
-                              : isOwnMessage(message) 
-                                ? 'text-primary-foreground/40' 
-                                : 'text-muted-foreground/40'
+                              : 'text-muted-foreground/40'
                           }`} />
                         )}
                       </div>

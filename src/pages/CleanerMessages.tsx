@@ -128,17 +128,6 @@ const CleanerMessages = () => {
           <header className="sticky top-0 z-10 flex h-12 md:h-14 shrink-0 items-center gap-2 border-b bg-background px-2 md:px-4 shadow-sm">
             <SidebarTrigger className="-ml-1 p-1 md:p-2" />
             
-            {/* Back button for chat view */}
-            {currentView === 'chat' && activeChat && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleBackToMessages}
-                className="p-1 md:p-2 min-h-8"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            )}
             
             <div className="text-xs md:text-sm font-semibold text-foreground truncate">
               {isAdminViewing ? 'Chat Management - Cleaner View' : 'Messages'}
@@ -194,6 +183,7 @@ const CleanerMessages = () => {
                       messages={messages}
                       onSendMessage={handleSendMessage}
                       sendingMessage={sendingMessage}
+                      onBack={handleBackToMessages}
                     />
                   )}
                 </div>
@@ -219,6 +209,7 @@ const CleanerMessages = () => {
                         messages={messages}
                         onSendMessage={handleSendMessage}
                         sendingMessage={sendingMessage}
+                        onBack={handleBackToMessages}
                       />
                     ) : (
                       <div className="flex flex-col items-center justify-center h-full bg-card p-8 text-center">
