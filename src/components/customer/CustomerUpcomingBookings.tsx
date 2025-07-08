@@ -236,25 +236,33 @@ const CustomerUpcomingBookings = () => {
 
       {/* View Toggle */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Your Bookings</h2>
-        <div className="flex items-center gap-2">
+        <h2 className="text-2xl font-bold">Your Upcoming Bookings</h2>
+        <div className="flex items-center gap-3">
           <Button
             variant={viewMode === 'cards' ? 'default' : 'outline'}
-            size="sm"
+            size="lg"
             onClick={() => setViewMode('cards')}
-            className="flex items-center gap-2"
+            className={`flex items-center gap-3 px-6 py-3 text-base font-semibold ${
+              viewMode === 'cards' 
+                ? 'bg-[#18A5A5] hover:bg-[#185166] text-white' 
+                : 'border-[#18A5A5] text-[#18A5A5] hover:bg-[#18A5A5] hover:text-white'
+            }`}
           >
-            <Grid className="h-4 w-4" />
-            Cards
+            <Grid className="h-5 w-5" />
+            Cards View
           </Button>
           <Button
             variant={viewMode === 'calendar' ? 'default' : 'outline'}
-            size="sm"
+            size="lg"
             onClick={() => setViewMode('calendar')}
-            className="flex items-center gap-2"
+            className={`flex items-center gap-3 px-6 py-3 text-base font-semibold ${
+              viewMode === 'calendar' 
+                ? 'bg-[#18A5A5] hover:bg-[#185166] text-white' 
+                : 'border-[#18A5A5] text-[#18A5A5] hover:bg-[#18A5A5] hover:text-white'
+            }`}
           >
-            <Calendar className="h-4 w-4" />
-            Calendar
+            <Calendar className="h-5 w-5" />
+            Calendar View
           </Button>
         </div>
       </div>

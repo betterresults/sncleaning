@@ -36,12 +36,12 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
     <Sidebar className="border-r-0 bg-[#185166]" collapsible="icon">
       <SidebarHeader className={`border-b border-white/10 bg-[#185166] ${open ? "px-6 py-4" : "px-4 py-4"}`}>
         {open && (
-          <div className="text-sm font-bold text-white">
+          <div className="text-lg font-bold text-white">
             SN Cleaning
           </div>
         )}
         {!open && (
-          <div className="text-xs font-bold text-white text-center">
+          <div className="text-sm font-bold text-white text-center">
             SN
           </div>
         )}
