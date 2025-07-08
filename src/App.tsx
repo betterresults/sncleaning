@@ -29,44 +29,26 @@ import NotFound from "./pages/NotFound";
 import { AdminCustomerProvider } from "./contexts/AdminCustomerContext";
 import { AdminCleanerProvider } from "./contexts/AdminCleanerContext";
 import InstallPrompt from "./components/InstallPrompt";
-import SplashScreen from "./components/SplashScreen";
-import { useState, useEffect } from "react";
 
 const queryClient = new QueryClient();
 
-const App = () => {
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Show splash screen for 2 seconds
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (isLoading) {
-    return <SplashScreen />;
-  }
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <AdminCustomerProvider>
-              <AdminCleanerProvider>
-              <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/users" element={<Users />} />
-              <Route path="/past-bookings" element={<PastBookings />} />
-              <Route path="/cleaner-dashboard" element={<CleanerDashboard />} />
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <AuthProvider>
+          <AdminCustomerProvider>
+            <AdminCleanerProvider>
+            <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/users" element={<Users />} />
+            <Route path="/past-bookings" element={<PastBookings />} />
+            <Route path="/cleaner-dashboard" element={<CleanerDashboard />} />
           <Route path="/cleaner-today-bookings" element={<CleanerTodayBookings />} />
           <Route path="/customer-messages" element={<CustomerMessages />} />
           <Route path="/cleaner-messages" element={<CleanerMessages />} />
@@ -87,10 +69,9 @@ const App = () => {
             </AdminCustomerProvider>
           </AuthProvider>
           <InstallPrompt />
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
-};
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;
