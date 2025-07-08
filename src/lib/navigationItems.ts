@@ -45,7 +45,7 @@ export const customerNavigation = [
     icon: Plus,
   },
   {
-    title: "My Bookings",
+    title: "Completed Bookings",
     url: "/customer-completed-bookings",
     icon: Calendar,
   },

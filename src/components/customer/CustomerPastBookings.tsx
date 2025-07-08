@@ -304,7 +304,7 @@ const CustomerPastBookings = () => {
   const reviewPercentage = stats.totalBookings > 0 ? Math.round((stats.reviewedBookings / stats.totalBookings) * 100) : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
       {/* Time Period Filter */}
       <Card className="shadow-sm">
         <CardContent className="p-0">
@@ -367,44 +367,44 @@ const CustomerPastBookings = () => {
       </Card>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="p-2 bg-blue-100 rounded-lg">
                 <CheckCircle className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">Completed Bookings</p>
-                <p className="text-2xl font-bold text-[#185166]">{stats.totalBookings}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-500">Completed Bookings</p>
+                <p className="text-lg sm:text-2xl font-bold text-[#185166]">{stats.totalBookings}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
         <Card className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="p-2 bg-green-100 rounded-lg">
-                <DollarSign className="h-5 w-5 text-green-600" />
+                <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">Total Paid</p>
-                <p className="text-2xl font-bold text-[#185166]">£{stats.totalPaid.toFixed(2)}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-500">Total Paid</p>
+                <p className="text-lg sm:text-2xl font-bold text-[#185166]">£{stats.totalPaid.toFixed(2)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
         <Card className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="p-2 bg-purple-100 rounded-lg">
-                <Calendar className="h-5 w-5 text-purple-600" />
+                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">Payment Status</p>
-                <p className="text-2xl font-bold text-[#185166]">{stats.paidBookings}/{stats.totalBookings}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-500">Payment Status</p>
+                <p className="text-lg sm:text-2xl font-bold text-[#185166]">{stats.paidBookings}/{stats.totalBookings}</p>
                 <p className="text-xs text-gray-400">{paymentPercentage}% paid</p>
               </div>
             </div>
@@ -412,14 +412,14 @@ const CustomerPastBookings = () => {
         </Card>
         
         <Card className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="p-2 bg-yellow-100 rounded-lg">
-                <Star className="h-5 w-5 text-yellow-600" />
+                <Star className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">Reviews Left</p>
-                <p className="text-2xl font-bold text-[#185166]">{stats.reviewedBookings}/{stats.totalBookings}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-500">Reviews Left</p>
+                <p className="text-lg sm:text-2xl font-bold text-[#185166]">{stats.reviewedBookings}/{stats.totalBookings}</p>
                 <p className="text-xs text-gray-400">{reviewPercentage}% reviewed</p>
               </div>
             </div>
@@ -429,15 +429,15 @@ const CustomerPastBookings = () => {
 
       {/* Bookings List */}
       <Card>
-        <CardContent className="p-6">
+        <CardContent className="p-3 sm:p-6">
           {filteredBookings.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <div className="text-center py-6 sm:py-8 text-muted-foreground">
+              <CheckCircle className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-4 opacity-50" />
               <p>No completed bookings found.</p>
               <p className="text-sm">Your completed bookings will appear here.</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {filteredBookings.map((booking) => (
                 <BookingCard
                   key={booking.id}
@@ -481,63 +481,65 @@ const CustomerPastBookings = () => {
 
       {/* Review Dialog */}
       <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] bg-white border-[#18A5A5]/20">
-          <DialogHeader>
-            <DialogTitle className="text-[#185166] text-xl font-semibold">Leave a Review</DialogTitle>
-            <DialogDescription className="text-gray-600">
-              How would you rate {selectedBookingForReview?.cleaner?.first_name} {selectedBookingForReview?.cleaner?.last_name}'s cleaning service?
+        <DialogContent className="sm:max-w-[500px] bg-white border-[#18A5A5]/20 mx-4">
+          <DialogHeader className="text-center">
+            <DialogTitle className="text-[#185166] text-xl sm:text-2xl font-semibold text-center">Leave a Review</DialogTitle>
+            <DialogDescription className="text-gray-600 text-center mt-2">
+              How would you rate <span className="font-semibold text-[#18A5A5]">{selectedBookingForReview?.cleaner?.first_name} {selectedBookingForReview?.cleaner?.last_name}</span>'s cleaning service?
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-6 py-4">
-            <div className="grid gap-3">
-              <Label htmlFor="rating" className="text-[#185166] font-medium">How would you rate this service?</Label>
-              <div className="flex items-center gap-1">
+          <div className="grid gap-6 py-6">
+            <div className="text-center">
+              <Label className="text-[#185166] font-medium text-lg block mb-4">How would you rate this service?</Label>
+              <div className="flex items-center justify-center gap-2 mb-4">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
                     type="button"
                     onClick={() => setReviewRating(star)}
-                    className={`text-2xl transition-colors ${
+                    className={`text-4xl sm:text-5xl transition-all duration-200 transform hover:scale-110 ${
                       star <= reviewRating 
-                        ? 'text-[#18A5A5] hover:text-[#18A5A5]' 
-                        : 'text-gray-300 hover:text-[#18A5A5]'
+                        ? 'text-yellow-400 hover:text-yellow-500 drop-shadow-sm' 
+                        : 'text-gray-300 hover:text-yellow-400'
                     }`}
                   >
                     ★
                   </button>
                 ))}
-                <span className="ml-2 text-sm text-gray-600">
-                  {reviewRating === 1 && 'Poor'}
-                  {reviewRating === 2 && 'Fair'}
-                  {reviewRating === 3 && 'Good'}
-                  {reviewRating === 4 && 'Very Good'}
-                  {reviewRating === 5 && 'Excellent'}
+              </div>
+              <div className="text-center">
+                <span className="text-lg font-semibold text-[#185166]">
+                  {reviewRating === 1 && '😞 Poor'}
+                  {reviewRating === 2 && '😐 Fair'}
+                  {reviewRating === 3 && '🙂 Good'}
+                  {reviewRating === 4 && '😊 Very Good'}
+                  {reviewRating === 5 && '🤩 Excellent'}
                 </span>
               </div>
             </div>
-            <div className="grid gap-3">
-              <Label htmlFor="review" className="text-[#185166] font-medium">Additional Comments (Optional)</Label>
+            <div className="space-y-3">
+              <Label htmlFor="review" className="text-[#185166] font-medium text-center block">Additional Comments (Optional)</Label>
               <Textarea
                 id="review"
                 placeholder="Tell us about your experience with the cleaning service..."
                 value={reviewText}
                 onChange={(e) => setReviewText(e.target.value)}
                 rows={4}
-                className="border-gray-200 focus:border-[#18A5A5] focus:ring-[#18A5A5]/20"
+                className="border-gray-200 focus:border-[#18A5A5] focus:ring-[#18A5A5]/20 text-center"
               />
             </div>
           </div>
-          <DialogFooter className="flex gap-2">
+          <DialogFooter className="flex flex-col sm:flex-row gap-3 sm:gap-2">
             <Button 
               variant="outline" 
               onClick={() => setReviewDialogOpen(false)}
-              className="border-gray-200 text-gray-600 hover:bg-gray-50"
+              className="border-gray-200 text-gray-600 hover:bg-gray-50 w-full sm:w-auto order-2 sm:order-1"
             >
               Cancel
             </Button>
             <Button 
               onClick={handleSubmitReview}
-              className="bg-[#18A5A5] hover:bg-[#185166] text-white"
+              className="bg-[#18A5A5] hover:bg-[#185166] text-white w-full sm:w-auto order-1 sm:order-2"
             >
               Submit Review
             </Button>
