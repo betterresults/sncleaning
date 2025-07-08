@@ -305,14 +305,19 @@ const CleanerPastBookings = () => {
             <AccordionItem value="period" className="border-0">
               <AccordionTrigger className="px-4 py-3 hover:no-underline">
                 <div className="flex items-center space-x-2">
-                  <Filter className="h-4 w-4" />
-                  <span className="font-medium">Time Period</span>
+                  <CalendarDays className="h-4 w-4" />
+                  <span className="font-medium">
+                    {filters.timePeriod === 'current-month' && 'Current Month'}
+                    {filters.timePeriod === 'last-month' && 'Last Month'}
+                    {filters.timePeriod === 'last-3-months' && 'Last 3 Months'}
+                    {filters.timePeriod === 'last-6-months' && 'Last 6 Months'}
+                    {filters.timePeriod === 'all' && 'All Time'}
+                  </span>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-4 pb-4">
                 {/* Mobile: Dropdown */}
                 <div className="block sm:hidden">
-                  <Label className="text-sm font-medium mb-2 block">Select Period</Label>
                   <Select
                     value={filters.timePeriod}
                     onValueChange={(value) => setFilters({...filters, timePeriod: value})}
