@@ -91,13 +91,25 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log("Test email sent successfully:", emailResponse);
+    console.log("Full Resend API response:", JSON.stringify(emailResponse, null, 2));
+
+    if (emailResponse.error) {
+      console.error("Resend API error:", emailResponse.error);
+      return new Response(JSON.stringify({ 
+        error: `Resend API error: ${emailResponse.error.message}`,
+        details: emailResponse.error
+      }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
 
     return new Response(JSON.stringify({ 
       success: true, 
       message: 'Test email sent successfully',
       email_id: emailResponse.data?.id,
-      sent_to: email
+      sent_to: email,
+      resend_response: emailResponse
     }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
