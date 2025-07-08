@@ -32,15 +32,15 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
   const { open } = useSidebar();
 
   return (
-    <Sidebar className="border-r border-border bg-card" collapsible="icon">
-      <SidebarHeader className={`border-b border-border ${open ? "px-6 py-4" : "px-4 py-4"}`}>
+    <Sidebar className="border-r-0 bg-[#185166]" collapsible="icon">
+      <SidebarHeader className={`border-b border-white/10 ${open ? "px-6 py-6" : "px-4 py-6"}`}>
         {open && (
-          <div className="text-base font-medium text-foreground">
+          <div className="text-lg font-bold text-white">
             SN Cleaning
           </div>
         )}
         {!open && (
-          <div className="text-sm font-medium text-foreground text-center">
+          <div className="text-sm font-bold text-white text-center">
             SN
           </div>
         )}
@@ -77,25 +77,25 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className={`border-t border-border bg-muted/30 ${open ? "px-4 py-6" : "px-3 py-6"}`}>
+      <SidebarFooter className={`border-t border-white/10 bg-[#185166] ${open ? "px-4 py-6" : "px-3 py-6"}`}>
         <SidebarMenu className="space-y-4">
           <SidebarMenuItem>
             <SidebarMenuButton 
-              className={`transition-all duration-200 hover:bg-muted/50 ${
-                open ? "justify-start px-4 py-4 rounded-xl" : "justify-center px-3 py-4 rounded-xl mx-auto w-12"
+              className={`transition-all duration-200 hover:bg-white/10 ${
+                open ? "justify-start px-4 py-4 rounded-lg" : "justify-center px-3 py-4 rounded-lg mx-auto w-12"
               }`}
             >
-              <div className={`w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center flex-shrink-0 ${
+              <div className={`w-8 h-8 bg-gradient-to-br from-[#18A5A5] to-[#18A5A5]/80 rounded-full flex items-center justify-center flex-shrink-0 ${
                 open ? "" : "mx-auto"
               }`}>
-                <User className="h-4 w-4 text-primary-foreground" />
+                <User className="h-4 w-4 text-white" />
               </div>
               {open && (
                 <div className="ml-3 flex flex-col items-start min-w-0">
-                  <span className="text-sm font-medium text-foreground truncate w-full">
+                  <span className="text-sm font-medium text-white truncate w-full">
                     {user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'User'}
                   </span>
-                  <span className="text-xs text-muted-foreground truncate w-full">
+                  <span className="text-xs text-white/60 truncate w-full">
                     {user?.email}
                   </span>
                 </div>
@@ -108,7 +108,7 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
                 onClick={onSignOut} 
                 variant="outline" 
                 size="sm" 
-                className="w-full h-11 font-medium border-muted-foreground/20 hover:bg-destructive hover:text-destructive-foreground hover:border-destructive/50 transition-all duration-200"
+                className="w-full h-11 font-medium border-white/30 text-white hover:bg-white/10 hover:text-white hover:border-white/50 transition-all duration-200"
               >
                 Sign Out
               </Button>
