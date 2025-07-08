@@ -89,12 +89,12 @@ export function CleanerSidebar() {
                     isActive={location.pathname === item.url}
                     className={`transition-all duration-200 ${
                       open 
-                        ? "h-16 p-4 justify-start rounded-lg" 
-                        : "h-16 p-4 justify-center rounded-lg"
+                        ? "h-20 px-6 py-4 justify-start rounded-lg" 
+                        : "h-20 px-4 py-4 justify-center rounded-lg"
                     }`}
                   >
                     <Link to={item.url} className="flex items-center w-full">
-                      <item.icon className="h-8 w-8 flex-shrink-0" />
+                      <item.icon className="h-12 w-12 flex-shrink-0" />
                       {open && (
                         <span className="ml-4 font-medium truncate text-base">
                           {item.title}
