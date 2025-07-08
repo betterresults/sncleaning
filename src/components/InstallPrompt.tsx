@@ -49,9 +49,13 @@ const InstallPrompt = () => {
   };
 
   // Don't show if already installed or user dismissed it
-  // (Removed mobile-only restriction for testing)
-  if (isInstalled || (!isInstallable && isDismissed)) {
-    // Show debug info instead when conditions aren't met
+  if (isInstalled || isDismissed) {
+    return null;
+  }
+
+  // Don't show if not installable and not in debug mode
+  if (!isInstallable) {
+    // Show debug info only when needed
     if (showDebug) {
       return (
         <div className="fixed bottom-4 left-4 right-4 z-50 bg-gray-100 p-3 rounded text-xs">
@@ -72,38 +76,38 @@ const InstallPrompt = () => {
   }
 
   return (
-    <Card className="fixed bottom-4 left-4 right-4 z-50 shadow-lg border-blue-200 bg-blue-50">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 flex-1">
-            <div className="bg-blue-500 p-2 rounded-full">
-              <Download className="h-4 w-4 text-white" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm">
+      <Card className="w-full max-w-md shadow-2xl border-0" style={{ backgroundColor: '#18A5A5' }}>
+        <CardContent className="p-6">
+          <div className="text-center space-y-4">
+            <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: '#185166' }}>
+              <Download className="h-8 w-8 text-white" />
             </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-sm text-blue-900">Install SN Cleaning</h3>
-              <p className="text-xs text-blue-700">Add to your home screen for quick access</p>
+            <div>
+              <h3 className="text-xl font-bold text-white mb-2">Install SN Cleaning</h3>
+              <p className="text-white/90 text-sm">Add our app to your home screen for quick access to all cleaning services</p>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button
+                onClick={handleInstall}
+                className="flex-1 bg-white text-black hover:bg-gray-100 font-semibold"
+                size="lg"
+              >
+                Install Now
+              </Button>
+              <Button
+                onClick={handleDismiss}
+                variant="ghost"
+                size="lg"
+                className="text-white hover:bg-white/10 px-3"
+              >
+                <X className="h-5 w-5" />
+              </Button>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={handleInstall}
-              size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
-            >
-              Install
-            </Button>
-            <Button
-              onClick={handleDismiss}
-              variant="ghost"
-              size="sm"
-              className="text-blue-600 hover:text-blue-700 p-1"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
