@@ -1,14 +1,21 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Calendar, DollarSign, Star } from 'lucide-react';
+import { CheckCircle, Calendar, DollarSign, Star, CalendarDays, Filter, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import BookingCard from '@/components/booking/BookingCard';
 import CleaningPhotosViewDialog from './CleaningPhotosViewDialog';
-import BookingFilters from '@/components/cleaner/BookingFilters';
+import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 
 interface PastBooking {
   id: number;
@@ -26,6 +33,7 @@ interface PastBooking {
     last_name: string;
   } | null;
   cleaner_id?: number;
+  has_photos?: boolean;
 }
 
 const CustomerPastBookings = () => {
@@ -38,13 +46,15 @@ const CustomerPastBookings = () => {
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<PastBooking | null>(null);
   const [photosDialogOpen, setPhotosDialogOpen] = useState(false);
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [selectedBookingForReview, setSelectedBookingForReview] = useState<PastBooking | null>(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewText, setReviewText] = useState('');
   
   // Filter states
+  const [timePeriod, setTimePeriod] = useState('current-month');
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
-  const [customerSearch, setCustomerSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [serviceTypeFilter, setServiceTypeFilter] = useState('all');
   const [serviceTypes, setServiceTypes] = useState<string[]>([]);
   
   const [stats, setStats] = useState({
@@ -67,10 +77,31 @@ const CustomerPastBookings = () => {
     }
   }, [activeCustomerId]);
 
+  const getTimePeriodDates = (period: string) => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    switch (period) {
+      case 'current-month':
+        return { from: startOfMonth(now), to: endOfMonth(now) };
+      case 'last-month':
+        const lastMonth = subMonths(now, 1);
+        return { from: startOfMonth(lastMonth), to: endOfMonth(lastMonth) };
+      case 'last-3-months':
+        const last3Months = subMonths(now, 3);
+        return { from: startOfMonth(last3Months), to: today };
+      case 'last-6-months':
+        const last6Months = subMonths(now, 6);
+        return { from: startOfMonth(last6Months), to: today };
+      default:
+        return null;
+    }
+  };
+
   // Filter bookings when filters change
   useEffect(() => {
     applyFilters();
-  }, [bookings, dateFrom, dateTo, customerSearch, statusFilter, serviceTypeFilter]);
+  }, [bookings, timePeriod, dateFrom, dateTo]);
 
   const fetchPastBookings = async () => {
     if (!activeCustomerId) return;
@@ -96,26 +127,36 @@ const CustomerPastBookings = () => {
 
       if (error) throw error;
       
-      // Transform the data to include cleaner info from the cleaner ID
+      // Transform the data to include cleaner info and check for photos
       const bookingsWithCleanerInfo = await Promise.all(
         (data || []).map(async (booking) => {
+          let cleanerData = null;
+          let hasPhotos = false;
+
+          // Get cleaner info
           if (booking.cleaner) {
-            const { data: cleanerData } = await supabase
+            const { data: cleanerResult } = await supabase
               .from('cleaners')
               .select('first_name, last_name')
               .eq('id', booking.cleaner)
               .single();
-            
-            return {
-              ...booking,
-              cleaner: cleanerData,
-              cleaner_id: booking.cleaner
-            };
+            cleanerData = cleanerResult;
           }
+
+          // Check if photos exist for this booking
+          const { data: photosData } = await supabase
+            .from('cleaning_photos')
+            .select('id')
+            .eq('booking_id', booking.id)
+            .limit(1);
+          
+          hasPhotos = photosData && photosData.length > 0;
+            
           return {
             ...booking,
-            cleaner: null,
-            cleaner_id: booking.cleaner
+            cleaner: cleanerData,
+            cleaner_id: booking.cleaner,
+            has_photos: hasPhotos
           };
         })
       );
@@ -153,6 +194,17 @@ const CustomerPastBookings = () => {
   const applyFilters = () => {
     let filtered = [...bookings];
 
+    // Apply time period filter first
+    if (timePeriod !== 'all') {
+      const periodDates = getTimePeriodDates(timePeriod);
+      if (periodDates) {
+        filtered = filtered.filter(booking => {
+          const bookingDate = new Date(booking.date_time);
+          return bookingDate >= periodDates.from && bookingDate <= periodDates.to;
+        });
+      }
+    }
+
     // Date filters
     if (dateFrom) {
       filtered = filtered.filter(booking => 
@@ -162,28 +214,6 @@ const CustomerPastBookings = () => {
     if (dateTo) {
       filtered = filtered.filter(booking => 
         new Date(booking.date_time) <= dateTo
-      );
-    }
-
-    // Customer search (for admin use)
-    if (customerSearch && userRole === 'admin') {
-      filtered = filtered.filter(booking =>
-        booking.address?.toLowerCase().includes(customerSearch.toLowerCase()) ||
-        booking.postcode?.toLowerCase().includes(customerSearch.toLowerCase())
-      );
-    }
-
-    // Status filter
-    if (statusFilter && statusFilter !== 'all') {
-      filtered = filtered.filter(booking => 
-        booking.booking_status?.toLowerCase() === statusFilter.toLowerCase()
-      );
-    }
-
-    // Service type filter
-    if (serviceTypeFilter && serviceTypeFilter !== 'all') {
-      filtered = filtered.filter(booking => 
-        booking.service_type === serviceTypeFilter
       );
     }
 
@@ -211,14 +241,48 @@ const CustomerPastBookings = () => {
   const clearFilters = () => {
     setDateFrom(undefined);
     setDateTo(undefined);
-    setCustomerSearch('');
-    setStatusFilter('all');
-    setServiceTypeFilter('all');
+    setTimePeriod('current-month');
   };
 
   const handleReview = (booking: PastBooking) => {
-    // TODO: Open review dialog
-    console.log('Review booking:', booking.id);
+    setSelectedBookingForReview(booking);
+    setReviewRating(5);
+    setReviewText('');
+    setReviewDialogOpen(true);
+  };
+
+  const handleSubmitReview = async () => {
+    if (!selectedBookingForReview) return;
+
+    try {
+      const { error } = await supabase
+        .from('reviews')
+        .insert({
+          past_booking_id: selectedBookingForReview.id,
+          rating: reviewRating,
+          review_text: reviewText
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Your review has been submitted successfully!'
+      });
+
+      setReviewDialogOpen(false);
+      setSelectedBookingForReview(null);
+      
+      // Refresh reviews
+      fetchPastBookings();
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to submit review. Please try again.',
+        variant: 'destructive'
+      });
+    }
   };
 
   const handleSeePhotos = (booking: PastBooking) => {
@@ -241,21 +305,66 @@ const CustomerPastBookings = () => {
 
   return (
     <div className="space-y-6">
-      {/* Filters */}
-      <BookingFilters
-        dateFrom={dateFrom}
-        dateTo={dateTo}
-        customerSearch={customerSearch}
-        statusFilter={statusFilter}
-        serviceTypeFilter={serviceTypeFilter}
-        serviceTypes={serviceTypes}
-        onDateFromChange={setDateFrom}
-        onDateToChange={setDateTo}
-        onCustomerSearchChange={setCustomerSearch}
-        onStatusFilterChange={setStatusFilter}
-        onServiceTypeFilterChange={setServiceTypeFilter}
-        onClearFilters={clearFilters}
-      />
+      {/* Time Period Filter */}
+      <Card className="shadow-sm">
+        <CardContent className="p-0">
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="period" className="border-0">
+              <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                <div className="flex items-center space-x-2">
+                  <CalendarDays className="h-4 w-4" />
+                  <span className="font-medium">
+                    {timePeriod === 'current-month' && 'Current Month'}
+                    {timePeriod === 'last-month' && 'Last Month'}
+                    {timePeriod === 'last-3-months' && 'Last 3 Months'}
+                    {timePeriod === 'last-6-months' && 'Last 6 Months'}
+                    {timePeriod === 'all' && 'All Time'}
+                  </span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                <div className="grid grid-cols-1 gap-2">
+                  <Button
+                    variant={timePeriod === 'current-month' ? 'default' : 'outline'}
+                    onClick={() => setTimePeriod('current-month')}
+                    className="w-full justify-start"
+                  >
+                    Current Month
+                  </Button>
+                  <Button
+                    variant={timePeriod === 'last-month' ? 'default' : 'outline'}
+                    onClick={() => setTimePeriod('last-month')}
+                    className="w-full justify-start"
+                  >
+                    Last Month
+                  </Button>
+                  <Button
+                    variant={timePeriod === 'last-3-months' ? 'default' : 'outline'}
+                    onClick={() => setTimePeriod('last-3-months')}
+                    className="w-full justify-start"
+                  >
+                    Last 3 Months
+                  </Button>
+                  <Button
+                    variant={timePeriod === 'last-6-months' ? 'default' : 'outline'}
+                    onClick={() => setTimePeriod('last-6-months')}
+                    className="w-full justify-start"
+                  >
+                    Last 6 Months
+                  </Button>
+                  <Button
+                    variant={timePeriod === 'all' ? 'default' : 'outline'}
+                    onClick={() => setTimePeriod('all')}
+                    className="w-full justify-start"
+                  >
+                    All Time
+                  </Button>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </CardContent>
+      </Card>
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -347,7 +456,7 @@ const CustomerPastBookings = () => {
                   }}
                   type="completed"
                   onReview={(b) => handleReview(booking)}
-                  onSeePhotos={(b) => handleSeePhotos(booking)}
+                  onSeePhotos={booking.has_photos ? (b) => handleSeePhotos(booking) : undefined}
                   hasReview={reviews[booking.id] || false}
                 />
               ))}
@@ -369,6 +478,53 @@ const CustomerPastBookings = () => {
           }}
         />
       )}
+
+      {/* Review Dialog */}
+      <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Leave a Review</DialogTitle>
+            <DialogDescription>
+              How was your cleaning service? Share your feedback to help us improve.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="rating">Rating</Label>
+              <Select value={reviewRating.toString()} onValueChange={(value) => setReviewRating(parseInt(value))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select rating" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">⭐⭐⭐⭐⭐ Excellent</SelectItem>
+                  <SelectItem value="4">⭐⭐⭐⭐ Very Good</SelectItem>
+                  <SelectItem value="3">⭐⭐⭐ Good</SelectItem>
+                  <SelectItem value="2">⭐⭐ Fair</SelectItem>
+                  <SelectItem value="1">⭐ Poor</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="review">Review (Optional)</Label>
+              <Textarea
+                id="review"
+                placeholder="Tell us about your experience..."
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReviewDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmitReview}>
+              Submit Review
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
