@@ -199,36 +199,34 @@ const CleanerPastBookings = () => {
   const totalEarnings = filteredBookings.reduce((sum, booking) => sum + (booking.cleaner_pay || 0), 0);
 
   const PastBookingCard = ({ booking }: { booking: PastBooking }) => (
-    <div className="group relative overflow-hidden rounded-2xl border p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/30 border-border/60 bg-gradient-to-br from-card to-card/80 hover:shadow-primary/5">
+    <div className="group relative overflow-hidden rounded-2xl border p-3 sm:p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/30 border-border/60 bg-gradient-to-br from-card to-card/80 hover:shadow-primary/5">
       
       {/* Header with Service Type and Earnings */}
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between mb-3 sm:mb-4">
         <div className="flex items-center gap-2">
-          <h3 className="text-xl font-bold text-foreground tracking-tight">{booking.cleaning_type || 'Standard Cleaning'}</h3>
+          <h3 className="text-lg sm:text-xl font-bold text-foreground tracking-tight">{booking.cleaning_type || 'Standard Cleaning'}</h3>
         </div>
         <div className="text-right">
-          <div className="text-2xl font-bold text-green-600">£{booking.cleaner_pay?.toFixed(2) || '0.00'}</div>
+          <div className="text-xl sm:text-2xl font-bold text-green-600">£{booking.cleaner_pay?.toFixed(2) || '0.00'}</div>
           <div className="text-xs text-muted-foreground">Your earnings</div>
         </div>
       </div>
       
-      {/* Date, Time, and Customer in a compact row */}
-      <div className="flex items-center justify-between mb-4 text-sm">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <CalendarDays className="h-4 w-4 text-primary" />
-            <span className="font-medium">{booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : 'No date'}</span>
-          </div>
+      {/* Date and Customer - Mobile responsive */}
+      <div className="space-y-2 mb-3 sm:mb-4">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <CalendarDays className="h-4 w-4 text-primary flex-shrink-0" />
+          <span className="font-medium">{booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : 'No date'}</span>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <User className="h-4 w-4 text-blue-600" />
+          <User className="h-4 w-4 text-blue-600 flex-shrink-0" />
           <span className="font-medium text-blue-600 dark:text-blue-400">{booking.first_name} {booking.last_name}</span>
         </div>
       </div>
       
-      {/* Address and Actions */}
-      <div className="flex items-center pt-3 border-t border-border/40">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground flex-1 min-w-0 mr-4">
+      {/* Address and Actions - Mobile responsive */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-border/40">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground flex-1 min-w-0">
           <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
           <a
             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(booking.postcode)}`}
@@ -244,7 +242,7 @@ const CleanerPastBookings = () => {
           variant="outline"
           size="sm"
           onClick={() => handleUploadPhotos(booking.id)}
-          className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/30"
+          className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/30 sm:ml-4"
         >
           <Upload className="h-4 w-4" />
           <span className="ml-1 hidden sm:inline">Upload Photos</span>
@@ -284,10 +282,28 @@ const CleanerPastBookings = () => {
         </Card>
       </div>
 
-      {/* Time Period Filter Buttons */}
+      {/* Time Period Filter - Responsive: Dropdown on mobile, buttons on desktop */}
       <Card className="shadow-sm">
-        <CardContent className="p-4">
-          <div className="grid grid-cols-5 gap-2 w-full">
+        <CardContent className="p-3 sm:p-4">
+          {/* Mobile: Dropdown */}
+          <div className="block sm:hidden">
+            <Label htmlFor="period-select" className="text-sm font-medium mb-2 block">Select Period</Label>
+            <select
+              id="period-select"
+              value={filters.timePeriod}
+              onChange={(e) => setFilters({...filters, timePeriod: e.target.value})}
+              className="w-full p-2 border border-gray-300 rounded-md text-sm bg-white"
+            >
+              <option value="current-month">Current Month</option>
+              <option value="last-month">Last Month</option>
+              <option value="last-3-months">Last 3 Months</option>
+              <option value="last-6-months">Last 6 Months</option>
+              <option value="all">All Time</option>
+            </select>
+          </div>
+          
+          {/* Desktop: Buttons */}
+          <div className="hidden sm:grid grid-cols-5 gap-2 w-full">
             <Button
               variant={filters.timePeriod === 'current-month' ? 'default' : 'outline'}
               onClick={() => setFilters({...filters, timePeriod: 'current-month'})}
