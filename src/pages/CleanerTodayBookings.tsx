@@ -1,13 +1,15 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
-import { CleanerSidebar } from '@/components/CleanerSidebar';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { UnifiedSidebar } from '@/components/UnifiedSidebar';
+import { UnifiedHeader } from '@/components/UnifiedHeader';
+import { cleanerNavigation } from '@/lib/navigationItems';
 import CleanerTodayBookingsList from '@/components/cleaner/CleanerTodayBookingsList';
 import AdminCleanerSelector from '@/components/admin/AdminCleanerSelector';
 
 const CleanerTodayBookings = () => {
-  const { user, userRole, cleanerId, loading } = useAuth();
+  const { user, userRole, cleanerId, loading, signOut } = useAuth();
   
   // Check if admin is viewing this dashboard
   const isAdminViewing = userRole === 'admin';
@@ -28,18 +30,28 @@ const CleanerTodayBookings = () => {
   // Get first name for greeting
   const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Cleaner';
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
-        <CleanerSidebar />
+        <UnifiedSidebar 
+          navigationItems={cleanerNavigation}
+          user={user}
+          onSignOut={handleSignOut}
+        />
         <SidebarInset className="flex-1">
-          <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-white px-4 shadow-sm">
-            <SidebarTrigger className="-ml-1 p-2" />
-            <div className="flex-1" />
-            <div className="text-base font-semibold text-gray-900 truncate">
-              Today's Work 📍
-            </div>
-          </header>
+          <UnifiedHeader 
+            title="Today's Work 📍"
+            user={user}
+            userRole={userRole}
+          />
           
           <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
             <div className="max-w-7xl mx-auto">
