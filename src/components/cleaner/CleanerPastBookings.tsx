@@ -215,7 +215,7 @@ const CleanerPastBookings = () => {
   const totalEarnings = filteredBookings.reduce((sum, booking) => sum + (booking.cleaner_pay || 0), 0);
 
   const PastBookingCard = ({ booking }: { booking: PastBooking }) => (
-    <div className="group relative overflow-hidden rounded-2xl p-3 sm:p-5 shadow-sm transition-all duration-300 hover:shadow-lg bg-gradient-to-br from-card to-card/80 hover:shadow-primary/5">
+    <div className="group relative overflow-hidden rounded-2xl border p-3 sm:p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/30 border-border/60 bg-gradient-to-br from-card to-card/80 hover:shadow-primary/5">
       
       {/* Header with Service Type and Earnings */}
       <div className="flex items-start justify-between mb-3 sm:mb-4">
@@ -241,7 +241,7 @@ const CleanerPastBookings = () => {
       </div>
       
       {/* Address and Actions - Mobile responsive */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-border/40">
         <div className="flex items-center gap-2 text-sm text-muted-foreground flex-1 min-w-0">
           <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
           <a
@@ -437,24 +437,22 @@ const CleanerPastBookings = () => {
       </Card>
 
       {/* Past Bookings */}
-      <Card>
-        <CardContent>
-          {filteredBookings.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No completed bookings found
+      <div className="space-y-4">
+        {filteredBookings.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            No completed bookings found
+          </div>
+        ) : (
+          <>
+            {/* Card view - works for both mobile and desktop */}
+            <div className="space-y-4">
+              {filteredBookings.map((booking) => (
+                <PastBookingCard key={booking.id} booking={booking} />
+              ))}
             </div>
-          ) : (
-            <>
-              {/* Card view - works for both mobile and desktop */}
-              <div className="space-y-4">
-                {filteredBookings.map((booking) => (
-                  <PastBookingCard key={booking.id} booking={booking} />
-                ))}
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+          </>
+        )}
+      </div>
 
       {/* Upload Photos Dialog */}
       {selectedBookingForUpload && (
