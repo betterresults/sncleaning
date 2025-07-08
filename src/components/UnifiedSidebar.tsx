@@ -62,7 +62,7 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
                     }`}
                   >
                     <Link to={item.url} className={`flex items-center w-full ${open ? "" : "justify-center"}`}>
-                      <item.icon className={open ? "h-6 w-6 flex-shrink-0" : "h-8 w-8 flex-shrink-0"} />
+                      <item.icon className={open ? "h-6 w-6 flex-shrink-0" : "h-10 w-10 flex-shrink-0"} />
                       {open && (
                         <span className="ml-3 font-medium truncate text-base">
                           {item.title}
