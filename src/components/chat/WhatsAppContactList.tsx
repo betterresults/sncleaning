@@ -212,16 +212,16 @@ const WhatsAppContactList = ({
         <Button
           variant="ghost"
           onClick={onSwitchToMessages}
-          className="flex-1 h-10 sm:h-12 rounded-none border-b-2 border-transparent hover:border-muted-foreground/20 text-xs sm:text-sm"
+          className="flex-1 h-10 md:h-12 rounded-none border-b-2 border-transparent hover:border-muted-foreground/20 text-xs md:text-sm"
         >
-          <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+          <MessageCircle className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
           Messages
         </Button>
         <Button
           variant="ghost"
-          className="flex-1 h-10 sm:h-12 rounded-none border-b-2 border-primary bg-primary/5 text-xs sm:text-sm"
+          className="flex-1 h-10 md:h-12 rounded-none border-b-2 border-primary bg-primary/5 text-xs md:text-sm"
         >
-          <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+          <Users className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
           Contacts
         </Button>
       </div>

@@ -125,8 +125,8 @@ const CleanerMessages = () => {
         <CleanerSidebar />
         <SidebarInset className="flex-1">
           {/* Header with navigation */}
-          <header className="sticky top-0 z-10 flex h-12 sm:h-14 shrink-0 items-center gap-2 border-b bg-background px-2 sm:px-4 shadow-sm">
-            <SidebarTrigger className="-ml-1 p-1 sm:p-2" />
+          <header className="sticky top-0 z-10 flex h-12 md:h-14 shrink-0 items-center gap-2 border-b bg-background px-2 md:px-4 shadow-sm">
+            <SidebarTrigger className="-ml-1 p-1 md:p-2" />
             
             {/* Back button for chat view */}
             {currentView === 'chat' && activeChat && (
@@ -135,22 +135,22 @@ const CleanerMessages = () => {
                   variant="ghost"
                   size="sm"
                   onClick={handleBackToMessages}
-                  className="p-1 sm:p-2 min-h-8"
+                  className="p-1 md:p-2 min-h-8"
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
                 
                 {/* Chat header info */}
-                <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                <div className="flex items-center space-x-2 md:space-x-3 flex-1 min-w-0">
+                  <div className="w-6 h-6 md:w-8 md:h-8 bg-primary/10 rounded-full flex items-center justify-center">
                     {activeChat.chat_type === 'office_cleaner' ? (
-                      <Building2 className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+                      <Building2 className="h-3 w-3 md:h-4 md:w-4 text-primary" />
                     ) : (
-                      <User className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+                      <User className="h-3 w-3 md:h-4 md:w-4 text-primary" />
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h3 className="font-medium text-foreground text-xs sm:text-sm truncate">
+                    <h3 className="font-medium text-foreground text-xs md:text-sm truncate">
                       {activeChat.chat_type === 'office_cleaner' 
                         ? 'SN Cleaning Office'
                         : activeChat.customer 
@@ -168,7 +168,7 @@ const CleanerMessages = () => {
               </>
             )}
             
-            <div className="text-xs sm:text-sm font-semibold text-foreground truncate">
+            <div className="text-xs md:text-sm font-semibold text-foreground truncate">
               {isAdminViewing ? 'Chat Management - Cleaner View' : 'Messages'}
             </div>
           </header>
@@ -176,7 +176,7 @@ const CleanerMessages = () => {
           <main className="flex-1 flex flex-col overflow-hidden">
             {/* Admin Cleaner Selector */}
             {isAdminViewing && (
-              <div className="p-2 sm:p-4 border-b border-border bg-muted/30">
+              <div className="p-2 md:p-4 border-b border-border bg-muted/30">
                 <AdminCleanerSelector />
               </div>
             )}
@@ -194,8 +194,8 @@ const CleanerMessages = () => {
               </div>
             ) : (
               <div className="flex-1 overflow-hidden">
-                {/* Mobile WhatsApp-like views */}
-                <div className="h-full sm:hidden">
+                {/* Mobile WhatsApp-like views - default for all screen sizes, hidden on large screens */}
+                <div className="h-full lg:hidden">
                   {currentView === 'messages' && (
                     <WhatsAppMessageList
                       chats={chats}
@@ -226,8 +226,8 @@ const CleanerMessages = () => {
                   )}
                 </div>
 
-                {/* Desktop: Split view */}
-                <div className="hidden sm:flex h-full">
+                {/* Desktop: Split view - only show on large screens */}
+                <div className="hidden lg:flex h-full">
                   {/* Message List */}
                   <div className="w-80 flex-shrink-0 h-full border-r border-border">
                     <WhatsAppMessageList
@@ -260,7 +260,7 @@ const CleanerMessages = () => {
                         <Button
                           variant="outline"
                           onClick={() => setCurrentView('contacts')}
-                          className="hidden sm:inline-flex"
+                          className="hidden lg:inline-flex"
                         >
                           <Users className="h-4 w-4 mr-2" />
                           Browse Contacts

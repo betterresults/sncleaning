@@ -59,17 +59,17 @@ const WhatsAppMessageList = ({ chats, activeChat, onSelectChat, onSwitchToContac
       <div className="flex items-center border-b border-border bg-card">
         <Button
           variant="ghost"
-          className="flex-1 h-10 sm:h-12 rounded-none border-b-2 border-primary bg-primary/5 text-xs sm:text-sm"
+          className="flex-1 h-10 md:h-12 rounded-none border-b-2 border-primary bg-primary/5 text-xs md:text-sm"
         >
-          <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+          <MessageCircle className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
           Messages
         </Button>
         <Button
           variant="ghost"
           onClick={onSwitchToContacts}
-          className="flex-1 h-10 sm:h-12 rounded-none border-b-2 border-transparent hover:border-muted-foreground/20 text-xs sm:text-sm"
+          className="flex-1 h-10 md:h-12 rounded-none border-b-2 border-transparent hover:border-muted-foreground/20 text-xs md:text-sm"
         >
-          <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+          <Users className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
           Contacts
         </Button>
       </div>
@@ -88,15 +88,15 @@ const WhatsAppMessageList = ({ chats, activeChat, onSelectChat, onSwitchToContac
               <div
                 key={chat.id}
                 onClick={() => onSelectChat(chat)}
-                className={`flex items-center gap-2 sm:gap-3 p-3 sm:p-4 cursor-pointer transition-colors hover:bg-muted/50 ${
+                className={`flex items-center gap-2 md:gap-3 p-3 md:p-4 cursor-pointer transition-colors hover:bg-muted/50 ${
                   activeChat?.id === chat.id ? 'bg-muted' : ''
                 }`}
               >
                 {/* Avatar */}
-                <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0">
-                  <AvatarFallback className="bg-primary/10 text-primary border border-primary/20 text-xs sm:text-sm">
+                <Avatar className="h-10 w-10 md:h-12 md:w-12 flex-shrink-0">
+                  <AvatarFallback className="bg-primary/10 text-primary border border-primary/20 text-xs md:text-sm">
                     {chat.chat_type === 'office_cleaner' || chat.chat_type === 'customer_office' ? (
-                      <Building2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                      <Building2 className="h-4 w-4 md:h-5 md:w-5" />
                     ) : (
                       getInitials(getChatDisplayName(chat))
                     )}
@@ -106,17 +106,17 @@ const WhatsAppMessageList = ({ chats, activeChat, onSelectChat, onSwitchToContac
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-medium text-foreground truncate text-sm sm:text-base">
+                    <h3 className="font-medium text-foreground truncate text-sm md:text-base">
                       {getChatDisplayName(chat)}
                     </h3>
-                    <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
                       {chat.last_message_at && (
                         <span className="text-xs text-muted-foreground">
                           {formatDistanceToNow(new Date(chat.last_message_at), { addSuffix: true })}
                         </span>
                       )}
                       {chat.unread_count && chat.unread_count > 0 && (
-                        <Badge variant="default" className="bg-primary text-primary-foreground h-4 min-w-4 sm:h-5 sm:min-w-5 text-xs">
+                        <Badge variant="default" className="bg-primary text-primary-foreground h-4 min-w-4 md:h-5 md:min-w-5 text-xs">
                           {chat.unread_count}
                         </Badge>
                       )}
