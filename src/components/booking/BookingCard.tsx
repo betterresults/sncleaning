@@ -105,18 +105,6 @@ const BookingCard = <T extends BaseBooking>({
         {/* Status and Actions row */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            {type === 'upcoming' && (
-              <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${
-                booking.booking_status === 'Confirmed' 
-                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
-                  : booking.booking_status === 'Pending'
-                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                  : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
-              }`}>
-                {booking.booking_status}
-              </span>
-            )}
-            
             {type === 'completed' && (
               <Button
                 variant="outline"
