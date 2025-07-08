@@ -514,6 +514,73 @@ export type Database = {
         }
         Relationships: []
       }
+      cleaning_photos: {
+        Row: {
+          booking_date: string
+          booking_id: number
+          caption: string | null
+          cleaner_id: number
+          created_at: string
+          customer_id: number
+          damage_details: string | null
+          file_path: string
+          id: string
+          photo_type: string
+          postcode: string
+          updated_at: string
+        }
+        Insert: {
+          booking_date: string
+          booking_id: number
+          caption?: string | null
+          cleaner_id: number
+          created_at?: string
+          customer_id: number
+          damage_details?: string | null
+          file_path: string
+          id?: string
+          photo_type: string
+          postcode: string
+          updated_at?: string
+        }
+        Update: {
+          booking_date?: string
+          booking_id?: number
+          caption?: string | null
+          cleaner_id?: number
+          created_at?: string
+          customer_id?: number
+          damage_details?: string | null
+          file_path?: string
+          id?: string
+          photo_type?: string
+          postcode?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaning_photos_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cleaning_photos_cleaner_id_fkey"
+            columns: ["cleaner_id"]
+            isOneToOne: false
+            referencedRelation: "cleaners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cleaning_photos_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_payment_methods: {
         Row: {
           card_brand: string | null
@@ -864,6 +931,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "customers"
             referencedColumns: ["frontly_id"]
+          },
+        ]
+      }
+      photo_completion_notifications: {
+        Row: {
+          booking_id: number
+          chat_message_sent: boolean
+          created_at: string
+          email_sent: boolean
+          id: string
+          notification_sent_at: string
+        }
+        Insert: {
+          booking_id: number
+          chat_message_sent?: boolean
+          created_at?: string
+          email_sent?: boolean
+          id?: string
+          notification_sent_at?: string
+        }
+        Update: {
+          booking_id?: number
+          chat_message_sent?: boolean
+          created_at?: string
+          email_sent?: boolean
+          id?: string
+          notification_sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photo_completion_notifications_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
           },
         ]
       }
