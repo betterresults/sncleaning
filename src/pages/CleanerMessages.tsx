@@ -121,9 +121,9 @@ const CleanerMessages = () => {
 
   return (
     <SidebarProvider defaultOpen={false}>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="h-screen flex w-full bg-background overflow-hidden">
         <CleanerSidebar />
-        <SidebarInset className="flex-1 flex flex-col min-w-0">
+        <SidebarInset className="flex-1 flex flex-col min-w-0 h-screen">
           {/* Header with navigation */}
           <header className="sticky top-0 z-10 flex h-12 md:h-14 shrink-0 items-center gap-2 border-b bg-background px-2 md:px-4 shadow-sm">
             <SidebarTrigger className="-ml-1 p-1 md:p-2" />
@@ -173,7 +173,7 @@ const CleanerMessages = () => {
             </div>
           </header>
           
-          <main className="flex-1 flex flex-col overflow-hidden min-h-0">
+          <main className="flex-1 flex flex-col overflow-hidden h-full">
             {/* Admin Cleaner Selector */}
             {isAdminViewing && (
               <div className="p-2 md:p-4 border-b border-border bg-muted/30">
@@ -193,7 +193,7 @@ const CleanerMessages = () => {
                 </div>
               </div>
             ) : (
-              <div className="flex-1 overflow-hidden">
+              <div className="flex-1 overflow-hidden h-full">
                 {/* Mobile WhatsApp-like views - default for all screen sizes, hidden on large screens */}
                 <div className="h-full lg:hidden">
                   {currentView === 'messages' && (

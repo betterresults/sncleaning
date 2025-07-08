@@ -149,6 +149,22 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
     return 'Unknown';
   };
 
+  const formatTimeAgo = (date: string) => {
+    const distance = formatDistanceToNow(new Date(date), { addSuffix: false });
+    return distance
+      .replace('about ', '')
+      .replace(' hours', 'h')
+      .replace(' hour', 'h')
+      .replace(' minutes', 'm')
+      .replace(' minute', 'm')
+      .replace(' days', 'd')
+      .replace(' day', 'd')
+      .replace(' weeks', 'w')
+      .replace(' week', 'w')
+      .replace(' months', 'mo')
+      .replace(' month', 'mo');
+  };
+
   return (
     <div className="flex flex-col h-full bg-card overflow-hidden">
       {/* Messages */}
@@ -157,7 +173,7 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
         ref={scrollAreaRef}
         onScrollCapture={handleScroll}
       >
-        <div className="space-y-3 md:space-y-4">
+        <div className="space-y-2 md:space-y-3">
           {chat.id === 'pending' ? (
             <div className="flex flex-col items-center justify-center h-full p-8 text-center">
               <MessageCircle className="h-12 w-12 text-muted-foreground/40 mb-4" />
@@ -190,10 +206,18 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
                         : 'bg-muted text-muted-foreground'
                     }`}
                   >
-                    {/* Always show sender name for clarity */}
-                    <p className="text-xs font-medium mb-1 opacity-70">
-                      {getSenderName(message)}
-                    </p>
+                    {/* Compact header with name on left and time on right */}
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-xs font-medium opacity-70">
+                        {getSenderName(message)}
+                      </p>
+                      <p className={`text-xs opacity-60 ${
+                        isOwnMessage(message) ? 'text-primary-foreground/60' : 'text-muted-foreground/60'
+                      }`}>
+                        {formatTimeAgo(message.created_at)}
+                      </p>
+                    </div>
+                    
                     <p className="text-sm break-words">
                       {message.file_url ? (
                         message.file_url.includes('image') || message.message.includes('📷') ? (
@@ -219,11 +243,6 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
                       ) : (
                         message.message
                       )}
-                    </p>
-                    <p className={`text-xs mt-1 ${
-                      isOwnMessage(message) ? 'text-primary-foreground/70' : 'text-muted-foreground/70'
-                    }`}>
-                      {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
                     </p>
                   </div>
                 </div>
