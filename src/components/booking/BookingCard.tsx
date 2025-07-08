@@ -60,7 +60,7 @@ const BookingCard = <T extends BaseBooking>({
           )}
         </div>
         <div className="text-right">
-          <div className="text-2xl font-bold text-green-600">£{booking.total_cost}</div>
+          <div className="text-2xl font-bold text-[#18A5A5]">£{booking.total_cost}</div>
         </div>
       </div>
       
@@ -101,7 +101,7 @@ const BookingCard = <T extends BaseBooking>({
           </div>
         )}
         
-        {type === 'completed' && (
+        {type === 'completed' && onSeePhotos && (
           <Button
             variant="outline"
             size="sm"

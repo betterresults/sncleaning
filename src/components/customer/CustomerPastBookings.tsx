@@ -481,45 +481,64 @@ const CustomerPastBookings = () => {
 
       {/* Review Dialog */}
       <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] bg-white border-[#18A5A5]/20">
           <DialogHeader>
-            <DialogTitle>Leave a Review</DialogTitle>
-            <DialogDescription>
-              How was your cleaning service? Share your feedback to help us improve.
+            <DialogTitle className="text-[#185166] text-xl font-semibold">Leave a Review</DialogTitle>
+            <DialogDescription className="text-gray-600">
+              How would you rate {selectedBookingForReview?.cleaner?.first_name} {selectedBookingForReview?.cleaner?.last_name}'s cleaning service?
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="rating">Rating</Label>
-              <Select value={reviewRating.toString()} onValueChange={(value) => setReviewRating(parseInt(value))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select rating" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">⭐⭐⭐⭐⭐ Excellent</SelectItem>
-                  <SelectItem value="4">⭐⭐⭐⭐ Very Good</SelectItem>
-                  <SelectItem value="3">⭐⭐⭐ Good</SelectItem>
-                  <SelectItem value="2">⭐⭐ Fair</SelectItem>
-                  <SelectItem value="1">⭐ Poor</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="grid gap-6 py-4">
+            <div className="grid gap-3">
+              <Label htmlFor="rating" className="text-[#185166] font-medium">How would you rate this service?</Label>
+              <div className="flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setReviewRating(star)}
+                    className={`text-2xl transition-colors ${
+                      star <= reviewRating 
+                        ? 'text-[#18A5A5] hover:text-[#18A5A5]' 
+                        : 'text-gray-300 hover:text-[#18A5A5]'
+                    }`}
+                  >
+                    ★
+                  </button>
+                ))}
+                <span className="ml-2 text-sm text-gray-600">
+                  {reviewRating === 1 && 'Poor'}
+                  {reviewRating === 2 && 'Fair'}
+                  {reviewRating === 3 && 'Good'}
+                  {reviewRating === 4 && 'Very Good'}
+                  {reviewRating === 5 && 'Excellent'}
+                </span>
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="review">Review (Optional)</Label>
+            <div className="grid gap-3">
+              <Label htmlFor="review" className="text-[#185166] font-medium">Additional Comments (Optional)</Label>
               <Textarea
                 id="review"
-                placeholder="Tell us about your experience..."
+                placeholder="Tell us about your experience with the cleaning service..."
                 value={reviewText}
                 onChange={(e) => setReviewText(e.target.value)}
                 rows={4}
+                className="border-gray-200 focus:border-[#18A5A5] focus:ring-[#18A5A5]/20"
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setReviewDialogOpen(false)}>
+          <DialogFooter className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setReviewDialogOpen(false)}
+              className="border-gray-200 text-gray-600 hover:bg-gray-50"
+            >
               Cancel
             </Button>
-            <Button onClick={handleSubmitReview}>
+            <Button 
+              onClick={handleSubmitReview}
+              className="bg-[#18A5A5] hover:bg-[#185166] text-white"
+            >
               Submit Review
             </Button>
           </DialogFooter>
