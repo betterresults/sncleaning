@@ -165,8 +165,30 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage }: ChatIn
       .replace(' month', 'mo ago');
   };
 
+
   return (
     <div className="flex flex-col h-full bg-card overflow-hidden">
+      {/* Chat Header */}
+      <div className="flex items-center gap-3 p-3 border-b border-border bg-background">
+        <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+          {chat.chat_type === 'office_cleaner' ? (
+            <MessageCircle className="h-4 w-4 text-primary" />
+          ) : (
+            <MessageCircle className="h-4 w-4 text-primary" />
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-medium text-foreground text-sm truncate">
+            {getChatTitle()}
+          </h3>
+          {chat.booking && (
+            <p className="text-xs text-muted-foreground truncate">
+              {new Date(chat.booking.date_time).toLocaleDateString()}
+            </p>
+          )}
+        </div>
+      </div>
+
       {/* Messages */}
       <ScrollArea 
         className="flex-1 p-2 md:p-4" 

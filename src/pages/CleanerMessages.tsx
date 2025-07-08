@@ -130,42 +130,14 @@ const CleanerMessages = () => {
             
             {/* Back button for chat view */}
             {currentView === 'chat' && activeChat && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleBackToMessages}
-                  className="p-1 md:p-2 min-h-8"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-                
-                {/* Chat header info */}
-                <div className="flex items-center space-x-2 md:space-x-3 flex-1 min-w-0">
-                  <div className="w-6 h-6 md:w-8 md:h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                    {activeChat.chat_type === 'office_cleaner' ? (
-                      <Building2 className="h-3 w-3 md:h-4 md:w-4 text-primary" />
-                    ) : (
-                      <User className="h-3 w-3 md:h-4 md:w-4 text-primary" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-medium text-foreground text-xs md:text-sm truncate">
-                      {activeChat.chat_type === 'office_cleaner' 
-                        ? 'SN Cleaning Office'
-                        : activeChat.customer 
-                          ? `${activeChat.customer.first_name} ${activeChat.customer.last_name}`.trim()
-                          : 'Customer'
-                      }
-                    </h3>
-                    {activeChat.booking && (
-                      <p className="text-xs text-muted-foreground truncate">
-                        {activeChat.booking.service_type} - {new Date(activeChat.booking.date_time).toLocaleDateString()}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBackToMessages}
+                className="p-1 md:p-2 min-h-8"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
             )}
             
             <div className="text-xs md:text-sm font-semibold text-foreground truncate">
