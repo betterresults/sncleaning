@@ -298,22 +298,22 @@ const CleanerEarnings = () => {
       <Card className="relative overflow-hidden bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 border-0 text-white">
         <div className="absolute inset-0 bg-black/10"></div>
         <CardContent className="relative z-10 p-4 sm:p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-start sm:items-center gap-3">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
               <div className="p-2 sm:p-3 bg-white/20 rounded-lg backdrop-blur-sm flex-shrink-0">
                 <CreditCard className="h-5 w-5 sm:h-6 sm:w-6" />
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-lg font-medium">Next Payment</div>
-                <div className="text-sm opacity-80 mb-2">{earnings.upcomingPayment.paymentDate}</div>
-                <div className="text-xs sm:text-sm bg-white/10 rounded-full px-2 py-1 sm:px-3 sm:py-1 backdrop-blur-sm inline-flex items-center gap-1 sm:gap-2">
-                  <Calendar className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                  <span className="break-words">{earnings.upcomingPayment.periodStart} - {earnings.upcomingPayment.periodEnd}</span>
-                </div>
-              </div>
+              <div className="text-lg font-medium">Next Payment</div>
             </div>
-            <div className="text-3xl sm:text-4xl font-bold tracking-tight text-center sm:text-right">
+            <div className="text-2xl sm:text-3xl font-bold tracking-tight">
               £{earnings.upcomingPayment.amount.toFixed(2)}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="text-sm opacity-80">{earnings.upcomingPayment.paymentDate}</div>
+            <div className="text-xs sm:text-sm bg-white/10 rounded-full px-2 py-1 sm:px-3 sm:py-1 backdrop-blur-sm inline-flex items-center gap-1 sm:gap-2">
+              <Calendar className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="break-words">{earnings.upcomingPayment.periodStart} - {earnings.upcomingPayment.periodEnd}</span>
             </div>
           </div>
         </CardContent>
