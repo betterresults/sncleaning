@@ -46,32 +46,38 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
         )}
       </SidebarHeader>
       
-      <SidebarContent className="p-2">
+      <SidebarContent className="p-0 bg-[#185166]">
         <SidebarGroup>
-          <SidebarGroupContent>
-             <SidebarMenu className="!space-y-0 !my-0 !p-0">
-               {navigationItems.map((item) => (
-                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild
-                    isActive={location.pathname === item.url}
-                     className={`transition-all duration-200 ${
-                       open 
-                         ? "!h-10 !px-3 !py-1 justify-start rounded-lg" 
-                         : "!h-12 !px-0 !py-2 justify-center rounded-lg"
-                     }`}
-                  >
-                    <Link to={item.url} className={`flex items-center w-full ${open ? "" : "justify-center"}`}>
-                      <item.icon className={open ? "!h-6 !w-6 flex-shrink-0" : "!h-6 !w-6 flex-shrink-0"} />
-                      {open && (
-                        <span className="ml-3 font-medium truncate text-base">
-                          {item.title}
-                        </span>
-                      )}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+          <SidebarGroupContent className="px-3 py-2">
+            <SidebarMenu className="space-y-1">
+              {navigationItems.map((item) => {
+                const isActive = location.pathname === item.url;
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton 
+                      asChild 
+                      className={`h-12 transition-all duration-200 hover:bg-white/10 ${
+                        isActive 
+                          ? "bg-white/20 text-white shadow-sm" 
+                          : "text-white/80 hover:text-white"
+                      } ${
+                        open 
+                          ? "justify-start px-4 rounded-lg mx-2" 
+                          : "justify-center px-0 rounded-lg mx-3 w-10"
+                      }`}
+                    >
+                      <Link to={item.url} className="flex items-center w-full">
+                        <item.icon className={`${open ? "h-5 w-5" : "h-5 w-5"} flex-shrink-0`} />
+                        {open && (
+                          <span className="ml-3 font-medium text-sm">
+                            {item.title}
+                          </span>
+                        )}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
