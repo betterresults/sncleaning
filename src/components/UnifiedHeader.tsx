@@ -21,14 +21,14 @@ export function UnifiedHeader({ title, user, userRole }: UnifiedHeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-white px-4 shadow-sm">
-      <SidebarTrigger className="-ml-1 p-2" />
+    <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b border-white/10 bg-[#185166] px-4 shadow-sm">
+      <SidebarTrigger className="-ml-1 p-2 text-white hover:bg-white/10 hover:text-white border-0 bg-transparent" />
       <div className="flex-1" />
-      <div className="text-base font-semibold text-gray-900 truncate">
+      <div className="text-base font-semibold text-white truncate">
         {title}
       </div>
       <div className="flex-1 flex justify-end">
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-white/80 truncate">
           {getGreeting()}
         </div>
       </div>

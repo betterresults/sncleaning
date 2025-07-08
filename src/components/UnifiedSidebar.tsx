@@ -34,15 +34,14 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
 
   return (
     <Sidebar className="border-r-0 bg-[#185166]" collapsible="icon">
-      <SidebarHeader className={`border-b border-white/10 bg-[#185166] ${open ? "px-6 py-6" : "px-4 py-6"}`}>
+      <SidebarHeader className={`border-b border-white/10 bg-[#185166] ${open ? "px-6 py-4" : "px-4 py-4"}`}>
         {open && (
-          <div className="text-lg font-bold text-white flex items-center justify-between">
+          <div className="text-sm font-bold text-white">
             SN Cleaning
-            <SidebarTrigger className="text-white hover:bg-white/10 hover:text-white border-0 bg-transparent p-2 ml-4" />
           </div>
         )}
         {!open && (
-          <div className="text-sm font-bold text-white text-center">
+          <div className="text-xs font-bold text-white text-center">
             SN
           </div>
         )}
@@ -65,11 +64,11 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
                       } ${
                         open 
                           ? "justify-start px-4 rounded-lg mx-2" 
-                          : "justify-center px-2 rounded-lg mx-2 w-12 h-12"
+                          : "justify-center rounded-lg mx-2 w-12 h-12 p-[0.15rem]"
                       }`}
                     >
                       <Link to={item.url} className="flex items-center w-full !text-white hover:!text-white">
-                        <item.icon className={`${open ? "h-5 w-5" : "h-6 w-6"} flex-shrink-0 !text-white`} />
+                        <item.icon className={`${open ? "h-5 w-5" : "h-6 w-6"} flex-shrink-0 !text-white ${!open ? 'mx-auto' : ''}`} />
                         {open && (
                           <span className="ml-3 font-medium text-sm !text-white">
                             {item.title}
