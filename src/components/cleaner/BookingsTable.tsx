@@ -55,12 +55,12 @@ const BookingsTable = ({ bookings, title, type, onAcceptBooking, onDropService }
   }
 
   return (
-    <div className="bg-white rounded-lg shadow">
-      <div className="p-6 border-b">
-        <h2 className="text-xl font-semibold">{title}</h2>
+    <div className="bg-white rounded-lg shadow w-full overflow-hidden">
+      <div className="p-3 sm:p-6 border-b">
+        <h2 className="text-lg sm:text-xl font-semibold">{title}</h2>
       </div>
       
-      <div className="p-6 space-y-4">
+      <div className="p-3 sm:p-6 space-y-3 sm:space-y-4">
         {bookings.map((booking) => (
           <CleanerBookingCard
             key={booking.id}

@@ -42,17 +42,17 @@ const CleanerDashboard = () => {
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-gray-50">
           <CleanerSidebar />
-          <SidebarInset className="flex-1">
+          <SidebarInset className="flex-1 min-w-0">
             <header className="sticky top-0 z-10 flex h-16 sm:h-14 shrink-0 items-center gap-3 border-b bg-white px-3 sm:px-4 shadow-sm">
               <SidebarTrigger className="h-10 w-10 sm:h-8 sm:w-8 p-2 touch-manipulation" />
-              <div className="flex-1" />
+              <div className="flex-1 min-w-0" />
               <div className="text-sm sm:text-base font-semibold text-gray-900 truncate">
                 Hello {firstName}! 👋
               </div>
             </header>
             
-            <main className="flex-1 p-3 sm:p-4 space-y-3 sm:space-y-4 max-w-full overflow-x-hidden">
-              <div className="max-w-7xl mx-auto">
+            <main className="flex-1 p-2 sm:p-4 space-y-2 sm:space-y-4 w-full overflow-x-hidden">
+              <div className="w-full max-w-full">
                 {isAdminViewing && <AdminCleanerSelector />}
                 <CleanerUpcomingBookings />
               </div>

@@ -10,24 +10,24 @@ interface UpcomingBookingsStatsProps {
 
 const UpcomingBookingsStats: React.FC<UpcomingBookingsStatsProps> = ({ stats }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 w-full">
       <Card className="bg-gradient-to-br from-slate-50 to-blue-50 border border-blue-100 shadow-lg">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
           <CardTitle className="text-sm font-medium text-slate-700">Upcoming Bookings</CardTitle>
-          <CalendarDays className="h-5 w-5 text-blue-600" />
+          <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
         </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold text-slate-900">{stats.totalBookings}</div>
+        <CardContent className="p-3 sm:p-6 pt-0">
+          <div className="text-2xl sm:text-3xl font-bold text-slate-900">{stats.totalBookings}</div>
         </CardContent>
       </Card>
 
       <Card className="bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-100 shadow-lg">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
           <CardTitle className="text-sm font-medium text-slate-700">Expected Earnings</CardTitle>
-          <Banknote className="h-5 w-5 text-emerald-600" />
+          <Banknote className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
         </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold text-slate-900">£{stats.totalEarnings.toFixed(2)}</div>
+        <CardContent className="p-3 sm:p-6 pt-0">
+          <div className="text-2xl sm:text-3xl font-bold text-slate-900">£{stats.totalEarnings.toFixed(2)}</div>
         </CardContent>
       </Card>
     </div>
