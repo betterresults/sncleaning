@@ -128,26 +128,12 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#18A5A5] via-[#185166] to-[#18A5A5] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Logo Section */}
+        {/* Modern Title */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 mx-auto mb-4 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-            <img 
-              src="/sn-cleaning-logo.png" 
-              alt="SN Cleaning Services" 
-              className="w-12 h-12 object-contain"
-              onError={(e) => {
-                const target = e.currentTarget as HTMLImageElement;
-                const fallback = target.nextElementSibling as HTMLElement;
-                target.style.display = 'none';
-                if (fallback) fallback.style.display = 'block';
-              }}
-            />
-            <div className="hidden text-white font-bold text-xl">SN</div>
-          </div>
-          <h1 className="text-2xl font-bold text-white mb-2">
-            SN Cleaning Services
+          <h1 className="text-5xl font-black text-white mb-8 tracking-tight">
+            SN CLEANING
+            <span className="block text-3xl font-light mt-2 opacity-90">SERVICES</span>
           </h1>
-          <p className="text-white/80">Professional cleaning solutions</p>
         </div>
 
         {/* Modern Glass Card */}
@@ -156,9 +142,6 @@ const Auth = () => {
             <h2 className="text-2xl font-bold text-white mb-2">
               {getCardTitle()}
             </h2>
-            <p className="text-white/80">
-              {getCardDescription()}
-            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
