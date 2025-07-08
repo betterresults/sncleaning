@@ -51,15 +51,15 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
           <SidebarGroupContent>
              <SidebarMenu className="!space-y-0 !my-0 !p-0">
                {navigationItems.map((item) => (
-                 <SidebarMenuItem key={item.title} className="!-my-1">
+                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild
                     isActive={location.pathname === item.url}
-                    className={`transition-all duration-200 ${
-                      open 
-                        ? "h-14 px-3 py-3 justify-start rounded-lg" 
-                        : "h-16 px-0 py-4 justify-center rounded-lg"
-                    }`}
+                     className={`transition-all duration-200 ${
+                       open 
+                         ? "!h-10 !px-3 !py-1 justify-start rounded-lg" 
+                         : "!h-12 !px-0 !py-2 justify-center rounded-lg"
+                     }`}
                   >
                     <Link to={item.url} className={`flex items-center w-full ${open ? "" : "justify-center"}`}>
                       <item.icon className={open ? "!h-6 !w-6 flex-shrink-0" : "!h-6 !w-6 flex-shrink-0"} />
