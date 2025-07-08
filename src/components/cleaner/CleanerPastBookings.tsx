@@ -7,8 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { CalendarDays, MapPin, User, Banknote, Search, Filter, X, Upload } from 'lucide-react';
+import CleaningPhotosUploadDialog from './CleaningPhotosUploadDialog';
 
 interface PastBooking {
   id: number;
@@ -24,6 +26,8 @@ interface PastBooking {
   cleaner_pay: number;
   payment_status: string;
   booking_status: string;
+  customer?: number;
+  cleaner?: number;
 }
 
 interface Filters {
@@ -57,6 +61,8 @@ const CleanerPastBookings = () => {
     customerSearch: '',
     timePeriod: 'current-month',
   });
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [selectedBookingForUpload, setSelectedBookingForUpload] = useState<PastBooking | null>(null);
 
   const getTimePeriodDates = (period: string) => {
     const now = new Date();
@@ -126,10 +132,20 @@ const CleanerPastBookings = () => {
     });
   };
 
-  const handleUploadPhotos = (bookingId: number) => {
-    // Placeholder for photo upload functionality
-    console.log('Upload photos for booking:', bookingId);
-    // This will be implemented later based on user requirements
+  const handleUploadPhotos = (booking: PastBooking) => {
+    // Get the cleaner ID for the booking
+    const currentCleanerId = userRole === 'admin' ? selectedCleanerId : cleanerId;
+    
+    if (!currentCleanerId) {
+      return;
+    }
+
+    setSelectedBookingForUpload({
+      ...booking,
+      cleaner: currentCleanerId,
+      customer: booking.customer || 0
+    });
+    setUploadDialogOpen(true);
   };
 
   const fetchPastBookings = async () => {
@@ -241,7 +257,7 @@ const CleanerPastBookings = () => {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => handleUploadPhotos(booking.id)}
+          onClick={() => handleUploadPhotos(booking)}
           className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/30 sm:ml-4"
         >
           <Upload className="h-4 w-4" />
@@ -282,64 +298,79 @@ const CleanerPastBookings = () => {
         </Card>
       </div>
 
-      {/* Time Period Filter - Responsive: Dropdown on mobile, buttons on desktop */}
+      {/* Time Period Filter - Consistent Design */}
       <Card className="shadow-sm">
-        <CardContent className="p-3 sm:p-4">
-          {/* Mobile: Dropdown */}
-          <div className="block sm:hidden">
-            <Label htmlFor="period-select" className="text-sm font-medium mb-2 block">Select Period</Label>
-            <select
-              id="period-select"
-              value={filters.timePeriod}
-              onChange={(e) => setFilters({...filters, timePeriod: e.target.value})}
-              className="w-full p-2 border border-gray-300 rounded-md text-sm bg-white"
-            >
-              <option value="current-month">Current Month</option>
-              <option value="last-month">Last Month</option>
-              <option value="last-3-months">Last 3 Months</option>
-              <option value="last-6-months">Last 6 Months</option>
-              <option value="all">All Time</option>
-            </select>
-          </div>
-          
-          {/* Desktop: Buttons */}
-          <div className="hidden sm:grid grid-cols-5 gap-2 w-full">
-            <Button
-              variant={filters.timePeriod === 'current-month' ? 'default' : 'outline'}
-              onClick={() => setFilters({...filters, timePeriod: 'current-month'})}
-              className="w-full text-xs sm:text-sm"
-            >
-              Current Month
-            </Button>
-            <Button
-              variant={filters.timePeriod === 'last-month' ? 'default' : 'outline'}
-              onClick={() => setFilters({...filters, timePeriod: 'last-month'})}
-              className="w-full text-xs sm:text-sm"
-            >
-              Last Month
-            </Button>
-            <Button
-              variant={filters.timePeriod === 'last-3-months' ? 'default' : 'outline'}
-              onClick={() => setFilters({...filters, timePeriod: 'last-3-months'})}
-              className="w-full text-xs sm:text-sm"
-            >
-              Last 3 Months
-            </Button>
-            <Button
-              variant={filters.timePeriod === 'last-6-months' ? 'default' : 'outline'}
-              onClick={() => setFilters({...filters, timePeriod: 'last-6-months'})}
-              className="w-full text-xs sm:text-sm"
-            >
-              Last 6 Months
-            </Button>
-            <Button
-              variant={filters.timePeriod === 'all' ? 'default' : 'outline'}
-              onClick={() => setFilters({...filters, timePeriod: 'all'})}
-              className="w-full text-xs sm:text-sm"
-            >
-              All Time
-            </Button>
-          </div>
+        <CardContent className="p-0">
+          <Accordion type="single" collapsible className="w-full" defaultValue="period">
+            <AccordionItem value="period" className="border-0">
+              <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                <div className="flex items-center space-x-2">
+                  <CalendarDays className="h-4 w-4" />
+                  <span className="font-medium">Time Period</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                {/* Mobile: Dropdown */}
+                <div className="block sm:hidden">
+                  <Label className="text-sm font-medium mb-2 block">Select Period</Label>
+                  <Select
+                    value={filters.timePeriod}
+                    onValueChange={(value) => setFilters({...filters, timePeriod: value})}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="current-month">Current Month</SelectItem>
+                      <SelectItem value="last-month">Last Month</SelectItem>
+                      <SelectItem value="last-3-months">Last 3 Months</SelectItem>
+                      <SelectItem value="last-6-months">Last 6 Months</SelectItem>
+                      <SelectItem value="all">All Time</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Desktop: Buttons */}
+                <div className="hidden sm:grid grid-cols-5 gap-2 w-full">
+                  <Button
+                    variant={filters.timePeriod === 'current-month' ? 'default' : 'outline'}
+                    onClick={() => setFilters({...filters, timePeriod: 'current-month'})}
+                    className="w-full text-xs sm:text-sm"
+                  >
+                    Current Month
+                  </Button>
+                  <Button
+                    variant={filters.timePeriod === 'last-month' ? 'default' : 'outline'}
+                    onClick={() => setFilters({...filters, timePeriod: 'last-month'})}
+                    className="w-full text-xs sm:text-sm"
+                  >
+                    Last Month
+                  </Button>
+                  <Button
+                    variant={filters.timePeriod === 'last-3-months' ? 'default' : 'outline'}
+                    onClick={() => setFilters({...filters, timePeriod: 'last-3-months'})}
+                    className="w-full text-xs sm:text-sm"
+                  >
+                    Last 3 Months
+                  </Button>
+                  <Button
+                    variant={filters.timePeriod === 'last-6-months' ? 'default' : 'outline'}
+                    onClick={() => setFilters({...filters, timePeriod: 'last-6-months'})}
+                    className="w-full text-xs sm:text-sm"
+                  >
+                    Last 6 Months
+                  </Button>
+                  <Button
+                    variant={filters.timePeriod === 'all' ? 'default' : 'outline'}
+                    onClick={() => setFilters({...filters, timePeriod: 'all'})}
+                    className="w-full text-xs sm:text-sm"
+                  >
+                    All Time
+                  </Button>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </CardContent>
       </Card>
 
@@ -424,6 +455,21 @@ const CleanerPastBookings = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Upload Photos Dialog */}
+      {selectedBookingForUpload && (
+        <CleaningPhotosUploadDialog
+          open={uploadDialogOpen}
+          onOpenChange={setUploadDialogOpen}
+          booking={{
+            id: selectedBookingForUpload.id,
+            customer: selectedBookingForUpload.customer || 0,
+            cleaner: selectedBookingForUpload.cleaner || 0,
+            postcode: selectedBookingForUpload.postcode,
+            date_time: selectedBookingForUpload.date_time
+          }}
+        />
+      )}
     </div>
   );
 };
