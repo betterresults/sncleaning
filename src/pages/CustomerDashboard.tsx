@@ -23,21 +23,21 @@ const CustomerDashboard = () => {
   };
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false}>
       <div className="min-h-screen flex w-full bg-gray-50">
         <UnifiedSidebar 
           navigationItems={customerNavigation}
           user={user}
           onSignOut={handleSignOut}
         />
-        <SidebarInset className="flex-1 flex flex-col">
+        <SidebarInset className="flex-1 flex flex-col w-full">
           <UnifiedHeader 
             title="Customer Dashboard 🏠"
             user={user}
             userRole={userRole}
           />
           
-          <main className="flex-1 p-2 sm:p-4 lg:p-6 max-w-full overflow-x-hidden">
+          <main className="flex-1 p-2 sm:p-4 lg:p-6 w-full overflow-x-hidden">
             <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-6">
               {isAdminViewing && <AdminCustomerSelector />}
               <CustomerUpcomingBookings />
