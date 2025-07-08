@@ -317,21 +317,41 @@ const CleanerPastBookings = () => {
               </AccordionTrigger>
               <AccordionContent className="px-4 pb-4">
                 <div className="grid grid-cols-1 gap-2">
-                  <Select
-                    value={filters.timePeriod}
-                    onValueChange={(value) => setFilters({...filters, timePeriod: value})}
+                  <Button
+                    variant={filters.timePeriod === 'current-month' ? 'default' : 'outline'}
+                    onClick={() => setFilters({...filters, timePeriod: 'current-month'})}
+                    className="w-full justify-start"
                   >
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="current-month">Current Month</SelectItem>
-                      <SelectItem value="last-month">Last Month</SelectItem>
-                      <SelectItem value="last-3-months">Last 3 Months</SelectItem>
-                      <SelectItem value="last-6-months">Last 6 Months</SelectItem>
-                      <SelectItem value="all">All Time</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    Current Month
+                  </Button>
+                  <Button
+                    variant={filters.timePeriod === 'last-month' ? 'default' : 'outline'}
+                    onClick={() => setFilters({...filters, timePeriod: 'last-month'})}
+                    className="w-full justify-start"
+                  >
+                    Last Month
+                  </Button>
+                  <Button
+                    variant={filters.timePeriod === 'last-3-months' ? 'default' : 'outline'}
+                    onClick={() => setFilters({...filters, timePeriod: 'last-3-months'})}
+                    className="w-full justify-start"
+                  >
+                    Last 3 Months
+                  </Button>
+                  <Button
+                    variant={filters.timePeriod === 'last-6-months' ? 'default' : 'outline'}
+                    onClick={() => setFilters({...filters, timePeriod: 'last-6-months'})}
+                    className="w-full justify-start"
+                  >
+                    Last 6 Months
+                  </Button>
+                  <Button
+                    variant={filters.timePeriod === 'all' ? 'default' : 'outline'}
+                    onClick={() => setFilters({...filters, timePeriod: 'all'})}
+                    className="w-full justify-start"
+                  >
+                    All Time
+                  </Button>
                 </div>
               </AccordionContent>
             </AccordionItem>
