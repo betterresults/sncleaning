@@ -190,46 +190,46 @@ const CustomerUpcomingBookings = () => {
     <div className="space-y-6">
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200 dark:from-gray-950/20 dark:to-gray-900/20 dark:border-gray-800/30">
+        <Card className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
                 <Calendar className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Upcoming Bookings</p>
-                <p className="text-2xl font-bold text-foreground">{totalBookings}</p>
+                <p className="text-sm font-medium text-gray-500">Upcoming Bookings</p>
+                <p className="text-2xl font-bold text-[#185166]">{totalBookings}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
         <Card 
-          className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 dark:from-green-950/20 dark:to-green-900/20 dark:border-green-800/30 cursor-pointer hover:shadow-md transition-shadow"
+          className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
           onClick={() => navigate('/customer-completed-bookings')}
         >
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+              <div className="p-2 bg-green-100 rounded-lg">
                 <CheckCircle className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold text-foreground">{completedBookingsCount}</p>
+                <p className="text-sm font-medium text-gray-500">Completed</p>
+                <p className="text-2xl font-bold text-[#185166]">{completedBookingsCount}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200 dark:from-red-950/20 dark:to-red-900/20 dark:border-red-800/30">
+        <Card className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+              <div className="p-2 bg-red-100 rounded-lg">
                 <User className="h-5 w-5 text-red-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Needs Payment</p>
-                <p className="text-2xl font-bold text-foreground">{unpaidBookings}</p>
+                <p className="text-sm font-medium text-gray-500">Needs Payment</p>
+                <p className="text-2xl font-bold text-[#185166]">{unpaidBookings}</p>
               </div>
             </div>
           </CardContent>
@@ -238,7 +238,7 @@ const CustomerUpcomingBookings = () => {
 
       {/* View Toggle */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Your Upcoming Bookings</h2>
+        <h2 className="text-2xl font-bold text-[#185166]">Your Upcoming Bookings</h2>
         <div className="flex items-center gap-3">
           <Button
             variant={viewMode === 'cards' ? 'default' : 'outline'}
