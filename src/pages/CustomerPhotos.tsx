@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, ArrowLeft } from 'lucide-react';
+import { Download, ArrowLeft, Home } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface PhotoFile {
@@ -13,6 +13,7 @@ interface PhotoFile {
 
 const CustomerPhotos = () => {
   const { folderName } = useParams<{ folderName: string }>();
+  const navigate = useNavigate();
   const [photos, setPhotos] = useState<PhotoFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -111,10 +112,16 @@ const CustomerPhotos = () => {
         <Card className="w-96">
           <CardContent className="p-6 text-center">
             <p className="text-destructive mb-4">{error}</p>
-            <Button onClick={() => window.history.back()} variant="outline">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Go Back
-            </Button>
+            <div className="flex gap-2 justify-center">
+              <Button onClick={() => window.history.back()} variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Go Back
+              </Button>
+              <Button onClick={() => navigate('/')} variant="default">
+                <Home className="h-4 w-4 mr-2" />
+                Home
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -125,14 +132,22 @@ const CustomerPhotos = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-4">
         <div className="mb-6">
-          <Button 
-            onClick={() => window.history.back()} 
-            variant="outline"
-            className="mb-4"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
+          <div className="flex gap-2 mb-4">
+            <Button 
+              onClick={() => window.history.back()} 
+              variant="outline"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+            <Button 
+              onClick={() => navigate('/')} 
+              variant="default"
+            >
+              <Home className="h-4 w-4 mr-2" />
+              Home
+            </Button>
+          </div>
           
           <div className="text-center">
             <h1 className="text-3xl font-bold text-foreground mb-2">
