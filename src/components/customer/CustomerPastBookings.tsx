@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import BookingCard from '@/components/booking/BookingCard';
 import CleaningPhotosViewDialog from './CleaningPhotosViewDialog';
+import BookingFilters from '@/components/cleaner/BookingFilters';
 
 interface PastBooking {
   id: number;
@@ -32,10 +33,20 @@ const CustomerPastBookings = () => {
   const { selectedCustomerId } = useAdminCustomer();
   const { toast } = useToast();
   const [bookings, setBookings] = useState<PastBooking[]>([]);
+  const [filteredBookings, setFilteredBookings] = useState<PastBooking[]>([]);
   const [reviews, setReviews] = useState<{[key: number]: boolean}>({});
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<PastBooking | null>(null);
   const [photosDialogOpen, setPhotosDialogOpen] = useState(false);
+  
+  // Filter states
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [serviceTypeFilter, setServiceTypeFilter] = useState('all');
+  const [serviceTypes, setServiceTypes] = useState<string[]>([]);
+  
   const [stats, setStats] = useState({
     totalBookings: 0,
     totalPaid: 0,
@@ -51,9 +62,15 @@ const CustomerPastBookings = () => {
       fetchPastBookings();
     } else {
       setBookings([]);
+      setFilteredBookings([]);
       setLoading(false);
     }
   }, [activeCustomerId]);
+
+  // Filter bookings when filters change
+  useEffect(() => {
+    applyFilters();
+  }, [bookings, dateFrom, dateTo, customerSearch, statusFilter, serviceTypeFilter]);
 
   const fetchPastBookings = async () => {
     if (!activeCustomerId) return;
@@ -104,6 +121,10 @@ const CustomerPastBookings = () => {
       );
       
       setBookings(bookingsWithCleanerInfo);
+      
+      // Extract unique service types for filter
+      const uniqueServiceTypes = [...new Set(bookingsWithCleanerInfo.map(b => b.service_type).filter(Boolean))];
+      setServiceTypes(uniqueServiceTypes);
 
       // Fetch reviews for these bookings
       const { data: reviewData } = await supabase
@@ -117,24 +138,6 @@ const CustomerPastBookings = () => {
       });
       setReviews(reviewsMap);
 
-      // Calculate statistics
-      const totalBookings = bookingsWithCleanerInfo.length;
-      const paidBookings = bookingsWithCleanerInfo.filter(b => 
-        b.payment_status && b.payment_status.toLowerCase().includes('paid')
-      ).length;
-      const reviewedBookings = Object.keys(reviewsMap).length;
-      const totalPaid = bookingsWithCleanerInfo.reduce((sum, booking) => {
-        const cost = parseFloat(booking.total_cost) || 0;
-        return sum + cost;
-      }, 0);
-
-      setStats({
-        totalBookings,
-        totalPaid,
-        paidBookings,
-        reviewedBookings
-      });
-
     } catch (error) {
       console.error('Error fetching past bookings:', error);
       toast({
@@ -145,6 +148,73 @@ const CustomerPastBookings = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyFilters = () => {
+    let filtered = [...bookings];
+
+    // Date filters
+    if (dateFrom) {
+      filtered = filtered.filter(booking => 
+        new Date(booking.date_time) >= dateFrom
+      );
+    }
+    if (dateTo) {
+      filtered = filtered.filter(booking => 
+        new Date(booking.date_time) <= dateTo
+      );
+    }
+
+    // Customer search (for admin use)
+    if (customerSearch && userRole === 'admin') {
+      filtered = filtered.filter(booking =>
+        booking.address?.toLowerCase().includes(customerSearch.toLowerCase()) ||
+        booking.postcode?.toLowerCase().includes(customerSearch.toLowerCase())
+      );
+    }
+
+    // Status filter
+    if (statusFilter && statusFilter !== 'all') {
+      filtered = filtered.filter(booking => 
+        booking.booking_status?.toLowerCase() === statusFilter.toLowerCase()
+      );
+    }
+
+    // Service type filter
+    if (serviceTypeFilter && serviceTypeFilter !== 'all') {
+      filtered = filtered.filter(booking => 
+        booking.service_type === serviceTypeFilter
+      );
+    }
+
+    setFilteredBookings(filtered);
+
+    // Calculate statistics for filtered results
+    const totalBookings = filtered.length;
+    const paidBookings = filtered.filter(b => 
+      b.payment_status && b.payment_status.toLowerCase().includes('paid')
+    ).length;
+    const reviewedBookings = filtered.filter(b => reviews[b.id]).length;
+    const totalPaid = filtered.reduce((sum, booking) => {
+      const cost = parseFloat(booking.total_cost) || 0;
+      return sum + cost;
+    }, 0);
+
+    setStats({
+      totalBookings,
+      totalPaid,
+      paidBookings,
+      reviewedBookings
+    });
+  };
+  };
+
+  const clearFilters = () => {
+    setDateFrom(undefined);
+    setDateTo(undefined);
+    setCustomerSearch('');
+    setStatusFilter('all');
+    setServiceTypeFilter('all');
   };
 
   const handleReview = (booking: PastBooking) => {
@@ -172,61 +242,77 @@ const CustomerPastBookings = () => {
 
   return (
     <div className="space-y-6">
+      {/* Filters */}
+      <BookingFilters
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        customerSearch={customerSearch}
+        statusFilter={statusFilter}
+        serviceTypeFilter={serviceTypeFilter}
+        serviceTypes={serviceTypes}
+        onDateFromChange={setDateFrom}
+        onDateToChange={setDateTo}
+        onCustomerSearchChange={setCustomerSearch}
+        onStatusFilterChange={setStatusFilter}
+        onServiceTypeFilterChange={setServiceTypeFilter}
+        onClearFilters={clearFilters}
+      />
+
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 dark:from-blue-950/20 dark:to-blue-900/20 dark:border-blue-800/30">
+        <Card className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <div className="p-2 bg-blue-100 rounded-lg">
                 <CheckCircle className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Completed Bookings</p>
-                <p className="text-2xl font-bold text-foreground">{stats.totalBookings}</p>
+                <p className="text-sm font-medium text-gray-500">Completed Bookings</p>
+                <p className="text-2xl font-bold text-[#185166]">{stats.totalBookings}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 dark:from-green-950/20 dark:to-green-900/20 dark:border-green-800/30">
+        <Card className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+              <div className="p-2 bg-green-100 rounded-lg">
                 <DollarSign className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Paid</p>
-                <p className="text-2xl font-bold text-foreground">£{stats.totalPaid.toFixed(2)}</p>
+                <p className="text-sm font-medium text-gray-500">Total Paid</p>
+                <p className="text-2xl font-bold text-[#185166]">£{stats.totalPaid.toFixed(2)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 dark:from-purple-950/20 dark:to-purple-900/20 dark:border-purple-800/30">
+        <Card className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+              <div className="p-2 bg-purple-100 rounded-lg">
                 <Calendar className="h-5 w-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Payment Status</p>
-                <p className="text-2xl font-bold text-foreground">{stats.paidBookings}/{stats.totalBookings}</p>
-                <p className="text-xs text-muted-foreground">{paymentPercentage}% paid</p>
+                <p className="text-sm font-medium text-gray-500">Payment Status</p>
+                <p className="text-2xl font-bold text-[#185166]">{stats.paidBookings}/{stats.totalBookings}</p>
+                <p className="text-xs text-gray-400">{paymentPercentage}% paid</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200 dark:from-yellow-950/20 dark:to-yellow-900/20 dark:border-yellow-800/30">
+        <Card className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+              <div className="p-2 bg-yellow-100 rounded-lg">
                 <Star className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Reviews Left</p>
-                <p className="text-2xl font-bold text-foreground">{stats.reviewedBookings}/{stats.totalBookings}</p>
-                <p className="text-xs text-muted-foreground">{reviewPercentage}% reviewed</p>
+                <p className="text-sm font-medium text-gray-500">Reviews Left</p>
+                <p className="text-2xl font-bold text-[#185166]">{stats.reviewedBookings}/{stats.totalBookings}</p>
+                <p className="text-xs text-gray-400">{reviewPercentage}% reviewed</p>
               </div>
             </div>
           </CardContent>
@@ -236,7 +322,7 @@ const CustomerPastBookings = () => {
       {/* Bookings List */}
       <Card>
         <CardContent className="p-6">
-          {bookings.length === 0 ? (
+          {filteredBookings.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No completed bookings found.</p>
@@ -244,7 +330,7 @@ const CustomerPastBookings = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {bookings.map((booking) => (
+              {filteredBookings.map((booking) => (
                 <BookingCard
                   key={booking.id}
                   booking={{

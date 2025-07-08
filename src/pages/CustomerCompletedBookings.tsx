@@ -33,7 +33,7 @@ const CustomerCompletedBookings = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="My Bookings 📋"
+            title="Completed Bookings 📋"
             user={user}
             userRole={userRole}
           />
