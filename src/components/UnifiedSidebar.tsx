@@ -58,11 +58,11 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
                     className={`transition-all duration-200 ${
                       open 
                         ? "h-14 px-3 py-3 justify-start rounded-lg" 
-                        : "h-20 px-3 py-6 justify-center rounded-lg"
+                        : "h-16 px-0 py-4 justify-center rounded-lg"
                     }`}
                   >
-                    <Link to={item.url} className="flex items-center w-full">
-                      <item.icon className={open ? "h-8 w-8 flex-shrink-0" : "h-12 w-12 flex-shrink-0"} />
+                    <Link to={item.url} className={`flex items-center w-full ${open ? "" : "justify-center"}`}>
+                      <item.icon className={open ? "h-6 w-6 flex-shrink-0" : "h-8 w-8 flex-shrink-0"} />
                       {open && (
                         <span className="ml-3 font-medium truncate text-base">
                           {item.title}
