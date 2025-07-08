@@ -52,6 +52,8 @@ const CustomerUpcomingBookings = () => {
   const [duplicatingBooking, setDuplicatingBooking] = useState<Booking | null>(null);
   const [viewMode, setViewMode] = useState<'cards' | 'calendar'>('cards');
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentPage, setCurrentPage] = useState(1);
+  const bookingsPerPage = 10;
 
   // Use selected customer ID if admin is viewing, otherwise use the logged-in user's customer ID
   const activeCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
@@ -378,18 +380,63 @@ const CustomerUpcomingBookings = () => {
                 <p className="text-sm">Book a new cleaning service to get started.</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {bookings.map((booking) => (
-                  <BookingCard
-                    key={booking.id}
-                    booking={booking}
-                    type="upcoming"
-                    onEdit={handleEditBooking}
-                    onCancel={handleCancelBooking}
-                    onDuplicate={handleDuplicateBooking}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="space-y-4">
+                  {bookings.slice((currentPage - 1) * bookingsPerPage, currentPage * bookingsPerPage).map((booking) => (
+                    <BookingCard
+                      key={booking.id}
+                      booking={booking}
+                      type="upcoming"
+                      onEdit={handleEditBooking}
+                      onCancel={handleCancelBooking}
+                      onDuplicate={handleDuplicateBooking}
+                    />
+                  ))}
+                </div>
+                {bookings.length > bookingsPerPage && (
+                  <div className="flex justify-center mt-6">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="border-[#185166] text-[#185166] hover:bg-[#185166] hover:text-white"
+                      >
+                        Previous
+                      </Button>
+                      
+                      {Array.from({ length: Math.ceil(bookings.length / bookingsPerPage) }, (_, i) => {
+                        const pageNum = i + 1;
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={currentPage === pageNum ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={currentPage === pageNum 
+                              ? "bg-[#185166] hover:bg-[#18A5A5] text-white" 
+                              : "border-[#185166] text-[#185166] hover:bg-[#185166] hover:text-white"
+                            }
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      })}
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(Math.min(currentPage + 1, Math.ceil(bookings.length / bookingsPerPage)))}
+                        disabled={currentPage === Math.ceil(bookings.length / bookingsPerPage)}
+                        className="border-[#185166] text-[#185166] hover:bg-[#185166] hover:text-white"
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>

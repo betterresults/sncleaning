@@ -52,7 +52,7 @@ const BookingCard = <T extends BaseBooking>({
       {/* Header with Service Type and Cost */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-2">
-          <h3 className="text-xl font-bold text-foreground tracking-tight">{booking.service_type}</h3>
+          <h3 className="text-xl font-bold text-[#185166] tracking-tight">{booking.service_type}</h3>
           {booking.same_day && (
             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
               Same Day
@@ -60,15 +60,15 @@ const BookingCard = <T extends BaseBooking>({
           )}
         </div>
         <div className="text-right">
-          <div className="text-2xl font-bold text-primary">£{booking.total_cost}</div>
+          <div className="text-2xl font-bold text-gray-600">£{booking.total_cost}</div>
         </div>
       </div>
       
       {/* Date, Time, Hours and Cleaner in a compact row */}
       <div className="flex items-center justify-between mb-4 text-sm">
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Calendar className="h-4 w-4 text-primary" />
+          <div className="flex items-center gap-2 text-[#185166]">
+            <Calendar className="h-4 w-4 text-gray-600" />
             <span className="font-medium">{new Date(booking.date_time).toLocaleDateString('en-GB', { 
               day: 'numeric', 
               month: 'long', 
@@ -79,15 +79,15 @@ const BookingCard = <T extends BaseBooking>({
               hour12: true 
             })}</span>
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Clock className="h-4 w-4 text-orange-500" />
+          <div className="flex items-center gap-2 text-[#185166]">
+            <Clock className="h-4 w-4 text-gray-600" />
             <span className="font-medium">{booking.total_hours}h</span>
           </div>
         </div>
         {booking.cleaner && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <User className="h-4 w-4 text-green-600" />
-            <span className="font-medium text-green-600 dark:text-green-400">{booking.cleaner.first_name} {booking.cleaner.last_name}</span>
+          <div className="flex items-center gap-2 text-sm text-[#185166]">
+            <User className="h-4 w-4 text-gray-600" />
+            <span className="font-medium text-[#185166]">{booking.cleaner.first_name} {booking.cleaner.last_name}</span>
           </div>
         )}
       </div>
@@ -108,8 +108,7 @@ const BookingCard = <T extends BaseBooking>({
           )}
           
           {type === 'upcoming' ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
+            <div className="flex items-center gap-2 text-sm text-[#185166]">
               <span className="truncate">{booking.address}</span>
             </div>
           ) : (
@@ -167,7 +166,7 @@ const BookingCard = <T extends BaseBooking>({
                 variant="outline"
                 size="sm"
                 onClick={() => onEdit?.(booking)}
-                className="bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-700 border-gray-200 hover:border-gray-300 dark:bg-gray-950/20 dark:hover:bg-gray-950/40 dark:text-gray-400 dark:border-gray-800/30"
+                className="bg-[#185166] hover:bg-[#18A5A5] text-white border-[#185166] hover:border-[#18A5A5]"
               >
                 <Edit className="h-4 w-4" />
                 <span className="ml-1 hidden sm:inline">Edit</span>
