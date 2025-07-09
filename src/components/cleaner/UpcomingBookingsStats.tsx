@@ -10,7 +10,7 @@ interface UpcomingBookingsStatsProps {
 
 const UpcomingBookingsStats: React.FC<UpcomingBookingsStatsProps> = ({ stats }) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 w-full px-1 sm:px-0">
+    <div className="grid grid-cols-2 gap-2 sm:gap-6 w-full">
       <Card className="bg-gradient-to-br from-slate-50 to-blue-50 border border-blue-100 shadow-lg">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
           <CardTitle className="text-sm font-medium text-slate-700">Upcoming Bookings</CardTitle>
