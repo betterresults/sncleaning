@@ -33,7 +33,7 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
   const { open } = useSidebar();
 
   return (
-    <Sidebar className="border-r-0 bg-[#185166]" collapsible="icon">
+    <Sidebar className="border-r-0 bg-[#185166]" collapsible="offcanvas">
       <SidebarHeader className={`border-b border-white/10 bg-[#185166] ${open ? "px-6 py-4" : "px-4 py-4"}`}>
         {open && (
           <div className="text-lg font-bold text-white">

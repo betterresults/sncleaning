@@ -189,7 +189,7 @@ const CustomerUpcomingBookings = () => {
   return (
     <div className="w-full space-y-4 sm:space-y-6">
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         <Card className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
           <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2 sm:gap-3">
