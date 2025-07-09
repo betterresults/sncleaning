@@ -237,36 +237,32 @@ const CustomerUpcomingBookings = () => {
       </div>
 
       {/* View Toggle */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h2 className="text-xl sm:text-2xl font-bold text-[#185166]">Your Upcoming Bookings</h2>
-        <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex flex-col gap-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-[#185166] text-center">Your Upcoming Bookings</h2>
+        <div className="grid grid-cols-2 gap-2 max-w-md mx-auto w-full">
           <Button
             variant={viewMode === 'cards' ? 'default' : 'outline'}
-            size="sm"
             onClick={() => setViewMode('cards')}
-            className={`flex items-center gap-2 px-3 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-semibold ${
+            className={`flex items-center justify-center gap-2 py-3 text-sm font-semibold w-full ${
               viewMode === 'cards' 
                 ? 'bg-[#18A5A5] hover:bg-[#185166] text-white' 
                 : 'border-[#18A5A5] text-[#18A5A5] hover:bg-[#18A5A5] hover:text-white'
             }`}
           >
-            <Grid className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="hidden sm:inline">Cards View</span>
-            <span className="sm:hidden">Cards</span>
+            <Grid className="h-4 w-4" />
+            <span>Cards View</span>
           </Button>
           <Button
             variant={viewMode === 'calendar' ? 'default' : 'outline'}
-            size="sm"
             onClick={() => setViewMode('calendar')}
-            className={`flex items-center gap-2 px-3 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-semibold ${
+            className={`flex items-center justify-center gap-2 py-3 text-sm font-semibold w-full ${
               viewMode === 'calendar' 
                 ? 'bg-[#18A5A5] hover:bg-[#185166] text-white' 
                 : 'border-[#18A5A5] text-[#18A5A5] hover:bg-[#18A5A5] hover:text-white'
             }`}
           >
-            <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="hidden sm:inline">Calendar View</span>
-            <span className="sm:hidden">Calendar</span>
+            <Calendar className="h-4 w-4" />
+            <span>Calendar View</span>
           </Button>
         </div>
       </div>
