@@ -109,7 +109,7 @@ const CustomerPastBookings = () => {
   // Filter bookings when filters change
   useEffect(() => {
     applyFilters();
-  }, [bookings, timePeriod, dateFrom, dateTo, cleanerFilter, paymentFilter, ratingFilter]);
+  }, [bookings, timePeriod, dateFrom, dateTo, cleanerFilter, paymentFilter, ratingFilter, reviews]);
 
   const fetchPastBookings = async () => {
     if (!activeCustomerId) return;
