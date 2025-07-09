@@ -42,15 +42,15 @@ const CleanerDashboard = () => {
           user={user}
           onSignOut={handleSignOut}
         />
-        <SidebarInset className="flex-1">
+        <SidebarInset className="flex-1 overflow-x-hidden max-w-full">
           <UnifiedHeader 
             title="My Bookings 📅"
             user={user}
             userRole={userRole}
           />
           
-          <main className="flex-1 w-full overflow-x-hidden">
-            <div className="p-2 sm:p-4 pr-4 sm:pr-8 space-y-3 sm:space-y-4">
+          <main className="flex-1 w-full max-w-full overflow-x-hidden">
+            <div className="p-2 sm:p-4 space-y-3 sm:space-y-4 max-w-full">
               {userRole === 'admin' && (
                 <div className="mb-3 sm:mb-4">
                   <AdminCleanerSelector />
