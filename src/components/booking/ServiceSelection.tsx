@@ -9,6 +9,13 @@ interface ServiceSelectionProps {
 
 const services = [
   {
+    id: 'airbnb-cleaning',
+    title: 'Airbnb Cleaning',
+    icon: Building,
+    available: true,
+    description: 'Turnaround cleaning for short-term rentals'
+  },
+  {
     id: 'end-of-tenancy',
     title: 'End Of Tenancy Cleaning',
     icon: Users,
@@ -45,13 +52,6 @@ const services = [
     description: 'Professional carpet deep cleaning'
   },
   {
-    id: 'airbnb-cleaning',
-    title: 'Airbnb Cleaning',
-    icon: Building,
-    available: true,
-    description: 'Turnaround cleaning for short-term rentals'
-  },
-  {
     id: 'commercial-cleaning',
     title: 'Commercial Cleaning',
     icon: Building,
@@ -65,11 +65,8 @@ const ServiceSelection = ({ onServiceSelect }: ServiceSelectionProps) => {
     <div className="space-y-8">
       <div className="text-center">
         <h2 className="text-3xl font-bold text-[#185166] mb-4">
-          What Type Of Service You Are Interested In?
+          Choose the service you would like to book
         </h2>
-        <p className="text-gray-600 text-lg">
-          Choose the cleaning service that best fits your needs
-        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
