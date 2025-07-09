@@ -50,7 +50,7 @@ const CleanerDashboard = () => {
           />
           
           <main className="flex-1 w-full overflow-x-hidden">
-            <div className="p-2 sm:p-4 pr-3 sm:pr-6 space-y-3 sm:space-y-4">
+            <div className="p-2 sm:p-4 pr-4 sm:pr-8 space-y-3 sm:space-y-4">
               {userRole === 'admin' && (
                 <div className="mb-3 sm:mb-4">
                   <AdminCleanerSelector />
