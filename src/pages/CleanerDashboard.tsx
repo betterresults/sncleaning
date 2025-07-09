@@ -36,8 +36,8 @@ const CleanerDashboard = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
-        <UnifiedSidebar 
+      <div className="min-h-screen flex w-full bg-gray-50 overflow-x-hidden">
+        <UnifiedSidebar
           navigationItems={cleanerNavigation}
           user={user}
           onSignOut={handleSignOut}

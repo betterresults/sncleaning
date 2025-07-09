@@ -98,7 +98,7 @@ const CleanerBookingCard = ({
           </a>
         </div>
         
-        <div className="flex items-center gap-2 sm:ml-4">
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           {/* View Details - Always available */}
           <Button
             variant="outline"
