@@ -26,6 +26,8 @@ import CustomerSettings from "./pages/CustomerSettings";
 import CustomerAddBooking from "./pages/CustomerAddBooking";
 import CustomerPhotos from "./pages/CustomerPhotos";
 import CreateCustomerAccounts from "./pages/CreateCustomerAccounts";
+import CleanerSettings from "./pages/CleanerSettings";
+import AdminSettings from "./pages/AdminSettings";
 import NotFound from "./pages/NotFound";
 import { AdminCustomerProvider } from "./contexts/AdminCustomerContext";
 import { AdminCleanerProvider } from "./contexts/AdminCleanerContext";
@@ -47,14 +49,17 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
+            <Route path="/admin-settings" element={<AdminSettings />} />
             <Route path="/users" element={<Users />} />
             <Route path="/past-bookings" element={<PastBookings />} />
             <Route path="/cleaner-dashboard" element={<CleanerDashboard />} />
-          <Route path="/cleaner-today-bookings" element={<CleanerTodayBookings />} />
-          <Route path="/customer-messages" element={<CustomerMessages />} />
-          <Route path="/cleaner-messages" element={<CleanerMessages />} />
-          <Route path="/admin-chat-management" element={<AdminChatManagement />} />
-          <Route path="/admin-pricing-formulas" element={<AdminPricingFormulas />} />
+           <Route path="/cleaner-today-bookings" element={<CleanerTodayBookings />} />
+           <Route path="/cleaner-settings" element={<CleanerSettings />} />
+           <Route path="/customer-messages" element={<CustomerMessages />} />
+           <Route path="/cleaner-messages" element={<CleanerMessages />} />
+           <Route path="/admin-chat-management" element={<AdminChatManagement />} />
+           <Route path="/admin-pricing-formulas" element={<AdminPricingFormulas />} />
               <Route path="/cleaner-available-bookings" element={<CleanerAvailableBookings />} />
               <Route path="/cleaner-past-bookings" element={<CleanerPastBookings />} />
               <Route path="/cleaner-earnings" element={<CleanerEarnings />} />

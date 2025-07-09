@@ -4,28 +4,34 @@ import { Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { customerNavigation } from '@/lib/navigationItems';
-import PersonalInfoEditor from '@/components/customer/PersonalInfoEditor';
-import PaymentMethodManager from '@/components/customer/PaymentMethodManager';
-import AddressManager from '@/components/customer/AddressManager';
+import { adminNavigation } from '@/lib/navigationItems';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Lock, Eye, EyeOff } from 'lucide-react';
+import { Lock, User, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-const CustomerSettings = () => {
-  const { user, userRole, customerId, signOut } = useAuth();
+const AdminSettings = () => {
+  const { user, userRole, loading, signOut } = useAuth();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,6 +68,7 @@ const CustomerSettings = () => {
       });
 
       setPasswordData({
+        currentPassword: '',
         newPassword: '',
         confirmPassword: ''
       });
@@ -77,15 +84,16 @@ const CustomerSettings = () => {
     }
   };
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-base">Loading settings...</div>
+      </div>
+    );
+  }
 
-  if (!user || (!customerId && userRole !== 'admin')) {
+  // Only allow admins
+  if (!user || userRole !== 'admin') {
     return <Navigate to="/auth" replace />;
   }
 
@@ -93,24 +101,50 @@ const CustomerSettings = () => {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
         <UnifiedSidebar 
-          navigationItems={customerNavigation}
+          navigationItems={adminNavigation}
           user={user}
           onSignOut={handleSignOut}
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="Settings ⚙️"
+            title="Admin Settings ⚙️"
             user={user}
             userRole={userRole}
           />
           
-          <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
-            <div className="max-w-4xl mx-auto space-y-6">
-              <PersonalInfoEditor />
-              <AddressManager />
-              <PaymentMethodManager />
+          <main className="flex-1 p-2 sm:p-4 space-y-3 sm:space-y-4 w-full overflow-x-hidden">
+            <div className="w-full px-1 sm:px-0 max-w-2xl mx-auto">
+              <h1 className="text-2xl font-bold text-[#185166] mb-6">Admin Settings</h1>
               
-              {/* Change Password Section */}
+              {/* Account Information */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-[#185166]">
+                    <User className="h-5 w-5" />
+                    Account Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Email</Label>
+                    <Input value={user?.email || ''} disabled className="bg-gray-50" />
+                  </div>
+                  <div>
+                    <Label>Name</Label>
+                    <Input 
+                      value={`${user?.user_metadata?.first_name || ''} ${user?.user_metadata?.last_name || ''}`.trim() || 'Admin User'} 
+                      disabled 
+                      className="bg-gray-50" 
+                    />
+                  </div>
+                  <div>
+                    <Label>Role</Label>
+                    <Input value="Administrator" disabled className="bg-gray-50" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Change Password */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-[#185166]">
@@ -119,7 +153,7 @@ const CustomerSettings = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
+                  <form onSubmit={handlePasswordChange} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="newPassword">New Password</Label>
                       <div className="relative">
@@ -194,4 +228,4 @@ const CustomerSettings = () => {
   );
 };
 
-export default CustomerSettings;
+export default AdminSettings;

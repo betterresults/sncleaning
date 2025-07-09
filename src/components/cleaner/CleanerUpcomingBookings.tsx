@@ -231,7 +231,7 @@ const CleanerUpcomingBookings = () => {
   }
 
   return (
-    <div className="space-y-3 sm:space-y-4 max-w-full">
+    <div className="space-y-3 sm:space-y-4 w-full px-1 sm:px-0">
       <UpcomingBookingsStats stats={stats} />
 
       <BookingFilters

@@ -33,6 +33,11 @@ export const cleanerNavigation = [
     url: "/cleaner-earnings",
     icon: DollarSign,
   },
+  {
+    title: "Settings",
+    url: "/cleaner-settings",
+    icon: Settings,
+  },
 ];
 
 export const customerNavigation = [
@@ -100,5 +105,10 @@ export const adminNavigation = [
     title: "Chat Management",
     url: "/admin-chat-management",
     icon: MessageCircle,
+  },
+  {
+    title: "Settings",
+    url: "/admin-settings",
+    icon: Settings,
   },
 ];
