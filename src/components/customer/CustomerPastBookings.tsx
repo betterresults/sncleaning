@@ -306,9 +306,13 @@ const CustomerPastBookings = () => {
   const handleSubmitReview = async () => {
     if (!selectedBookingForReview) return;
 
+    // Determine the effective customer ID (either the logged-in customer or selected customer for admin)
+    const effectiveCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
+    
     try {
       console.log('Submitting review for booking:', selectedBookingForReview.id);
       console.log('Review data:', { rating: reviewRating, text: reviewText });
+      console.log('Effective customer ID:', effectiveCustomerId);
 
       const { data, error } = await supabase
         .from('reviews')
