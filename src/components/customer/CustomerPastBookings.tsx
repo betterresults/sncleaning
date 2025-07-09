@@ -340,7 +340,13 @@ const CustomerPastBookings = () => {
       setReviewRating(5);
       setReviewText('');
       
-      // Refresh reviews
+      // Update the reviews state to include the new review
+      setReviews(prev => ({
+        ...prev,
+        [selectedBookingForReview.id]: true
+      }));
+      
+      // Refresh reviews to get the latest data
       fetchPastBookings();
     } catch (error) {
       console.error('Error submitting review:', error);
