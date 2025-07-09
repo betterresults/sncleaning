@@ -49,9 +49,13 @@ const CleanerDashboard = () => {
             userRole={userRole}
           />
           
-          <main className="flex-1 p-2 sm:p-4 space-y-3 sm:space-y-4 max-w-full overflow-x-hidden">
-            <div className="w-full">
-              {userRole === 'admin' && <AdminCleanerSelector />}
+          <main className="flex-1 p-2 sm:p-4 space-y-3 sm:space-y-4 w-full overflow-x-hidden">
+            <div className="w-full px-1 sm:px-0">
+              {userRole === 'admin' && (
+                <div className="mb-3 sm:mb-4">
+                  <AdminCleanerSelector />
+                </div>
+              )}
               <CleanerUpcomingBookings />
             </div>
           </main>
