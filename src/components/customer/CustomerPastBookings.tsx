@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Calendar, DollarSign, Star, CalendarDays, Filter, X } from 'lucide-react';
+import { CheckCircle, Calendar, DollarSign, Star, CalendarDays, Filter, X, Grid, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -56,6 +56,14 @@ const CustomerPastBookings = () => {
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [serviceTypes, setServiceTypes] = useState<string[]>([]);
+  const [viewMode, setViewMode] = useState<'cards' | 'calendar'>('cards');
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentPage, setCurrentPage] = useState(1);
+  const bookingsPerPage = 10;
+  const [cleanerFilter, setCleanerFilter] = useState('all');
+  const [paymentFilter, setPaymentFilter] = useState('all');
+  const [ratingFilter, setRatingFilter] = useState('all');
+  const [availableCleaners, setAvailableCleaners] = useState<{id: number, name: string}[]>([]);
   
   const [stats, setStats] = useState({
     totalBookings: 0,
@@ -101,7 +109,7 @@ const CustomerPastBookings = () => {
   // Filter bookings when filters change
   useEffect(() => {
     applyFilters();
-  }, [bookings, timePeriod, dateFrom, dateTo]);
+  }, [bookings, timePeriod, dateFrom, dateTo, cleanerFilter, paymentFilter, ratingFilter]);
 
   const fetchPastBookings = async () => {
     if (!activeCustomerId) return;
@@ -167,6 +175,18 @@ const CustomerPastBookings = () => {
       const uniqueServiceTypes = [...new Set(bookingsWithCleanerInfo.map(b => b.service_type).filter(Boolean))];
       setServiceTypes(uniqueServiceTypes);
 
+      // Extract unique cleaners for filter
+      const uniqueCleaners = bookingsWithCleanerInfo
+        .filter(b => b.cleaner)
+        .map(b => ({
+          id: b.cleaner_id!,
+          name: `${b.cleaner!.first_name} ${b.cleaner!.last_name}`
+        }))
+        .filter((cleaner, index, self) => 
+          index === self.findIndex(c => c.id === cleaner.id)
+        );
+      setAvailableCleaners(uniqueCleaners);
+
       // Fetch reviews for these bookings
       const { data: reviewData } = await supabase
         .from('reviews')
@@ -217,6 +237,35 @@ const CustomerPastBookings = () => {
       );
     }
 
+    // Cleaner filter
+    if (cleanerFilter !== 'all') {
+      filtered = filtered.filter(booking => 
+        booking.cleaner_id === parseInt(cleanerFilter)
+      );
+    }
+
+    // Payment filter
+    if (paymentFilter !== 'all') {
+      if (paymentFilter === 'paid') {
+        filtered = filtered.filter(booking => 
+          booking.payment_status && booking.payment_status.toLowerCase().includes('paid')
+        );
+      } else if (paymentFilter === 'unpaid') {
+        filtered = filtered.filter(booking => 
+          !booking.payment_status || !booking.payment_status.toLowerCase().includes('paid')
+        );
+      }
+    }
+
+    // Rating filter
+    if (ratingFilter !== 'all') {
+      if (ratingFilter === 'reviewed') {
+        filtered = filtered.filter(booking => reviews[booking.id]);
+      } else if (ratingFilter === 'not-reviewed') {
+        filtered = filtered.filter(booking => !reviews[booking.id]);
+      }
+    }
+
     setFilteredBookings(filtered);
 
     // Calculate statistics for filtered results
@@ -242,6 +291,9 @@ const CustomerPastBookings = () => {
     setDateFrom(undefined);
     setDateTo(undefined);
     setTimePeriod('current-month');
+    setCleanerFilter('all');
+    setPaymentFilter('all');
+    setRatingFilter('all');
   };
 
   const handleReview = (booking: PastBooking) => {
@@ -366,6 +418,302 @@ const CustomerPastBookings = () => {
         </CardContent>
       </Card>
 
+      {/* Filters Card */}
+      <Card className="shadow-sm">
+        <CardContent className="p-0">
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="filters" className="border-0">
+              <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                <div className="flex items-center space-x-2">
+                  <Filter className="h-4 w-4" />
+                  <span className="font-medium">Additional Filters</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Cleaner</Label>
+                    <Select value={cleanerFilter} onValueChange={setCleanerFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All cleaners" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All cleaners</SelectItem>
+                        {availableCleaners.map((cleaner) => (
+                          <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
+                            {cleaner.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Payment Status</Label>
+                    <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All payments" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All payments</SelectItem>
+                        <SelectItem value="paid">Paid</SelectItem>
+                        <SelectItem value="unpaid">Unpaid</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Review Status</Label>
+                    <Select value={ratingFilter} onValueChange={setRatingFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All reviews" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All reviews</SelectItem>
+                        <SelectItem value="reviewed">Reviewed</SelectItem>
+                        <SelectItem value="not-reviewed">Not reviewed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Date From</Label>
+                    <Input
+                      type="date"
+                      value={dateFrom ? format(dateFrom, 'yyyy-MM-dd') : ''}
+                      onChange={(e) => setDateFrom(e.target.value ? new Date(e.target.value) : undefined)}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Date To</Label>
+                    <Input
+                      type="date"
+                      value={dateTo ? format(dateTo, 'yyyy-MM-dd') : ''}
+                      onChange={(e) => setDateTo(e.target.value ? new Date(e.target.value) : undefined)}
+                    />
+                  </div>
+                  
+                  <div className="flex items-end">
+                    <Button onClick={clearFilters} variant="outline" className="w-full">
+                      Clear Filters
+                    </Button>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </CardContent>
+      </Card>
+
+      {/* View Toggle */}
+      <div className="flex flex-col gap-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-[#185166] text-center">Your Completed Bookings</h2>
+        <div className="grid grid-cols-2 gap-2 max-w-md mx-auto w-full">
+          <Button
+            variant={viewMode === 'cards' ? 'default' : 'outline'}
+            onClick={() => setViewMode('cards')}
+            className={`flex items-center justify-center gap-2 py-3 text-sm font-semibold w-full ${
+              viewMode === 'cards' 
+                ? 'bg-[#18A5A5] hover:bg-[#185166] text-white' 
+                : 'border-[#18A5A5] text-[#18A5A5] hover:bg-[#18A5A5] hover:text-white'
+            }`}
+          >
+            <Grid className="h-4 w-4" />
+            <span>Cards View</span>
+          </Button>
+          <Button
+            variant={viewMode === 'calendar' ? 'default' : 'outline'}
+            onClick={() => setViewMode('calendar')}
+            className={`flex items-center justify-center gap-2 py-3 text-sm font-semibold w-full ${
+              viewMode === 'calendar' 
+                ? 'bg-[#18A5A5] hover:bg-[#185166] text-white' 
+                : 'border-[#18A5A5] text-[#18A5A5] hover:bg-[#18A5A5] hover:text-white'
+            }`}
+          >
+            <Calendar className="h-4 w-4" />
+            <span>Calendar View</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Calendar View */}
+      {viewMode === 'calendar' && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                {currentMonth.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-7 gap-2 mb-4">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                <div key={day} className="p-2 text-center text-sm font-medium text-muted-foreground">
+                  {day}
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-2">
+              {(() => {
+                const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+                const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+                const startDate = new Date(monthStart);
+                startDate.setDate(startDate.getDate() - monthStart.getDay());
+                
+                const days = [];
+                const endDate = new Date(monthEnd);
+                endDate.setDate(endDate.getDate() + (6 - monthEnd.getDay()));
+                
+                for (let day = new Date(startDate); day <= endDate; day.setDate(day.getDate() + 1)) {
+                  const dayBookings = filteredBookings.filter(booking => {
+                    const bookingDate = new Date(booking.date_time);
+                    return bookingDate.toDateString() === day.toDateString();
+                  });
+                  
+                  const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
+                  const isToday = day.toDateString() === new Date().toDateString();
+                  
+                  days.push(
+                    <div 
+                      key={day.toISOString()} 
+                      className={`min-h-[80px] p-1 border rounded-lg ${
+                        isCurrentMonth ? 'bg-card' : 'bg-muted/30'
+                      } ${isToday ? 'ring-2 ring-primary' : ''}`}
+                    >
+                      <div className={`text-sm font-medium mb-1 ${
+                        isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'
+                      }`}>
+                        {day.getDate()}
+                      </div>
+                      {dayBookings.map(booking => (
+                        <div
+                          key={booking.id}
+                          className="text-xs p-1 mb-1 rounded truncate bg-green-100 text-green-800 hover:bg-green-200 cursor-pointer"
+                          title={`${booking.service_type} - ${booking.address} - ${new Date(booking.date_time).toLocaleTimeString('en-GB', { 
+                            hour: 'numeric', 
+                            minute: '2-digit',
+                            hour12: true 
+                          })}`}
+                        >
+                          <div className="font-medium">{booking.service_type}</div>
+                          <div className="text-[10px] opacity-80">{booking.address}</div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                }
+                
+                return days;
+              })()}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Cards View */}
+      {viewMode === 'cards' && (
+        <Card>
+          <CardContent className="p-3 sm:p-6">
+            {filteredBookings.length === 0 ? (
+              <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                <CheckCircle className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-4 opacity-50" />
+                <p>No completed bookings found.</p>
+                <p className="text-sm">Your completed bookings will appear here.</p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-3 sm:space-y-4">
+                  {filteredBookings.slice((currentPage - 1) * bookingsPerPage, currentPage * bookingsPerPage).map((booking) => (
+                    <BookingCard
+                      key={booking.id}
+                      booking={{
+                        id: booking.id,
+                        date_time: booking.date_time,
+                        address: booking.address,
+                        postcode: booking.postcode,
+                        service_type: booking.service_type,
+                        total_hours: booking.total_hours,
+                        total_cost: parseFloat(booking.total_cost) || 0,
+                        booking_status: booking.booking_status,
+                        payment_status: booking.payment_status,
+                        same_day: booking.same_day === 'true',
+                        cleaner: booking.cleaner
+                      }}
+                      type="completed"
+                      onReview={(b) => handleReview(booking)}
+                      onSeePhotos={booking.has_photos ? (b) => handleSeePhotos(booking) : undefined}
+                      hasReview={reviews[booking.id] || false}
+                    />
+                  ))}
+                </div>
+                {filteredBookings.length > bookingsPerPage && (
+                  <div className="flex justify-center mt-6">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="border-[#185166] text-[#185166] hover:bg-[#185166] hover:text-white"
+                      >
+                        Previous
+                      </Button>
+                      
+                      {Array.from({ length: Math.ceil(filteredBookings.length / bookingsPerPage) }, (_, i) => {
+                        const pageNum = i + 1;
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={currentPage === pageNum ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={currentPage === pageNum 
+                              ? "bg-[#185166] hover:bg-[#18A5A5] text-white" 
+                              : "border-[#185166] text-[#185166] hover:bg-[#185166] hover:text-white"
+                            }
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      })}
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(Math.min(currentPage + 1, Math.ceil(filteredBookings.length / bookingsPerPage)))}
+                        disabled={currentPage === Math.ceil(filteredBookings.length / bookingsPerPage)}
+                        className="border-[#185166] text-[#185166] hover:bg-[#185166] hover:text-white"
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Statistics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
@@ -426,44 +774,6 @@ const CustomerPastBookings = () => {
           </CardContent>
         </Card>
       </div>
-
-      {/* Bookings List */}
-      <Card>
-        <CardContent className="p-3 sm:p-6">
-          {filteredBookings.length === 0 ? (
-            <div className="text-center py-6 sm:py-8 text-muted-foreground">
-              <CheckCircle className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-4 opacity-50" />
-              <p>No completed bookings found.</p>
-              <p className="text-sm">Your completed bookings will appear here.</p>
-            </div>
-          ) : (
-            <div className="space-y-3 sm:space-y-4">
-              {filteredBookings.map((booking) => (
-                <BookingCard
-                  key={booking.id}
-                  booking={{
-                    id: booking.id,
-                    date_time: booking.date_time,
-                    address: booking.address,
-                    postcode: booking.postcode,
-                    service_type: booking.service_type,
-                    total_hours: booking.total_hours,
-                    total_cost: parseFloat(booking.total_cost) || 0,
-                    booking_status: booking.booking_status,
-                    payment_status: booking.payment_status,
-                    same_day: booking.same_day === 'true',
-                    cleaner: booking.cleaner
-                  }}
-                  type="completed"
-                  onReview={(b) => handleReview(booking)}
-                  onSeePhotos={booking.has_photos ? (b) => handleSeePhotos(booking) : undefined}
-                  hasReview={reviews[booking.id] || false}
-                />
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {selectedBooking && (
         <CleaningPhotosViewDialog

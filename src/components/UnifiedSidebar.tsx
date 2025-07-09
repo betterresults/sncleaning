@@ -20,6 +20,8 @@ interface NavigationItem {
   title: string;
   url: string;
   icon: React.ComponentType<{ className?: string }>;
+  disabled?: boolean;
+  subtitle?: string;
 }
 
 interface UnifiedSidebarProps {
@@ -45,23 +47,39 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
           <SidebarGroupContent className="px-3 py-2">
             <SidebarMenu className="space-y-1">
               {navigationItems.map((item) => {
-                const isActive = location.pathname === item.url;
+                const isActive = location.pathname === item.url && !item.disabled;
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton 
-                      asChild 
+                      asChild={!item.disabled}
                       className={`h-12 transition-all duration-200 border-0 justify-start px-4 rounded-lg mx-2 ${
                         isActive 
                           ? "!bg-white/20 !text-white shadow-sm hover:!bg-white/25 hover:!text-white" 
                           : "!text-white/90 hover:!text-white hover:!bg-white/10"
-                      }`}
+                      } ${item.disabled ? "opacity-60 cursor-not-allowed" : ""}`}
                     >
-                      <Link to={item.url} className="flex items-center w-full !text-white hover:!text-white">
-                        <item.icon className="h-5 w-5 flex-shrink-0 !text-white" />
-                        <span className="ml-3 font-medium text-sm !text-white">
-                          {item.title}
-                        </span>
-                      </Link>
+                      {item.disabled ? (
+                        <div className="flex items-center w-full !text-white">
+                          <item.icon className="h-5 w-5 flex-shrink-0 !text-white" />
+                          <div className="ml-3 flex flex-col">
+                            <span className="font-medium text-sm !text-white">
+                              {item.title}
+                            </span>
+                            {item.subtitle && (
+                              <span className="text-xs !text-white/60">
+                                {item.subtitle}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <Link to={item.url} className="flex items-center w-full !text-white hover:!text-white">
+                          <item.icon className="h-5 w-5 flex-shrink-0 !text-white" />
+                          <span className="ml-3 font-medium text-sm !text-white">
+                            {item.title}
+                          </span>
+                        </Link>
+                      )}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );

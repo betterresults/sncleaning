@@ -13,8 +13,10 @@ export const cleanerNavigation = [
   },
   {
     title: "Messages",
-    url: "/cleaner-messages",
+    url: "#",
     icon: MessageCircle,
+    disabled: true,
+    subtitle: "Coming Soon"
   },
   {
     title: "Available Bookings",
@@ -51,8 +53,10 @@ export const customerNavigation = [
   },
   {
     title: "Messages",
-    url: "/customer-messages",
+    url: "#",
     icon: MessageCircle,
+    disabled: true,
+    subtitle: "Coming Soon"
   },
   {
     title: "Settings",
