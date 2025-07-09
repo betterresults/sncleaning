@@ -32,7 +32,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   const [showAdditionalTab, setShowAdditionalTab] = useState(false);
 
   const bookingDate = new Date(booking.date_time).toISOString().split('T')[0];
-  const folderPath = `${booking.postcode}_${bookingDate}_${booking.customer}`;
+  const folderPath = `${booking.id}-${booking.postcode}_${bookingDate}_${booking.customer}`;
 
   const handleFileSelect = (files: FileList | null, type: 'before' | 'after' | 'additional') => {
     if (!files) return;
