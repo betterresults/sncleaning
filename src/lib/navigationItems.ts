@@ -77,9 +77,25 @@ export const adminNavigation = [
     icon: Home,
   },
   {
-    title: "Past Bookings",
-    url: "/past-bookings",
-    icon: History,
+    title: "Bookings",
+    icon: Calendar,
+    subItems: [
+      {
+        title: "Add New Booking",
+        url: "/customer-add-booking",
+        icon: Plus,
+      },
+      {
+        title: "Upcoming Bookings",
+        url: "/admin-dashboard",
+        icon: BarChart3,
+      },
+      {
+        title: "Completed Bookings",
+        url: "/past-bookings",
+        icon: History,
+      },
+    ],
   },
   {
     title: "Users",
@@ -90,11 +106,6 @@ export const adminNavigation = [
     title: "Create Accounts",
     url: "/create-customer-accounts",
     icon: Plus,
-  },
-  {
-    title: "Admin Dashboard",
-    url: "/admin-dashboard",
-    icon: BarChart3,
   },
   {
     title: "Pricing Formulas",

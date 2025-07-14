@@ -91,7 +91,6 @@ export type Database = {
           first_cleaning: string | null
           first_name: string | null
           frequently: string | null
-          frontly_id: number | null
           hours_required: number | null
           id: number
           invoice_id: string | null
@@ -159,7 +158,6 @@ export type Database = {
           first_cleaning?: string | null
           first_name?: string | null
           frequently?: string | null
-          frontly_id?: number | null
           hours_required?: number | null
           id?: number
           invoice_id?: string | null
@@ -227,7 +225,6 @@ export type Database = {
           first_cleaning?: string | null
           first_name?: string | null
           frequently?: string | null
-          frontly_id?: number | null
           hours_required?: number | null
           id?: number
           invoice_id?: string | null
@@ -724,8 +721,6 @@ export type Database = {
           cleaning_cost_per_visit: string | null
           cleaning_time: string | null
           cleaning_type: string | null
-          client_status: string | null
-          client_type: string | null
           company: string | null
           cost_deduction: string | null
           coupon_code: string | null
@@ -743,7 +738,6 @@ export type Database = {
           first_cleaning: string | null
           first_name: string | null
           frequently: string | null
-          frontly_id: number | null
           hours_required: number | null
           id: number
           invoice_id: string | null
@@ -770,7 +764,6 @@ export type Database = {
           same_day: string | null
           service_type: string | null
           steam_cleaning_cost: string | null
-          terms: string | null
           total_cost: string | null
           total_hours: number | null
           upholstery_items: string | null
@@ -791,8 +784,6 @@ export type Database = {
           cleaning_cost_per_visit?: string | null
           cleaning_time?: string | null
           cleaning_type?: string | null
-          client_status?: string | null
-          client_type?: string | null
           company?: string | null
           cost_deduction?: string | null
           coupon_code?: string | null
@@ -810,7 +801,6 @@ export type Database = {
           first_cleaning?: string | null
           first_name?: string | null
           frequently?: string | null
-          frontly_id?: number | null
           hours_required?: number | null
           id: number
           invoice_id?: string | null
@@ -837,7 +827,6 @@ export type Database = {
           same_day?: string | null
           service_type?: string | null
           steam_cleaning_cost?: string | null
-          terms?: string | null
           total_cost?: string | null
           total_hours?: number | null
           upholstery_items?: string | null
@@ -858,8 +847,6 @@ export type Database = {
           cleaning_cost_per_visit?: string | null
           cleaning_time?: string | null
           cleaning_type?: string | null
-          client_status?: string | null
-          client_type?: string | null
           company?: string | null
           cost_deduction?: string | null
           coupon_code?: string | null
@@ -877,7 +864,6 @@ export type Database = {
           first_cleaning?: string | null
           first_name?: string | null
           frequently?: string | null
-          frontly_id?: number | null
           hours_required?: number | null
           id?: number
           invoice_id?: string | null
@@ -904,7 +890,6 @@ export type Database = {
           same_day?: string | null
           service_type?: string | null
           steam_cleaning_cost?: string | null
-          terms?: string | null
           total_cost?: string | null
           total_hours?: number | null
           upholstery_items?: string | null
@@ -1222,11 +1207,11 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
-      move_past_bookings: {
+      move_sub_bookings_to_past: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
-      move_sub_bookings_to_past: {
+      move_to_past_bookings_table: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }

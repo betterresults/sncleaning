@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { User, Menu } from 'lucide-react';
+import { User, Menu, ChevronDown, ChevronRight } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -11,17 +11,27 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 
-interface NavigationItem {
+interface NavigationSubItem {
   title: string;
   url: string;
   icon: React.ComponentType<{ className?: string }>;
+}
+
+interface NavigationItem {
+  title: string;
+  url?: string;
+  icon: React.ComponentType<{ className?: string }>;
   disabled?: boolean;
   subtitle?: string;
+  subItems?: NavigationSubItem[];
 }
 
 interface UnifiedSidebarProps {
@@ -33,6 +43,7 @@ interface UnifiedSidebarProps {
 export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSidebarProps) {
   const location = useLocation();
   const { open } = useSidebar();
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   return (
     <Sidebar className="border-r-0 bg-[#185166]" collapsible="offcanvas">
@@ -47,16 +58,35 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
           <SidebarGroupContent className="px-3 py-2">
             <SidebarMenu className="space-y-1">
               {navigationItems.map((item) => {
-                const isActive = location.pathname === item.url && !item.disabled;
+                const isActive = item.url && location.pathname === item.url && !item.disabled;
+                const hasSubItems = item.subItems && item.subItems.length > 0;
+                const isExpanded = expandedItems.includes(item.title);
+                
+                // Check if any subitem is active
+                const hasActiveSubItem = hasSubItems && item.subItems?.some(subItem => 
+                  location.pathname === subItem.url
+                );
+
+                const toggleExpanded = () => {
+                  if (hasSubItems) {
+                    setExpandedItems(prev => 
+                      prev.includes(item.title) 
+                        ? prev.filter(title => title !== item.title)
+                        : [...prev, item.title]
+                    );
+                  }
+                };
+
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton 
-                      asChild={!item.disabled}
+                      asChild={!item.disabled && !hasSubItems}
+                      onClick={hasSubItems ? toggleExpanded : undefined}
                       className={`h-12 transition-all duration-200 border-0 justify-start px-4 rounded-lg mx-2 ${
-                        isActive 
+                        isActive || hasActiveSubItem
                           ? "!bg-white/20 !text-white shadow-sm hover:!bg-white/25 hover:!text-white" 
                           : "!text-white/90 hover:!text-white hover:!bg-white/10"
-                      } ${item.disabled ? "opacity-60 cursor-not-allowed" : ""}`}
+                      } ${item.disabled ? "opacity-60 cursor-not-allowed" : ""} ${hasSubItems ? "cursor-pointer" : ""}`}
                     >
                       {item.disabled ? (
                         <div className="flex items-center w-full !text-white">
@@ -72,8 +102,22 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
                             )}
                           </div>
                         </div>
+                      ) : hasSubItems ? (
+                        <div className="flex items-center justify-between w-full !text-white hover:!text-white">
+                          <div className="flex items-center">
+                            <item.icon className="h-5 w-5 flex-shrink-0 !text-white" />
+                            <span className="ml-3 font-medium text-sm !text-white">
+                              {item.title}
+                            </span>
+                          </div>
+                          {isExpanded ? (
+                            <ChevronDown className="h-4 w-4 !text-white" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 !text-white" />
+                          )}
+                        </div>
                       ) : (
-                        <Link to={item.url} className="flex items-center w-full !text-white hover:!text-white">
+                        <Link to={item.url!} className="flex items-center w-full !text-white hover:!text-white">
                           <item.icon className="h-5 w-5 flex-shrink-0 !text-white" />
                           <span className="ml-3 font-medium text-sm !text-white">
                             {item.title}
@@ -81,6 +125,30 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
                         </Link>
                       )}
                     </SidebarMenuButton>
+                    
+                    {hasSubItems && isExpanded && (
+                      <SidebarMenuSub>
+                        {item.subItems?.map((subItem) => {
+                          const isSubActive = location.pathname === subItem.url;
+                          return (
+                            <SidebarMenuSubItem key={subItem.title}>
+                              <SidebarMenuSubButton 
+                                asChild
+                                isActive={isSubActive}
+                                className="!text-white/80 hover:!text-white hover:!bg-white/10"
+                              >
+                                <Link to={subItem.url} className="flex items-center w-full">
+                                  <subItem.icon className="h-4 w-4 flex-shrink-0 !text-white/80" />
+                                  <span className="ml-2 text-sm">
+                                    {subItem.title}
+                                  </span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          );
+                        })}
+                      </SidebarMenuSub>
+                    )}
                   </SidebarMenuItem>
                 );
               })}
