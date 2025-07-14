@@ -82,7 +82,7 @@ export const adminNavigation = [
     subItems: [
       {
         title: "Add New Booking",
-        url: "/customer-add-booking",
+        url: "/admin-add-booking",
         icon: Plus,
       },
       {

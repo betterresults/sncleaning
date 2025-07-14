@@ -26,6 +26,7 @@ import CustomerSettings from "./pages/CustomerSettings";
 import CustomerAddBooking from "./pages/CustomerAddBooking";
 import CustomerPhotos from "./pages/CustomerPhotos";
 import CreateCustomerAccounts from "./pages/CreateCustomerAccounts";
+import AdminAddBooking from "./pages/AdminAddBooking";
 import CleanerSettings from "./pages/CleanerSettings";
 import AdminSettings from "./pages/AdminSettings";
 import NotFound from "./pages/NotFound";
@@ -66,8 +67,9 @@ const App = () => (
               <Route path="/customer-dashboard" element={<CustomerDashboard />} />
               <Route path="/customer-completed-bookings" element={<CustomerCompletedBookings />} />
               <Route path="/customer-settings" element={<CustomerSettings />} />
-              <Route path="/customer-add-booking" element={<CustomerAddBooking />} />
-              <Route path="/photos/:folderName" element={<CustomerPhotos />} />
+               <Route path="/customer-add-booking" element={<CustomerAddBooking />} />
+               <Route path="/admin-add-booking" element={<AdminAddBooking />} />
+               <Route path="/photos/:folderName" element={<CustomerPhotos />} />
               <Route path="/create-customer-accounts" element={<CreateCustomerAccounts />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
