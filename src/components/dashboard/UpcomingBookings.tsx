@@ -251,19 +251,24 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   const handleDelete = async (bookingId: number) => {
     if (window.confirm('Are you sure you want to delete this booking?')) {
       try {
-        const { error } = await supabase
+        console.log('Attempting to delete booking with ID:', bookingId);
+        const { error, data } = await supabase
           .from('bookings')
           .delete()
           .eq('id', bookingId);
 
         if (error) {
           console.error('Error deleting booking:', error);
+          alert('Failed to delete booking: ' + error.message);
           return;
         }
 
+        console.log('Booking deleted successfully:', data);
+        alert('Booking deleted successfully!');
         fetchData();
       } catch (error) {
         console.error('Error deleting booking:', error);
+        alert('An unexpected error occurred while deleting the booking.');
       }
     }
   };
