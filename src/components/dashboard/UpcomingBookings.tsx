@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Edit, Trash2, Filter, Search, Settings, Copy, X, UserPlus, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import DashboardStats from '../admin/DashboardStats';
 import BulkEditBookingsDialog from './BulkEditBookingsDialog';
 import EditBookingDialog from './EditBookingDialog';
@@ -93,6 +94,8 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
   const [selectedBookingForDuplicate, setSelectedBookingForDuplicate] = useState<Booking | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [bookingToDelete, setBookingToDelete] = useState<number | null>(null);
   const { toast } = useToast();
 
   const fetchData = async () => {
@@ -251,66 +254,74 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   };
 
   const handleDelete = async (bookingId: number) => {
-    if (window.confirm('Are you sure you want to delete this booking?')) {
-      try {
-        console.log('Attempting to delete booking with ID:', bookingId);
-        
-        // Check if booking exists first
-        const { data: existingBooking, error: checkError } = await supabase
-          .from('bookings')
-          .select('id')
-          .eq('id', bookingId)
-          .single();
+    setBookingToDelete(bookingId);
+    setDeleteDialogOpen(true);
+  };
 
-        if (checkError || !existingBooking) {
-          console.error('Booking not found:', checkError);
-          toast({
-            title: "Error",
-            description: "Booking not found",
-            variant: "destructive"
-          });
-          return;
-        }
+  const confirmDelete = async () => {
+    if (!bookingToDelete) return;
+    
+    try {
+      console.log('Attempting to delete booking with ID:', bookingToDelete);
+      
+      // Check if booking exists first
+      const { data: existingBooking, error: checkError } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('id', bookingToDelete)
+        .single();
 
-        const { error, count } = await supabase
-          .from('bookings')
-          .delete({ count: 'exact' })
-          .eq('id', bookingId);
+      if (checkError || !existingBooking) {
+        console.error('Booking not found:', checkError);
+        toast({
+          title: "Error",
+          description: "Booking not found",
+          variant: "destructive"
+        });
+        return;
+      }
 
-        if (error) {
-          console.error('Error deleting booking:', error);
-          toast({
-            title: "Error",
-            description: `Failed to delete booking: ${error.message}`,
-            variant: "destructive"
-          });
-          return;
-        }
+      const { error, count } = await supabase
+        .from('bookings')
+        .delete({ count: 'exact' })
+        .eq('id', bookingToDelete);
 
-        console.log('Deletion result - affected rows:', count);
-        
-        if (count === 0) {
-          toast({
-            title: "Warning",
-            description: "No booking was deleted. It may have already been removed.",
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "Success",
-            description: "Booking deleted successfully!"
-          });
-        }
-        
-        fetchData();
-      } catch (error) {
+      if (error) {
         console.error('Error deleting booking:', error);
         toast({
           title: "Error",
-          description: "An unexpected error occurred while deleting the booking.",
+          description: `Failed to delete booking: ${error.message}`,
           variant: "destructive"
         });
+        return;
       }
+
+      console.log('Deletion result - affected rows:', count);
+      
+      if (count === 0) {
+        toast({
+          title: "Warning",
+          description: "No booking was deleted. It may have already been removed.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Booking deleted successfully!"
+        });
+      }
+      
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting booking:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while deleting the booking.",
+        variant: "destructive"
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setBookingToDelete(null);
     }
   };
 
@@ -747,6 +758,25 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
         onOpenChange={setDuplicateDialogOpen}
         onSuccess={fetchData}
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Booking</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this booking? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
