@@ -31,6 +31,7 @@ import CleanerSettings from "./pages/CleanerSettings";
 import AdminSettings from "./pages/AdminSettings";
 import RecurringBookings from "./pages/RecurringBookings";
 import AddRecurringBooking from "./pages/AddRecurringBooking";
+import EditRecurringBooking from "./pages/EditRecurringBooking";
 import NotFound from "./pages/NotFound";
 import { AdminCustomerProvider } from "./contexts/AdminCustomerContext";
 import { AdminCleanerProvider } from "./contexts/AdminCleanerContext";
@@ -75,6 +76,7 @@ const App = () => (
                <Route path="/create-customer-accounts" element={<CreateCustomerAccounts />} />
                <Route path="/recurring-bookings" element={<RecurringBookings />} />
                <Route path="/recurring-bookings/add" element={<AddRecurringBooking />} />
+               <Route path="/recurring-bookings/edit/:id" element={<EditRecurringBooking />} />
                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                <Route path="*" element={<NotFound />} />
             </Routes>
