@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       addresses: {
         Row: {
+          access: string | null
           address: string
           created_at: string
           customer_id: number
@@ -26,6 +27,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          access?: string | null
           address: string
           created_at?: string
           customer_id: number
@@ -36,6 +38,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          access?: string | null
           address?: string
           created_at?: string
           customer_id?: number
@@ -1009,6 +1012,84 @@ export type Database = {
           {
             foreignKeyName: "profiles_customer_id_fkey"
             columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recurring_services: {
+        Row: {
+          address: string | null
+          cleaner: number | null
+          cleaner_rate: number | null
+          cleaning_type: string | null
+          client: number | null
+          cost_per_hour: number | null
+          created_at: string
+          days: string | null
+          days_number: number | null
+          days_of_the_week: string | null
+          frequently: string | null
+          hours: number | null
+          id: number
+          payment_method: string | null
+          postponed: boolean | null
+          start_date: string | null
+          start_time: string | null
+          total_cost: number | null
+        }
+        Insert: {
+          address?: string | null
+          cleaner?: number | null
+          cleaner_rate?: number | null
+          cleaning_type?: string | null
+          client?: number | null
+          cost_per_hour?: number | null
+          created_at?: string
+          days?: string | null
+          days_number?: number | null
+          days_of_the_week?: string | null
+          frequently?: string | null
+          hours?: number | null
+          id?: number
+          payment_method?: string | null
+          postponed?: boolean | null
+          start_date?: string | null
+          start_time?: string | null
+          total_cost?: number | null
+        }
+        Update: {
+          address?: string | null
+          cleaner?: number | null
+          cleaner_rate?: number | null
+          cleaning_type?: string | null
+          client?: number | null
+          cost_per_hour?: number | null
+          created_at?: string
+          days?: string | null
+          days_number?: number | null
+          days_of_the_week?: string | null
+          frequently?: string | null
+          hours?: number | null
+          id?: number
+          payment_method?: string | null
+          postponed?: boolean | null
+          start_date?: string | null
+          start_time?: string | null
+          total_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_services_address_fkey"
+            columns: ["address"]
+            isOneToOne: false
+            referencedRelation: "addresses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_services_client_fkey"
+            columns: ["client"]
             isOneToOne: false
             referencedRelation: "customers"
             referencedColumns: ["id"]

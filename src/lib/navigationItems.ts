@@ -1,4 +1,4 @@
-import { Calendar, History, DollarSign, Briefcase, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Calculator } from 'lucide-react';
+import { Calendar, History, DollarSign, Briefcase, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Calculator, Repeat } from 'lucide-react';
 
 export const cleanerNavigation = [
   {
@@ -94,6 +94,11 @@ export const adminNavigation = [
         title: "Completed Bookings",
         url: "/past-bookings",
         icon: History,
+      },
+      {
+        title: "Recurring Bookings",
+        url: "/recurring-bookings",
+        icon: Repeat,
       },
     ],
   },

@@ -29,6 +29,8 @@ import CreateCustomerAccounts from "./pages/CreateCustomerAccounts";
 import AdminAddBooking from "./pages/AdminAddBooking";
 import CleanerSettings from "./pages/CleanerSettings";
 import AdminSettings from "./pages/AdminSettings";
+import RecurringBookings from "./pages/RecurringBookings";
+import AddRecurringBooking from "./pages/AddRecurringBooking";
 import NotFound from "./pages/NotFound";
 import { AdminCustomerProvider } from "./contexts/AdminCustomerContext";
 import { AdminCleanerProvider } from "./contexts/AdminCleanerContext";
@@ -70,9 +72,11 @@ const App = () => (
                <Route path="/customer-add-booking" element={<CustomerAddBooking />} />
                <Route path="/admin-add-booking" element={<AdminAddBooking />} />
                <Route path="/photos/:folderName" element={<CustomerPhotos />} />
-              <Route path="/create-customer-accounts" element={<CreateCustomerAccounts />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
+               <Route path="/create-customer-accounts" element={<CreateCustomerAccounts />} />
+               <Route path="/recurring-bookings" element={<RecurringBookings />} />
+               <Route path="/recurring-bookings/add" element={<AddRecurringBooking />} />
+               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+               <Route path="*" element={<NotFound />} />
             </Routes>
               </AdminCleanerProvider>
             </AdminCustomerProvider>
