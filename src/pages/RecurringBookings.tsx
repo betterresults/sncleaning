@@ -70,17 +70,17 @@ export default function RecurringBookings() {
         .from('recurring_services')
         .select(`
           *,
-          customers!recurring_services_client_fkey (
+          customers!customer (
             id,
             first_name,
             last_name
           ),
-          cleaners (
+          cleaners!cleaner (
             id,
             first_name,
             last_name
           ),
-          addresses (
+          addresses!address (
             address,
             postcode
           )
