@@ -83,6 +83,17 @@ const ConvertToRecurringDialog = ({ open, onOpenChange, booking, onSuccess }: Co
   useEffect(() => {
     if (booking?.customer) {
       fetchCustomerAddresses();
+      
+      // Update form data when booking prop changes
+      console.log('Booking data for recurring conversion:', booking);
+      setRecurringData(prev => ({
+        ...prev,
+        cleaningType: booking?.cleaning_type || 'Standard Cleaning',
+        hours: booking?.total_hours?.toString() || booking?.hours_required?.toString() || '2',
+        costPerHour: booking?.cleaning_cost_per_hour?.toString() || '20',
+        totalCost: booking?.total_cost?.toString() || '40',
+        paymentMethod: booking?.payment_method || 'Cash'
+      }));
     }
   }, [booking]);
 
