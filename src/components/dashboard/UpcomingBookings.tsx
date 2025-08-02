@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Edit, Trash2, Filter, Search, Settings, Copy, X, UserPlus, DollarSign } from 'lucide-react';
+import { Edit, Trash2, Filter, Search, Settings, Copy, X, UserPlus, DollarSign, Repeat } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -17,6 +17,7 @@ import BulkEditBookingsDialog from './BulkEditBookingsDialog';
 import EditBookingDialog from './EditBookingDialog';
 import AssignCleanerDialog from './AssignCleanerDialog';
 import DuplicateBookingDialog from './DuplicateBookingDialog';
+import ConvertToRecurringDialog from './ConvertToRecurringDialog';
 
 interface Booking {
   id: number;
@@ -96,6 +97,8 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   const [selectedBookingForDuplicate, setSelectedBookingForDuplicate] = useState<Booking | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState<number | null>(null);
+  const [convertToRecurringOpen, setConvertToRecurringOpen] = useState(false);
+  const [selectedBookingForRecurring, setSelectedBookingForRecurring] = useState<Booking | null>(null);
   const { toast } = useToast();
 
   const fetchData = async () => {
@@ -347,6 +350,11 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   const handleAssignCleaner = (bookingId: number) => {
     setSelectedBookingId(bookingId);
     setAssignCleanerOpen(true);
+  };
+
+  const handleMakeRecurring = (booking: Booking) => {
+    setSelectedBookingForRecurring(booking);
+    setConvertToRecurringOpen(true);
   };
 
   useEffect(() => {
@@ -663,6 +671,15 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                             <Button
                               variant="ghost"
                               size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleMakeRecurring(booking)}
+                              title="Make Recurring"
+                            >
+                              <Repeat className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                               onClick={() => handleDelete(booking.id)}
                               title="Delete"
@@ -773,6 +790,13 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ConvertToRecurringDialog
+        open={convertToRecurringOpen}
+        onOpenChange={setConvertToRecurringOpen}
+        booking={selectedBookingForRecurring}
+        onSuccess={fetchData}
+      />
     </div>
   );
 };

@@ -8,10 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Edit, Trash2, Copy, Filter, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail, Banknote, CheckCircle, XCircle, AlertCircle, X, Edit3 } from 'lucide-react';
+import { Edit, Trash2, Copy, Filter, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail, Banknote, CheckCircle, XCircle, AlertCircle, X, Edit3, Repeat } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import BulkEditPastBookingsDialog from './BulkEditPastBookingsDialog';
+import ConvertToRecurringDialog from './ConvertToRecurringDialog';
 
 interface PastBooking {
   id: number;
@@ -88,6 +89,8 @@ const PastBookingsTable = () => {
   const [selectedBooking, setSelectedBooking] = useState<PastBooking | null>(null);
   const [newDateTime, setNewDateTime] = useState('');
   const [bulkEditDialog, setBulkEditDialog] = useState(false);
+  const [convertToRecurringOpen, setConvertToRecurringOpen] = useState(false);
+  const [selectedBookingForRecurring, setSelectedBookingForRecurring] = useState<PastBooking | null>(null);
 
   const getTimePeriodDates = (period: string) => {
     const now = new Date();
@@ -324,6 +327,11 @@ const PastBookingsTable = () => {
   const handleDuplicate = (booking: PastBooking) => {
     setSelectedBooking(booking);
     setDuplicateDialog(true);
+  };
+
+  const handleMakeRecurring = (booking: PastBooking) => {
+    setSelectedBookingForRecurring(booking);
+    setConvertToRecurringOpen(true);
   };
 
   const handleDuplicateConfirm = async () => {
@@ -721,6 +729,13 @@ const PastBookingsTable = () => {
                                   <Copy className="mr-2 h-4 w-4" />
                                   Duplicate
                                 </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="cursor-pointer"
+                                  onClick={() => handleMakeRecurring(booking)}
+                                >
+                                  <Repeat className="mr-2 h-4 w-4" />
+                                  Make Recurring
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
@@ -887,6 +902,13 @@ const PastBookingsTable = () => {
                                   <Copy className="mr-2 h-4 w-4" />
                                   Duplicate
                                 </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="cursor-pointer"
+                                  onClick={() => handleMakeRecurring(booking)}
+                                >
+                                  <Repeat className="mr-2 h-4 w-4" />
+                                  Make Recurring
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
@@ -991,6 +1013,13 @@ const PastBookingsTable = () => {
         onSuccess={() => {
           fetchData();
         }}
+      />
+
+      <ConvertToRecurringDialog
+        open={convertToRecurringOpen}
+        onOpenChange={setConvertToRecurringOpen}
+        booking={selectedBookingForRecurring}
+        onSuccess={fetchData}
       />
     </div>
   );
