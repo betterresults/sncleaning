@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Edit, Trash2, Copy, Filter, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail, Banknote, CheckCircle, XCircle, AlertCircle, X, Edit3, Repeat } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -91,6 +92,8 @@ const PastBookingsTable = () => {
   const [bulkEditDialog, setBulkEditDialog] = useState(false);
   const [convertToRecurringOpen, setConvertToRecurringOpen] = useState(false);
   const [selectedBookingForRecurring, setSelectedBookingForRecurring] = useState<PastBooking | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [bookingToDelete, setBookingToDelete] = useState<number | null>(null);
 
   const getTimePeriodDates = (period: string) => {
     const now = new Date();
@@ -332,6 +335,40 @@ const PastBookingsTable = () => {
   const handleMakeRecurring = (booking: PastBooking) => {
     setSelectedBookingForRecurring(booking);
     setConvertToRecurringOpen(true);
+  };
+
+  const handleDelete = (bookingId: number) => {
+    setBookingToDelete(bookingId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!bookingToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from('past_bookings')
+        .delete()
+        .eq('id', bookingToDelete);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Booking deleted successfully."
+      });
+
+      setDeleteDialogOpen(false);
+      setBookingToDelete(null);
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting booking:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete booking.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleDuplicateConfirm = async () => {
@@ -736,6 +773,13 @@ const PastBookingsTable = () => {
                                   <Repeat className="mr-2 h-4 w-4" />
                                   Make Recurring
                                 </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="cursor-pointer text-red-600"
+                                  onClick={() => handleDelete(booking.id)}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
@@ -909,6 +953,13 @@ const PastBookingsTable = () => {
                                   <Repeat className="mr-2 h-4 w-4" />
                                   Make Recurring
                                 </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="cursor-pointer text-red-600"
+                                  onClick={() => handleDelete(booking.id)}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
@@ -1021,6 +1072,26 @@ const PastBookingsTable = () => {
         booking={selectedBookingForRecurring}
         onSuccess={fetchData}
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Booking</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this booking? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

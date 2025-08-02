@@ -46,7 +46,7 @@ const ConvertToRecurringDialog = ({ open, onOpenChange, booking, onSuccess }: Co
     startDate: undefined,
     startTime: '09:00',
     cleaningType: booking?.cleaning_type || 'Standard Cleaning',
-    hours: booking?.hours_required?.toString() || '2',
+    hours: booking?.total_hours?.toString() || booking?.hours_required?.toString() || '2',
     costPerHour: booking?.cleaning_cost_per_hour?.toString() || '20',
     totalCost: booking?.total_cost?.toString() || '40',
     paymentMethod: booking?.payment_method || 'Cash',
