@@ -68,46 +68,50 @@ export default function RecurringBookings() {
     try {
       const { data, error } = await supabase
         .from('recurring_services')
-        .select('*')
+        .select(`
+          *,
+          customers!recurring_services_client_fkey (
+            id,
+            first_name,
+            last_name
+          ),
+          cleaners (
+            id,
+            first_name,
+            last_name
+          ),
+          addresses (
+            address,
+            postcode
+          )
+        `)
         .order('start_date', { ascending: false });
 
       if (error) throw error;
 
-        // Fetch customer and cleaner names separately
-        const servicesWithNames = await Promise.all((data || []).map(async (service) => {
+        // Process the data with joined relationships
+        const servicesWithNames = (data || []).map((service: any) => {
           let customer_name = 'Unknown Customer';
           let cleaner_name = 'No Cleaner Assigned';
+          let address_text = service.addresses?.address || 'No Address';
 
-          if (service.client) {
-            const { data: customerData } = await supabase
-              .from('customers')
-              .select('first_name, last_name')
-              .eq('id', service.client)
-              .single();
-            
-            if (customerData) {
-              customer_name = `${customerData.first_name} ${customerData.last_name}`.trim();
-            }
+          // Get customer name from the joined data
+          if (service.customers) {
+            customer_name = `${service.customers.first_name || ''} ${service.customers.last_name || ''}`.trim();
           }
 
-        if (service.cleaner) {
-          const { data: cleanerData } = await supabase
-            .from('cleaners')
-            .select('first_name, last_name')
-            .eq('id', service.cleaner)
-            .single();
-          
-          if (cleanerData) {
-            cleaner_name = `${cleanerData.first_name} ${cleanerData.last_name}`.trim();
+          // Get cleaner name from the joined data
+          if (service.cleaners) {
+            cleaner_name = `${service.cleaners.first_name || ''} ${service.cleaners.last_name || ''}`.trim();
           }
-        }
 
-        return {
-          ...service,
-          customer_name,
-          cleaner_name
-        };
-      }));
+          return {
+            ...service,
+            customer_name,
+            cleaner_name,
+            address: address_text
+          };
+        });
 
       setRecurringServices(servicesWithNames);
     } catch (error) {

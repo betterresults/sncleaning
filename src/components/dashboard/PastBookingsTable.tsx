@@ -145,21 +145,7 @@ const PastBookingsTable = () => {
       console.log('Fetching past bookings...');
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('past_bookings')
-        .select(`
-          *,
-          cleaners!past_bookings_cleaner_fkey (
-            id,
-            first_name,
-            last_name,
-            full_name
-          ),
-          customers!past_bookings_customer_fkey (
-            id,
-            first_name,
-            last_name,
-            full_name
-          )
-        `)
+        .select('*')
         .order('date_time', { ascending: sortOrder === 'asc' });
 
       if (bookingsError) {
