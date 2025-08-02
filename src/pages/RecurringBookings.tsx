@@ -3,9 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { Plus, Edit, Trash2, Calendar, User, MapPin } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from '@/contexts/AuthContext';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { UnifiedSidebar } from '@/components/UnifiedSidebar';
+import { UnifiedHeader } from '@/components/UnifiedHeader';
+import { adminNavigation } from '@/lib/navigationItems';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,6 +46,19 @@ export default function RecurringBookings() {
   const [recurringServices, setRecurringServices] = useState<RecurringService[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { user, userRole, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  if (!user || userRole !== 'admin') {
+    return <Navigate to="/auth" replace />;
+  }
 
   useEffect(() => {
     fetchRecurringServices();
@@ -55,22 +73,22 @@ export default function RecurringBookings() {
 
       if (error) throw error;
 
-      // Fetch customer and cleaner names separately
-      const servicesWithNames = await Promise.all((data || []).map(async (service) => {
-        let customer_name = 'Unknown Customer';
-        let cleaner_name = 'No Cleaner Assigned';
+        // Fetch customer and cleaner names separately
+        const servicesWithNames = await Promise.all((data || []).map(async (service) => {
+          let customer_name = 'Unknown Customer';
+          let cleaner_name = 'No Cleaner Assigned';
 
-        if (service.client) {
-          const { data: customerData } = await supabase
-            .from('customers')
-            .select('first_name, last_name')
-            .eq('id', service.client)
-            .single();
-          
-          if (customerData) {
-            customer_name = `${customerData.first_name} ${customerData.last_name}`.trim();
+          if (service.client) {
+            const { data: customerData } = await supabase
+              .from('customers')
+              .select('first_name, last_name')
+              .eq('id', service.client)
+              .single();
+            
+            if (customerData) {
+              customer_name = `${customerData.first_name} ${customerData.last_name}`.trim();
+            }
           }
-        }
 
         if (service.cleaner) {
           const { data: cleanerData } = await supabase
@@ -143,20 +161,50 @@ export default function RecurringBookings() {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading recurring services...</p>
-          </div>
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-gray-50">
+          <UnifiedSidebar 
+            navigationItems={adminNavigation}
+            user={user}
+            onSignOut={handleSignOut}
+          />
+          <SidebarInset className="flex-1">
+            <UnifiedHeader 
+              title="Recurring Bookings 🔄"
+              user={user}
+              userRole={userRole}
+            />
+            <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
+              <div className="flex items-center justify-center min-h-[400px]">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">Loading recurring services...</p>
+                </div>
+              </div>
+            </main>
+          </SidebarInset>
         </div>
-      </div>
+      </SidebarProvider>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-8">
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-gray-50">
+        <UnifiedSidebar 
+          navigationItems={adminNavigation}
+          user={user}
+          onSignOut={handleSignOut}
+        />
+        <SidebarInset className="flex-1">
+          <UnifiedHeader 
+            title="Recurring Bookings 🔄"
+            user={user}
+            userRole={userRole}
+          />
+          <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
+            <div className="max-w-7xl mx-auto space-y-6">
+              <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Recurring Bookings</h1>
           <p className="text-muted-foreground">
@@ -285,8 +333,12 @@ export default function RecurringBookings() {
               </CardContent>
             </Card>
           ))}
-        </div>
-      )}
-    </div>
+              </div>
+            )}
+            </div>
+          </main>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
 }
