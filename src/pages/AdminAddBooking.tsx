@@ -5,7 +5,7 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { adminNavigation } from '@/lib/navigationItems';
-import BookingForm from '@/components/booking/BookingForm';
+import NewBookingForm from '@/components/booking/NewBookingForm';
 
 const AdminAddBooking = () => {
   const { user, userRole, signOut } = useAuth();
@@ -39,7 +39,7 @@ const AdminAddBooking = () => {
           
           <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
             <div className="max-w-4xl mx-auto space-y-6">
-              <BookingForm onBookingCreated={() => {}} />
+              <NewBookingForm onBookingCreated={() => {}} />
             </div>
           </main>
         </SidebarInset>
