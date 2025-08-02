@@ -31,6 +31,7 @@ interface RecurringData {
   totalCost: string;
   paymentMethod: string;
   cleanerRate: string;
+  cleaner: string;
 }
 
 const ConvertToRecurringDialog = ({ open, onOpenChange, booking, onSuccess }: ConvertToRecurringDialogProps) => {
@@ -38,6 +39,7 @@ const ConvertToRecurringDialog = ({ open, onOpenChange, booking, onSuccess }: Co
   const [loading, setLoading] = useState(false);
   const [customerAddresses, setCustomerAddresses] = useState<any[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
+  const [cleaners, setCleaners] = useState<any[]>([]);
   
   const [recurringData, setRecurringData] = useState<RecurringData>({
     frequently: 'weekly',
@@ -50,7 +52,8 @@ const ConvertToRecurringDialog = ({ open, onOpenChange, booking, onSuccess }: Co
     costPerHour: booking?.cleaning_cost_per_hour?.toString() || '20',
     totalCost: booking?.total_cost?.toString() || '40',
     paymentMethod: booking?.payment_method || 'Cash',
-    cleanerRate: '16'
+    cleanerRate: booking?.cleaner_rate?.toString() || '16',
+    cleaner: booking?.cleaner?.toString() || ''
   });
 
   const frequencies = [
@@ -77,12 +80,14 @@ const ConvertToRecurringDialog = ({ open, onOpenChange, booking, onSuccess }: Co
     'Cash',
     'Card',
     'Bank Transfer',
-    'Freeagent'
+    'Freeagent',
+    'Stripe'
   ];
 
   useEffect(() => {
     if (booking?.customer) {
       fetchCustomerAddresses();
+      fetchCleaners();
       
       // Update form data when booking prop changes
       console.log('Booking data for recurring conversion:', booking);
@@ -92,7 +97,9 @@ const ConvertToRecurringDialog = ({ open, onOpenChange, booking, onSuccess }: Co
         hours: booking?.total_hours?.toString() || '2',
         costPerHour: booking?.cleaning_cost_per_hour?.toString() || '20',
         totalCost: booking?.total_cost?.toString() || '40',
-        paymentMethod: booking?.payment_method || 'Cash'
+        paymentMethod: booking?.payment_method || 'Cash',
+        cleanerRate: booking?.cleaner_rate?.toString() || '16',
+        cleaner: booking?.cleaner?.toString() || ''
       }));
     }
   }, [booking]);
@@ -118,6 +125,20 @@ const ConvertToRecurringDialog = ({ open, onOpenChange, booking, onSuccess }: Co
       }
     } catch (error) {
       console.error('Error fetching customer addresses:', error);
+    }
+  };
+
+  const fetchCleaners = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('cleaners')
+        .select('id, first_name, last_name, full_name')
+        .order('first_name');
+
+      if (error) throw error;
+      setCleaners(data || []);
+    } catch (error) {
+      console.error('Error fetching cleaners:', error);
     }
   };
 
@@ -159,7 +180,7 @@ const ConvertToRecurringDialog = ({ open, onOpenChange, booking, onSuccess }: Co
         .from('recurring_services')
         .insert({
           customer: booking.customer,
-          cleaner: booking.cleaner,
+          cleaner: parseInt(recurringData.cleaner) || booking.cleaner,
           address: selectedAddressId,
           cleaning_type: recurringData.cleaningType,
           frequently: recurringData.frequently,
@@ -386,6 +407,23 @@ const ConvertToRecurringDialog = ({ open, onOpenChange, booking, onSuccess }: Co
                 onChange={(e) => handleInputChange('cleanerRate', e.target.value)}
               />
             </div>
+          </div>
+
+          {/* Cleaner Selection */}
+          <div className="space-y-2">
+            <Label>Assigned Cleaner *</Label>
+            <Select value={recurringData.cleaner} onValueChange={(value) => handleInputChange('cleaner', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a cleaner" />
+              </SelectTrigger>
+              <SelectContent>
+                {cleaners.map((cleaner) => (
+                  <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
+                    {cleaner.full_name || `${cleaner.first_name} ${cleaner.last_name}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Payment Method */}
