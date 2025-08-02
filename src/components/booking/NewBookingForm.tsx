@@ -264,12 +264,13 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
 
   const handleUseClientAddress = (checked: boolean) => {
     if (checked && formData.customerId) {
-      // Fetch customer details to get their address
+      // Fetch customer's default address from addresses table
       const fetchCustomerAddress = async () => {
         const { data, error } = await supabase
-          .from('customers')
+          .from('addresses')
           .select('address, postcode')
-          .eq('id', formData.customerId)
+          .eq('customer_id', formData.customerId)
+          .eq('is_default', true)
           .single();
         
         if (data && !error) {
@@ -279,6 +280,30 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
             address: data.address || '',
             postcode: data.postcode || ''
           }));
+        } else {
+          // If no default address found, try to get any address for this customer
+          const { data: anyAddress, error: anyError } = await supabase
+            .from('addresses')
+            .select('address, postcode')
+            .eq('customer_id', formData.customerId)
+            .limit(1)
+            .single();
+          
+          if (anyAddress && !anyError) {
+            setFormData(prev => ({
+              ...prev,
+              useClientAddress: checked,
+              address: anyAddress.address || '',
+              postcode: anyAddress.postcode || ''
+            }));
+          } else {
+            // Show a message if no address is found
+            console.log('No address found for this customer');
+            setFormData(prev => ({
+              ...prev,
+              useClientAddress: checked
+            }));
+          }
         }
       };
       fetchCustomerAddress();
