@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 interface PhotoFile {
   name: string;
   url: string;
+  type?: string;
 }
 
 const CustomerPhotos = () => {
@@ -32,34 +33,75 @@ const CustomerPhotos = () => {
     try {
       setLoading(true);
       
-      // List all files in the folder
-      const { data: files, error: listError } = await supabase.storage
+      console.log('Fetching photos for folder:', folderName);
+      
+      // First, try to list the main folder
+      const { data: mainFiles, error: mainError } = await supabase.storage
         .from('cleaning.photos')
         .list(folderName, {
           limit: 100,
           sortBy: { column: 'name', order: 'asc' }
         });
 
-      if (listError) {
-        throw listError;
+      let allFiles: any[] = [];
+
+      if (mainError) {
+        console.error('Error listing main folder:', mainError);
+        throw mainError;
       }
 
-      if (!files || files.length === 0) {
+      console.log('Main folder contents:', mainFiles);
+
+      if (mainFiles && mainFiles.length > 0) {
+        // Check for subfolders (before, after, damage, etc.)
+        const subfolders = mainFiles.filter(file => file.name && !file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i));
+        const directImages = mainFiles.filter(file => file.name && file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i));
+        
+        // Add direct images
+        allFiles.push(...directImages.map(file => ({
+          name: file.name,
+          fullPath: `${folderName}/${file.name}`,
+          type: 'general'
+        })));
+
+        // Check subfolders for images
+        for (const subfolder of subfolders) {
+          const { data: subFiles } = await supabase.storage
+            .from('cleaning.photos')
+            .list(`${folderName}/${subfolder.name}`, {
+              limit: 100,
+              sortBy: { column: 'name', order: 'asc' }
+            });
+
+          if (subFiles) {
+            const subImages = subFiles.filter(file => file.name && file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i));
+            allFiles.push(...subImages.map(file => ({
+              name: file.name,
+              fullPath: `${folderName}/${subfolder.name}/${file.name}`,
+              type: subfolder.name
+            })));
+          }
+        }
+      }
+
+      console.log('All found files:', allFiles);
+
+      if (allFiles.length === 0) {
         setError('No photos found in this folder');
         return;
       }
 
-      // Filter for image files and create URLs
-      const imageFiles = files
-        .filter(file => file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i))
-        .map(file => ({
-          name: file.name,
-          url: supabase.storage
-            .from('cleaning.photos')
-            .getPublicUrl(`${folderName}/${file.name}`).data.publicUrl
-        }));
+      // Create photo objects with public URLs
+      const photoFiles = allFiles.map(file => ({
+        name: `${file.type !== 'general' ? file.type + '/' : ''}${file.name}`,
+        url: supabase.storage
+          .from('cleaning.photos')
+          .getPublicUrl(file.fullPath).data.publicUrl,
+        type: file.type
+      }));
 
-      setPhotos(imageFiles);
+      console.log('Photo URLs generated:', photoFiles);
+      setPhotos(photoFiles);
     } catch (err: any) {
       console.error('Error fetching photos:', err);
       setError(`Failed to load photos: ${err.message}`);
