@@ -73,7 +73,7 @@ export const customerNavigation = [
 export const adminNavigation = [
   {
     title: "Dashboard",
-    url: "/admin",
+    url: "/dashboard",
     icon: Home,
   },
   {
@@ -87,7 +87,7 @@ export const adminNavigation = [
       },
       {
         title: "Upcoming Bookings",
-        url: "/admin",
+        url: "/dashboard",
         icon: BarChart3,
       },
       {
