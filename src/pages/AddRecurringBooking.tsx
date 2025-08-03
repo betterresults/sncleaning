@@ -172,16 +172,14 @@ export default function AddRecurringBooking() {
 
     try {
       const submitData = {
-        client: parseInt(formData.client),
+        customer: parseInt(formData.client),
         address: formData.address,
         cleaner: formData.cleaner ? parseInt(formData.cleaner) : null,
         cleaner_rate: formData.cleaner_rate ? parseFloat(formData.cleaner_rate) : null,
         cleaning_type: formData.cleaning_type,
         frequently: formData.frequently,
-        days: formData.days,
-        days_number: formData.days_number ? parseInt(formData.days_number) : null,
         days_of_the_week: formData.days_of_the_week || null,
-        hours: formData.hours ? parseFloat(formData.hours) : null,
+        hours: formData.hours || null,
         cost_per_hour: formData.cost_per_hour ? parseFloat(formData.cost_per_hour) : null,
         total_cost: formData.total_cost ? parseFloat(formData.total_cost) : null,
         payment_method: formData.payment_method,
