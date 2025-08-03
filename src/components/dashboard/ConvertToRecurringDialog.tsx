@@ -15,9 +15,8 @@ const ConvertToRecurringDialog = ({ open, onOpenChange, booking, onSuccess }: Co
     return {
       bookingId: booking.id?.toString() || '',
       customerId: booking.customer?.toString() || '',
-      address: booking.address || '', // Keep as string for now - will be resolved in the form
-      postcode: booking.postcode || '',
-      cleaningType: booking.cleaning_type || booking.service_type || 'Standard Cleaning',
+      addressId: booking.address?.toString() || '',
+      cleaningType: booking.cleaning_type || 'Standard Cleaning',
       // Use total_hours (actual billable hours) as priority, fallback to hours_required only if needed
       hours: booking.total_hours?.toString() || booking.hours_required?.toString() || '2',
       // Handle both cleaning_cost_per_hour and calculated cost
@@ -28,11 +27,7 @@ const ConvertToRecurringDialog = ({ open, onOpenChange, booking, onSuccess }: Co
       totalCost: booking.total_cost?.toString() || '40',
       paymentMethod: booking.payment_method || 'Cash',
       cleanerRate: booking.cleaner_rate?.toString() || booking.cleaner_pay?.toString() || '16',
-      cleaner: booking.cleaner?.toString() || '',
-      firstName: booking.first_name || '',
-      lastName: booking.last_name || '',
-      email: booking.email || '',
-      phone: booking.phone_number || ''
+      cleaner: booking.cleaner?.toString() || ''
     };
   };
 

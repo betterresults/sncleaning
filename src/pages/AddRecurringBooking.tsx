@@ -46,12 +46,6 @@ const DAYS_OF_WEEK = [
   { id: 'sunday', label: 'Sunday' },
 ];
 
-interface PrefillAddress {
-  address: string;
-  postcode: string;
-  customerId: string;
-}
-
 export default function AddRecurringBooking() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -62,7 +56,6 @@ export default function AddRecurringBooking() {
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [showCreateCustomer, setShowCreateCustomer] = useState(false);
   const [showCreateCleaner, setShowCreateCleaner] = useState(false);
-  const [prefillAddress, setPrefillAddress] = useState<PrefillAddress | null>(null);
 
   const [formData, setFormData] = useState({
     client: '',
@@ -91,8 +84,7 @@ export default function AddRecurringBooking() {
     const from = searchParams.get('from');
     if (from === 'booking') {
       const customerId = searchParams.get('customerId');
-      const address = searchParams.get('address');
-      const postcode = searchParams.get('postcode');
+      const addressId = searchParams.get('addressId');
       const cleaningType = searchParams.get('cleaningType');
       const hours = searchParams.get('hours');
       const costPerHour = searchParams.get('costPerHour');
@@ -100,14 +92,11 @@ export default function AddRecurringBooking() {
       const paymentMethod = searchParams.get('paymentMethod');
       const cleanerRate = searchParams.get('cleanerRate');
       const cleaner = searchParams.get('cleaner');
-      const firstName = searchParams.get('firstName');
-      const lastName = searchParams.get('lastName');
-      const email = searchParams.get('email');
-      const phone = searchParams.get('phone');
       
       setFormData(prev => ({
         ...prev,
         client: customerId || '',
+        address: addressId || '',
         cleaning_type: cleaningType || 'Standard Cleaning',
         hours: hours || '2',
         cost_per_hour: costPerHour || '20',
@@ -116,11 +105,6 @@ export default function AddRecurringBooking() {
         cleaner_rate: cleanerRate || '16',
         cleaner: cleaner || ''
       }));
-
-      // Store address info for matching later
-      if (address && postcode && customerId) {
-        setPrefillAddress({ address, postcode, customerId });
-      }
     }
   }, [searchParams]);
 
@@ -128,7 +112,7 @@ export default function AddRecurringBooking() {
     if (formData.client) {
       fetchAddresses(parseInt(formData.client));
     }
-  }, [formData.client, prefillAddress]);
+  }, [formData.client]);
 
   useEffect(() => {
     calculateTotalCost();
@@ -172,19 +156,6 @@ export default function AddRecurringBooking() {
 
       if (error) throw error;
       setAddresses(data || []);
-
-      // Auto-select matching address if we have prefill data
-      if (prefillAddress && prefillAddress.customerId === customerId.toString()) {
-        const matchingAddress = data?.find(addr => 
-          addr.address.includes(prefillAddress.address) || 
-          addr.postcode === prefillAddress.postcode
-        );
-        
-        if (matchingAddress) {
-          setFormData(prev => ({ ...prev, address: matchingAddress.id }));
-          setPrefillAddress(null); // Clear after use
-        }
-      }
     } catch (error) {
       console.error('Error fetching addresses:', error);
     }
