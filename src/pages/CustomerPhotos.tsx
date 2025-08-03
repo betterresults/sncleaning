@@ -458,27 +458,26 @@ const CustomerPhotos = () => {
         {isGalleryOpen && selectedPhotoIndex !== null && (
           <Dialog open={isGalleryOpen} onOpenChange={setIsGalleryOpen}>
             <DialogContent 
-              className="max-w-screen-xl w-screen h-screen p-0 bg-black/95 border-0"
+              className="max-w-none w-screen h-screen p-0 bg-black border-0 m-0"
               onKeyDown={handleKeyDown}
             >
               <div className="relative w-full h-full flex flex-col">
                 {/* Top Bar */}
-                <div className="absolute top-0 left-0 right-0 z-50 flex justify-between items-center p-4 bg-gradient-to-b from-black/50 to-transparent">
+                <div className="absolute top-0 left-0 right-0 z-50 flex justify-between items-center p-6 bg-gradient-to-b from-black/80 via-black/40 to-transparent">
                   <div className="text-white">
-                    <p className="text-lg font-semibold">
+                    <p className="text-xl font-semibold">
                       Photo {selectedPhotoIndex + 1} of {currentPhotos.length}
                     </p>
-                    <p className="text-sm opacity-80">
+                    <p className="text-sm opacity-80 mt-1">
                       {currentPhotos[selectedPhotoIndex].name}
                     </p>
                   </div>
                   
-                  <div className="flex gap-2">
+                  <div className="flex gap-3">
                     <Button
                       onClick={() => downloadPhoto(currentPhotos[selectedPhotoIndex].url, currentPhotos[selectedPhotoIndex].name)}
                       size="sm"
-                      variant="outline"
-                      className="bg-black/50 border-white/20 text-white hover:bg-black/70"
+                      className="bg-white/10 border border-white/20 text-white hover:bg-white/20 backdrop-blur-sm"
                     >
                       <Download className="h-4 w-4 mr-2" />
                       Download
@@ -486,7 +485,7 @@ const CustomerPhotos = () => {
                     
                     <button
                       onClick={closeGallery}
-                      className="p-2 bg-black/50 text-white rounded-md hover:bg-black/70 transition-colors"
+                      className="p-2 bg-white/10 border border-white/20 text-white rounded-md hover:bg-white/20 transition-all backdrop-blur-sm"
                     >
                       <X className="h-6 w-6" />
                     </button>
@@ -497,7 +496,7 @@ const CustomerPhotos = () => {
                 {selectedPhotoIndex > 0 && (
                   <button
                     onClick={goToPrevious}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 z-50 p-3 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
+                    className="absolute left-6 top-1/2 -translate-y-1/2 z-50 p-4 bg-black/60 text-white rounded-full hover:bg-black/80 transition-all backdrop-blur-sm border border-white/20"
                   >
                     <ChevronLeft className="h-8 w-8" />
                   </button>
@@ -506,41 +505,53 @@ const CustomerPhotos = () => {
                 {selectedPhotoIndex < currentPhotos.length - 1 && (
                   <button
                     onClick={goToNext}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 z-50 p-3 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
+                    className="absolute right-6 top-1/2 -translate-y-1/2 z-50 p-4 bg-black/60 text-white rounded-full hover:bg-black/80 transition-all backdrop-blur-sm border border-white/20"
                   >
                     <ChevronRight className="h-8 w-8" />
                   </button>
                 )}
 
-                {/* Main Photo */}
-                <div className="flex-1 flex items-center justify-center p-4 pt-20 pb-32">
-                  <img
-                    src={currentPhotos[selectedPhotoIndex].url}
-                    alt={`Photo ${selectedPhotoIndex + 1}`}
-                    className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
-                  />
+                {/* Main Photo Container */}
+                <div className="flex-1 flex items-center justify-center p-6 pt-24 pb-24">
+                  <div className="relative max-w-full max-h-full">
+                    <img
+                      src={currentPhotos[selectedPhotoIndex].url}
+                      alt={`Photo ${selectedPhotoIndex + 1}`}
+                      className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg shadow-2xl"
+                      style={{ maxHeight: 'calc(100vh - 12rem)' }}
+                    />
+                  </div>
                 </div>
 
                 {/* Thumbnail Strip */}
-                <div className="absolute bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black/80 to-transparent p-4">
-                  <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-white/20">
-                    {currentPhotos.map((photo, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setSelectedPhotoIndex(index)}
-                        className={`flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition-all ${
-                          index === selectedPhotoIndex 
-                            ? 'border-white shadow-lg scale-110' 
-                            : 'border-white/30 hover:border-white/60'
-                        }`}
-                      >
-                        <img
-                          src={photo.url}
-                          alt={`Thumbnail ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </button>
-                    ))}
+                <div className="absolute bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-6">
+                  <div className="flex justify-center">
+                    <div className="flex gap-3 overflow-x-auto max-w-full pb-2" style={{ scrollbarWidth: 'thin' }}>
+                      {currentPhotos.map((photo, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setSelectedPhotoIndex(index)}
+                          className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+                            index === selectedPhotoIndex 
+                              ? 'border-white shadow-lg scale-110 ring-2 ring-white/50' 
+                              : 'border-white/30 hover:border-white/60 hover:scale-105'
+                          }`}
+                        >
+                          <img
+                            src={photo.url}
+                            alt={`Thumbnail ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Navigation hint */}
+                  <div className="text-center mt-3">
+                    <p className="text-white/60 text-sm">
+                      Use arrow keys or click thumbnails to navigate • ESC to close
+                    </p>
                   </div>
                 </div>
               </div>
