@@ -11,27 +11,30 @@ export const TestEmailButton = () => {
   const sendTestPhotoEmail = async () => {
     setLoading(true);
     try {
-      console.log('Testing photo notification system...');
+      console.log('Testing photo notification for booking 108248...');
       
-      const { data, error } = await supabase.functions.invoke('test-photo-notification', {
+      const { data, error } = await supabase.functions.invoke('send-photo-notification', {
         body: {
-          email: 'sinsip.2014@gmail.com',
-          booking_id: 123
+          booking_id: 108248,
+          customer_id: 29,
+          cleaner_id: 1,
+          folder_name: "108248_SE164NF_2025-07-29_29",
+          total_photos: 11
         }
       });
 
       if (error) {
-        console.error('Error sending test photo notification:', error);
+        console.error('Error sending real photo notification:', error);
         toast({
           title: "Error",
-          description: `Failed to send test notification: ${error.message}`,
+          description: `Failed to send notification: ${error.message}`,
           variant: "destructive",
         });
       } else {
-        console.log('Test photo notification sent successfully:', data);
+        console.log('Real photo notification sent successfully:', data);
         toast({
-          title: "Success", 
-          description: "Test photo notification sent to sinsip.2014@gmail.com",
+          title: "Success",
+          description: "Photo notification sent for booking 108248 to frances.douglasthomson@gmail.com",
         });
       }
     } catch (error: any) {
