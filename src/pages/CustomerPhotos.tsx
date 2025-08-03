@@ -3,24 +3,38 @@ import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
-import { Download, ArrowLeft, Home, Expand, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { 
+  Download, ArrowLeft, Home, X, ChevronLeft, ChevronRight, 
+  FolderOpen, Share, Archive, Eye, Grid3x3, Image as ImageIcon 
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface PhotoFile {
   name: string;
   url: string;
   type?: string;
+  fullPath: string;
+}
+
+interface PhotoFolder {
+  name: string;
+  photos: PhotoFile[];
+  count: number;
 }
 
 const CustomerPhotos = () => {
   const { folderName } = useParams<{ folderName: string }>();
   const navigate = useNavigate();
-  const [photos, setPhotos] = useState<PhotoFile[]>([]);
+  const [allPhotos, setAllPhotos] = useState<PhotoFile[]>([]);
+  const [photoFolders, setPhotoFolders] = useState<PhotoFolder[]>([]);
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [currentPhotos, setCurrentPhotos] = useState<PhotoFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'folders' | 'grid'>('folders');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -43,7 +57,7 @@ const CustomerPhotos = () => {
           sortBy: { column: 'name', order: 'asc' }
         });
 
-      let allFiles: any[] = [];
+      let allFiles: PhotoFile[] = [];
 
       if (mainError) {
         console.error('Error listing main folder:', mainError);
@@ -61,6 +75,7 @@ const CustomerPhotos = () => {
         allFiles.push(...directImages.map(file => ({
           name: file.name,
           fullPath: `${folderName}/${file.name}`,
+          url: supabase.storage.from('cleaning.photos').getPublicUrl(`${folderName}/${file.name}`).data.publicUrl,
           type: 'general'
         })));
 
@@ -78,6 +93,7 @@ const CustomerPhotos = () => {
             allFiles.push(...subImages.map(file => ({
               name: file.name,
               fullPath: `${folderName}/${subfolder.name}/${file.name}`,
+              url: supabase.storage.from('cleaning.photos').getPublicUrl(`${folderName}/${subfolder.name}/${file.name}`).data.publicUrl,
               type: subfolder.name
             })));
           }
@@ -91,17 +107,25 @@ const CustomerPhotos = () => {
         return;
       }
 
-      // Create photo objects with public URLs
-      const photoFiles = allFiles.map(file => ({
-        name: `${file.type !== 'general' ? file.type + '/' : ''}${file.name}`,
-        url: supabase.storage
-          .from('cleaning.photos')
-          .getPublicUrl(file.fullPath).data.publicUrl,
-        type: file.type
+      // Group photos by folder
+      const folders: { [key: string]: PhotoFile[] } = {};
+      allFiles.forEach(photo => {
+        const folderType = photo.type || 'general';
+        if (!folders[folderType]) {
+          folders[folderType] = [];
+        }
+        folders[folderType].push(photo);
+      });
+
+      const folderArray = Object.entries(folders).map(([name, photos]) => ({
+        name: name === 'general' ? 'All Photos' : name.charAt(0).toUpperCase() + name.slice(1),
+        photos,
+        count: photos.length
       }));
 
-      console.log('Photo URLs generated:', photoFiles);
-      setPhotos(photoFiles);
+      setAllPhotos(allFiles);
+      setPhotoFolders(folderArray);
+      setCurrentPhotos(allFiles); // Show all photos by default
     } catch (err: any) {
       console.error('Error fetching photos:', err);
       setError(`Failed to load photos: ${err.message}`);
@@ -136,6 +160,64 @@ const CustomerPhotos = () => {
     }
   };
 
+  const downloadAllPhotos = async () => {
+    if (currentPhotos.length === 0) return;
+    
+    toast({
+      title: "Download Started",
+      description: `Downloading ${currentPhotos.length} photos...`,
+    });
+
+    for (const photo of currentPhotos) {
+      await downloadPhoto(photo.url, photo.name);
+      // Small delay to prevent overwhelming the browser
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  };
+
+  const sharePhotos = async () => {
+    const shareUrl = window.location.href;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Cleaning Photos',
+          text: `Check out these cleaning photos from your service!`,
+          url: shareUrl,
+        });
+        toast({
+          title: "Shared Successfully",
+          description: "Photos shared successfully!",
+        });
+      } catch (error) {
+        copyToClipboard(shareUrl);
+      }
+    } else {
+      copyToClipboard(shareUrl);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toast({
+        title: "Link Copied",
+        description: "Photo link copied to clipboard!",
+      });
+    });
+  };
+
+  const selectFolder = (folder: PhotoFolder) => {
+    setSelectedFolder(folder.name);
+    setCurrentPhotos(folder.photos);
+    setViewMode('grid');
+  };
+
+  const backToFolders = () => {
+    setSelectedFolder(null);
+    setCurrentPhotos(allPhotos);
+    setViewMode('folders');
+  };
+
   const openGallery = (index: number) => {
     setSelectedPhotoIndex(index);
     setIsGalleryOpen(true);
@@ -153,7 +235,7 @@ const CustomerPhotos = () => {
   };
 
   const goToNext = () => {
-    if (selectedPhotoIndex !== null && selectedPhotoIndex < photos.length - 1) {
+    if (selectedPhotoIndex !== null && selectedPhotoIndex < currentPhotos.length - 1) {
       setSelectedPhotoIndex(selectedPhotoIndex + 1);
     }
   };
@@ -204,14 +286,15 @@ const CustomerPhotos = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-4">
+        {/* Header */}
         <div className="mb-6">
           <div className="flex gap-2 mb-4">
             <Button 
-              onClick={() => window.history.back()} 
+              onClick={selectedFolder ? backToFolders : () => window.history.back()} 
               variant="outline"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
+              {selectedFolder ? 'Back to Folders' : 'Back'}
             </Button>
             <Button 
               onClick={() => navigate('/')} 
@@ -220,84 +303,195 @@ const CustomerPhotos = () => {
               <Home className="h-4 w-4 mr-2" />
               Home
             </Button>
+            
+            {/* Action Buttons */}
+            <div className="ml-auto flex gap-2">
+              <Button onClick={sharePhotos} variant="outline" size="sm">
+                <Share className="h-4 w-4 mr-2" />
+                Share
+              </Button>
+              <Button onClick={downloadAllPhotos} variant="outline" size="sm">
+                <Archive className="h-4 w-4 mr-2" />
+                Download All ({currentPhotos.length})
+              </Button>
+              <Button 
+                onClick={() => setViewMode(viewMode === 'folders' ? 'grid' : 'folders')}
+                variant="outline" 
+                size="sm"
+              >
+                {viewMode === 'folders' ? <Grid3x3 className="h-4 w-4" /> : <FolderOpen className="h-4 w-4" />}
+              </Button>
+            </div>
           </div>
           
           <div className="text-center">
             <h1 className="text-3xl font-bold text-foreground mb-2">
-              Your Cleaning Photos
+              {selectedFolder || 'Your Cleaning Photos'}
             </h1>
             <p className="text-muted-foreground mb-1">
-              Service completed on {folderName.includes('_') ? folderName.split('_')[1] : 'your selected date'}
+              Service completed on {folderName?.includes('_') ? folderName.split('_')[2] : 'your selected date'}
             </p>
             <p className="text-sm text-muted-foreground">
-              {photos.length} photo{photos.length !== 1 ? 's' : ''} available
+              {selectedFolder 
+                ? `${currentPhotos.length} photo${currentPhotos.length !== 1 ? 's' : ''} in ${selectedFolder}`
+                : `${allPhotos.length} photo${allPhotos.length !== 1 ? 's' : ''} total • ${photoFolders.length} folder${photoFolders.length !== 1 ? 's' : ''}`
+              }
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {photos.map((photo, index) => (
-            <Card key={photo.name} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
-              <CardContent className="p-0">
-                <div className="aspect-square relative" onClick={() => openGallery(index)}>
-                  <img
-                    src={photo.url}
-                    alt={`Cleaning photo ${index + 1}`}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center opacity-0 hover:opacity-100">
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openGallery(index);
-                        }}
-                        size="sm"
-                        className="bg-white text-black hover:bg-gray-100"
-                      >
-                        <Expand className="h-4 w-4 mr-2" />
-                        View
-                      </Button>
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          downloadPhoto(photo.url, photo.name);
-                        }}
-                        size="sm"
-                        className="bg-white text-black hover:bg-gray-100"
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Download
-                      </Button>
+        {/* Folder View */}
+        {viewMode === 'folders' && !selectedFolder && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {photoFolders.map((folder) => (
+              <Card 
+                key={folder.name} 
+                className="hover:shadow-lg transition-all duration-200 cursor-pointer group animate-fade-in"
+                onClick={() => selectFolder(folder)}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                        <FolderOpen className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg">{folder.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {folder.count} photo{folder.count !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </div>
+                  
+                  {/* Preview thumbnails */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {folder.photos.slice(0, 3).map((photo, index) => (
+                      <div key={index} className="aspect-square rounded-md overflow-hidden bg-gray-100">
+                        <img
+                          src={photo.url}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-full object-cover hover-scale"
+                        />
+                      </div>
+                    ))}
+                    {folder.photos.length > 3 && (
+                      <div className="aspect-square rounded-md bg-gray-100 flex items-center justify-center">
+                        <span className="text-sm text-muted-foreground font-medium">
+                          +{folder.photos.length - 3}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Photo Grid */}
+        {(viewMode === 'grid' || selectedFolder) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {currentPhotos.map((photo, index) => (
+              <Card key={photo.name} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group animate-fade-in">
+                <CardContent className="p-0">
+                  <div className="aspect-square relative" onClick={() => openGallery(index)}>
+                    <img
+                      src={photo.url}
+                      alt={`Photo ${index + 1}`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openGallery(index);
+                          }}
+                          size="sm"
+                          className="bg-white/90 text-black hover:bg-white backdrop-blur-sm"
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            downloadPhoto(photo.url, photo.name);
+                          }}
+                          size="sm"
+                          className="bg-white/90 text-black hover:bg-white backdrop-blur-sm"
+                        >
+                          <Download className="h-4 w-4 mr-1" />
+                          Save
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="p-3">
-                  <p className="text-sm text-muted-foreground truncate">
-                    {photo.name}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                  <div className="p-3">
+                    <p className="text-sm text-muted-foreground truncate">
+                      {photo.name}
+                    </p>
+                    {photo.type && photo.type !== 'general' && (
+                      <span className="inline-block px-2 py-1 bg-primary/10 text-primary text-xs rounded-full mt-1">
+                        {photo.type}
+                      </span>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
-        {/* Full Screen Gallery */}
+        {/* No Photos Message */}
+        {currentPhotos.length === 0 && !loading && (
+          <div className="text-center py-12">
+            <ImageIcon className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+            <p className="text-muted-foreground">No photos found in this folder.</p>
+          </div>
+        )}
+
+        {/* Enhanced Full Screen Gallery */}
         {isGalleryOpen && selectedPhotoIndex !== null && (
           <Dialog open={isGalleryOpen} onOpenChange={setIsGalleryOpen}>
             <DialogContent 
-              className="max-w-screen-xl w-screen h-screen p-0 bg-black/95"
+              className="max-w-screen-xl w-screen h-screen p-0 bg-black/95 border-0"
               onKeyDown={handleKeyDown}
             >
-              <div className="relative w-full h-full flex items-center justify-center">
-                {/* Close Button */}
-                <button
-                  onClick={closeGallery}
-                  className="absolute top-4 right-4 z-50 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
-                >
-                  <X className="h-6 w-6" />
-                </button>
+              <div className="relative w-full h-full flex flex-col">
+                {/* Top Bar */}
+                <div className="absolute top-0 left-0 right-0 z-50 flex justify-between items-center p-4 bg-gradient-to-b from-black/50 to-transparent">
+                  <div className="text-white">
+                    <p className="text-lg font-semibold">
+                      Photo {selectedPhotoIndex + 1} of {currentPhotos.length}
+                    </p>
+                    <p className="text-sm opacity-80">
+                      {currentPhotos[selectedPhotoIndex].name}
+                    </p>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => downloadPhoto(currentPhotos[selectedPhotoIndex].url, currentPhotos[selectedPhotoIndex].name)}
+                      size="sm"
+                      variant="outline"
+                      className="bg-black/50 border-white/20 text-white hover:bg-black/70"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
+                    </Button>
+                    
+                    <button
+                      onClick={closeGallery}
+                      className="p-2 bg-black/50 text-white rounded-md hover:bg-black/70 transition-colors"
+                    >
+                      <X className="h-6 w-6" />
+                    </button>
+                  </div>
+                </div>
 
                 {/* Navigation Buttons */}
                 {selectedPhotoIndex > 0 && (
@@ -309,7 +503,7 @@ const CustomerPhotos = () => {
                   </button>
                 )}
 
-                {selectedPhotoIndex < photos.length - 1 && (
+                {selectedPhotoIndex < currentPhotos.length - 1 && (
                   <button
                     onClick={goToNext}
                     className="absolute right-4 top-1/2 -translate-y-1/2 z-50 p-3 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
@@ -318,42 +512,40 @@ const CustomerPhotos = () => {
                   </button>
                 )}
 
-                {/* Photo */}
-                <img
-                  src={photos[selectedPhotoIndex].url}
-                  alt={`Cleaning photo ${selectedPhotoIndex + 1}`}
-                  className="max-w-full max-h-full object-contain"
-                />
+                {/* Main Photo */}
+                <div className="flex-1 flex items-center justify-center p-4 pt-20 pb-32">
+                  <img
+                    src={currentPhotos[selectedPhotoIndex].url}
+                    alt={`Photo ${selectedPhotoIndex + 1}`}
+                    className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                  />
+                </div>
 
-                {/* Photo Info */}
-                <div className="absolute bottom-4 left-4 right-4 bg-black/50 text-white p-4 rounded-lg">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-lg font-semibold">
-                        Photo {selectedPhotoIndex + 1} of {photos.length}
-                      </p>
-                      <p className="text-sm opacity-80">
-                        {photos[selectedPhotoIndex].name}
-                      </p>
-                    </div>
-                    <Button
-                      onClick={() => downloadPhoto(photos[selectedPhotoIndex].url, photos[selectedPhotoIndex].name)}
-                      className="bg-primary text-primary-foreground hover:bg-primary/90"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download
-                    </Button>
+                {/* Thumbnail Strip */}
+                <div className="absolute bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black/80 to-transparent p-4">
+                  <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-white/20">
+                    {currentPhotos.map((photo, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedPhotoIndex(index)}
+                        className={`flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition-all ${
+                          index === selectedPhotoIndex 
+                            ? 'border-white shadow-lg scale-110' 
+                            : 'border-white/30 hover:border-white/60'
+                        }`}
+                      >
+                        <img
+                          src={photo.url}
+                          alt={`Thumbnail ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
             </DialogContent>
           </Dialog>
-        )}
-
-        {photos.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No photos found in this folder.</p>
-          </div>
         )}
       </div>
     </div>
