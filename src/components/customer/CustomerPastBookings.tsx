@@ -52,7 +52,7 @@ const CustomerPastBookings = () => {
   const [reviewText, setReviewText] = useState('');
   
   // Filter states
-  const [timePeriod, setTimePeriod] = useState('current-month');
+  const [timePeriod, setTimePeriod] = useState('all');
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [serviceTypes, setServiceTypes] = useState<string[]>([]);
