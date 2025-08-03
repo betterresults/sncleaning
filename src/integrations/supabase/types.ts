@@ -94,6 +94,7 @@ export type Database = {
           first_cleaning: string | null
           first_name: string | null
           frequently: string | null
+          has_photos: boolean | null
           hours_required: number | null
           id: number
           invoice_id: string | null
@@ -161,6 +162,7 @@ export type Database = {
           first_cleaning?: string | null
           first_name?: string | null
           frequently?: string | null
+          has_photos?: boolean | null
           hours_required?: number | null
           id?: number
           invoice_id?: string | null
@@ -228,6 +230,7 @@ export type Database = {
           first_cleaning?: string | null
           first_name?: string | null
           frequently?: string | null
+          has_photos?: boolean | null
           hours_required?: number | null
           id?: number
           invoice_id?: string | null
@@ -732,6 +735,7 @@ export type Database = {
           first_cleaning: string | null
           first_name: string | null
           frequently: string | null
+          has_photos: boolean | null
           hours_required: number | null
           id: number
           invoice_id: string | null
@@ -795,6 +799,7 @@ export type Database = {
           first_cleaning?: string | null
           first_name?: string | null
           frequently?: string | null
+          has_photos?: boolean | null
           hours_required?: number | null
           id: number
           invoice_id?: string | null
@@ -858,6 +863,7 @@ export type Database = {
           first_cleaning?: string | null
           first_name?: string | null
           frequently?: string | null
+          has_photos?: boolean | null
           hours_required?: number | null
           id?: number
           invoice_id?: string | null
