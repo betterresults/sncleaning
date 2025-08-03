@@ -34,6 +34,7 @@ interface PastBooking {
   } | null;
   cleaner_id?: number;
   has_photos?: boolean;
+  photo_folder_name?: string; // Direct reference to photo folder
 }
 
 const CustomerPastBookings = () => {
@@ -140,6 +141,7 @@ const CustomerPastBookings = () => {
         (data || []).map(async (booking) => {
           let cleanerData = null;
           let hasPhotos = false;
+          let photoFolderName = '';
 
           // Get cleaner info
           if (booking.cleaner) {
@@ -147,24 +149,33 @@ const CustomerPastBookings = () => {
               .from('cleaners')
               .select('first_name, last_name')
               .eq('id', booking.cleaner)
-              .single();
+              .maybeSingle();
             cleanerData = cleanerResult;
           }
 
-          // Check if photos exist for this booking
+          // Get photos info for this booking
           const { data: photosData } = await supabase
             .from('cleaning_photos')
-            .select('id')
+            .select('file_path')
             .eq('booking_id', booking.id)
             .limit(1);
           
-          hasPhotos = photosData && photosData.length > 0;
+          if (photosData && photosData.length > 0) {
+            hasPhotos = true;
+            // Extract folder name from the file path
+            const filePath = photosData[0].file_path;
+            const folderMatch = filePath.match(/^([^\/]+)\//);
+            if (folderMatch) {
+              photoFolderName = folderMatch[1];
+            }
+          }
             
           return {
             ...booking,
             cleaner: cleanerData,
             cleaner_id: booking.cleaner,
-            has_photos: hasPhotos
+            has_photos: hasPhotos,
+            photo_folder_name: photoFolderName
           };
         })
       );
@@ -358,43 +369,19 @@ const CustomerPastBookings = () => {
     }
   };
 
-  const handleSeePhotos = async (booking: PastBooking) => {
-    try {
-      // First, try to get the actual folder name from the photos database
-      const { data: photoData } = await supabase
-        .from('cleaning_photos')
-        .select('file_path')
-        .eq('booking_id', booking.id)
-        .limit(1);
-
-      let folderName = '';
-      
-      if (photoData && photoData.length > 0) {
-        // Extract folder name from the actual file path
-        const filePath = photoData[0].file_path;
-        const folderMatch = filePath.match(/^([^\/]+)\//);
-        if (folderMatch) {
-          folderName = folderMatch[1];
-        }
-      }
-      
-      // If no photos found or folder extraction failed, use fallback naming
-      if (!folderName) {
-        const bookingDate = new Date(booking.date_time).toISOString().split('T')[0];
-        folderName = `${booking.id}_${booking.postcode}_${bookingDate}_${activeCustomerId}`;
-      }
-      
-      console.log('Opening photos for folder:', folderName);
-      // Navigate to dedicated photos page
-      window.open(`/photos/${folderName}`, '_blank');
-    } catch (error) {
-      console.error('Error getting photo folder:', error);
+  const handleSeePhotos = (booking: PastBooking) => {
+    if (!booking.photo_folder_name) {
       toast({
         title: 'Error',
-        description: 'Could not load photos. Please try again.',
+        description: 'Photo folder not found for this booking.',
         variant: 'destructive'
       });
+      return;
     }
+    
+    console.log('Opening photos for folder:', booking.photo_folder_name);
+    // Navigate to dedicated photos page with the direct folder reference
+    window.open(`/photos/${booking.photo_folder_name}`, '_blank');
   };
 
   if (loading) {
