@@ -3,7 +3,8 @@ import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, ArrowLeft, Home } from 'lucide-react';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Download, ArrowLeft, Home, Expand, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface PhotoFile {
@@ -17,6 +18,8 @@ const CustomerPhotos = () => {
   const [photos, setPhotos] = useState<PhotoFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -89,6 +92,34 @@ const CustomerPhotos = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const openGallery = (index: number) => {
+    setSelectedPhotoIndex(index);
+    setIsGalleryOpen(true);
+  };
+
+  const closeGallery = () => {
+    setIsGalleryOpen(false);
+    setSelectedPhotoIndex(null);
+  };
+
+  const goToPrevious = () => {
+    if (selectedPhotoIndex !== null && selectedPhotoIndex > 0) {
+      setSelectedPhotoIndex(selectedPhotoIndex - 1);
+    }
+  };
+
+  const goToNext = () => {
+    if (selectedPhotoIndex !== null && selectedPhotoIndex < photos.length - 1) {
+      setSelectedPhotoIndex(selectedPhotoIndex + 1);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') goToPrevious();
+    if (e.key === 'ArrowRight') goToNext();
+    if (e.key === 'Escape') closeGallery();
   };
 
   if (!folderName) {
@@ -164,9 +195,9 @@ const CustomerPhotos = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {photos.map((photo, index) => (
-            <Card key={photo.name} className="overflow-hidden hover:shadow-lg transition-shadow">
+            <Card key={photo.name} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
               <CardContent className="p-0">
-                <div className="aspect-square relative">
+                <div className="aspect-square relative" onClick={() => openGallery(index)}>
                   <img
                     src={photo.url}
                     alt={`Cleaning photo ${index + 1}`}
@@ -174,14 +205,30 @@ const CustomerPhotos = () => {
                     loading="lazy"
                   />
                   <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center opacity-0 hover:opacity-100">
-                    <Button
-                      onClick={() => downloadPhoto(photo.url, photo.name)}
-                      size="sm"
-                      className="bg-white text-black hover:bg-gray-100"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openGallery(index);
+                        }}
+                        size="sm"
+                        className="bg-white text-black hover:bg-gray-100"
+                      >
+                        <Expand className="h-4 w-4 mr-2" />
+                        View
+                      </Button>
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          downloadPhoto(photo.url, photo.name);
+                        }}
+                        size="sm"
+                        className="bg-white text-black hover:bg-gray-100"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Download
+                      </Button>
+                    </div>
                   </div>
                 </div>
                 <div className="p-3">
@@ -193,6 +240,73 @@ const CustomerPhotos = () => {
             </Card>
           ))}
         </div>
+
+        {/* Full Screen Gallery */}
+        {isGalleryOpen && selectedPhotoIndex !== null && (
+          <Dialog open={isGalleryOpen} onOpenChange={setIsGalleryOpen}>
+            <DialogContent 
+              className="max-w-screen-xl w-screen h-screen p-0 bg-black/95"
+              onKeyDown={handleKeyDown}
+            >
+              <div className="relative w-full h-full flex items-center justify-center">
+                {/* Close Button */}
+                <button
+                  onClick={closeGallery}
+                  className="absolute top-4 right-4 z-50 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+
+                {/* Navigation Buttons */}
+                {selectedPhotoIndex > 0 && (
+                  <button
+                    onClick={goToPrevious}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 z-50 p-3 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
+                  >
+                    <ChevronLeft className="h-8 w-8" />
+                  </button>
+                )}
+
+                {selectedPhotoIndex < photos.length - 1 && (
+                  <button
+                    onClick={goToNext}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 z-50 p-3 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
+                  >
+                    <ChevronRight className="h-8 w-8" />
+                  </button>
+                )}
+
+                {/* Photo */}
+                <img
+                  src={photos[selectedPhotoIndex].url}
+                  alt={`Cleaning photo ${selectedPhotoIndex + 1}`}
+                  className="max-w-full max-h-full object-contain"
+                />
+
+                {/* Photo Info */}
+                <div className="absolute bottom-4 left-4 right-4 bg-black/50 text-white p-4 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-lg font-semibold">
+                        Photo {selectedPhotoIndex + 1} of {photos.length}
+                      </p>
+                      <p className="text-sm opacity-80">
+                        {photos[selectedPhotoIndex].name}
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => downloadPhoto(photos[selectedPhotoIndex].url, photos[selectedPhotoIndex].name)}
+                      className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
 
         {photos.length === 0 && (
           <div className="text-center py-12">

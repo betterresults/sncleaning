@@ -11,12 +11,17 @@ const corsHeaders = {
 
 interface PhotoNotificationRequest {
   booking_id: number;
-  customer_email: string;
-  customer_name: string;
-  service_type: string;
-  booking_date: string;
-  photo_count: number;
+  customer_email?: string;
+  customer_name?: string;
+  service_type?: string;
+  booking_date?: string;
+  photo_count?: number;
   photo_folder_path?: string; // e.g., "SE164NF_2025-07-07_29"
+  // Alternative format
+  customer_id?: number;
+  cleaner_id?: number;
+  folder_name?: string;
+  total_photos?: number;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -30,25 +35,97 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { booking_id, customer_email, customer_name, service_type, booking_date, photo_count, photo_folder_path }: PhotoNotificationRequest = await req.json();
+    const requestData: PhotoNotificationRequest = await req.json();
+    const { 
+      booking_id, 
+      customer_email, 
+      customer_name, 
+      service_type, 
+      booking_date, 
+      photo_count, 
+      photo_folder_path,
+      customer_id,
+      cleaner_id,
+      folder_name,
+      total_photos
+    } = requestData;
 
     console.log('Processing photo notification for booking:', booking_id);
+    console.log('Request data:', requestData);
 
-    // Get photos for this booking to determine the folder path
+    // Get booking details if not provided
+    let bookingDetails: any = {};
+    let customerInfo: any = {};
+    
+    if (!customer_email || !customer_name) {
+      const { data: booking } = await supabase
+        .from('bookings')
+        .select(`
+          *,
+          customers!customer (
+            first_name,
+            last_name,
+            email
+          )
+        `)
+        .eq('id', booking_id)
+        .single();
+      
+      if (!booking) {
+        // Try past_bookings table
+        const { data: pastBooking } = await supabase
+          .from('past_bookings')
+          .select(`
+            *,
+            customers!customer (
+              first_name,
+              last_name,
+              email
+            )
+          `)
+          .eq('id', booking_id)
+          .single();
+        
+        if (pastBooking) {
+          bookingDetails = pastBooking;
+          customerInfo = pastBooking.customers || {
+            first_name: pastBooking.first_name,
+            last_name: pastBooking.last_name,
+            email: pastBooking.email
+          };
+        }
+      } else {
+        bookingDetails = booking;
+        customerInfo = booking.customers || {
+          first_name: booking.first_name,
+          last_name: booking.last_name,
+          email: booking.email
+        };
+      }
+    }
+
+    // Get photos for this booking to determine the folder path and count
     const { data: photos } = await supabase
       .from('cleaning_photos')
       .select('file_path, postcode, booking_date')
-      .eq('booking_id', booking_id)
-      .limit(1);
+      .eq('booking_id', booking_id);
 
     // Generate folder path from the first photo's path or use provided path
-    let folderPath = photo_folder_path;
+    let folderPath = photo_folder_path || folder_name;
+    let photoCount = photo_count || total_photos || (photos ? photos.length : 0);
+    
     if (!folderPath && photos && photos.length > 0) {
       const photoPath = photos[0].file_path;
       // Extract folder from path like "SE164NF_2025-07-07_29/photo1.jpg" 
       const folderMatch = photoPath.match(/^([^\/]+)\//);
       folderPath = folderMatch ? folderMatch[1] : null;
     }
+
+    // Use provided data or fallback to booking data
+    const finalCustomerEmail = customer_email || customerInfo.email;
+    const finalCustomerName = customer_name || `${customerInfo.first_name || ''} ${customerInfo.last_name || ''}`.trim();
+    const finalServiceType = service_type || bookingDetails.service_type || 'Cleaning Service';
+    const finalBookingDate = booking_date || bookingDetails.date_time || bookingDetails.booking_date;
 
     // Check if notification already sent for this booking
     const { data: existingNotification } = await supabase
@@ -66,10 +143,23 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
+    // Prepare email recipients
+    const recipients = [];
+    if (finalCustomerEmail) {
+      recipients.push(finalCustomerEmail);
+    }
+    recipients.push("sales@sncleaningservices.co.uk");
+
+    console.log('Sending email to:', recipients);
+    console.log('Customer:', finalCustomerName);
+    console.log('Service:', finalServiceType);
+    console.log('Photos:', photoCount);
+    console.log('Folder:', folderPath);
+
     // Send email notification
     const emailResponse = await resend.emails.send({
       from: "SN Cleaning <noreply@notifications.sncleaningservices.co.uk>",
-      to: [customer_email, "sales@sncleaningservices.co.uk"],
+      to: recipients,
       reply_to: "sales@sncleaningservices.co.uk",
       subject: `Your Cleaning Photos Are Ready! 📸`,
       html: `
@@ -83,15 +173,16 @@ const handler = async (req: Request): Promise<Response> => {
             <div style="padding: 0 30px 30px 30px;">
               <h2 style="color: #18A5A5; margin-bottom: 20px;">Your Cleaning Photos Are Ready!</h2>
               
-              <p>Dear ${customer_name},</p>
+              <p>Dear ${finalCustomerName || 'Valued Customer'},</p>
               
-              <p>Great news! Your cleaner has completed the ${service_type} service and uploaded ${photo_count} photos showing the excellent work completed at your property.</p>
+              <p>Great news! Your cleaner has completed the ${finalServiceType} service and uploaded ${photoCount} photos showing the excellent work completed at your property.</p>
               
               <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #18A5A5;">
                 <h3 style="margin-top: 0; color: #185166;">Service Details:</h3>
-                <p style="margin: 5px 0;"><strong>Service:</strong> ${service_type}</p>
-                <p style="margin: 5px 0;"><strong>Date:</strong> ${new Date(booking_date).toLocaleDateString()}</p>
-                <p style="margin: 5px 0;"><strong>Photos:</strong> ${photo_count} uploaded</p>
+                <p style="margin: 5px 0;"><strong>Service:</strong> ${finalServiceType}</p>
+                <p style="margin: 5px 0;"><strong>Date:</strong> ${finalBookingDate ? new Date(finalBookingDate).toLocaleDateString() : 'Recent service'}</p>
+                <p style="margin: 5px 0;"><strong>Photos:</strong> ${photoCount} uploaded</p>
+                <p style="margin: 5px 0;"><strong>Booking ID:</strong> ${booking_id}</p>
               </div>
               
               ${folderPath ? `
@@ -102,13 +193,16 @@ const handler = async (req: Request): Promise<Response> => {
                    style="display: inline-block; background-color: white; color: #18A5A5; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 10px;">
                   📸 View Photos
                 </a>
+                <p style="margin: 20px 0 0 0; font-size: 14px; opacity: 0.9;">
+                  Note: Photos are publicly accessible - no login required
+                </p>
               </div>
               ` : ''}
               
               <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
                 <p style="margin: 0; color: #666; font-size: 14px;">
                   <strong>Note:</strong> These photos showcase the quality of work performed and serve as verification of service completion. 
-                  You can access these photos anytime through your customer portal.
+                  You can access these photos anytime through the provided link.
                 </p>
               </div>
               
