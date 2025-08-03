@@ -30,12 +30,13 @@ export const TestEmailButton = () => {
       } else {
         console.log('Test photo notification sent successfully:', data);
         toast({
-          title: "Success",
+          title: "Success", 
           description: "Test photo notification sent to sinsip.2014@gmail.com",
         });
       }
     } catch (error: any) {
-      console.error('Error:', error);
+      console.error('Photo notification test error:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
       toast({
         title: "Error",
         description: `Failed to send test notification: ${error.message}`,

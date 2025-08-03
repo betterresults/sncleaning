@@ -1,1 +1,10 @@
 project_id = "dkomihipebixlegygnoy"
+
+[functions.send-photo-notification]
+verify_jwt = false
+
+[functions.test-photo-notification]
+verify_jwt = false
+
+[functions.auto-photo-notification]
+verify_jwt = false
