@@ -1280,6 +1280,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_user_role: {
+        Args: { user_uuid: string }
+        Returns: string
+      }
       move_sub_bookings_to_past: {
         Args: Record<PropertyKey, never>
         Returns: undefined
