@@ -19,7 +19,7 @@ export const TestEmailButton = () => {
           customer_id: 29,
           cleaner_id: 1,
           folder_name: "108248_SE164NF_2025-07-29_29",
-          total_photos: 11
+          total_photos: 16
         }
       });
 
