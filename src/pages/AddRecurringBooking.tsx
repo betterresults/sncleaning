@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -48,6 +48,7 @@ const DAYS_OF_WEEK = [
 
 export default function AddRecurringBooking() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
@@ -78,7 +79,32 @@ export default function AddRecurringBooking() {
   useEffect(() => {
     fetchCustomers();
     fetchCleaners();
-  }, []);
+    
+    // Handle prefilled data from URL parameters
+    const from = searchParams.get('from');
+    if (from === 'booking') {
+      const customerId = searchParams.get('customerId');
+      const cleaningType = searchParams.get('cleaningType');
+      const hours = searchParams.get('hours');
+      const costPerHour = searchParams.get('costPerHour');
+      const totalCost = searchParams.get('totalCost');
+      const paymentMethod = searchParams.get('paymentMethod');
+      const cleanerRate = searchParams.get('cleanerRate');
+      const cleaner = searchParams.get('cleaner');
+      
+      setFormData(prev => ({
+        ...prev,
+        client: customerId || '',
+        cleaning_type: cleaningType || 'Standard Cleaning',
+        hours: hours || '2',
+        cost_per_hour: costPerHour || '20',
+        total_cost: totalCost || '40',
+        payment_method: paymentMethod || 'Cash',
+        cleaner_rate: cleanerRate || '16',
+        cleaner: cleaner || ''
+      }));
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (formData.client) {
