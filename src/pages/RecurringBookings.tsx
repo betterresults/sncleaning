@@ -330,7 +330,7 @@ export default function RecurringBookings() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Cost per Visit</p>
-                    <p className="font-medium">£{service.total_cost}</p>
+                    <p className="font-medium">£{Number(service.total_cost).toFixed(2)}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Start Date</p>
@@ -351,7 +351,7 @@ export default function RecurringBookings() {
                   {service.days_of_the_week && (
                     <div className="md:col-span-2">
                       <p className="text-sm font-medium text-muted-foreground">Days of Week</p>
-                      <p className="font-medium">{service.days_of_the_week}</p>
+                      <p className="font-medium">{service.days_of_the_week.split(', ').map(day => day.charAt(0).toUpperCase() + day.slice(1)).join(', ')}</p>
                     </div>
                   )}
                   {service.postponed && (

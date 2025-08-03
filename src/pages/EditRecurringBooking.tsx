@@ -496,14 +496,14 @@ export default function EditRecurringBooking() {
               </div>
 
               <div>
-                <Label htmlFor="total_cost">Total Cost per Visit</Label>
+                <Label htmlFor="total_cost">Total Cost per Visit *</Label>
                 <Input
                   id="total_cost"
                   type="number"
                   step="0.01"
                   value={formData.total_cost}
-                  readOnly
-                  className="bg-muted"
+                  onChange={(e) => setFormData(prev => ({ ...prev, total_cost: e.target.value }))}
+                  required
                 />
               </div>
             </div>
