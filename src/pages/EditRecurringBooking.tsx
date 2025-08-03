@@ -107,7 +107,7 @@ export default function EditRecurringBooking() {
 
       if (data) {
         setFormData({
-          client: data.client?.toString() || '',
+          client: data.customer?.toString() || '',
           address: data.address || '',
           cleaner: data.cleaner?.toString() || '',
           cleaner_rate: data.cleaner_rate?.toString() || '',
@@ -226,7 +226,7 @@ export default function EditRecurringBooking() {
 
     try {
       const submitData = {
-        client: parseInt(formData.client),
+        customer: parseInt(formData.client),
         address: formData.address,
         cleaner: formData.cleaner ? parseInt(formData.cleaner) : null,
         cleaner_rate: formData.cleaner_rate ? parseFloat(formData.cleaner_rate) : null,
