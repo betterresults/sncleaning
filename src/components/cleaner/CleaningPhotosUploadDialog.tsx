@@ -89,31 +89,36 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
 
       if (uploadError) throw uploadError;
 
-      // Save metadata to database - try direct insert with type workaround
-      let dbError = null;
-      try {
-        const { error } = await (supabase as any)
-          .from('cleaning_photos')
-          .insert({
-            booking_id: booking.id,
-            customer_id: booking.customer,
-            cleaner_id: booking.cleaner,
-            file_path: filePath,
-            photo_type: photoType,
-            postcode: booking.postcode,
-            booking_date: bookingDate,
-            damage_details: photoType === 'additional' ? additionalDetails : null
-          });
-        dbError = error;
-      } catch (error) {
-        console.error('Database insert error:', error);
-        dbError = error;
-      }
+      // Save metadata to database with better error handling
+      console.log('Saving photo metadata to database:', {
+        booking_id: booking.id,
+        customer_id: booking.customer,
+        cleaner_id: booking.cleaner,
+        file_path: filePath,
+        photo_type: photoType,
+        postcode: booking.postcode,
+        booking_date: bookingDate
+      });
+
+      const { error: dbError } = await supabase
+        .from('cleaning_photos')
+        .insert({
+          booking_id: booking.id,
+          customer_id: booking.customer,
+          cleaner_id: booking.cleaner,
+          file_path: filePath,
+          photo_type: photoType,
+          postcode: booking.postcode,
+          booking_date: bookingDate,
+          damage_details: photoType === 'additional' ? additionalDetails : null
+        });
 
       if (dbError) {
-        console.error('Database error:', dbError);
-        // Don't throw error here to allow file upload to complete
+        console.error('Database insert error for file:', filePath, dbError);
+        throw new Error(`Database error: ${dbError.message}`);
       }
+
+      console.log('Photo metadata saved successfully for:', filePath);
 
       return filePath;
     });
