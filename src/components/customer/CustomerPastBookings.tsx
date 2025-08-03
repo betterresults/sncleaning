@@ -358,12 +358,43 @@ const CustomerPastBookings = () => {
     }
   };
 
-  const handleSeePhotos = (booking: PastBooking) => {
-    // Extract date from date_time for folder name
-    const bookingDate = new Date(booking.date_time).toISOString().split('T')[0];
-    const folderName = `${booking.id}_${booking.postcode}_${bookingDate}_${activeCustomerId}`;
-    // Navigate to dedicated photos page
-    window.open(`/photos/${folderName}`, '_blank');
+  const handleSeePhotos = async (booking: PastBooking) => {
+    try {
+      // First, try to get the actual folder name from the photos database
+      const { data: photoData } = await supabase
+        .from('cleaning_photos')
+        .select('file_path')
+        .eq('booking_id', booking.id)
+        .limit(1);
+
+      let folderName = '';
+      
+      if (photoData && photoData.length > 0) {
+        // Extract folder name from the actual file path
+        const filePath = photoData[0].file_path;
+        const folderMatch = filePath.match(/^([^\/]+)\//);
+        if (folderMatch) {
+          folderName = folderMatch[1];
+        }
+      }
+      
+      // If no photos found or folder extraction failed, use fallback naming
+      if (!folderName) {
+        const bookingDate = new Date(booking.date_time).toISOString().split('T')[0];
+        folderName = `${booking.id}_${booking.postcode}_${bookingDate}_${activeCustomerId}`;
+      }
+      
+      console.log('Opening photos for folder:', folderName);
+      // Navigate to dedicated photos page
+      window.open(`/photos/${folderName}`, '_blank');
+    } catch (error) {
+      console.error('Error getting photo folder:', error);
+      toast({
+        title: 'Error',
+        description: 'Could not load photos. Please try again.',
+        variant: 'destructive'
+      });
+    }
   };
 
   if (loading) {
