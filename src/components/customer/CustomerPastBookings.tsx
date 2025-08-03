@@ -359,8 +359,11 @@ const CustomerPastBookings = () => {
   };
 
   const handleSeePhotos = (booking: PastBooking) => {
-    setSelectedBooking(booking);
-    setPhotosDialogOpen(true);
+    // Extract date from date_time for folder name
+    const bookingDate = new Date(booking.date_time).toISOString().split('T')[0];
+    const folderName = `${booking.id}_${booking.postcode}_${bookingDate}_${activeCustomerId}`;
+    // Navigate to dedicated photos page
+    window.open(`/photos/${folderName}`, '_blank');
   };
 
   if (loading) {

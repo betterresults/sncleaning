@@ -159,9 +159,26 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
 
       await Promise.all(uploadPromises);
 
+      // Send customer notification about photos being ready
+      try {
+        const folderName = `${booking.id}_${booking.postcode}_${bookingDate}_${booking.customer}`;
+        await supabase.functions.invoke('send-photo-notification', {
+          body: {
+            booking_id: booking.id,
+            customer_id: booking.customer,
+            cleaner_id: booking.cleaner,
+            folder_name: folderName,
+            total_photos: beforeFiles.length + afterFiles.length + additionalFiles.length
+          }
+        });
+      } catch (notificationError) {
+        console.error('Failed to send photo notification:', notificationError);
+        // Don't fail the upload if notification fails
+      }
+
       toast({
         title: 'Photos Uploaded Successfully',
-        description: `Uploaded ${beforeFiles.length + afterFiles.length + additionalFiles.length} photos.`
+        description: `Uploaded ${beforeFiles.length + afterFiles.length + additionalFiles.length} photos. Customer will be notified.`
       });
 
       // Reset form
