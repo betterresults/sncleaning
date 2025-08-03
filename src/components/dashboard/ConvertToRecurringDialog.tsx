@@ -188,7 +188,7 @@ const ConvertToRecurringDialog = ({ open, onOpenChange, booking, onSuccess }: Co
           days_of_the_week: recurringData.daysOfTheWeek,
           start_date: recurringData.startDate.toISOString().split('T')[0],
           start_time: `${recurringData.startTime}:00`,
-          hours: parseFloat(recurringData.hours),
+          hours: recurringData.hours,
           cost_per_hour: parseFloat(recurringData.costPerHour),
           total_cost: parseFloat(recurringData.totalCost),
           payment_method: recurringData.paymentMethod,

@@ -101,7 +101,7 @@ export default function EditRecurringBooking() {
         .from('recurring_services')
         .select('*')
         .eq('id', parseInt(id!))
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
@@ -113,8 +113,8 @@ export default function EditRecurringBooking() {
           cleaner_rate: data.cleaner_rate?.toString() || '',
           cleaning_type: data.cleaning_type || '',
           frequently: data.frequently || '',
-          days: data.days || '',
-          days_number: data.days_number?.toString() || '',
+          days: '', // This field doesn't exist in database
+          days_number: '', // This field doesn't exist in database
           days_of_the_week: data.days_of_the_week || '',
           hours: data.hours?.toString() || '',
           cost_per_hour: data.cost_per_hour?.toString() || '',
@@ -232,10 +232,8 @@ export default function EditRecurringBooking() {
         cleaner_rate: formData.cleaner_rate ? parseFloat(formData.cleaner_rate) : null,
         cleaning_type: formData.cleaning_type,
         frequently: formData.frequently,
-        days: formData.days,
-        days_number: formData.days_number ? parseInt(formData.days_number) : null,
         days_of_the_week: formData.days_of_the_week || null,
-        hours: formData.hours ? parseFloat(formData.hours) : null,
+        hours: formData.hours,
         cost_per_hour: formData.cost_per_hour ? parseFloat(formData.cost_per_hour) : null,
         total_cost: formData.total_cost ? parseFloat(formData.total_cost) : null,
         payment_method: formData.payment_method,

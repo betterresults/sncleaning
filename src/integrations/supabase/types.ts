@@ -659,51 +659,42 @@ export type Database = {
       }
       customers: {
         Row: {
-          address: string | null
           clent_type: string | null
           client_status: string | null
           company: string | null
           email: string | null
           first_name: string | null
-          frontly_id: number | null
           full_name: string | null
           id: number
           image: string | null
           last_name: string | null
           phone: string | null
-          postcode: string | null
           whatsapp: string | null
         }
         Insert: {
-          address?: string | null
           clent_type?: string | null
           client_status?: string | null
           company?: string | null
           email?: string | null
           first_name?: string | null
-          frontly_id?: number | null
           full_name?: string | null
           id?: number
           image?: string | null
           last_name?: string | null
           phone?: string | null
-          postcode?: string | null
           whatsapp?: string | null
         }
         Update: {
-          address?: string | null
           clent_type?: string | null
           client_status?: string | null
           company?: string | null
           email?: string | null
           first_name?: string | null
-          frontly_id?: number | null
           full_name?: string | null
           id?: number
           image?: string | null
           last_name?: string | null
           phone?: string | null
-          postcode?: string | null
           whatsapp?: string | null
         }
         Relationships: []
@@ -906,13 +897,6 @@ export type Database = {
             referencedRelation: "cleaners"
             referencedColumns: ["frontly_id"]
           },
-          {
-            foreignKeyName: "past_bookings_customer_fkey"
-            columns: ["customer"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["frontly_id"]
-          },
         ]
       }
       photo_completion_notifications: {
@@ -1024,17 +1008,18 @@ export type Database = {
           cleaner: number | null
           cleaner_rate: number | null
           cleaning_type: string | null
-          client: number | null
           cost_per_hour: number | null
           created_at: string
-          days: string | null
-          days_number: number | null
+          customer: number | null
           days_of_the_week: string | null
           frequently: string | null
-          hours: number | null
+          hours: string | null
           id: number
+          interval: string | null
+          last_generated_date: string | null
           payment_method: string | null
           postponed: boolean | null
+          recurring_group_id: string | null
           start_date: string | null
           start_time: string | null
           total_cost: number | null
@@ -1044,17 +1029,18 @@ export type Database = {
           cleaner?: number | null
           cleaner_rate?: number | null
           cleaning_type?: string | null
-          client?: number | null
           cost_per_hour?: number | null
           created_at?: string
-          days?: string | null
-          days_number?: number | null
+          customer?: number | null
           days_of_the_week?: string | null
           frequently?: string | null
-          hours?: number | null
+          hours?: string | null
           id?: number
+          interval?: string | null
+          last_generated_date?: string | null
           payment_method?: string | null
           postponed?: boolean | null
+          recurring_group_id?: string | null
           start_date?: string | null
           start_time?: string | null
           total_cost?: number | null
@@ -1064,17 +1050,18 @@ export type Database = {
           cleaner?: number | null
           cleaner_rate?: number | null
           cleaning_type?: string | null
-          client?: number | null
           cost_per_hour?: number | null
           created_at?: string
-          days?: string | null
-          days_number?: number | null
+          customer?: number | null
           days_of_the_week?: string | null
           frequently?: string | null
-          hours?: number | null
+          hours?: string | null
           id?: number
+          interval?: string | null
+          last_generated_date?: string | null
           payment_method?: string | null
           postponed?: boolean | null
+          recurring_group_id?: string | null
           start_date?: string | null
           start_time?: string | null
           total_cost?: number | null
@@ -1088,8 +1075,15 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "recurring_services_client_fkey"
-            columns: ["client"]
+            foreignKeyName: "recurring_services_cleaner_fkey"
+            columns: ["cleaner"]
+            isOneToOne: false
+            referencedRelation: "cleaners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_services_customer_fkey"
+            columns: ["customer"]
             isOneToOne: false
             referencedRelation: "customers"
             referencedColumns: ["id"]
@@ -1268,21 +1262,13 @@ export type Database = {
         }
         Returns: boolean
       }
-      create_bi_weekly_cleaning_bookings_within_30_days: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      create_monthly_cleaning_bookings_within_30_days: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      create_weekly_cleaning_bookings_within_30_days: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
       custom_access_token_hook: {
         Args: { event: Json }
         Returns: Json
+      }
+      generate_recurring_bookings: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
