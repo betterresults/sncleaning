@@ -84,6 +84,7 @@ export default function AddRecurringBooking() {
     const from = searchParams.get('from');
     if (from === 'booking') {
       const customerId = searchParams.get('customerId');
+      const addressId = searchParams.get('addressId');
       const cleaningType = searchParams.get('cleaningType');
       const hours = searchParams.get('hours');
       const costPerHour = searchParams.get('costPerHour');
@@ -95,6 +96,7 @@ export default function AddRecurringBooking() {
       setFormData(prev => ({
         ...prev,
         client: customerId || '',
+        address: addressId || '',
         cleaning_type: cleaningType || 'Standard Cleaning',
         hours: hours || '2',
         cost_per_hour: costPerHour || '20',
