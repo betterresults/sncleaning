@@ -17,12 +17,12 @@ const ConvertToRecurringDialog = ({ open, onOpenChange, booking, onSuccess }: Co
       customerId: booking.customer?.toString() || '',
       addressId: booking.address?.toString() || '',
       cleaningType: booking.cleaning_type || 'Standard Cleaning',
-      // Handle both total_hours (upcoming) and hours_required (past) bookings
-      hours: (booking.total_hours || booking.hours_required)?.toString() || '2',
+      // Use total_hours (actual billable hours) as priority, fallback to hours_required only if needed
+      hours: booking.total_hours?.toString() || booking.hours_required?.toString() || '2',
       // Handle both cleaning_cost_per_hour and calculated cost
       costPerHour: booking.cleaning_cost_per_hour?.toString() || 
-                   (booking.total_cost && (booking.total_hours || booking.hours_required) 
-                     ? (parseFloat(booking.total_cost) / (booking.total_hours || booking.hours_required)).toString()
+                   (booking.total_cost && booking.total_hours 
+                     ? (parseFloat(booking.total_cost) / booking.total_hours).toString()
                      : '20'),
       totalCost: booking.total_cost?.toString() || '40',
       paymentMethod: booking.payment_method || 'Cash',
