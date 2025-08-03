@@ -25,14 +25,14 @@ import {
 
 interface RecurringService {
   id: number;
-  client: number;
+  customer: number;
   customer_name?: string;
   address: string;
   cleaning_type: string;
   frequently: string;
   start_date: string;
   start_time: string;
-  hours: number;
+  hours: string;
   cost_per_hour: number;
   total_cost: number;
   cleaner: number;
@@ -66,52 +66,78 @@ export default function RecurringBookings() {
 
   const fetchRecurringServices = async () => {
     try {
-      const { data, error } = await supabase
+      // First, get the recurring services
+      const { data: services, error: servicesError } = await supabase
         .from('recurring_services')
-        .select(`
-          *,
-          customers!customer (
-            id,
-            first_name,
-            last_name
-          ),
-          cleaners!cleaner (
-            id,
-            first_name,
-            last_name
-          ),
-          addresses!address (
-            address,
-            postcode
-          )
-        `)
+        .select('*')
         .order('start_date', { ascending: false });
 
-      if (error) throw error;
+      if (servicesError) throw servicesError;
 
-        // Process the data with joined relationships
-        const servicesWithNames = (data || []).map((service: any) => {
-          let customer_name = 'Unknown Customer';
-          let cleaner_name = 'No Cleaner Assigned';
-          let address_text = service.addresses?.address || 'No Address';
+      if (!services || services.length === 0) {
+        setRecurringServices([]);
+        return;
+      }
 
-          // Get customer name from the joined data
-          if (service.customers) {
-            customer_name = `${service.customers.first_name || ''} ${service.customers.last_name || ''}`.trim();
-          }
+      // Get unique customer IDs, cleaner IDs, and address IDs
+      const customerIds = [...new Set(services.map(s => s.customer).filter(Boolean))];
+      const cleanerIds = [...new Set(services.map(s => s.cleaner).filter(Boolean))];
+      const addressIds = [...new Set(services.map(s => s.address).filter(Boolean))];
 
-          // Get cleaner name from the joined data
-          if (service.cleaners) {
-            cleaner_name = `${service.cleaners.first_name || ''} ${service.cleaners.last_name || ''}`.trim();
-          }
+      // Fetch customers
+      const { data: customers } = await supabase
+        .from('customers')
+        .select('id, first_name, last_name')
+        .in('id', customerIds);
 
-          return {
-            ...service,
-            customer_name,
-            cleaner_name,
-            address: address_text
-          };
-        });
+      // Fetch cleaners
+      const { data: cleaners } = await supabase
+        .from('cleaners')
+        .select('id, first_name, last_name')
+        .in('id', cleanerIds);
+
+      // Fetch addresses
+      const { data: addresses } = await supabase
+        .from('addresses')
+        .select('id, address, postcode')
+        .in('id', addressIds);
+
+      // Create lookup maps
+      const customersMap = new Map(customers?.map(c => [c.id, c]) || []);
+      const cleanersMap = new Map(cleaners?.map(c => [c.id, c]) || []);
+      const addressesMap = new Map(addresses?.map(a => [a.id, a]) || []);
+
+      // Process the data with joined relationships
+      const servicesWithNames = services.map((service: any) => {
+        let customer_name = 'Unknown Customer';
+        let cleaner_name = 'No Cleaner Assigned';
+        let address_text = 'No Address';
+
+        // Get customer name
+        const customer = customersMap.get(service.customer);
+        if (customer) {
+          customer_name = `${customer.first_name || ''} ${customer.last_name || ''}`.trim();
+        }
+
+        // Get cleaner name
+        const cleaner = cleanersMap.get(service.cleaner);
+        if (cleaner) {
+          cleaner_name = `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim();
+        }
+
+        // Get address
+        const address = addressesMap.get(service.address);
+        if (address) {
+          address_text = address.address;
+        }
+
+        return {
+          ...service,
+          customer_name,
+          cleaner_name,
+          address: address_text
+        };
+      });
 
       setRecurringServices(servicesWithNames);
     } catch (error) {
