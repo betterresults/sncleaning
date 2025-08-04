@@ -120,50 +120,92 @@ const handler = async (req: Request): Promise<Response> => {
             await resend.emails.send({
               from: "SN Cleaning Services <admin@sncleaningservices.co.uk>",
               to: [booking_data.email],
-              subject: "Welcome! Your Booking Confirmation & Account Details",
+              subject: "🎉 Booking Confirmed + Your VIP Account is Ready!",
               html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                  <h2>Thank You for Choosing SN Cleaning Services!</h2>
-                  <p>Hi ${booking_data.first_name || 'there'},</p>
-                  <p>Thank you for booking with us! We've received your cleaning request and we're excited to serve you.</p>
-                  
-                  <h3>We've Also Created Your Customer Account</h3>
-                  <p>You now have access to our customer portal where you can:</p>
-                  <ul>
-                    <li>View your booking details and history</li>
-                    <li>See before/after cleaning photos</li>
-                    <li>Manage your profile and addresses</li>
-                    <li>Book additional services</li>
-                    <li>Download invoices and receipts</li>
-                  </ul>
-
-                  <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #007bff;">
-                    <h3 style="margin-top: 0;">Your Login Details:</h3>
-                    <p><strong>Email:</strong> ${booking_data.email}</p>
-                    <p><strong>Temporary Password:</strong> <code style="background-color: #e9ecef; padding: 4px 8px; border-radius: 4px; font-size: 16px;">${tempPassword}</code></p>
+                <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa;">
+                  <!-- Header -->
+                  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center;">
+                    <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 300;">Thank You for Choosing Us!</h1>
+                    <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">Your cleaning is in excellent hands</p>
                   </div>
-
-                  <p><strong>Important:</strong> Please change your password after your first login for security.</p>
                   
-                  <p style="text-align: center;">
-                    <a href="${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovableproject.com') || 'https://your-domain.com'}/auth" 
-                       style="background-color: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
-                      Access Your Account
-                    </a>
-                  </p>
+                  <!-- Main Content -->
+                  <div style="padding: 40px 30px; background-color: white;">
+                    <h2 style="color: #4a5568; margin: 0 0 20px 0; font-size: 24px;">Hello ${booking_data.first_name || 'there'}! 👋</h2>
+                    
+                    <p style="color: #718096; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
+                      We're absolutely delighted that you've chosen SN Cleaning Services! Your booking has been received and we're already preparing to make your space sparkle.
+                    </p>
 
-                  <div style="background-color: #d4edda; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #28a745;">
-                    <h4 style="margin-top: 0; color: #155724;">What's Next?</h4>
-                    <p style="margin-bottom: 0; color: #155724;">We'll contact you soon to confirm your booking details and schedule. You'll receive cleaning photos after each service through your customer portal.</p>
+                    <!-- Booking Confirmation Box -->
+                    <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 25px; border-radius: 12px; margin: 30px 0; text-align: center;">
+                      <h3 style="color: white; margin: 0 0 10px 0; font-size: 20px;">✅ Booking Confirmed!</h3>
+                      <p style="color: rgba(255,255,255,0.95); margin: 0; font-size: 16px;">
+                        We'll contact you soon to confirm all the details and schedule your cleaning.
+                      </p>
+                    </div>
+
+                    <h3 style="color: #4a5568; margin: 30px 0 20px 0; font-size: 20px;">🎁 Bonus: We've Created Your VIP Account!</h3>
+                    
+                    <p style="color: #718096; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
+                      As a valued customer, you now have access to your personal cleaning portal with exclusive features:
+                    </p>
+
+                    <!-- Features Box -->
+                    <div style="background-color: #f7fafc; padding: 25px; border-radius: 12px; border: 2px solid #e2e8f0; margin: 25px 0;">
+                      <ul style="color: #4a5568; margin: 0; padding-left: 20px; line-height: 1.8; font-size: 15px;">
+                        <li>📅 <strong>Track Your Bookings:</strong> View past and upcoming cleans</li>
+                        <li>📸 <strong>See the Results:</strong> Before & after photos of your cleaning</li>
+                        <li>📱 <strong>Easy Rebooking:</strong> Schedule your next clean with one click</li>
+                        <li>📋 <strong>Manage Addresses:</strong> Save multiple locations</li>
+                        <li>📄 <strong>Digital Receipts:</strong> Download invoices anytime</li>
+                        <li>⭐ <strong>Share Feedback:</strong> Let us know how we're doing</li>
+                      </ul>
+                    </div>
+
+                    <!-- Login Details -->
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 12px; color: white; margin: 30px 0;">
+                      <h3 style="color: white; margin: 0 0 15px 0; font-size: 18px;">🔐 Your VIP Access Details</h3>
+                      <p style="margin: 8px 0; color: rgba(255,255,255,0.95);"><strong>Email:</strong> ${booking_data.email}</p>
+                      <p style="margin: 8px 0; color: rgba(255,255,255,0.95);"><strong>Temporary Password:</strong></p>
+                      <div style="background-color: rgba(255,255,255,0.15); color: white; padding: 12px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 16px; letter-spacing: 1px; margin: 10px 0; border: 1px solid rgba(255,255,255,0.3);">
+                        ${tempPassword}
+                      </div>
+                      <p style="color: #ffd700; font-size: 14px; margin: 15px 0 0 0;">
+                        ⚠️ <strong>Security Tip:</strong> Change this password after your first login!
+                      </p>
+                    </div>
+
+                    <!-- CTA Button -->
+                    <div style="text-align: center; margin: 35px 0;">
+                      <a href="${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovableproject.com') || 'https://your-domain.com'}/auth" 
+                         style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
+                        🚀 Access Your VIP Portal
+                      </a>
+                    </div>
+
+                    <!-- What's Next Box -->
+                    <div style="background-color: #e6fffa; padding: 20px; border-radius: 8px; border-left: 4px solid #38b2ac; margin: 25px 0;">
+                      <h4 style="color: #234e52; margin: 0 0 10px 0; font-size: 16px;">🔮 What Happens Next?</h4>
+                      <p style="color: #234e52; margin: 0; line-height: 1.6; font-size: 15px;">
+                        Our team will contact you within 24 hours to confirm your booking details and schedule. After each cleaning, you'll receive stunning before & after photos through your portal!
+                      </p>
+                    </div>
+
+                    <p style="color: #718096; font-size: 16px; line-height: 1.6; margin-top: 30px;">
+                      Have questions? We're here to help! Simply reply to this email or give us a call. Our friendly team loves hearing from customers.
+                    </p>
+                    
+                    <p style="color: #4a5568; font-size: 16px; margin-top: 25px;">
+                      Thank you for trusting us with your space! 🌟<br>
+                      <span style="color: #667eea; font-weight: 500;">The SN Cleaning Services Team</span>
+                    </p>
                   </div>
-
-                  <p>If you have any questions about your booking or account, please don't hesitate to contact us.</p>
-                  <p>We look forward to providing you with exceptional cleaning services!</p>
                   
-                  <p>Best regards,<br>The SN Cleaning Services Team</p>
-                  
-                  <div style="border-top: 1px solid #dee2e6; margin-top: 30px; padding-top: 20px; font-size: 12px; color: #6c757d;">
-                    <p>SN Cleaning Services - Professional Cleaning Solutions</p>
+                  <!-- Footer -->
+                  <div style="background-color: #4a5568; padding: 20px; text-align: center; color: #a0aec0; font-size: 14px;">
+                    <p style="margin: 0;">SN Cleaning Services - Making your space sparkle since day one! ✨</p>
+                    <p style="margin: 5px 0 0 0;">Professional • Reliable • Customer-Focused</p>
                   </div>
                 </div>
               `,

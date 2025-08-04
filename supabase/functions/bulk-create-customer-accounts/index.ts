@@ -96,32 +96,72 @@ const handler = async (req: Request): Promise<Response> => {
             await resend.emails.send({
               from: "SN Cleaning Services <admin@sncleaningservices.co.uk>",
               to: [customer.email],
-              subject: "Your Account Has Been Created - Set Your Password",
+              subject: "🏠 Welcome to SN Cleaning Services - Your Account is Ready!",
               html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                  <h2>Welcome to SN Cleaning Services!</h2>
-                  <p>Hi ${customer.first_name || 'there'},</p>
-                  <p>We've created an account for you to access our customer portal where you can:</p>
-                  <ul>
-                    <li>View your booking history</li>
-                    <li>See cleaning photos</li>
-                    <li>Manage your profile</li>
-                    <li>Book new services</li>
-                  </ul>
-                  <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                    <h3>Your Login Details:</h3>
-                    <p><strong>Email:</strong> ${customer.email}</p>
-                    <p><strong>Temporary Password:</strong> <code style="background-color: #e0e0e0; padding: 2px 6px; border-radius: 4px;">${tempPassword}</code></p>
+                <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa;">
+                  <!-- Header -->
+                  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center;">
+                    <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 300;">Welcome to SN Cleaning Services!</h1>
+                    <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">Your trusted cleaning partner</p>
                   </div>
-                  <p><strong>Important:</strong> Please change your password after your first login for security.</p>
-                  <p>
-                    <a href="${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovableproject.com') || 'https://your-domain.com'}/auth" 
-                       style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-                      Login to Your Account
-                    </a>
-                  </p>
-                  <p>If you have any questions, please don't hesitate to contact us.</p>
-                  <p>Best regards,<br>SN Cleaning Services Team</p>
+                  
+                  <!-- Main Content -->
+                  <div style="padding: 40px 30px; background-color: white;">
+                    <h2 style="color: #4a5568; margin: 0 0 20px 0; font-size: 24px;">Hello ${customer.first_name || 'there'}! 👋</h2>
+                    
+                    <p style="color: #718096; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
+                      We're absolutely delighted to have you as part of our SN Cleaning Services family! We've created your personal account so you can enjoy all the amazing features we offer.
+                    </p>
+
+                    <!-- Features Box -->
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 12px; margin: 30px 0;">
+                      <h3 style="color: white; margin: 0 0 15px 0; font-size: 18px;">✨ What you can do with your account:</h3>
+                      <ul style="color: rgba(255,255,255,0.95); margin: 0; padding-left: 20px; line-height: 1.8;">
+                        <li>📅 View and manage all your bookings</li>
+                        <li>📸 Access before & after cleaning photos</li>
+                        <li>📋 Update your profile and preferences</li>
+                        <li>🏠 Manage multiple addresses</li>
+                        <li>📄 Download invoices and receipts</li>
+                        <li>⭐ Leave reviews and feedback</li>
+                      </ul>
+                    </div>
+
+                    <!-- Login Details -->
+                    <div style="background-color: #edf2f7; padding: 25px; border-radius: 8px; border-left: 4px solid #667eea;">
+                      <h3 style="color: #4a5568; margin: 0 0 15px 0; font-size: 18px;">🔐 Your Login Details</h3>
+                      <p style="margin: 8px 0; color: #4a5568;"><strong>Email:</strong> ${customer.email}</p>
+                      <p style="margin: 8px 0; color: #4a5568;"><strong>Temporary Password:</strong></p>
+                      <div style="background-color: #4a5568; color: white; padding: 12px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 16px; letter-spacing: 1px; margin: 10px 0;">
+                        ${tempPassword}
+                      </div>
+                      <p style="color: #e53e3e; font-size: 14px; margin: 15px 0 0 0;">
+                        ⚠️ <strong>Important:</strong> Please change this password after your first login for security.
+                      </p>
+                    </div>
+
+                    <!-- CTA Button -->
+                    <div style="text-align: center; margin: 35px 0;">
+                      <a href="${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovableproject.com') || 'https://your-domain.com'}/auth" 
+                         style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); transition: all 0.3s ease;">
+                        🚀 Access Your Account Now
+                      </a>
+                    </div>
+
+                    <p style="color: #718096; font-size: 16px; line-height: 1.6; margin-top: 30px;">
+                      If you have any questions or need assistance, our friendly team is here to help! Just reply to this email or give us a call.
+                    </p>
+                    
+                    <p style="color: #4a5568; font-size: 16px; margin-top: 25px;">
+                      Thank you for choosing SN Cleaning Services! 🌟<br>
+                      <span style="color: #667eea; font-weight: 500;">The SN Cleaning Team</span>
+                    </p>
+                  </div>
+                  
+                  <!-- Footer -->
+                  <div style="background-color: #4a5568; padding: 20px; text-align: center; color: #a0aec0; font-size: 14px;">
+                    <p style="margin: 0;">SN Cleaning Services - Making your home sparkle! ✨</p>
+                    <p style="margin: 5px 0 0 0;">Professional • Reliable • Trusted</p>
+                  </div>
                 </div>
               `,
             });
