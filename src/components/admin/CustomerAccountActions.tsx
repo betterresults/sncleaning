@@ -42,17 +42,23 @@ export const CustomerAccountActions = ({ customer, onAccountCreated }: CustomerA
 
   const checkCustomerAccount = async () => {
     try {
+      console.log(`Checking account for customer ID: ${customer.id}`);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('user_id')
         .eq('customer_id', customer.id)
         .maybeSingle();
 
+      console.log(`Account check result for customer ${customer.id}:`, { data, error });
+
       if (error) {
         console.error('Error checking customer account:', error);
         setHasAccount(false);
       } else {
-        setHasAccount(!!data);
+        const hasAccount = !!data;
+        console.log(`Customer ${customer.id} has account: ${hasAccount}`);
+        setHasAccount(hasAccount);
       }
     } catch (error) {
       console.error('Error checking customer account:', error);
