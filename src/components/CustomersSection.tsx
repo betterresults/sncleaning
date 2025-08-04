@@ -3,8 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, Search } from 'lucide-react';
 import { CustomerAccountActions } from '@/components/admin/CustomerAccountActions';
 
 interface CustomerData {
@@ -17,6 +18,8 @@ interface CustomerData {
   postcode?: string;
   client_status: string;
   full_name: string;
+  booking_count?: number;
+  upcoming_bookings?: number;
 }
 
 interface CustomersSectionProps {
@@ -27,10 +30,12 @@ interface CustomersSectionProps {
 
 const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }: CustomersSectionProps) => {
   const [customers, setCustomers] = useState<CustomerData[]>([]);
+  const [filteredCustomers, setFilteredCustomers] = useState<CustomerData[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<number | null>(null);
   const [editCustomerData, setEditCustomerData] = useState<Partial<CustomerData>>({});
+  const [searchTerm, setSearchTerm] = useState('');
   const [newCustomer, setNewCustomer] = useState({
     firstName: '',
     lastName: '',
@@ -45,16 +50,38 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
     try {
       console.log('Fetching customers...');
       
+      // Fetch customers with booking counts using separate queries
       const { data: customers, error } = await supabase
         .from('customers')
         .select('*')
         .order('id', { ascending: false });
       
-      console.log('Customers data:', customers, 'Error:', error);
-      
       if (error) throw error;
 
-      setCustomers(customers || []);
+      // Get booking counts for each customer
+      const processedCustomers = await Promise.all(
+        customers?.map(async (customer) => {
+          const [{ count: upcomingCount }, { count: pastCount }] = await Promise.all([
+            supabase
+              .from('bookings')
+              .select('*', { count: 'exact', head: true })
+              .eq('customer', customer.id),
+            supabase
+              .from('past_bookings')
+              .select('*', { count: 'exact', head: true })
+              .eq('customer', customer.id)
+          ]);
+
+          return {
+            ...customer,
+            booking_count: (upcomingCount || 0) + (pastCount || 0),
+            upcoming_bookings: upcomingCount || 0
+          };
+        }) || []
+      );
+
+      setCustomers(processedCustomers);
+      setFilteredCustomers(processedCustomers);
     } catch (error: any) {
       console.error('Error fetching customers:', error);
       toast({
@@ -190,17 +217,57 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
     e.preventDefault();
     e.stopPropagation();
     console.log('Create customer button clicked');
-    
+  };
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    if (term.trim() === '') {
+      setFilteredCustomers(customers);
+    } else {
+      const filtered = customers.filter(customer => 
+        customer.first_name?.toLowerCase().includes(term.toLowerCase()) ||
+        customer.last_name?.toLowerCase().includes(term.toLowerCase()) ||
+        customer.email?.toLowerCase().includes(term.toLowerCase()) ||
+        customer.phone?.includes(term) ||
+        customer.id.toString().includes(term)
+      );
+      setFilteredCustomers(filtered);
+    }
+  };
+
+  const getCustomerBadge = (customer: CustomerData) => {
+    if (!customer.booking_count || customer.booking_count === 0) {
+      return <Badge variant="secondary" className="text-xs">New</Badge>;
+    } else if (customer.upcoming_bookings && customer.upcoming_bookings > 0) {
+      return <Badge variant="default" className="text-xs">Active</Badge>;
+    } else {
+      return <Badge variant="outline" className="text-xs">Past Customer</Badge>;
+    }
   };
 
   useEffect(() => {
     fetchCustomers();
   }, []);
 
+  useEffect(() => {
+    handleSearch(searchTerm);
+  }, [customers]);
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-        <h3 className="text-base sm:text-lg font-semibold">Customers</h3>
+        <h3 className="text-base sm:text-lg font-semibold">Customers ({filteredCustomers.length})</h3>
+      </div>
+
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <Input
+          placeholder="Search customers by name, email, phone, or ID..."
+          value={searchTerm}
+          onChange={(e) => handleSearch(e.target.value)}
+          className="pl-10"
+        />
       </div>
 
       {/* Create Customer Form - Mobile Responsive */}
@@ -286,9 +353,13 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
       <div>
         {loading ? (
           <div className="text-center py-8">Loading customers...</div>
+        ) : filteredCustomers.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            {searchTerm ? 'No customers found matching your search.' : 'No customers found.'}
+          </div>
         ) : (
           <div className="space-y-3">
-            {customers.map((customer) => (
+            {filteredCustomers.map((customer) => (
               <div key={customer.id} className="p-3 sm:p-4 border rounded-lg">
                 {editingCustomer === customer.id ? (
                   <div className="space-y-3">
@@ -363,15 +434,18 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
                 ) : (
                   <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
                     <div className="flex-1">
-                      <div className="font-medium text-sm sm:text-base">
-                        {customer.first_name} {customer.last_name}
+                      <div className="flex items-center gap-2 font-medium text-sm sm:text-base mb-1">
+                        <span>{customer.first_name} {customer.last_name}</span>
+                        {getCustomerBadge(customer)}
                       </div>
                       <div className="text-xs sm:text-sm text-gray-500 break-all">{customer.email}</div>
                       <div className="text-xs sm:text-sm text-gray-500">{customer.phone}</div>
                       <div className="text-xs text-gray-400">
                         {customer.address}, {customer.postcode}
                       </div>
-                      <div className="text-xs text-gray-400">ID: {customer.id}</div>
+                      <div className="text-xs text-gray-400">
+                        ID: {customer.id} • Bookings: {customer.booking_count || 0}
+                      </div>
                     </div>
                     <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-2 lg:items-end">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium self-start ${
