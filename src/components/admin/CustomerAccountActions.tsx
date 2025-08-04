@@ -86,24 +86,24 @@ export const CustomerAccountActions = ({ customer, onAccountCreated }: CustomerA
   const handleCreateAccount = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('bulk-create-customer-accounts', {
+      const { data, error } = await supabase.functions.invoke('create-customer-account', {
         body: {
-          customer_ids: [customer.id],
-          send_emails: true
+          customer_id: customer.id,
+          send_email: true
         }
       });
 
       if (error) throw error;
 
-      if (data.results && data.results.length > 0) {
+      if (data.success) {
         setHasAccount(true);
         toast({
           title: "🎉 Account Created Successfully!",
-          description: `Welcome email sent to ${customer.email}`,
+          description: `Password reset email sent to ${customer.email}`,
         });
         onAccountCreated?.();
-      } else if (data.errors && data.errors.length > 0) {
-        throw new Error(data.errors[0].error);
+      } else {
+        throw new Error(data.error || 'Failed to create account');
       }
     } catch (error) {
       console.error('Error creating customer account:', error);
