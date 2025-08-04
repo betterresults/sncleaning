@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Edit, Trash2 } from 'lucide-react';
+import { CustomerAccountActions } from '@/components/admin/CustomerAccountActions';
 
 interface CustomerData {
   id: number;
@@ -380,6 +381,10 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
                       }`}>
                         {customer.client_status}
                       </span>
+                      <CustomerAccountActions 
+                        customer={customer}
+                        onAccountCreated={fetchCustomers}
+                      />
                       <div className="flex gap-2">
                         <Button
                           onClick={() => startEditingCustomer(customer)}

@@ -1,18 +1,21 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { UserPlus, CheckCircle, AlertCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { UserPlus, Loader2, Users, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { CleanerAccountActions } from '@/components/admin/CleanerAccountActions';
 
 interface Cleaner {
   id: number;
   first_name: string;
   last_name: string;
   email: string;
+  full_name?: string;
+  phone?: number;
 }
 
 interface ProcessResult {
@@ -22,21 +25,24 @@ interface ProcessResult {
 }
 
 const CreateCleanerUsersUtility = () => {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [results, setResults] = useState<ProcessResult[]>([]);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
-  const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [loadingCleaners, setLoadingCleaners] = useState(true);
+  const [results, setResults] = useState<ProcessResult[]>([]);
 
   const fetchCleaners = async () => {
     try {
+      setLoadingCleaners(true);
       const { data, error } = await supabase
         .from('cleaners')
-        .select('id, first_name, last_name, email')
-        .not('email', 'is', null);
+        .select('*')
+        .order('id', { ascending: false });
 
       if (error) throw error;
-      
+
       setCleaners(data || []);
       return data || [];
     } catch (error: any) {
@@ -47,8 +53,14 @@ const CreateCleanerUsersUtility = () => {
         variant: 'destructive',
       });
       return [];
+    } finally {
+      setLoadingCleaners(false);
     }
   };
+
+  useEffect(() => {
+    fetchCleaners();
+  }, []);
 
   const createUserForCleaner = async (cleaner: Cleaner): Promise<ProcessResult> => {
     try {
@@ -108,7 +120,7 @@ const CreateCleanerUsersUtility = () => {
     setResults([]);
 
     try {
-      const cleanersToProcess = await fetchCleaners();
+      const cleanersToProcess = cleaners.filter(c => c.email);
       
       if (cleanersToProcess.length === 0) {
         toast({
@@ -154,85 +166,125 @@ const CreateCleanerUsersUtility = () => {
     }
   };
 
-  const getStatusIcon = (status: ProcessResult['status']) => {
-    switch (status) {
-      case 'success':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'exists':
-        return <CheckCircle className="h-4 w-4 text-blue-500" />;
-      case 'error':
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
-    }
-  };
-
-  const getStatusColor = (status: ProcessResult['status']) => {
-    switch (status) {
-      case 'success':
-        return 'text-green-600';
-      case 'exists':
-        return 'text-blue-600';
-      case 'error':
-        return 'text-red-600';
-    }
-  };
+  const filteredCleaners = cleaners.filter(cleaner =>
+    cleaner.email && (
+      cleaner.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cleaner.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cleaner.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cleaner.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <UserPlus className="h-5 w-5" />
-          Create User Accounts for Cleaners
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            This utility will create user accounts for all cleaners with email addresses. 
-            Default password will be set to "123456". Users already existing will be skipped.
-          </AlertDescription>
-        </Alert>
-
-        <Button 
-          onClick={processAllCleaners} 
-          disabled={loading}
-          className="w-full"
-        >
-          {loading ? 'Processing...' : 'Create User Accounts for All Cleaners'}
-        </Button>
-
-        {loading && (
-          <div className="space-y-2">
-            <Progress value={progress} className="w-full" />
-            <p className="text-sm text-gray-600 text-center">
-              Processing... {Math.round(progress)}% complete
-            </p>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Cleaner Account Management
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Search Bar */}
+          <div className="flex items-center space-x-2">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search cleaners by name or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1"
+            />
           </div>
-        )}
 
-        {results.length > 0 && (
-          <div className="space-y-3">
-            <h3 className="font-semibold">Results:</h3>
-            <div className="max-h-60 overflow-y-auto space-y-2">
-              {results.map((result, index) => (
-                <div key={index} className="flex items-center gap-2 p-2 border rounded">
-                  {getStatusIcon(result.status)}
-                  <div className="flex-1">
-                    <div className="font-medium">
-                      {result.cleaner.first_name} {result.cleaner.last_name}
-                    </div>
-                    <div className="text-sm text-gray-500">{result.cleaner.email}</div>
-                  </div>
-                  <div className={`text-sm ${getStatusColor(result.status)}`}>
-                    {result.message}
-                  </div>
-                </div>
-              ))}
+          {/* Individual Cleaners List */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium">Individual Cleaner Management</h3>
+              <Badge variant="outline">{filteredCleaners.length} cleaners</Badge>
             </div>
+
+            {loadingCleaners ? (
+              <div className="text-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+                <p className="text-muted-foreground">Loading cleaners...</p>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {filteredCleaners.map((cleaner) => (
+                  <div key={cleaner.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex-1">
+                      <h4 className="font-medium">
+                        {cleaner.full_name || `${cleaner.first_name} ${cleaner.last_name}`}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">{cleaner.email}</p>
+                      {cleaner.phone && (
+                        <p className="text-xs text-muted-foreground">{cleaner.phone}</p>
+                      )}
+                    </div>
+                    <CleanerAccountActions 
+                      cleaner={cleaner}
+                      onAccountCreated={fetchCleaners}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </CardContent>
-    </Card>
+
+          <hr className="my-6" />
+
+          {/* Bulk Operations */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Bulk Operations</h3>
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                This utility will create user accounts for all cleaners with email addresses. 
+                Cleaners will receive login credentials to access their dashboard.
+              </p>
+            </div>
+
+            <Button 
+              onClick={processAllCleaners} 
+              disabled={loading}
+              className="w-full"
+            >
+              {loading ? 'Processing...' : 'Create User Accounts for All Cleaners'}
+            </Button>
+
+            {loading && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Creating accounts...</span>
+                  <span>{Math.round(progress)}%</span>
+                </div>
+                <Progress value={progress} className="w-full" />
+              </div>
+            )}
+
+            {results.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="font-semibold">Bulk Operation Results:</h4>
+                <div className="max-h-60 overflow-y-auto space-y-2">
+                  {results.map((result, index) => (
+                    <div key={index} className="flex items-center gap-2 p-2 border rounded">
+                      <div className="flex-1">
+                        <div className="font-medium">
+                          {result.cleaner.first_name} {result.cleaner.last_name}
+                        </div>
+                        <div className="text-sm text-gray-500">{result.cleaner.email}</div>
+                      </div>
+                      <Badge variant={result.status === 'success' ? 'default' : result.status === 'exists' ? 'secondary' : 'destructive'}>
+                        {result.message}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
