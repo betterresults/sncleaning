@@ -44,21 +44,36 @@ export const CustomerAccountActions = ({ customer, onAccountCreated }: CustomerA
     try {
       console.log(`Checking account for customer ID: ${customer.id}`);
       
-      const { data, error } = await supabase
+      // Check if customer has a linked profile
+      const { data: linkedProfile, error: profileError } = await supabase
         .from('profiles')
         .select('user_id')
         .eq('customer_id', customer.id)
         .maybeSingle();
 
-      console.log(`Account check result for customer ${customer.id}:`, { data, error });
+      console.log(`Profile check result for customer ${customer.id}:`, { linkedProfile, profileError });
 
-      if (error) {
-        console.error('Error checking customer account:', error);
-        setHasAccount(false);
+      if (linkedProfile) {
+        console.log(`Customer ${customer.id} has linked account`);
+        setHasAccount(true);
+        return;
+      }
+
+      // Check if email already exists in profiles (different user)
+      const { data: emailProfile, error: emailError } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name')
+        .eq('email', customer.email)
+        .maybeSingle();
+
+      console.log(`Email check result for ${customer.email}:`, { emailProfile, emailError });
+
+      if (emailProfile) {
+        console.log(`Email ${customer.email} already has account (belongs to ${emailProfile.first_name} ${emailProfile.last_name})`);
+        setHasAccount(true); // Show reset password since email has account
       } else {
-        const hasAccount = !!data;
-        console.log(`Customer ${customer.id} has account: ${hasAccount}`);
-        setHasAccount(hasAccount);
+        console.log(`Customer ${customer.id} has no account`);
+        setHasAccount(false);
       }
     } catch (error) {
       console.error('Error checking customer account:', error);
