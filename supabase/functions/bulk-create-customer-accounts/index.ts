@@ -30,17 +30,13 @@ const handler = async (req: Request): Promise<Response> => {
     // Get customers without accounts
     let query = supabaseAdmin
       .from('customers')
-      .select(`
-        id, first_name, last_name, email,
-        profiles!inner(customer_id)
-      `)
-      .is('profiles.customer_id', null);
+      .select('id, first_name, last_name, email');
 
     if (customer_ids && customer_ids.length > 0) {
       query = query.in('id', customer_ids);
     }
 
-    const { data: customersWithoutAccounts, error: fetchError } = await query;
+    const { data: allCustomers, error: fetchError } = await query;
 
     if (fetchError) {
       console.error('Error fetching customers:', fetchError);
@@ -49,6 +45,22 @@ const handler = async (req: Request): Promise<Response> => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+
+    // Filter out customers who already have accounts
+    const customersWithoutAccounts = [];
+    
+    for (const customer of allCustomers || []) {
+      const { data: existingProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('user_id')
+        .eq('customer_id', customer.id)
+        .maybeSingle();
+      
+      if (!existingProfile) {
+        customersWithoutAccounts.push(customer);
+      }
+    }
+
 
     const results = [];
     const errors = [];

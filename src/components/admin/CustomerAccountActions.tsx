@@ -46,10 +46,16 @@ export const CustomerAccountActions = ({ customer, onAccountCreated }: CustomerA
         .from('profiles')
         .select('user_id')
         .eq('customer_id', customer.id)
-        .single();
+        .maybeSingle();
 
-      setHasAccount(!!data);
+      if (error) {
+        console.error('Error checking customer account:', error);
+        setHasAccount(false);
+      } else {
+        setHasAccount(!!data);
+      }
     } catch (error) {
+      console.error('Error checking customer account:', error);
       setHasAccount(false);
     } finally {
       setCheckingAccount(false);

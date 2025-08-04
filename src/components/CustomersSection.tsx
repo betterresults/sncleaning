@@ -237,11 +237,11 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
 
   const getCustomerBadge = (customer: CustomerData) => {
     if (!customer.booking_count || customer.booking_count === 0) {
-      return <Badge variant="secondary" className="text-xs">New</Badge>;
+      return <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600">New</Badge>;
     } else if (customer.upcoming_bookings && customer.upcoming_bookings > 0) {
-      return <Badge variant="default" className="text-xs">Active</Badge>;
+      return <Badge variant="default" className="text-xs bg-green-100 text-green-600">Active</Badge>;
     } else {
-      return <Badge variant="outline" className="text-xs">Past Customer</Badge>;
+      return <Badge variant="outline" className="text-xs bg-blue-100 text-blue-600">Past Customer</Badge>;
     }
   };
 
@@ -432,29 +432,22 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 font-medium text-sm sm:text-base mb-1">
-                        <span>{customer.first_name} {customer.last_name}</span>
-                        {getCustomerBadge(customer)}
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 font-medium text-sm sm:text-base mb-1">
+                          <span>{customer.first_name} {customer.last_name}</span>
+                          {getCustomerBadge(customer)}
+                        </div>
+                        <div className="text-xs sm:text-sm text-gray-500 break-all">{customer.email}</div>
+                        <div className="text-xs sm:text-sm text-gray-500">{customer.phone}</div>
+                        <div className="text-xs text-gray-400">
+                          {customer.address}, {customer.postcode}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          ID: {customer.id} • Bookings: {customer.booking_count || 0}
+                        </div>
                       </div>
-                      <div className="text-xs sm:text-sm text-gray-500 break-all">{customer.email}</div>
-                      <div className="text-xs sm:text-sm text-gray-500">{customer.phone}</div>
-                      <div className="text-xs text-gray-400">
-                        {customer.address}, {customer.postcode}
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        ID: {customer.id} • Bookings: {customer.booking_count || 0}
-                      </div>
-                    </div>
-                    <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-2 lg:items-end">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium self-start ${
-                        customer.client_status === 'Current' ? 'bg-green-100 text-green-800' : 
-                        customer.client_status === 'New' ? 'bg-blue-100 text-blue-800' : 
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {customer.client_status}
-                      </span>
+                      <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-2 lg:items-end">
                       <CustomerAccountActions 
                         customer={customer}
                         onAccountCreated={fetchCustomers}
