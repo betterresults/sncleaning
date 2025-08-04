@@ -94,50 +94,21 @@ const handler = async (req: Request): Promise<Response> => {
       console.error('Error linking customer to profile:', profileError);
     }
 
-    // Send welcome email if requested
+    // Send password reset email using Supabase's built-in system (much more reliable)
     if (send_email) {
       try {
-        await resend.emails.send({
-          from: "SN Cleaning Services <admin@notifications.sncleaningservices.co.uk>",
-          to: [customer.email],
-          subject: "🏠 Welcome to SN Cleaning Services - Your Account is Ready!",
-          html: `
-            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa;">
-              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center;">
-                <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 300;">Welcome to SN Cleaning Services!</h1>
-              </div>
-              
-              <div style="padding: 40px 30px; background-color: white;">
-                <h2 style="color: #4a5568; margin: 0 0 20px 0; font-size: 24px;">Hello ${customer.first_name || 'there'}! 👋</h2>
-                
-                <p style="color: #718096; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
-                  We've created your personal account so you can manage your bookings and access all our services.
-                </p>
-
-                <div style="background-color: #edf2f7; padding: 25px; border-radius: 8px; border-left: 4px solid #667eea;">
-                  <h3 style="color: #4a5568; margin: 0 0 15px 0; font-size: 18px;">🔐 Your Login Details</h3>
-                  <p style="margin: 8px 0; color: #4a5568;"><strong>Email:</strong> ${customer.email}</p>
-                  <p style="margin: 8px 0; color: #4a5568;"><strong>Temporary Password:</strong></p>
-                  <div style="background-color: #4a5568; color: white; padding: 12px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 16px; letter-spacing: 1px; margin: 10px 0;">
-                    ${tempPassword}
-                  </div>
-                  <p style="color: #e53e3e; font-size: 14px; margin: 15px 0 0 0;">
-                    ⚠️ <strong>Important:</strong> Please change this password after your first login.
-                  </p>
-                </div>
-
-                <div style="text-align: center; margin: 35px 0;">
-                  <a href="${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovableproject.com') || 'https://your-domain.com'}/auth" 
-                     style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 16px;">
-                    🚀 Access Your Account Now
-                  </a>
-                </div>
-              </div>
-            </div>
-          `,
+        console.log(`Sending password reset email to ${customer.email}`);
+        const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(customer.email, {
+          redirectTo: `${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovableproject.com') || 'https://your-domain.com'}/auth`
         });
+        
+        if (resetError) {
+          console.error('Error sending reset email:', resetError);
+        } else {
+          console.log('Reset email sent successfully');
+        }
       } catch (emailError) {
-        console.error('Error sending email:', emailError);
+        console.error('Error with built-in email system:', emailError);
       }
     }
 
