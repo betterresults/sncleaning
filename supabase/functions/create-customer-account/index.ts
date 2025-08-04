@@ -99,7 +99,7 @@ const handler = async (req: Request): Promise<Response> => {
       try {
         console.log(`Sending password reset email to ${customer.email}`);
         const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(customer.email, {
-          redirectTo: `${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovableproject.com') || 'https://your-domain.com'}/auth`
+          redirectTo: `${req.headers.get('origin') || 'http://localhost:3000'}/auth`
         });
         
         if (resetError) {
