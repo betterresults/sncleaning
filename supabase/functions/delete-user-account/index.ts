@@ -1,0 +1,98 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface DeleteUserRequest {
+  customer_id?: number;
+  email?: string;
+  user_id?: string;
+}
+
+const handler = async (req: Request): Promise<Response> => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const { customer_id, email, user_id }: DeleteUserRequest = await req.json();
+
+    let userIdToDelete = user_id;
+
+    // If we have customer_id, find the linked user
+    if (customer_id && !userIdToDelete) {
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('user_id')
+        .eq('customer_id', customer_id)
+        .maybeSingle();
+      
+      if (profile) {
+        userIdToDelete = profile.user_id;
+      }
+    }
+
+    // If we have email, find the user by email
+    if (email && !userIdToDelete) {
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('user_id')
+        .eq('email', email)
+        .maybeSingle();
+      
+      if (profile) {
+        userIdToDelete = profile.user_id;
+      }
+    }
+
+    if (!userIdToDelete) {
+      return new Response(JSON.stringify({ error: 'User not found' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Delete the user from auth (this should cascade to profiles)
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userIdToDelete);
+
+    if (deleteError) {
+      console.error('Error deleting user:', deleteError);
+      return new Response(JSON.stringify({ error: deleteError.message }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Clean up any remaining profile entries (just in case)
+    await supabaseAdmin
+      .from('profiles')
+      .delete()
+      .eq('user_id', userIdToDelete);
+
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'User account deleted successfully',
+      deleted_user_id: userIdToDelete
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error) {
+    console.error('Error in delete-user-account function:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+};
+
+serve(handler);
