@@ -105,7 +105,14 @@ const handler = async (req: Request): Promise<Response> => {
         // Send password setup email if requested
         if (send_emails) {
           try {
-            await resend.emails.send({
+            console.log(`Attempting to send email to ${customer.email}`);
+            
+            if (!Deno.env.get("RESEND_API_KEY")) {
+              console.error("RESEND_API_KEY is not set");
+              throw new Error("Email service not configured");
+            }
+            
+            const emailResult = await resend.emails.send({
               from: "SN Cleaning Services <admin@sncleaningservices.co.uk>",
               to: [customer.email],
               subject: "🏠 Welcome to SN Cleaning Services - Your Account is Ready!",
@@ -177,8 +184,11 @@ const handler = async (req: Request): Promise<Response> => {
                 </div>
               `,
             });
+            
+            console.log('Email sent successfully:', emailResult);
           } catch (emailError) {
             console.error(`Error sending email to ${customer.email}:`, emailError);
+            // Don't fail the account creation if email fails
           }
         }
 
