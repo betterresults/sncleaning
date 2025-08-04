@@ -98,7 +98,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (send_email) {
       try {
         await resend.emails.send({
-          from: "SN Cleaning Services <admin@sncleaningservices.co.uk>",
+          from: "SN Cleaning Services <admin@notifications.sncleaningservices.co.uk>",
           to: [customer.email],
           subject: "🏠 Welcome to SN Cleaning Services - Your Account is Ready!",
           html: `
