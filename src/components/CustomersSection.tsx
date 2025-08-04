@@ -237,12 +237,9 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
 
   const getCustomerBadge = (customer: CustomerData) => {
     if (!customer.booking_count || customer.booking_count === 0) {
-      return <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600">New</Badge>;
-    } else if (customer.upcoming_bookings && customer.upcoming_bookings > 0) {
-      return <Badge variant="default" className="text-xs bg-green-100 text-green-600">Active</Badge>;
-    } else {
-      return <Badge variant="outline" className="text-xs bg-blue-100 text-blue-600">Past Customer</Badge>;
+      return <Badge variant="secondary" className="text-xs bg-green-100 text-green-600">New</Badge>;
     }
+    return null; // No badge for existing customers
   };
 
   useEffect(() => {

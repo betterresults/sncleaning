@@ -133,7 +133,7 @@ export const CustomerAccountActions = ({ customer, onAccountCreated }: CustomerA
   return (
     <div className="flex items-center space-x-2">
       {hasAccount ? (
-        <Button variant="outline" size="sm" disabled={resetLoading}>
+        <Button variant="outline" size="sm" disabled={resetLoading} onClick={handlePasswordReset}>
           {resetLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
