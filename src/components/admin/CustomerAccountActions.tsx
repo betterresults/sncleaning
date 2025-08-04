@@ -99,15 +99,18 @@ export const CustomerAccountActions = ({ customer, onAccountCreated }: CustomerA
   const handlePasswordReset = async () => {
     setResetLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(customer.email, {
-        redirectTo: `${window.location.origin}/auth`,
+      const { data, error } = await supabase.functions.invoke('send-password-reset', {
+        body: {
+          email: customer.email,
+          customer_name: `${customer.first_name} ${customer.last_name}`.trim()
+        }
       });
 
       if (error) throw error;
 
       toast({
         title: "🔐 Password Reset Email Sent",
-        description: `Reset link sent to ${customer.email}`,
+        description: `Reset link sent to ${customer.email} with your branded template`,
       });
     } catch (error) {
       console.error('Error sending password reset:', error);
