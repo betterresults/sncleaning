@@ -6,6 +6,7 @@ import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { adminNavigation } from '@/lib/navigationItems';
 import CreateCleanerUsersUtility from '@/components/admin/CreateCleanerUsersUtility';
+import { BulkCreateAccountsDialog } from '@/components/admin/BulkCreateAccountsDialog';
 
 const CreateCustomerAccounts = () => {
   const { user, userRole, signOut } = useAuth();
@@ -38,7 +39,11 @@ const CreateCustomerAccounts = () => {
           />
           
           <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
-            <div className="max-w-7xl mx-auto">
+            <div className="max-w-7xl mx-auto space-y-6">
+              <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-semibold">Customer Account Management</h1>
+                <BulkCreateAccountsDialog />
+              </div>
               <CreateCleanerUsersUtility />
             </div>
           </main>
