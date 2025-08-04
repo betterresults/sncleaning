@@ -92,7 +92,9 @@ const handler = async (req: Request): Promise<Response> => {
           continue;
         }
 
-        // Update profile with customer_id
+        // Wait a moment for triggers to complete, then update profile with customer_id
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         const { error: profileError } = await supabaseAdmin
           .from('profiles')
           .update({ customer_id: customer.id })
@@ -100,6 +102,16 @@ const handler = async (req: Request): Promise<Response> => {
 
         if (profileError) {
           console.error(`Error updating profile for customer ${customer.id}:`, profileError);
+          // Try again in case of timing issues
+          await new Promise(resolve => setTimeout(resolve, 500));
+          const { error: retryError } = await supabaseAdmin
+            .from('profiles')
+            .update({ customer_id: customer.id })
+            .eq('user_id', authUser.user.id);
+          
+          if (retryError) {
+            console.error(`Retry failed for customer ${customer.id}:`, retryError);
+          }
         }
 
         // Send password setup email if requested
