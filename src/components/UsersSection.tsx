@@ -211,48 +211,29 @@ const UsersSection = ({ refreshKey, hideCreateButton }: UsersSectionProps) => {
     try {
       setUpdating(true);
       
-      // Update user metadata and email if changed
-      if (editUserData.email !== users.find(u => u.id === userId)?.email || 
-          editUserData.first_name || editUserData.last_name) {
-        
-        const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
-          email: editUserData.email,
-          user_metadata: {
+      console.log('Updating user:', userId, 'with data:', editUserData);
+      
+      // Call the edge function to update the user
+      const { data, error } = await supabase.functions.invoke('update-user-admin', {
+        body: {
+          userId: userId,
+          updates: {
             first_name: editUserData.first_name,
-            last_name: editUserData.last_name
+            last_name: editUserData.last_name,
+            email: editUserData.email,
+            role: editUserData.role,
+            password: editUserData.password
           }
-        });
+        }
+      });
 
-        if (updateError) throw updateError;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
       }
 
-      // Update password if provided
-      if (editUserData.password && editUserData.password.trim()) {
-        const { error: passwordError } = await supabase.auth.admin.updateUserById(userId, {
-          password: editUserData.password
-        });
-
-        if (passwordError) throw passwordError;
-      }
-
-      // Update role
-      if (editUserData.role !== users.find(u => u.id === userId)?.role) {
-        await updateUserRole(userId, editUserData.role);
-      }
-
-      // Update profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          first_name: editUserData.first_name,
-          last_name: editUserData.last_name,
-          email: editUserData.email,
-          role: editUserData.role
-        })
-        .eq('user_id', userId);
-
-      if (profileError) {
-        console.warn('Could not update profile:', profileError);
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to update user');
       }
 
       toast({
