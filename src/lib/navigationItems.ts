@@ -1,4 +1,4 @@
-import { Calendar, History, DollarSign, Briefcase, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Calculator, Repeat } from 'lucide-react';
+import { Calendar, History, DollarSign, Briefcase, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Calculator, Repeat, CreditCard } from 'lucide-react';
 
 export const cleanerNavigation = [
   {
@@ -116,6 +116,22 @@ export const adminNavigation = [
     title: "Pricing Formulas",
     url: "/admin-pricing-formulas",
     icon: Calculator,
+  },
+  {
+    title: "Payments",
+    icon: CreditCard,
+    subItems: [
+      {
+        title: "Cleaner Payments",
+        url: "/admin-cleaner-payments",
+        icon: DollarSign,
+      },
+      {
+        title: "Customer Payments",
+        url: "/admin-customer-payments",
+        icon: CreditCard,
+      },
+    ],
   },
   {
     title: "Chat Management",
