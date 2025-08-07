@@ -1,8 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, RotateCcw, Mail, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface UserData {
   id: string;
@@ -23,6 +35,7 @@ const UsersSection = ({ refreshKey, hideCreateButton }: UsersSectionProps) => {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [resetLoading, setResetLoading] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchUsers = async () => {
@@ -184,6 +197,31 @@ const UsersSection = ({ refreshKey, hideCreateButton }: UsersSectionProps) => {
     }
   };
 
+  const handlePasswordReset = async (email: string, userId: string) => {
+    setResetLoading(userId);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth`,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "🔐 Password Reset Email Sent",
+        description: `Reset link sent to ${email}`,
+      });
+    } catch (error: any) {
+      console.error('Error sending password reset:', error);
+      toast({
+        title: "Error Sending Reset Email",
+        description: error.message || "Failed to send reset email. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setResetLoading(null);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
   }, [refreshKey]);
@@ -225,15 +263,45 @@ const UsersSection = ({ refreshKey, hideCreateButton }: UsersSectionProps) => {
                       <span className={`px-2 py-1 rounded-full text-xs font-medium self-start ${getRoleColor(user.role || 'guest')}`}>
                         {getRoleDisplayName(user.role || 'guest')}
                       </span>
-                      <select
-                        value={user.role || 'guest'}
-                        onChange={(e) => updateUserRole(user.id, e.target.value)}
-                        className="text-xs sm:text-sm border rounded px-2 py-1 w-full sm:w-auto"
-                      >
-                        <option value="guest">Customer</option>
-                        <option value="user">Cleaner</option>
-                        <option value="admin">Administrator</option>
-                      </select>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <select
+                          value={user.role || 'guest'}
+                          onChange={(e) => updateUserRole(user.id, e.target.value)}
+                          className="text-xs sm:text-sm border rounded px-2 py-1 w-full sm:w-auto"
+                        >
+                          <option value="guest">Customer</option>
+                          <option value="user">Cleaner</option>
+                          <option value="admin">Administrator</option>
+                        </select>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm" disabled={resetLoading === user.id}>
+                              {resetLoading === user.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <RotateCcw className="h-4 w-4" />
+                              )}
+                              <span className="hidden sm:inline ml-1">Reset Password</span>
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Send Password Reset Email?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will send a password reset email to <strong>{user.email}</strong>.
+                                They'll receive a secure link to reset their password.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handlePasswordReset(user.email, user.id)}>
+                                <Mail className="h-4 w-4 mr-2" />
+                                Send Reset Email
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
                   </div>
                 </div>
