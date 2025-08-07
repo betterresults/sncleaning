@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, RotateCcw, Mail, Loader2 } from 'lucide-react';
+import { AlertCircle, RotateCcw, Mail, Loader2, Edit, Save, X, Eye, EyeOff } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +38,10 @@ const UsersSection = ({ refreshKey, hideCreateButton }: UsersSectionProps) => {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [resetLoading, setResetLoading] = useState<string | null>(null);
+  const [editingUser, setEditingUser] = useState<string | null>(null);
+  const [editUserData, setEditUserData] = useState<any>({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [updating, setUpdating] = useState(false);
   const { toast } = useToast();
 
   const fetchUsers = async () => {
@@ -184,6 +190,92 @@ const UsersSection = ({ refreshKey, hideCreateButton }: UsersSectionProps) => {
     }
   };
 
+  const startEditingUser = (user: UserData) => {
+    setEditingUser(user.id);
+    setEditUserData({
+      first_name: user.user_metadata.first_name || '',
+      last_name: user.user_metadata.last_name || '',
+      email: user.email,
+      role: user.role || 'guest',
+      password: ''
+    });
+  };
+
+  const cancelEditing = () => {
+    setEditingUser(null);
+    setEditUserData({});
+    setShowPassword(false);
+  };
+
+  const updateUser = async (userId: string) => {
+    try {
+      setUpdating(true);
+      
+      // Update user metadata and email if changed
+      if (editUserData.email !== users.find(u => u.id === userId)?.email || 
+          editUserData.first_name || editUserData.last_name) {
+        
+        const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
+          email: editUserData.email,
+          user_metadata: {
+            first_name: editUserData.first_name,
+            last_name: editUserData.last_name
+          }
+        });
+
+        if (updateError) throw updateError;
+      }
+
+      // Update password if provided
+      if (editUserData.password && editUserData.password.trim()) {
+        const { error: passwordError } = await supabase.auth.admin.updateUserById(userId, {
+          password: editUserData.password
+        });
+
+        if (passwordError) throw passwordError;
+      }
+
+      // Update role
+      if (editUserData.role !== users.find(u => u.id === userId)?.role) {
+        await updateUserRole(userId, editUserData.role);
+      }
+
+      // Update profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          first_name: editUserData.first_name,
+          last_name: editUserData.last_name,
+          email: editUserData.email,
+          role: editUserData.role
+        })
+        .eq('user_id', userId);
+
+      if (profileError) {
+        console.warn('Could not update profile:', profileError);
+      }
+
+      toast({
+        title: 'Success',
+        description: editUserData.password ? 'User details and password updated successfully!' : 'User details updated successfully!',
+      });
+
+      setEditingUser(null);
+      setEditUserData({});
+      setShowPassword(false);
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error updating user:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update user',
+        variant: 'destructive',
+      });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'admin':
@@ -252,58 +344,158 @@ const UsersSection = ({ refreshKey, hideCreateButton }: UsersSectionProps) => {
             ) : (
               users.map((user) => (
                 <div key={user.id} className="p-3 sm:p-4 border rounded-lg space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div className="flex-1">
-                      <div className="font-medium text-sm sm:text-base">
-                        {user.user_metadata.first_name} {user.user_metadata.last_name}
-                      </div>
-                      <div className="text-xs sm:text-sm text-gray-500 break-all">{user.email}</div>
-                    </div>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium self-start ${getRoleColor(user.role || 'guest')}`}>
-                        {getRoleDisplayName(user.role || 'guest')}
-                      </span>
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <select
-                          value={user.role || 'guest'}
-                          onChange={(e) => updateUserRole(user.id, e.target.value)}
-                          className="text-xs sm:text-sm border rounded px-2 py-1 w-full sm:w-auto"
-                        >
-                          <option value="guest">Customer</option>
-                          <option value="user">Cleaner</option>
-                          <option value="admin">Administrator</option>
-                        </select>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm" disabled={resetLoading === user.id}>
-                              {resetLoading === user.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <RotateCcw className="h-4 w-4" />
-                              )}
-                              <span className="hidden sm:inline ml-1">Reset Password</span>
+                  {editingUser === user.id ? (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <Label htmlFor="firstName" className="text-sm font-medium">First Name</Label>
+                          <Input
+                            id="firstName"
+                            value={editUserData.first_name}
+                            onChange={(e) => setEditUserData({ ...editUserData, first_name: e.target.value })}
+                            className="text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="lastName" className="text-sm font-medium">Last Name</Label>
+                          <Input
+                            id="lastName"
+                            value={editUserData.last_name}
+                            onChange={(e) => setEditUserData({ ...editUserData, last_name: e.target.value })}
+                            className="text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            value={editUserData.email}
+                            onChange={(e) => setEditUserData({ ...editUserData, email: e.target.value })}
+                            className="text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="role" className="text-sm font-medium">Role</Label>
+                          <select
+                            id="role"
+                            value={editUserData.role}
+                            onChange={(e) => setEditUserData({ ...editUserData, role: e.target.value })}
+                            className="w-full text-sm border rounded px-3 py-2 h-10"
+                          >
+                            <option value="guest">Customer</option>
+                            <option value="user">Cleaner</option>
+                            <option value="admin">Administrator</option>
+                          </select>
+                        </div>
+                        <div className="sm:col-span-2">
+                          <Label htmlFor="password" className="text-sm font-medium">New Password (leave empty to keep current)</Label>
+                          <div className="relative">
+                            <Input
+                              id="password"
+                              type={showPassword ? "text" : "password"}
+                              value={editUserData.password}
+                              onChange={(e) => setEditUserData({ ...editUserData, password: e.target.value })}
+                              placeholder="Enter new password or leave empty"
+                              className="text-sm pr-10"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-0 top-0 h-full px-3"
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Send Password Reset Email?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will send a password reset email to <strong>{user.email}</strong>.
-                                They'll receive a secure link to reset their password.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handlePasswordReset(user.email, user.id)}>
-                                <Mail className="h-4 w-4 mr-2" />
-                                Send Reset Email
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Button
+                          onClick={() => updateUser(user.id)}
+                          disabled={updating}
+                          size="sm"
+                          className="w-full sm:w-auto"
+                        >
+                          {updating ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                              Updating...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-4 w-4 mr-2" />
+                              Save Changes
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          onClick={cancelEditing}
+                          variant="outline"
+                          size="sm"
+                          className="w-full sm:w-auto"
+                        >
+                          <X className="h-4 w-4 mr-2" />
+                          Cancel
+                        </Button>
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex-1">
+                        <div className="font-medium text-sm sm:text-base">
+                          {user.user_metadata.first_name} {user.user_metadata.last_name}
+                        </div>
+                        <div className="text-xs sm:text-sm text-gray-500 break-all">{user.email}</div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium self-start ${getRoleColor(user.role || 'guest')}`}>
+                          {getRoleDisplayName(user.role || 'guest')}
+                        </span>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Button
+                            onClick={() => startEditingUser(user)}
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-1"
+                          >
+                            <Edit className="h-4 w-4" />
+                            <span className="hidden sm:inline">Edit User</span>
+                            <span className="sm:hidden">Edit</span>
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="outline" size="sm" disabled={resetLoading === user.id}>
+                                {resetLoading === user.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Mail className="h-4 w-4" />
+                                )}
+                                <span className="hidden sm:inline ml-1">Email Reset</span>
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Send Password Reset Email?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will send a password reset email to <strong>{user.email}</strong>.
+                                  They'll receive a secure link to reset their password.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handlePasswordReset(user.email, user.id)}>
+                                  <Mail className="h-4 w-4 mr-2" />
+                                  Send Reset Email
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))
             )}
