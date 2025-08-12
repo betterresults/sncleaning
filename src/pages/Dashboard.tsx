@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { adminNavigation } from '@/lib/navigationItems';
 import UpcomingBookings from '@/components/dashboard/UpcomingBookings';
 import DashboardStats from '@/components/admin/DashboardStats';
-import { Calendar, Clock, CalendarDays, CalendarClock } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 
 const Dashboard = () => {
   const { user, userRole, cleanerId, loading, signOut } = useAuth();
-  const [selectedTimeRange, setSelectedTimeRange] = useState<'today' | '3days' | '7days' | '30days'>('3days');
+  const [selectedTimeRange, setSelectedTimeRange] = useState<'today' | '3days' | '7days' | '30days'>('30days');
 
   const handleSignOut = async () => {
     try {
@@ -72,7 +72,7 @@ const Dashboard = () => {
       default:
         return {
           dateFrom: today.toISOString(),
-          dateTo: new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString()
+          dateTo: new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
         };
     }
   };
@@ -94,65 +94,35 @@ const Dashboard = () => {
             userRole={userRole}
           />
           
-          <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
+          <main className="flex-1 p-4 space-y-6 max-w-full overflow-x-hidden">
             <div className="max-w-7xl mx-auto space-y-6">
-              {/* Time Range Selector */}
-              <div className="space-y-3">
-                <h2 className="text-base font-semibold text-gray-900">
-                  Filter by Time Period
-                </h2>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { key: 'today' as const, label: 'Today', icon: '📅', shortLabel: 'Today' },
-                    { key: '3days' as const, label: '3 Days', icon: '📊', shortLabel: '3D' },
-                    { key: '7days' as const, label: '7 Days', icon: '📈', shortLabel: '7D' },
-                    { key: '30days' as const, label: '30 Days', icon: '📋', shortLabel: '30D' }
-                  ].map((range) => (
-                    <Button
-                      key={range.key}
-                      variant={selectedTimeRange === range.key ? "default" : "outline"}
-                      onClick={() => setSelectedTimeRange(range.key)}
-                      className={`
-                        h-12 w-full text-sm font-medium transition-all
-                        ${selectedTimeRange === range.key 
-                          ? 'bg-blue-600 text-white border-blue-600 shadow-md' 
-                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                        }
-                      `}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-base">{range.icon}</span>
-                        <span className="hidden sm:inline">{range.label}</span>
-                        <span className="sm:hidden">{range.shortLabel}</span>
-                      </div>
-                    </Button>
-                  ))}
-                </div>
+              {/* Time Filter Dropdown */}
+              <div className="flex items-center gap-3">
+                <Calendar className="h-5 w-5 text-gray-600" />
+                <Select value={selectedTimeRange} onValueChange={(value: 'today' | '3days' | '7days' | '30days') => setSelectedTimeRange(value)}>
+                  <SelectTrigger className="w-48 bg-white border-gray-300 shadow-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border shadow-lg z-50">
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="3days">Next 3 Days</SelectItem>
+                    <SelectItem value="7days">Next 7 Days</SelectItem>
+                    <SelectItem value="30days">Next 30 Days</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              {/* Statistics Section */}
-              <div className="space-y-3">
-                <h2 className="text-base font-semibold text-gray-900">
-                  Statistics
-                </h2>
-                <DashboardStats filters={dateRange} />
-              </div>
+              {/* Statistics */}
+              <DashboardStats filters={dateRange} />
               
-              {/* Bookings Section */}
-              <div className="space-y-3">
-                <h2 className="text-base font-semibold text-gray-900">
-                  Bookings Management
-                </h2>
-                
-                <Card className="border shadow-sm">
-                  <CardContent className="p-4">
-                    <UpcomingBookings 
-                      dashboardDateFilter={dateRange}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
+              {/* Bookings */}
+              <Card className="border shadow-sm">
+                <CardContent className="p-4">
+                  <UpcomingBookings 
+                    dashboardDateFilter={dateRange}
+                  />
+                </CardContent>
+              </Card>
             </div>
           </main>
         </SidebarInset>

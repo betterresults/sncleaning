@@ -12,7 +12,7 @@ import { Edit, Trash2, Filter, Search, Settings, Copy, X, UserPlus, DollarSign, 
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import DashboardStats from '../admin/DashboardStats';
+
 import BulkEditBookingsDialog from './BulkEditBookingsDialog';
 import EditBookingDialog from './EditBookingDialog';
 import AssignCleanerDialog from './AssignCleanerDialog';
@@ -411,16 +411,6 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
 
   return (
     <div className="space-y-6">
-      {hasActiveFilters && (
-        <DashboardStats 
-          filters={{
-            dateFrom: filters.dateFrom,
-            dateTo: filters.dateTo,
-            cleanerId: filters.cleanerId !== 'all' ? parseInt(filters.cleanerId) : undefined,
-            customerId: filters.customerId !== 'all' ? parseInt(filters.customerId) : undefined,
-          }}
-        />
-      )}
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
