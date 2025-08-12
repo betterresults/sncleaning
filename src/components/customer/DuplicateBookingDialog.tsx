@@ -103,6 +103,7 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
           address: booking.address,
           postcode: booking.postcode,
           service_type: booking.service_type,
+          cleaning_type: booking.service_type,
           total_hours: booking.total_hours,
           total_cost: booking.total_cost,
           cleaning_cost_per_hour: booking.cleaning_cost_per_hour,
@@ -110,7 +111,8 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
           last_name: booking.last_name,
           phone_number: booking.phone_number,
           email: booking.email,
-          booking_status: 'Pending',
+          booking_status: 'active',
+          payment_status: 'Unpaid',
           ...formData
         });
 
