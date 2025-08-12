@@ -34,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useNavigate } from 'react-router-dom';
 
 interface UserData {
@@ -70,6 +71,13 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   const [resetLoading, setResetLoading] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Selection and bulk edit state for Customers view
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedBusinessIds, setSelectedBusinessIds] = useState<number[]>([]);
+  const [bulkType, setBulkType] = useState<string | 'no-change' | 'empty'>('no-change');
+  const [bulkStatus, setBulkStatus] = useState<string | 'no-change'>('no-change');
+  const [bulkUpdating, setBulkUpdating] = useState(false);
 
   const fetchUsers = async () => {
     try {
@@ -162,7 +170,9 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       last_name: user.last_name || '',
       email: user.email,
       role: user.role || 'guest',
-      password: ''
+      password: '',
+      client_type: user.client_type ?? null,
+      client_status: user.client_status || ''
     });
   };
 
@@ -175,7 +185,36 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   const updateUser = async (userId: string) => {
     try {
       setUpdating(true);
+
+      if (userType === 'customer') {
+        const row = users.find(u => u.id === userId);
+        if (row?.type === 'business_customer' && row.business_id) {
+          const updates: any = {};
+          if ('client_type' in editData) {
+            updates.clent_type = editData.client_type === 'empty' ? null : editData.client_type;
+          }
+          if ('client_status' in editData) {
+            updates.client_status = editData.client_status;
+          }
+          // Optionally allow editing name/email too in the future
+          const { error: custErr } = await supabase
+            .from('customers')
+            .update(updates)
+            .eq('id', row.business_id);
+          if (custErr) throw custErr;
+
+          toast({ title: 'Updated', description: 'Customer updated successfully' });
+          cancelEditing();
+          fetchUsers();
+          return;
+        } else {
+          toast({ title: 'Not editable', description: 'Only business customers can be edited here', variant: 'destructive' });
+          setUpdating(false);
+          return;
+        }
+      }
       
+      // Default path: update auth user via admin function
       const { data, error } = await supabase.functions.invoke('update-user-admin', {
         body: {
           userId: userId,
@@ -364,8 +403,6 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                               {user.first_name} {user.last_name}
                             </div>
                             <div className="text-sm text-muted-foreground">
-                              ID: {user.id.substring(0, 8)}...
-                            </div>
                           </div>
                         )}
                       </TableCell>
