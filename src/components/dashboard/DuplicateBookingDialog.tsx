@@ -21,6 +21,7 @@ interface Booking {
   phone_number: string;
   address: string;
   cleaning_type: string;
+  service_type?: string;
   total_cost: number;
   payment_status: string;
   cleaner: number | null;
@@ -183,7 +184,7 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
       
       // Handle frequently field for Airbnb same day cleaning
       let frequently = bookingData.frequently;
-      if (booking.cleaning_type === 'Air BnB' && isSameDayCleaning) {
+      if ((booking.service_type === 'Air BnB' || booking.cleaning_type === 'Air BnB') && isSameDayCleaning) {
         frequently = 'Same Day';
       }
       
@@ -230,7 +231,7 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
   const isFormValid = selectedDate && selectedHour && selectedMinute && 
     (cleanerOption !== 'different' || selectedCleaner !== null);
 
-  const isAirbnbBooking = booking?.cleaning_type === 'Air BnB';
+  const isAirbnbBooking = booking?.service_type === 'Air BnB' || booking?.cleaning_type === 'Air BnB';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
