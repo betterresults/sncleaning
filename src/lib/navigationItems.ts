@@ -1,4 +1,4 @@
-import { Calendar, History, DollarSign, Briefcase, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Calculator, Repeat, CreditCard } from 'lucide-react';
+import { Calendar, History, DollarSign, Briefcase, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Calculator, Repeat, CreditCard, Shield, UserCheck, UserPlus } from 'lucide-react';
 
 export const cleanerNavigation = [
   {
@@ -102,11 +102,32 @@ export const adminNavigation = [
       },
     ],
   },
-  {
-    title: "Users",
-    url: "/users",
-    icon: Users,
-  },
+    {
+      title: "Users",
+      icon: Users,
+      subItems: [
+        {
+          title: "All Users",
+          url: "/users",
+          icon: Users,
+        },
+        {
+          title: "Admins",
+          url: "/users/admins",
+          icon: Shield,
+        },
+        {
+          title: "Cleaners",
+          url: "/users/cleaners",
+          icon: UserCheck,
+        },
+        {
+          title: "Customers",
+          url: "/users/customers",
+          icon: UserPlus,
+        },
+      ],
+    },
   {
     title: "Create Accounts",
     url: "/create-customer-accounts",

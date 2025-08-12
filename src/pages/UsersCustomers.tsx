@@ -7,7 +7,7 @@ import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { adminNavigation } from '@/lib/navigationItems';
 import ModernUsersTable from '@/components/ModernUsersTable';
 
-const Users = () => {
+const UsersCustomers = () => {
   const { user, userRole, signOut } = useAuth();
 
   const handleSignOut = async () => {
@@ -32,14 +32,14 @@ const Users = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="All Users 👥"
+            title="Customer Users 👥"
             user={user}
             userRole={userRole}
           />
           
           <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
             <div className="max-w-7xl mx-auto">
-              <ModernUsersTable userType="all" />
+              <ModernUsersTable userType="customer" />
             </div>
           </main>
         </SidebarInset>
@@ -48,4 +48,4 @@ const Users = () => {
   );
 };
 
-export default Users;
+export default UsersCustomers;
