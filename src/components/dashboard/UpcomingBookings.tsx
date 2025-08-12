@@ -129,8 +129,12 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
           .gte('date_time', dashboardDateFilter.dateFrom)
           .lte('date_time', dashboardDateFilter.dateTo);
       } else {
-        // Default: only show future bookings
-        bookingsQuery = bookingsQuery.gte('date_time', new Date().toISOString());
+        // Default: show next 30 days for upcoming bookings
+        const thirtyDaysFromNow = new Date();
+        thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+        bookingsQuery = bookingsQuery
+          .gte('date_time', new Date().toISOString())
+          .lte('date_time', thirtyDaysFromNow.toISOString());
       }
 
       const { data: bookingsData, error: bookingsError } = await bookingsQuery
