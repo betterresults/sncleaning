@@ -25,7 +25,9 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  CalendarPlus
+  CalendarPlus,
+  MapPin,
+  Plus
 } from 'lucide-react';
 import {
   Select,
@@ -36,6 +38,8 @@ import {
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useNavigate } from 'react-router-dom';
+import CreateBookingDialogWithCustomer from '@/components/booking/CreateBookingDialogWithCustomer';
+import CustomerAddressDialog from '@/components/customer/CustomerAddressDialog';
 
 interface UserData {
   id: string;
@@ -53,6 +57,7 @@ interface UserData {
   postcode?: string;
   client_status?: string;
   client_type?: string | null;
+  addressCount?: number;
 }
 
 interface ModernUsersTableProps {
@@ -113,6 +118,30 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         }));
         processedUsers = [...authCustomers, ...businessCustomers];
         
+        // Get address counts for customers
+        const customerIds = businessCustomers.map(customer => customer.id).filter(Boolean);
+        let addressCounts: { [key: number]: number } = {};
+        
+        if (customerIds.length > 0) {
+          const { data: addressData } = await supabase
+            .from('addresses')
+            .select('customer_id')
+            .in('customer_id', customerIds);
+          
+          if (addressData) {
+            addressCounts = addressData.reduce((acc: { [key: number]: number }, addr: any) => {
+              acc[addr.customer_id] = (acc[addr.customer_id] || 0) + 1;
+              return acc;
+            }, {});
+          }
+        }
+
+        // Add address counts to processed users
+        processedUsers = processedUsers.map(user => ({
+          ...user,
+          addressCount: user.type === 'business_customer' ? (addressCounts[user.id] || 0) : 0
+        }));
+        
       } else if (userType === 'all') {
         // For all: show everything
         processedUsers = [...(data.authUsers || []), ...(data.businessCustomers || [])];
@@ -146,6 +175,11 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAddressChange = () => {
+    // Refresh the data to get updated address counts
+    fetchUsers();
   };
 
   const handleSearch = (term: string) => {
@@ -371,9 +405,8 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       if (selectedBusinessIds.length === 0) return;
       const updates: any = {};
       if (bulkType !== 'no-change') updates.clent_type = bulkType === 'empty' ? null : bulkType;
-      if (bulkStatus !== 'no-change') updates.client_status = bulkStatus;
       if (Object.keys(updates).length === 0) {
-        toast({ title: 'Nothing to update', description: 'Choose Type or Status to apply', variant: 'destructive' });
+        toast({ title: 'Nothing to update', description: 'Choose Type to apply', variant: 'destructive' });
         return;
       }
       setBulkUpdating(true);
@@ -383,7 +416,6 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       setSelectedIds(new Set());
       setSelectedBusinessIds([]);
       setBulkType('no-change');
-      setBulkStatus('no-change');
       fetchUsers();
     } catch (e: any) {
       toast({ title: 'Error', description: e.message || 'Bulk update failed', variant: 'destructive' });
@@ -436,16 +468,6 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                 <SelectItem value="empty">Clear</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={bulkStatus} onValueChange={setBulkStatus}>
-              <SelectTrigger className="w-32">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="no-change">No change</SelectItem>
-                <SelectItem value="New">New</SelectItem>
-                <SelectItem value="Current">Current</SelectItem>
-              </SelectContent>
-            </Select>
             <Button onClick={applyBulkUpdate} disabled={bulkUpdating} size="sm">
               {bulkUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
             </Button>
@@ -481,7 +503,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                   {isCustomerView ? (
                     <>
                       <TableHead>Type</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>Addresses</TableHead>
                     </>
                   ) : (
                     <TableHead>Role</TableHead>
@@ -490,12 +512,12 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={isCustomerView ? 6 : 4} className="text-center py-8 text-muted-foreground">
-                      {searchTerm ? 'No users found matching your search.' : 'No users found.'}
-                    </TableCell>
-                  </TableRow>
+                  {filteredUsers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={isCustomerView ? 5 : 4} className="text-center py-8 text-muted-foreground">
+                        {searchTerm ? 'No users found matching your search.' : 'No users found.'}
+                      </TableCell>
+                    </TableRow>
                 ) : (
                   filteredUsers.map((user) => (
                     <TableRow key={user.id}>
@@ -590,21 +612,19 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                             )}
                           </TableCell>
                           <TableCell>
-                            {editingUser === user.id && user.type === 'business_customer' ? (
-                              <Select 
-                                value={editData.client_status} 
-                                onValueChange={(value) => setEditData({ ...editData, client_status: value })}
+                            {user.type === 'business_customer' ? (
+                              <CustomerAddressDialog
+                                customerId={Number(user.business_id || user.id)}
+                                addressCount={user.addressCount || 0}
+                                onAddressChange={handleAddressChange}
                               >
-                                <SelectTrigger className="w-32">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="New">New</SelectItem>
-                                  <SelectItem value="Current">Current</SelectItem>
-                                </SelectContent>
-                              </Select>
+                                <Button variant="outline" size="sm">
+                                  <MapPin className="h-4 w-4 mr-2" />
+                                  {user.addressCount || 0}
+                                </Button>
+                              </CustomerAddressDialog>
                             ) : (
-                              getCustomerStatusBadge(user.client_status)
+                              <span className="text-sm text-muted-foreground">–</span>
                             )}
                           </TableCell>
                         </>
@@ -663,13 +683,17 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                               <Edit2 className="h-4 w-4" />
                             </Button>
                             {isCustomerView && user.type === 'business_customer' && (
-                              <Button
-                                size="sm"
-                                variant="default"
-                                onClick={() => navigate('/admin-add-booking', { state: { preselectedCustomer: user.business_id } })}
-                              >
-                                <CalendarPlus className="h-4 w-4" />
-                              </Button>
+                              <CreateBookingDialogWithCustomer customer={{
+                                id: Number(user.business_id || user.id),
+                                first_name: user.first_name || '',
+                                last_name: user.last_name || '',
+                                email: user.email || '',
+                                phone: user.phone || ''
+                              }}>
+                                <Button size="sm" variant="outline">
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </CreateBookingDialogWithCustomer>
                             )}
                             {!isCustomerView && (
                               <Button
