@@ -312,7 +312,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
     if (t === 'client') {
       return <Badge variant="default" className="gap-1">Client</Badge>;
     }
-    return <Badge variant="outline">-</Badge>;
+    return <Badge variant="outline">—</Badge>;
   };
 
   const getTypeTitle = () => {
@@ -327,6 +327,71 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         return 'All Users';
     }
   };
+
+  const getCustomerStatusBadge = (status?: string) => {
+    if (!status) return <Badge variant="outline">—</Badge>;
+    const s = status.toLowerCase();
+    if (s === 'current') return <Badge variant="default">Current</Badge>;
+    if (s === 'new') return <Badge variant="secondary">New</Badge>;
+    return <Badge variant="outline">{status}</Badge>;
+  };
+
+  const isSelected = (id: string) => selectedIds.has(id);
+
+  const toggleSelect = (user: UserData) => {
+    if (user.type !== 'business_customer' || !user.business_id) return;
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(user.id)) next.delete(user.id); else next.add(user.id);
+      return next;
+    });
+    setSelectedBusinessIds(prev => {
+      const exists = prev.includes(user.business_id!);
+      if (exists) return prev.filter(v => v !== user.business_id);
+      return [...prev, user.business_id!];
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const allBusiness = filteredUsers.filter(u => u.type === 'business_customer' && u.business_id);
+    const allIds = allBusiness.map(u => u.id);
+    const allBizIds = allBusiness.map(u => u.business_id!) as number[];
+    const allSelected = allIds.every(id => selectedIds.has(id));
+    if (allSelected) {
+      setSelectedIds(new Set());
+      setSelectedBusinessIds([]);
+    } else {
+      setSelectedIds(new Set(allIds));
+      setSelectedBusinessIds(allBizIds);
+    }
+  };
+
+  const applyBulkUpdate = async () => {
+    try {
+      if (selectedBusinessIds.length === 0) return;
+      const updates: any = {};
+      if (bulkType !== 'no-change') updates.clent_type = bulkType === 'empty' ? null : bulkType;
+      if (bulkStatus !== 'no-change') updates.client_status = bulkStatus;
+      if (Object.keys(updates).length === 0) {
+        toast({ title: 'Nothing to update', description: 'Choose Type or Status to apply', variant: 'destructive' });
+        return;
+      }
+      setBulkUpdating(true);
+      const { error } = await supabase.from('customers').update(updates).in('id', selectedBusinessIds);
+      if (error) throw error;
+      toast({ title: 'Updated', description: `Updated ${selectedBusinessIds.length} customers` });
+      setSelectedIds(new Set());
+      setSelectedBusinessIds([]);
+      setBulkType('no-change');
+      setBulkStatus('no-change');
+      fetchUsers();
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message || 'Bulk update failed', variant: 'destructive' });
+    } finally {
+      setBulkUpdating(false);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
   }, [userType]);
@@ -334,6 +399,9 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   useEffect(() => {
     handleSearch(searchTerm);
   }, [users]);
+
+  const isCustomerView = userType === 'customer';
+  const showBulkEdit = isCustomerView && selectedBusinessIds.length > 0;
 
   return (
     <Card>
@@ -346,12 +414,46 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
-            placeholder="Search users by name, email, or ID..."
+            placeholder="Search users by name, email..."
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
             className="pl-10"
           />
         </div>
+
+        {/* Bulk Edit Controls for Customers */}
+        {showBulkEdit && (
+          <div className="flex flex-wrap items-center gap-2 p-3 bg-muted rounded-lg">
+            <span className="text-sm font-medium">{selectedBusinessIds.length} selected:</span>
+            <Select value={bulkType} onValueChange={setBulkType}>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="no-change">No change</SelectItem>
+                <SelectItem value="client">Client</SelectItem>
+                <SelectItem value="business">Business</SelectItem>
+                <SelectItem value="empty">Clear</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={bulkStatus} onValueChange={setBulkStatus}>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="no-change">No change</SelectItem>
+                <SelectItem value="New">New</SelectItem>
+                <SelectItem value="Current">Current</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button onClick={applyBulkUpdate} disabled={bulkUpdating} size="sm">
+              {bulkUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => { setSelectedIds(new Set()); setSelectedBusinessIds([]); }}>
+              Clear
+            </Button>
+          </div>
+        )}
       </CardHeader>
 
       <CardContent>
@@ -365,22 +467,49 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>User</TableHead>
+                  {isCustomerView && (
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={filteredUsers.filter(u => u.type === 'business_customer').length > 0 && 
+                                 filteredUsers.filter(u => u.type === 'business_customer').every(u => isSelected(u.id))}
+                        onCheckedChange={toggleSelectAll}
+                      />
+                    </TableHead>
+                  )}
+                  <TableHead>Customer</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
+                  {isCustomerView ? (
+                    <>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Status</TableHead>
+                    </>
+                  ) : (
+                    <TableHead>Role</TableHead>
+                  )}
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredUsers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={isCustomerView ? 6 : 4} className="text-center py-8 text-muted-foreground">
                       {searchTerm ? 'No users found matching your search.' : 'No users found.'}
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredUsers.map((user) => (
                     <TableRow key={user.id}>
+                      {isCustomerView && (
+                        <TableCell>
+                          {user.type === 'business_customer' ? (
+                            <Checkbox
+                              checked={isSelected(user.id)}
+                              onCheckedChange={() => toggleSelect(user)}
+                            />
+                          ) : null}
+                        </TableCell>
+                      )}
+                      
                       <TableCell>
                         {editingUser === user.id ? (
                           <div className="flex gap-2">
@@ -398,11 +527,8 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                             />
                           </div>
                         ) : (
-                          <div>
-                            <div className="font-medium">
-                              {user.first_name} {user.last_name}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
+                          <div className="font-medium">
+                            {user.first_name} {user.last_name}
                           </div>
                         )}
                       </TableCell>
@@ -416,49 +542,93 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                               onChange={(e) => setEditData({ ...editData, email: e.target.value })}
                               className="w-48"
                             />
-                            <div className="relative">
-                              <Input
-                                type={showPassword ? "text" : "password"}
-                                placeholder="New password (optional)"
-                                value={editData.password}
-                                onChange={(e) => setEditData({ ...editData, password: e.target.value })}
-                                className="w-48 pr-10"
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="absolute right-0 top-0 h-full px-3"
-                                onClick={() => setShowPassword(!showPassword)}
-                              >
-                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                              </Button>
-                            </div>
+                            {!isCustomerView && (
+                              <div className="relative">
+                                <Input
+                                  type={showPassword ? "text" : "password"}
+                                  placeholder="New password (optional)"
+                                  value={editData.password}
+                                  onChange={(e) => setEditData({ ...editData, password: e.target.value })}
+                                  className="w-48 pr-10"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute right-0 top-0 h-full px-3"
+                                  onClick={() => setShowPassword(!showPassword)}
+                                >
+                                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <div className="font-mono text-sm">{user.email}</div>
                         )}
                       </TableCell>
                       
-                      <TableCell>
-                        {editingUser === user.id ? (
-                          <Select 
-                            value={editData.role} 
-                            onValueChange={(value) => setEditData({ ...editData, role: value })}
-                          >
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="guest">Customer</SelectItem>
-                              <SelectItem value="user">Cleaner</SelectItem>
-                              <SelectItem value="admin">Admin</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          getRoleBadge(user.role || 'guest')
-                        )}
-                      </TableCell>
+                      {isCustomerView ? (
+                        <>
+                          <TableCell>
+                            {editingUser === user.id && user.type === 'business_customer' ? (
+                              <Select 
+                                value={editData.client_type ?? 'empty'} 
+                                onValueChange={(value) => setEditData({ ...editData, client_type: value === 'empty' ? null : value })}
+                              >
+                                <SelectTrigger className="w-32">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="empty">—</SelectItem>
+                                  <SelectItem value="client">Client</SelectItem>
+                                  <SelectItem value="business">Business</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              getCustomerTypeBadge(user)
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {editingUser === user.id && user.type === 'business_customer' ? (
+                              <Select 
+                                value={editData.client_status} 
+                                onValueChange={(value) => setEditData({ ...editData, client_status: value })}
+                              >
+                                <SelectTrigger className="w-32">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="New">New</SelectItem>
+                                  <SelectItem value="Current">Current</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              getCustomerStatusBadge(user.client_status)
+                            )}
+                          </TableCell>
+                        </>
+                      ) : (
+                        <TableCell>
+                          {editingUser === user.id ? (
+                            <Select 
+                              value={editData.role} 
+                              onValueChange={(value) => setEditData({ ...editData, role: value })}
+                            >
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="guest">Customer</SelectItem>
+                                <SelectItem value="user">Cleaner</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            getRoleBadge(user.role || 'guest')
+                          )}
+                        </TableCell>
+                      )}
                       
                       <TableCell className="text-right">
                         {editingUser === user.id ? (
@@ -488,21 +658,33 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                               size="sm"
                               variant="outline"
                               onClick={() => startEditing(user)}
+                              disabled={isCustomerView && user.type !== 'business_customer'}
                             >
                               <Edit2 className="h-4 w-4" />
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handlePasswordReset(user.email, user.id)}
-                              disabled={resetLoading === user.id}
-                            >
-                              {resetLoading === user.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Mail className="h-4 w-4" />
-                              )}
-                            </Button>
+                            {isCustomerView && user.type === 'business_customer' && (
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => navigate('/admin-add-booking', { state: { preselectedCustomer: user.business_id } })}
+                              >
+                                <CalendarPlus className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {!isCustomerView && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handlePasswordReset(user.email, user.id)}
+                                disabled={resetLoading === user.id}
+                              >
+                                {resetLoading === user.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Mail className="h-4 w-4" />
+                                )}
+                              </Button>
+                            )}
                           </div>
                         )}
                       </TableCell>
