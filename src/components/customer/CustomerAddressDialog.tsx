@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { MapPin, Plus, Edit, Trash2 } from 'lucide-react';
+import { MapPin, Plus, Edit, Trash2, Star, Copy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -134,6 +134,42 @@ const CustomerAddressDialog = ({ customerId, addressCount, onAddressChange, chil
     }
   };
 
+  const handleSetAsDefault = async (id: string) => {
+    setLoading(true);
+    try {
+      // First, unset all other addresses as default
+      await supabase
+        .from('addresses')
+        .update({ is_default: false })
+        .eq('customer_id', customerId);
+
+      // Then set this address as default
+      const { error } = await supabase
+        .from('addresses')
+        .update({ is_default: true })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Default address updated successfully'
+      });
+
+      fetchAddresses();
+      onAddressChange();
+    } catch (error) {
+      console.error('Error setting default address:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to set default address',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDeleteAddress = async (id: string) => {
     setLoading(true);
     try {
@@ -163,6 +199,17 @@ const CustomerAddressDialog = ({ customerId, addressCount, onAddressChange, chil
     }
   };
 
+  const handleDuplicateAddress = (address: Address) => {
+    setNewAddress({
+      address: address.address,
+      postcode: address.postcode
+    });
+    toast({
+      title: 'Address copied',
+      description: 'Address details copied to the form above. Make your changes and click Add Address.',
+    });
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -184,12 +231,6 @@ const CustomerAddressDialog = ({ customerId, addressCount, onAddressChange, chil
         <div className="space-y-6">
           {/* Add New Address - Top Section */}
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <Plus className="h-4 w-4 text-primary" />
-              </div>
-              <h3 className="font-medium text-primary">Add New Address</h3>
-            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="newAddress" className="text-sm font-medium">Address *</Label>
@@ -248,9 +289,12 @@ const CustomerAddressDialog = ({ customerId, addressCount, onAddressChange, chil
                     onEdit={() => setEditingId(address.id)}
                     onCancel={() => setEditingId(null)}
                     onSave={(updatedData) => handleUpdateAddress(address.id, updatedData)}
+                    onSetAsDefault={() => handleSetAsDefault(address.id)}
                     onDelete={() => handleDeleteAddress(address.id)}
+                    onDuplicate={() => handleDuplicateAddress(address)}
                     loading={loading}
                     isOnlyAddress={addresses.length === 1}
+                    hasMultipleAddresses={addresses.length > 1}
                   />
                 ))}
               </div>
@@ -268,12 +312,15 @@ interface AddressCardProps {
   onEdit: () => void;
   onCancel: () => void;
   onSave: (data: Partial<Address>) => void;
+  onSetAsDefault: () => void;
   onDelete: () => void;
+  onDuplicate: () => void;
   loading: boolean;
   isOnlyAddress: boolean;
+  hasMultipleAddresses: boolean;
 }
 
-const AddressCard = ({ address, isEditing, onEdit, onCancel, onSave, onDelete, loading, isOnlyAddress }: AddressCardProps) => {
+const AddressCard = ({ address, isEditing, onEdit, onCancel, onSave, onSetAsDefault, onDelete, onDuplicate, loading, isOnlyAddress, hasMultipleAddresses }: AddressCardProps) => {
   const [editData, setEditData] = useState({
     address: address.address,
     postcode: address.postcode
@@ -339,17 +386,39 @@ const AddressCard = ({ address, isEditing, onEdit, onCancel, onSave, onDelete, l
         <div>
           <p className="font-medium text-foreground">{address.address}</p>
           <p className="text-sm text-muted-foreground">{address.postcode}</p>
-          <div className="flex justify-end space-x-2 mt-4">
-            <Button variant="outline" size="sm" onClick={onEdit} className="hover:border-primary hover:text-primary">
-              <Edit className="h-4 w-4 mr-1" />
-              Edit
-            </Button>
-            {!isOnlyAddress && (
-              <Button variant="outline" size="sm" onClick={onDelete} disabled={loading} className="hover:border-destructive hover:text-destructive">
-                <Trash2 className="h-4 w-4 mr-1" />
-                Delete
+          <div className="flex justify-between items-center mt-4">
+            <div className="flex gap-2">
+              {hasMultipleAddresses && !address.is_default && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={onSetAsDefault}
+                  className="hover:border-primary hover:text-primary"
+                >
+                  <Star className="h-4 w-4 mr-1" />
+                  Set Default
+                </Button>
+              )}
+            </div>
+            <div className="flex space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={onDuplicate} 
+                className="hover:border-primary hover:text-primary"
+                title="Duplicate this address"
+              >
+                <Copy className="h-4 w-4" />
               </Button>
-            )}
+              <Button variant="outline" size="sm" onClick={onEdit} className="hover:border-primary hover:text-primary">
+                <Edit className="h-4 w-4" />
+              </Button>
+              {!isOnlyAddress && (
+                <Button variant="outline" size="sm" onClick={onDelete} disabled={loading} className="hover:border-destructive hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       )}
