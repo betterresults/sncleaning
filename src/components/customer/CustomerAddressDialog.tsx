@@ -28,6 +28,7 @@ const CustomerAddressDialog = ({ customerId, addressCount, onAddressChange, chil
   const [loading, setLoading] = useState(false);
   const [newAddress, setNewAddress] = useState({ address: '', postcode: '' });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [hasChanges, setHasChanges] = useState(false);
   const { toast } = useToast();
 
   const fetchAddresses = async () => {
@@ -91,7 +92,7 @@ const CustomerAddressDialog = ({ customerId, addressCount, onAddressChange, chil
 
       setNewAddress({ address: '', postcode: '' });
       fetchAddresses();
-      onAddressChange();
+      setHasChanges(true);
     } catch (error) {
       console.error('Error adding address:', error);
       toast({
@@ -121,7 +122,7 @@ const CustomerAddressDialog = ({ customerId, addressCount, onAddressChange, chil
 
       setEditingId(null);
       fetchAddresses();
-      onAddressChange();
+      setHasChanges(true);
     } catch (error) {
       console.error('Error updating address:', error);
       toast({
@@ -157,7 +158,7 @@ const CustomerAddressDialog = ({ customerId, addressCount, onAddressChange, chil
       });
 
       fetchAddresses();
-      onAddressChange();
+      setHasChanges(true);
     } catch (error) {
       console.error('Error setting default address:', error);
       toast({
@@ -186,7 +187,7 @@ const CustomerAddressDialog = ({ customerId, addressCount, onAddressChange, chil
       });
 
       fetchAddresses();
-      onAddressChange();
+      setHasChanges(true);
     } catch (error) {
       console.error('Error deleting address:', error);
       toast({
@@ -210,8 +211,17 @@ const CustomerAddressDialog = ({ customerId, addressCount, onAddressChange, chil
     });
   };
 
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    // Only call onAddressChange when closing the dialog and there were changes
+    if (!newOpen && hasChanges) {
+      onAddressChange();
+      setHasChanges(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {children || (
           <Button variant="outline" size="sm">
