@@ -74,6 +74,12 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [resetLoading, setResetLoading] = useState<string | null>(null);
+  
+  // Customer filters
+  const [customerTypeFilter, setCustomerTypeFilter] = useState<'all' | 'business' | 'regular'>('all');
+  const [addressFilter, setAddressFilter] = useState<'all' | 'with-addresses' | 'without-addresses'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'New' | 'Current'>('all');
+  
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -182,19 +188,51 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
     fetchUsers();
   };
 
+  const applyFilters = (usersData: UserData[], searchTerm: string) => {
+    let filtered = usersData;
+
+    // Apply search filter
+    if (searchTerm.trim() !== '') {
+      filtered = filtered.filter(user => 
+        user.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.id.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Apply customer-specific filters only for customer view
+    if (userType === 'customer') {
+      // Customer type filter
+      if (customerTypeFilter === 'business') {
+        filtered = filtered.filter(user => user.type === 'business_customer');
+      } else if (customerTypeFilter === 'regular') {
+        filtered = filtered.filter(user => user.type === 'auth_user');
+      }
+
+      // Address filter
+      if (addressFilter === 'with-addresses') {
+        filtered = filtered.filter(user => (user.addressCount || 0) > 0);
+      } else if (addressFilter === 'without-addresses') {
+        filtered = filtered.filter(user => (user.addressCount || 0) === 0);
+      }
+
+      // Status filter
+      if (statusFilter !== 'all') {
+        filtered = filtered.filter(user => user.client_status === statusFilter);
+      }
+    }
+
+    return filtered;
+  };
+
   const handleSearch = (term: string) => {
     setSearchTerm(term);
-    if (term.trim() === '') {
-      setFilteredUsers(users);
-    } else {
-      const filtered = users.filter(user => 
-        user.first_name?.toLowerCase().includes(term.toLowerCase()) ||
-        user.last_name?.toLowerCase().includes(term.toLowerCase()) ||
-        user.email?.toLowerCase().includes(term.toLowerCase()) ||
-        user.id.toLowerCase().includes(term.toLowerCase())
-      );
-      setFilteredUsers(filtered);
-    }
+    setFilteredUsers(applyFilters(users, term));
+  };
+
+  const handleFilterChange = () => {
+    setFilteredUsers(applyFilters(users, searchTerm));
   };
 
   const startEditing = (user: UserData) => {
@@ -429,8 +467,8 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   }, [userType]);
 
   useEffect(() => {
-    handleSearch(searchTerm);
-  }, [users]);
+    handleFilterChange();
+  }, [users, customerTypeFilter, addressFilter, statusFilter]);
 
   const isCustomerView = userType === 'customer';
   const showBulkEdit = isCustomerView && selectedBusinessIds.length > 0;
@@ -442,15 +480,65 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           <span>{getTypeTitle()} ({filteredUsers.length})</span>
         </CardTitle>
         
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search users by name, email..."
-            value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="pl-10"
-          />
+        {/* Search and Filters */}
+        <div className="space-y-4">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Search users by name, email..."
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          {/* Customer Filters */}
+          {userType === 'customer' && (
+            <div className="flex flex-wrap gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-muted-foreground">Customer Type</label>
+                <Select value={customerTypeFilter} onValueChange={(value: any) => setCustomerTypeFilter(value)}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="business">Business</SelectItem>
+                    <SelectItem value="regular">Regular</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-muted-foreground">Addresses</label>
+                <Select value={addressFilter} onValueChange={(value: any) => setAddressFilter(value)}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Customers</SelectItem>
+                    <SelectItem value="with-addresses">With Addresses</SelectItem>
+                    <SelectItem value="without-addresses">Without Addresses</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-muted-foreground">Status</label>
+                <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="New">New</SelectItem>
+                    <SelectItem value="Current">Current</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Bulk Edit Controls for Customers */}
