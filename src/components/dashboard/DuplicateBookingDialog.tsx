@@ -60,6 +60,16 @@ interface Booking {
   cleaner_percentage?: number;
   booking_status?: string;
   frontly_id?: number;
+  cleaners?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+  } | null;
+  customers?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+  } | null;
 }
 
 interface Cleaner {
@@ -161,11 +171,13 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
       }
       // 'unassigned' keeps assignedCleaner as null
 
-      // Create duplicate booking data, excluding generated fields and auto-increment fields
+      // Create duplicate booking data, excluding generated fields, auto-increment fields, and relationship data
       const { 
         id, 
         date_time, 
-        frontly_id, 
+        frontly_id,
+        cleaners,
+        customers,
         ...bookingData 
       } = booking;
       
