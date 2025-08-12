@@ -61,6 +61,7 @@ interface BookingData {
   propertyAccess: string;
   keyPickupAddress: string;
   useClientAddress: boolean;
+  useClientAddressForKeys: boolean;
   keyCollectionNotes: string;
   
   // Cost and payment
@@ -107,6 +108,7 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
     propertyAccess: '',
     keyPickupAddress: '',
     useClientAddress: false,
+    useClientAddressForKeys: false,
     keyCollectionNotes: '',
     totalCost: 0,
     cleanerPay: 0,
@@ -317,6 +319,53 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
     }
   };
 
+  const handleUseClientAddressForKeys = async (checked: boolean) => {
+    if (checked && formData.customerId) {
+      // Fetch customer's default address from addresses table
+      const { data, error } = await supabase
+        .from('addresses')
+        .select('address, postcode')
+        .eq('customer_id', formData.customerId)
+        .eq('is_default', true)
+        .single();
+      
+      if (data && !error) {
+        setFormData(prev => ({
+          ...prev,
+          useClientAddressForKeys: checked,
+          keyPickupAddress: `${data.address}, ${data.postcode}`
+        }));
+      } else {
+        console.log('No address found for this customer');
+        setFormData(prev => ({
+          ...prev,
+          useClientAddressForKeys: checked
+        }));
+      }
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        useClientAddressForKeys: checked,
+        keyPickupAddress: ''
+      }));
+    }
+  };
+
+  const buildKeyCollectionDetails = () => {
+    let keyDetails = '';
+    
+    if (formData.keyPickupAddress && formData.keyPickupAddress.trim()) {
+      keyDetails += `Pickup Address: ${formData.keyPickupAddress.trim()}`;
+    }
+    
+    if (formData.keyCollectionNotes && formData.keyCollectionNotes.trim()) {
+      if (keyDetails) keyDetails += '\n\n';
+      keyDetails += `Notes: ${formData.keyCollectionNotes.trim()}`;
+    }
+    
+    return keyDetails || null;
+  };
+
   // Calculate total cost for hourly services
   useEffect(() => {
     if (requiresHours && formData.totalHours > 0 && formData.costPerHour > 0) {
@@ -487,7 +536,7 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
         payment_status: formData.paymentStatus,
         booking_status: 'Confirmed',
         frequently: frequently,
-        key_collection: formData.keyCollectionNotes || null,
+        key_collection: buildKeyCollectionDetails(),
         cleaning_cost_per_hour: requiresHours ? formData.costPerHour : null
       };
 
@@ -967,15 +1016,32 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
                 </div>
                 
                 {formData.propertyAccess === 'estate_agent' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="keyPickupAddress" className="text-sm font-semibold text-gray-700">Key Pickup Address</Label>
-                    <Textarea
-                      id="keyPickupAddress"
-                      value={formData.keyPickupAddress}
-                      onChange={(e) => handleInputChange('keyPickupAddress', e.target.value)}
-                      placeholder="Enter estate agent office address..."
-                      className="border-2 border-gray-200 focus:border-red-500 transition-colors"
-                    />
+                  <div className="space-y-4">
+                    {/* Option to use client address for business customers */}
+                    {formData.customerId && (
+                      <div className="flex items-center space-x-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <Checkbox
+                          id="useClientAddressForKeys"
+                          checked={formData.useClientAddressForKeys}
+                          onCheckedChange={handleUseClientAddressForKeys}
+                        />
+                        <Label htmlFor="useClientAddressForKeys" className="text-sm font-medium text-blue-700">
+                          Use client's address for key pickup
+                        </Label>
+                      </div>
+                    )}
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="keyPickupAddress" className="text-sm font-semibold text-gray-700">Key Pickup Address</Label>
+                      <Textarea
+                        id="keyPickupAddress"
+                        value={formData.keyPickupAddress}
+                        onChange={(e) => handleInputChange('keyPickupAddress', e.target.value)}
+                        placeholder="Enter estate agent office address..."
+                        className="border-2 border-gray-200 focus:border-red-500 transition-colors"
+                        disabled={formData.useClientAddressForKeys}
+                      />
+                    </div>
                   </div>
                 )}
                 
