@@ -64,60 +64,25 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
     try {
       setLoading(true);
       
-      console.log('=== FETCHING USERS DEBUG ===');
+      console.log('=== FETCHING USERS WITH ADMIN PRIVILEGES ===');
       console.log('User type filter:', userType);
       
-      // Fetch profiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*');
+      // Use admin edge function to bypass RLS
+      const { data, error } = await supabase.functions.invoke('get-all-users-admin');
       
-      console.log('Profiles fetched:', profiles?.length || 0, profiles);
-      
-      if (profilesError) {
-        console.error('Profiles error:', profilesError);
-        throw profilesError;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
       }
 
-      // Fetch user roles
-      const { data: userRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('*');
-      
-      console.log('User roles fetched:', userRoles?.length || 0, userRoles);
-      
-      if (rolesError) {
-        console.error('Error fetching user roles:', rolesError);
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to fetch users');
       }
 
-      const roleMap = new Map();
-      if (userRoles) {
-        userRoles.forEach(role => {
-          roleMap.set(role.user_id, role.role);
-        });
-      }
+      console.log('Users fetched from admin function:', data.users?.length || 0);
+      console.log('All users data:', data.users);
 
-      let processedUsers = profiles?.map(profile => {
-        const userRole = roleMap.get(profile.user_id) || profile.role || 'guest';
-        console.log(`Processing user ${profile.email}:`, {
-          profile_role: profile.role,
-          user_roles_role: roleMap.get(profile.user_id),
-          final_role: userRole,
-          user_id: profile.user_id
-        });
-        
-        return {
-          id: profile.user_id,
-          email: profile.email || '',
-          first_name: profile.first_name || '',
-          last_name: profile.last_name || '',
-          role: userRole,
-          cleaner_id: profile.cleaner_id,
-          customer_id: profile.customer_id
-        };
-      }) || [];
-
-      console.log('All processed users:', processedUsers);
+      let processedUsers = data.users || [];
 
       // Filter by user type
       if (userType !== 'all') {
