@@ -175,41 +175,49 @@ const CustomerAddressDialog = ({ customerId, addressCount, onAddressChange, chil
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
-            Manage Customer Addresses
+          <DialogTitle className="flex items-center gap-2 text-xl">
+            <MapPin className="h-5 w-5 text-primary" />
+            Addresses
           </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">
-          {/* Add New Address */}
-          <div className="border rounded-lg p-4 space-y-4">
-            <h3 className="font-medium flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add New Address
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
+          {/* Add New Address - Top Section */}
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <Plus className="h-4 w-4 text-primary" />
+              </div>
+              <h3 className="font-medium text-primary">Add New Address</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="newAddress">Address</Label>
+                <Label htmlFor="newAddress" className="text-sm font-medium">Address *</Label>
                 <Input
                   id="newAddress"
                   value={newAddress.address}
                   onChange={(e) => setNewAddress({ ...newAddress, address: e.target.value })}
                   placeholder="Enter full address"
+                  className="border-primary/20 focus:border-primary"
                 />
               </div>
               <div>
-                <Label htmlFor="newPostcode">Postcode</Label>
+                <Label htmlFor="newPostcode" className="text-sm font-medium">Postcode *</Label>
                 <Input
                   id="newPostcode"
                   value={newAddress.postcode}
                   onChange={(e) => setNewAddress({ ...newAddress, postcode: e.target.value })}
                   placeholder="Enter postcode"
+                  className="border-primary/20 focus:border-primary"
                 />
               </div>
             </div>
             <div className="flex justify-end">
-              <Button onClick={handleAddAddress} disabled={loading}>
+              <Button 
+                onClick={handleAddAddress} 
+                disabled={loading}
+                className="bg-primary hover:bg-primary/90"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Address
               </Button>
@@ -218,12 +226,17 @@ const CustomerAddressDialog = ({ customerId, addressCount, onAddressChange, chil
 
           {/* Existing Addresses */}
           <div className="space-y-4">
-            <h3 className="font-medium">Existing Addresses ({addresses.length})</h3>
+            {addresses.length > 0 && (
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <h3 className="font-medium text-muted-foreground">Addresses ({addresses.length})</h3>
+              </div>
+            )}
             {addresses.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg">
                 <MapPin className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No addresses found.</p>
-                <p className="text-sm">Add the first address above.</p>
+                <p className="font-medium">No addresses yet</p>
+                <p className="text-sm">Add your first address above to get started.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -237,6 +250,7 @@ const CustomerAddressDialog = ({ customerId, addressCount, onAddressChange, chil
                     onSave={(updatedData) => handleUpdateAddress(address.id, updatedData)}
                     onDelete={() => handleDeleteAddress(address.id)}
                     loading={loading}
+                    isOnlyAddress={addresses.length === 1}
                   />
                 ))}
               </div>
@@ -256,9 +270,10 @@ interface AddressCardProps {
   onSave: (data: Partial<Address>) => void;
   onDelete: () => void;
   loading: boolean;
+  isOnlyAddress: boolean;
 }
 
-const AddressCard = ({ address, isEditing, onEdit, onCancel, onSave, onDelete, loading }: AddressCardProps) => {
+const AddressCard = ({ address, isEditing, onEdit, onCancel, onSave, onDelete, loading, isOnlyAddress }: AddressCardProps) => {
   const [editData, setEditData] = useState({
     address: address.address,
     postcode: address.postcode
@@ -277,30 +292,32 @@ const AddressCard = ({ address, isEditing, onEdit, onCancel, onSave, onDelete, l
   };
 
   return (
-    <div className="border rounded-lg p-4 space-y-3">
-      {address.is_default && (
-        <Badge variant="secondary" className="text-xs">
-          Default Address
+    <div className="border border-border/60 rounded-lg p-4 space-y-3 bg-card hover:shadow-sm transition-shadow">
+      {address.is_default && !isOnlyAddress && (
+        <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
+          Default
         </Badge>
       )}
       
       {isEditing ? (
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor={`edit-address-${address.id}`}>Address</Label>
+              <Label htmlFor={`edit-address-${address.id}`} className="text-sm font-medium">Address</Label>
               <Input
                 id={`edit-address-${address.id}`}
                 value={editData.address}
                 onChange={(e) => setEditData({ ...editData, address: e.target.value })}
+                className="border-primary/20 focus:border-primary"
               />
             </div>
             <div>
-              <Label htmlFor={`edit-postcode-${address.id}`}>Postcode</Label>
+              <Label htmlFor={`edit-postcode-${address.id}`} className="text-sm font-medium">Postcode</Label>
               <Input
                 id={`edit-postcode-${address.id}`}
                 value={editData.postcode}
                 onChange={(e) => setEditData({ ...editData, postcode: e.target.value })}
+                className="border-primary/20 focus:border-primary"
               />
             </div>
           </div>
@@ -308,24 +325,31 @@ const AddressCard = ({ address, isEditing, onEdit, onCancel, onSave, onDelete, l
             <Button variant="outline" size="sm" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button size="sm" onClick={handleSave} disabled={loading}>
+            <Button 
+              size="sm" 
+              onClick={handleSave} 
+              disabled={loading}
+              className="bg-primary hover:bg-primary/90"
+            >
               Save
             </Button>
           </div>
         </div>
       ) : (
         <div>
-          <p className="font-medium">{address.address}</p>
+          <p className="font-medium text-foreground">{address.address}</p>
           <p className="text-sm text-muted-foreground">{address.postcode}</p>
-          <div className="flex justify-end space-x-2 mt-3">
-            <Button variant="outline" size="sm" onClick={onEdit}>
+          <div className="flex justify-end space-x-2 mt-4">
+            <Button variant="outline" size="sm" onClick={onEdit} className="hover:border-primary hover:text-primary">
               <Edit className="h-4 w-4 mr-1" />
               Edit
             </Button>
-            <Button variant="outline" size="sm" onClick={onDelete} disabled={loading}>
-              <Trash2 className="h-4 w-4 mr-1" />
-              Delete
-            </Button>
+            {!isOnlyAddress && (
+              <Button variant="outline" size="sm" onClick={onDelete} disabled={loading} className="hover:border-destructive hover:text-destructive">
+                <Trash2 className="h-4 w-4 mr-1" />
+                Delete
+              </Button>
+            )}
           </div>
         </div>
       )}
