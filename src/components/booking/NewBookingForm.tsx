@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -124,6 +125,7 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
   const [newPropertyAccess, setNewPropertyAccess] = useState({ label: '', value: '', icon: '' });
   const [showAddPaymentMethodDialog, setShowAddPaymentMethodDialog] = useState(false);
   const [newPaymentMethod, setNewPaymentMethod] = useState('');
+  const navigate = useNavigate();
 
   const serviceTypes = [
     { value: 'domestic', label: 'Domestic Cleaning', color: 'from-blue-500 to-cyan-500' },
@@ -564,6 +566,9 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
       });
 
       onBookingCreated();
+      
+      // Navigate to upcoming bookings page
+      navigate('/dashboard');
     } catch (error) {
       console.error('Error creating booking:', error);
       toast({
