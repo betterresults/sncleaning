@@ -67,64 +67,56 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       console.log('=== FETCHING DATA ===');
       console.log('User type filter:', userType);
       
+      // Use admin edge function to bypass RLS
+      const { data, error } = await supabase.functions.invoke('get-all-users-admin');
+      
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to fetch data');
+      }
+
+      console.log('Auth users fetched:', data.authUsers?.length || 0);
+      console.log('Business customers fetched:', data.businessCustomers?.length || 0);
+
+      let processedUsers = [];
+
+      // Filter and combine data based on user type
       if (userType === 'customer') {
-        // For customers, fetch directly from customers table using admin function
-        const { data, error } = await supabase.functions.invoke('get-all-users-admin');
-        
-        if (error) {
-          console.error('Edge function error:', error);
-          throw error;
-        }
-
-        if (!data.success) {
-          throw new Error(data.error || 'Failed to fetch customers');
-        }
-
-        console.log('Business customers fetched:', data.businessCustomers?.length || 0);
-        
-        const processedUsers = (data.businessCustomers || []).map(customer => ({
-          id: customer.id,
-          email: customer.email,
-          first_name: customer.first_name,
-          last_name: customer.last_name,
-          role: 'customer', // Display role as 'customer' for clarity
-          phone: customer.phone,
-          address: customer.address,
-          postcode: customer.postcode,
-          client_status: customer.client_status,
-          type: 'business_customer'
+        // For customers: show ALL customers (both auth users with guest role AND business customers)
+        const authCustomers = (data.authUsers || []).filter(user => user.role === 'guest');
+        const businessCustomers = (data.businessCustomers || []).map(customer => ({
+          ...customer,
+          role: 'customer' // Display as 'customer' for clarity
         }));
-
-        console.log('Final customers:', processedUsers);
-        setUsers(processedUsers);
-        setFilteredUsers(processedUsers);
+        processedUsers = [...authCustomers, ...businessCustomers];
+        
+      } else if (userType === 'all') {
+        // For all: show everything
+        processedUsers = [...(data.authUsers || []), ...(data.businessCustomers || [])];
         
       } else {
-        // For auth users (admins, cleaners), use the auth system
-        const { data, error } = await supabase.functions.invoke('get-all-users-admin');
-        
-        if (error) throw error;
-        if (!data.success) throw new Error(data.error || 'Failed to fetch users');
-
-        let processedUsers = data.authUsers || [];
-
-        // Filter by user type
-        if (userType !== 'all') {
-          processedUsers = processedUsers.filter(user => {
-            switch (userType) {
-              case 'admin':
-                return user.role === 'admin';
-              case 'cleaner':
-                return user.role === 'user';
-              default:
-                return true;
-            }
-          });
-        }
-
-        setUsers(processedUsers);
-        setFilteredUsers(processedUsers);
+        // For admins/cleaners: only show auth users with matching roles
+        processedUsers = (data.authUsers || []).filter(user => {
+          switch (userType) {
+            case 'admin':
+              return user.role === 'admin';
+            case 'cleaner':
+              return user.role === 'user';
+            default:
+              return true;
+          }
+        });
       }
+
+      console.log('Final processed users for', userType, ':', processedUsers);
+      console.log('Count:', processedUsers.length);
+
+      setUsers(processedUsers);
+      setFilteredUsers(processedUsers);
     } catch (error: any) {
       console.error('Error fetching data:', error);
       toast({
