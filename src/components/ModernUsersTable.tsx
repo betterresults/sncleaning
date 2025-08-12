@@ -76,9 +76,8 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   const [resetLoading, setResetLoading] = useState<string | null>(null);
   
   // Customer filters
-  const [customerTypeFilter, setCustomerTypeFilter] = useState<'all' | 'business' | 'regular'>('all');
-  const [addressFilter, setAddressFilter] = useState<'all' | 'with-addresses' | 'without-addresses'>('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'New' | 'Current'>('all');
+  const [customerTypeFilter, setCustomerTypeFilter] = useState<string>('all');
+  const [addressFilter, setAddressFilter] = useState<'all' | 'with-addresses' | 'no-addresses'>('all');
   
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -188,6 +187,21 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
     fetchUsers();
   };
 
+  // Get unique customer types from actual data
+  const getUniqueCustomerTypes = () => {
+    const types = new Set<string>();
+    users.forEach(user => {
+      if (user.type === 'business_customer') {
+        if (user.client_type) {
+          types.add(user.client_type);
+        } else {
+          types.add('empty');
+        }
+      }
+    });
+    return Array.from(types);
+  };
+
   const applyFilters = (usersData: UserData[], searchTerm: string) => {
     let filtered = usersData;
 
@@ -204,22 +218,23 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
     // Apply customer-specific filters only for customer view
     if (userType === 'customer') {
       // Customer type filter
-      if (customerTypeFilter === 'business') {
-        filtered = filtered.filter(user => user.type === 'business_customer');
-      } else if (customerTypeFilter === 'regular') {
-        filtered = filtered.filter(user => user.type === 'auth_user');
+      if (customerTypeFilter !== 'all') {
+        filtered = filtered.filter(user => {
+          if (user.type === 'business_customer') {
+            if (customerTypeFilter === 'empty') {
+              return !user.client_type;
+            }
+            return user.client_type === customerTypeFilter;
+          }
+          return false;
+        });
       }
 
       // Address filter
       if (addressFilter === 'with-addresses') {
         filtered = filtered.filter(user => (user.addressCount || 0) > 0);
-      } else if (addressFilter === 'without-addresses') {
+      } else if (addressFilter === 'no-addresses') {
         filtered = filtered.filter(user => (user.addressCount || 0) === 0);
-      }
-
-      // Status filter
-      if (statusFilter !== 'all') {
-        filtered = filtered.filter(user => user.client_status === statusFilter);
       }
     }
 
@@ -468,7 +483,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
 
   useEffect(() => {
     handleFilterChange();
-  }, [users, customerTypeFilter, addressFilter, statusFilter]);
+  }, [users, customerTypeFilter, addressFilter]);
 
   const isCustomerView = userType === 'customer';
   const showBulkEdit = isCustomerView && selectedBusinessIds.length > 0;
@@ -498,14 +513,17 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
             <div className="flex flex-wrap gap-3">
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium text-muted-foreground">Customer Type</label>
-                <Select value={customerTypeFilter} onValueChange={(value: any) => setCustomerTypeFilter(value)}>
+                <Select value={customerTypeFilter} onValueChange={(value: string) => setCustomerTypeFilter(value)}>
                   <SelectTrigger className="w-40">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="business">Business</SelectItem>
-                    <SelectItem value="regular">Regular</SelectItem>
+                    {getUniqueCustomerTypes().map(type => (
+                      <SelectItem key={type} value={type}>
+                        {type === 'empty' ? '—' : type.charAt(0).toUpperCase() + type.slice(1)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -513,27 +531,13 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium text-muted-foreground">Addresses</label>
                 <Select value={addressFilter} onValueChange={(value: any) => setAddressFilter(value)}>
-                  <SelectTrigger className="w-48">
+                  <SelectTrigger className="w-40">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Customers</SelectItem>
                     <SelectItem value="with-addresses">With Addresses</SelectItem>
-                    <SelectItem value="without-addresses">Without Addresses</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-muted-foreground">Status</label>
-                <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="New">New</SelectItem>
-                    <SelectItem value="Current">Current</SelectItem>
+                    <SelectItem value="no-addresses">No Address</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
