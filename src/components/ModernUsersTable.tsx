@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -27,7 +28,9 @@ import {
   Loader2,
   CalendarPlus,
   MapPin,
-  Plus
+  Plus,
+  Trash2,
+  UserPlus
 } from 'lucide-react';
 import {
   Select,
@@ -40,6 +43,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useNavigate } from 'react-router-dom';
 import CreateBookingDialogWithCustomer from '@/components/booking/CreateBookingDialogWithCustomer';
 import CustomerAddressDialog from '@/components/customer/CustomerAddressDialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface UserData {
   id: string;
@@ -78,6 +83,21 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   // Customer filters
   const [customerTypeFilter, setCustomerTypeFilter] = useState<string>('all');
   const [addressFilter, setAddressFilter] = useState<'all' | 'with-addresses' | 'no-addresses'>('all');
+  
+  // Add new user state
+  const [showAddUserDialog, setShowAddUserDialog] = useState(false);
+  const [newUserData, setNewUserData] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    password: '',
+    role: userType === 'customer' ? 'guest' : userType === 'cleaner' ? 'user' : 'guest'
+  });
+  const [addingUser, setAddingUser] = useState(false);
+  
+  // Delete user state
+  const [userToDelete, setUserToDelete] = useState<UserData | null>(null);
+  const [deletingUser, setDeletingUser] = useState(false);
   
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -248,6 +268,88 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
 
   const handleFilterChange = () => {
     setFilteredUsers(applyFilters(users, searchTerm));
+  };
+
+  const handleAddUser = async () => {
+    if (!newUserData.first_name || !newUserData.last_name || !newUserData.email || !newUserData.password) {
+      toast({
+        title: 'Error',
+        description: 'Please fill in all required fields',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setAddingUser(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          email: newUserData.email,
+          password: newUserData.password,
+          firstName: newUserData.first_name,
+          lastName: newUserData.last_name,
+          role: newUserData.role
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'User created successfully'
+      });
+
+      setShowAddUserDialog(false);
+      setNewUserData({
+        first_name: '',
+        last_name: '',
+        email: '',
+        password: '',
+        role: userType === 'customer' ? 'guest' : userType === 'cleaner' ? 'user' : 'guest'
+      });
+      fetchUsers();
+    } catch (error) {
+      console.error('Error creating user:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create user',
+        variant: 'destructive'
+      });
+    } finally {
+      setAddingUser(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+
+    setDeletingUser(true);
+    try {
+      const { error } = await supabase.functions.invoke('delete-user-account', {
+        body: {
+          userId: userToDelete.id
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'User deleted successfully'
+      });
+
+      setUserToDelete(null);
+      fetchUsers();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete user',
+        variant: 'destructive'
+      });
+    } finally {
+      setDeletingUser(false);
+    }
   };
 
   const startEditing = (user: UserData) => {
@@ -493,6 +595,10 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>{getTypeTitle()} ({filteredUsers.length})</span>
+          <Button onClick={() => setShowAddUserDialog(true)} size="sm">
+            <UserPlus className="h-4 w-4 mr-2" />
+            Add {userType === 'customer' ? 'Customer' : userType === 'cleaner' ? 'Cleaner' : userType === 'admin' ? 'Admin' : 'User'}
+          </Button>
         </CardTitle>
         
         {/* Search and Filters */}
@@ -788,17 +894,37 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                               </CreateBookingDialogWithCustomer>
                             )}
                             {!isCustomerView && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handlePasswordReset(user.email, user.id)}
+                                  disabled={resetLoading === user.id}
+                                >
+                                  {resetLoading === user.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Mail className="h-4 w-4" />
+                                  )}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setUserToDelete(user)}
+                                  className="hover:border-destructive hover:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                            {isCustomerView && user.type === 'business_customer' && (
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handlePasswordReset(user.email, user.id)}
-                                disabled={resetLoading === user.id}
+                                onClick={() => setUserToDelete(user)}
+                                className="hover:border-destructive hover:text-destructive"
                               >
-                                {resetLoading === user.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Mail className="h-4 w-4" />
-                                )}
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             )}
                           </div>
@@ -812,6 +938,102 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           </div>
         )}
       </CardContent>
+      
+      {/* Add User Dialog */}
+      <Dialog open={showAddUserDialog} onOpenChange={setShowAddUserDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New {userType === 'customer' ? 'Customer' : userType === 'cleaner' ? 'Cleaner' : userType === 'admin' ? 'Admin' : 'User'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="firstName">First Name *</Label>
+                <Input
+                  id="firstName"
+                  value={newUserData.first_name}
+                  onChange={(e) => setNewUserData({...newUserData, first_name: e.target.value})}
+                  placeholder="Enter first name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="lastName">Last Name *</Label>
+                <Input
+                  id="lastName"
+                  value={newUserData.last_name}
+                  onChange={(e) => setNewUserData({...newUserData, last_name: e.target.value})}
+                  placeholder="Enter last name"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={newUserData.email}
+                onChange={(e) => setNewUserData({...newUserData, email: e.target.value})}
+                placeholder="Enter email address"
+              />
+            </div>
+            <div>
+              <Label htmlFor="password">Password *</Label>
+              <Input
+                id="password"
+                type="password"
+                value={newUserData.password}
+                onChange={(e) => setNewUserData({...newUserData, password: e.target.value})}
+                placeholder="Enter password"
+              />
+            </div>
+            {userType === 'all' && (
+              <div>
+                <Label htmlFor="role">Role</Label>
+                <Select value={newUserData.role} onValueChange={(value) => setNewUserData({...newUserData, role: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="guest">Customer</SelectItem>
+                    <SelectItem value="user">Cleaner</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowAddUserDialog(false)}>Cancel</Button>
+              <Button onClick={handleAddUser} disabled={addingUser}>
+                {addingUser ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Add {userType === 'customer' ? 'Customer' : userType === 'cleaner' ? 'Cleaner' : userType === 'admin' ? 'Admin' : 'User'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Confirmation Dialog */}
+      <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {userToDelete?.first_name} {userToDelete?.last_name}? This action cannot be undone and will permanently remove the user account and all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              disabled={deletingUser}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletingUser ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Delete User
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };
