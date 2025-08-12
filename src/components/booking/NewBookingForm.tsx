@@ -351,19 +351,22 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
     }
   };
 
-  const buildKeyCollectionDetails = () => {
-    let keyDetails = '';
+  const buildAccessDetails = () => {
+    let accessDetails = '';
     
-    if (formData.keyPickupAddress && formData.keyPickupAddress.trim()) {
-      keyDetails += `Pickup Address: ${formData.keyPickupAddress.trim()}`;
+    // Add the access method
+    if (formData.propertyAccess) {
+      const accessMethod = formData.propertyAccess.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+      accessDetails += `Access Method: ${accessMethod}`;
     }
     
+    // Add the notes
     if (formData.keyCollectionNotes && formData.keyCollectionNotes.trim()) {
-      if (keyDetails) keyDetails += '\n\n';
-      keyDetails += `Notes: ${formData.keyCollectionNotes.trim()}`;
+      if (accessDetails) accessDetails += '\n\n';
+      accessDetails += `Notes: ${formData.keyCollectionNotes.trim()}`;
     }
     
-    return keyDetails || null;
+    return accessDetails || null;
   };
 
   // Calculate total cost for hourly services
@@ -536,7 +539,8 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
         payment_status: formData.paymentStatus,
         booking_status: 'Confirmed',
         frequently: frequently,
-        key_collection: buildKeyCollectionDetails(),
+        access: buildAccessDetails(),
+        key_collection: formData.keyPickupAddress || null,
         cleaning_cost_per_hour: requiresHours ? formData.costPerHour : null
       };
 
@@ -1053,7 +1057,7 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
                     id="keyCollectionNotes"
                     value={formData.keyCollectionNotes}
                     onChange={(e) => handleInputChange('keyCollectionNotes', e.target.value)}
-                    placeholder="Enter keybox code, key location, contact details, or any special instructions..."
+                    placeholder="Enter keybox code, key location, contact details, or any special instructions for property access..."
                     className="border-2 border-gray-200 focus:border-red-500 transition-colors"
                     rows={4}
                   />
