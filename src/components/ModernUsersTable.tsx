@@ -64,17 +64,27 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
     try {
       setLoading(true);
       
+      console.log('=== FETCHING USERS DEBUG ===');
+      console.log('User type filter:', userType);
+      
       // Fetch profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*');
       
-      if (profilesError) throw profilesError;
+      console.log('Profiles fetched:', profiles?.length || 0, profiles);
+      
+      if (profilesError) {
+        console.error('Profiles error:', profilesError);
+        throw profilesError;
+      }
 
       // Fetch user roles
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('*');
+      
+      console.log('User roles fetched:', userRoles?.length || 0, userRoles);
       
       if (rolesError) {
         console.error('Error fetching user roles:', rolesError);
@@ -87,31 +97,52 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         });
       }
 
-      let processedUsers = profiles?.map(profile => ({
-        id: profile.user_id,
-        email: profile.email || '',
-        first_name: profile.first_name || '',
-        last_name: profile.last_name || '',
-        role: roleMap.get(profile.user_id) || profile.role || 'guest',
-        cleaner_id: profile.cleaner_id,
-        customer_id: profile.customer_id
-      })) || [];
+      let processedUsers = profiles?.map(profile => {
+        const userRole = roleMap.get(profile.user_id) || profile.role || 'guest';
+        console.log(`Processing user ${profile.email}:`, {
+          profile_role: profile.role,
+          user_roles_role: roleMap.get(profile.user_id),
+          final_role: userRole,
+          user_id: profile.user_id
+        });
+        
+        return {
+          id: profile.user_id,
+          email: profile.email || '',
+          first_name: profile.first_name || '',
+          last_name: profile.last_name || '',
+          role: userRole,
+          cleaner_id: profile.cleaner_id,
+          customer_id: profile.customer_id
+        };
+      }) || [];
+
+      console.log('All processed users:', processedUsers);
 
       // Filter by user type
       if (userType !== 'all') {
+        console.log('Filtering by user type:', userType);
         processedUsers = processedUsers.filter(user => {
-          switch (userType) {
-            case 'admin':
-              return user.role === 'admin';
-            case 'cleaner':
-              return user.role === 'user';
-            case 'customer':
-              return user.role === 'guest';
-            default:
-              return true;
-          }
+          const shouldInclude = (() => {
+            switch (userType) {
+              case 'admin':
+                return user.role === 'admin';
+              case 'cleaner':
+                return user.role === 'user';
+              case 'customer':
+                return user.role === 'guest';
+              default:
+                return true;
+            }
+          })();
+          
+          console.log(`User ${user.email} (role: ${user.role}) - Include: ${shouldInclude}`);
+          return shouldInclude;
         });
       }
+
+      console.log('Final filtered users:', processedUsers);
+      console.log('Count:', processedUsers.length);
 
       setUsers(processedUsers);
       setFilteredUsers(processedUsers);
