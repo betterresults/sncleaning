@@ -1021,15 +1021,15 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
                 
                 {formData.propertyAccess === 'estate_agent' && (
                   <div className="space-y-4">
-                    {/* Option to use client address for business customers */}
+                    {/* Option to use client address for business customers - always show if customer is selected */}
                     {formData.customerId && (
-                      <div className="flex items-center space-x-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center space-x-2 p-3 bg-green-50 rounded-lg border border-green-200">
                         <Checkbox
                           id="useClientAddressForKeys"
                           checked={formData.useClientAddressForKeys}
                           onCheckedChange={handleUseClientAddressForKeys}
                         />
-                        <Label htmlFor="useClientAddressForKeys" className="text-sm font-medium text-blue-700">
+                        <Label htmlFor="useClientAddressForKeys" className="text-sm font-medium text-green-700">
                           Use client's address for key pickup
                         </Label>
                       </div>
