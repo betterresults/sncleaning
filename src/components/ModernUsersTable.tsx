@@ -79,34 +79,33 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         throw new Error(data.error || 'Failed to fetch users');
       }
 
-      console.log('Users fetched from admin function:', data.users?.length || 0);
-      console.log('All users data:', data.users);
+      console.log('Auth users fetched:', data.authUsers?.length || 0);
+      console.log('Business customers fetched:', data.businessCustomers?.length || 0);
 
-      let processedUsers = data.users || [];
+      let processedUsers = [];
 
-      // Filter by user type
-      if (userType !== 'all') {
-        console.log('Filtering by user type:', userType);
-        processedUsers = processedUsers.filter(user => {
-          const shouldInclude = (() => {
-            switch (userType) {
-              case 'admin':
-                return user.role === 'admin';
-              case 'cleaner':
-                return user.role === 'user';
-              case 'customer':
-                return user.role === 'guest';
-              default:
-                return true;
-            }
-          })();
-          
-          console.log(`User ${user.email} (role: ${user.role}) - Include: ${shouldInclude}`);
-          return shouldInclude;
+      // Combine auth users and business customers based on user type filter
+      if (userType === 'all') {
+        processedUsers = [...(data.authUsers || []), ...(data.businessCustomers || [])];
+      } else if (userType === 'customer') {
+        // For customer view, show both auth users with guest role AND business customers
+        const authCustomers = (data.authUsers || []).filter(user => user.role === 'guest');
+        processedUsers = [...authCustomers, ...(data.businessCustomers || [])];
+      } else {
+        // For other types, only show auth users
+        processedUsers = (data.authUsers || []).filter(user => {
+          switch (userType) {
+            case 'admin':
+              return user.role === 'admin';
+            case 'cleaner':
+              return user.role === 'user';
+            default:
+              return true;
+          }
         });
       }
 
-      console.log('Final filtered users:', processedUsers);
+      console.log('Final processed users:', processedUsers);
       console.log('Count:', processedUsers.length);
 
       setUsers(processedUsers);

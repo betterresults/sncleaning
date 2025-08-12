@@ -18,7 +18,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    console.log('Fetching all users with admin privileges...')
+    console.log('Fetching all users and customers with admin privileges...')
 
     // Fetch all profiles (bypasses RLS)
     const { data: profiles, error: profilesError } = await supabaseAdmin
@@ -44,6 +44,18 @@ serve(async (req) => {
 
     console.log('User roles fetched:', userRoles?.length || 0)
 
+    // Fetch all customers from business table (bypasses RLS)
+    const { data: customers, error: customersError } = await supabaseAdmin
+      .from('customers')
+      .select('*')
+
+    if (customersError) {
+      console.error('Error fetching customers:', customersError)
+      throw customersError
+    }
+
+    console.log('Customers fetched:', customers?.length || 0)
+
     // Create role mapping
     const roleMap = new Map()
     if (userRoles) {
@@ -52,8 +64,8 @@ serve(async (req) => {
       })
     }
 
-    // Process users with role information
-    const processedUsers = profiles?.map(profile => {
+    // Process auth users with role information
+    const authUsers = profiles?.map(profile => {
       const userRole = roleMap.get(profile.user_id) || profile.role || 'guest'
       
       return {
@@ -63,17 +75,34 @@ serve(async (req) => {
         last_name: profile.last_name || '',
         role: userRole,
         cleaner_id: profile.cleaner_id,
-        customer_id: profile.customer_id
+        customer_id: profile.customer_id,
+        type: 'auth_user'
       }
     }) || []
 
-    console.log('Processed users:', processedUsers.length)
+    // Process business customers
+    const businessCustomers = customers?.map(customer => ({
+      id: customer.id.toString(), // Convert to string to match user IDs
+      email: customer.email || '',
+      first_name: customer.first_name || '',
+      last_name: customer.last_name || '',
+      role: 'guest', // All business customers are considered guest role
+      phone: customer.phone || '',
+      address: customer.address || '',
+      postcode: customer.postcode || '',
+      client_status: customer.client_status || '',
+      type: 'business_customer'
+    })) || []
+
+    console.log('Processed auth users:', authUsers.length)
+    console.log('Processed business customers:', businessCustomers.length)
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        users: processedUsers,
-        total: processedUsers.length 
+        authUsers: authUsers,
+        businessCustomers: businessCustomers,
+        total: authUsers.length + businessCustomers.length 
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -88,7 +117,8 @@ serve(async (req) => {
       JSON.stringify({ 
         success: false, 
         error: error.message,
-        users: [],
+        authUsers: [],
+        businessCustomers: [],
         total: 0 
       }),
       {
