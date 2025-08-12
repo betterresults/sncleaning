@@ -81,6 +81,7 @@ interface BookingData {
 }
 
 const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
+  console.log('NewBookingForm: Component rendering started');
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<BookingData>({
@@ -126,6 +127,8 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
   const [showAddPaymentMethodDialog, setShowAddPaymentMethodDialog] = useState(false);
   const [newPaymentMethod, setNewPaymentMethod] = useState('');
   const navigate = useNavigate();
+  
+  console.log('NewBookingForm: State initialized, formData:', formData);
 
   const serviceTypes = [
     { value: 'domestic', label: 'Domestic Cleaning', color: 'from-blue-500 to-cyan-500' },
@@ -580,6 +583,8 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
       setLoading(false);
     }
   };
+
+  console.log('NewBookingForm: About to render component');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
