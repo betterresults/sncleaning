@@ -82,15 +82,17 @@ serve(async (req) => {
 
     // Process business customers
     const businessCustomers = customers?.map(customer => ({
-      id: customer.id.toString(), // Convert to string to match user IDs
+      id: customer.id.toString(), // string id for UI keying
+      business_id: customer.id,   // numeric id for DB updates
       email: customer.email || '',
       first_name: customer.first_name || '',
       last_name: customer.last_name || '',
-      role: 'guest', // All business customers are considered guest role
+      role: 'guest', // considered customer in auth terms
       phone: customer.phone || '',
       address: customer.address || '',
       postcode: customer.postcode || '',
       client_status: customer.client_status || '',
+      client_type: customer.clent_type || null,
       type: 'business_customer'
     })) || []
 

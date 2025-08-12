@@ -24,7 +24,8 @@ import {
   Users,
   Eye,
   EyeOff,
-  Loader2
+  Loader2,
+  CalendarPlus
 } from 'lucide-react';
 import {
   Select,
@@ -33,15 +34,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useNavigate } from 'react-router-dom';
 
 interface UserData {
   id: string;
   email: string;
   first_name?: string;
   last_name?: string;
-  role?: 'guest' | 'user' | 'admin';
+  role?: 'guest' | 'user' | 'admin' | 'customer';
   cleaner_id?: number;
   customer_id?: number;
+  // Extended for customers view
+  type?: 'auth_user' | 'business_customer';
+  business_id?: number;
+  phone?: string;
+  address?: string;
+  postcode?: string;
+  client_status?: string;
+  client_type?: string | null;
 }
 
 interface ModernUsersTableProps {
@@ -59,6 +69,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   const [updating, setUpdating] = useState(false);
   const [resetLoading, setResetLoading] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const fetchUsers = async () => {
     try {
@@ -242,6 +253,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           </Badge>
         );
       case 'guest':
+      case 'customer':
         return (
           <Badge variant="secondary" className="gap-1">
             <Users className="h-3 w-3" />
@@ -253,6 +265,17 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
     }
   };
 
+  const getCustomerTypeBadge = (user: UserData) => {
+    const t = user.client_type?.toLowerCase();
+    if (t === 'business') {
+      return <Badge variant="secondary" className="gap-1">Business</Badge>;
+    }
+    if (t === 'client') {
+      return <Badge variant="default" className="gap-1">Client</Badge>;
+    }
+    return <Badge variant="outline">-</Badge>;
+  };
+
   const getTypeTitle = () => {
     switch (userType) {
       case 'admin':
@@ -260,12 +283,11 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       case 'cleaner':
         return 'Cleaner Users';
       case 'customer':
-        return 'Customer Users';
+        return 'Customers';
       default:
         return 'All Users';
     }
   };
-
   useEffect(() => {
     fetchUsers();
   }, [userType]);
