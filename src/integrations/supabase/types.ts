@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -116,6 +116,7 @@ export type Database = {
           postcode: string | null
           property_details: string | null
           record_message: string | null
+          recurring_group_id: string | null
           remaining_days: string | null
           result_page: string | null
           same_day: boolean | null
@@ -184,6 +185,7 @@ export type Database = {
           postcode?: string | null
           property_details?: string | null
           record_message?: string | null
+          recurring_group_id?: string | null
           remaining_days?: string | null
           result_page?: string | null
           same_day?: boolean | null
@@ -252,6 +254,7 @@ export type Database = {
           postcode?: string | null
           property_details?: string | null
           record_message?: string | null
+          recurring_group_id?: string | null
           remaining_days?: string | null
           result_page?: string | null
           same_day?: boolean | null
@@ -1029,6 +1032,7 @@ export type Database = {
           start_date: string | null
           start_time: string | null
           total_cost: number | null
+          was_created_until: string | null
         }
         Insert: {
           address?: string | null
@@ -1050,6 +1054,7 @@ export type Database = {
           start_date?: string | null
           start_time?: string | null
           total_cost?: number | null
+          was_created_until?: string | null
         }
         Update: {
           address?: string | null
@@ -1071,6 +1076,7 @@ export type Database = {
           start_date?: string | null
           start_time?: string | null
           total_cost?: number | null
+          was_created_until?: string | null
         }
         Relationships: [
           {
