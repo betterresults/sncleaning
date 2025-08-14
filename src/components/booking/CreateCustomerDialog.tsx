@@ -75,20 +75,38 @@ const CreateCustomerDialog = ({ children, onCustomerCreated }: CreateCustomerDia
         return;
       }
 
+      console.log('Customer created successfully:', data);
+
       // Create a default address if address info was provided
       if (formData.address || formData.postcode) {
-        const { error: addressError } = await supabase
+        console.log('Creating address for customer:', data.id);
+        console.log('Address data:', { address: formData.address, postcode: formData.postcode });
+        
+        const addressData = {
+          customer_id: data.id,
+          address: formData.address || 'Not specified',
+          postcode: formData.postcode || 'Not specified',
+          is_default: true
+        };
+
+        const { data: addressResult, error: addressError } = await supabase
           .from('addresses')
-          .insert([{
-            customer_id: data.id,
-            address: formData.address || 'Not specified',
-            postcode: formData.postcode || 'Not specified',
-            is_default: true
-          }]);
+          .insert(addressData)
+          .select();
+
+        console.log('Address creation result:', { addressResult, addressError });
 
         if (addressError) {
           console.error('Error creating address:', addressError);
-          // Don't fail the whole operation if address creation fails
+          console.error('Address error details:', JSON.stringify(addressError, null, 2));
+          // Don't fail the whole operation if address creation fails, but show a warning
+          toast({
+            title: "Warning",
+            description: "Customer created but address couldn't be saved. You can add it later.",
+            variant: "destructive",
+          });
+        } else {
+          console.log('Address created successfully:', addressResult);
         }
       }
 
