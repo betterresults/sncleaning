@@ -44,8 +44,6 @@ const CreateCustomerDialog = ({ children, onCustomerCreated }: CreateCustomerDia
         full_name: `${formData.firstName} ${formData.lastName}`.trim(),
         email: formData.email,
         phone: formData.phone,
-        address: formData.address,
-        postcode: formData.postcode,
         company: formData.company,
         client_status: 'New'
       };
@@ -60,10 +58,27 @@ const CreateCustomerDialog = ({ children, onCustomerCreated }: CreateCustomerDia
         console.error('Error creating customer:', error);
         toast({
           title: "Error",
-          description: "Failed to create customer. Please try again.",
+          description: `Failed to create customer: ${error.message}`,
           variant: "destructive",
         });
         return;
+      }
+
+      // Create a default address if address info was provided
+      if (formData.address || formData.postcode) {
+        const { error: addressError } = await supabase
+          .from('addresses')
+          .insert([{
+            customer_id: data.id,
+            address: formData.address || 'Not specified',
+            postcode: formData.postcode || 'Not specified',
+            is_default: true
+          }]);
+
+        if (addressError) {
+          console.error('Error creating address:', addressError);
+          // Don't fail the whole operation if address creation fails
+        }
       }
 
       toast({
