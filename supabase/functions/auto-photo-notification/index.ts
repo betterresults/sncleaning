@@ -30,119 +30,78 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { file_path, booking_id, customer_id, postcode, booking_date }: PhotoUploadData = await req.json();
 
-    console.log('Auto photo notification triggered for:', file_path);
+    console.log('Auto photo notification triggered for:', file_path, 'booking_id:', booking_id);
 
-    // Extract folder name from file path (e.g., "SE164NF_2025-07-07_29/photo1.jpg" -> "SE164NF_2025-07-07_29")
-    const folderMatch = file_path.match(/^([^\/]+)\//);
-    const folderPath = folderMatch ? folderMatch[1] : 'unknown-folder';
-
-    // Get photo count in this folder
-    const { data: folderPhotos } = await supabase.storage
-      .from('cleaning.photos')
-      .list(folderPath, {
-        limit: 100
-      });
-
-    const photoCount = folderPhotos?.filter(file => 
-      file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)
-    ).length || 0;
-
-    // Check if notification already sent for this folder (prevent spam)
-    const { data: existingNotification } = await supabase
-      .from('photo_completion_notifications')
-      .select('*')
-      .eq('booking_id', booking_id || 0)
-      .eq('email_sent', true)
-      .single();
-
-    if (existingNotification && photoCount <= 1) {
-      console.log('Email already sent for this folder');
-      return new Response(JSON.stringify({ message: 'Email already sent' }), {
+    if (!booking_id) {
+      console.log('No booking_id provided, skipping notification');
+      return new Response(JSON.stringify({ message: 'No booking_id provided' }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    // Send notification email ONLY TO SALES for testing
-    const emailResponse = await resend.emails.send({
-      from: "SN Cleaning <noreply@notifications.sncleaningservices.co.uk>",
-      to: ["sales@sncleaningservices.co.uk"], // Only to sales for testing
-      reply_to: "sales@sncleaningservices.co.uk",
-      subject: `[TEST] New Cleaning Photos Uploaded! 📸 - ${folderPath}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9;">
-          <div style="background-color: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            <div style="text-align: center; padding: 30px 30px 0 30px;">
-              <h1 style="color: #18A5A5; margin: 0; font-size: 28px;">SN Cleaning</h1>
-              <p style="color: #185166; margin: 5px 0 0 0; font-size: 14px;">Professional Cleaning Services</p>
-            </div>
+    // Check if notification already sent for this booking
+    const { data: existingNotification } = await supabase
+      .from('photo_completion_notifications')
+      .select('*')
+      .eq('booking_id', booking_id)
+      .single();
 
-            <div style="padding: 0 30px 30px 30px;">
-              <h2 style="color: #18A5A5; margin-bottom: 20px;">🔧 TEST MODE - New Photos Uploaded!</h2>
-              
-              <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;">
-                <p style="margin: 0; color: #856404; font-weight: bold;">⚠️ This is a test notification sent only to sales team</p>
-              </div>
-              
-              <p>A new photo has been uploaded to the system:</p>
-              
-              <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #18A5A5;">
-                <h3 style="margin-top: 0; color: #185166;">Upload Details:</h3>
-                <p style="margin: 5px 0;"><strong>Folder:</strong> ${folderPath}</p>
-                <p style="margin: 5px 0;"><strong>File:</strong> ${file_path}</p>
-                <p style="margin: 5px 0;"><strong>Total Photos in Folder:</strong> ${photoCount}</p>
-                ${booking_id ? `<p style="margin: 5px 0;"><strong>Booking ID:</strong> ${booking_id}</p>` : ''}
-                ${postcode ? `<p style="margin: 5px 0;"><strong>Postcode:</strong> ${postcode}</p>` : ''}
-                ${booking_date ? `<p style="margin: 5px 0;"><strong>Date:</strong> ${booking_date}</p>` : ''}
-              </div>
-              
-              <div style="background-color: #18A5A5; color: white; padding: 20px; border-radius: 8px; margin: 30px 0; text-align: center;">
-                <h3 style="margin: 0 0 15px 0;">View Photos</h3>
-                <p style="margin: 0 0 20px 0;">Click the button below to view all photos in this folder:</p>
-                <a href="https://account.sncleaningservices.co.uk/photos/${folderPath}" 
-                   style="display: inline-block; background-color: white; color: #18A5A5; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 10px;">
-                  📸 View Photos
-                </a>
-              </div>
-              
-              <div style="background-color: #d1ecf1; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #bee5eb;">
-                <p style="margin: 0; color: #0c5460; font-size: 14px;">
-                  <strong>Testing Instructions:</strong><br>
-                  • Upload more photos to test the system<br>
-                  • Check that the photo gallery page works correctly<br>
-                  • Once ready, we can enable customer notifications
-                </p>
-              </div>
-              
-              <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee;">
-                <p style="color: #18A5A5; font-weight: bold; margin: 0;">SN Cleaning Services</p>
-                <p style="color: #666; font-size: 12px; margin: 5px 0;">Professional • Reliable • Trusted</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      `,
-    });
-
-    console.log("Test notification email sent successfully:", emailResponse);
-
-    // Record the notification if booking_id exists
-    if (booking_id) {
+    if (existingNotification) {
+      console.log('Notification already exists for booking:', booking_id);
+      
+      if (existingNotification.email_sent) {
+        console.log('Email already sent for booking:', booking_id);
+        return new Response(JSON.stringify({ message: 'Email already sent for this booking' }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+      
+      // Check if 15 minutes have passed since first upload
+      const firstUploadTime = new Date(existingNotification.created_at);
+      const now = new Date();
+      const timeDiffMinutes = (now.getTime() - firstUploadTime.getTime()) / (1000 * 60);
+      
+      console.log('Time since first upload:', timeDiffMinutes, 'minutes');
+      
+      if (timeDiffMinutes >= 15) {
+        // Send the consolidated notification
+        await sendConsolidatedNotification(supabase, booking_id, postcode, booking_date);
+        
+        // Mark as sent
+        await supabase
+          .from('photo_completion_notifications')
+          .update({
+            email_sent: true,
+            notification_sent_at: new Date().toISOString()
+          })
+          .eq('booking_id', booking_id);
+          
+        console.log('Consolidated notification sent for booking:', booking_id);
+      } else {
+        console.log('Waiting for 15-minute window to complete. Time remaining:', 15 - timeDiffMinutes, 'minutes');
+      }
+    } else {
+      // First photo upload for this booking - create notification record
+      console.log('First photo upload for booking:', booking_id, 'starting 15-minute timer');
+      
       await supabase
         .from('photo_completion_notifications')
         .insert({
           booking_id,
-          email_sent: true,
+          email_sent: false,
           notification_sent_at: new Date().toISOString()
         });
+
+      // Schedule the delayed notification using a background task
+      EdgeRuntime.waitUntil(scheduleDelayedNotification(supabase, booking_id, postcode, booking_date));
     }
 
     return new Response(JSON.stringify({ 
       success: true, 
-      message: 'Test notification sent to sales team',
-      email_id: emailResponse.data?.id,
-      folder_path: folderPath,
-      photo_count: photoCount
+      message: 'Photo upload processed',
+      booking_id
     }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -159,5 +118,146 @@ const handler = async (req: Request): Promise<Response> => {
     );
   }
 };
+
+async function scheduleDelayedNotification(supabase: any, booking_id: number, postcode?: string, booking_date?: string) {
+  try {
+    console.log('Starting 15-minute delay for booking:', booking_id);
+    
+    // Wait 15 minutes
+    await new Promise(resolve => setTimeout(resolve, 15 * 60 * 1000));
+    
+    console.log('15-minute delay completed for booking:', booking_id);
+    
+    // Check if notification still needs to be sent
+    const { data: notification } = await supabase
+      .from('photo_completion_notifications')
+      .select('*')
+      .eq('booking_id', booking_id)
+      .eq('email_sent', false)
+      .single();
+
+    if (notification) {
+      await sendConsolidatedNotification(supabase, booking_id, postcode, booking_date);
+      
+      // Mark as sent
+      await supabase
+        .from('photo_completion_notifications')
+        .update({
+          email_sent: true,
+          notification_sent_at: new Date().toISOString()
+        })
+        .eq('booking_id', booking_id);
+        
+      console.log('Delayed notification sent for booking:', booking_id);
+    } else {
+      console.log('Notification already sent or cancelled for booking:', booking_id);
+    }
+  } catch (error) {
+    console.error('Error in delayed notification for booking:', booking_id, error);
+  }
+}
+
+async function sendConsolidatedNotification(supabase: any, booking_id: number, postcode?: string, booking_date?: string) {
+  try {
+    // Get booking details
+    const { data: booking } = await supabase
+      .from('bookings')
+      .select('customer, first_name, last_name, email, address, postcode, date_time')
+      .eq('id', booking_id)
+      .single();
+
+    if (!booking) {
+      console.log('Booking not found:', booking_id);
+      return;
+    }
+
+    // Get customer details if email not in booking
+    let customerEmail = booking.email;
+    if (!customerEmail && booking.customer) {
+      const { data: customer } = await supabase
+        .from('customers')
+        .select('email, first_name, last_name')
+        .eq('id', booking.customer)
+        .single();
+      
+      if (customer) {
+        customerEmail = customer.email;
+      }
+    }
+
+    // Get all photos for this booking
+    const { data: photos } = await supabase
+      .from('cleaning_photos')
+      .select('*')
+      .eq('booking_id', booking_id);
+
+    const photoCount = photos?.length || 0;
+    const folderPath = `${booking.postcode || postcode}_${booking_date || new Date().toISOString().split('T')[0]}_${booking_id}`;
+
+    console.log('Sending consolidated email for booking:', booking_id, 'to:', customerEmail, 'photos:', photoCount);
+
+    // Send notification email
+    const emailResponse = await resend.emails.send({
+      from: "SN Cleaning <noreply@notifications.sncleaningservices.co.uk>",
+      to: customerEmail ? [customerEmail] : ["sales@sncleaningservices.co.uk"],
+      cc: ["sales@sncleaningservices.co.uk"],
+      reply_to: "sales@sncleaningservices.co.uk",
+      subject: `Your Cleaning Photos Are Ready! 📸 - ${booking.address || folderPath}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9;">
+          <div style="background-color: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="text-align: center; padding: 30px 30px 0 30px;">
+              <h1 style="color: #18A5A5; margin: 0; font-size: 28px;">SN Cleaning</h1>
+              <p style="color: #185166; margin: 5px 0 0 0; font-size: 14px;">Professional Cleaning Services</p>
+            </div>
+
+            <div style="padding: 0 30px 30px 30px;">
+              <h2 style="color: #18A5A5; margin-bottom: 20px;">📸 Your Cleaning Photos Are Ready!</h2>
+              
+              <p>Dear ${booking.first_name || 'Valued Customer'},</p>
+              
+              <p>Great news! Your cleaner has finished the job and uploaded ${photoCount} photo${photoCount !== 1 ? 's' : ''} showing the completed work.</p>
+              
+              <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #18A5A5;">
+                <h3 style="margin-top: 0; color: #185166;">Cleaning Summary:</h3>
+                <p style="margin: 5px 0;"><strong>Address:</strong> ${booking.address}</p>
+                <p style="margin: 5px 0;"><strong>Date:</strong> ${booking_date || new Date(booking.date_time).toLocaleDateString()}</p>
+                <p style="margin: 5px 0;"><strong>Photos:</strong> ${photoCount} photo${photoCount !== 1 ? 's' : ''} uploaded</p>
+                <p style="margin: 5px 0;"><strong>Booking ID:</strong> ${booking_id}</p>
+              </div>
+              
+              <div style="background-color: #18A5A5; color: white; padding: 20px; border-radius: 8px; margin: 30px 0; text-align: center;">
+                <h3 style="margin: 0 0 15px 0;">View Your Photos</h3>
+                <p style="margin: 0 0 20px 0;">Click the button below to view all photos of your completed cleaning:</p>
+                <a href="https://account.sncleaningservices.co.uk/photos/${folderPath}" 
+                   style="display: inline-block; background-color: white; color: #18A5A5; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 10px;">
+                  📸 View Photos
+                </a>
+              </div>
+              
+              <div style="background-color: #d1ecf1; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #bee5eb;">
+                <p style="margin: 0; color: #0c5460; font-size: 14px;">
+                  <strong>Thank you for choosing SN Cleaning!</strong><br>
+                  We hope you're satisfied with our service. If you have any questions or feedback, please don't hesitate to contact us.
+                </p>
+              </div>
+              
+              <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee;">
+                <p style="color: #18A5A5; font-weight: bold; margin: 0;">SN Cleaning Services</p>
+                <p style="color: #666; font-size: 12px; margin: 5px 0;">Professional • Reliable • Trusted</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `,
+    });
+
+    console.log("Consolidated notification email sent successfully:", emailResponse);
+    return emailResponse;
+  } catch (error) {
+    console.error("Error sending consolidated notification:", error);
+    throw error;
+  }
+}
 
 serve(handler);
