@@ -108,20 +108,28 @@ export default function AddRecurringBooking() {
       const paymentMethod = searchParams.get('paymentMethod');
       const cleanerRate = searchParams.get('cleanerRate');
       const cleaner = searchParams.get('cleaner');
+      const bookingId = searchParams.get('bookingId');
+      
+      // Fix payment method name
+      let fixedPaymentMethod = paymentMethod;
+      if (paymentMethod === 'Freeagent') {
+        fixedPaymentMethod = 'Invoiless';
+      }
       
       setFormData(prev => ({
         ...prev,
         client: customerId || '',
-        address: addressId || '',
-        cleaning_type: cleaningType || 'Standard Cleaning',
+        address: decodeURIComponent(addressId || ''),
+        cleaning_type: decodeURIComponent(cleaningType || 'Standard Cleaning'),
         hours: hours || '2',
         cost_per_hour: costPerHour || '20',
         total_cost: totalCost || '40',
-        payment_method: paymentMethod || 'Cash',
+        payment_method: fixedPaymentMethod || 'Cash',
         cleaner_rate: cleanerRate || '16',
         cleaner: cleaner || '',
         cleaner_assignment: cleaner ? 'assigned' : 'unassigned'
       }));
+
     }
   }, [searchParams]);
 
@@ -450,36 +458,34 @@ export default function AddRecurringBooking() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <Label className="text-sm font-semibold text-gray-700">Service Type *</Label>
-                  <Select value={formData.cleaning_type} onValueChange={(value) => setFormData(prev => ({ ...prev, cleaning_type: value }))}>
-                    <SelectTrigger className="mt-1 border-2 border-gray-200 focus:border-purple-500 transition-colors">
-                      <SelectValue placeholder="Select service type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Standard Cleaning">Standard Cleaning</SelectItem>
-                      <SelectItem value="Deep Cleaning">Deep Cleaning</SelectItem>
-                      <SelectItem value="End of Tenancy">End of Tenancy</SelectItem>
-                      <SelectItem value="Office Cleaning">Office Cleaning</SelectItem>
-                      <SelectItem value="Post Construction">Post Construction</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <Label className="text-sm font-semibold text-gray-700">Frequency *</Label>
+                <Select value={formData.frequently} onValueChange={(value) => setFormData(prev => ({ ...prev, frequently: value }))}>
+                  <SelectTrigger className="mt-1 border-2 border-gray-200 focus:border-purple-500 transition-colors">
+                    <SelectValue placeholder="Select frequency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="bi-weekly">Bi-weekly</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                <div>
-                  <Label className="text-sm font-semibold text-gray-700">Frequency *</Label>
-                  <Select value={formData.frequently} onValueChange={(value) => setFormData(prev => ({ ...prev, frequently: value }))}>
-                    <SelectTrigger className="mt-1 border-2 border-gray-200 focus:border-purple-500 transition-colors">
-                      <SelectValue placeholder="Select frequency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="bi-weekly">Bi-weekly</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <Label className="text-sm font-semibold text-gray-700">Service Type *</Label>
+                <Select value={formData.cleaning_type} onValueChange={(value) => setFormData(prev => ({ ...prev, cleaning_type: value }))}>
+                  <SelectTrigger className="mt-1 border-2 border-gray-200 focus:border-purple-500 transition-colors">
+                    <SelectValue placeholder="Select service type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Standard Cleaning">Standard Cleaning</SelectItem>
+                    <SelectItem value="Deep Cleaning">Deep Cleaning</SelectItem>
+                    <SelectItem value="End of Tenancy">End of Tenancy</SelectItem>
+                    <SelectItem value="Office Cleaning">Office Cleaning</SelectItem>
+                    <SelectItem value="Post Construction">Post Construction</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {formData.frequently === 'weekly' && (
@@ -521,11 +527,11 @@ export default function AddRecurringBooking() {
                     </SelectTrigger>
                     <SelectContent className="bg-background border border-border">
                       <SelectItem value="unassigned">Unassigned</SelectItem>
-                      {cleaners.map((cleaner) => (
-                        <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
-                          {cleaner.first_name} {cleaner.last_name} - £{cleaner.hourly_rate}/hr
-                        </SelectItem>
-                      ))}
+                       {cleaners.map((cleaner) => (
+                         <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
+                           {cleaner.first_name} {cleaner.last_name}
+                         </SelectItem>
+                       ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -638,12 +644,12 @@ export default function AddRecurringBooking() {
                   <SelectTrigger className="mt-1 border-2 border-gray-200 focus:border-indigo-500 transition-colors">
                     <SelectValue placeholder="Select payment method" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Invoice">Invoice</SelectItem>
-                    <SelectItem value="Stripe">Stripe</SelectItem>
-                    <SelectItem value="Cash">Cash</SelectItem>
-                    <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                  </SelectContent>
+                   <SelectContent>
+                     <SelectItem value="Invoiless">Invoiless</SelectItem>
+                     <SelectItem value="Stripe">Stripe</SelectItem>
+                     <SelectItem value="Cash">Cash</SelectItem>
+                     <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                   </SelectContent>
                 </Select>
               </div>
             </CardContent>
