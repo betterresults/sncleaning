@@ -580,7 +580,8 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                     return (
                       <TableRow 
                         key={booking.id} 
-                        className={isUnsigned ? "bg-red-50 hover:bg-red-100 border-l-4 border-red-500" : "hover:bg-gray-50"}
+                        className={`cursor-pointer ${isUnsigned ? "bg-red-50 hover:bg-red-100 border-l-4 border-red-500" : "hover:bg-gray-50"}`}
+                        onClick={() => handleEdit(booking.id)}
                       >
                         <TableCell>
                           <div className="text-sm">
@@ -630,7 +631,10 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                               variant="ghost"
                               size="sm"
                               className="h-8 w-8 p-0"
-                              onClick={() => handleEdit(booking.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEdit(booking.id);
+                              }}
                               title="Edit"
                             >
                               <Edit className="h-4 w-4" />
@@ -639,7 +643,10 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                               variant="ghost"
                               size="sm"
                               className="h-8 w-8 p-0"
-                              onClick={() => handleDuplicate(booking)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDuplicate(booking);
+                              }}
                               title="Duplicate"
                             >
                               <Copy className="h-4 w-4" />
@@ -648,7 +655,10 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                               variant="ghost"
                               size="sm"
                               className="h-8 w-8 p-0"
-                              onClick={() => handleAssignCleaner(booking.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAssignCleaner(booking.id);
+                              }}
                               title="Assign Cleaner"
                             >
                               <UserPlus className="h-4 w-4" />
@@ -657,7 +667,10 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                               variant="ghost"
                               size="sm"
                               className="h-8 w-8 p-0"
-                              onClick={() => handleCancel(booking.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCancel(booking.id);
+                              }}
                               title="Cancel"
                             >
                               <X className="h-4 w-4" />
@@ -666,7 +679,10 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                               variant="ghost"
                               size="sm"
                               className="h-8 w-8 p-0"
-                              onClick={() => handleMakeRecurring(booking)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMakeRecurring(booking);
+                              }}
                               title="Make Recurring"
                             >
                               <Repeat className="h-4 w-4" />
@@ -675,7 +691,10 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                               variant="ghost"
                               size="sm"
                               className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                              onClick={() => handleDelete(booking.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(booking.id);
+                              }}
                               title="Delete"
                             >
                               <Trash2 className="h-4 w-4" />
