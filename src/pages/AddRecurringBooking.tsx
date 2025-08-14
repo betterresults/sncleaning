@@ -202,7 +202,7 @@ export default function AddRecurringBooking() {
   };
 
   const handleCleanerChange = (cleanerId: string) => {
-    if (cleanerId === '' || cleanerId === 'unassigned') {
+    if (cleanerId === 'unassigned') {
       setFormData(prev => ({
         ...prev,
         cleaner: '',
@@ -520,7 +520,7 @@ export default function AddRecurringBooking() {
                       <SelectValue placeholder="Select a cleaner" />
                     </SelectTrigger>
                     <SelectContent className="bg-background border border-border">
-                      <SelectItem value="">Unassigned</SelectItem>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
                       {cleaners.map((cleaner) => (
                         <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
                           {cleaner.first_name} {cleaner.last_name} - £{cleaner.hourly_rate}/hr
