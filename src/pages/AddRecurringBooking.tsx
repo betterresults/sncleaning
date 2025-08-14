@@ -149,7 +149,7 @@ export default function AddRecurringBooking() {
       
       const { data, error } = await supabase
         .from('bookings')
-        .select('date_time, date_only')
+        .select('date_time, date_only, cleaner_rate, cleaner_pay')
         .eq('id', parseInt(bookingId))
         .single();
 
@@ -177,7 +177,8 @@ export default function AddRecurringBooking() {
           ...prev,
           days_of_the_week: dayName,
           days_number: '1',
-          start_date: localDate.toISOString().split('T')[0]
+          start_date: localDate.toISOString().split('T')[0],
+          cleaner_rate: data.cleaner_rate?.toString() || prev.cleaner_rate
         }));
       }
     } catch (error) {
@@ -467,10 +468,22 @@ export default function AddRecurringBooking() {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
+                       <Calendar
                         mode="single"
                         selected={selectedDate}
-                        onSelect={setSelectedDate}
+                        onSelect={(date) => {
+                          setSelectedDate(date);
+                          if (date) {
+                            const dayName = date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+                            setSelectedDays([dayName]);
+                            setFormData(prev => ({
+                              ...prev,
+                              days_of_the_week: dayName,
+                              days_number: '1',
+                              start_date: date.toISOString().split('T')[0]
+                            }));
+                          }
+                        }}
                         disabled={(date) => {
                           const today = new Date();
                           today.setHours(0, 0, 0, 0);
