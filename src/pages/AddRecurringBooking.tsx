@@ -325,6 +325,14 @@ export default function AddRecurringBooking() {
     setLoading(true);
 
     try {
+      // Generate a unique recurring group ID for this booking series
+      const recurringGroupId = crypto.randomUUID();
+      
+      // Determine interval based on frequency
+      let interval = '7'; // Default to weekly
+      if (formData.frequently === 'fortnightly') interval = '14';
+      if (formData.frequently === 'monthly') interval = '30';
+      
       const submitData = {
         customer: parseInt(formData.client),
         address: formData.address,
@@ -340,7 +348,11 @@ export default function AddRecurringBooking() {
         start_date: selectedDate?.toISOString().split('T')[0] || formData.start_date,
         start_time: selectedTime,
         postponed: formData.postponed,
+        interval: interval,
+        recurring_group_id: recurringGroupId,
       };
+
+      console.log('Submitting recurring service with data:', submitData);
 
       const { error } = await supabase
         .from('recurring_services')
