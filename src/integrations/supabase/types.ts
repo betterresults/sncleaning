@@ -1298,6 +1298,21 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      test_generate_recurring_bookings: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          address_found: boolean
+          booking_date: string
+          calculated_start: string
+          created: boolean
+          day_check: string
+          day_name: string
+          days_of_week: string
+          error_msg: string
+          service_id: number
+          start_date: string
+        }[]
+      }
     }
     Enums: {
       app_permission:
