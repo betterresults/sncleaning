@@ -5,7 +5,7 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { adminNavigation } from '@/lib/navigationItems';
-import ModernUsersTable from '@/components/ModernUsersTable';
+import EnhancedCleanerManagement from '@/components/EnhancedCleanerManagement';
 
 const UsersCleaners = () => {
   const { user, userRole, signOut } = useAuth();
@@ -39,7 +39,7 @@ const UsersCleaners = () => {
           
           <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
             <div className="max-w-7xl mx-auto">
-              <ModernUsersTable userType="cleaner" />
+              <EnhancedCleanerManagement />
             </div>
           </main>
         </SidebarInset>
