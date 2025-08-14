@@ -229,6 +229,26 @@ export default function AddRecurringBooking() {
     calculateTotalCost();
   }, [formData.hours, formData.cost_per_hour]);
 
+  // Auto-select single address and ensure cleaner is selected
+  useEffect(() => {
+    if (addresses.length === 1 && !formData.address) {
+      setFormData(prev => ({ ...prev, address: addresses[0].id }));
+    }
+  }, [addresses, formData.address]);
+
+  // Ensure cleaner gets selected after cleaners are loaded
+  useEffect(() => {
+    const cleanerParam = searchParams.get('cleaner');
+    if (cleanerParam && cleaners.length > 0 && !formData.cleaner) {
+      console.log('Setting cleaner from URL:', cleanerParam);
+      setFormData(prev => ({ 
+        ...prev, 
+        cleaner: cleanerParam,
+        cleaner_assignment: 'assigned'
+      }));
+    }
+  }, [cleaners, searchParams, formData.cleaner]);
+
   const fetchAddresses = async (customerId: number) => {
     try {
       const { data, error } = await supabase
