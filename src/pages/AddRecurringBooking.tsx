@@ -1,16 +1,18 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, User, MapPin, Clock, Banknote, CalendarDays, Users } from "lucide-react";
+import { ArrowLeft, Plus, User, Clock, Banknote, CalendarDays, CalendarIcon, Users } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import CreateCustomerDialog from "@/components/booking/CreateCustomerDialog";
 import CreateCleanerDialog from "@/components/booking/CreateCleanerDialog";
 
@@ -58,15 +60,20 @@ export default function AddRecurringBooking() {
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [showCreateCustomer, setShowCreateCustomer] = useState(false);
   const [showCreateCleaner, setShowCreateCleaner] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [selectedHour, setSelectedHour] = useState('09');
+  const [selectedMinute, setSelectedMinute] = useState('00');
+  const [selectedPeriod, setSelectedPeriod] = useState('AM');
+  const [selectedTime, setSelectedTime] = useState('09:00 AM');
 
   const [formData, setFormData] = useState({
     client: '',
     address: '',
     cleaner: '',
-    cleaner_assignment: 'unassigned', // 'unassigned' or 'assigned'
+    cleaner_assignment: 'unassigned',
     cleaner_rate: '',
     cleaner_percentage: '70',
-    payment_structure: 'hourly', // 'hourly' or 'percentage'
+    payment_structure: 'hourly',
     cleaning_type: '',
     frequently: '',
     days: '',
@@ -80,6 +87,10 @@ export default function AddRecurringBooking() {
     start_time: '',
     postponed: false,
   });
+
+  const hours = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
+  const minutes = ['00', '30'];
+  const periods = ['AM', 'PM'];
 
   useEffect(() => {
     fetchCustomers();
@@ -108,7 +119,8 @@ export default function AddRecurringBooking() {
         total_cost: totalCost || '40',
         payment_method: paymentMethod || 'Cash',
         cleaner_rate: cleanerRate || '16',
-        cleaner: cleaner || ''
+        cleaner: cleaner || '',
+        cleaner_assignment: cleaner ? 'assigned' : 'unassigned'
       }));
     }
   }, [searchParams]);
@@ -190,13 +202,36 @@ export default function AddRecurringBooking() {
   };
 
   const handleCleanerChange = (cleanerId: string) => {
-    const cleaner = cleaners.find(c => c.id === parseInt(cleanerId));
-    setFormData(prev => ({
-      ...prev,
-      cleaner: cleanerId,
-      cleaner_rate: cleaner?.hourly_rate?.toString() || '',
-      cost_per_hour: cleaner?.hourly_rate?.toString() || ''
-    }));
+    if (cleanerId === '' || cleanerId === 'unassigned') {
+      setFormData(prev => ({
+        ...prev,
+        cleaner: '',
+        cleaner_rate: '',
+        cost_per_hour: prev.cost_per_hour
+      }));
+    } else {
+      const cleaner = cleaners.find(c => c.id === parseInt(cleanerId));
+      setFormData(prev => ({
+        ...prev,
+        cleaner: cleanerId,
+        cleaner_rate: cleaner?.hourly_rate?.toString() || '',
+        cost_per_hour: cleaner?.hourly_rate?.toString() || prev.cost_per_hour
+      }));
+    }
+  };
+
+  const handleTimeChange = (type: 'hour' | 'minute' | 'period', value: string) => {
+    const newHour = type === 'hour' ? value : selectedHour;
+    const newMinute = type === 'minute' ? value : selectedMinute;
+    const newPeriod = type === 'period' ? value : selectedPeriod;
+    
+    if (type === 'hour') setSelectedHour(value);
+    if (type === 'minute') setSelectedMinute(value);
+    if (type === 'period') setSelectedPeriod(value);
+    
+    const newTime = `${newHour}:${newMinute} ${newPeriod}`;
+    setSelectedTime(newTime);
+    setFormData(prev => ({ ...prev, start_time: newTime }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -216,8 +251,8 @@ export default function AddRecurringBooking() {
         cost_per_hour: formData.cost_per_hour ? parseFloat(formData.cost_per_hour) : null,
         total_cost: formData.total_cost ? parseFloat(formData.total_cost) : null,
         payment_method: formData.payment_method,
-        start_date: formData.start_date,
-        start_time: formData.start_time,
+        start_date: selectedDate?.toISOString().split('T')[0] || formData.start_date,
+        start_time: selectedTime,
         postponed: formData.postponed,
       };
 
@@ -246,426 +281,419 @@ export default function AddRecurringBooking() {
   };
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <Button 
-          variant="outline" 
-          onClick={() => navigate('/recurring-bookings')}
-          className="shrink-0"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Create Recurring Booking</h1>
-          <p className="text-muted-foreground">Set up a new recurring cleaning service</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/recurring-bookings')}
+            className="shrink-0"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Create Recurring Booking</h1>
+          </div>
         </div>
-      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Customer Information */}
-        <Card className="border-border/50">
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <User className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <CardTitle className="text-lg">Customer Information</CardTitle>
-                <CardDescription>Select or add a customer for this recurring service</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <Label htmlFor="customer" className="text-sm font-medium">Customer *</Label>
-                <Select value={formData.client} onValueChange={(value) => setFormData(prev => ({ ...prev, client: value }))}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Choose a customer" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border border-border">
-                    {customers.map((customer) => (
-                      <SelectItem key={customer.id} value={customer.id.toString()}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{customer.first_name} {customer.last_name}</span>
-                          <span className="text-xs text-muted-foreground">{customer.email}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowCreateCustomer(true)}
-                className="mt-6 shrink-0"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add New
-              </Button>
-            </div>
-
-            {formData.client && (
-              <>
-                <Separator />
-                <div>
-                  <Label htmlFor="address" className="text-sm font-medium">Service Address *</Label>
-                  <Select value={formData.address} onValueChange={(value) => setFormData(prev => ({ ...prev, address: value }))}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Select service address" />
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Customer Information */}
+          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-t-lg">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <User className="h-6 w-6" />
+                Customer Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6 p-6">
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <Label className="text-sm font-semibold text-gray-700">Customer *</Label>
+                  <Select value={formData.client} onValueChange={(value) => setFormData(prev => ({ ...prev, client: value }))}>
+                    <SelectTrigger className="mt-1 border-2 border-gray-200 focus:border-blue-500 transition-colors">
+                      <SelectValue placeholder="Select a customer" />
                     </SelectTrigger>
                     <SelectContent className="bg-background border border-border">
-                      {addresses.map((address) => (
-                        <SelectItem key={address.id} value={address.id}>
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-3 w-3 text-muted-foreground" />
-                            <span>{address.address}, {address.postcode}</span>
-                            {address.is_default && <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">Default</span>}
-                          </div>
+                      {customers.map((customer) => (
+                        <SelectItem key={customer.id} value={customer.id.toString()}>
+                          {customer.first_name} {customer.last_name} - {customer.email}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Service & Schedule */}
-        <Card className="border-border/50">
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
-                <CalendarDays className="h-4 w-4 text-blue-500" />
-              </div>
-              <div>
-                <CardTitle className="text-lg">Service & Schedule</CardTitle>
-                <CardDescription>Configure service type and recurring schedule</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium">Service Type *</Label>
-                <Select value={formData.cleaning_type} onValueChange={(value) => setFormData(prev => ({ ...prev, cleaning_type: value }))}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Choose service type" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border border-border">
-                    <SelectItem value="Standard Cleaning">Standard Cleaning</SelectItem>
-                    <SelectItem value="Deep Cleaning">Deep Cleaning</SelectItem>
-                    <SelectItem value="End of Tenancy">End of Tenancy</SelectItem>
-                    <SelectItem value="Office Cleaning">Office Cleaning</SelectItem>
-                    <SelectItem value="Post Construction">Post Construction</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowCreateCustomer(true)}
+                  className="mt-6 text-blue-600 border-blue-300 hover:border-blue-400"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add New
+                </Button>
               </div>
 
-              <div>
-                <Label className="text-sm font-medium">Frequency *</Label>
-                <Select value={formData.frequently} onValueChange={(value) => setFormData(prev => ({ ...prev, frequently: value }))}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="How often?" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border border-border">
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="bi-weekly">Bi-weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+              {formData.client && (
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700">Address *</Label>
+                  <Select value={formData.address} onValueChange={(value) => setFormData(prev => ({ ...prev, address: value }))}>
+                    <SelectTrigger className="mt-1 border-2 border-gray-200 focus:border-blue-500 transition-colors">
+                      <SelectValue placeholder="Select an address" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border border-border">
+                      {addresses.map((address) => (
+                        <SelectItem key={address.id} value={address.id}>
+                          {address.address}, {address.postcode} {address.is_default && '(Default)'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-            {formData.frequently === 'weekly' && (
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">Days of the Week *</Label>
-                <div className="grid grid-cols-3 md:grid-cols-7 gap-2">
-                  {DAYS_OF_WEEK.map((day) => (
-                    <div key={day.id} className="flex items-center space-x-2 p-2 rounded-md border border-border/50 hover:bg-accent/50 transition-colors">
-                      <Checkbox
-                        id={day.id}
-                        checked={selectedDays.includes(day.id)}
-                        onCheckedChange={() => handleDayToggle(day.id)}
+          {/* Date & Time Selection */}
+          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-t-lg">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <CalendarDays className="h-6 w-6" />
+                Date & Time
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6 p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-gray-700">Start Date *</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal border-2 border-gray-200 hover:border-purple-400 transition-colors",
+                          !selectedDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={setSelectedDate}
+                        disabled={(date) => {
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          return date < today;
+                        }}
+                        initialFocus
+                        className="p-4 pointer-events-auto"
                       />
-                      <Label htmlFor={day.id} className="text-xs font-medium">{day.label.slice(0, 3)}</Label>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                
+                <div className="space-y-4">
+                  <Label className="text-sm font-semibold text-gray-700">Time *</Label>
+                  <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border-2 border-purple-200">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-5 w-5 text-purple-600" />
+                      <Select value={selectedHour} onValueChange={(value) => handleTimeChange('hour', value)}>
+                        <SelectTrigger className="w-20 border-2 border-purple-200 focus:border-purple-500">
+                          <SelectValue placeholder="Hour" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {hours.map((hour) => (
+                            <SelectItem key={hour} value={hour}>
+                              {hour}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <Separator />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium">Start Date *</Label>
-                <Input
-                  type="date"
-                  value={formData.start_date}
-                  onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
-                  className="mt-1"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium">Start Time *</Label>
-                <Input
-                  type="time"
-                  value={formData.start_time}
-                  onChange={(e) => setFormData(prev => ({ ...prev, start_time: e.target.value }))}
-                  className="mt-1"
-                  required
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Cleaner Assignment */}
-        <Card className="border-border/50">
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center">
-                <Users className="h-4 w-4 text-green-500" />
-              </div>
-              <div>
-                <CardTitle className="text-lg">Cleaner Assignment</CardTitle>
-                <CardDescription>Assign a cleaner or leave unassigned</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Cleaner Assignment</Label>
-              <RadioGroup 
-                value={formData.cleaner_assignment} 
-                onValueChange={(value) => setFormData(prev => ({ 
-                  ...prev, 
-                  cleaner_assignment: value, 
-                  cleaner: value === 'unassigned' ? '' : prev.cleaner 
-                }))}
-                className="grid grid-cols-1 md:grid-cols-2 gap-3"
-              >
-                <div className="flex items-center space-x-2 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors">
-                  <RadioGroupItem value="unassigned" id="unassigned" />
-                  <Label htmlFor="unassigned" className="flex-1 font-medium">Leave Unassigned</Label>
-                </div>
-                <div className="flex items-center space-x-2 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors">
-                  <RadioGroupItem value="assigned" id="assigned" />
-                  <Label htmlFor="assigned" className="flex-1 font-medium">Assign Cleaner</Label>
-                </div>
-              </RadioGroup>
-            </div>
-
-            {formData.cleaner_assignment === 'assigned' && (
-              <>
-                <Separator />
-                <div className="flex gap-3">
-                  <div className="flex-1">
-                    <Label className="text-sm font-medium">Select Cleaner *</Label>
-                    <Select value={formData.cleaner} onValueChange={handleCleanerChange}>
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Choose a cleaner" />
+                    
+                    <span className="text-xl font-bold text-purple-600">:</span>
+                    
+                    <Select value={selectedMinute} onValueChange={(value) => handleTimeChange('minute', value)}>
+                      <SelectTrigger className="w-20 border-2 border-purple-200 focus:border-purple-500">
+                        <SelectValue placeholder="Min" />
                       </SelectTrigger>
-                      <SelectContent className="bg-background border border-border">
-                        {cleaners.map((cleaner) => (
-                          <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
-                            <div className="flex flex-col">
-                              <span className="font-medium">{cleaner.first_name} {cleaner.last_name}</span>
-                              <span className="text-xs text-muted-foreground">£{cleaner.hourly_rate}/hr</span>
-                            </div>
+                      <SelectContent>
+                        {minutes.map((minute) => (
+                          <SelectItem key={minute} value={minute}>
+                            {minute}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    <Select value={selectedPeriod} onValueChange={(value) => handleTimeChange('period', value)}>
+                      <SelectTrigger className="w-20 border-2 border-purple-200 focus:border-purple-500">
+                        <SelectValue placeholder="AM/PM" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {periods.map((period) => (
+                          <SelectItem key={period} value={period}>
+                            {period}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowCreateCleaner(true)}
-                    className="mt-6 shrink-0"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add New
-                  </Button>
+                  <div className="text-center text-lg font-semibold text-purple-600 bg-white rounded-lg py-2 border-2 border-purple-200">
+                    Selected: {selectedTime}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700">Service Type *</Label>
+                  <Select value={formData.cleaning_type} onValueChange={(value) => setFormData(prev => ({ ...prev, cleaning_type: value }))}>
+                    <SelectTrigger className="mt-1 border-2 border-gray-200 focus:border-purple-500 transition-colors">
+                      <SelectValue placeholder="Select service type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Standard Cleaning">Standard Cleaning</SelectItem>
+                      <SelectItem value="Deep Cleaning">Deep Cleaning</SelectItem>
+                      <SelectItem value="End of Tenancy">End of Tenancy</SelectItem>
+                      <SelectItem value="Office Cleaning">Office Cleaning</SelectItem>
+                      <SelectItem value="Post Construction">Post Construction</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                {formData.cleaner && (
-                  <>
-                    <Separator />
-                    <div className="space-y-4">
-                      <div className="space-y-3">
-                        <Label className="text-sm font-medium">Cleaner Payment Structure</Label>
-                        <RadioGroup 
-                          value={formData.payment_structure} 
-                          onValueChange={(value) => setFormData(prev => ({ ...prev, payment_structure: value }))}
-                          className="grid grid-cols-1 md:grid-cols-2 gap-3"
-                        >
-                          <div className="flex items-center space-x-2 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors">
-                            <RadioGroupItem value="hourly" id="hourly" />
-                            <Label htmlFor="hourly" className="flex-1 font-medium">Hourly Rate</Label>
-                          </div>
-                          <div className="flex items-center space-x-2 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors">
-                            <RadioGroupItem value="percentage" id="percentage" />
-                            <Label htmlFor="percentage" className="flex-1 font-medium">Percentage of Total</Label>
-                          </div>
-                        </RadioGroup>
-                      </div>
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700">Frequency *</Label>
+                  <Select value={formData.frequently} onValueChange={(value) => setFormData(prev => ({ ...prev, frequently: value }))}>
+                    <SelectTrigger className="mt-1 border-2 border-gray-200 focus:border-purple-500 transition-colors">
+                      <SelectValue placeholder="Select frequency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="bi-weekly">Bi-weekly</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {formData.payment_structure === 'hourly' ? (
-                          <div>
-                            <Label className="text-sm font-medium">Hourly Rate (£) *</Label>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              value={formData.cleaner_rate}
-                              onChange={(e) => setFormData(prev => ({ ...prev, cleaner_rate: e.target.value }))}
-                              className="mt-1"
-                              required
-                            />
-                          </div>
-                        ) : (
-                          <div>
-                            <Label className="text-sm font-medium">Percentage (%) *</Label>
-                            <Input
-                              type="number"
-                              min="0"
-                              max="100"
-                              value={formData.cleaner_percentage}
-                              onChange={(e) => setFormData(prev => ({ ...prev, cleaner_percentage: e.target.value }))}
-                              className="mt-1"
-                              required
-                            />
-                          </div>
-                        )}
+              {formData.frequently === 'weekly' && (
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold text-gray-700">Days of the Week *</Label>
+                  <div className="grid grid-cols-3 md:grid-cols-7 gap-3">
+                    {DAYS_OF_WEEK.map((day) => (
+                      <div key={day.id} className="flex items-center space-x-2 p-3 rounded-lg border-2 border-purple-200 hover:bg-purple-50 transition-colors">
+                        <Checkbox
+                          id={day.id}
+                          checked={selectedDays.includes(day.id)}
+                          onCheckedChange={() => handleDayToggle(day.id)}
+                          className="border-2 border-purple-400"
+                        />
+                        <Label htmlFor={day.id} className="text-xs font-medium">{day.label.slice(0, 3)}</Label>
                       </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Cleaner Assignment */}
+          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-t-lg">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <Users className="h-6 w-6" />
+                Cleaner Assignment
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6 p-6">
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <Label className="text-sm font-semibold text-gray-700">Cleaner</Label>
+                  <Select value={formData.cleaner} onValueChange={handleCleanerChange}>
+                    <SelectTrigger className="mt-1 border-2 border-gray-200 focus:border-green-500 transition-colors">
+                      <SelectValue placeholder="Select a cleaner" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border border-border">
+                      <SelectItem value="">Unassigned</SelectItem>
+                      {cleaners.map((cleaner) => (
+                        <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
+                          {cleaner.first_name} {cleaner.last_name} - £{cleaner.hourly_rate}/hr
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowCreateCleaner(true)}
+                  className="mt-6 text-green-600 border-green-300 hover:border-green-400"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add New
+                </Button>
+              </div>
+
+              {formData.cleaner && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border-2 border-green-200">
+                  <div>
+                    <Label className="text-sm font-semibold text-gray-700">Payment Structure</Label>
+                    <Select value={formData.payment_structure} onValueChange={(value) => setFormData(prev => ({ ...prev, payment_structure: value }))}>
+                      <SelectTrigger className="mt-1 border-2 border-green-200 focus:border-green-500">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="hourly">Hourly Rate</SelectItem>
+                        <SelectItem value="percentage">Percentage</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {formData.payment_structure === 'hourly' ? (
+                    <div>
+                      <Label className="text-sm font-semibold text-gray-700">Hourly Rate (£)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={formData.cleaner_rate}
+                        onChange={(e) => setFormData(prev => ({ ...prev, cleaner_rate: e.target.value }))}
+                        className="mt-1 border-2 border-green-200 focus:border-green-500"
+                      />
                     </div>
-                  </>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
+                  ) : (
+                    <div>
+                      <Label className="text-sm font-semibold text-gray-700">Percentage (%)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={formData.cleaner_percentage}
+                        onChange={(e) => setFormData(prev => ({ ...prev, cleaner_percentage: e.target.value }))}
+                        className="mt-1 border-2 border-green-200 focus:border-green-500"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-        {/* Pricing */}
-        <Card className="border-border/50">
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center">
-                <Banknote className="h-4 w-4 text-orange-500" />
+          {/* Pricing & Payment */}
+          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-t-lg">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <Banknote className="h-6 w-6" />
+                Payment & Cost
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6 p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700">Hours per Visit *</Label>
+                  <Input
+                    type="number"
+                    step="0.5"
+                    min="0.5"
+                    value={formData.hours}
+                    onChange={(e) => setFormData(prev => ({ ...prev, hours: e.target.value }))}
+                    className="mt-1 border-2 border-gray-200 focus:border-indigo-500 transition-colors"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700">Rate per Hour (£) *</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.cost_per_hour}
+                    onChange={(e) => setFormData(prev => ({ ...prev, cost_per_hour: e.target.value }))}
+                    className="mt-1 border-2 border-gray-200 focus:border-indigo-500 transition-colors"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700">Total per Visit (Auto-calculated)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={formData.total_cost}
+                    readOnly
+                    className="mt-1 bg-gray-50 text-gray-600 border-2 border-gray-200"
+                  />
+                </div>
               </div>
+
               <div>
-                <CardTitle className="text-lg">Pricing & Payment</CardTitle>
-                <CardDescription>Set service pricing and payment method</CardDescription>
+                <Label className="text-sm font-semibold text-gray-700">Payment Method *</Label>
+                <Select value={formData.payment_method} onValueChange={(value) => setFormData(prev => ({ ...prev, payment_method: value }))}>
+                  <SelectTrigger className="mt-1 border-2 border-gray-200 focus:border-indigo-500 transition-colors">
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Invoice">Invoice</SelectItem>
+                    <SelectItem value="Stripe">Stripe</SelectItem>
+                    <SelectItem value="Cash">Cash</SelectItem>
+                    <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label className="text-sm font-medium">Hours per Visit *</Label>
-                <Input
-                  type="number"
-                  step="0.5"
-                  min="0.5"
-                  value={formData.hours}
-                  onChange={(e) => setFormData(prev => ({ ...prev, hours: e.target.value }))}
-                  className="mt-1"
-                  required
-                />
-              </div>
+            </CardContent>
+          </Card>
 
-              <div>
-                <Label className="text-sm font-medium">Rate per Hour (£) *</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.cost_per_hour}
-                  onChange={(e) => setFormData(prev => ({ ...prev, cost_per_hour: e.target.value }))}
-                  className="mt-1"
-                  required
-                />
-              </div>
+          {/* Actions */}
+          <div className="flex justify-end gap-4 pt-4">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => navigate('/recurring-bookings')}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={loading} 
+              className="min-w-[200px] bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+            >
+              {loading ? "Creating..." : "Create Recurring Booking"}
+            </Button>
+          </div>
+        </form>
 
-              <div>
-                <Label className="text-sm font-medium">Total per Visit</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formData.total_cost}
-                  readOnly
-                  className="mt-1 bg-muted text-muted-foreground"
-                />
-              </div>
-            </div>
-
-            <Separator />
-
-            <div>
-              <Label className="text-sm font-medium">Payment Method *</Label>
-              <Select value={formData.payment_method} onValueChange={(value) => setFormData(prev => ({ ...prev, payment_method: value }))}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="How will you be paid?" />
-                </SelectTrigger>
-                <SelectContent className="bg-background border border-border">
-                  <SelectItem value="Invoice">Invoice</SelectItem>
-                  <SelectItem value="Stripe">Stripe</SelectItem>
-                  <SelectItem value="Cash">Cash</SelectItem>
-                  <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Actions */}
-        <div className="flex justify-end gap-3 pt-4">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={() => navigate('/recurring-bookings')}
-            disabled={loading}
+        {/* Hidden dialogs */}
+        {showCreateCustomer && (
+          <CreateCustomerDialog
+            onCustomerCreated={(customer) => {
+              fetchCustomers();
+              setFormData(prev => ({ ...prev, client: customer.id.toString() }));
+              setShowCreateCustomer(false);
+            }}
           >
-            Cancel
-          </Button>
-          <Button type="submit" disabled={loading} className="min-w-[160px]">
-            {loading ? "Creating..." : "Create Recurring Booking"}
-          </Button>
-        </div>
-      </form>
+            <div className="hidden" />
+          </CreateCustomerDialog>
+        )}
 
-      {/* Hidden dialogs */}
-      {showCreateCustomer && (
-        <CreateCustomerDialog
-          onCustomerCreated={(customer) => {
-            fetchCustomers();
-            setFormData(prev => ({ ...prev, client: customer.id.toString() }));
-            setShowCreateCustomer(false);
-          }}
-        >
-          <div className="hidden" />
-        </CreateCustomerDialog>
-      )}
-
-      {showCreateCleaner && (
-        <CreateCleanerDialog
-          onCleanerCreated={(cleaner) => {
-            fetchCleaners();
-            setFormData(prev => ({ ...prev, cleaner: cleaner.id.toString() }));
-            setShowCreateCleaner(false);
-          }}
-        >
-          <div className="hidden" />
-        </CreateCleanerDialog>
-      )}
+        {showCreateCleaner && (
+          <CreateCleanerDialog
+            onCleanerCreated={(cleaner) => {
+              fetchCleaners();
+              setFormData(prev => ({ ...prev, cleaner: cleaner.id.toString() }));
+              setShowCreateCleaner(false);
+            }}
+          >
+            <div className="hidden" />
+          </CreateCleanerDialog>
+        )}
+      </div>
     </div>
   );
 }
