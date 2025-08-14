@@ -122,7 +122,6 @@ export default function AddRecurringBooking() {
         setFormData(prev => ({
           ...prev,
           client: customerId || '',
-          address: decodeURIComponent(addressId || ''),
           cleaning_type: decodeURIComponent(cleaningType || 'Standard Cleaning'),
           hours: hours || '2',
           cost_per_hour: costPerHour || '20',
@@ -161,14 +160,14 @@ export default function AddRecurringBooking() {
         const originalDate = new Date(data.date_time);
         console.log('Original date from booking:', originalDate);
         
-        // Ensure we use the correct date without timezone issues
-        const localDate = new Date(originalDate.getFullYear(), originalDate.getMonth(), originalDate.getDate());
-        console.log('Local date set:', localDate);
+        // Use the local date/time as displayed to the user (no timezone adjustment)
+        const localDate = new Date(originalDate.getTime() + (originalDate.getTimezoneOffset() * 60000));
+        console.log('Adjusted local date:', localDate);
         
         const dayName = localDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
         console.log('Day name:', dayName);
         
-        // Set the original date as selected date
+        // Set the corrected date as selected date
         setSelectedDate(localDate);
         
         // Auto-select the day of the week
