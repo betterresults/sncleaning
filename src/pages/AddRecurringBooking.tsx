@@ -93,52 +93,60 @@ export default function AddRecurringBooking() {
   const periods = ['AM', 'PM'];
 
   useEffect(() => {
-    fetchCustomers();
-    fetchCleaners();
-    
-    // Handle prefilled data from URL parameters
-    const from = searchParams.get('from');
-    if (from === 'booking') {
-      const customerId = searchParams.get('customerId');
-      const addressId = searchParams.get('addressId');
-      const cleaningType = searchParams.get('cleaningType');
-      const hours = searchParams.get('hours');
-      const costPerHour = searchParams.get('costPerHour');
-      const totalCost = searchParams.get('totalCost');
-      const paymentMethod = searchParams.get('paymentMethod');
-      const cleanerRate = searchParams.get('cleanerRate');
-      const cleaner = searchParams.get('cleaner');
-      const bookingId = searchParams.get('bookingId');
+    const initializeData = async () => {
+      // First fetch customers and cleaners
+      await Promise.all([fetchCustomers(), fetchCleaners()]);
       
-      // Fix payment method name
-      let fixedPaymentMethod = paymentMethod;
-      if (paymentMethod === 'Freeagent') {
-        fixedPaymentMethod = 'Invoiless';
-      }
-      
-      setFormData(prev => ({
-        ...prev,
-        client: customerId || '',
-        address: decodeURIComponent(addressId || ''),
-        cleaning_type: decodeURIComponent(cleaningType || 'Standard Cleaning'),
-        hours: hours || '2',
-        cost_per_hour: costPerHour || '20',
-        total_cost: totalCost || '40',
-        payment_method: fixedPaymentMethod || 'Cash',
-        cleaner_rate: cleanerRate || '16',
-        cleaner: cleaner || '',
-        cleaner_assignment: cleaner ? 'assigned' : 'unassigned'
-      }));
+      // Then handle prefilled data from URL parameters
+      const from = searchParams.get('from');
+      if (from === 'booking') {
+        const customerId = searchParams.get('customerId');
+        const addressId = searchParams.get('addressId');
+        const cleaningType = searchParams.get('cleaningType');
+        const hours = searchParams.get('hours');
+        const costPerHour = searchParams.get('costPerHour');
+        const totalCost = searchParams.get('totalCost');
+        const paymentMethod = searchParams.get('paymentMethod');
+        const cleanerRate = searchParams.get('cleanerRate');
+        const cleaner = searchParams.get('cleaner');
+        const bookingId = searchParams.get('bookingId');
+        
+        // Fix payment method name
+        let fixedPaymentMethod = paymentMethod;
+        if (paymentMethod === 'Freeagent') {
+          fixedPaymentMethod = 'Invoiless';
+        }
+        
+        console.log('URL Parameters:', { customerId, cleaner, bookingId });
+        
+        setFormData(prev => ({
+          ...prev,
+          client: customerId || '',
+          address: decodeURIComponent(addressId || ''),
+          cleaning_type: decodeURIComponent(cleaningType || 'Standard Cleaning'),
+          hours: hours || '2',
+          cost_per_hour: costPerHour || '20',
+          total_cost: totalCost || '40',
+          payment_method: fixedPaymentMethod || 'Cash',
+          cleaner_rate: cleanerRate || '16',
+          cleaner: cleaner || '',
+          cleaner_assignment: cleaner ? 'assigned' : 'unassigned'
+        }));
 
-      // Fetch original booking date and auto-populate start date and days
-      if (bookingId) {
-        fetchOriginalBookingData(bookingId);
+        // Fetch original booking date and auto-populate start date and days
+        if (bookingId) {
+          await fetchOriginalBookingData(bookingId);
+        }
       }
-    }
+    };
+    
+    initializeData();
   }, [searchParams]);
 
   const fetchOriginalBookingData = async (bookingId: string) => {
     try {
+      console.log('Fetching booking data for ID:', bookingId);
+      
       const { data, error } = await supabase
         .from('bookings')
         .select('date_time, date_only')
@@ -147,12 +155,21 @@ export default function AddRecurringBooking() {
 
       if (error) throw error;
       
+      console.log('Original booking data:', data);
+      
       if (data && data.date_time) {
         const originalDate = new Date(data.date_time);
-        const dayName = originalDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+        console.log('Original date from booking:', originalDate);
+        
+        // Ensure we use the correct date without timezone issues
+        const localDate = new Date(originalDate.getFullYear(), originalDate.getMonth(), originalDate.getDate());
+        console.log('Local date set:', localDate);
+        
+        const dayName = localDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+        console.log('Day name:', dayName);
         
         // Set the original date as selected date
-        setSelectedDate(originalDate);
+        setSelectedDate(localDate);
         
         // Auto-select the day of the week
         setSelectedDays([dayName]);
@@ -160,11 +177,45 @@ export default function AddRecurringBooking() {
           ...prev,
           days_of_the_week: dayName,
           days_number: '1',
-          start_date: originalDate.toISOString().split('T')[0]
+          start_date: localDate.toISOString().split('T')[0]
         }));
       }
     } catch (error) {
       console.error('Error fetching original booking data:', error);
+    }
+  };
+
+  const fetchCustomers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('id, first_name, last_name, email, phone')
+        .order('first_name');
+
+      if (error) throw error;
+      console.log('Fetched customers:', data?.length);
+      setCustomers(data || []);
+      return data;
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+      return [];
+    }
+  };
+
+  const fetchCleaners = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('cleaners')
+        .select('id, first_name, last_name, email, hourly_rate')
+        .order('first_name');
+
+      if (error) throw error;
+      console.log('Fetched cleaners:', data?.length);
+      setCleaners(data || []);
+      return data;
+    } catch (error) {
+      console.error('Error fetching cleaners:', error);
+      return [];
     }
   };
 
@@ -177,34 +228,6 @@ export default function AddRecurringBooking() {
   useEffect(() => {
     calculateTotalCost();
   }, [formData.hours, formData.cost_per_hour]);
-
-  const fetchCustomers = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('customers')
-        .select('id, first_name, last_name, email, phone')
-        .order('first_name');
-
-      if (error) throw error;
-      setCustomers(data || []);
-    } catch (error) {
-      console.error('Error fetching customers:', error);
-    }
-  };
-
-  const fetchCleaners = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('cleaners')
-        .select('id, first_name, last_name, email, hourly_rate')
-        .order('first_name');
-
-      if (error) throw error;
-      setCleaners(data || []);
-    } catch (error) {
-      console.error('Error fetching cleaners:', error);
-    }
-  };
 
   const fetchAddresses = async (customerId: number) => {
     try {
