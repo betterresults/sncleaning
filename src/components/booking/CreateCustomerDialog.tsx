@@ -54,7 +54,7 @@ const CreateCustomerDialog = ({ children, onCustomerCreated }: CreateCustomerDia
       
       const { data, error } = await supabase
         .from('customers')
-        .insert([customerData])
+        .insert(customerData)
         .select()
         .single();
 
