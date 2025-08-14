@@ -49,8 +49,8 @@ const CleanersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }: 
     phone: '',
     address: '',
     postcode: '',
-    hourly_rate: 0,
-    presentage_rate: 0,
+    hourly_rate: 20,
+    presentage_rate: 70,
     services: '',
     years: 0
   });
@@ -131,8 +131,8 @@ const CleanersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }: 
         phone: '',
         address: '',
         postcode: '',
-        hourly_rate: 0,
-        presentage_rate: 0,
+        hourly_rate: 20,
+        presentage_rate: 70,
         services: '',
         years: 0
       });

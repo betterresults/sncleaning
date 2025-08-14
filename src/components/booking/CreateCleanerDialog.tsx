@@ -24,7 +24,8 @@ const CreateCleanerDialog = ({ children, onCleanerCreated }: CreateCleanerDialog
     phone: '',
     address: '',
     postcode: '',
-    hourlyRate: '',
+    hourlyRate: '20',
+    percentageRate: '70',
     services: '',
     dbsDate: '',
     dbsStatus: 'No'
@@ -50,11 +51,11 @@ const CreateCleanerDialog = ({ children, onCleanerCreated }: CreateCleanerDialog
         phone: formData.phone ? parseInt(formData.phone) : null,
         address: formData.address,
         postcode: formData.postcode,
-        hourly_rate: formData.hourlyRate ? parseFloat(formData.hourlyRate) : null,
+        hourly_rate: formData.hourlyRate ? parseFloat(formData.hourlyRate) : 20,
+        presentage_rate: formData.percentageRate ? parseFloat(formData.percentageRate) : 70,
         services: formData.services,
         DBS_date: formData.dbsDate || null,
         DBS: formData.dbsStatus,
-        presentage_rate: 70, // Default 70%
         rating: 0,
         reviews: 0,
         years: 0,
@@ -91,7 +92,8 @@ const CreateCleanerDialog = ({ children, onCleanerCreated }: CreateCleanerDialog
         phone: '',
         address: '',
         postcode: '',
-        hourlyRate: '',
+        hourlyRate: '20',
+        percentageRate: '70',
         services: '',
         dbsDate: '',
         dbsStatus: 'No'
@@ -179,15 +181,33 @@ const CreateCleanerDialog = ({ children, onCleanerCreated }: CreateCleanerDialog
               />
             </div>
             <div>
-              <Label htmlFor="hourlyRate">Hourly Rate (£)</Label>
+              <Label htmlFor="hourlyRate">Hourly Rate (£) *</Label>
               <Input
                 id="hourlyRate"
                 type="number"
                 step="0.01"
                 value={formData.hourlyRate}
                 onChange={(e) => handleInputChange('hourlyRate', e.target.value)}
+                placeholder="20.00"
+                required
               />
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="percentageRate">Percentage Rate (%) *</Label>
+            <Input
+              id="percentageRate"
+              type="number"
+              step="1"
+              min="0"
+              max="100"
+              value={formData.percentageRate}
+              onChange={(e) => handleInputChange('percentageRate', e.target.value)}
+              placeholder="70"
+              required
+            />
+            <p className="text-sm text-gray-500 mt-1">Percentage of booking total cost that cleaner receives</p>
           </div>
 
           <div>
