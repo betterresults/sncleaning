@@ -39,9 +39,9 @@ const Auth = () => {
       return <Navigate to="/cleaner-dashboard" replace />;
     }
     
-    // Redirect admins to admin dashboard
+    // Redirect admins to dashboard
     if (userRole === 'admin') {
-      return <Navigate to="/admin" replace />;
+      return <Navigate to="/dashboard" replace />;
     }
     
     // Default redirect to main dashboard
