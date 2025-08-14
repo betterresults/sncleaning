@@ -130,8 +130,43 @@ export default function AddRecurringBooking() {
         cleaner_assignment: cleaner ? 'assigned' : 'unassigned'
       }));
 
+      // Fetch original booking date and auto-populate start date and days
+      if (bookingId) {
+        fetchOriginalBookingData(bookingId);
+      }
     }
   }, [searchParams]);
+
+  const fetchOriginalBookingData = async (bookingId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('date_time, date_only')
+        .eq('id', parseInt(bookingId))
+        .single();
+
+      if (error) throw error;
+      
+      if (data && data.date_time) {
+        const originalDate = new Date(data.date_time);
+        const dayName = originalDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+        
+        // Set the original date as selected date
+        setSelectedDate(originalDate);
+        
+        // Auto-select the day of the week
+        setSelectedDays([dayName]);
+        setFormData(prev => ({
+          ...prev,
+          days_of_the_week: dayName,
+          days_number: '1',
+          start_date: originalDate.toISOString().split('T')[0]
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching original booking data:', error);
+    }
+  };
 
   useEffect(() => {
     if (formData.client) {
