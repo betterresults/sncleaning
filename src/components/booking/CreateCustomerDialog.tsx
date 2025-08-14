@@ -50,7 +50,7 @@ const CreateCustomerDialog = ({ children, onCustomerCreated }: CreateCustomerDia
         client_status: 'New'
       };
 
-      console.log('Inserting customer data:', customerData);
+      console.log('About to insert customer data:', JSON.stringify(customerData, null, 2));
       
       const { data, error } = await supabase
         .from('customers')
@@ -58,11 +58,15 @@ const CreateCustomerDialog = ({ children, onCustomerCreated }: CreateCustomerDia
         .select()
         .single();
 
-      console.log('Customer insert result:', { data, error });
+      console.log('Customer insert response:', { data, error });
+      console.log('Full error object:', JSON.stringify(error, null, 2));
 
       if (error) {
         console.error('Error creating customer:', error);
-        console.error('Error details:', error.details, error.hint, error.code);
+        console.error('Error message:', error.message);
+        console.error('Error details:', error.details);
+        console.error('Error hint:', error.hint);
+        console.error('Error code:', error.code);
         toast({
           title: "Error",
           description: `Failed to create customer: ${error.message}`,
