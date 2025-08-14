@@ -36,6 +36,8 @@ const CreateCustomerDialog = ({ children, onCustomerCreated }: CreateCustomerDia
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    
+    console.log('Creating customer with data:', formData);
 
     try {
       const customerData = {
@@ -48,14 +50,19 @@ const CreateCustomerDialog = ({ children, onCustomerCreated }: CreateCustomerDia
         client_status: 'New'
       };
 
+      console.log('Inserting customer data:', customerData);
+      
       const { data, error } = await supabase
         .from('customers')
         .insert([customerData])
         .select()
         .single();
 
+      console.log('Customer insert result:', { data, error });
+
       if (error) {
         console.error('Error creating customer:', error);
+        console.error('Error details:', error.details, error.hint, error.code);
         toast({
           title: "Error",
           description: `Failed to create customer: ${error.message}`,
