@@ -99,6 +99,8 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   const [bookingToDelete, setBookingToDelete] = useState<number | null>(null);
   const [convertToRecurringOpen, setConvertToRecurringOpen] = useState(false);
   const [selectedBookingForRecurring, setSelectedBookingForRecurring] = useState<Booking | null>(null);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [bookingToCancel, setBookingToCancel] = useState<number | null>(null);
   const { toast } = useToast();
 
   const fetchData = async () => {
@@ -334,20 +336,45 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   };
 
   const handleCancel = async (bookingId: number) => {
+    setBookingToCancel(bookingId);
+    setCancelDialogOpen(true);
+  };
+
+  const confirmCancel = async () => {
+    if (!bookingToCancel) return;
+    
     try {
       const { error } = await supabase
         .from('bookings')
         .update({ booking_status: 'Cancelled' })
-        .eq('id', bookingId);
+        .eq('id', bookingToCancel);
 
       if (error) {
         console.error('Error cancelling booking:', error);
+        toast({
+          title: "Error",
+          description: "Failed to cancel booking. Please try again.",
+          variant: "destructive",
+        });
         return;
       }
+
+      toast({
+        title: "Booking cancelled",
+        description: "The booking has been successfully cancelled.",
+      });
 
       fetchData();
     } catch (error) {
       console.error('Error cancelling booking:', error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel booking. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setCancelDialogOpen(false);
+      setBookingToCancel(null);
     }
   };
 
@@ -799,6 +826,25 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
             </AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Booking</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel this booking? This will mark the booking as cancelled.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setCancelDialogOpen(false)}>
+              No, Keep Booking
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCancel} className="bg-orange-600 hover:bg-orange-700">
+              Yes, Cancel Booking
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
