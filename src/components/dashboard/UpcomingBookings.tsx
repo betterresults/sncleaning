@@ -8,10 +8,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Edit, Trash2, Filter, Search, Settings, Copy, X, UserPlus, DollarSign, Repeat } from 'lucide-react';
+import { Edit, Trash2, Filter, Search, Settings, Copy, X, UserPlus, DollarSign, Repeat, Calendar, List } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
+import moment from 'moment';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 import BulkEditBookingsDialog from './BulkEditBookingsDialog';
 import EditBookingDialog from './EditBookingDialog';
@@ -101,7 +104,11 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   const [selectedBookingForRecurring, setSelectedBookingForRecurring] = useState<Booking | null>(null);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const { toast } = useToast();
+
+  // Setup calendar localizer
+  const localizer = momentLocalizer(moment);
 
   const fetchData = async () => {
     try {
@@ -570,185 +577,250 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
           </Button>
         </div>
 
-        <div className="text-xs sm:text-sm text-gray-600 text-center lg:text-right">
-          Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredBookings.length)} of {filteredBookings.length}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center rounded-lg border bg-background p-1">
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className="flex items-center gap-2"
+            >
+              <List className="h-4 w-4" />
+              List
+            </Button>
+            <Button
+              variant={viewMode === 'calendar' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('calendar')}
+              className="flex items-center gap-2"
+            >
+              <Calendar className="h-4 w-4" />
+              Calendar
+            </Button>
+          </div>
+          <div className="text-xs sm:text-sm text-gray-600 text-center lg:text-right">
+            Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredBookings.length)} of {filteredBookings.length}
+          </div>
         </div>
       </div>
 
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300">
-            <Table className="min-w-full"
-            >
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date & Time</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Address</TableHead>
-                  <TableHead>Cleaning Type</TableHead>
-                  <TableHead>Cleaner</TableHead>
-                  <TableHead>Cost</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedBookings.length === 0 ? (
+          {viewMode === 'list' ? (
+            <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300">
+              <Table className="min-w-full">
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
-                      No bookings found
-                    </TableCell>
+                    <TableHead>Date & Time</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>Address</TableHead>
+                    <TableHead>Cleaning Type</TableHead>
+                    <TableHead>Cleaner</TableHead>
+                    <TableHead>Cost</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ) : (
-                  paginatedBookings.map((booking) => {
-                    const isUnsigned = !booking.cleaner;
-                    const cleanerName = getCleanerName(booking);
-                    
-                    return (
-                      <TableRow 
-                        key={booking.id} 
-                        className={`cursor-pointer ${isUnsigned ? "bg-red-50 hover:bg-red-100 border-l-4 border-red-500" : "hover:bg-gray-50"}`}
-                        onClick={() => handleEdit(booking.id)}
-                      >
-                        <TableCell>
-                          <div className="text-sm">
-                            <div className="font-medium">
-                              {format(new Date(booking.date_time), 'dd/MM/yyyy')}
+                </TableHeader>
+                <TableBody>
+                  {paginatedBookings.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8">
+                        No bookings found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedBookings.map((booking) => {
+                      const isUnsigned = !booking.cleaner;
+                      const cleanerName = getCleanerName(booking);
+                      
+                      return (
+                        <TableRow 
+                          key={booking.id} 
+                          className={`cursor-pointer ${isUnsigned ? "bg-red-50 hover:bg-red-100 border-l-4 border-red-500" : "hover:bg-gray-50"}`}
+                          onClick={() => handleEdit(booking.id)}
+                        >
+                          <TableCell>
+                            <div className="text-sm">
+                              <div className="font-medium">
+                                {format(new Date(booking.date_time), 'dd/MM/yyyy')}
+                              </div>
+                              <div className="text-gray-500">
+                                {format(new Date(booking.date_time), 'HH:mm')}
+                              </div>
                             </div>
-                            <div className="text-gray-500">
-                              {format(new Date(booking.date_time), 'HH:mm')}
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              <div className="font-medium">
+                                {booking.first_name} {booking.last_name}
+                              </div>
+                              <div className="text-gray-500">
+                                ID: {booking.customer}
+                              </div>
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            <div className="font-medium">
-                              {booking.first_name} {booking.last_name}
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              <div>{booking.email}</div>
+                              <div className="text-gray-500">{booking.phone_number}</div>
                             </div>
-                            <div className="text-gray-500">
-                              ID: {booking.customer}
+                          </TableCell>
+                          <TableCell className="max-w-32 truncate">
+                            {booking.address}
+                          </TableCell>
+                          <TableCell>{booking.cleaning_type || 'N/A'}</TableCell>
+                          <TableCell>
+                            {isUnsigned ? (
+                              <Badge variant="destructive" className="bg-red-600 text-white">
+                                Unsigned
+                              </Badge>
+                            ) : (
+                              <span className="text-green-700 font-medium">{cleanerName}</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            £{booking.total_cost?.toFixed(2) || '0.00'}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEdit(booking.id);
+                                }}
+                                title="Edit"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDuplicate(booking);
+                                }}
+                                title="Duplicate"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAssignCleaner(booking.id);
+                                }}
+                                title="Assign Cleaner"
+                              >
+                                <UserPlus className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCancel(booking.id);
+                                }}
+                                title="Cancel"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMakeRecurring(booking);
+                                }}
+                                title="Make Recurring"
+                              >
+                                <Repeat className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(booking.id);
+                                }}
+                                title="Delete"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                              <div
+                                className="flex items-center justify-center h-8 w-8"
+                                title={booking.payment_status || 'Unpaid'}
+                              >
+                                <DollarSign 
+                                  className={`h-4 w-4 ${
+                                    booking.payment_status?.toLowerCase() === 'paid' 
+                                      ? 'text-green-600' 
+                                      : booking.payment_status?.toLowerCase() === 'collecting'
+                                      ? 'text-orange-500'
+                                      : 'text-red-600'
+                                  }`}
+                                />
+                              </div>
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            <div>{booking.email}</div>
-                            <div className="text-gray-500">{booking.phone_number}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="max-w-32 truncate">
-                          {booking.address}
-                        </TableCell>
-                        <TableCell>{booking.cleaning_type || 'N/A'}</TableCell>
-                        <TableCell>
-                          {isUnsigned ? (
-                            <Badge variant="destructive" className="bg-red-600 text-white">
-                              Unsigned
-                            </Badge>
-                          ) : (
-                            <span className="text-green-700 font-medium">{cleanerName}</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          £{booking.total_cost?.toFixed(2) || '0.00'}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEdit(booking.id);
-                              }}
-                              title="Edit"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDuplicate(booking);
-                              }}
-                              title="Duplicate"
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAssignCleaner(booking.id);
-                              }}
-                              title="Assign Cleaner"
-                            >
-                              <UserPlus className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleCancel(booking.id);
-                              }}
-                              title="Cancel"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleMakeRecurring(booking);
-                              }}
-                              title="Make Recurring"
-                            >
-                              <Repeat className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(booking.id);
-                              }}
-                              title="Delete"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                            <div
-                              className="flex items-center justify-center h-8 w-8"
-                              title={booking.payment_status || 'Unpaid'}
-                            >
-                              <DollarSign 
-                                className={`h-4 w-4 ${
-                                  booking.payment_status?.toLowerCase() === 'paid' 
-                                    ? 'text-green-600' 
-                                    : booking.payment_status?.toLowerCase() === 'collecting'
-                                    ? 'text-orange-500'
-                                    : 'text-red-600'
-                                }`}
-                              />
-                            </div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="p-4" style={{ height: '600px' }}>
+              <BigCalendar
+                localizer={localizer}
+                events={filteredBookings.map(booking => ({
+                  id: booking.id,
+                  title: `${booking.first_name} ${booking.last_name} - ${booking.cleaning_type}`,
+                  start: new Date(booking.date_time),
+                  end: new Date(new Date(booking.date_time).getTime() + 2 * 60 * 60 * 1000), // 2 hours default
+                  resource: booking,
+                }))}
+                startAccessor="start"
+                endAccessor="end"
+                style={{ height: '100%' }}
+                onSelectEvent={(event) => handleEdit(event.resource.id)}
+                eventPropGetter={(event) => {
+                  const isUnsigned = !event.resource.cleaner;
+                  return {
+                    style: {
+                      backgroundColor: isUnsigned ? '#ef4444' : '#3b82f6',
+                      borderColor: isUnsigned ? '#dc2626' : '#2563eb',
+                      color: 'white',
+                      borderRadius: '4px',
+                      border: 'none',
+                    }
+                  };
+                }}
+                views={['month', 'week', 'day']}
+                defaultView="month"
+                popup
+                components={{
+                  event: ({ event }) => (
+                    <div className="text-xs">
+                      <div className="font-medium">{event.resource.first_name} {event.resource.last_name}</div>
+                      <div>{event.resource.cleaning_type}</div>
+                      <div>£{event.resource.total_cost?.toFixed(2)}</div>
+                      {!event.resource.cleaner && <div className="text-red-200">Unsigned</div>}
+                    </div>
+                  ),
+                }}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 
