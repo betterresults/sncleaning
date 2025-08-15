@@ -82,12 +82,24 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       const fileName = `${timestamp}_${index}_${file.name}`;
       const filePath = `${folderPath}/${photoType}/${fileName}`;
 
-      // Upload to storage
-      const { error: uploadError } = await supabase.storage
+      console.log('Attempting to upload file:', { filePath, fileSize: file.size, fileType: file.type });
+
+      // Upload to storage with detailed error logging
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('cleaning.photos')
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Storage upload error:', {
+          error: uploadError,
+          filePath,
+          fileSize: file.size,
+          fileType: file.type
+        });
+        throw new Error(`Upload failed for ${file.name}: ${uploadError.message}`);
+      }
+
+      console.log('File uploaded successfully:', { filePath, uploadData });
 
       // Save metadata to database with better error handling
       console.log('Saving photo metadata to database:', {
