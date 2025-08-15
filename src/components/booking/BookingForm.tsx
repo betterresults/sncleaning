@@ -49,6 +49,9 @@ interface BookingData {
   // Payment
   paymentMethod: string;
   paymentStatus: string;
+  
+  // Recurring booking support
+  recurringGroupId?: string | null;
 }
 
 const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
@@ -76,7 +79,8 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
     additionalDetails: '',
     carpetCleaning: false,
     paymentMethod: 'Cash',
-    paymentStatus: 'Unpaid'
+    paymentStatus: 'Unpaid',
+    recurringGroupId: null
   });
 
   const handleInputChange = (field: keyof BookingData, value: string | number | boolean) => {
@@ -109,12 +113,28 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
     }
   };
 
-  const handleCleanerSelect = (cleaner: any) => {
+  const handleCleanerSelect = async (cleaner: any) => {
     if (cleaner) {
+      let cleanerRate = cleaner.hourly_rate || 0;
+      
+      // Check for custom rates if this is for a recurring booking
+      if (formData.recurringGroupId) {
+        const { data: customRate } = await supabase
+          .from('cleaner_recurring_rates')
+          .select('custom_hourly_rate, custom_percentage_rate')
+          .eq('cleaner_id', cleaner.id)
+          .eq('recurring_group_id', formData.recurringGroupId)
+          .single();
+          
+        if (customRate && customRate.custom_hourly_rate) {
+          cleanerRate = customRate.custom_hourly_rate;
+        }
+      }
+      
       setFormData(prev => ({
         ...prev,
         cleanerId: cleaner.id,
-        cleanerHourlyRate: cleaner.hourly_rate || 0,
+        cleanerHourlyRate: cleanerRate,
         cleanerPercentageRate: cleaner.presentage_rate || 70
       }));
     } else {
@@ -188,6 +208,30 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
           variant: "destructive",
         });
         return;
+      }
+
+      // Save custom cleaner rate if different from default and this is a recurring booking
+      if (formData.cleanerId && formData.cleanerHourlyRate && formData.recurringGroupId) {
+        const { data: cleanerData } = await supabase
+          .from('cleaners')
+          .select('hourly_rate')
+          .eq('id', formData.cleanerId)
+          .single();
+          
+        if (cleanerData && cleanerData.hourly_rate !== formData.cleanerHourlyRate) {
+          const { error: rateError } = await supabase
+            .from('cleaner_recurring_rates')
+            .upsert([{
+              cleaner_id: formData.cleanerId,
+              recurring_group_id: formData.recurringGroupId,
+              custom_hourly_rate: formData.cleanerHourlyRate,
+              custom_percentage_rate: null
+            }]);
+          
+          if (rateError) {
+            console.error('Error saving custom cleaner rate:', rateError);
+          }
+        }
       }
 
       toast({

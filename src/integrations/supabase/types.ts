@@ -391,6 +391,36 @@ export type Database = {
           },
         ]
       }
+      cleaner_recurring_rates: {
+        Row: {
+          cleaner_id: number
+          created_at: string
+          custom_hourly_rate: number | null
+          custom_percentage_rate: number | null
+          id: string
+          recurring_group_id: string
+          updated_at: string
+        }
+        Insert: {
+          cleaner_id: number
+          created_at?: string
+          custom_hourly_rate?: number | null
+          custom_percentage_rate?: number | null
+          id?: string
+          recurring_group_id: string
+          updated_at?: string
+        }
+        Update: {
+          cleaner_id?: number
+          created_at?: string
+          custom_hourly_rate?: number | null
+          custom_percentage_rate?: number | null
+          id?: string
+          recurring_group_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cleaner_tracking: {
         Row: {
           booking_id: number
@@ -668,6 +698,7 @@ export type Database = {
           clent_type: string | null
           client_status: string | null
           company: string | null
+          created_at: string | null
           email: string | null
           first_name: string | null
           full_name: string | null
@@ -681,6 +712,7 @@ export type Database = {
           clent_type?: string | null
           client_status?: string | null
           company?: string | null
+          created_at?: string | null
           email?: string | null
           first_name?: string | null
           full_name?: string | null
@@ -694,6 +726,7 @@ export type Database = {
           clent_type?: string | null
           client_status?: string | null
           company?: string | null
+          created_at?: string | null
           email?: string | null
           first_name?: string | null
           full_name?: string | null
