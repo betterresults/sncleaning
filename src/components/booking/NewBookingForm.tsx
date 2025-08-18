@@ -338,17 +338,21 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
         .eq('is_default', true)
         .single();
       
-      if (data && !error) {
+      if (data && !error && data.address && data.postcode) {
         setFormData(prev => ({
           ...prev,
           useClientAddressForKeys: checked,
           keyPickupAddress: `${data.address}, ${data.postcode}`
         }));
       } else {
-        console.log('No address found for this customer');
+        toast({
+          title: "No Address Found",
+          description: "This customer doesn't have a saved address for key pickup. Please enter it manually.",
+          variant: "destructive",
+        });
         setFormData(prev => ({
           ...prev,
-          useClientAddressForKeys: checked
+          useClientAddressForKeys: false
         }));
       }
     } else {
