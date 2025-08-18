@@ -157,6 +157,7 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
     'Card',
     'Bank Transfer',
     'Online',
+    'Stripe',
     'Invoiless'
   ]);
 
@@ -1155,6 +1156,20 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
                         {method}
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="paymentStatus" className="text-sm font-semibold text-gray-700">Payment Status</Label>
+                <Select value={formData.paymentStatus} onValueChange={(value) => handleInputChange('paymentStatus', value)}>
+                  <SelectTrigger className="border-2 border-gray-200 focus:border-indigo-500">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Unpaid">Unpaid</SelectItem>
+                    <SelectItem value="Paid">Paid</SelectItem>
+                    <SelectItem value="Partially Paid">Partially Paid</SelectItem>
+                    <SelectItem value="Pending">Pending</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
