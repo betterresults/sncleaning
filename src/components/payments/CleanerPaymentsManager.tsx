@@ -198,7 +198,7 @@ const CleanerPaymentsManager = () => {
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [selectedCleanerIds, setSelectedCleanerIds] = useState<string[]>([]);
   const [paymentData, setPaymentData] = useState<{ [cleanerId: string]: PaymentData }>({});
-  const [period, setPeriod] = useState<'last_month' | 'current_month' | 'custom'>('current_month');
+  const [period, setPeriod] = useState<'last_month' | 'current_month'>('current_month');
   const [customStartDate, setCustomStartDate] = useState<Date>();
   const [customEndDate, setCustomEndDate] = useState<Date>();
   const [loading, setLoading] = useState(false);
@@ -238,6 +238,14 @@ const CleanerPaymentsManager = () => {
   };
 
   const getDateRange = () => {
+    // If custom dates are set, use them, otherwise use period selection
+    if (customStartDate && customEndDate) {
+      return {
+        start: customStartDate,
+        end: customEndDate
+      };
+    }
+    
     const now = new Date();
     if (period === 'current_month') {
       return {
@@ -250,13 +258,8 @@ const CleanerPaymentsManager = () => {
         start: startOfMonth(lastMonth),
         end: endOfMonth(lastMonth)
       };
-    } else if (period === 'custom' && customStartDate && customEndDate) {
-      return {
-        start: customStartDate,
-        end: customEndDate
-      };
     } else {
-      // Default to current month if custom dates not set
+      // Default to current month
       return {
         start: startOfMonth(now),
         end: endOfMonth(now)
@@ -342,6 +345,39 @@ const CleanerPaymentsManager = () => {
     return { totalEarnings, totalJobs, averagePerJob };
   };
 
+  const handleMarkAllPaid = async () => {
+    try {
+      const allBookingIds: number[] = [];
+      
+      // Collect all booking IDs from selected cleaners
+      Object.values(paymentData).forEach(data => {
+        data.bookings.forEach(booking => {
+          if (booking.cleaner_pay_status !== 'Paid') {
+            allBookingIds.push(booking.id);
+          }
+        });
+      });
+
+      if (allBookingIds.length === 0) {
+        toast.info('No unpaid bookings to mark as paid');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('past_bookings')
+        .update({ cleaner_pay_status: 'Paid' })
+        .in('id', allBookingIds);
+
+      if (error) throw error;
+
+      toast.success(`Marked ${allBookingIds.length} bookings as paid`);
+      fetchPaymentData();
+    } catch (error) {
+      console.error('Error marking payments as paid:', error);
+      toast.error('Failed to mark payments as paid');
+    }
+  };
+
   const { start, end } = getDateRange();
   const totalStats = getTotalStats();
 
@@ -391,75 +427,72 @@ const CleanerPaymentsManager = () => {
           <CardContent className="space-y-4">
             <div>
               <label className="text-sm font-medium mb-2 block">Quick Select</label>
-              <Select value={period} onValueChange={(value: 'last_month' | 'current_month' | 'custom') => setPeriod(value)}>
+              <Select value={period} onValueChange={(value: 'last_month' | 'current_month') => setPeriod(value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="last_month">Last Month</SelectItem>
                   <SelectItem value="current_month">Current Month</SelectItem>
-                  <SelectItem value="custom">Custom Range</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {period === 'custom' && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Start Date</label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !customStartDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {customStartDate ? format(customStartDate, "PPP") : "Pick start date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={customStartDate}
-                        onSelect={setCustomStartDate}
-                        initialFocus
-                        className="p-3 pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-2 block">End Date</label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !customEndDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {customEndDate ? format(customEndDate, "PPP") : "Pick end date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={customEndDate}
-                        onSelect={setCustomEndDate}
-                        initialFocus
-                        className="p-3 pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Start Date</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !customStartDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {customStartDate ? format(customStartDate, "PPP") : "Pick start date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={customStartDate}
+                      onSelect={setCustomStartDate}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
-            )}
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">End Date</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !customEndDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {customEndDate ? format(customEndDate, "PPP") : "Pick end date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={customEndDate}
+                      onSelect={setCustomEndDate}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
 
             <p className="text-sm text-muted-foreground">
               Period: {format(start, 'MMM dd, yyyy')} - {format(end, 'MMM dd, yyyy')}
@@ -475,39 +508,49 @@ const CleanerPaymentsManager = () => {
       ) : selectedCleanerIds.length > 0 && Object.keys(paymentData).length > 0 ? (
         <>
           {/* Overall Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">£{totalStats.totalEarnings.toFixed(2)}</div>
-                <p className="text-xs text-muted-foreground">
-                  {selectedCleanerIds.length} cleaner{selectedCleanerIds.length > 1 ? 's' : ''}
-                </p>
-              </CardContent>
-            </Card>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold">Payment Summary</h3>
+              <Button onClick={handleMarkAllPaid} className="flex items-center gap-2">
+                <Check className="h-4 w-4" />
+                Mark All as Paid
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">£{totalStats.totalEarnings.toFixed(2)}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedCleanerIds.length} cleaner{selectedCleanerIds.length > 1 ? 's' : ''}
+                  </p>
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Jobs</CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{totalStats.totalJobs}</div>
-              </CardContent>
-            </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Jobs</CardTitle>
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{totalStats.totalJobs}</div>
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Average per Job</CardTitle>
-                <Clock className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">£{totalStats.averagePerJob.toFixed(2)}</div>
-              </CardContent>
-            </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Average per Job</CardTitle>
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">£{totalStats.averagePerJob.toFixed(2)}</div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           {/* Individual Cleaner Breakdowns */}
