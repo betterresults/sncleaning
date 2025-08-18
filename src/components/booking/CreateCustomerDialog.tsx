@@ -84,8 +84,8 @@ const CreateCustomerDialog = ({ children, onCustomerCreated }: CreateCustomerDia
         
         const addressData = {
           customer_id: data.id,
-          address: formData.address || 'Not specified',
-          postcode: formData.postcode || 'Not specified',
+          address: formData.address || '',
+          postcode: formData.postcode || '',
           is_default: true
         };
 

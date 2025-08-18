@@ -280,12 +280,12 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
           .eq('is_default', true)
           .single();
         
-        if (data && !error) {
+        if (data && !error && data.address && data.postcode) {
           setFormData(prev => ({
             ...prev,
             useClientAddress: checked,
-            address: data.address || '',
-            postcode: data.postcode || ''
+            address: data.address,
+            postcode: data.postcode
           }));
         } else {
           // If no default address found, try to get any address for this customer
@@ -296,19 +296,23 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
             .limit(1)
             .single();
           
-          if (anyAddress && !anyError) {
+          if (anyAddress && !anyError && anyAddress.address && anyAddress.postcode) {
             setFormData(prev => ({
               ...prev,
               useClientAddress: checked,
-              address: anyAddress.address || '',
-              postcode: anyAddress.postcode || ''
+              address: anyAddress.address,
+              postcode: anyAddress.postcode
             }));
           } else {
             // Show a message if no address is found
-            console.log('No address found for this customer');
+            toast({
+              title: "No Address Found",
+              description: "This customer doesn't have a saved address. Please enter it manually.",
+              variant: "destructive",
+            });
             setFormData(prev => ({
               ...prev,
-              useClientAddress: checked
+              useClientAddress: false
             }));
           }
         }
