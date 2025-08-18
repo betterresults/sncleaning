@@ -43,9 +43,11 @@ interface PaymentData {
 interface BookingPaymentCardProps {
   booking: BookingPayment;
   onUpdate: () => void;
+  isSelected: boolean;
+  onSelectionChange: (bookingId: number, selected: boolean) => void;
 }
 
-const BookingPaymentCard: React.FC<BookingPaymentCardProps> = ({ booking, onUpdate }) => {
+const BookingPaymentCard: React.FC<BookingPaymentCardProps> = ({ booking, onUpdate, isSelected, onSelectionChange }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingPay, setEditingPay] = useState(booking.cleaner_pay?.toString() || '0');
   const [editingStatus, setEditingStatus] = useState(booking.cleaner_pay_status || 'Unpaid');
@@ -117,22 +119,28 @@ const BookingPaymentCard: React.FC<BookingPaymentCardProps> = ({ booking, onUpda
   return (
     <Card className="p-4">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div className="flex-1 space-y-2">
-          <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-muted-foreground" />
-            <span className="font-medium">{booking.address}</span>
-          </div>
-          
-          {customerName && (
+        <div className="flex items-center gap-3">
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={(checked) => onSelectionChange(booking.id, checked as boolean)}
+          />
+          <div className="flex-1 space-y-2">
             <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Customer: {customerName}</span>
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">{booking.address}</span>
             </div>
-          )}
-          
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span>{format(new Date(booking.date_time), 'MMM dd, yyyy HH:mm')}</span>
-            <span>{booking.total_hours}h</span>
+            
+            {customerName && (
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Customer: {customerName}</span>
+              </div>
+            )}
+            
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <span>{format(new Date(booking.date_time), 'MMM dd, yyyy HH:mm')}</span>
+              <span>{booking.total_hours}h</span>
+            </div>
           </div>
         </div>
 
@@ -197,6 +205,7 @@ const BookingPaymentCard: React.FC<BookingPaymentCardProps> = ({ booking, onUpda
 const CleanerPaymentsManager = () => {
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [selectedCleanerIds, setSelectedCleanerIds] = useState<string[]>([]);
+  const [selectedBookingIds, setSelectedBookingIds] = useState<number[]>([]);
   const [paymentData, setPaymentData] = useState<{ [cleanerId: string]: PaymentData }>({});
   const [period, setPeriod] = useState<'last_month' | 'current_month'>('current_month');
   const [customStartDate, setCustomStartDate] = useState<Date>();
@@ -345,32 +354,30 @@ const CleanerPaymentsManager = () => {
     return { totalEarnings, totalJobs, averagePerJob };
   };
 
-  const handleMarkAllPaid = async () => {
-    try {
-      const allBookingIds: number[] = [];
-      
-      // Collect all booking IDs from selected cleaners
-      Object.values(paymentData).forEach(data => {
-        data.bookings.forEach(booking => {
-          if (booking.cleaner_pay_status !== 'Paid') {
-            allBookingIds.push(booking.id);
-          }
-        });
-      });
+  const handleBookingSelectionChange = (bookingId: number, selected: boolean) => {
+    if (selected) {
+      setSelectedBookingIds([...selectedBookingIds, bookingId]);
+    } else {
+      setSelectedBookingIds(selectedBookingIds.filter(id => id !== bookingId));
+    }
+  };
 
-      if (allBookingIds.length === 0) {
-        toast.info('No unpaid bookings to mark as paid');
+  const handleMarkSelectedPaid = async () => {
+    try {
+      if (selectedBookingIds.length === 0) {
+        toast.info('No bookings selected to mark as paid');
         return;
       }
 
       const { error } = await supabase
         .from('past_bookings')
         .update({ cleaner_pay_status: 'Paid' })
-        .in('id', allBookingIds);
+        .in('id', selectedBookingIds);
 
       if (error) throw error;
 
-      toast.success(`Marked ${allBookingIds.length} bookings as paid`);
+      toast.success(`Marked ${selectedBookingIds.length} bookings as paid`);
+      setSelectedBookingIds([]); // Clear selection after marking as paid
       fetchPaymentData();
     } catch (error) {
       console.error('Error marking payments as paid:', error);
@@ -511,9 +518,13 @@ const CleanerPaymentsManager = () => {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-semibold">Payment Summary</h3>
-              <Button onClick={handleMarkAllPaid} className="flex items-center gap-2">
+              <Button 
+                onClick={handleMarkSelectedPaid} 
+                className="flex items-center gap-2"
+                disabled={selectedBookingIds.length === 0}
+              >
                 <Check className="h-4 w-4" />
-                Mark All as Paid
+                Mark Selected as Paid ({selectedBookingIds.length})
               </Button>
             </div>
             
@@ -580,13 +591,15 @@ const CleanerPaymentsManager = () => {
                     </p>
                   ) : (
                     <div className="space-y-4">
-                      {data.bookings.map((booking) => (
-                        <BookingPaymentCard 
-                          key={booking.id}
-                          booking={booking}
-                          onUpdate={fetchPaymentData}
-                        />
-                      ))}
+                       {data.bookings.map((booking) => (
+                         <BookingPaymentCard 
+                           key={booking.id}
+                           booking={booking}
+                           onUpdate={fetchPaymentData}
+                           isSelected={selectedBookingIds.includes(booking.id)}
+                           onSelectionChange={handleBookingSelectionChange}
+                         />
+                       ))}
                     </div>
                   )}
                 </CardContent>
