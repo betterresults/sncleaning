@@ -417,47 +417,33 @@ const CleanerPaymentsManager = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              Select Cleaners
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="select-all"
-                  checked={allCleanersSelected}
-                  onCheckedChange={handleSelectAll}
-                />
-                <label htmlFor="select-all" className="text-sm font-medium">
-                  Select All
-                </label>
-              </div>
-            </CardTitle>
+            <CardTitle>Cleaners</CardTitle>
           </CardHeader>
-          <CardContent className="max-h-48 overflow-y-auto">
-            <div className="space-y-2">
-              {cleaners.map((cleaner) => (
-                <div key={cleaner.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`cleaner-${cleaner.id}`}
-                    checked={selectedCleanerIds.includes(cleaner.id.toString())}
-                    onCheckedChange={(checked) => 
-                      handleCleanerToggle(cleaner.id.toString(), checked as boolean)
-                    }
-                  />
-                  <label htmlFor={`cleaner-${cleaner.id}`} className="text-sm">
-                    {cleaner.first_name} {cleaner.last_name}
-                  </label>
-                </div>
-              ))}
+          <CardContent>
+            <div className="flex items-center space-x-2 mb-4">
+              <Checkbox
+                id="select-all-cleaners"
+                checked={allCleanersSelected}
+                onCheckedChange={handleSelectAll}
+              />
+              <label htmlFor="select-all-cleaners" className="text-sm font-medium">
+                All cleaners
+              </label>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {selectedCleanerIds.length === 0 
+                ? "No cleaners selected" 
+                : selectedCleanerIds.length === cleaners.length
+                ? `All cleaners (${cleaners.length})`
+                : `Selected cleaners (${selectedCleanerIds.length})`
+              }
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Period Selection</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="pt-6 space-y-4">
             <div>
-              <label className="text-sm font-medium mb-2 block">Quick Select</label>
               <Select value={period} onValueChange={(value: 'last_month' | 'current_month') => setPeriod(value)}>
                 <SelectTrigger>
                   <SelectValue />
@@ -469,64 +455,58 @@ const CleanerPaymentsManager = () => {
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Start Date</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !customStartDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {customStartDate ? format(customStartDate, "PPP") : "Pick start date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent
-                      mode="single"
-                      selected={customStartDate}
-                      onSelect={setCustomStartDate}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "justify-start text-left font-normal text-sm h-9",
+                      !customStartDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-3 w-3" />
+                    {customStartDate ? format(customStartDate, "dd/MM/yy") : "Start date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={customStartDate}
+                    onSelect={setCustomStartDate}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
 
-              <div>
-                <label className="text-sm font-medium mb-2 block">End Date</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !customEndDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {customEndDate ? format(customEndDate, "PPP") : "Pick end date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent
-                      mode="single"
-                      selected={customEndDate}
-                      onSelect={setCustomEndDate}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "justify-start text-left font-normal text-sm h-9",
+                      !customEndDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-3 w-3" />
+                    {customEndDate ? format(customEndDate, "dd/MM/yy") : "End date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={customEndDate}
+                    onSelect={setCustomEndDate}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <p className="text-sm text-muted-foreground">
-              Period: {format(start, 'MMM dd, yyyy')} - {format(end, 'MMM dd, yyyy')}
+              {format(start, 'dd MMM yyyy')} - {format(end, 'dd MMM yyyy')}
             </p>
           </CardContent>
         </Card>
@@ -538,69 +518,39 @@ const CleanerPaymentsManager = () => {
         </div>
       ) : selectedCleanerIds.length > 0 && Object.keys(paymentData).length > 0 ? (
         <>
-          {/* Overall Summary */}
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-4">
-                <h3 className="text-lg font-semibold">Payment Summary</h3>
-                {getTotalBookingsCount() > 0 && (
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="select-all-bookings"
-                      checked={areAllBookingsSelected()}
-                      onCheckedChange={handleSelectAllBookings}
-                    />
-                    <label htmlFor="select-all-bookings" className="text-sm font-medium">
-                      Select All Bookings ({getTotalBookingsCount()})
-                    </label>
-                  </div>
-                )}
-              </div>
-              {selectedBookingIds.length > 0 && (
-                <Button 
-                  onClick={handleMarkSelectedPaid} 
-                  className="flex items-center gap-2"
-                >
-                  <Check className="h-4 w-4" />
-                  Mark Selected as Paid ({selectedBookingIds.length})
-                </Button>
-              )}
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">£{totalStats.totalEarnings.toFixed(2)}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {selectedCleanerIds.length} cleaner{selectedCleanerIds.length > 1 ? 's' : ''}
-                  </p>
-                </CardContent>
-              </Card>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">£{totalStats.totalEarnings.toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground">
+                  {selectedCleanerIds.length} cleaner{selectedCleanerIds.length > 1 ? 's' : ''}
+                </p>
+              </CardContent>
+            </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Jobs</CardTitle>
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{totalStats.totalJobs}</div>
-                </CardContent>
-              </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Jobs</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{totalStats.totalJobs}</div>
+              </CardContent>
+            </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Average per Job</CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">£{totalStats.averagePerJob.toFixed(2)}</div>
-                </CardContent>
-              </Card>
-            </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Average per Job</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">£{totalStats.averagePerJob.toFixed(2)}</div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Individual Cleaner Breakdowns */}
@@ -613,14 +563,51 @@ const CleanerPaymentsManager = () => {
             return (
               <Card key={cleanerId}>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    {cleaner.first_name} {cleaner.last_name}
-                  </CardTitle>
-                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                    <span>Earnings: £{data.totalEarnings.toFixed(2)}</span>
-                    <span>Jobs: {data.completedJobs}</span>
-                    <span>Avg: £{data.averagePerJob.toFixed(2)}</span>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <User className="h-5 w-5" />
+                        {cleaner.first_name} {cleaner.last_name}
+                      </CardTitle>
+                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                        <span>Earnings: £{data.totalEarnings.toFixed(2)}</span>
+                        <span>Jobs: {data.completedJobs}</span>
+                        <span>Avg: £{data.averagePerJob.toFixed(2)}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {data.bookings.length > 0 && (
+                        <>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`select-all-${cleanerId}`}
+                              checked={data.bookings.every(booking => selectedBookingIds.includes(booking.id))}
+                              onCheckedChange={(checked) => {
+                                const cleanerBookingIds = data.bookings.map(b => b.id);
+                                if (checked) {
+                                  setSelectedBookingIds([...selectedBookingIds, ...cleanerBookingIds.filter(id => !selectedBookingIds.includes(id))]);
+                                } else {
+                                  setSelectedBookingIds(selectedBookingIds.filter(id => !cleanerBookingIds.includes(id)));
+                                }
+                              }}
+                            />
+                            <label htmlFor={`select-all-${cleanerId}`} className="text-sm font-medium">
+                              Select All ({data.bookings.length})
+                            </label>
+                          </div>
+                          {selectedBookingIds.some(id => data.bookings.some(b => b.id === id)) && (
+                            <Button 
+                              size="sm"
+                              onClick={handleMarkSelectedPaid} 
+                              className="flex items-center gap-2"
+                            >
+                              <Check className="h-4 w-4" />
+                              Mark Selected as Paid
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
