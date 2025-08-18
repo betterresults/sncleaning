@@ -362,6 +362,30 @@ const CleanerPaymentsManager = () => {
     }
   };
 
+  const handleSelectAllBookings = (selectAll: boolean) => {
+    if (selectAll) {
+      // Collect all booking IDs from current payment data
+      const allBookingIds: number[] = [];
+      Object.values(paymentData).forEach(data => {
+        data.bookings.forEach(booking => {
+          allBookingIds.push(booking.id);
+        });
+      });
+      setSelectedBookingIds(allBookingIds);
+    } else {
+      setSelectedBookingIds([]);
+    }
+  };
+
+  const getTotalBookingsCount = () => {
+    return Object.values(paymentData).reduce((total, data) => total + data.bookings.length, 0);
+  };
+
+  const areAllBookingsSelected = () => {
+    const totalBookings = getTotalBookingsCount();
+    return totalBookings > 0 && selectedBookingIds.length === totalBookings;
+  };
+
   const handleMarkSelectedPaid = async () => {
     try {
       if (selectedBookingIds.length === 0) {
@@ -517,15 +541,30 @@ const CleanerPaymentsManager = () => {
           {/* Overall Summary */}
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Payment Summary</h3>
-              <Button 
-                onClick={handleMarkSelectedPaid} 
-                className="flex items-center gap-2"
-                disabled={selectedBookingIds.length === 0}
-              >
-                <Check className="h-4 w-4" />
-                Mark Selected as Paid ({selectedBookingIds.length})
-              </Button>
+              <div className="flex items-center gap-4">
+                <h3 className="text-lg font-semibold">Payment Summary</h3>
+                {getTotalBookingsCount() > 0 && (
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="select-all-bookings"
+                      checked={areAllBookingsSelected()}
+                      onCheckedChange={handleSelectAllBookings}
+                    />
+                    <label htmlFor="select-all-bookings" className="text-sm font-medium">
+                      Select All Bookings ({getTotalBookingsCount()})
+                    </label>
+                  </div>
+                )}
+              </div>
+              {selectedBookingIds.length > 0 && (
+                <Button 
+                  onClick={handleMarkSelectedPaid} 
+                  className="flex items-center gap-2"
+                >
+                  <Check className="h-4 w-4" />
+                  Mark Selected as Paid ({selectedBookingIds.length})
+                </Button>
+              )}
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
