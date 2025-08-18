@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -7,10 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
-import { Calendar, DollarSign, Clock, User, Edit2, Check, X, MapPin, CalendarIcon } from 'lucide-react';
+import { Calendar, DollarSign, Clock, User, Edit2, Check, X, MapPin, CalendarIcon, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Cleaner {
@@ -211,7 +212,9 @@ const CleanerPaymentsManager = () => {
   const [customStartDate, setCustomStartDate] = useState<Date>();
   const [customEndDate, setCustomEndDate] = useState<Date>();
   const [loading, setLoading] = useState(false);
-  const [allCleanersSelected, setAllCleanersSelected] = useState(true);
+  const [cleanerDropdownOpen, setCleanerDropdownOpen] = useState(false);
+  const [cleanerSearchQuery, setCleanerSearchQuery] = useState('');
+  const endDateRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     fetchCleaners();
@@ -221,7 +224,6 @@ const CleanerPaymentsManager = () => {
     if (cleaners.length > 0) {
       // Set all cleaners selected by default for current month
       setSelectedCleanerIds(cleaners.map(c => c.id.toString()));
-      setAllCleanersSelected(true);
     }
   }, [cleaners]);
 
@@ -333,17 +335,32 @@ const CleanerPaymentsManager = () => {
     } else {
       setSelectedCleanerIds(selectedCleanerIds.filter(id => id !== cleanerId));
     }
-    setAllCleanersSelected(false);
   };
 
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedCleanerIds(cleaners.map(c => c.id.toString()));
-      setAllCleanersSelected(true);
+  const handleSelectAllCleaners = () => {
+    setSelectedCleanerIds(cleaners.map(c => c.id.toString()));
+    setCleanerDropdownOpen(false);
+  };
+
+  const getCleanerDisplayText = () => {
+    if (selectedCleanerIds.length === 0) {
+      return "Select cleaners";
+    } else if (selectedCleanerIds.length === cleaners.length) {
+      return "All cleaners";
     } else {
-      setSelectedCleanerIds([]);
-      setAllCleanersSelected(false);
+      return `Selected cleaners (${selectedCleanerIds.length})`;
     }
+  };
+
+  const filteredCleaners = cleaners.filter(cleaner => 
+    `${cleaner.first_name} ${cleaner.last_name}`.toLowerCase().includes(cleanerSearchQuery.toLowerCase())
+  );
+
+  const getPeriodDisplayText = () => {
+    if (customStartDate && customEndDate) {
+      return "Custom range";
+    }
+    return period === 'current_month' ? 'Current Month' : 'Last Month';
   };
 
   const getTotalStats = () => {
@@ -416,44 +433,73 @@ const CleanerPaymentsManager = () => {
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
-          <CardHeader>
-            <CardTitle>Cleaners</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center space-x-2 mb-4">
-              <Checkbox
-                id="select-all-cleaners"
-                checked={allCleanersSelected}
-                onCheckedChange={handleSelectAll}
-              />
-              <label htmlFor="select-all-cleaners" className="text-sm font-medium">
-                All cleaners
-              </label>
-            </div>
-            <div className="text-sm text-muted-foreground">
-              {selectedCleanerIds.length === 0 
-                ? "No cleaners selected" 
-                : selectedCleanerIds.length === cleaners.length
-                ? `All cleaners (${cleaners.length})`
-                : `Selected cleaners (${selectedCleanerIds.length})`
-              }
-            </div>
+          <CardContent className="pt-6">
+            <Popover open={cleanerDropdownOpen} onOpenChange={setCleanerDropdownOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={cleanerDropdownOpen}
+                  className="w-full justify-between"
+                >
+                  {getCleanerDisplayText()}
+                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0" align="start">
+                <Command>
+                  <CommandInput 
+                    placeholder="Search cleaners..." 
+                    value={cleanerSearchQuery}
+                    onValueChange={setCleanerSearchQuery}
+                  />
+                  <CommandEmpty>No cleaners found.</CommandEmpty>
+                  <CommandGroup className="max-h-64 overflow-auto">
+                    <CommandItem
+                      onSelect={handleSelectAllCleaners}
+                      className="cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={selectedCleanerIds.length === cleaners.length}
+                        className="mr-2"
+                      />
+                      All cleaners
+                    </CommandItem>
+                    {filteredCleaners.map((cleaner) => (
+                      <CommandItem
+                        key={cleaner.id}
+                        onSelect={() => handleCleanerToggle(cleaner.id.toString(), !selectedCleanerIds.includes(cleaner.id.toString()))}
+                        className="cursor-pointer"
+                      >
+                        <Checkbox
+                          checked={selectedCleanerIds.includes(cleaner.id.toString())}
+                          className="mr-2"
+                        />
+                        {cleaner.first_name} {cleaner.last_name}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="pt-6 space-y-4">
-            <div>
-              <Select value={period} onValueChange={(value: 'last_month' | 'current_month') => setPeriod(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="last_month">Last Month</SelectItem>
-                  <SelectItem value="current_month">Current Month</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {!(customStartDate && customEndDate) && (
+              <div>
+                <Select value={period} onValueChange={(value: 'last_month' | 'current_month') => setPeriod(value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={getPeriodDisplayText()} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="last_month">Last Month</SelectItem>
+                    <SelectItem value="current_month">Current Month</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-2">
               <Popover>
@@ -473,7 +519,13 @@ const CleanerPaymentsManager = () => {
                   <CalendarComponent
                     mode="single"
                     selected={customStartDate}
-                    onSelect={setCustomStartDate}
+                    onSelect={(date) => {
+                      setCustomStartDate(date);
+                      // Auto-focus end date when start date is selected
+                      if (date && endDateRef.current) {
+                        setTimeout(() => endDateRef.current?.click(), 100);
+                      }
+                    }}
                     initialFocus
                     className="p-3 pointer-events-auto"
                   />
@@ -483,6 +535,7 @@ const CleanerPaymentsManager = () => {
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
+                    ref={endDateRef}
                     variant="outline"
                     className={cn(
                       "justify-start text-left font-normal text-sm h-9",
