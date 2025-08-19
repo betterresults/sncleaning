@@ -303,13 +303,13 @@ const AddressManager = () => {
                   </div>
                 )}
 
-                {/* Show past booking addresses if available */}
+                {/* Always show past booking addresses section when available */}
                 {!loadingPastAddresses && pastBookingAddresses.length > 0 && (
                   <>
                     <div className="space-y-3">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <History className="h-4 w-4" />
-                        Addresses from past bookings ({pastBookingAddresses.length} found)
+                        Select from past booking addresses ({pastBookingAddresses.length} found)
                       </div>
                       <div className="max-h-40 overflow-y-auto space-y-2">
                         {pastBookingAddresses.map((pastAddr) => (
@@ -329,12 +329,15 @@ const AddressManager = () => {
                       </div>
                     </div>
                     <Separator />
+                    <div className="text-sm text-muted-foreground">
+                      Or enter a new address below:
+                    </div>
                   </>
                 )}
 
                 {/* Show message if no past addresses found */}
                 {!loadingPastAddresses && pastBookingAddresses.length === 0 && (
-                  <div className="text-sm text-muted-foreground text-center py-2">
+                  <div className="text-sm text-muted-foreground text-center py-2 border rounded-lg bg-muted/20">
                     No addresses found in past bookings for this customer.
                   </div>
                 )}
