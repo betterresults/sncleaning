@@ -3,7 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { MapPin, Plus, Edit, Trash2, Star, Copy } from 'lucide-react';
+import { MapPin, Plus, Edit, Trash2, Star, Copy, History, Clock } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +15,14 @@ interface Address {
   address: string;
   postcode: string;
   is_default: boolean;
+}
+
+interface PastBookingAddress {
+  id: string;
+  address: string;
+  postcode: string;
+  date_time: string;
+  booking_id: string;
 }
 
 interface CustomerAddressDialogProps {
@@ -29,6 +39,8 @@ const CustomerAddressDialog = ({ customerId, addressCount, onAddressChange, chil
   const [newAddress, setNewAddress] = useState({ address: '', postcode: '' });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [pastBookingAddresses, setPastBookingAddresses] = useState<PastBookingAddress[]>([]);
+  const [loadingPastAddresses, setLoadingPastAddresses] = useState(false);
   const { toast } = useToast();
 
   const fetchAddresses = async () => {
@@ -56,11 +68,86 @@ const CustomerAddressDialog = ({ customerId, addressCount, onAddressChange, chil
     }
   };
 
+  const fetchPastBookingAddresses = async () => {
+    if (!customerId) return;
+
+    setLoadingPastAddresses(true);
+    try {
+      // Fetch from both bookings and past_bookings tables
+      const [bookingsResult, pastBookingsResult] = await Promise.all([
+        supabase
+          .from('bookings')
+          .select('id, address, postcode, date_time')
+          .eq('customer', customerId)
+          .not('address', 'is', null)
+          .not('address', 'eq', '')
+          .not('address', 'eq', 'Unknown')
+          .not('postcode', 'is', null)
+          .not('postcode', 'eq', '')
+          .order('date_time', { ascending: false }),
+        
+        supabase
+          .from('past_bookings')
+          .select('id, address, postcode, date_time')
+          .eq('customer', customerId)
+          .not('address', 'is', null)
+          .not('address', 'eq', '')
+          .not('address', 'eq', 'Unknown')
+          .not('postcode', 'is', null)
+          .not('postcode', 'eq', '')
+          .order('date_time', { ascending: false })
+      ]);
+
+      if (bookingsResult.error) throw bookingsResult.error;
+      if (pastBookingsResult.error) throw pastBookingsResult.error;
+
+      // Combine and deduplicate addresses
+      const allAddresses = [
+        ...(bookingsResult.data || []).map(booking => ({
+          ...booking,
+          booking_id: booking.id.toString(),
+          id: `booking-${booking.id}`
+        })),
+        ...(pastBookingsResult.data || []).map(booking => ({
+          ...booking,
+          booking_id: booking.id.toString(),
+          id: `past-${booking.id}`
+        }))
+      ];
+
+      // Remove duplicates based on address + postcode combination
+      const uniqueAddresses = allAddresses.filter((addr, index, self) => 
+        index === self.findIndex(a => 
+          a.address?.toLowerCase() === addr.address?.toLowerCase() && 
+          a.postcode?.toLowerCase() === addr.postcode?.toLowerCase()
+        )
+      );
+
+      setPastBookingAddresses(uniqueAddresses);
+    } catch (error) {
+      console.error('Error fetching past booking addresses:', error);
+    } finally {
+      setLoadingPastAddresses(false);
+    }
+  };
+
   useEffect(() => {
     if (open && customerId) {
       fetchAddresses();
+      fetchPastBookingAddresses();
     }
   }, [open, customerId]);
+
+  const handleImportFromPastBooking = (pastAddress: PastBookingAddress) => {
+    setNewAddress({
+      address: pastAddress.address,
+      postcode: pastAddress.postcode
+    });
+    toast({
+      title: 'Address imported',
+      description: 'Address details imported from past booking.',
+    });
+  };
 
   const handleAddAddress = async () => {
     if (!newAddress.address || !newAddress.postcode) {
@@ -241,6 +328,44 @@ const CustomerAddressDialog = ({ customerId, addressCount, onAddressChange, chil
         <div className="space-y-6">
           {/* Add New Address - Top Section */}
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-4">
+            {/* Past booking addresses dropdown */}
+            <div className="space-y-2">
+              <Label htmlFor="pastAddressSelect">
+                <div className="flex items-center gap-2">
+                  <History className="h-4 w-4" />
+                  Select from past booking addresses
+                </div>
+              </Label>
+              <Select onValueChange={(value) => {
+                const selectedAddress = pastBookingAddresses.find(addr => addr.id === value);
+                if (selectedAddress) {
+                  handleImportFromPastBooking(selectedAddress);
+                }
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder={
+                    loadingPastAddresses 
+                      ? "Loading past addresses..." 
+                      : pastBookingAddresses.length === 0 
+                        ? "No addresses found in past bookings" 
+                        : `Choose from ${pastBookingAddresses.length} past address${pastBookingAddresses.length > 1 ? 'es' : ''}`
+                  } />
+                </SelectTrigger>
+                <SelectContent>
+                  {pastBookingAddresses.map((pastAddr) => (
+                    <SelectItem key={pastAddr.id} value={pastAddr.id}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{pastAddr.address}</span>
+                        <span className="text-xs text-muted-foreground">{pastAddr.postcode}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Separator />
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="newAddress" className="text-sm font-medium">Address *</Label>
