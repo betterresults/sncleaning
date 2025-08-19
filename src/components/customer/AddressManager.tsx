@@ -62,6 +62,7 @@ const AddressManager = () => {
   }, [activeCustomerId]);
 
   useEffect(() => {
+    console.log('Dialog open effect triggered:', { isAddDialogOpen, activeCustomerId });
     if (isAddDialogOpen && activeCustomerId) {
       fetchPastBookingAddresses();
     }
@@ -190,9 +191,15 @@ const AddressManager = () => {
   };
 
   const fetchPastBookingAddresses = async () => {
-    if (!activeCustomerId) return;
+    console.log('fetchPastBookingAddresses called with activeCustomerId:', activeCustomerId);
+    if (!activeCustomerId) {
+      console.log('No activeCustomerId, returning early');
+      return;
+    }
 
     setLoadingPastAddresses(true);
+    console.log('Starting to fetch past booking addresses for customer:', activeCustomerId);
+    
     try {
       // Fetch from both bookings and past_bookings tables
       const [bookingsResult, pastBookingsResult] = await Promise.all([
@@ -218,6 +225,9 @@ const AddressManager = () => {
           .not('postcode', 'eq', '')
           .order('date_time', { ascending: false })
       ]);
+
+      console.log('Bookings query result:', bookingsResult);
+      console.log('Past bookings query result:', pastBookingsResult);
 
       if (bookingsResult.error) throw bookingsResult.error;
       if (pastBookingsResult.error) throw pastBookingsResult.error;
@@ -245,6 +255,7 @@ const AddressManager = () => {
       );
 
       setPastBookingAddresses(uniqueAddresses);
+      console.log('Final past booking addresses set:', uniqueAddresses);
     } catch (error) {
       console.error('Error fetching past booking addresses:', error);
       toast({
