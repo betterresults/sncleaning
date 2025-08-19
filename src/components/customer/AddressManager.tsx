@@ -17,6 +17,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Address {
   id: string;
@@ -303,44 +304,43 @@ const AddressManager = () => {
                   </div>
                 )}
 
-                {/* Always show past booking addresses section when available */}
-                {!loadingPastAddresses && pastBookingAddresses.length > 0 && (
-                  <>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <History className="h-4 w-4" />
-                        Select from past booking addresses ({pastBookingAddresses.length} found)
-                      </div>
-                      <div className="max-h-40 overflow-y-auto space-y-2">
-                        {pastBookingAddresses.map((pastAddr) => (
-                          <div
-                            key={pastAddr.id}
-                            className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                            onClick={() => handleImportFromPastBooking(pastAddr)}
-                          >
-                            <div className="font-medium text-sm">{pastAddr.address}</div>
-                            <div className="text-xs text-muted-foreground">{pastAddr.postcode}</div>
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                              <Clock className="h-3 w-3" />
-                              {pastAddr.date_time ? new Date(pastAddr.date_time).toLocaleDateString() : 'Date unknown'}
-                            </div>
+                {/* Past booking addresses dropdown */}
+                <div className="space-y-2">
+                  <Label htmlFor="pastAddressSelect">
+                    <div className="flex items-center gap-2">
+                      <History className="h-4 w-4" />
+                      Select from past booking addresses
+                    </div>
+                  </Label>
+                  <Select onValueChange={(value) => {
+                    const selectedAddress = pastBookingAddresses.find(addr => addr.id === value);
+                    if (selectedAddress) {
+                      handleImportFromPastBooking(selectedAddress);
+                    }
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={
+                        loadingPastAddresses 
+                          ? "Loading past addresses..." 
+                          : pastBookingAddresses.length === 0 
+                            ? "No addresses found in past bookings" 
+                            : `Choose from ${pastBookingAddresses.length} past address${pastBookingAddresses.length > 1 ? 'es' : ''}`
+                      } />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {pastBookingAddresses.map((pastAddr) => (
+                        <SelectItem key={pastAddr.id} value={pastAddr.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{pastAddr.address}</span>
+                            <span className="text-xs text-muted-foreground">{pastAddr.postcode}</span>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                    <Separator />
-                    <div className="text-sm text-muted-foreground">
-                      Or enter a new address below:
-                    </div>
-                  </>
-                )}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                {/* Show message if no past addresses found */}
-                {!loadingPastAddresses && pastBookingAddresses.length === 0 && (
-                  <div className="text-sm text-muted-foreground text-center py-2 border rounded-lg bg-muted/20">
-                    No addresses found in past bookings for this customer.
-                  </div>
-                )}
+                <Separator />
 
                 {/* Manual address input */}
                 <div>
