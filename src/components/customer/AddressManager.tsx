@@ -62,10 +62,10 @@ const AddressManager = () => {
   }, [activeCustomerId]);
 
   useEffect(() => {
-    if (isAddDialogOpen && activeCustomerId && addresses.length === 0) {
+    if (isAddDialogOpen && activeCustomerId) {
       fetchPastBookingAddresses();
     }
-  }, [isAddDialogOpen, activeCustomerId, addresses.length]);
+  }, [isAddDialogOpen, activeCustomerId]);
 
   const fetchAddresses = async () => {
     if (!activeCustomerId) {
@@ -284,8 +284,8 @@ const AddressManager = () => {
                 <DialogTitle>Add New Address</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
-                {/* Show past booking addresses if customer has no saved addresses */}
-                {addresses.length === 0 && pastBookingAddresses.length > 0 && (
+                {/* Show past booking addresses if available */}
+                {pastBookingAddresses.length > 0 && (
                   <>
                     <div className="space-y-3">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
