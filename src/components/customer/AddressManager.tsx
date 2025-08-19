@@ -284,13 +284,21 @@ const AddressManager = () => {
                 <DialogTitle>Add New Address</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
+                {/* Loading state for past addresses */}
+                {loadingPastAddresses && (
+                  <div className="text-sm text-muted-foreground flex items-center gap-2">
+                    <Clock className="h-4 w-4 animate-spin" />
+                    Looking for addresses from past bookings...
+                  </div>
+                )}
+
                 {/* Show past booking addresses if available */}
-                {pastBookingAddresses.length > 0 && (
+                {!loadingPastAddresses && pastBookingAddresses.length > 0 && (
                   <>
                     <div className="space-y-3">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <History className="h-4 w-4" />
-                        Addresses from past bookings
+                        Addresses from past bookings ({pastBookingAddresses.length} found)
                       </div>
                       <div className="max-h-40 overflow-y-auto space-y-2">
                         {pastBookingAddresses.map((pastAddr) => (
@@ -311,6 +319,13 @@ const AddressManager = () => {
                     </div>
                     <Separator />
                   </>
+                )}
+
+                {/* Show message if no past addresses found */}
+                {!loadingPastAddresses && pastBookingAddresses.length === 0 && (
+                  <div className="text-sm text-muted-foreground text-center py-2">
+                    No addresses found in past bookings for this customer.
+                  </div>
                 )}
 
                 {/* Manual address input */}
