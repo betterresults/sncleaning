@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { MapPin, Plus, Edit, Trash2, Save, X } from 'lucide-react';
+import { MapPin, Plus, Edit, Trash2, Save, X, History, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -16,12 +16,21 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
 
 interface Address {
   id: string;
   address: string;
   postcode: string;
   is_default: boolean;
+}
+
+interface PastBookingAddress {
+  id: string;
+  address: string;
+  postcode: string;
+  date_time: string;
+  booking_id: string;
 }
 
 const AddressManager = () => {
@@ -36,6 +45,8 @@ const AddressManager = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newAddress, setNewAddress] = useState({ address: '', postcode: '' });
+  const [pastBookingAddresses, setPastBookingAddresses] = useState<PastBookingAddress[]>([]);
+  const [loadingPastAddresses, setLoadingPastAddresses] = useState(false);
 
   console.log('AddressManager: Component rendered with:', {
     userRole,
@@ -49,6 +60,12 @@ const AddressManager = () => {
       fetchAddresses();
     }
   }, [activeCustomerId]);
+
+  useEffect(() => {
+    if (isAddDialogOpen && activeCustomerId && addresses.length === 0) {
+      fetchPastBookingAddresses();
+    }
+  }, [isAddDialogOpen, activeCustomerId, addresses.length]);
 
   const fetchAddresses = async () => {
     if (!activeCustomerId) {
@@ -172,6 +189,81 @@ const AddressManager = () => {
     }
   };
 
+  const fetchPastBookingAddresses = async () => {
+    if (!activeCustomerId) return;
+
+    setLoadingPastAddresses(true);
+    try {
+      // Fetch from both bookings and past_bookings tables
+      const [bookingsResult, pastBookingsResult] = await Promise.all([
+        supabase
+          .from('bookings')
+          .select('id, address, postcode, date_time')
+          .eq('customer', activeCustomerId)
+          .not('address', 'is', null)
+          .not('address', 'eq', '')
+          .not('address', 'eq', 'Unknown')
+          .not('postcode', 'is', null)
+          .not('postcode', 'eq', '')
+          .order('date_time', { ascending: false }),
+        
+        supabase
+          .from('past_bookings')
+          .select('id, address, postcode, date_time')
+          .eq('customer', activeCustomerId)
+          .not('address', 'is', null)
+          .not('address', 'eq', '')
+          .not('address', 'eq', 'Unknown')
+          .not('postcode', 'is', null)
+          .not('postcode', 'eq', '')
+          .order('date_time', { ascending: false })
+      ]);
+
+      if (bookingsResult.error) throw bookingsResult.error;
+      if (pastBookingsResult.error) throw pastBookingsResult.error;
+
+      // Combine and deduplicate addresses
+      const allAddresses = [
+        ...(bookingsResult.data || []).map(booking => ({
+          ...booking,
+          booking_id: booking.id.toString(),
+          id: `booking-${booking.id}`
+        })),
+        ...(pastBookingsResult.data || []).map(booking => ({
+          ...booking,
+          booking_id: booking.id.toString(),
+          id: `past-${booking.id}`
+        }))
+      ];
+
+      // Remove duplicates based on address + postcode combination
+      const uniqueAddresses = allAddresses.filter((addr, index, self) => 
+        index === self.findIndex(a => 
+          a.address?.toLowerCase() === addr.address?.toLowerCase() && 
+          a.postcode?.toLowerCase() === addr.postcode?.toLowerCase()
+        )
+      );
+
+      setPastBookingAddresses(uniqueAddresses);
+    } catch (error) {
+      console.error('Error fetching past booking addresses:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load past booking addresses',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoadingPastAddresses(false);
+    }
+  };
+
+  const handleImportFromPastBooking = (pastAddress: PastBookingAddress) => {
+    setNewAddress({
+      address: pastAddress.address,
+      postcode: pastAddress.postcode
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -187,11 +279,41 @@ const AddressManager = () => {
                 Add Address
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Add New Address</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
+                {/* Show past booking addresses if customer has no saved addresses */}
+                {addresses.length === 0 && pastBookingAddresses.length > 0 && (
+                  <>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <History className="h-4 w-4" />
+                        Addresses from past bookings
+                      </div>
+                      <div className="max-h-40 overflow-y-auto space-y-2">
+                        {pastBookingAddresses.map((pastAddr) => (
+                          <div
+                            key={pastAddr.id}
+                            className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                            onClick={() => handleImportFromPastBooking(pastAddr)}
+                          >
+                            <div className="font-medium text-sm">{pastAddr.address}</div>
+                            <div className="text-xs text-muted-foreground">{pastAddr.postcode}</div>
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                              <Clock className="h-3 w-3" />
+                              {pastAddr.date_time ? new Date(pastAddr.date_time).toLocaleDateString() : 'Date unknown'}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <Separator />
+                  </>
+                )}
+
+                {/* Manual address input */}
                 <div>
                   <Label htmlFor="newAddress">Address</Label>
                   <Input
