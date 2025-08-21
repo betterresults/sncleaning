@@ -185,10 +185,11 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           }
         }
 
-        // Add address counts to processed users
+        // Add address counts to processed users and ensure type is set
         processedUsers = processedUsers.map(user => ({
           ...user,
-          addressCount: user.type === 'business_customer' ? (addressCounts[user.id] || 0) : 0
+          type: user.type || 'business_customer', // Ensure all customers have correct type
+          addressCount: user.type === 'business_customer' || !user.type ? (addressCounts[user.id] || 0) : 0
         }));
         
       } else if (userType === 'all') {
