@@ -613,6 +613,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
+                    <TableHead>Customer</TableHead>
                     <TableHead>Address</TableHead>
                     <TableHead>Service</TableHead>
                     <TableHead>Cleaner</TableHead>
@@ -623,7 +624,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                 <TableBody>
                   {paginatedBookings.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">
+                      <TableCell colSpan={7} className="text-center py-8">
                         No bookings found
                       </TableCell>
                     </TableRow>
@@ -638,55 +639,60 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                           className={`cursor-pointer ${isUnsigned ? "bg-red-50 hover:bg-red-100 border-l-4 border-red-500" : "hover:bg-gray-50"}`}
                           onClick={() => handleEdit(booking.id)}
                         >
-                          <TableCell className="py-3">
-                            <div className="text-sm">
-                              <div className="font-medium text-gray-900">
+                          <TableCell className="py-4">
+                            <div>
+                              <div className="text-base font-normal text-gray-900">
                                 {format(new Date(booking.date_time), 'dd/MM/yy')}
                               </div>
-                              <div className="text-gray-500 text-xs">
+                              <div className="text-sm text-gray-600">
                                 {format(new Date(booking.date_time), 'HH:mm')}
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell className="py-3">
-                            <div className="text-sm">
-                              <div className="text-gray-900 font-medium leading-tight">
-                                {booking.address}
-                              </div>
-                              <div className="text-xs text-gray-500 mt-1">
+                          <TableCell className="py-4">
+                            <div>
+                              <div className="text-base font-normal text-gray-900">
                                 {booking.first_name} {booking.last_name}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                {booking.email}
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell className="py-3">
-                            <div className="text-sm font-medium text-gray-900">
+                          <TableCell className="py-4">
+                            <div className="text-base font-normal text-gray-900">
+                              {booking.address}
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-4">
+                            <div className="text-base font-normal text-gray-900">
                               {booking.total_hours ? `${booking.total_hours}h ` : ''}
                               {booking.service_type || booking.cleaning_type || 'Standard'}
                             </div>
                           </TableCell>
-                          <TableCell className="py-3">
+                          <TableCell className="py-4">
                             {isUnsigned ? (
-                              <Badge variant="destructive" className="bg-red-100 text-red-700 text-xs font-medium border-red-200">
+                              <Badge variant="outline" className="text-red-600 border-red-300 bg-red-50">
                                 Unassigned
                               </Badge>
                             ) : (
-                              <span className="text-sm font-medium text-gray-900">{cleanerName}</span>
+                              <span className="text-base font-normal text-gray-900">{cleanerName}</span>
                             )}
                           </TableCell>
-                          <TableCell className="py-3">
+                          <TableCell className="py-4">
                             <div className="text-right">
-                              <div className="text-lg font-semibold text-gray-900">
+                              <div className="text-lg font-normal text-gray-900">
                                 £{booking.total_cost?.toFixed(2) || '0.00'}
                               </div>
                               {booking.cleaner_pay && (
-                                <div className="text-xs text-gray-500">
+                                <div className="text-sm text-gray-600">
                                   £{booking.cleaner_pay.toFixed(2)}
                                 </div>
                               )}
                             </div>
                           </TableCell>
-                          <TableCell className="py-3">
-                            <div className="flex items-center justify-center gap-2">
+                          <TableCell className="py-4">
+                            <div className="flex items-center justify-center gap-3">
                               <div
                                 className="flex items-center justify-center"
                                 title={booking.payment_status || 'Unpaid'}
