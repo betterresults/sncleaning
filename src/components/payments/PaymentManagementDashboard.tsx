@@ -15,7 +15,8 @@ import {
   RefreshCw,
   Search,
   Filter,
-  Download
+  Download,
+  Calendar
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +25,24 @@ import PaymentStatusIndicator from './PaymentStatusIndicator';
 import ManualPaymentDialog from './ManualPaymentDialog';
 
 interface Booking {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone_number: string;
+  address: string;
+  date_time: string;
+  total_cost: number | string;
+  payment_status: string;
+  customer: number;
+  cleaners?: {
+    first_name: string;
+    last_name: string;
+  } | null;
+}
+
+// Normalized booking interface for ManualPaymentDialog
+interface NormalizedBooking {
   id: number;
   first_name: string;
   last_name: string;
@@ -51,7 +70,8 @@ interface PaymentStats {
 }
 
 const PaymentManagementDashboard = () => {
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [allBookings, setAllBookings] = useState<Booking[]>([]);
+  const [pastBookings, setPastBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [stats, setStats] = useState<PaymentStats>({
     totalBookings: 0,
@@ -63,7 +83,7 @@ const PaymentManagementDashboard = () => {
     pendingRevenue: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<NormalizedBooking | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -76,13 +96,14 @@ const PaymentManagementDashboard = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [bookings, searchTerm, statusFilter]);
+  }, [allBookings, pastBookings, searchTerm, statusFilter]);
 
   const fetchBookings = async () => {
     try {
       setLoading(true);
       
-      const { data, error } = await supabase
+      // Fetch upcoming and today's bookings
+      const { data: upcomingData, error: upcomingError } = await supabase
         .from('bookings')
         .select(`
           *,
@@ -91,13 +112,35 @@ const PaymentManagementDashboard = () => {
             last_name
           )
         `)
-        .gte('date_time', new Date().toISOString())
         .order('date_time', { ascending: true });
 
-      if (error) throw error;
+      if (upcomingError) throw upcomingError;
 
-      setBookings(data || []);
-      calculateStats(data || []);
+      // Fetch past bookings
+      const { data: pastData, error: pastError } = await supabase
+        .from('past_bookings')
+        .select(`
+          *,
+          cleaners!past_bookings_cleaner_fkey (
+            first_name,
+            last_name
+          )
+        `)
+        .order('date_time', { ascending: false });
+
+      if (pastError) throw pastError;
+
+      const allUpcoming = upcomingData || [];
+      const allPast = (pastData || []).map(booking => ({
+        ...booking,
+        total_cost: typeof booking.total_cost === 'string' 
+          ? parseFloat(booking.total_cost) || 0 
+          : booking.total_cost
+      }));
+
+      setAllBookings(allUpcoming);
+      setPastBookings(allPast);
+      calculateStats([...allUpcoming, ...allPast]);
     } catch (error) {
       console.error('Error fetching bookings:', error);
       toast({
@@ -123,7 +166,9 @@ const PaymentManagementDashboard = () => {
 
     bookingData.forEach((booking) => {
       const status = booking.payment_status?.toLowerCase();
-      const cost = booking.total_cost || 0;
+      const cost = typeof booking.total_cost === 'string' 
+        ? parseFloat(booking.total_cost) || 0 
+        : booking.total_cost || 0;
 
       switch (status) {
         case 'paid':
@@ -151,7 +196,8 @@ const PaymentManagementDashboard = () => {
   };
 
   const applyFilters = () => {
-    let filtered = [...bookings];
+    // Combine all bookings for filtering
+    let filtered = [...allBookings, ...pastBookings];
 
     // Search filter
     if (searchTerm) {
@@ -207,7 +253,14 @@ const PaymentManagementDashboard = () => {
   };
 
   const handlePaymentAction = (booking: Booking) => {
-    setSelectedBooking(booking);
+    // Normalize booking data to ensure total_cost is a number
+    const normalizedBooking: NormalizedBooking = {
+      ...booking,
+      total_cost: typeof booking.total_cost === 'string' 
+        ? parseFloat(booking.total_cost) || 0 
+        : booking.total_cost
+    };
+    setSelectedBooking(normalizedBooking);
     setPaymentDialogOpen(true);
   };
 
@@ -223,6 +276,33 @@ const PaymentManagementDashboard = () => {
       const status = booking.payment_status?.toLowerCase();
       return ['unpaid', 'not paid', ''].includes(status) || !status;
     });
+  };
+
+  const getTodaysBookings = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    return allBookings.filter(booking => {
+      const bookingDate = new Date(booking.date_time);
+      return bookingDate >= today && bookingDate < tomorrow;
+    });
+  };
+
+  const getUpcomingBookings = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    
+    return allBookings.filter(booking => {
+      const bookingDate = new Date(booking.date_time);
+      return bookingDate >= tomorrow;
+    });
+  };
+
+  const getCompletedBookings = () => {
+    return pastBookings;
   };
 
   const StatCard = ({ title, value, icon: Icon, color, subtitle }: any) => (
@@ -346,16 +426,202 @@ const PaymentManagementDashboard = () => {
       </Card>
 
       {/* Payment Tables */}
-      <Tabs defaultValue="all" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="all">All Bookings ({filteredBookings.length})</TabsTrigger>
+      <Tabs defaultValue="today" className="space-y-6">
+        <TabsList className="grid grid-cols-6 w-full">
+          <TabsTrigger value="today" className="text-blue-600">
+            Today ({getTodaysBookings().length})
+          </TabsTrigger>
+          <TabsTrigger value="upcoming">
+            Upcoming ({getUpcomingBookings().length})
+          </TabsTrigger>
+          <TabsTrigger value="completed" className="text-green-600">
+            Completed ({getCompletedBookings().length})
+          </TabsTrigger>
           <TabsTrigger value="failed" className="text-red-600">
             Failed ({getFailedBookings().length})
           </TabsTrigger>
           <TabsTrigger value="unpaid" className="text-yellow-600">
             Unpaid ({getUnpaidBookings().length})
           </TabsTrigger>
+          <TabsTrigger value="all">All ({filteredBookings.length})</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="today">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-blue-600 flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Today's Bookings
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Time</TableHead>
+                    <TableHead>Address</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Cleaner</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {getTodaysBookings().map((booking) => (
+                    <TableRow key={booking.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{booking.first_name} {booking.last_name}</div>
+                          <div className="text-sm text-muted-foreground">{booking.email}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(booking.date_time), 'HH:mm')}
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">{booking.address}</TableCell>
+                      <TableCell>£{typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost}</TableCell>
+                      <TableCell>
+                        <PaymentStatusIndicator status={booking.payment_status} />
+                      </TableCell>
+                      <TableCell>
+                        {booking.cleaners ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}` : 'Unassigned'}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          onClick={() => handlePaymentAction(booking)}
+                          className="flex items-center gap-1"
+                        >
+                          <DollarSign className="h-4 w-4" />
+                          Manage
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="upcoming">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Upcoming Bookings
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Address</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Cleaner</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {getUpcomingBookings().map((booking) => (
+                    <TableRow key={booking.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{booking.first_name} {booking.last_name}</div>
+                          <div className="text-sm text-muted-foreground">{booking.email}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(booking.date_time), 'MMM dd, yyyy HH:mm')}
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">{booking.address}</TableCell>
+                      <TableCell>£{typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost}</TableCell>
+                      <TableCell>
+                        <PaymentStatusIndicator status={booking.payment_status} />
+                      </TableCell>
+                      <TableCell>
+                        {booking.cleaners ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}` : 'Unassigned'}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          onClick={() => handlePaymentAction(booking)}
+                          className="flex items-center gap-1"
+                        >
+                          <DollarSign className="h-4 w-4" />
+                          Manage
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="completed">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-green-600 flex items-center gap-2">
+                <CheckCircle className="h-5 w-5" />
+                Completed Bookings
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Address</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Cleaner</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {getCompletedBookings().map((booking) => (
+                    <TableRow key={booking.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{booking.first_name} {booking.last_name}</div>
+                          <div className="text-sm text-muted-foreground">{booking.email}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(booking.date_time), 'MMM dd, yyyy HH:mm')}
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">{booking.address}</TableCell>
+                      <TableCell>£{typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost}</TableCell>
+                      <TableCell>
+                        <PaymentStatusIndicator status={booking.payment_status} />
+                      </TableCell>
+                      <TableCell>
+                        {booking.cleaners ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}` : 'Unassigned'}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          onClick={() => handlePaymentAction(booking)}
+                          className="flex items-center gap-1"
+                        >
+                          <DollarSign className="h-4 w-4" />
+                          Manage
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="all">
           <Card>
@@ -385,7 +651,7 @@ const PaymentManagementDashboard = () => {
                         {format(new Date(booking.date_time), 'MMM dd, yyyy HH:mm')}
                       </TableCell>
                       <TableCell className="max-w-xs truncate">{booking.address}</TableCell>
-                      <TableCell>£{booking.total_cost}</TableCell>
+                      <TableCell>£{typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost}</TableCell>
                       <TableCell>
                         <PaymentStatusIndicator status={booking.payment_status} />
                       </TableCell>
@@ -441,7 +707,7 @@ const PaymentManagementDashboard = () => {
                       <TableCell>
                         {format(new Date(booking.date_time), 'MMM dd, yyyy HH:mm')}
                       </TableCell>
-                      <TableCell>£{booking.total_cost}</TableCell>
+                      <TableCell>£{typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost}</TableCell>
                       <TableCell>
                         <PaymentStatusIndicator status={booking.payment_status} />
                       </TableCell>
@@ -495,7 +761,7 @@ const PaymentManagementDashboard = () => {
                       <TableCell>
                         {format(new Date(booking.date_time), 'MMM dd, yyyy HH:mm')}
                       </TableCell>
-                      <TableCell>£{booking.total_cost}</TableCell>
+                      <TableCell>£{typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost}</TableCell>
                       <TableCell>
                         <PaymentStatusIndicator status={booking.payment_status} />
                       </TableCell>
