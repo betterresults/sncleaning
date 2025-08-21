@@ -34,6 +34,7 @@ import AddRecurringBooking from "./pages/AddRecurringBooking";
 import EditRecurringBooking from "./pages/EditRecurringBooking";
 import AdminCleanerPayments from "./pages/AdminCleanerPayments";
 import AdminCustomerPayments from "./pages/AdminCustomerPayments";
+import UpcomingBookings from "./pages/UpcomingBookings";
 import UsersAdmins from "./pages/UsersAdmins";
 import UsersCleaners from "./pages/UsersCleaners";
 import UsersCustomers from "./pages/UsersCustomers";
@@ -57,6 +58,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/upcoming-bookings" element={<UpcomingBookings />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/admin-settings" element={<AdminSettings />} />

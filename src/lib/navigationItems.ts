@@ -87,7 +87,7 @@ export const adminNavigation = [
       },
       {
         title: "Upcoming Bookings",
-        url: "/dashboard",
+        url: "/upcoming-bookings",
         icon: BarChart3,
       },
       {

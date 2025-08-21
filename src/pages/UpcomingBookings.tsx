@@ -1,0 +1,74 @@
+import React from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Navigate } from 'react-router-dom';
+import { Card, CardContent } from '@/components/ui/card';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { UnifiedSidebar } from '@/components/UnifiedSidebar';
+import { UnifiedHeader } from '@/components/UnifiedHeader';
+import { adminNavigation } from '@/lib/navigationItems';
+import UpcomingBookings from '@/components/dashboard/UpcomingBookings';
+
+const UpcomingBookingsPage = () => {
+  const { user, userRole, cleanerId, loading, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Redirect cleaners to their dashboard
+  if (userRole === 'user' && cleanerId) {
+    return <Navigate to="/cleaner-dashboard" replace />;
+  }
+
+  // No date filter means show ALL future bookings
+  const noDateFilter = undefined;
+
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-gray-50">
+        <UnifiedSidebar 
+          navigationItems={adminNavigation}
+          user={user}
+          onSignOut={handleSignOut}
+        />
+        <SidebarInset className="flex-1">
+          <UnifiedHeader 
+            title="Upcoming Bookings 📅"
+            user={user}
+            userRole={userRole}
+          />
+          
+          <main className="flex-1 p-4 space-y-6 max-w-full overflow-x-hidden">
+            <div className="max-w-7xl mx-auto space-y-6">
+              <Card className="border shadow-sm">
+                <CardContent className="p-4">
+                  <UpcomingBookings 
+                    dashboardDateFilter={noDateFilter}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          </main>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
+  );
+};
+
+export default UpcomingBookingsPage;
