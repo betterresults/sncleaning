@@ -365,18 +365,8 @@ const PaymentManagementDashboard = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold">Payment Management</h2>
-          <p className="text-muted-foreground">Monitor and manage booking payments</p>
         </div>
         <div className="flex gap-2">
-          <Button 
-            onClick={handleSyncCustomers} 
-            disabled={syncingCustomers}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${syncingCustomers ? 'animate-spin' : ''}`} />
-            {syncingCustomers ? 'Syncing...' : 'Sync Customers'}
-          </Button>
           <Button onClick={fetchBookings} variant="outline">
             <RefreshCw className="h-4 w-4" />
           </Button>
@@ -411,7 +401,7 @@ const PaymentManagementDashboard = () => {
           value={stats.unpaidBookings}
           icon={AlertCircle}
           color="text-yellow-600"
-          subtitle="Need payment setup"
+          subtitle="Pending payment"
         />
       </div>
 
