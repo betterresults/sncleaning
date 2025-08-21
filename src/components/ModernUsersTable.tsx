@@ -30,7 +30,8 @@ import {
   MapPin,
   Plus,
   Trash2,
-  UserPlus
+  UserPlus,
+  CreditCard
 } from 'lucide-react';
 import {
   Select,
@@ -43,6 +44,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useNavigate } from 'react-router-dom';
 import CreateBookingDialogWithCustomer from '@/components/booking/CreateBookingDialogWithCustomer';
 import CustomerAddressDialog from '@/components/customer/CustomerAddressDialog';
+import CustomerPaymentDialog from '@/components/customer/CustomerPaymentDialog';
+import PaymentMethodStatusBadge from '@/components/customer/PaymentMethodStatusBadge';
+import { useCustomerPaymentMethods } from '@/hooks/useCustomerPaymentMethods';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
@@ -99,8 +103,19 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   const [userToDelete, setUserToDelete] = useState<UserData | null>(null);
   const [deletingUser, setDeletingUser] = useState(false);
   
+  // Payment management state
+  const [selectedCustomerForPayment, setSelectedCustomerForPayment] = useState<UserData | null>(null);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // Get customer IDs for payment data fetching
+  const customerIds = users
+    .filter(user => user.type === 'business_customer' && user.business_id)
+    .map(user => user.business_id!);
+    
+  const { paymentData, loading: paymentLoading, refetch: refetchPaymentData } = useCustomerPaymentMethods(customerIds);
 
   // Selection and bulk edit state for Customers view
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -687,35 +702,36 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  {isCustomerView && (
-                    <TableHead className="w-12">
-                      <Checkbox
-                        checked={filteredUsers.filter(u => u.type === 'business_customer').length > 0 && 
-                                 filteredUsers.filter(u => u.type === 'business_customer').every(u => isSelected(u.id))}
-                        onCheckedChange={toggleSelectAll}
-                      />
-                    </TableHead>
-                  )}
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Email</TableHead>
-                  {isCustomerView ? (
-                    <>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Addresses</TableHead>
-                    </>
-                  ) : (
-                    <TableHead>Role</TableHead>
-                  )}
-                  <TableHead className="text-right">Actions</TableHead>
+                   {isCustomerView && (
+                     <TableHead className="w-12">
+                       <Checkbox
+                         checked={filteredUsers.filter(u => u.type === 'business_customer').length > 0 && 
+                                  filteredUsers.filter(u => u.type === 'business_customer').every(u => isSelected(u.id))}
+                         onCheckedChange={toggleSelectAll}
+                       />
+                     </TableHead>
+                   )}
+                   <TableHead>Customer</TableHead>
+                   <TableHead>Email</TableHead>
+                   {isCustomerView ? (
+                     <>
+                       <TableHead>Type</TableHead>
+                       <TableHead>Payment Methods</TableHead>
+                       <TableHead>Addresses</TableHead>
+                     </>
+                   ) : (
+                     <TableHead>Role</TableHead>
+                   )}
+                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                  {filteredUsers.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={isCustomerView ? 5 : 4} className="text-center py-8 text-muted-foreground">
-                        {searchTerm ? 'No users found matching your search.' : 'No users found.'}
-                      </TableCell>
-                    </TableRow>
+                   {filteredUsers.length === 0 ? (
+                     <TableRow>
+                       <TableCell colSpan={isCustomerView ? 6 : 4} className="text-center py-8 text-muted-foreground">
+                         {searchTerm ? 'No users found matching your search.' : 'No users found.'}
+                       </TableCell>
+                     </TableRow>
                 ) : (
                   filteredUsers.map((user) => (
                     <TableRow key={user.id}>
@@ -788,44 +804,67 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                         )}
                       </TableCell>
                       
-                      {isCustomerView ? (
-                        <>
-                          <TableCell>
-                            {editingUser === user.id && user.type === 'business_customer' ? (
-                              <Select 
-                                value={editData.client_type ?? 'empty'} 
-                                onValueChange={(value) => setEditData({ ...editData, client_type: value === 'empty' ? null : value })}
-                              >
-                                <SelectTrigger className="w-32">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="empty">—</SelectItem>
-                                  <SelectItem value="client">Client</SelectItem>
-                                  <SelectItem value="business">Business</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            ) : (
-                              getCustomerTypeBadge(user)
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {user.type === 'business_customer' ? (
-                              <CustomerAddressDialog
-                                customerId={Number(user.business_id || user.id)}
-                                addressCount={user.addressCount || 0}
-                                onAddressChange={handleAddressChange}
-                              >
-                                <Button variant="outline" size="sm">
-                                  <MapPin className="h-4 w-4 mr-2" />
-                                  {user.addressCount || 0}
-                                </Button>
-                              </CustomerAddressDialog>
-                            ) : (
-                              <span className="text-sm text-muted-foreground">–</span>
-                            )}
-                          </TableCell>
-                        </>
+                       {isCustomerView ? (
+                         <>
+                           <TableCell>
+                             {editingUser === user.id && user.type === 'business_customer' ? (
+                               <Select 
+                                 value={editData.client_type ?? 'empty'} 
+                                 onValueChange={(value) => setEditData({ ...editData, client_type: value === 'empty' ? null : value })}
+                               >
+                                 <SelectTrigger className="w-32">
+                                   <SelectValue />
+                                 </SelectTrigger>
+                                 <SelectContent>
+                                   <SelectItem value="empty">—</SelectItem>
+                                   <SelectItem value="client">Client</SelectItem>
+                                   <SelectItem value="business">Business</SelectItem>
+                                 </SelectContent>
+                               </Select>
+                             ) : (
+                               getCustomerTypeBadge(user)
+                             )}
+                           </TableCell>
+                           <TableCell>
+                             {user.type === 'business_customer' && user.business_id ? (
+                               <div className="flex items-center gap-2">
+                                 <PaymentMethodStatusBadge
+                                   paymentMethodCount={paymentData[user.business_id]?.payment_method_count || 0}
+                                   hasStripeAccount={paymentData[user.business_id]?.has_stripe_account || false}
+                                 />
+                                 <Button
+                                   variant="outline"
+                                   size="sm"
+                                   onClick={() => {
+                                     setSelectedCustomerForPayment(user);
+                                     setShowPaymentDialog(true);
+                                   }}
+                                 >
+                                   <CreditCard className="h-4 w-4 mr-1" />
+                                   Manage
+                                 </Button>
+                               </div>
+                             ) : (
+                               <span className="text-sm text-muted-foreground">–</span>
+                             )}
+                           </TableCell>
+                           <TableCell>
+                             {user.type === 'business_customer' ? (
+                               <CustomerAddressDialog
+                                 customerId={Number(user.business_id || user.id)}
+                                 addressCount={user.addressCount || 0}
+                                 onAddressChange={handleAddressChange}
+                               >
+                                 <Button variant="outline" size="sm">
+                                   <MapPin className="h-4 w-4 mr-2" />
+                                   {user.addressCount || 0}
+                                 </Button>
+                               </CustomerAddressDialog>
+                             ) : (
+                               <span className="text-sm text-muted-foreground">–</span>
+                             )}
+                           </TableCell>
+                         </>
                       ) : (
                         <TableCell>
                           {editingUser === user.id ? (
@@ -1034,6 +1073,21 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Customer Payment Dialog */}
+      {selectedCustomerForPayment && (
+        <CustomerPaymentDialog
+          open={showPaymentDialog}
+          onOpenChange={setShowPaymentDialog}
+          customerId={Number(selectedCustomerForPayment.business_id || selectedCustomerForPayment.id)}
+          customerName={`${selectedCustomerForPayment.first_name} ${selectedCustomerForPayment.last_name}`}
+          customerEmail={selectedCustomerForPayment.email}
+          onPaymentMethodsChange={() => {
+            refetchPaymentData();
+            fetchUsers();
+          }}
+        />
+      )}
     </Card>
   );
 };
