@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Edit, Trash2, Filter, Search, Settings, Copy, X, UserPlus, DollarSign, Repeat, Calendar, List, MoreHorizontal, CalendarDays, Clock, MapPin, User, Mail, Phone, Banknote, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
+import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -111,6 +113,8 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   const [selectedBookingForRecurring, setSelectedBookingForRecurring] = useState<Booking | null>(null);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState<number | null>(null);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<Booking | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const { toast } = useToast();
 
@@ -392,6 +396,11 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   const handleAssignCleaner = (bookingId: number) => {
     setSelectedBookingId(bookingId);
     setAssignCleanerOpen(true);
+  };
+
+  const handlePaymentAction = (booking: Booking) => {
+    setSelectedBookingForPayment(booking);
+    setPaymentDialogOpen(true);
   };
 
   const handleMakeRecurring = (booking: Booking) => {
@@ -752,7 +761,12 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                             </div>
                           </TableCell>
                           <TableCell>
-                            {getPaymentStatusIcon(booking.payment_status, booking.total_cost)}
+                            <div className="flex items-center space-x-2">
+                              <PaymentStatusIndicator status={booking.payment_status} />
+                              <span className="font-semibold text-base">
+                                £{booking.total_cost?.toFixed(2) || '0.00'}
+                              </span>
+                            </div>
                           </TableCell>
                           <TableCell>
                             <div className="flex justify-center">
@@ -790,16 +804,26 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                                     <UserPlus className="w-4 h-4 mr-2" />
                                     Assign Cleaner
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleMakeRecurring(booking);
-                                    }}
-                                  >
-                                    <Repeat className="w-4 h-4 mr-2" />
-                                    Make Recurring
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
+                                   <DropdownMenuItem
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       handleMakeRecurring(booking);
+                                     }}
+                                   >
+                                     <Repeat className="w-4 h-4 mr-2" />
+                                     Make Recurring
+                                   </DropdownMenuItem>
+                                   <DropdownMenuSeparator />
+                                   <DropdownMenuItem
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       handlePaymentAction(booking);
+                                     }}
+                                   >
+                                     <DollarSign className="w-4 h-4 mr-2" />
+                                     Manage Payment
+                                   </DropdownMenuItem>
+                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -980,6 +1004,20 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
         onOpenChange={setConvertToRecurringOpen}
         booking={selectedBookingForRecurring}
         onSuccess={fetchData}
+      />
+
+      <ManualPaymentDialog
+        booking={selectedBookingForPayment}
+        isOpen={paymentDialogOpen}
+        onClose={() => {
+          setPaymentDialogOpen(false);
+          setSelectedBookingForPayment(null);
+        }}
+        onSuccess={() => {
+          fetchData();
+          setPaymentDialogOpen(false);
+          setSelectedBookingForPayment(null);
+        }}
       />
     </div>
   );
