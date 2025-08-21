@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
-import { Calendar, DollarSign, Clock, User } from 'lucide-react';
+import { Calendar, DollarSign, Clock, User, CreditCard } from 'lucide-react';
+import { CollectPaymentMethodDialog } from './CollectPaymentMethodDialog';
 
 interface Customer {
   id: number;
@@ -33,6 +35,7 @@ const CustomerPaymentsManager = () => {
   const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
   const [period, setPeriod] = useState<'last_month' | 'current_month'>('last_month');
   const [loading, setLoading] = useState(false);
+  const [collectPaymentDialogOpen, setCollectPaymentDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchCustomers();
@@ -157,9 +160,19 @@ const CustomerPaymentsManager = () => {
       {selectedCustomer && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              {selectedCustomer.first_name} {selectedCustomer.last_name}
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                {selectedCustomer.first_name} {selectedCustomer.last_name}
+              </div>
+              <Button
+                onClick={() => setCollectPaymentDialogOpen(true)}
+                className="flex items-center gap-2"
+                size="sm"
+              >
+                <CreditCard className="h-4 w-4" />
+                Collect Payment Method
+              </Button>
             </CardTitle>
             <p className="text-sm text-muted-foreground">
               Period: {format(start, 'MMM dd, yyyy')} - {format(end, 'MMM dd, yyyy')}
@@ -241,6 +254,20 @@ const CustomerPaymentsManager = () => {
           <p className="text-muted-foreground">Select a customer to view payment details.</p>
         </div>
       ) : null}
+
+      {/* Collect Payment Method Dialog */}
+      {selectedCustomer && (
+        <CollectPaymentMethodDialog
+          open={collectPaymentDialogOpen}
+          onOpenChange={setCollectPaymentDialogOpen}
+          customer={{
+            id: selectedCustomer.id,
+            first_name: selectedCustomer.first_name,
+            last_name: selectedCustomer.last_name,
+            email: selectedCustomer.email
+          }}
+        />
+      )}
     </div>
   );
 };

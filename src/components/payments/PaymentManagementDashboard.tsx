@@ -16,13 +16,15 @@ import {
   Search,
   Filter,
   Download,
-  Calendar
+  Calendar,
+  CreditCard
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import PaymentStatusIndicator from './PaymentStatusIndicator';
 import ManualPaymentDialog from './ManualPaymentDialog';
+import { CollectPaymentMethodDialog } from './CollectPaymentMethodDialog';
 
 interface Booking {
   id: number;
@@ -85,6 +87,7 @@ const PaymentManagementDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<NormalizedBooking | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [collectPaymentDialogOpen, setCollectPaymentDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [activeTab, setActiveTab] = useState('today');
@@ -295,6 +298,17 @@ const PaymentManagementDashboard = () => {
     };
     setSelectedBooking(normalizedBooking);
     setPaymentDialogOpen(true);
+  };
+
+  const handleCollectPaymentMethod = (booking: Booking) => {
+    const normalizedBooking: NormalizedBooking = {
+      ...booking,
+      total_cost: typeof booking.total_cost === 'string' 
+        ? parseFloat(booking.total_cost) || 0 
+        : booking.total_cost
+    };
+    setSelectedBooking(normalizedBooking);
+    setCollectPaymentDialogOpen(true);
   };
 
   const getFailedBookings = () => {
@@ -523,14 +537,25 @@ const PaymentManagementDashboard = () => {
                         {booking.cleaners ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}` : 'Unassigned'}
                       </TableCell>
                       <TableCell>
-                        <Button
-                          size="sm"
-                          onClick={() => handlePaymentAction(booking)}
-                          className="flex items-center gap-1"
-                        >
-                          <DollarSign className="h-4 w-4" />
-                          Manage
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            onClick={() => handlePaymentAction(booking)}
+                            className="flex items-center gap-1"
+                          >
+                            <DollarSign className="h-4 w-4" />
+                            Manage
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleCollectPaymentMethod(booking)}
+                            className="flex items-center gap-1"
+                          >
+                            <CreditCard className="h-4 w-4" />
+                            Card
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -582,14 +607,25 @@ const PaymentManagementDashboard = () => {
                         {booking.cleaners ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}` : 'Unassigned'}
                       </TableCell>
                       <TableCell>
-                        <Button
-                          size="sm"
-                          onClick={() => handlePaymentAction(booking)}
-                          className="flex items-center gap-1"
-                        >
-                          <DollarSign className="h-4 w-4" />
-                          Manage
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            onClick={() => handlePaymentAction(booking)}
+                            className="flex items-center gap-1"
+                          >
+                            <DollarSign className="h-4 w-4" />
+                            Manage
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleCollectPaymentMethod(booking)}
+                            className="flex items-center gap-1"
+                          >
+                            <CreditCard className="h-4 w-4" />
+                            Card
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -641,14 +677,25 @@ const PaymentManagementDashboard = () => {
                         {booking.cleaners ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}` : 'Unassigned'}
                       </TableCell>
                       <TableCell>
-                        <Button
-                          size="sm"
-                          onClick={() => handlePaymentAction(booking)}
-                          className="flex items-center gap-1"
-                        >
-                          <DollarSign className="h-4 w-4" />
-                          Manage
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            onClick={() => handlePaymentAction(booking)}
+                            className="flex items-center gap-1"
+                          >
+                            <DollarSign className="h-4 w-4" />
+                            Manage
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleCollectPaymentMethod(booking)}
+                            className="flex items-center gap-1"
+                          >
+                            <CreditCard className="h-4 w-4" />
+                            Card
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -694,14 +741,25 @@ const PaymentManagementDashboard = () => {
                         {booking.cleaners ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}` : 'Unassigned'}
                       </TableCell>
                       <TableCell>
-                        <Button
-                          size="sm"
-                          onClick={() => handlePaymentAction(booking)}
-                          className="flex items-center gap-1"
-                        >
-                          <DollarSign className="h-4 w-4" />
-                          Manage
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            onClick={() => handlePaymentAction(booking)}
+                            className="flex items-center gap-1"
+                          >
+                            <DollarSign className="h-4 w-4" />
+                            Manage
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleCollectPaymentMethod(booking)}
+                            className="flex items-center gap-1"
+                          >
+                            <CreditCard className="h-4 w-4" />
+                            Card
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -747,15 +805,26 @@ const PaymentManagementDashboard = () => {
                         <PaymentStatusIndicator status={booking.payment_status} />
                       </TableCell>
                       <TableCell>
-                        <Button
-                          size="sm"
-                          onClick={() => handlePaymentAction(booking)}
-                          variant="destructive"
-                          className="flex items-center gap-1"
-                        >
-                          <RefreshCw className="h-4 w-4" />
-                          Retry Payment
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            onClick={() => handlePaymentAction(booking)}
+                            variant="destructive"
+                            className="flex items-center gap-1"
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                            Retry Payment
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleCollectPaymentMethod(booking)}
+                            className="flex items-center gap-1"
+                          >
+                            <CreditCard className="h-4 w-4" />
+                            Card
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -801,14 +870,25 @@ const PaymentManagementDashboard = () => {
                         <PaymentStatusIndicator status={booking.payment_status} />
                       </TableCell>
                       <TableCell>
-                        <Button
-                          size="sm"
-                          onClick={() => handlePaymentAction(booking)}
-                          className="flex items-center gap-1"
-                        >
-                          <DollarSign className="h-4 w-4" />
-                          Setup Payment
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            onClick={() => handlePaymentAction(booking)}
+                            className="flex items-center gap-1"
+                          >
+                            <DollarSign className="h-4 w-4" />
+                            Setup Payment
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleCollectPaymentMethod(booking)}
+                            className="flex items-center gap-1"
+                          >
+                            <CreditCard className="h-4 w-4" />
+                            Card
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -829,6 +909,29 @@ const PaymentManagementDashboard = () => {
         }}
         onSuccess={fetchBookings}
       />
+
+      {/* Collect Payment Method Dialog */}
+      {selectedBooking && (
+        <CollectPaymentMethodDialog
+          open={collectPaymentDialogOpen}
+          onOpenChange={(open) => {
+            setCollectPaymentDialogOpen(open);
+            if (!open) setSelectedBooking(null);
+          }}
+          customer={{
+            id: selectedBooking.customer,
+            first_name: selectedBooking.first_name,
+            last_name: selectedBooking.last_name,
+            email: selectedBooking.email
+          }}
+          booking={{
+            id: selectedBooking.id,
+            total_cost: selectedBooking.total_cost,
+            cleaning_type: 'Cleaning Service',
+            address: selectedBooking.address
+          }}
+        />
+      )}
     </div>
   );
 };
