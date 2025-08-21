@@ -109,7 +109,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.log('Attempting to send email to:', email);
       
       const emailResult = await resend.emails.send({
-        from: "SN Cleaning <onboarding@resend.dev>",
+        from: "SN Cleaning <noreply@notifications.sncleaningservices.co.uk>",
         to: [email],
         subject: "Set Up Your Payment Method - SN Cleaning",
         html: `
