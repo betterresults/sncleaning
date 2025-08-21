@@ -65,15 +65,24 @@ serve(async (req) => {
       try {
         console.log(`Processing customer: ${customer.id} - ${customer.email}`)
 
-        // Search for Stripe customer by email
+        // Search for Stripe customer by email (try multiple variations)
         console.log(`Searching Stripe for customer with email: ${customer.email}`)
-        const stripeCustomers = await stripe.customers.list({
-          email: customer.email,
+        let stripeCustomers = await stripe.customers.list({
+          email: customer.email.toLowerCase().trim(),
           limit: 1
         })
 
+        // If not found, try searching by general query
         if (stripeCustomers.data.length === 0) {
-          console.log(`No Stripe customer found for ${customer.email}`)
+          console.log(`No exact match, trying broader search for: ${customer.email}`)
+          stripeCustomers = await stripe.customers.search({
+            query: `email:'${customer.email.toLowerCase().trim()}'`,
+            limit: 1
+          })
+        }
+
+        if (stripeCustomers.data.length === 0) {
+          console.log(`No Stripe customer found for ${customer.email} after comprehensive search`)
           continue
         }
 
