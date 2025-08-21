@@ -49,6 +49,7 @@ import PaymentMethodStatusIcon from '@/components/customer/PaymentMethodStatusBa
 import { useCustomerPaymentMethods } from '@/hooks/useCustomerPaymentMethods';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { CollectPaymentMethodDialog } from '@/components/payments/CollectPaymentMethodDialog';
 
 interface UserData {
   id: string;
@@ -102,6 +103,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   // Delete user state
   const [userToDelete, setUserToDelete] = useState<UserData | null>(null);
   const [deletingUser, setDeletingUser] = useState(false);
+  const [collectPaymentDialogUser, setCollectPaymentDialogUser] = useState<UserData | null>(null);
   
   // Payment management state
   const [selectedCustomerForPayment, setSelectedCustomerForPayment] = useState<UserData | null>(null);
@@ -953,6 +955,16 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                                 </Button>
                               </CreateBookingDialogWithCustomer>
                             )}
+                            {isCustomerView && user.type === 'business_customer' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setCollectPaymentDialogUser(user)}
+                                className="bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200"
+                              >
+                                <CreditCard className="h-4 w-4" />
+                              </Button>
+                            )}
                             {!isCustomerView && (
                               <>
                                 <Button
@@ -1106,6 +1118,20 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           onPaymentMethodsChange={() => {
             refetchPaymentData();
             fetchUsers();
+          }}
+        />
+      )}
+
+      {/* Collect Payment Method Dialog */}
+      {collectPaymentDialogUser && (
+        <CollectPaymentMethodDialog
+          open={!!collectPaymentDialogUser}
+          onOpenChange={(open) => !open && setCollectPaymentDialogUser(null)}
+          customer={{
+            id: collectPaymentDialogUser.business_id || parseInt(collectPaymentDialogUser.id),
+            first_name: collectPaymentDialogUser.first_name || '',
+            last_name: collectPaymentDialogUser.last_name || '',
+            email: collectPaymentDialogUser.email
           }}
         />
       )}
