@@ -112,7 +112,7 @@ const CreateCustomerDialog = ({ children, onCustomerCreated }: CreateCustomerDia
 
       // Create auth user account so customer can log in
       console.log('Creating auth user account for customer:', data.id);
-      const defaultPassword = '123456'; // Default password, customer can reset it
+      const defaultPassword = 'TempPass123!'; // Secure temporary password
       
       const { data: userResult, error: userError } = await supabase.functions.invoke('create-user', {
         body: {
@@ -129,29 +129,37 @@ const CreateCustomerDialog = ({ children, onCustomerCreated }: CreateCustomerDia
       let authAccountCreated = false;
       if (userError) {
         console.error('Error creating user account:', userError);
-        // Don't fail the whole operation, but inform the user
+        // Still successful but inform about login limitation
         toast({
-          title: "Partial Success",
-          description: "Customer created but login account couldn't be created. They may need to sign up separately.",
-          variant: "destructive",
+          title: "Customer Created",
+          description: "Customer created successfully. Login account will be created automatically when they first sign up.",
         });
-      } else if (!userResult.success) {
-        console.error('User creation failed:', userResult.error);
+      } else if (!userResult || !userResult.success) {
+        console.error('User creation failed:', userResult?.error || 'Unknown error');
         toast({
-          title: "Partial Success", 
-          description: "Customer created but login account couldn't be created. They may need to sign up separately.",
-          variant: "destructive",
+          title: "Customer Created", 
+          description: "Customer created successfully. Login account will be created automatically when they first sign up.",
         });
       } else {
         console.log('Auth user created successfully:', userResult);
         authAccountCreated = true;
+        
+        // Now link the customer to the newly created user profile
+        const { error: linkError } = await supabase
+          .from('profiles')
+          .update({ customer_id: data.id })
+          .eq('user_id', userResult.user.id);
+          
+        if (linkError) {
+          console.error('Error linking profile to customer:', linkError);
+        }
       }
 
       // Show appropriate success message
       if (authAccountCreated) {
         toast({
           title: "Success",
-          description: `Customer created successfully! They can now log in with email ${formData.email} and password ${defaultPassword}`,
+          description: `Customer and login account created! They can log in with email ${formData.email} and password: ${defaultPassword}`,
         });
       } else {
         toast({

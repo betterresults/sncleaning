@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import BulkLinkRecordsUtility from '@/components/admin/BulkLinkRecordsUtility';
+import BulkAccountCreationUtility from '@/components/admin/BulkAccountCreationUtility';
 import { 
   Table, 
   TableBody, 
@@ -656,17 +658,25 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   const showBulkEdit = isCustomerView && selectedBusinessIds.length > 0;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>{getTypeTitle()} ({filteredUsers.length})</span>
-          <div className="flex gap-2">
-            <Button onClick={() => setShowAddUserDialog(true)} size="sm">
-              <UserPlus className="h-4 w-4 mr-2" />
-              Add {userType === 'customer' ? 'Customer' : userType === 'cleaner' ? 'Cleaner' : userType === 'admin' ? 'Admin' : 'User'}
-            </Button>
-          </div>
-        </CardTitle>
+    <div className="space-y-6">
+      {userType === 'all' && (
+        <>
+          <BulkAccountCreationUtility />
+          <BulkLinkRecordsUtility />
+        </>
+      )}
+      
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>{getTypeTitle()} ({filteredUsers.length})</span>
+            <div className="flex gap-2">
+              <Button onClick={() => setShowAddUserDialog(true)} size="sm">
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add {userType === 'customer' ? 'Customer' : userType === 'cleaner' ? 'Cleaner' : userType === 'admin' ? 'Admin' : 'User'}
+              </Button>
+            </div>
+          </CardTitle>
         
         {/* Search and Filters */}
         <div className="space-y-4">
@@ -1163,7 +1173,8 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           }}
         />
       )}
-    </Card>
+      </Card>
+    </div>
   );
 };
 
