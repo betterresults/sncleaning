@@ -35,6 +35,8 @@ interface Booking {
   payment_status: string;
   cleaner: number | null;
   customer: number;
+  cleaner_pay: number | null;
+  total_hours: number | null;
   cleaners?: {
     id: number;
     first_name: string;
@@ -615,13 +617,14 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                     <TableHead>Cleaning Type</TableHead>
                     <TableHead>Cleaner</TableHead>
                     <TableHead>Cost</TableHead>
+                    <TableHead>Cleaner Pay</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginatedBookings.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8">
+                      <TableCell colSpan={9} className="text-center py-8">
                         No bookings found
                       </TableCell>
                     </TableRow>
@@ -678,86 +681,106 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                           <TableCell className="font-medium">
                             £{booking.total_cost?.toFixed(2) || '0.00'}
                           </TableCell>
+                          <TableCell className="font-medium">
+                            <div className="text-sm">
+                              {booking.cleaner_pay ? (
+                                <>
+                                  <div className="font-semibold text-green-700">
+                                    £{booking.cleaner_pay.toFixed(2)}
+                                  </div>
+                                  {booking.total_hours && (
+                                    <div className="text-xs text-gray-500">
+                                      {booking.total_hours}h
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="text-gray-400">Not set</span>
+                              )}
+                            </div>
+                          </TableCell>
                           <TableCell>
-                            <div className="flex items-center justify-center gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEdit(booking.id);
-                                }}
-                                title="Edit"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDuplicate(booking);
-                                }}
-                                title="Duplicate"
-                              >
-                                <Copy className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleAssignCleaner(booking.id);
-                                }}
-                                title="Assign Cleaner"
-                              >
-                                <UserPlus className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCancel(booking.id);
-                                }}
-                                title="Cancel"
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleMakeRecurring(booking);
-                                }}
-                                title="Make Recurring"
-                              >
-                                <Repeat className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDelete(booking.id);
-                                }}
-                                title="Delete"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                            <div className="flex items-center justify-center">
+                              <div className="grid grid-cols-3 gap-0.5">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEdit(booking.id);
+                                  }}
+                                  title="Edit"
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDuplicate(booking);
+                                  }}
+                                  title="Duplicate"
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAssignCleaner(booking.id);
+                                  }}
+                                  title="Assign Cleaner"
+                                >
+                                  <UserPlus className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCancel(booking.id);
+                                  }}
+                                  title="Cancel"
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleMakeRecurring(booking);
+                                  }}
+                                  title="Make Recurring"
+                                >
+                                  <Repeat className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDelete(booking.id);
+                                  }}
+                                  title="Delete"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
                               <div
-                                className="flex items-center justify-center h-8 w-8"
+                                className="flex items-center justify-center h-7 w-7 ml-1"
                                 title={booking.payment_status || 'Unpaid'}
                               >
                                 <DollarSign 
-                                  className={`h-4 w-4 ${
+                                  className={`h-3 w-3 ${
                                     booking.payment_status?.toLowerCase() === 'paid' 
                                       ? 'text-green-600' 
                                       : booking.payment_status?.toLowerCase() === 'collecting'
