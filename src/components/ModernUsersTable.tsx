@@ -393,29 +393,33 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       if (userType === 'customer') {
         const row = users.find(u => u.id === userId);
         if (row?.type === 'business_customer' && row.business_id) {
-          const updates: any = {};
+          // Update customer table for business customers
+          const customerUpdates: any = {};
           if ('client_type' in editData) {
-            updates.clent_type = editData.client_type === 'empty' ? null : editData.client_type;
+            customerUpdates.clent_type = editData.client_type === 'empty' ? null : editData.client_type;
           }
           if ('client_status' in editData) {
-            updates.client_status = editData.client_status;
+            customerUpdates.client_status = editData.client_status;
           }
-          // Optionally allow editing name/email too in the future
+          if ('first_name' in editData) {
+            customerUpdates.first_name = editData.first_name;
+          }
+          if ('last_name' in editData) {
+            customerUpdates.last_name = editData.last_name;
+          }
+          if ('email' in editData) {
+            customerUpdates.email = editData.email;
+          }
+          
           const { error: custErr } = await supabase
             .from('customers')
-            .update(updates)
+            .update(customerUpdates)
             .eq('id', row.business_id);
           if (custErr) throw custErr;
-
-          toast({ title: 'Updated', description: 'Customer updated successfully' });
-          cancelEditing();
-          fetchUsers();
-          return;
-        } else {
-          toast({ title: 'Not editable', description: 'Only business customers can be edited here', variant: 'destructive' });
-          setUpdating(false);
-          return;
         }
+        
+        // Always update auth user for customers (both business and regular)
+        // Fall through to the auth user update below
       }
       
       // Default path: update auth user via admin function
