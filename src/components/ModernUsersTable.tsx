@@ -152,11 +152,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
 
       // Filter and combine data based on user type
       if (userType === 'customer') {
-        // For customers: show ALL customers (both auth users with guest role AND business customers)
-        const authCustomers = (data.authUsers || []).filter(user => user.role === 'guest').map(user => ({
-          ...user,
-          type: 'auth_user'
-        }));
+        // For customers: ONLY show customers from the customers table (business customers)
         const businessCustomers = (data.businessCustomers || []).map(customer => {
           console.log('Processing business customer:', customer.id, customer.first_name, customer.last_name, 'type will be set to: business_customer');
           return {
@@ -166,7 +162,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
             role: 'customer' // Display as 'customer' for clarity
           };
         });
-        processedUsers = [...authCustomers, ...businessCustomers];
+        processedUsers = businessCustomers;
         
         // Get address counts for customers
         const customerIds = businessCustomers.map(customer => customer.id).filter(Boolean);
