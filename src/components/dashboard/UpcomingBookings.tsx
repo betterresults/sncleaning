@@ -30,7 +30,9 @@ interface Booking {
   email: string;
   phone_number: string;
   address: string;
+  postcode: string;
   cleaning_type: string;
+  service_type: string;
   total_cost: number;
   payment_status: string;
   cleaner: number | null;
@@ -613,18 +615,17 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                     <TableHead>Date & Time</TableHead>
                     <TableHead>Customer</TableHead>
                     <TableHead>Contact</TableHead>
-                    <TableHead>Address</TableHead>
-                    <TableHead>Cleaning Type</TableHead>
+                    <TableHead>Address & Postcode</TableHead>
+                    <TableHead>Service Details</TableHead>
                     <TableHead>Cleaner</TableHead>
-                    <TableHead>Cost</TableHead>
-                    <TableHead>Cleaner Pay</TableHead>
+                    <TableHead>Cost & Pay</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginatedBookings.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8">
+                      <TableCell colSpan={8} className="text-center py-8">
                         No bookings found
                       </TableCell>
                     </TableRow>
@@ -654,59 +655,73 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                               <div className="font-medium">
                                 {booking.first_name} {booking.last_name}
                               </div>
-                              <div className="text-gray-500">
-                                ID: {booking.customer}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm space-y-1">
+                              <div className="break-words">{booking.email}</div>
+                              <div className="text-gray-500">{booking.phone_number}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="max-w-40">
+                            <div className="text-sm space-y-1">
+                              <div className="break-words leading-tight">{booking.address}</div>
+                              <div className="text-gray-500 font-medium">{booking.postcode}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="max-w-32">
+                            <div className="text-sm space-y-1">
+                              <div className="font-medium">
+                                {booking.total_hours ? `${booking.total_hours}h ` : ''}
+                                {booking.service_type || booking.cleaning_type || 'Standard'}
                               </div>
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="text-sm">
-                              <div>{booking.email}</div>
-                              <div className="text-gray-500">{booking.phone_number}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="max-w-32 truncate">
-                            {booking.address}
-                          </TableCell>
-                          <TableCell>{booking.cleaning_type || 'N/A'}</TableCell>
-                          <TableCell>
                             {isUnsigned ? (
-                              <Badge variant="destructive" className="bg-red-600 text-white">
+                              <Badge variant="destructive" className="bg-red-600 text-white text-xs">
                                 Unsigned
                               </Badge>
                             ) : (
-                              <span className="text-green-700 font-medium">{cleanerName}</span>
+                              <span className="text-green-700 font-medium text-sm">{cleanerName}</span>
                             )}
                           </TableCell>
-                          <TableCell className="font-medium">
-                            £{booking.total_cost?.toFixed(2) || '0.00'}
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            <div className="text-sm">
+                          <TableCell>
+                            <div className="text-sm space-y-1">
+                              <div className="font-semibold text-lg">
+                                £{booking.total_cost?.toFixed(2) || '0.00'}
+                              </div>
                               {booking.cleaner_pay ? (
-                                <>
-                                  <div className="font-semibold text-green-700">
-                                    £{booking.cleaner_pay.toFixed(2)}
-                                  </div>
-                                  {booking.total_hours && (
-                                    <div className="text-xs text-gray-500">
-                                      {booking.total_hours}h
-                                    </div>
-                                  )}
-                                </>
+                                <div className="text-xs text-green-700 font-medium">
+                                  Pay: £{booking.cleaner_pay.toFixed(2)}
+                                </div>
                               ) : (
-                                <span className="text-gray-400">Not set</span>
+                                <div className="text-xs text-gray-400">Pay not set</div>
                               )}
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex items-center justify-center gap-2">
+                              <div
+                                className="flex items-center justify-center h-8 w-8"
+                                title={booking.payment_status || 'Unpaid'}
+                              >
+                                <DollarSign 
+                                  className={`h-5 w-5 ${
+                                    booking.payment_status?.toLowerCase() === 'paid' 
+                                      ? 'text-green-600' 
+                                      : booking.payment_status?.toLowerCase() === 'collecting'
+                                      ? 'text-orange-500'
+                                      : 'text-red-600'
+                                  }`}
+                                />
+                              </div>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-7 w-7 p-0"
+                                    className="h-8 w-8 p-0"
                                     onClick={(e) => e.stopPropagation()}
                                   >
                                     <MoreHorizontal className="h-4 w-4" />
@@ -772,20 +787,6 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
-                              <div
-                                className="flex items-center justify-center h-7 w-7"
-                                title={booking.payment_status || 'Unpaid'}
-                              >
-                                <DollarSign 
-                                  className={`h-3 w-3 ${
-                                    booking.payment_status?.toLowerCase() === 'paid' 
-                                      ? 'text-green-600' 
-                                      : booking.payment_status?.toLowerCase() === 'collecting'
-                                      ? 'text-orange-500'
-                                      : 'text-red-600'
-                                  }`}
-                                />
-                              </div>
                             </div>
                           </TableCell>
                         </TableRow>
