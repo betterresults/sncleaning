@@ -57,7 +57,8 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
   useEffect(() => {
     if (booking) {
       setAmount(booking.total_cost || 0);
-      setPaymentLinkDescription(`Cleaning Service - ${booking.address}`);
+      const cleaningDate = new Date(booking.date_time).toLocaleDateString('en-GB');
+      setPaymentLinkDescription(`Cleaning Service - ${cleaningDate} - ${booking.address}`);
       fetchPaymentMethods();
     }
   }, [booking]);
