@@ -961,7 +961,10 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => startEditing(user)}
+                              onClick={() => {
+                                console.log('Edit button clicked for user:', user.id, user.first_name, user.last_name, 'type:', user.type);
+                                startEditing(user);
+                              }}
                             >
                               <Edit2 className="h-4 w-4" />
                             </Button>
@@ -973,7 +976,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                                 email: user.email || '',
                                 phone: user.phone || ''
                               }}>
-                                <Button size="sm" variant="outline">
+                                <Button size="sm" variant="outline" onClick={() => console.log('Add booking clicked for:', user.first_name, user.last_name)}>
                                   <Plus className="h-4 w-4" />
                                 </Button>
                               </CreateBookingDialogWithCustomer>
@@ -982,7 +985,10 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => setCollectPaymentDialogUser(user)}
+                                onClick={() => {
+                                  console.log('Collect payment clicked for:', user.first_name, user.last_name, 'user object:', user);
+                                  setCollectPaymentDialogUser(user);
+                                }}
                                 className="bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200"
                               >
                                 <CreditCard className="h-4 w-4" />
@@ -1016,7 +1022,10 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => setUserToDelete(user)}
+                                onClick={() => {
+                                  console.log('Delete button clicked for:', user.first_name, user.last_name, 'type:', user.type);
+                                  setUserToDelete(user);
+                                }}
                                 className="hover:border-destructive hover:text-destructive"
                               >
                                 <Trash2 className="h-4 w-4" />
