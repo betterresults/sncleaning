@@ -612,20 +612,18 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
               <Table className="min-w-full">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date & Time</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Address & Postcode</TableHead>
-                    <TableHead>Service Details</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Address</TableHead>
+                    <TableHead>Service</TableHead>
                     <TableHead>Cleaner</TableHead>
-                    <TableHead>Cost & Pay</TableHead>
+                    <TableHead>Cost</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginatedBookings.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8">
+                      <TableCell colSpan={6} className="text-center py-8">
                         No bookings found
                       </TableCell>
                     </TableRow>
@@ -640,70 +638,57 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                           className={`cursor-pointer ${isUnsigned ? "bg-red-50 hover:bg-red-100 border-l-4 border-red-500" : "hover:bg-gray-50"}`}
                           onClick={() => handleEdit(booking.id)}
                         >
-                          <TableCell>
+                          <TableCell className="py-3">
                             <div className="text-sm">
-                              <div className="font-medium">
-                                {format(new Date(booking.date_time), 'dd/MM/yyyy')}
+                              <div className="font-medium text-gray-900">
+                                {format(new Date(booking.date_time), 'dd/MM/yy')}
                               </div>
-                              <div className="text-gray-500">
+                              <div className="text-gray-500 text-xs">
                                 {format(new Date(booking.date_time), 'HH:mm')}
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-3">
                             <div className="text-sm">
-                              <div className="font-medium">
+                              <div className="text-gray-900 font-medium leading-tight">
+                                {booking.address}
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">
                                 {booking.first_name} {booking.last_name}
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell>
-                            <div className="text-sm space-y-1">
-                              <div className="break-words">{booking.email}</div>
-                              <div className="text-gray-500">{booking.phone_number}</div>
+                          <TableCell className="py-3">
+                            <div className="text-sm font-medium text-gray-900">
+                              {booking.total_hours ? `${booking.total_hours}h ` : ''}
+                              {booking.service_type || booking.cleaning_type || 'Standard'}
                             </div>
                           </TableCell>
-                          <TableCell className="max-w-40">
-                            <div className="text-sm space-y-1">
-                              <div className="break-words leading-tight">{booking.address}</div>
-                              <div className="text-gray-500 font-medium">{booking.postcode}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="max-w-32">
-                            <div className="text-sm space-y-1">
-                              <div className="font-medium">
-                                {booking.total_hours ? `${booking.total_hours}h ` : ''}
-                                {booking.service_type || booking.cleaning_type || 'Standard'}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
+                          <TableCell className="py-3">
                             {isUnsigned ? (
-                              <Badge variant="destructive" className="bg-red-600 text-white text-xs">
-                                Unsigned
+                              <Badge variant="destructive" className="bg-red-100 text-red-700 text-xs font-medium border-red-200">
+                                Unassigned
                               </Badge>
                             ) : (
-                              <span className="text-green-700 font-medium text-sm">{cleanerName}</span>
+                              <span className="text-sm font-medium text-gray-900">{cleanerName}</span>
                             )}
                           </TableCell>
-                          <TableCell>
-                            <div className="text-sm space-y-1">
-                              <div className="font-semibold text-lg">
+                          <TableCell className="py-3">
+                            <div className="text-right">
+                              <div className="text-lg font-semibold text-gray-900">
                                 £{booking.total_cost?.toFixed(2) || '0.00'}
                               </div>
-                              {booking.cleaner_pay ? (
-                                <div className="text-xs text-green-700 font-medium">
-                                  Pay: £{booking.cleaner_pay.toFixed(2)}
+                              {booking.cleaner_pay && (
+                                <div className="text-xs text-gray-500">
+                                  £{booking.cleaner_pay.toFixed(2)}
                                 </div>
-                              ) : (
-                                <div className="text-xs text-gray-400">Pay not set</div>
                               )}
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-3">
                             <div className="flex items-center justify-center gap-2">
                               <div
-                                className="flex items-center justify-center h-8 w-8"
+                                className="flex items-center justify-center"
                                 title={booking.payment_status || 'Unpaid'}
                               >
                                 <DollarSign 
@@ -712,7 +697,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                                       ? 'text-green-600' 
                                       : booking.payment_status?.toLowerCase() === 'collecting'
                                       ? 'text-orange-500'
-                                      : 'text-red-600'
+                                      : 'text-red-500'
                                   }`}
                                 />
                               </div>
@@ -721,10 +706,10 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-8 w-8 p-0"
+                                    className="h-8 w-8 p-0 hover:bg-gray-100"
                                     onClick={(e) => e.stopPropagation()}
                                   >
-                                    <MoreHorizontal className="h-4 w-4" />
+                                    <MoreHorizontal className="h-4 w-4 text-gray-600" />
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-48">
