@@ -28,14 +28,28 @@ serve(async (req) => {
     // Initialize Stripe
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" })
 
-    console.log('Starting customer-Stripe account sync...')
+    // Parse request body to check for specific customer ID
+    const body = req.method === 'POST' ? await req.json() : {}
+    const specificCustomerId = body.customerId
 
-    // Get all customers with email addresses
-    const { data: customers, error: customerError } = await supabaseClient
+    console.log('Starting customer-Stripe account sync...')
+    
+    if (specificCustomerId) {
+      console.log(`Syncing specific customer ID: ${specificCustomerId}`)
+    }
+
+    // Get customers - either specific customer or all customers
+    let query = supabaseClient
       .from('customers')
       .select('id, email, first_name, last_name')
       .not('email', 'is', null)
       .neq('email', '')
+
+    if (specificCustomerId) {
+      query = query.eq('id', specificCustomerId)
+    }
+
+    const { data: customers, error: customerError } = await query
 
     if (customerError) {
       throw new Error(`Database error: ${customerError.message}`)
@@ -52,6 +66,7 @@ serve(async (req) => {
         console.log(`Processing customer: ${customer.id} - ${customer.email}`)
 
         // Search for Stripe customer by email
+        console.log(`Searching Stripe for customer with email: ${customer.email}`)
         const stripeCustomers = await stripe.customers.list({
           email: customer.email,
           limit: 1
@@ -63,7 +78,7 @@ serve(async (req) => {
         }
 
         const stripeCustomer = stripeCustomers.data[0]
-        console.log(`Found Stripe customer: ${stripeCustomer.id}`)
+        console.log(`Found Stripe customer: ${stripeCustomer.id} for ${customer.email}`)
 
         // Get payment methods for this Stripe customer
         const paymentMethods = await stripe.paymentMethods.list({
@@ -80,6 +95,7 @@ serve(async (req) => {
           .eq('customer_id', customer.id)
 
         const existingIds = new Set(existingPaymentMethods?.map(pm => pm.stripe_payment_method_id) || [])
+        console.log(`Existing payment methods in database: ${existingIds.size}`)
 
         // Insert new payment methods
         let addedCount = 0
@@ -114,6 +130,8 @@ serve(async (req) => {
 
         if (addedCount > 0) {
           console.log(`Added ${addedCount} payment methods for customer ${customer.email}`)
+        } else if (paymentMethods.data.length > 0) {
+          console.log(`All ${paymentMethods.data.length} payment methods already exist for customer ${customer.email}`)
         }
 
         customersProcessed++

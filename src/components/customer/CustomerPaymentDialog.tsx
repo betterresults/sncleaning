@@ -42,7 +42,9 @@ const CustomerPaymentDialog = ({
   const handleSyncStripe = async () => {
     setSyncing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('sync-customer-stripe-accounts');
+      const { data, error } = await supabase.functions.invoke('sync-customer-stripe-accounts', {
+        body: { customerId: customerId }  // Send specific customer ID
+      });
       
       if (error) throw error;
       
