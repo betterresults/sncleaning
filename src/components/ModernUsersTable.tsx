@@ -342,7 +342,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
     try {
       const { error } = await supabase.functions.invoke('delete-user-account', {
         body: {
-          userId: userToDelete.id
+          user_id: userToDelete.id
         }
       });
 
@@ -387,11 +387,18 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   };
 
   const updateUser = async (userId: string) => {
+    console.log('=== UPDATE USER DEBUG ===');
+    console.log('User ID:', userId);
+    console.log('User Type:', userType);
+    console.log('Edit Data:', editData);
+    
     try {
       setUpdating(true);
 
       if (userType === 'customer') {
         const row = users.find(u => u.id === userId);
+        console.log('Found user row:', row);
+        
         if (row?.type === 'business_customer' && row.business_id) {
           // Update customer table for business customers
           const customerUpdates: any = {};
@@ -411,11 +418,17 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
             customerUpdates.email = editData.email;
           }
           
+          console.log('Customer updates:', customerUpdates);
+          
           const { error: custErr } = await supabase
             .from('customers')
             .update(customerUpdates)
             .eq('id', row.business_id);
-          if (custErr) throw custErr;
+          if (custErr) {
+            console.error('Customer update error:', custErr);
+            throw custErr;
+          }
+          console.log('Customer table updated successfully');
         }
         
         // Always update auth user for customers (both business and regular)
@@ -423,6 +436,17 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       }
       
       // Default path: update auth user via admin function
+      console.log('Calling update-user-admin with:', {
+        userId: userId,
+        updates: {
+          first_name: editData.first_name,
+          last_name: editData.last_name,
+          email: editData.email,
+          role: editData.role,
+          password: editData.password
+        }
+      });
+      
       const { data, error } = await supabase.functions.invoke('update-user-admin', {
         body: {
           userId: userId,
@@ -435,6 +459,8 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           }
         }
       });
+
+      console.log('update-user-admin response:', { data, error });
 
       if (error) throw error;
       if (!data.success) throw new Error(data.error || 'Failed to update user');
