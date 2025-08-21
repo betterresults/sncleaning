@@ -50,6 +50,7 @@ import { useCustomerPaymentMethods } from '@/hooks/useCustomerPaymentMethods';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { CollectPaymentMethodDialog } from '@/components/payments/CollectPaymentMethodDialog';
+import { SyncPaymentMethodsButton } from '@/components/payments/SyncPaymentMethodsButton';
 
 interface UserData {
   id: string;
@@ -642,10 +643,15 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>{getTypeTitle()} ({filteredUsers.length})</span>
-          <Button onClick={() => setShowAddUserDialog(true)} size="sm">
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add {userType === 'customer' ? 'Customer' : userType === 'cleaner' ? 'Cleaner' : userType === 'admin' ? 'Admin' : 'User'}
-          </Button>
+          <div className="flex gap-2">
+            {userType === 'customer' && (
+              <SyncPaymentMethodsButton onSyncComplete={fetchUsers} />
+            )}
+            <Button onClick={() => setShowAddUserDialog(true)} size="sm">
+              <UserPlus className="h-4 w-4 mr-2" />
+              Add {userType === 'customer' ? 'Customer' : userType === 'cleaner' ? 'Cleaner' : userType === 'admin' ? 'Admin' : 'User'}
+            </Button>
+          </div>
         </CardTitle>
         
         {/* Search and Filters */}
