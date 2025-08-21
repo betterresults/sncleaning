@@ -85,10 +85,30 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Created Checkout Session:', checkoutSession.id);
 
     // Send email with payment method collection link
-    const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    console.log('RESEND_API_KEY exists:', !!resendApiKey);
+    
+    if (!resendApiKey) {
+      console.error('RESEND_API_KEY environment variable is not set');
+      return new Response(JSON.stringify({
+        success: true,
+        checkout_url: checkoutSession.url,
+        setup_intent_id: setupIntent.id,
+        stripe_customer_id: stripeCustomer.id,
+        session_id: checkoutSession.id,
+        email_sent: false,
+        email_error: 'RESEND_API_KEY not configured'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const resend = new Resend(resendApiKey);
     
     try {
-      await resend.emails.send({
+      console.log('Attempting to send email to:', email);
+      
+      const emailResult = await resend.emails.send({
         from: "SN Cleaning <noreply@resend.dev>",
         to: [email],
         subject: "Set Up Your Payment Method - SN Cleaning",
@@ -140,10 +160,24 @@ const handler = async (req: Request): Promise<Response> => {
         `
       });
       
+      console.log('Email send result:', emailResult);
       console.log('Payment method collection email sent successfully to:', email);
+      
     } catch (emailError) {
       console.error('Failed to send payment method collection email:', emailError);
-      // Don't fail the main request if email fails
+      console.error('Email error details:', JSON.stringify(emailError, null, 2));
+      
+      return new Response(JSON.stringify({
+        success: true,
+        checkout_url: checkoutSession.url,
+        setup_intent_id: setupIntent.id,
+        stripe_customer_id: stripeCustomer.id,
+        session_id: checkoutSession.id,
+        email_sent: false,
+        email_error: emailError.message || 'Unknown email error'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     return new Response(JSON.stringify({
