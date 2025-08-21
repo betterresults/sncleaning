@@ -50,8 +50,6 @@ import { useCustomerPaymentMethods } from '@/hooks/useCustomerPaymentMethods';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { CollectPaymentMethodDialog } from '@/components/payments/CollectPaymentMethodDialog';
-import { SyncPaymentMethodsButton } from '@/components/payments/SyncPaymentMethodsButton';
-import RemoveAllPaymentMethodsButton from '@/components/payments/RemoveAllPaymentMethodsButton';
 
 interface UserData {
   id: string;
@@ -159,12 +157,15 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           ...user,
           type: 'auth_user'
         }));
-        const businessCustomers = (data.businessCustomers || []).map(customer => ({
-          ...customer,
-          type: 'business_customer',
-          business_id: customer.id,
-          role: 'customer' // Display as 'customer' for clarity
-        }));
+        const businessCustomers = (data.businessCustomers || []).map(customer => {
+          console.log('Processing business customer:', customer.id, customer.first_name, customer.last_name, 'type will be set to: business_customer');
+          return {
+            ...customer,
+            type: 'business_customer',
+            business_id: customer.id,
+            role: 'customer' // Display as 'customer' for clarity
+          };
+        });
         processedUsers = [...authCustomers, ...businessCustomers];
         
         // Get address counts for customers
@@ -186,11 +187,14 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         }
 
         // Add address counts to processed users and ensure type is set
-        processedUsers = processedUsers.map(user => ({
-          ...user,
-          type: user.type || 'business_customer', // Ensure all customers have correct type
-          addressCount: user.type === 'business_customer' || !user.type ? (addressCounts[user.id] || 0) : 0
-        }));
+        processedUsers = processedUsers.map(user => {
+          console.log('Final user processing:', user.id, user.first_name, 'type:', user.type, 'addressCount will be:', user.type === 'business_customer' || !user.type ? (addressCounts[user.id] || 0) : 0);
+          return {
+            ...user,
+            type: user.type || 'business_customer', // Ensure all customers have correct type
+            addressCount: user.type === 'business_customer' || !user.type ? (addressCounts[user.id] || 0) : 0
+          };
+        });
         
       } else if (userType === 'all') {
         // For all: show everything
@@ -661,12 +665,6 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         <CardTitle className="flex items-center justify-between">
           <span>{getTypeTitle()} ({filteredUsers.length})</span>
           <div className="flex gap-2">
-            {userType === 'customer' && (
-              <div className="flex gap-2 items-center">
-                <SyncPaymentMethodsButton onSyncComplete={fetchUsers} />
-                <RemoveAllPaymentMethodsButton onRemoveComplete={fetchUsers} />
-              </div>
-            )}
             <Button onClick={() => setShowAddUserDialog(true)} size="sm">
               <UserPlus className="h-4 w-4 mr-2" />
               Add {userType === 'customer' ? 'Customer' : userType === 'cleaner' ? 'Cleaner' : userType === 'admin' ? 'Admin' : 'User'}
