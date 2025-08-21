@@ -55,12 +55,10 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
 
       if (error) throw error;
 
-      // Open Stripe checkout in new tab
       if (data.checkout_url) {
-        window.open(data.checkout_url, '_blank');
         toast({
-          title: 'Payment Method Collection Started',
-          description: 'Customer will be redirected to securely add their payment method.',
+          title: 'Email Sent Successfully',
+          description: `Payment method collection link sent to ${customer.email}. Customer can securely add their card details.`,
         });
         onOpenChange(false);
       }
