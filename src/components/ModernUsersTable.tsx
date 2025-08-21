@@ -154,9 +154,14 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       // Filter and combine data based on user type
       if (userType === 'customer') {
         // For customers: show ALL customers (both auth users with guest role AND business customers)
-        const authCustomers = (data.authUsers || []).filter(user => user.role === 'guest');
+        const authCustomers = (data.authUsers || []).filter(user => user.role === 'guest').map(user => ({
+          ...user,
+          type: 'auth_user'
+        }));
         const businessCustomers = (data.businessCustomers || []).map(customer => ({
           ...customer,
+          type: 'business_customer',
+          business_id: customer.id,
           role: 'customer' // Display as 'customer' for clarity
         }));
         processedUsers = [...authCustomers, ...businessCustomers];
@@ -187,7 +192,17 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         
       } else if (userType === 'all') {
         // For all: show everything
-        processedUsers = [...(data.authUsers || []), ...(data.businessCustomers || [])];
+        const allAuthUsers = (data.authUsers || []).map(user => ({
+          ...user,
+          type: 'auth_user'
+        }));
+        const allBusinessCustomers = (data.businessCustomers || []).map(customer => ({
+          ...customer,
+          type: 'business_customer',
+          business_id: customer.id,
+          role: 'customer'
+        }));
+        processedUsers = [...allAuthUsers, ...allBusinessCustomers];
         
       } else {
         // For admins/cleaners: only show auth users with matching roles
