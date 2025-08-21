@@ -15,6 +15,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 import BulkEditBookingsDialog from './BulkEditBookingsDialog';
 import EditBookingDialog from './EditBookingDialog';
@@ -409,9 +412,11 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   const paginatedBookings = filteredBookings.slice(startIndex, startIndex + itemsPerPage);
 
   const getPaymentStatusIcon = (status: string, cost: number) => {
-    const normalizedStatus = status?.toLowerCase() || '';
+    const normalizedStatus = status?.toLowerCase() || 'unpaid';
     
-    if (normalizedStatus.includes('paid') && !normalizedStatus.includes('not')) {
+    console.log('Payment status debug:', { status, normalizedStatus, cost }); // Debug log
+    
+    if (normalizedStatus === 'paid' || normalizedStatus.includes('paid')) {
       return (
         <div className="flex items-center space-x-2">
           <CheckCircle className="h-4 w-4 text-green-600" />
@@ -420,7 +425,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
           </span>
         </div>
       );
-    } else if (normalizedStatus.includes('collecting')) {
+    } else if (normalizedStatus === 'collecting' || normalizedStatus.includes('collecting')) {
       return (
         <div className="flex items-center space-x-2">
           <span className="font-semibold text-yellow-600 text-base">
@@ -468,41 +473,72 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
     <div className="space-y-6">
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
             <Filter className="h-4 w-4" />
             Filters
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="dateFrom">Date From</Label>
-              <Input
-                id="dateFrom"
-                type="date"
-                value={filters.dateFrom}
-                onChange={(e) => setFilters({...filters, dateFrom: e.target.value})}
-              />
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Date From */}
+            <div className="flex items-center gap-2">
+              <Label className="text-sm font-medium whitespace-nowrap">From:</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-[120px] justify-start text-left font-normal h-8"
+                  >
+                    <Calendar className="mr-2 h-3 w-3" />
+                    {filters.dateFrom ? format(new Date(filters.dateFrom), 'dd/MM') : 'Select'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={filters.dateFrom ? new Date(filters.dateFrom) : undefined}
+                    onSelect={(date) => setFilters({...filters, dateFrom: date ? date.toISOString().split('T')[0] : ''})}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="dateTo">Date To</Label>
-              <Input
-                id="dateTo"
-                type="date"
-                value={filters.dateTo}
-                onChange={(e) => setFilters({...filters, dateTo: e.target.value})}
-              />
+            {/* Date To */}
+            <div className="flex items-center gap-2">
+              <Label className="text-sm font-medium whitespace-nowrap">To:</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-[120px] justify-start text-left font-normal h-8"
+                  >
+                    <Calendar className="mr-2 h-3 w-3" />
+                    {filters.dateTo ? format(new Date(filters.dateTo), 'dd/MM') : 'Select'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={filters.dateTo ? new Date(filters.dateTo) : undefined}
+                    onSelect={(date) => setFilters({...filters, dateTo: date ? date.toISOString().split('T')[0] : ''})}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="cleaner">Cleaner</Label>
+            {/* Cleaner Filter */}
+            <div className="flex items-center gap-2">
+              <Label className="text-sm font-medium whitespace-nowrap">Cleaner:</Label>
               <Select value={filters.cleanerId} onValueChange={(value) => setFilters({...filters, cleanerId: value})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select cleaner" />
+                <SelectTrigger className="w-[140px] h-8">
+                  <SelectValue placeholder="All cleaners" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white border shadow-lg z-50">
                   <SelectItem value="all">All cleaners</SelectItem>
                   {cleaners.map((cleaner) => (
                     <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
@@ -513,42 +549,24 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="customer">Customer</Label>
-              <Select value={filters.customerId} onValueChange={(value) => setFilters({...filters, customerId: value})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select customer" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All customers</SelectItem>
-                  {customers.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.id.toString()}>
-                      {customer.first_name} {customer.last_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="customerSearch">Search Customer</Label>
+            {/* Customer Search */}
+            <div className="flex items-center gap-2">
+              <Label className="text-sm font-medium whitespace-nowrap">Customer:</Label>
               <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-2 top-2 h-3 w-3 text-gray-400" />
                 <Input
-                  id="customerSearch"
-                  placeholder="Search by name or email"
+                  placeholder="Search customer..."
                   value={filters.customerSearch}
                   onChange={(e) => setFilters({...filters, customerSearch: e.target.value})}
-                  className="pl-8"
+                  className="pl-7 w-[160px] h-8 text-sm"
                 />
               </div>
             </div>
 
-            <div className="flex items-end">
-              <Button onClick={clearFilters} variant="outline">
-                Clear Filters
-              </Button>
-            </div>
+            {/* Clear Filters */}
+            <Button onClick={clearFilters} variant="outline" size="sm" className="h-8">
+              Clear
+            </Button>
           </div>
         </CardContent>
       </Card>
