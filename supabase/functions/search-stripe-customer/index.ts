@@ -95,32 +95,68 @@ serve(async (req) => {
     let debugCustomers = []
     if (stripeCustomers.data.length === 0) {
       try {
-        console.log(`Strategy 4: Listing recent customers for debugging`)
-        const allCustomers = await stripe.customers.list({ limit: 20 })
+        console.log(`Strategy 4: Comprehensive customer listing for debugging`)
+        const allCustomers = await stripe.customers.list({ limit: 100 }) // Increase limit to see more customers
         debugCustomers = allCustomers.data.map(c => ({
           id: c.id,
           email: c.email,
           name: c.name,
           created: c.created
         }))
-        console.log(`Strategy 4: Found ${debugCustomers.length} recent customers:`)
-        debugCustomers.forEach(c => {
-          console.log(`  - ${c.email} (${c.name || 'No name'}) - ID: ${c.id}`)
+        console.log(`Strategy 4: Found ${debugCustomers.length} total customers in Stripe`)
+        
+        // Log ALL customer emails for debugging
+        console.log('ALL STRIPE CUSTOMER EMAILS:')
+        allCustomers.data.forEach((c, index) => {
+          console.log(`${index + 1}. "${c.email}" (Name: ${c.name || 'No name'}) - ID: ${c.id}`)
         })
         
-        // Try partial email match
-        const partialMatches = allCustomers.data.filter(c => 
-          c.email && (
-            c.email.toLowerCase().includes(searchEmail.toLowerCase()) ||
-            searchEmail.toLowerCase().includes(c.email.toLowerCase())
-          )
+        // Try exact match ignoring case and whitespace
+        console.log(`\nSearching for exact match of: "${searchEmail}"`)
+        const exactMatch = allCustomers.data.find(c => 
+          c.email && c.email.trim().toLowerCase() === searchEmail.trim().toLowerCase()
         )
-        if (partialMatches.length > 0) {
-          console.log(`Found ${partialMatches.length} partial email matches:`)
-          partialMatches.forEach(c => {
-            console.log(`  - Partial match: ${c.email} vs search: ${searchEmail}`)
+        
+        if (exactMatch) {
+          console.log(`FOUND EXACT MATCH: ${exactMatch.email} - ID: ${exactMatch.id}`)
+          stripeCustomers.data = [exactMatch]
+        } else {
+          // Try partial matches with detailed logging
+          console.log(`No exact match found, trying partial matches...`)
+          const partialMatches = allCustomers.data.filter(c => {
+            if (!c.email) return false
+            
+            const customerEmail = c.email.trim().toLowerCase()
+            const searchLower = searchEmail.trim().toLowerCase()
+            
+            const contains = customerEmail.includes(searchLower) || searchLower.includes(customerEmail)
+            
+            if (contains) {
+              console.log(`PARTIAL MATCH FOUND: "${c.email}" vs "${searchEmail}"`)
+            }
+            
+            return contains
           })
-          stripeCustomers.data = partialMatches
+          
+          if (partialMatches.length > 0) {
+            console.log(`Found ${partialMatches.length} partial matches`)
+            stripeCustomers.data = partialMatches
+          } else {
+            console.log(`NO MATCHES FOUND AT ALL for "${searchEmail}"`)
+            // Show similar emails for debugging
+            const similarEmails = allCustomers.data
+              .filter(c => c.email)
+              .map(c => c.email)
+              .filter(email => {
+                const emailParts = email.split('@')
+                const searchParts = searchEmail.split('@')
+                return emailParts[0] && searchParts[0] && 
+                       (emailParts[0].toLowerCase().includes(searchParts[0].toLowerCase()) ||
+                        searchParts[0].toLowerCase().includes(emailParts[0].toLowerCase()))
+              })
+            
+            console.log(`Similar email addresses found: ${similarEmails.join(', ')}`)
+          }
         }
       } catch (debugError) {
         console.log(`Strategy 4 debug listing failed: ${debugError.message}`)

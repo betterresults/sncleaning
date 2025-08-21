@@ -103,18 +103,9 @@ const CustomerPaymentDialog = ({
       if (error) throw error;
       
       if (data.customers_found === 0) {
-        // Show debug info if no customers found
-        let debugMessage = `No Stripe customer found with email: ${data.search_email}`;
-        if (data.debug_recent_customers && data.debug_recent_customers.length > 0) {
-          const recentEmails = data.debug_recent_customers.slice(0, 5).map((c: any) => c.email).filter(Boolean);
-          if (recentEmails.length > 0) {
-            debugMessage += `\n\nRecent Stripe customers found: ${recentEmails.join(', ')}`;
-          }
-        }
-        
         toast({
-          title: "No Stripe Account Found",
-          description: debugMessage,
+          title: "Customer Not Found in Stripe",
+          description: `"${data.search_email}" was not found in your Stripe account. Check the function logs for a complete list of all Stripe customers to verify the exact email format.`,
           variant: "destructive",
         });
       } else {
