@@ -9,28 +9,53 @@ const DeleteSinsipButton = () => {
   const { toast } = useToast();
 
   const deleteSinsipCustomer = async () => {
-    if (!confirm('Are you sure you want to delete the sinsip.2014@gmail.com customer completely?')) {
+    if (!confirm('Are you sure you want to delete ALL sinsip.2014@gmail.com records (both auth user and business customer)?')) {
       return;
     }
 
     setLoading(true);
     try {
-      // Delete the business customer (id 28)
-      const { data, error } = await supabase.functions.invoke('delete-user-account', {
-        body: { user_id: "28" }
-      });
-
-      if (error) {
-        console.error('Error calling delete function:', error);
-        throw error;
-      }
-
-      console.log('Delete response:', data);
+      console.log('Starting deletion of sinsip.2014@gmail.com records...');
       
-      toast({
-        title: "Success",
-        description: "Customer sinsip.2014@gmail.com deleted successfully!",
+      // Delete both the auth user and business customer
+      const promises = [
+        // Delete auth user
+        supabase.functions.invoke('delete-user-account', {
+          body: { user_id: "fab3fdc7-d43e-41d6-b40f-509de9c5e6d0" }
+        }),
+        // Delete business customer
+        supabase.functions.invoke('delete-user-account', {
+          body: { user_id: "28" }
+        })
+      ];
+
+      const results = await Promise.allSettled(promises);
+      
+      console.log('Delete results:', results);
+      
+      // Check results
+      let successCount = 0;
+      let errors = [];
+      
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled' && !result.value.error) {
+          successCount++;
+          console.log(`Delete ${index === 0 ? 'auth user' : 'business customer'} successful:`, result.value.data);
+        } else {
+          const error = result.status === 'rejected' ? result.reason : result.value.error;
+          console.error(`Delete ${index === 0 ? 'auth user' : 'business customer'} failed:`, error);
+          errors.push(`${index === 0 ? 'Auth user' : 'Business customer'}: ${error.message || error}`);
+        }
       });
+      
+      if (successCount > 0) {
+        toast({
+          title: "Success", 
+          description: `Deleted ${successCount}/2 sinsip.2014@gmail.com records${errors.length > 0 ? '. Some errors occurred.' : ''}`,
+        });
+      } else {
+        throw new Error(`All deletions failed: ${errors.join(', ')}`);
+      }
 
     } catch (error: any) {
       console.error('Error deleting customer:', error);
@@ -41,6 +66,11 @@ const DeleteSinsipButton = () => {
       });
     } finally {
       setLoading(false);
+      
+      // Force refresh the page after 1 second
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     }
   };
 
