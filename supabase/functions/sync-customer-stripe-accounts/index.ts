@@ -65,24 +65,58 @@ serve(async (req) => {
       try {
         console.log(`Processing customer: ${customer.id} - ${customer.email}`)
 
-        // Search for Stripe customer by email (try multiple variations)
-        console.log(`Searching Stripe for customer with email: ${customer.email}`)
-        let stripeCustomers = await stripe.customers.list({
-          email: customer.email.toLowerCase().trim(),
-          limit: 1
+        // Search for Stripe customer by email with multiple strategies
+        console.log(`Starting comprehensive Stripe customer search for: ${customer.email}`)
+        let stripeCustomers = { data: [] }
+        
+        // Strategy 1: Exact email match
+        console.log(`Strategy 1: Exact email search`)
+        stripeCustomers = await stripe.customers.list({
+          email: customer.email,
+          limit: 10
         })
+        console.log(`Strategy 1 found ${stripeCustomers.data.length} customers`)
 
-        // If not found, try searching by general query
+        // Strategy 2: Case-insensitive search
         if (stripeCustomers.data.length === 0) {
-          console.log(`No exact match, trying broader search for: ${customer.email}`)
-          stripeCustomers = await stripe.customers.search({
-            query: `email:'${customer.email.toLowerCase().trim()}'`,
-            limit: 1
+          console.log(`Strategy 2: Case-insensitive email search`)
+          stripeCustomers = await stripe.customers.list({
+            email: customer.email.toLowerCase(),
+            limit: 10
           })
+          console.log(`Strategy 2 found ${stripeCustomers.data.length} customers`)
+        }
+
+        // Strategy 3: Search query approach
+        if (stripeCustomers.data.length === 0) {
+          try {
+            console.log(`Strategy 3: Search API with query`)
+            stripeCustomers = await stripe.customers.search({
+              query: `email:"${customer.email}"`,
+              limit: 10
+            })
+            console.log(`Strategy 3 found ${stripeCustomers.data.length} customers`)
+          } catch (searchError) {
+            console.log(`Strategy 3 failed: ${searchError.message}`)
+          }
+        }
+
+        // Strategy 4: List all customers and filter (last resort for testing)
+        if (stripeCustomers.data.length === 0) {
+          console.log(`Strategy 4: Listing recent customers to check for matches`)
+          const allCustomers = await stripe.customers.list({ limit: 100 })
+          const matchingCustomers = allCustomers.data.filter(c => 
+            c.email?.toLowerCase() === customer.email.toLowerCase()
+          )
+          stripeCustomers.data = matchingCustomers
+          console.log(`Strategy 4 found ${matchingCustomers.length} matching customers from ${allCustomers.data.length} total`)
+          
+          // Log some sample emails for debugging
+          console.log(`Sample Stripe emails: ${allCustomers.data.slice(0, 5).map(c => c.email).join(', ')}`)
         }
 
         if (stripeCustomers.data.length === 0) {
-          console.log(`No Stripe customer found for ${customer.email} after comprehensive search`)
+          console.log(`❌ No Stripe customer found for ${customer.email} after all search strategies`)
           continue
         }
 
