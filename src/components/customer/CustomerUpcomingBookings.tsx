@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import EditBookingDialog from './EditBookingDialog';
 import DuplicateBookingDialog from './DuplicateBookingDialog';
 import BookingCard from '@/components/booking/BookingCard';
+import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 
 interface Booking {
   id: number;
@@ -22,6 +23,7 @@ interface Booking {
   total_cost: number;
   cleaning_cost_per_hour: number | null;
   booking_status: string;
+  payment_status: string;
   additional_details: string | null;
   property_details: string | null;
   parking_details: string | null;
@@ -50,6 +52,8 @@ const CustomerUpcomingBookings = () => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [duplicatingBooking, setDuplicatingBooking] = useState<Booking | null>(null);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<Booking | null>(null);
   const [viewMode, setViewMode] = useState<'cards' | 'calendar'>('cards');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [currentPage, setCurrentPage] = useState(1);
@@ -102,6 +106,11 @@ const CustomerUpcomingBookings = () => {
     setShowDuplicateDialog(true);
   };
 
+  const handlePaymentAction = (booking: Booking) => {
+    setSelectedBookingForPayment(booking);
+    setPaymentDialogOpen(true);
+  };
+
   const handleBookingUpdated = () => {
     fetchUpcomingBookings();
   };
@@ -123,6 +132,7 @@ const CustomerUpcomingBookings = () => {
           total_cost,
           cleaning_cost_per_hour,
           booking_status,
+          payment_status,
           additional_details,
           property_details,
           parking_details,
@@ -388,6 +398,7 @@ const CustomerUpcomingBookings = () => {
                       onEdit={handleEditBooking}
                       onCancel={handleCancelBooking}
                       onDuplicate={handleDuplicateBooking}
+                      onPaymentAction={handlePaymentAction}
                     />
                   ))}
                 </div>
@@ -452,6 +463,30 @@ const CustomerUpcomingBookings = () => {
         open={showDuplicateDialog}
         onOpenChange={setShowDuplicateDialog}
         onBookingCreated={fetchUpcomingBookings}
+      />
+      
+      <ManualPaymentDialog
+        booking={selectedBookingForPayment ? {
+          id: selectedBookingForPayment.id,
+          customer: activeCustomerId || 0,
+          first_name: selectedBookingForPayment.first_name || '',
+          last_name: selectedBookingForPayment.last_name || '', 
+          email: selectedBookingForPayment.email || '',
+          total_cost: selectedBookingForPayment.total_cost,
+          payment_status: selectedBookingForPayment.payment_status,
+          date_time: selectedBookingForPayment.date_time,
+          address: selectedBookingForPayment.address
+        } : null}
+        isOpen={paymentDialogOpen}
+        onClose={() => {
+          setPaymentDialogOpen(false);
+          setSelectedBookingForPayment(null);
+        }}
+        onSuccess={() => {
+          fetchUpcomingBookings();
+          setPaymentDialogOpen(false);
+          setSelectedBookingForPayment(null);
+        }}
       />
     </div>
   );

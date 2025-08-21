@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import BookingCard from '@/components/booking/BookingCard';
 import CleaningPhotosViewDialog from './CleaningPhotosViewDialog';
+import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,6 +52,8 @@ const CustomerPastBookings = () => {
   const [selectedBookingForReview, setSelectedBookingForReview] = useState<PastBooking | null>(null);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewText, setReviewText] = useState('');
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<PastBooking | null>(null);
   
   // Filter states
   const [timePeriod, setTimePeriod] = useState('all');
@@ -382,6 +385,11 @@ const CustomerPastBookings = () => {
     console.log('Opening photos for folder:', booking.photo_folder_name);
     // Navigate to dedicated photos page with the direct folder reference
     window.open(`/photos/${booking.photo_folder_name}`, '_blank');
+  };
+
+  const handlePaymentAction = (booking: PastBooking) => {
+    setSelectedBookingForPayment(booking);
+    setPaymentDialogOpen(true);
   };
 
   if (loading) {
@@ -764,6 +772,7 @@ const CustomerPastBookings = () => {
                       type="completed"
                       onReview={(b) => handleReview(booking)}
                       onSeePhotos={booking.has_photos ? (b) => handleSeePhotos(booking) : undefined}
+                      onPaymentAction={(b) => handlePaymentAction(booking)}
                       hasReview={reviews[booking.id] || false}
                     />
                   ))}
@@ -899,6 +908,30 @@ const CustomerPastBookings = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      <ManualPaymentDialog
+        booking={selectedBookingForPayment ? {
+          id: selectedBookingForPayment.id,
+          customer: activeCustomerId || 0,
+          first_name: selectedBookingForPayment.cleaner?.first_name || '',
+          last_name: selectedBookingForPayment.cleaner?.last_name || '',
+          email: '', // Past bookings don't have email in this structure
+          total_cost: parseFloat(selectedBookingForPayment.total_cost) || 0,
+          payment_status: selectedBookingForPayment.payment_status,
+          date_time: selectedBookingForPayment.date_time,
+          address: selectedBookingForPayment.address
+        } : null}
+        isOpen={paymentDialogOpen}
+        onClose={() => {
+          setPaymentDialogOpen(false);
+          setSelectedBookingForPayment(null);
+        }}
+        onSuccess={() => {
+          fetchPastBookings();
+          setPaymentDialogOpen(false);
+          setSelectedBookingForPayment(null);
+        }}
+      />
     </div>
   );
 };

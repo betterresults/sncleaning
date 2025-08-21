@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Calendar, Clock, MapPin, User, Edit, Star } from 'lucide-react';
+import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 
 interface BaseBooking {
   id: number;
@@ -29,6 +30,7 @@ interface BookingCardProps<T extends BaseBooking> {
   onDuplicate?: (booking: T) => void;
   onReview?: (booking: T) => void;
   onSeePhotos?: (booking: T) => void;
+  onPaymentAction?: (booking: T) => void;
   hasReview?: boolean;
 }
 
@@ -40,6 +42,7 @@ const BookingCard = <T extends BaseBooking>({
   onDuplicate,
   onReview,
   onSeePhotos,
+  onPaymentAction,
   hasReview
 }: BookingCardProps<T>) => {
   return (
@@ -59,8 +62,16 @@ const BookingCard = <T extends BaseBooking>({
             </span>
           )}
         </div>
-        <div className="text-right">
+        <div className="text-right flex items-center gap-3">
           <div className="text-2xl font-bold text-[#18A5A5]">£{booking.total_cost}</div>
+          {booking.payment_status && (
+            <PaymentStatusIndicator 
+              status={booking.payment_status} 
+              isClickable={type === 'upcoming' && !!onPaymentAction}
+              onClick={type === 'upcoming' && onPaymentAction ? () => onPaymentAction(booking) : undefined}
+              size="md"
+            />
+          )}
         </div>
       </div>
       

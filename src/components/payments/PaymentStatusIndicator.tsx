@@ -1,14 +1,15 @@
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, Clock, AlertCircle, DollarSign } from 'lucide-react';
 
 interface PaymentStatusIndicatorProps {
   status: string;
-  showIcon?: boolean;
+  onClick?: () => void;
   size?: 'sm' | 'md' | 'lg';
+  isClickable?: boolean;
 }
 
-const PaymentStatusIndicator = ({ status, showIcon = true, size = 'md' }: PaymentStatusIndicatorProps) => {
+const PaymentStatusIndicator = ({ status, onClick, size = 'md', isClickable = false }: PaymentStatusIndicatorProps) => {
   const getStatusConfig = (status: string) => {
     const normalizedStatus = status?.toLowerCase() || '';
     
@@ -16,54 +17,54 @@ const PaymentStatusIndicator = ({ status, showIcon = true, size = 'md' }: Paymen
       case 'paid':
         return {
           label: 'Paid',
-          className: 'bg-green-100 text-green-800 border-green-200',
+          className: 'bg-green-500 hover:bg-green-600',
           icon: CheckCircle,
-          color: 'text-green-600'
+          color: 'text-white'
         };
       case 'authorized':
         return {
           label: 'Authorized',
-          className: 'bg-blue-100 text-blue-800 border-blue-200',
+          className: 'bg-blue-500 hover:bg-blue-600',
           icon: Clock,
-          color: 'text-blue-600'
+          color: 'text-white'
         };
       case 'failed':
       case 'authorization_failed':
       case 'capture_failed':
         return {
           label: 'Failed',
-          className: 'bg-red-100 text-red-800 border-red-200',
+          className: 'bg-red-500 hover:bg-red-600',
           icon: XCircle,
-          color: 'text-red-600'
+          color: 'text-white'
         };
       case 'unpaid':
       case 'not paid':
         return {
           label: 'Unpaid',
-          className: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+          className: 'bg-yellow-500 hover:bg-yellow-600',
           icon: AlertCircle,
-          color: 'text-yellow-600'
+          color: 'text-white'
         };
       case 'pending':
         return {
           label: 'Pending',
-          className: 'bg-gray-100 text-gray-800 border-gray-200',
+          className: 'bg-gray-500 hover:bg-gray-600',
           icon: Clock,
-          color: 'text-gray-600'
+          color: 'text-white'
         };
       case 'processing':
         return {
           label: 'Processing',
-          className: 'bg-purple-100 text-purple-800 border-purple-200',
+          className: 'bg-purple-500 hover:bg-purple-600',
           icon: DollarSign,
-          color: 'text-purple-600'
+          color: 'text-white'
         };
       default:
         return {
           label: status || 'Unknown',
-          className: 'bg-gray-100 text-gray-800 border-gray-200',
+          className: 'bg-gray-500 hover:bg-gray-600',
           icon: AlertCircle,
-          color: 'text-gray-600'
+          color: 'text-white'
         };
     }
   };
@@ -72,15 +73,28 @@ const PaymentStatusIndicator = ({ status, showIcon = true, size = 'md' }: Paymen
   const Icon = config.icon;
 
   const iconSize = size === 'sm' ? 'h-3 w-3' : size === 'lg' ? 'h-5 w-5' : 'h-4 w-4';
-  const textSize = size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-base' : 'text-sm';
+  const buttonSize = size === 'sm' ? 'h-7 w-7' : size === 'lg' ? 'h-10 w-10' : 'h-8 w-8';
+
+  if (isClickable && onClick) {
+    return (
+      <Button
+        onClick={onClick}
+        className={`${config.className} ${buttonSize} p-0 rounded-full border-0 shadow-sm transition-all duration-200 hover:scale-110`}
+        variant="default"
+        title={config.label}
+      >
+        <Icon className={`${iconSize} ${config.color}`} />
+      </Button>
+    );
+  }
 
   return (
-    <Badge 
-      className={`${config.className} ${textSize} flex items-center gap-1.5 font-medium border`}
+    <div 
+      className={`${config.className.replace('hover:', '')} ${buttonSize} p-0 rounded-full border-0 shadow-sm flex items-center justify-center`}
+      title={config.label}
     >
-      {showIcon && <Icon className={`${iconSize} ${config.color}`} />}
-      {config.label}
-    </Badge>
+      <Icon className={`${iconSize} ${config.color}`} />
+    </div>
   );
 };
 

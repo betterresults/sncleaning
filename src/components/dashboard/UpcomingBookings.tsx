@@ -762,7 +762,12 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center space-x-2">
-                              <PaymentStatusIndicator status={booking.payment_status} />
+                              <PaymentStatusIndicator 
+                                status={booking.payment_status} 
+                                isClickable={true}
+                                onClick={() => handlePaymentAction(booking)}
+                                size="sm"
+                              />
                               <span className="font-semibold text-base">
                                 £{booking.total_cost?.toFixed(2) || '0.00'}
                               </span>
