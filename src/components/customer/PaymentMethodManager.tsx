@@ -61,7 +61,7 @@ const PaymentSetupForm = ({ clientSecret, onSuccess, onCancel, customerId }: {
         elements,
         clientSecret,
         confirmParams: {
-          return_url: `${window.location.origin}/customer-settings?payment_setup=success`,
+          return_url: `${window.location.origin}/auth?payment_setup=success&redirect=customer`,
         },
         redirect: 'if_required',
       });

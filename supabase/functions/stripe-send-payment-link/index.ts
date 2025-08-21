@@ -82,7 +82,7 @@ const handler = async (req: Request): Promise<Response> => {
       after_completion: {
         type: 'redirect',
         redirect: {
-          url: `${req.headers.get('origin') || 'https://your-domain.com'}/payment-success`
+          url: `${req.headers.get('origin') || 'https://your-domain.com'}/auth?payment_success=true&redirect=customer`
         }
       },
       automatic_tax: { enabled: false },

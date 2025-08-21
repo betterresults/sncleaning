@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import InstallPrompt from '@/components/InstallPrompt';
 
 const Auth = () => {
@@ -19,9 +19,30 @@ const Auth = () => {
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { user, userRole, cleanerId, loading: authLoading } = useAuth();
+  const { user, userRole, cleanerId, customerId, loading: authLoading } = useAuth();
+  const [searchParams] = useSearchParams();
 
-  console.log('Auth - Current auth state:', { user: !!user, userRole, cleanerId, authLoading });
+  console.log('Auth - Current auth state:', { user: !!user, userRole, cleanerId, customerId, authLoading });
+
+  // Check for payment-related success messages
+  useEffect(() => {
+    const paymentSetup = searchParams.get('payment_setup');
+    const paymentSuccess = searchParams.get('payment_success');
+    
+    if (paymentSetup === 'success') {
+      toast({
+        title: 'Payment Method Added!',
+        description: 'Your payment method has been successfully added. Please log in to access your account.',
+      });
+    }
+    
+    if (paymentSuccess === 'true') {
+      toast({
+        title: 'Payment Successful!',
+        description: 'Your payment has been processed successfully. Please log in to access your account.',
+      });
+    }
+  }, [searchParams, toast]);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -32,11 +53,23 @@ const Auth = () => {
   }, [user, userRole, cleanerId, authLoading]);
 
   if (!authLoading && user) {
-    console.log('Auth - Redirecting authenticated user:', { userRole, cleanerId });
+    console.log('Auth - Redirecting authenticated user:', { userRole, cleanerId, customerId });
+    
+    // Check if there's a specific redirect requested
+    const redirectParam = searchParams.get('redirect');
+    
+    if (redirectParam === 'customer' && customerId) {
+      return <Navigate to="/customer-dashboard" replace />;
+    }
     
     // Redirect cleaners to cleaner dashboard
     if (userRole === 'user' && cleanerId) {
       return <Navigate to="/cleaner-dashboard" replace />;
+    }
+    
+    // Redirect users with customer ID to customer dashboard  
+    if (userRole === 'user' && customerId) {
+      return <Navigate to="/customer-dashboard" replace />;
     }
     
     // Redirect admins to dashboard
