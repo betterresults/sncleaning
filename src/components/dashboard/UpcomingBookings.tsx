@@ -423,26 +423,16 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
     } else if (normalizedStatus.includes('collecting')) {
       return (
         <div className="flex items-center space-x-2">
-          <DollarSign className="h-4 w-4 text-orange-500" />
-          <span className="font-semibold text-orange-500 text-base">
-            £{cost?.toFixed(2) || '0.00'}
-          </span>
-        </div>
-      );
-    } else if (normalizedStatus.includes('processing')) {
-      return (
-        <div className="flex items-center space-x-2">
-          <AlertCircle className="h-4 w-4 text-yellow-600" />
           <span className="font-semibold text-yellow-600 text-base">
             £{cost?.toFixed(2) || '0.00'}
           </span>
         </div>
       );
     } else {
+      // Unpaid or other statuses - no icon, darker grey
       return (
         <div className="flex items-center space-x-2">
-          <XCircle className="h-4 w-4 text-gray-500" />
-          <span className="font-semibold text-gray-500 text-base">
+          <span className="font-semibold text-gray-700 text-base">
             £{cost?.toFixed(2) || '0.00'}
           </span>
         </div>
