@@ -7,7 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { CreditCard, DollarSign, Clock, Zap, RotateCcw } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CreditCard, DollarSign, Clock, Zap, RotateCcw, Mail, Link } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -46,11 +49,15 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
   const [amount, setAmount] = useState<number>(0);
   const [action, setAction] = useState<'authorize' | 'charge'>('charge');
   const [loading, setLoading] = useState(false);
+  const [paymentMode, setPaymentMode] = useState<'existing' | 'collect_only' | 'payment_link'>('existing');
+  const [paymentLinkDescription, setPaymentLinkDescription] = useState('');
+  const [collectForFuture, setCollectForFuture] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     if (booking) {
       setAmount(booking.total_cost || 0);
+      setPaymentLinkDescription(`Cleaning Service - ${booking.address}`);
       fetchPaymentMethods();
     }
   }, [booking]);
@@ -68,12 +75,16 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
 
       setPaymentMethods(data || []);
       
-      // Set default payment method as selected
+      // Set default payment method as selected and mode
       const defaultPM = data?.find(pm => pm.is_default);
       if (defaultPM) {
         setSelectedPaymentMethod(defaultPM.stripe_payment_method_id);
+        setPaymentMode('existing');
       } else if (data && data.length > 0) {
         setSelectedPaymentMethod(data[0].stripe_payment_method_id);
+        setPaymentMode('existing');
+      } else {
+        setPaymentMode('collect_only');
       }
     } catch (error) {
       console.error('Error fetching payment methods:', error);
@@ -85,6 +96,88 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
     }
   };
 
+  const handleCollectPaymentMethod = async () => {
+    if (!booking) return;
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('stripe-collect-payment-method', {
+        body: {
+          customer_id: booking.customer,
+          email: booking.email,
+          name: `${booking.first_name} ${booking.last_name}`.trim(),
+          return_url: `${window.location.origin}/payment-method-success`
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.checkout_url) {
+        window.open(data.checkout_url, '_blank');
+        toast({
+          title: 'Payment Method Collection Started',
+          description: 'Customer will be redirected to securely add their payment method.',
+        });
+        onClose();
+      }
+    } catch (error: any) {
+      console.error('Error collecting payment method:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create payment method collection',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendPaymentLink = async () => {
+    if (!booking || !amount || amount <= 0) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a valid amount',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('stripe-send-payment-link', {
+        body: {
+          customer_id: booking.customer,
+          email: booking.email,
+          name: `${booking.first_name} ${booking.last_name}`.trim(),
+          amount: amount,
+          description: paymentLinkDescription,
+          booking_id: booking.id,
+          collect_payment_method: collectForFuture
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.payment_link_url) {
+        window.open(data.payment_link_url, '_blank');
+
+        toast({
+          title: 'Payment Link Created',
+          description: `Payment link sent to ${booking.email}. Customer can pay £${amount}${collectForFuture ? ' and save their card for future invoices' : ''}.`,
+        });
+        onClose();
+      }
+    } catch (error: any) {
+      console.error('Error sending payment link:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create payment link',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   const handlePaymentAction = async () => {
     if (!booking || !selectedPaymentMethod) return;
 
@@ -205,121 +298,207 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
             </CardContent>
           </Card>
 
-          {!hasPaymentMethods ? (
-            <Card>
-              <CardContent className="p-4 text-center">
-                <CreditCard className="h-12 w-12 mx-auto text-gray-400 mb-2" />
-                <p className="text-gray-600">No payment methods available for this customer.</p>
-                <p className="text-sm text-gray-500 mt-1">
-                  Customer needs to add a payment method first.
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              {/* Payment Method Selection */}
-              <div className="space-y-2">
-                <Label>Payment Method</Label>
-                <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select payment method" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {paymentMethods.map((pm) => (
-                      <SelectItem key={pm.id} value={pm.stripe_payment_method_id}>
+          {/* Payment Method Tabs */}
+          <Tabs value={paymentMode} onValueChange={(value: any) => setPaymentMode(value)} className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              {hasPaymentMethods && (
+                <TabsTrigger value="existing" className="flex items-center gap-1">
+                  <CreditCard className="h-4 w-4" />
+                  Use Existing Card
+                </TabsTrigger>
+              )}
+              <TabsTrigger value="collect_only" className="flex items-center gap-1">
+                <CreditCard className="h-4 w-4" />
+                Collect Card Only
+              </TabsTrigger>
+              <TabsTrigger value="payment_link" className="flex items-center gap-1">
+                <Link className="h-4 w-4" />
+                Payment Link
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Existing Payment Methods Tab */}
+            {hasPaymentMethods && (
+              <TabsContent value="existing" className="space-y-4">
+                {/* Payment Method Selection */}
+                <div className="space-y-2">
+                  <Label>Payment Method</Label>
+                  <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select payment method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {paymentMethods.map((pm) => (
+                        <SelectItem key={pm.id} value={pm.stripe_payment_method_id}>
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="h-4 w-4" />
+                            <span className="capitalize">{pm.card_brand}</span>
+                            <span>•••• {pm.card_last4}</span>
+                            <span className="text-sm text-gray-500">
+                              {pm.card_exp_month.toString().padStart(2, '0')}/{pm.card_exp_year}
+                            </span>
+                            {pm.is_default && (
+                              <Badge variant="outline" className="text-xs">Default</Badge>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Amount */}
+                <div className="space-y-2">
+                  <Label>Amount (£)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={amount}
+                    onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+
+                {/* Action Selection */}
+                <div className="space-y-2">
+                  <Label>Action</Label>
+                  <Select value={action} onValueChange={(value: 'authorize' | 'charge') => setAction(value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="authorize">
                         <div className="flex items-center gap-2">
-                          <CreditCard className="h-4 w-4" />
-                          <span className="capitalize">{pm.card_brand}</span>
-                          <span>•••• {pm.card_last4}</span>
-                          <span className="text-sm text-gray-500">
-                            {pm.card_exp_month.toString().padStart(2, '0')}/{pm.card_exp_year}
-                          </span>
-                          {pm.is_default && (
-                            <Badge variant="outline" className="text-xs">Default</Badge>
-                          )}
+                          <Clock className="h-4 w-4" />
+                          <div>
+                            <div>Authorize (Hold)</div>
+                            <div className="text-xs text-gray-500">Put money on hold without charging</div>
+                          </div>
                         </div>
                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                      <SelectItem value="charge">
+                        <div className="flex items-center gap-2">
+                          <Zap className="h-4 w-4" />
+                          <div>
+                            <div>Charge Now</div>
+                            <div className="text-xs text-gray-500">Charge immediately</div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              {/* Amount */}
+                <div className="flex gap-3">
+                  {isFailedPayment && (
+                    <Button
+                      onClick={handleRetryPayment}
+                      disabled={loading}
+                      className="flex items-center gap-2 flex-1"
+                      variant="outline"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      {loading ? 'Retrying...' : 'Retry Payment'}
+                    </Button>
+                  )}
+
+                  <Button
+                    onClick={handlePaymentAction}
+                    disabled={loading || !selectedPaymentMethod}
+                    className="flex items-center gap-2 flex-1"
+                  >
+                    {action === 'authorize' ? <Clock className="h-4 w-4" /> : <Zap className="h-4 w-4" />}
+                    {loading 
+                      ? (action === 'authorize' ? 'Authorizing...' : 'Charging...')
+                      : (action === 'authorize' ? `Authorize £${amount}` : `Charge £${amount}`)
+                    }
+                  </Button>
+                </div>
+              </TabsContent>
+            )}
+
+            {/* Collect Payment Method Tab */}
+            <TabsContent value="collect_only" className="space-y-4">
+              <div className="text-center space-y-4">
+                <CreditCard className="h-12 w-12 mx-auto text-primary" />
+                <div>
+                  <h3 className="text-lg font-medium">Collect Payment Method</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Customer will be redirected to securely add their payment method via Stripe.
+                  </p>
+                </div>
+                <Button
+                  onClick={handleCollectPaymentMethod}
+                  disabled={loading}
+                  className="flex items-center gap-2"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  {loading ? 'Creating...' : 'Collect Card Details'}
+                </Button>
+              </div>
+            </TabsContent>
+
+            {/* Payment Link Tab */}
+            <TabsContent value="payment_link" className="space-y-4">
               <div className="space-y-2">
-                <Label>Amount (£)</Label>
+                <Label htmlFor="amount">Amount (£)</Label>
                 <Input
+                  id="amount"
                   type="number"
                   step="0.01"
                   min="0"
                   value={amount}
                   onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
+                  placeholder="0.00"
                 />
               </div>
 
-              {/* Action Selection */}
               <div className="space-y-2">
-                <Label>Action</Label>
-                <Select value={action} onValueChange={(value: 'authorize' | 'charge') => setAction(value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="authorize">
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        <div>
-                          <div>Authorize (Hold)</div>
-                          <div className="text-xs text-gray-500">Put money on hold without charging</div>
-                        </div>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="charge">
-                      <div className="flex items-center gap-2">
-                        <Zap className="h-4 w-4" />
-                        <div>
-                          <div>Charge Now</div>
-                          <div className="text-xs text-gray-500">Charge immediately</div>
-                        </div>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={paymentLinkDescription}
+                  onChange={(e) => setPaymentLinkDescription(e.target.value)}
+                  placeholder="Payment description"
+                  rows={2}
+                />
               </div>
 
-              <Separator />
-
-              {/* Action Buttons */}
-              <div className="flex gap-3">
-                {isFailedPayment && (
-                  <Button
-                    onClick={handleRetryPayment}
-                    disabled={loading}
-                    className="flex items-center gap-2 flex-1"
-                    variant="outline"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    {loading ? 'Retrying...' : 'Retry Payment'}
-                  </Button>
-                )}
-
-                <Button
-                  onClick={handlePaymentAction}
-                  disabled={loading || !selectedPaymentMethod}
-                  className="flex items-center gap-2 flex-1"
-                >
-                  {action === 'authorize' ? <Clock className="h-4 w-4" /> : <Zap className="h-4 w-4" />}
-                  {loading 
-                    ? (action === 'authorize' ? 'Authorizing...' : 'Charging...')
-                    : (action === 'authorize' ? `Authorize £${amount}` : `Charge £${amount}`)
-                  }
-                </Button>
-
-                <Button variant="outline" onClick={onClose} disabled={loading}>
-                  Cancel
-                </Button>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-sm">Also collect payment method for future use</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Customer will also set up their card for future payments
+                  </p>
+                </div>
+                <Switch
+                  checked={collectForFuture}
+                  onCheckedChange={setCollectForFuture}
+                />
               </div>
-            </>
-          )}
+
+              <Button
+                onClick={handleSendPaymentLink}
+                disabled={loading || !amount}
+                className="w-full flex items-center gap-2"
+              >
+                <Mail className="h-4 w-4" />
+                {loading ? 'Creating...' : 'Send Payment Link'}
+              </Button>
+            </TabsContent>
+          </Tabs>
+
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={onClose} disabled={loading}>
+              Cancel
+            </Button>
+          </div>
+
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p>• Payment method collection and payment links open in new tabs</p>
+            <p>• Customer enters payment details securely via Stripe</p>
+            <p>• Cards are saved for future authorized payments</p>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
