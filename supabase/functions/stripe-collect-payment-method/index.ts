@@ -107,6 +107,7 @@ const handler = async (req: Request): Promise<Response> => {
     
     try {
       console.log('Attempting to send email to:', email);
+      console.log('Using from address: SN Cleaning <noreply@notifications.sncleaningservices.co.uk>');
       
       const emailResult = await resend.emails.send({
         from: "SN Cleaning <noreply@notifications.sncleaningservices.co.uk>",
@@ -160,12 +161,26 @@ const handler = async (req: Request): Promise<Response> => {
         `
       });
       
-      console.log('Email send result:', emailResult);
+      console.log('Email send result:', JSON.stringify(emailResult, null, 2));
+      
+      if (emailResult.error) {
+        console.error('Resend API returned an error:', emailResult.error);
+        throw new Error(`Resend error: ${JSON.stringify(emailResult.error)}`);
+      }
+      
+      if (!emailResult.data || !emailResult.data.id) {
+        console.error('No email ID returned from Resend:', emailResult);
+        throw new Error('No email ID returned from Resend API');
+      }
+      
       console.log('Payment method collection email sent successfully to:', email);
+      console.log('Email ID:', emailResult.data.id);
       
     } catch (emailError) {
       console.error('Failed to send payment method collection email:', emailError);
       console.error('Email error details:', JSON.stringify(emailError, null, 2));
+      console.error('Email error message:', emailError.message);
+      console.error('Email error stack:', emailError.stack);
       
       return new Response(JSON.stringify({
         success: true,
@@ -174,7 +189,8 @@ const handler = async (req: Request): Promise<Response> => {
         stripe_customer_id: stripeCustomer.id,
         session_id: checkoutSession.id,
         email_sent: false,
-        email_error: emailError.message || 'Unknown email error'
+        email_error: emailError.message || 'Unknown email error',
+        email_error_details: emailError.toString()
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
