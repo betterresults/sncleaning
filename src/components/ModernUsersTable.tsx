@@ -45,7 +45,7 @@ import { useNavigate } from 'react-router-dom';
 import CreateBookingDialogWithCustomer from '@/components/booking/CreateBookingDialogWithCustomer';
 import CustomerAddressDialog from '@/components/customer/CustomerAddressDialog';
 import CustomerPaymentDialog from '@/components/customer/CustomerPaymentDialog';
-import PaymentMethodStatusBadge from '@/components/customer/PaymentMethodStatusBadge';
+import PaymentMethodStatusIcon from '@/components/customer/PaymentMethodStatusBadge';
 import { useCustomerPaymentMethods } from '@/hooks/useCustomerPaymentMethods';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -825,29 +825,20 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                                getCustomerTypeBadge(user)
                              )}
                            </TableCell>
-                           <TableCell>
-                             {user.type === 'business_customer' && user.business_id ? (
-                               <div className="flex items-center gap-2">
-                                 <PaymentMethodStatusBadge
-                                   paymentMethodCount={paymentData[user.business_id]?.payment_method_count || 0}
-                                   hasStripeAccount={paymentData[user.business_id]?.has_stripe_account || false}
-                                 />
-                                 <Button
-                                   variant="outline"
-                                   size="sm"
-                                   onClick={() => {
-                                     setSelectedCustomerForPayment(user);
-                                     setShowPaymentDialog(true);
-                                   }}
-                                 >
-                                   <CreditCard className="h-4 w-4 mr-1" />
-                                   Manage
-                                 </Button>
-                               </div>
-                             ) : (
-                               <span className="text-sm text-muted-foreground">–</span>
-                             )}
-                           </TableCell>
+                            <TableCell>
+                              {user.type === 'business_customer' && user.business_id ? (
+                                <PaymentMethodStatusIcon
+                                  paymentMethodCount={paymentData[user.business_id]?.payment_method_count || 0}
+                                  hasStripeAccount={paymentData[user.business_id]?.has_stripe_account || false}
+                                  onClick={() => {
+                                    setSelectedCustomerForPayment(user);
+                                    setShowPaymentDialog(true);
+                                  }}
+                                />
+                              ) : (
+                                <span className="text-sm text-muted-foreground">–</span>
+                              )}
+                            </TableCell>
                            <TableCell>
                              {user.type === 'business_customer' ? (
                                <CustomerAddressDialog

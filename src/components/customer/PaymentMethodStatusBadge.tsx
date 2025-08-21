@@ -1,40 +1,33 @@
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
-import { CreditCard, CheckCircle, XCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { DollarSign } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-interface PaymentMethodStatusBadgeProps {
+interface PaymentMethodStatusIconProps {
   paymentMethodCount: number;
   hasStripeAccount: boolean;
+  onClick: () => void;
 }
 
-const PaymentMethodStatusBadge = ({ paymentMethodCount, hasStripeAccount }: PaymentMethodStatusBadgeProps) => {
-  if (paymentMethodCount === 0 && !hasStripeAccount) {
-    return (
-      <div className="flex items-center gap-1">
-        <Badge variant="outline" className="gap-1 text-muted-foreground">
-          <XCircle className="h-3 w-3" />
-          No Payment Methods
-        </Badge>
-      </div>
-    );
-  }
-
+const PaymentMethodStatusIcon = ({ paymentMethodCount, hasStripeAccount, onClick }: PaymentMethodStatusIconProps) => {
+  const hasPaymentMethods = paymentMethodCount > 0 || hasStripeAccount;
+  
   return (
-    <div className="flex flex-col gap-1">
-      {paymentMethodCount > 0 && (
-        <Badge variant="secondary" className="gap-1">
-          <CreditCard className="h-3 w-3" />
-          {paymentMethodCount} Card{paymentMethodCount > 1 ? 's' : ''}
-        </Badge>
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={onClick}
+      className={cn(
+        "w-10 h-10 p-0 rounded-full border-2",
+        hasPaymentMethods 
+          ? "border-green-500 bg-green-50 hover:bg-green-100 text-green-600" 
+          : "border-red-500 bg-red-50 hover:bg-red-100 text-red-600"
       )}
-      {hasStripeAccount && (
-        <Badge variant="default" className="gap-1 bg-green-600">
-          <CheckCircle className="h-3 w-3" />
-          Stripe Connected
-        </Badge>
-      )}
-    </div>
+      title={hasPaymentMethods ? `${paymentMethodCount} payment method(s)` : "No payment methods"}
+    >
+      <DollarSign className="h-4 w-4" />
+    </Button>
   );
 };
 
-export default PaymentMethodStatusBadge;
+export default PaymentMethodStatusIcon;

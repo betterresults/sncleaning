@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import Stripe from 'https://esm.sh/stripe@14.21.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,10 +25,13 @@ serve(async (req) => {
       throw new Error('Stripe secret key not configured')
     }
 
+    // Initialize Stripe
+    const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" })
+
     console.log('Starting customer-Stripe account sync...')
 
-    // Get all customers with payment_method = 'Stripe'
-    const { data: stripeCustomers, error: customerError } = await supabaseClient
+    // Get all customers with email addresses
+    const { data: customers, error: customerError } = await supabaseClient
       .from('customers')
       .select('id, email, first_name, last_name')
       .not('email', 'is', null)
@@ -37,94 +41,99 @@ serve(async (req) => {
       throw new Error(`Database error: ${customerError.message}`)
     }
 
-    console.log('Found customers to sync:', stripeCustomers?.length || 0)
+    console.log(`Found ${customers?.length || 0} customers to sync`)
 
-    let syncedCount = 0
-    let newPaymentMethodsCount = 0
+    let customersProcessed = 0
+    let totalPaymentMethodsAdded = 0
 
-    for (const customer of stripeCustomers || []) {
+    // Process each customer
+    for (const customer of customers || []) {
       try {
+        console.log(`Processing customer: ${customer.id} - ${customer.email}`)
+
         // Search for Stripe customer by email
-        const stripeResponse = await fetch(`https://api.stripe.com/v1/customers/search?query=email:'${customer.email}'`, {
-          headers: {
-            'Authorization': `Bearer ${stripeKey}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
+        const stripeCustomers = await stripe.customers.list({
+          email: customer.email,
+          limit: 1
         })
 
-        if (!stripeResponse.ok) {
-          console.log(`Stripe API error for customer ${customer.email}:`, stripeResponse.status)
+        if (stripeCustomers.data.length === 0) {
+          console.log(`No Stripe customer found for ${customer.email}`)
           continue
         }
 
-        const searchResult = await stripeResponse.json()
+        const stripeCustomer = stripeCustomers.data[0]
+        console.log(`Found Stripe customer: ${stripeCustomer.id}`)
 
-        if (searchResult.data && searchResult.data.length > 0) {
-          const stripeCustomer = searchResult.data[0]
-          console.log(`Found Stripe customer for ${customer.email}:`, stripeCustomer.id)
+        // Get payment methods for this Stripe customer
+        const paymentMethods = await stripe.paymentMethods.list({
+          customer: stripeCustomer.id,
+          type: 'card'
+        })
 
-          // Get payment methods for this Stripe customer
-          const paymentMethodsResponse = await fetch(`https://api.stripe.com/v1/payment_methods?customer=${stripeCustomer.id}&type=card`, {
-            headers: {
-              'Authorization': `Bearer ${stripeKey}`,
-            },
-          })
+        console.log(`Found ${paymentMethods.data.length} payment methods for customer ${customer.email}`)
 
-          if (paymentMethodsResponse.ok) {
-            const paymentMethods = await paymentMethodsResponse.json()
+        // Check existing payment methods in our database
+        const { data: existingPaymentMethods } = await supabaseClient
+          .from('customer_payment_methods')
+          .select('stripe_payment_method_id')
+          .eq('customer_id', customer.id)
 
-            for (const pm of paymentMethods.data) {
-              // Check if payment method already exists in our database
-              const { data: existingPM } = await supabaseClient
-                .from('customer_payment_methods')
-                .select('id')
-                .eq('stripe_payment_method_id', pm.id)
-                .single()
+        const existingIds = new Set(existingPaymentMethods?.map(pm => pm.stripe_payment_method_id) || [])
 
-              if (!existingPM) {
-                // Insert new payment method
-                const { error: insertError } = await supabaseClient
-                  .from('customer_payment_methods')
-                  .insert({
-                    customer_id: customer.id,
-                    stripe_customer_id: stripeCustomer.id,
-                    stripe_payment_method_id: pm.id,
-                    card_brand: pm.card.brand,
-                    card_last4: pm.card.last4,
-                    card_exp_month: pm.card.exp_month,
-                    card_exp_year: pm.card.exp_year,
-                    is_default: stripeCustomer.invoice_settings?.default_payment_method === pm.id
-                  })
+        // Insert new payment methods
+        let addedCount = 0
+        for (const pm of paymentMethods.data) {
+          if (!existingIds.has(pm.id)) {
+            console.log(`Adding new payment method: ${pm.id} for customer ${customer.id}`)
+            
+            const { error: insertError } = await supabaseClient
+              .from('customer_payment_methods')
+              .insert({
+                customer_id: customer.id,
+                stripe_payment_method_id: pm.id,
+                stripe_customer_id: stripeCustomer.id,
+                card_brand: pm.card?.brand || 'unknown',
+                card_last4: pm.card?.last4 || '0000',
+                card_exp_month: pm.card?.exp_month || 1,
+                card_exp_year: pm.card?.exp_year || 2025,
+                is_default: addedCount === 0 // Set first payment method as default
+              })
 
-                if (!insertError) {
-                  newPaymentMethodsCount++
-                  console.log(`Added payment method for customer ${customer.email}`)
-                }
-              }
+            if (insertError) {
+              console.error(`Error inserting payment method ${pm.id}:`, insertError)
+            } else {
+              addedCount++
+              totalPaymentMethodsAdded++
+              console.log(`Successfully added payment method ${pm.id}`)
             }
+          } else {
+            console.log(`Payment method ${pm.id} already exists, skipping`)
           }
-
-          syncedCount++
         }
+
+        if (addedCount > 0) {
+          console.log(`Added ${addedCount} payment methods for customer ${customer.email}`)
+        }
+
+        customersProcessed++
+
       } catch (error) {
-        console.error(`Error syncing customer ${customer.email}:`, error)
+        console.error(`Error processing customer ${customer.id}:`, error)
       }
     }
 
-    console.log(`Sync completed: ${syncedCount} customers synced, ${newPaymentMethodsCount} payment methods added`)
+    console.log(`Sync completed: ${customersProcessed} customers processed, ${totalPaymentMethodsAdded} payment methods added`)
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        customersProcessed: stripeCustomers?.length || 0,
-        customersSynced: syncedCount,
-        newPaymentMethods: newPaymentMethodsCount,
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
-    )
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Sync completed successfully',
+      customersProcessed: customersProcessed,
+      paymentMethodsAdded: totalPaymentMethodsAdded
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200,
+    })
 
   } catch (error) {
     console.error('Error:', error)

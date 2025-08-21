@@ -48,7 +48,7 @@ const CustomerPaymentDialog = ({
       
       toast({
         title: "Sync Complete",
-        description: `Synced ${data.customersProcessed} customers with Stripe. Added ${data.paymentMethodsAdded} payment methods.`,
+        description: `Synced ${data.customersProcessed} customers. Added ${data.paymentMethodsAdded} payment methods.`,
       });
       
       // Trigger refresh of payment methods
