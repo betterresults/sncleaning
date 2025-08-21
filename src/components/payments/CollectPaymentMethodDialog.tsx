@@ -105,17 +105,10 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
       // Open payment link in new tab
       if (data.payment_link_url) {
         window.open(data.payment_link_url, '_blank');
-        
-        // Also open setup session if collecting payment method
-        if (collectForFuture && data.setup_session_url) {
-          setTimeout(() => {
-            window.open(data.setup_session_url, '_blank');
-          }, 1000);
-        }
 
         toast({
           title: 'Payment Link Created',
-          description: `Payment link sent to ${customer.email}. Customer can pay £${amount}.`,
+          description: `Payment link sent to ${customer.email}. Customer can pay £${amount}${collectForFuture ? ' and save their card for future invoices' : ''}.`,
         });
         onOpenChange(false);
       }

@@ -61,8 +61,8 @@ const handler = async (req: Request): Promise<Response> => {
       console.log('Created new Stripe customer:', stripeCustomer.id);
     }
 
-    // Create payment link
-    const paymentLink = await stripe.paymentLinks.create({
+    // Create payment link with payment method collection
+    const paymentLinkConfig: any = {
       line_items: [
         {
           price_data: {
@@ -93,31 +93,22 @@ const handler = async (req: Request): Promise<Response> => {
         booking_id: booking_id?.toString() || '',
         collect_payment_method: collect_payment_method.toString()
       }
-    });
+    };
+
+    // If we want to collect payment method, configure the link to save the card
+    if (collect_payment_method) {
+      paymentLinkConfig.customer = stripeCustomer.id;
+      paymentLinkConfig.payment_method_collection = 'always';
+      paymentLinkConfig.payment_method_types = ['card'];
+    }
+
+    const paymentLink = await stripe.paymentLinks.create(paymentLinkConfig);
 
     console.log('Created payment link:', paymentLink.id);
-
-    // If we also want to collect payment method for future use, create a setup mode session too
-    let setupSessionUrl = null;
-    if (collect_payment_method) {
-      const setupSession = await stripe.checkout.sessions.create({
-        customer: stripeCustomer.id,
-        mode: 'setup',
-        payment_method_types: ['card'],
-        success_url: `${req.headers.get('origin') || 'https://your-domain.com'}/payment-method-success`,
-        cancel_url: `${req.headers.get('origin') || 'https://your-domain.com'}/payment-method-cancelled`,
-        metadata: {
-          customer_id: customer_id.toString()
-        }
-      });
-      setupSessionUrl = setupSession.url;
-      console.log('Created setup session for payment method collection:', setupSession.id);
-    }
 
     return new Response(JSON.stringify({
       success: true,
       payment_link_url: paymentLink.url,
-      setup_session_url: setupSessionUrl,
       stripe_customer_id: stripeCustomer.id,
       payment_link_id: paymentLink.id
     }), {
