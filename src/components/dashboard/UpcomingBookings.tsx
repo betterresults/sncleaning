@@ -420,6 +420,15 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
           </span>
         </div>
       );
+    } else if (normalizedStatus.includes('collecting')) {
+      return (
+        <div className="flex items-center space-x-2">
+          <DollarSign className="h-4 w-4 text-orange-500" />
+          <span className="font-semibold text-orange-500 text-base">
+            £{cost?.toFixed(2) || '0.00'}
+          </span>
+        </div>
+      );
     } else if (normalizedStatus.includes('processing')) {
       return (
         <div className="flex items-center space-x-2">
@@ -432,8 +441,8 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
     } else {
       return (
         <div className="flex items-center space-x-2">
-          <XCircle className="h-4 w-4 text-red-600" />
-          <span className="font-semibold text-red-600 text-base">
+          <XCircle className="h-4 w-4 text-gray-500" />
+          <span className="font-semibold text-gray-500 text-base">
             £{cost?.toFixed(2) || '0.00'}
           </span>
         </div>
@@ -672,31 +681,40 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                                 <div className="text-gray-500 text-sm">
                                   {format(new Date(booking.date_time), 'HH:mm')}
                                 </div>
+                                {booking.total_hours && (
+                                  <div className="text-xs text-gray-600 font-medium">
+                                    {booking.total_hours === 1 ? '1 hour' : `${booking.total_hours} hours`}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="max-w-[140px]">
                             <div className="space-y-1">
                               <div className="font-medium text-base flex items-center">
-                                <User className="h-3 w-3 mr-2 text-gray-400" />
-                                {booking.first_name} {booking.last_name}
+                                <User className="h-3 w-3 mr-2 text-gray-400 flex-shrink-0" />
+                                <span className="truncate">{booking.first_name} {booking.last_name}</span>
+                              </div>
+                              <div className="text-sm text-gray-500 flex items-center group">
+                                <Mail className="h-3 w-3 mr-2 flex-shrink-0" />
+                                <span className="truncate cursor-help" title={booking.email}>
+                                  {booking.email.length > 20 ? `${booking.email.substring(0, 20)}...` : booking.email}
+                                </span>
                               </div>
                               <div className="text-sm text-gray-500 flex items-center">
-                                <Mail className="h-3 w-3 mr-2" />
-                                {booking.email}
-                              </div>
-                              <div className="text-sm text-gray-500 flex items-center">
-                                <Phone className="h-3 w-3 mr-2" />
-                                {booking.phone_number}
+                                <Phone className="h-3 w-3 mr-2 flex-shrink-0" />
+                                <span className="truncate">{booking.phone_number}</span>
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell>
-                            <div className="flex items-start space-x-2 max-w-48">
+                          <TableCell className="max-w-[180px]">
+                            <div className="flex items-start space-x-2">
                               <MapPin className="h-3 w-3 mt-0.5 text-gray-400 flex-shrink-0" />
                               <div className="text-sm text-gray-700 leading-tight">
                                 <div className="text-gray-500 font-medium">{booking.postcode}</div>
-                                <div>{booking.address}</div>
+                                <div className="truncate cursor-help" title={booking.address}>
+                                  {booking.address.length > 25 ? `${booking.address.substring(0, 25)}...` : booking.address}
+                                </div>
                               </div>
                             </div>
                           </TableCell>
@@ -717,10 +735,10 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                                   <span className="text-base font-medium">{cleanerName}</span>
                                 </div>
                               )}
-                              {booking.total_hours && (
-                                <div className="text-sm text-gray-600 font-medium flex items-center">
-                                  <Clock className="h-3 w-3 mr-2" />
-                                  {booking.total_hours === 1 ? '1 hour' : `${booking.total_hours} hours`}
+                              {booking.cleaner_pay && (
+                                <div className="text-sm text-green-600 font-medium flex items-center">
+                                  <Banknote className="h-3 w-3 mr-2" />
+                                  Pay: £{booking.cleaner_pay.toFixed(2)}
                                 </div>
                               )}
                             </div>
