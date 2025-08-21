@@ -64,8 +64,13 @@ serve(async (req) => {
 
     console.log(`Manual payment action: ${action} for booking ${bookingId}`)
 
-    // Get booking details
-    const { data: booking, error: bookingError } = await supabaseClient
+    // Smart table detection - try bookings first, then past_bookings
+    let booking: any = null;
+    let isUpcoming = false;
+    let isPast = false;
+
+    // First try upcoming bookings
+    const { data: upcomingBooking, error: upcomingError } = await supabaseClient
       .from('bookings')
       .select(`
         *,
@@ -77,10 +82,48 @@ serve(async (req) => {
         )
       `)
       .eq('id', bookingId)
-      .single()
+      .maybeSingle()
 
-    if (bookingError || !booking) {
-      throw new Error('Booking not found')
+    if (upcomingBooking) {
+      booking = upcomingBooking;
+      isUpcoming = true;
+      console.log(`Found booking in upcoming bookings table`);
+    } else {
+      // Try past bookings
+      const { data: pastBooking, error: pastError } = await supabaseClient
+        .from('past_bookings')
+        .select(`
+          *,
+          cleaners!past_bookings_cleaner_fkey (
+            first_name,
+            last_name
+          )
+        `)
+        .eq('id', bookingId)
+        .maybeSingle()
+
+      if (pastBooking) {
+        // Handle past booking structure - need to get customer info separately
+        const { data: customer } = await supabaseClient
+          .from('customers')
+          .select('id, email, first_name, last_name')
+          .eq('id', pastBooking.customer)
+          .single()
+
+        booking = {
+          ...pastBooking,
+          total_cost: typeof pastBooking.total_cost === 'string' 
+            ? parseFloat(pastBooking.total_cost) || 0 
+            : pastBooking.total_cost,
+          customers: customer
+        };
+        isPast = true;
+        console.log(`Found booking in past bookings table`);
+      }
+    }
+
+    if (!booking) {
+      throw new Error('Booking not found in either upcoming or completed bookings')
     }
 
     // Get customer's payment methods
@@ -140,14 +183,24 @@ serve(async (req) => {
         throw new Error(`Authorization failed: ${paymentIntent.error.message}`)
       }
 
-      // Update booking with payment intent ID and status
-      await supabaseClient
-        .from('bookings')
-        .update({
-          payment_status: 'authorized',
-          invoice_id: paymentIntent.id
-        })
-        .eq('id', bookingId)
+      // Update booking with payment intent ID and status in correct table
+      if (isUpcoming) {
+        await supabaseClient
+          .from('bookings')
+          .update({
+            payment_status: 'authorized',
+            invoice_id: paymentIntent.id
+          })
+          .eq('id', bookingId)
+      } else if (isPast) {
+        await supabaseClient
+          .from('past_bookings')
+          .update({
+            payment_status: 'authorized',
+            invoice_id: paymentIntent.id
+          })
+          .eq('id', bookingId)
+      }
 
       result = { 
         success: true, 
@@ -177,10 +230,18 @@ serve(async (req) => {
           throw new Error(`Capture failed: ${captureResult.error.message}`)
         }
 
-        await supabaseClient
-          .from('bookings')
-          .update({ payment_status: 'paid' })
-          .eq('id', bookingId)
+        // Update payment status in correct table
+        if (isUpcoming) {
+          await supabaseClient
+            .from('bookings')
+            .update({ payment_status: 'paid' })
+            .eq('id', bookingId)
+        } else if (isPast) {
+          await supabaseClient
+            .from('past_bookings')
+            .update({ payment_status: 'paid' })
+            .eq('id', bookingId)
+        }
 
         result = { 
           success: true, 
@@ -213,13 +274,24 @@ serve(async (req) => {
           throw new Error(`Payment failed: ${paymentIntent.error.message}`)
         }
 
-        await supabaseClient
-          .from('bookings')
-          .update({
-            payment_status: 'paid',
-            invoice_id: paymentIntent.id
-          })
-          .eq('id', bookingId)
+        // Update payment status in correct table
+        if (isUpcoming) {
+          await supabaseClient
+            .from('bookings')
+            .update({
+              payment_status: 'paid',
+              invoice_id: paymentIntent.id
+            })
+            .eq('id', bookingId)
+        } else if (isPast) {
+          await supabaseClient
+            .from('past_bookings')
+            .update({
+              payment_status: 'paid',
+              invoice_id: paymentIntent.id
+            })
+            .eq('id', bookingId)
+        }
 
         result = { 
           success: true, 
@@ -251,21 +323,40 @@ serve(async (req) => {
       const paymentIntent = await paymentIntentResponse.json()
 
       if (paymentIntent.error) {
-        await supabaseClient
-          .from('bookings')
-          .update({ payment_status: 'failed' })
-          .eq('id', bookingId)
+        // Update booking status to failed in correct table
+        if (isUpcoming) {
+          await supabaseClient
+            .from('bookings')
+            .update({ payment_status: 'failed' })
+            .eq('id', bookingId)
+        } else if (isPast) {
+          await supabaseClient
+            .from('past_bookings')
+            .update({ payment_status: 'failed' })
+            .eq('id', bookingId)
+        }
 
         throw new Error(`Retry failed: ${paymentIntent.error.message}`)
       }
 
-      await supabaseClient
-        .from('bookings')
-        .update({
-          payment_status: 'paid',
-          invoice_id: paymentIntent.id
-        })
-        .eq('id', bookingId)
+      // Update payment status in correct table
+      if (isUpcoming) {
+        await supabaseClient
+          .from('bookings')
+          .update({
+            payment_status: 'paid',
+            invoice_id: paymentIntent.id
+          })
+          .eq('id', bookingId)
+      } else if (isPast) {
+        await supabaseClient
+          .from('past_bookings')
+          .update({
+            payment_status: 'paid',
+            invoice_id: paymentIntent.id
+          })
+          .eq('id', bookingId)
+      }
 
       result = { 
         success: true, 
@@ -288,7 +379,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error:', error)
 
-    // Update booking status on error
+    // Enhanced error handling - try to update correct table on error
     try {
       const { bookingId } = await req.json()
       if (bookingId) {
@@ -298,10 +389,24 @@ serve(async (req) => {
           { auth: { persistSession: false } }
         )
         
-        await supabaseClient
-          .from('bookings')
-          .update({ payment_status: 'failed' })
-          .eq('id', bookingId)
+        // Try to update both tables (one will succeed, one will fail silently)
+        try {
+          await supabaseClient
+            .from('bookings')
+            .update({ payment_status: 'failed' })
+            .eq('id', bookingId)
+        } catch (e) {
+          // Ignore error if booking not in this table
+        }
+        
+        try {
+          await supabaseClient
+            .from('past_bookings')
+            .update({ payment_status: 'failed' })
+            .eq('id', bookingId)
+        } catch (e) {
+          // Ignore error if booking not in this table
+        }
       }
     } catch (updateError) {
       console.error('Error updating booking status:', updateError)
