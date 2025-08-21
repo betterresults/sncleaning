@@ -91,6 +91,42 @@ serve(async (req) => {
       }
     }
 
+    // Strategy 4: Debug - List recent customers to help identify the issue
+    let debugCustomers = []
+    if (stripeCustomers.data.length === 0) {
+      try {
+        console.log(`Strategy 4: Listing recent customers for debugging`)
+        const allCustomers = await stripe.customers.list({ limit: 20 })
+        debugCustomers = allCustomers.data.map(c => ({
+          id: c.id,
+          email: c.email,
+          name: c.name,
+          created: c.created
+        }))
+        console.log(`Strategy 4: Found ${debugCustomers.length} recent customers:`)
+        debugCustomers.forEach(c => {
+          console.log(`  - ${c.email} (${c.name || 'No name'}) - ID: ${c.id}`)
+        })
+        
+        // Try partial email match
+        const partialMatches = allCustomers.data.filter(c => 
+          c.email && (
+            c.email.toLowerCase().includes(searchEmail.toLowerCase()) ||
+            searchEmail.toLowerCase().includes(c.email.toLowerCase())
+          )
+        )
+        if (partialMatches.length > 0) {
+          console.log(`Found ${partialMatches.length} partial email matches:`)
+          partialMatches.forEach(c => {
+            console.log(`  - Partial match: ${c.email} vs search: ${searchEmail}`)
+          })
+          stripeCustomers.data = partialMatches
+        }
+      } catch (debugError) {
+        console.log(`Strategy 4 debug listing failed: ${debugError.message}`)
+      }
+    }
+
     const results = []
 
     // Process each found customer
@@ -137,7 +173,8 @@ serve(async (req) => {
       success: true,
       search_email: searchEmail,
       customers_found: results.length,
-      customers: results
+      customers: results,
+      debug_recent_customers: debugCustomers // Include recent customers for debugging
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
