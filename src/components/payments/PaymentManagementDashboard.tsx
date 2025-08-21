@@ -87,6 +87,7 @@ const PaymentManagementDashboard = () => {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [activeTab, setActiveTab] = useState('today');
   const [syncingCustomers, setSyncingCustomers] = useState(false);
   const { toast } = useToast();
 
@@ -96,7 +97,8 @@ const PaymentManagementDashboard = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [allBookings, pastBookings, searchTerm, statusFilter]);
+    updateStatsForActiveTab();
+  }, [allBookings, pastBookings, searchTerm, statusFilter, activeTab]);
 
   const fetchBookings = async () => {
     try {
@@ -141,6 +143,8 @@ const PaymentManagementDashboard = () => {
       setAllBookings(allUpcoming);
       setPastBookings(allPast);
       calculateStats([...allUpcoming, ...allPast]);
+      // Calculate initial stats for today's tab
+      updateStatsForActiveTab();
     } catch (error) {
       console.error('Error fetching bookings:', error);
       toast({
@@ -192,7 +196,36 @@ const PaymentManagementDashboard = () => {
       }
     });
 
-    setStats(stats);
+    return stats;
+  };
+
+  const updateStatsForActiveTab = () => {
+    let currentBookings: Booking[] = [];
+    
+    switch (activeTab) {
+      case 'today':
+        currentBookings = getTodaysBookings();
+        break;
+      case 'upcoming':
+        currentBookings = getUpcomingBookings();
+        break;
+      case 'completed':
+        currentBookings = getCompletedBookings();
+        break;
+      case 'failed':
+        currentBookings = getFailedBookings();
+        break;
+      case 'unpaid':
+        currentBookings = getUnpaidBookings();
+        break;
+      case 'all':
+      default:
+        currentBookings = [...allBookings, ...pastBookings];
+        break;
+    }
+    
+    const tabStats = calculateStats(currentBookings);
+    setStats(tabStats);
   };
 
   const applyFilters = () => {
@@ -265,14 +298,16 @@ const PaymentManagementDashboard = () => {
   };
 
   const getFailedBookings = () => {
-    return filteredBookings.filter(booking => {
+    const allCombined = [...allBookings, ...pastBookings];
+    return allCombined.filter(booking => {
       const status = booking.payment_status?.toLowerCase();
       return ['failed', 'authorization_failed', 'capture_failed'].includes(status);
     });
   };
 
   const getUnpaidBookings = () => {
-    return filteredBookings.filter(booking => {
+    const allCombined = [...allBookings, ...pastBookings];
+    return allCombined.filter(booking => {
       const status = booking.payment_status?.toLowerCase();
       return ['unpaid', 'not paid', ''].includes(status) || !status;
     });
@@ -426,7 +461,7 @@ const PaymentManagementDashboard = () => {
       </Card>
 
       {/* Payment Tables */}
-      <Tabs defaultValue="today" className="space-y-6">
+      <Tabs defaultValue="today" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid grid-cols-6 w-full">
           <TabsTrigger value="today" className="text-blue-600">
             Today ({getTodaysBookings().length})
@@ -443,7 +478,7 @@ const PaymentManagementDashboard = () => {
           <TabsTrigger value="unpaid" className="text-yellow-600">
             Unpaid ({getUnpaidBookings().length})
           </TabsTrigger>
-          <TabsTrigger value="all">All ({filteredBookings.length})</TabsTrigger>
+          <TabsTrigger value="all">All ({[...allBookings, ...pastBookings].length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="today">
