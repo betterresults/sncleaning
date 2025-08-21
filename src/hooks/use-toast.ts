@@ -6,7 +6,7 @@ import type {
 } from "@/components/ui/toast"
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_REMOVE_DELAY = 3000
 
 type ToasterToast = ToastProps & {
   id: string
@@ -188,4 +188,13 @@ function useToast() {
   }
 }
 
-export { useToast, toast }
+// Helper function for success toasts
+function successToast(title: string, description?: string) {
+  return toast({
+    variant: "success",
+    title,
+    description,
+  })
+}
+
+export { useToast, toast, successToast }
