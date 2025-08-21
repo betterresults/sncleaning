@@ -110,10 +110,55 @@ const CreateCustomerDialog = ({ children, onCustomerCreated }: CreateCustomerDia
         }
       }
 
-      toast({
-        title: "Success",
-        description: "Customer created successfully!",
+      // Create auth user account so customer can log in
+      console.log('Creating auth user account for customer:', data.id);
+      const defaultPassword = '123456'; // Default password, customer can reset it
+      
+      const { data: userResult, error: userError } = await supabase.functions.invoke('create-user', {
+        body: {
+          email: formData.email,
+          password: defaultPassword,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          role: 'guest' // customers have 'guest' role
+        }
       });
+
+      console.log('Create user response:', { userResult, userError });
+
+      let authAccountCreated = false;
+      if (userError) {
+        console.error('Error creating user account:', userError);
+        // Don't fail the whole operation, but inform the user
+        toast({
+          title: "Partial Success",
+          description: "Customer created but login account couldn't be created. They may need to sign up separately.",
+          variant: "destructive",
+        });
+      } else if (!userResult.success) {
+        console.error('User creation failed:', userResult.error);
+        toast({
+          title: "Partial Success", 
+          description: "Customer created but login account couldn't be created. They may need to sign up separately.",
+          variant: "destructive",
+        });
+      } else {
+        console.log('Auth user created successfully:', userResult);
+        authAccountCreated = true;
+      }
+
+      // Show appropriate success message
+      if (authAccountCreated) {
+        toast({
+          title: "Success",
+          description: `Customer created successfully! They can now log in with email ${formData.email} and password ${defaultPassword}`,
+        });
+      } else {
+        toast({
+          title: "Customer Created",
+          description: "Customer record created successfully in the system.",
+        });
+      }
 
       onCustomerCreated(data);
       setOpen(false);
