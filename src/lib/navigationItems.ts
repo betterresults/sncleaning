@@ -143,6 +143,11 @@ export const adminNavigation = [
     icon: CreditCard,
     subItems: [
       {
+        title: "Payment Management",
+        url: "/admin-payment-management",
+        icon: Settings,
+      },
+      {
         title: "Cleaner Payments",
         url: "/admin-cleaner-payments",
         icon: DollarSign,
