@@ -608,17 +608,17 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
       <Card>
         <CardContent className="p-0">
           {viewMode === 'list' ? (
-            <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300">
+            <div className="overflow-x-auto">
               <Table className="min-w-full">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Address</TableHead>
-                    <TableHead>Service</TableHead>
-                    <TableHead>Cleaner</TableHead>
-                    <TableHead>Cost</TableHead>
-                    <TableHead>Actions</TableHead>
+                <TableHeader className="bg-gray-50">
+                  <TableRow className="border-b border-gray-200">
+                    <TableHead className="text-left font-semibold text-gray-700 py-3 px-4">Date</TableHead>
+                    <TableHead className="text-left font-semibold text-gray-700 py-3 px-4">Customer</TableHead>
+                    <TableHead className="text-left font-semibold text-gray-700 py-3 px-4">Address</TableHead>
+                    <TableHead className="text-left font-semibold text-gray-700 py-3 px-4">Service</TableHead>
+                    <TableHead className="text-left font-semibold text-gray-700 py-3 px-4">Cleaner</TableHead>
+                    <TableHead className="text-right font-semibold text-gray-700 py-3 px-4">Cost</TableHead>
+                    <TableHead className="text-center font-semibold text-gray-700 py-3 px-4">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -636,69 +636,68 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                       return (
                         <TableRow 
                           key={booking.id} 
-                          className={`cursor-pointer ${isUnsigned ? "bg-red-50 hover:bg-red-100 border-l-4 border-red-500" : "hover:bg-gray-50"}`}
+                          className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${isUnsigned ? "bg-red-50" : ""}`}
                           onClick={() => handleEdit(booking.id)}
                         >
-                          <TableCell className="py-4">
-                            <div>
-                              <div className="text-base font-normal text-gray-900">
-                                {format(new Date(booking.date_time), 'dd/MM/yy')}
-                              </div>
-                              <div className="text-sm text-gray-600">
-                                {format(new Date(booking.date_time), 'HH:mm')}
-                              </div>
+                          <TableCell className="py-3 px-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {format(new Date(booking.date_time), 'dd MMM')}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {format(new Date(booking.date_time), 'HH:mm')}
                             </div>
                           </TableCell>
-                          <TableCell className="py-4">
-                            <div>
-                              <div className="text-base font-normal text-gray-900">
-                                {booking.first_name} {booking.last_name}
-                              </div>
-                              <div className="text-sm text-gray-600">
-                                {booking.email}
-                              </div>
+                          <TableCell className="py-3 px-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {booking.first_name} {booking.last_name}
+                            </div>
+                            <div className="text-xs text-gray-500 truncate max-w-[180px]">
+                              {booking.email}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {booking.phone_number}
                             </div>
                           </TableCell>
-                          <TableCell className="py-4">
-                            <div className="text-base font-normal text-gray-900">
+                          <TableCell className="py-3 px-4">
+                            <div className="text-xs text-gray-600 font-medium">
+                              {booking.postcode}
+                            </div>
+                            <div className="text-sm text-gray-900 max-w-[200px] truncate">
                               {booking.address}
                             </div>
                           </TableCell>
-                          <TableCell className="py-4">
-                            <div className="text-base font-normal text-gray-900">
-                              {booking.total_hours ? `${booking.total_hours}h ` : ''}
-                              {booking.service_type || booking.cleaning_type || 'Standard'}
+                          <TableCell className="py-3 px-4">
+                            <div className="text-sm text-gray-900">
+                              <span className="font-medium">{booking.total_hours}h</span> {booking.service_type || booking.cleaning_type || 'Standard'}
                             </div>
                           </TableCell>
-                          <TableCell className="py-4">
+                          <TableCell className="py-3 px-4">
                             {isUnsigned ? (
-                              <Badge variant="outline" className="text-red-600 border-red-300 bg-red-50">
+                              <span className="inline-flex px-2 py-1 text-xs font-medium bg-red-100 text-red-700 rounded-full">
                                 Unassigned
-                              </Badge>
+                              </span>
                             ) : (
-                              <span className="text-base font-normal text-gray-900">{cleanerName}</span>
+                              <span className="text-sm font-semibold text-gray-900">{cleanerName}</span>
                             )}
                           </TableCell>
-                          <TableCell className="py-4">
-                            <div className="text-right">
-                              <div className="text-lg font-normal text-gray-900">
-                                £{booking.total_cost?.toFixed(2) || '0.00'}
-                              </div>
-                              {booking.cleaner_pay && (
-                                <div className="text-sm text-gray-600">
-                                  £{booking.cleaner_pay.toFixed(2)}
-                                </div>
-                              )}
+                          <TableCell className="py-3 px-4 text-right">
+                            <div className="text-base font-semibold text-gray-900">
+                              £{booking.total_cost?.toFixed(2) || '0.00'}
                             </div>
+                            {booking.cleaner_pay && (
+                              <div className="text-xs text-gray-500">
+                                £{booking.cleaner_pay.toFixed(2)}
+                              </div>
+                            )}
                           </TableCell>
-                          <TableCell className="py-4">
-                            <div className="flex items-center justify-center gap-3">
+                          <TableCell className="py-3 px-4">
+                            <div className="flex items-center justify-center gap-2">
                               <div
-                                className="flex items-center justify-center"
+                                className="flex items-center justify-center w-6 h-6"
                                 title={booking.payment_status || 'Unpaid'}
                               >
                                 <DollarSign 
-                                  className={`h-5 w-5 ${
+                                  className={`w-4 h-4 ${
                                     booking.payment_status?.toLowerCase() === 'paid' 
                                       ? 'text-green-600' 
                                       : booking.payment_status?.toLowerCase() === 'collecting'
@@ -712,21 +711,21 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-8 w-8 p-0 hover:bg-gray-100"
+                                    className="w-6 h-6 p-0 hover:bg-gray-200 rounded-md"
                                     onClick={(e) => e.stopPropagation()}
                                   >
-                                    <MoreHorizontal className="h-4 w-4 text-gray-600" />
+                                    <MoreHorizontal className="w-4 h-4 text-gray-600" />
                                   </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuContent align="end" className="w-44">
                                   <DropdownMenuItem
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       handleEdit(booking.id);
                                     }}
                                   >
-                                    <Edit className="h-4 w-4 mr-2" />
-                                    Edit Booking
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    Edit
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={(e) => {
@@ -734,7 +733,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                                       handleDuplicate(booking);
                                     }}
                                   >
-                                    <Copy className="h-4 w-4 mr-2" />
+                                    <Copy className="w-4 h-4 mr-2" />
                                     Duplicate
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
@@ -743,7 +742,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                                       handleAssignCleaner(booking.id);
                                     }}
                                   >
-                                    <UserPlus className="h-4 w-4 mr-2" />
+                                    <UserPlus className="w-4 h-4 mr-2" />
                                     Assign Cleaner
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
@@ -752,7 +751,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                                       handleMakeRecurring(booking);
                                     }}
                                   >
-                                    <Repeat className="h-4 w-4 mr-2" />
+                                    <Repeat className="w-4 h-4 mr-2" />
                                     Make Recurring
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
@@ -763,8 +762,8 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                                     }}
                                     className="text-orange-600"
                                   >
-                                    <X className="h-4 w-4 mr-2" />
-                                    Cancel Booking
+                                    <X className="w-4 h-4 mr-2" />
+                                    Cancel
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={(e) => {
@@ -773,8 +772,8 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                                     }}
                                     className="text-red-600"
                                   >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Delete Booking
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
