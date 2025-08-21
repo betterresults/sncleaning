@@ -47,7 +47,7 @@ const CreateCustomerDialog = ({ children, onCustomerCreated }: CreateCustomerDia
         email: formData.email,
         phone: formData.phone,
         company: formData.company,
-        client_status: 'New'
+        client_status: 'Current'
       };
 
       console.log('About to insert customer data:', JSON.stringify(customerData, null, 2));

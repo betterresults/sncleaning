@@ -51,6 +51,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { CollectPaymentMethodDialog } from '@/components/payments/CollectPaymentMethodDialog';
 import { SyncPaymentMethodsButton } from '@/components/payments/SyncPaymentMethodsButton';
+import DeleteSinsipButton from '@/components/admin/DeleteSinsipButton';
 
 interface UserData {
   id: string;
@@ -660,7 +661,10 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           <span>{getTypeTitle()} ({filteredUsers.length})</span>
           <div className="flex gap-2">
             {userType === 'customer' && (
-              <SyncPaymentMethodsButton onSyncComplete={fetchUsers} />
+              <div className="flex gap-2 items-center">
+                <SyncPaymentMethodsButton onSyncComplete={fetchUsers} />
+                <DeleteSinsipButton />
+              </div>
             )}
             <Button onClick={() => setShowAddUserDialog(true)} size="sm">
               <UserPlus className="h-4 w-4 mr-2" />

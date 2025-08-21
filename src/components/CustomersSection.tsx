@@ -107,7 +107,7 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
           phone: newCustomer.phone,
           address: newCustomer.address,
           postcode: newCustomer.postcode,
-          client_status: 'New'
+          client_status: 'Current'
         })
         .select();
 
