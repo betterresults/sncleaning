@@ -35,6 +35,42 @@ serve(async (req) => {
       )
     }
 
+    // Check if this is a business customer ID (numeric string)
+    if (!userId.includes('-') && /^\d+$/.test(userId)) {
+      console.log('Detected business customer ID:', userId);
+      
+      // Update the customer record directly
+      const customerUpdates: any = {};
+      if (updates.first_name) customerUpdates.first_name = updates.first_name;
+      if (updates.last_name) customerUpdates.last_name = updates.last_name;
+      if (updates.email) customerUpdates.email = updates.email;
+      
+      console.log('Updating customer with:', customerUpdates);
+      
+      const { error: customerError } = await supabaseAdmin
+        .from('customers')
+        .update(customerUpdates)
+        .eq('id', parseInt(userId));
+
+      if (customerError) {
+        console.error('Customer update error:', customerError);
+        return new Response(
+          JSON.stringify({ error: `Failed to update customer: ${customerError.message}` }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('Customer updated successfully');
+      
+      return new Response(
+        JSON.stringify({ success: true, message: 'Customer updated successfully' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Handle auth users (UUID format)
+    console.log('Handling auth user update for UUID:', userId);
+
     // Prepare the update object for auth.users
     const authUpdates: any = {}
     
