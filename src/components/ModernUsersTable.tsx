@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import BulkLinkRecordsUtility from '@/components/admin/BulkLinkRecordsUtility';
 import BulkAccountCreationUtility from '@/components/admin/BulkAccountCreationUtility';
+import { DeleteUserByEmail } from '@/components/admin/DeleteUserByEmail';
 import { 
   Table, 
   TableBody, 
@@ -663,6 +664,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         <>
           <BulkAccountCreationUtility />
           <BulkLinkRecordsUtility />
+          <DeleteUserByEmail />
         </>
       )}
       
