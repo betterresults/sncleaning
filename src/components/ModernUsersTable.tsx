@@ -51,7 +51,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { CollectPaymentMethodDialog } from '@/components/payments/CollectPaymentMethodDialog';
 import { SyncPaymentMethodsButton } from '@/components/payments/SyncPaymentMethodsButton';
-import DeleteSinsipButton from '@/components/admin/DeleteSinsipButton';
+import RemoveAllPaymentMethodsButton from '@/components/payments/RemoveAllPaymentMethodsButton';
 
 interface UserData {
   id: string;
@@ -664,7 +664,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
             {userType === 'customer' && (
               <div className="flex gap-2 items-center">
                 <SyncPaymentMethodsButton onSyncComplete={fetchUsers} />
-                <DeleteSinsipButton />
+                <RemoveAllPaymentMethodsButton onRemoveComplete={fetchUsers} />
               </div>
             )}
             <Button onClick={() => setShowAddUserDialog(true)} size="sm">
@@ -964,11 +964,10 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                               size="sm"
                               variant="outline"
                               onClick={() => startEditing(user)}
-                              disabled={isCustomerView && user.type !== 'business_customer'}
                             >
                               <Edit2 className="h-4 w-4" />
                             </Button>
-                            {isCustomerView && user.type === 'business_customer' && (
+                            {isCustomerView && (user.type === 'business_customer' || !user.type) && (
                               <CreateBookingDialogWithCustomer customer={{
                                 id: Number(user.business_id || user.id),
                                 first_name: user.first_name || '',
@@ -981,7 +980,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                                 </Button>
                               </CreateBookingDialogWithCustomer>
                             )}
-                            {isCustomerView && user.type === 'business_customer' && (
+                            {isCustomerView && (user.type === 'business_customer' || !user.type) && (
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -1015,7 +1014,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                                 </Button>
                               </>
                             )}
-                            {isCustomerView && user.type === 'business_customer' && (
+                            {isCustomerView && (user.type === 'business_customer' || !user.type) && (
                               <Button
                                 size="sm"
                                 variant="outline"
