@@ -55,7 +55,59 @@ Deno.serve(async (req) => {
 
     console.log('User created successfully:', userData.user?.id)
 
-    // Now create the profile entry
+    let customerId = null;
+    let cleanerId = null;
+
+    // If creating a customer (guest role), handle customer record
+    if (role === 'guest') {
+      // Check if customer already exists
+      const { data: existingCustomer } = await supabaseAdmin
+        .from('customers')
+        .select('id')
+        .eq('email', email)
+        .single();
+
+      if (existingCustomer) {
+        customerId = existingCustomer.id;
+        console.log('Found existing customer:', customerId);
+      } else {
+        // Create new customer record
+        const { data: newCustomer, error: customerError } = await supabaseAdmin
+          .from('customers')
+          .insert({
+            first_name: firstName,
+            last_name: lastName,
+            email: email,
+            client_status: 'New'
+          })
+          .select('id')
+          .single();
+
+        if (customerError) {
+          console.error('Error creating customer:', customerError);
+        } else {
+          customerId = newCustomer.id;
+          console.log('Created new customer:', customerId);
+        }
+      }
+    }
+
+    // If creating a cleaner (user role), handle cleaner record
+    if (role === 'user') {
+      // Check if cleaner already exists
+      const { data: existingCleaner } = await supabaseAdmin
+        .from('cleaners')
+        .select('id')
+        .eq('email', email)
+        .single();
+
+      if (existingCleaner) {
+        cleanerId = existingCleaner.id;
+        console.log('Found existing cleaner:', cleanerId);
+      }
+    }
+
+    // Now create the profile entry with proper linking
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .insert({
@@ -64,7 +116,9 @@ Deno.serve(async (req) => {
         first_name: firstName,
         last_name: lastName,
         email: email,
-        role: role
+        role: role,
+        customer_id: customerId,
+        cleaner_id: cleanerId
       })
 
     if (profileError) {
