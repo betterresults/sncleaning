@@ -414,8 +414,12 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
 
   // Handle day click in calendar
   const handleDayClick = (date: Date) => {
+    if (!date) return;
+    
     const dayBookings = filteredBookings.filter(booking => {
+      if (!booking.date_time) return false;
       const bookingDate = new Date(booking.date_time);
+      if (isNaN(bookingDate.getTime())) return false;
       return bookingDate.toDateString() === date.toDateString();
     });
     
@@ -428,8 +432,12 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
 
   // Get bookings count for a specific date
   const getBookingsForDate = (date: Date) => {
+    if (!date) return [];
+    
     return filteredBookings.filter(booking => {
+      if (!booking.date_time) return false;
       const bookingDate = new Date(booking.date_time);
+      if (isNaN(bookingDate.getTime())) return false;
       return bookingDate.toDateString() === date.toDateString();
     });
   };
