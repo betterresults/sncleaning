@@ -443,18 +443,19 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   };
 
   // Custom day cell component with booking count
-  const CustomDayCell = ({ date, ...props }: any) => {
-    const dayBookings = getBookingsForDate(date);
+  const CustomDayCell = ({ children, value, ...props }: any) => {
+    const dayBookings = getBookingsForDate(value);
     const bookingCount = dayBookings.length;
     
     return (
       <div 
-        className="relative h-full w-full cursor-pointer hover:bg-blue-50 transition-colors"
-        onClick={() => handleDayClick(date)}
+        className="relative h-full w-full cursor-pointer hover:bg-blue-50 transition-colors min-h-[80px]"
+        onClick={() => handleDayClick(value)}
         {...props}
       >
+        {children}
         {bookingCount > 0 && (
-          <div className="absolute top-1 right-1 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold shadow-sm">
+          <div className="absolute top-1 right-1 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold shadow-sm z-10">
             {bookingCount}
           </div>
         )}
@@ -918,43 +919,22 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
             <div className="p-4" style={{ height: '600px' }}>
               <BigCalendar
                 localizer={localizer}
-                events={filteredBookings.map(booking => ({
-                  id: booking.id,
-                  title: `${booking.first_name} ${booking.last_name} - ${booking.cleaning_type}`,
-                  start: new Date(booking.date_time),
-                  end: new Date(new Date(booking.date_time).getTime() + 2 * 60 * 60 * 1000), // 2 hours default
-                  resource: booking,
-                }))}
+                events={[]} // No events - we'll show count badges instead
                 startAccessor="start"
                 endAccessor="end"
                 style={{ height: '100%' }}
-                onSelectEvent={(event) => handleEdit(event.resource.id)}
-                eventPropGetter={(event) => {
-                  const isUnsigned = !event.resource.cleaner;
-                  return {
-                    style: {
-                      backgroundColor: isUnsigned ? '#ef4444' : '#3b82f6',
-                      borderColor: isUnsigned ? '#dc2626' : '#2563eb',
-                      color: 'white',
-                      borderRadius: '4px',
-                      border: 'none',
-                    }
-                  };
-                }}
-                views={['month', 'week', 'day']}
+                views={['month']}
                 defaultView="month"
-                popup
+                toolbar={true}
                 components={{
-                  event: ({ event }) => (
-                    <div className="text-xs">
-                      <div className="font-medium">{event.resource.first_name} {event.resource.last_name}</div>
-                      <div>{event.resource.cleaning_type}</div>
-                      <div>£{event.resource.total_cost?.toFixed(2)}</div>
-                      {!event.resource.cleaner && <div className="text-red-200">Unsigned</div>}
-                    </div>
-                  ),
                   dateCellWrapper: CustomDayCell,
                 }}
+                onSelectSlot={(slotInfo) => {
+                  if (slotInfo.start) {
+                    handleDayClick(slotInfo.start);
+                  }
+                }}
+                selectable={true}
               />
             </div>
           )}
