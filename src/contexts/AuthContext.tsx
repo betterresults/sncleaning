@@ -67,7 +67,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Determine the final role
       const finalRole = userRoleData?.role || profileData?.role || 'guest';
       
-      console.log('Setting user role and relationships:', {
+      console.log('AUTH CONTEXT DEBUG - Setting user role and relationships:', {
+        userId: userId,
+        email: session?.user?.email,
         role: finalRole,
         cleanerId: profileData?.cleaner_id,
         customerId: profileData?.customer_id,
