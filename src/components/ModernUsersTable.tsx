@@ -120,7 +120,14 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
     .filter(user => user.type === 'business_customer' && user.business_id)
     .map(user => user.business_id!);
     
+  console.log('=== PAYMENT DEBUG ===');
+  console.log('Customer IDs for payment data:', customerIds);
+  console.log('Users with business_customer type:', users.filter(user => user.type === 'business_customer').length);
+    
   const { paymentData, loading: paymentLoading, refetch: refetchPaymentData } = useCustomerPaymentMethods(customerIds);
+  
+  console.log('Payment data received:', paymentData);
+  console.log('Payment loading:', paymentLoading);
 
   // Selection and bulk edit state for Customers view
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
