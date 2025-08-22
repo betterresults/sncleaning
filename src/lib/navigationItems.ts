@@ -77,59 +77,77 @@ export const adminNavigation = [
     icon: Home,
   },
   {
-    title: "Add New Booking",
-    url: "/admin-add-booking",
-    icon: Plus,
-  },
-  {
-    title: "Upcoming Bookings",
-    url: "/upcoming-bookings",
+    title: "Bookings",
     icon: Calendar,
+    subItems: [
+      {
+        title: "Add New Booking",
+        url: "/admin-add-booking",
+        icon: Plus,
+      },
+      {
+        title: "Upcoming Bookings",
+        url: "/upcoming-bookings",
+        icon: BarChart3,
+      },
+      {
+        title: "Completed Bookings",
+        url: "/past-bookings",
+        icon: History,
+      },
+      {
+        title: "Recurring Bookings",
+        url: "/recurring-bookings",
+        icon: Repeat,
+      },
+    ],
   },
+    {
+      title: "Users",
+      icon: Users,
+      subItems: [
+        {
+          title: "All Users",
+          url: "/users",
+          icon: Users,
+        },
+        {
+          title: "Admins",
+          url: "/users/admins",
+          icon: Shield,
+        },
+        {
+          title: "Cleaners",
+          url: "/users/cleaners",
+          icon: UserCheck,
+        },
+        {
+          title: "Customers",
+          url: "/users/customers",
+          icon: UserPlus,
+        },
+      ],
+    },
   {
-    title: "Completed Bookings",
-    url: "/past-bookings",
-    icon: History,
-  },
-  {
-    title: "Recurring Bookings",
-    url: "/recurring-bookings",
-    icon: Repeat,
-  },
-  {
-    title: "All Users",
-    url: "/users",
-    icon: Users,
-  },
-  {
-    title: "Admins",
-    url: "/users/admins",
-    icon: Shield,
-  },
-  {
-    title: "Cleaners",
-    url: "/users/cleaners",
-    icon: UserCheck,
-  },
-  {
-    title: "Customers",
-    url: "/users/customers",
-    icon: UserPlus,
-  },
-  {
-    title: "Payment Management",
-    url: "/admin-payment-management",
+    title: "Payments",
     icon: CreditCard,
-  },
-  {
-    title: "Cleaner Payments",
-    url: "/admin-cleaner-payments",
-    icon: DollarSign,
-  },
-  {
-    title: "Customer Payments",
-    url: "/admin-customer-payments",
-    icon: CreditCard,
+    subItems: [
+      {
+        title: "Payment Management",
+        url: "/admin-payment-management",
+        icon: Settings,
+      },
+      {
+        title: "Cleaner Payments",
+        url: "/admin-cleaner-payments",
+        icon: DollarSign,
+      },
+      {
+        title: "Customer Payments",
+        url: "/admin-customer-payments",
+        icon: CreditCard,
+      },
+    ],
   },
   {
     title: "Chat Management",
@@ -137,23 +155,35 @@ export const adminNavigation = [
     icon: MessageCircle,
   },
   {
-    title: "Cleaner Dashboard",
-    url: "/cleaner-dashboard",
-    icon: UserCheck,
+    title: "Views",
+    icon: BarChart3,
+    subItems: [
+      {
+        title: "Cleaner Dashboard",
+        url: "/cleaner-dashboard",
+        icon: UserCheck,
+      },
+      {
+        title: "Customer Dashboard", 
+        url: "/customer-dashboard",
+        icon: UserPlus,
+      },
+    ],
   },
   {
-    title: "Customer Dashboard", 
-    url: "/customer-dashboard",
-    icon: UserPlus,
-  },
-  {
-    title: "Admin Settings",
-    url: "/admin-settings",
+    title: "Settings",
     icon: Settings,
-  },
-  {
-    title: "Pricing Formulas",
-    url: "/admin-pricing-formulas",
-    icon: Calculator,
+    subItems: [
+      {
+        title: "Admin Settings",
+        url: "/admin-settings",
+        icon: Settings,
+      },
+      {
+        title: "Pricing Formulas",
+        url: "/admin-pricing-formulas",
+        icon: Calculator,
+      },
+    ],
   },
 ];
