@@ -82,21 +82,21 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
                     <SidebarMenuButton 
                       asChild={!item.disabled && !hasSubItems}
                       onClick={hasSubItems ? toggleExpanded : undefined}
-                      className={`h-10 transition-all duration-200 border-0 justify-start px-3 rounded-lg font-medium text-sm ${
+                      className={`h-11 transition-all duration-200 border-0 justify-start px-3 rounded-lg font-medium text-base ${
                         isActive || hasActiveSubItem
-                          ? "!bg-white/15 !text-white" 
-                          : "!text-white/90 hover:!text-white hover:!bg-white/8"
+                          ? "!bg-white/20 !text-white" 
+                          : "!text-white hover:!text-white hover:!bg-white/10"
                       } ${item.disabled ? "opacity-60 cursor-not-allowed" : ""} ${hasSubItems ? "cursor-pointer" : ""}`}
                     >
                       {item.disabled ? (
                         <div className="flex items-center w-full">
-                          <item.icon className="h-4 w-4 flex-shrink-0" />
-                          <div className="ml-2.5 flex flex-col">
-                            <span className="font-medium text-sm leading-tight">
+                          <item.icon className="h-5 w-5 flex-shrink-0" />
+                          <div className="ml-3 flex flex-col">
+                            <span className="font-medium text-base leading-tight">
                               {item.title}
                             </span>
                             {item.subtitle && (
-                              <span className="text-xs opacity-70">
+                              <span className="text-sm opacity-70">
                                 {item.subtitle}
                               </span>
                             )}
@@ -105,21 +105,21 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
                       ) : hasSubItems ? (
                         <div className="flex items-center justify-between w-full">
                           <div className="flex items-center">
-                            <item.icon className="h-4 w-4 flex-shrink-0" />
-                            <span className="ml-2.5 font-medium text-sm leading-tight">
+                            <item.icon className="h-5 w-5 flex-shrink-0" />
+                            <span className="ml-3 font-medium text-base leading-tight">
                               {item.title}
                             </span>
                           </div>
                           {isExpanded ? (
-                            <ChevronDown className="h-3 w-3" />
+                            <ChevronDown className="h-4 w-4" />
                           ) : (
-                            <ChevronRight className="h-3 w-3" />
+                            <ChevronRight className="h-4 w-4" />
                           )}
                         </div>
                       ) : (
                         <Link to={item.url!} className="flex items-center w-full">
-                          <item.icon className="h-4 w-4 flex-shrink-0" />
-                          <span className="ml-2.5 font-medium text-sm leading-tight">
+                          <item.icon className="h-5 w-5 flex-shrink-0" />
+                          <span className="ml-3 font-medium text-base leading-tight">
                             {item.title}
                           </span>
                         </Link>
@@ -127,22 +127,22 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
                     </SidebarMenuButton>
                     
                     {hasSubItems && isExpanded && (
-                      <SidebarMenuSub className="mt-0.5">
+                      <SidebarMenuSub className="mt-0.5 ml-0 border-0">
                         {item.subItems?.map((subItem) => {
                           const isSubActive = location.pathname === subItem.url;
                           return (
                             <SidebarMenuSubItem key={subItem.title}>
                               <SidebarMenuSubButton 
                                 asChild
-                                className={`h-9 transition-all duration-200 rounded-md px-3 font-medium text-xs ml-3 ${
+                                className={`h-10 transition-all duration-200 rounded-md px-3 font-medium text-sm ml-6 ${
                                   isSubActive
-                                    ? "!bg-white/15 !text-white"
-                                    : "!text-white/80 hover:!text-white hover:!bg-white/8"
+                                    ? "!bg-white/20 !text-white"
+                                    : "!text-white/90 hover:!text-white hover:!bg-white/10"
                                 }`}
                               >
                                 <Link to={subItem.url} className="flex items-center w-full">
-                                  <subItem.icon className="h-3 w-3 flex-shrink-0" />
-                                  <span className="ml-2 leading-tight">
+                                  <subItem.icon className="h-4 w-4 flex-shrink-0 !text-white/80" />
+                                  <span className="ml-3 leading-tight">
                                     {subItem.title}
                                   </span>
                                 </Link>
@@ -164,7 +164,7 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
         <SidebarMenu className="space-y-2">
           <SidebarMenuItem>
             <SidebarMenuButton 
-              className="transition-all duration-200 hover:bg-white/8 !text-white hover:!text-white border-0 justify-start px-2 py-2 rounded-lg h-auto"
+              className="transition-all duration-200 hover:bg-white/10 !text-white hover:!text-white border-0 justify-start px-2 py-2 rounded-lg h-auto"
             >
               <div className="w-8 h-8 bg-gradient-to-br from-[#18A5A5] to-[#18A5A5]/80 rounded-full flex items-center justify-center flex-shrink-0">
                 <User className="h-4 w-4 text-white" />
