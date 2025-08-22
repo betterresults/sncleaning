@@ -69,13 +69,13 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Created Setup Intent:', setupIntent.id);
 
     // Create Checkout Session for payment method collection
-    const origin = req.headers.get('origin') || 'https://your-domain.com';
+    const origin = req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/') || 'https://dkomihipebixlegygnoy.supabase.co';
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: stripeCustomer.id,
       mode: 'setup',
       payment_method_types: ['card'],
-      success_url: return_url || `${origin}/payment-method-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: return_url || `${origin}/payment-method-cancelled`,
+      success_url: return_url || `${origin}/auth?payment_method_added=true`,
+      cancel_url: return_url || `${origin}/auth?payment_method_cancelled=true`,
       metadata: {
         customer_id: customer_id.toString(),
         setup_intent_id: setupIntent.id

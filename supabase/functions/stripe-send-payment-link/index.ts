@@ -82,7 +82,7 @@ const handler = async (req: Request): Promise<Response> => {
       after_completion: {
         type: 'redirect',
         redirect: {
-          url: `${req.headers.get('origin') || 'https://your-domain.com'}/auth?payment_success=true&redirect=customer`
+          url: `${req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/') || 'https://dkomihipebixlegygnoy.supabase.co'}/auth?payment_success=true`
         }
       },
       automatic_tax: { enabled: false },

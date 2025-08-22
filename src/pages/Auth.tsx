@@ -28,6 +28,8 @@ const Auth = () => {
   useEffect(() => {
     const paymentSetup = searchParams.get('payment_setup');
     const paymentSuccess = searchParams.get('payment_success');
+    const paymentMethodAdded = searchParams.get('payment_method_added');
+    const paymentMethodCancelled = searchParams.get('payment_method_cancelled');
     
     if (paymentSetup === 'success') {
       toast({
@@ -40,6 +42,21 @@ const Auth = () => {
       toast({
         title: 'Payment Successful!',
         description: 'Your payment has been processed successfully. Please log in to access your account.',
+      });
+    }
+
+    if (paymentMethodAdded === 'true') {
+      toast({
+        title: 'Payment Method Added!',
+        description: 'Your payment method has been successfully set up. Please log in to access your account.',
+      });
+    }
+
+    if (paymentMethodCancelled === 'true') {
+      toast({
+        title: 'Payment Method Setup Cancelled',
+        description: 'Payment method setup was cancelled. You can try again after logging in.',
+        variant: 'destructive',
       });
     }
   }, [searchParams, toast]);
