@@ -8,6 +8,9 @@ import { cleanerNavigation } from '@/lib/navigationItems';
 import { useAdminCleaner } from '@/contexts/AdminCleanerContext';
 import AdminCleanerSelector from '@/components/admin/AdminCleanerSelector';
 import CleanerUpcomingBookings from '@/components/cleaner/CleanerUpcomingBookings';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 
 const CleanerDashboard = () => {
   const { user, userRole, cleanerId, loading, signOut } = useAuth();
@@ -52,7 +55,13 @@ const CleanerDashboard = () => {
           <main className="flex-1 w-full max-w-full overflow-x-hidden">
             <div className="p-2 sm:p-4 space-y-3 sm:space-y-4 max-w-full">
               {userRole === 'admin' && (
-                <div className="mb-3 sm:mb-4">
+                <div className="mb-3 sm:mb-4 space-y-3">
+                  <Button asChild variant="outline" size="sm" className="w-fit">
+                    <Link to="/dashboard" className="flex items-center gap-2">
+                      <ArrowLeft className="h-4 w-4" />
+                      Back to Admin Dashboard
+                    </Link>
+                  </Button>
                   <AdminCleanerSelector />
                 </div>
               )}
