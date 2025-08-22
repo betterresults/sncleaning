@@ -155,6 +155,26 @@ const PaymentMethodManager = () => {
   
   // Use selected customer ID if admin is viewing, otherwise use the logged-in user's customer ID  
   const activeCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
+  
+  // Show message if admin hasn't selected a customer
+  if (userRole === 'admin' && !selectedCustomerId) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Payment Methods
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>Select a customer first to manage their payment methods</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSetupDialog, setShowSetupDialog] = useState(false);
