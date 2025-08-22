@@ -382,13 +382,30 @@ const CustomerUpcomingBookings = () => {
         <Card>
           <CardContent className="p-3 sm:p-6">
             {bookings.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-8 text-muted-foreground space-y-4">
                 <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No upcoming bookings found.</p>
-                <p className="text-sm">Book a new cleaning service to get started.</p>
+                <div>
+                  <p>No upcoming bookings found.</p>
+                  <p className="text-sm">Book a new cleaning service to get started.</p>
+                </div>
+                <Button
+                  onClick={() => navigate('/customer-add-booking')}
+                  className="bg-[#18A5A5] hover:bg-[#185166] text-white font-semibold px-6 py-2 rounded-lg transition-colors"
+                >
+                  Add New Booking
+                </Button>
               </div>
             ) : (
               <>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-[#185166]">Your Bookings</h3>
+                  <Button
+                    onClick={() => navigate('/customer-add-booking')}
+                    className="bg-[#18A5A5] hover:bg-[#185166] text-white font-semibold px-4 py-2 rounded-lg transition-colors"
+                  >
+                    Add New Booking
+                  </Button>
+                </div>
                 <div className="space-y-4">
                   {bookings.slice((currentPage - 1) * bookingsPerPage, currentPage * bookingsPerPage).map((booking) => (
                     <BookingCard
