@@ -77,22 +77,6 @@ export const adminNavigation = [
     icon: Home,
   },
   {
-    title: "Views",
-    icon: BarChart3,
-    subItems: [
-      {
-        title: "Cleaner Dashboard",
-        url: "/cleaner-dashboard",
-        icon: UserCheck,
-      },
-      {
-        title: "Customer Dashboard", 
-        url: "/customer-dashboard",
-        icon: UserPlus,
-      },
-    ],
-  },
-  {
     title: "Bookings",
     icon: Calendar,
     subItems: [
@@ -145,16 +129,6 @@ export const adminNavigation = [
       ],
     },
   {
-    title: "Create Accounts",
-    url: "/create-customer-accounts",
-    icon: Plus,
-  },
-  {
-    title: "Pricing Formulas",
-    url: "/admin-pricing-formulas",
-    icon: Calculator,
-  },
-  {
     title: "Payments",
     icon: CreditCard,
     subItems: [
@@ -181,8 +155,35 @@ export const adminNavigation = [
     icon: MessageCircle,
   },
   {
+    title: "Views",
+    icon: BarChart3,
+    subItems: [
+      {
+        title: "Cleaner Dashboard",
+        url: "/cleaner-dashboard",
+        icon: UserCheck,
+      },
+      {
+        title: "Customer Dashboard", 
+        url: "/customer-dashboard",
+        icon: UserPlus,
+      },
+    ],
+  },
+  {
     title: "Settings",
-    url: "/admin-settings",
     icon: Settings,
+    subItems: [
+      {
+        title: "Admin Settings",
+        url: "/admin-settings",
+        icon: Settings,
+      },
+      {
+        title: "Pricing Formulas",
+        url: "/admin-pricing-formulas",
+        icon: Calculator,
+      },
+    ],
   },
 ];
