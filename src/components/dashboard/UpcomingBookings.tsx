@@ -26,6 +26,7 @@ import EditBookingDialog from './EditBookingDialog';
 import AssignCleanerDialog from './AssignCleanerDialog';
 import DuplicateBookingDialog from './DuplicateBookingDialog';
 import ConvertToRecurringDialog from './ConvertToRecurringDialog';
+import DayBookingsDialog from './DayBookingsDialog';
 
 interface Booking {
   id: number;
@@ -116,6 +117,9 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<Booking | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [dayBookingsDialogOpen, setDayBookingsDialogOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDayBookings, setSelectedDayBookings] = useState<Booking[]>([]);
   const { toast } = useToast();
 
   // Setup calendar localizer
@@ -406,6 +410,48 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   const handleMakeRecurring = (booking: Booking) => {
     setSelectedBookingForRecurring(booking);
     setConvertToRecurringOpen(true);
+  };
+
+  // Handle day click in calendar
+  const handleDayClick = (date: Date) => {
+    const dayBookings = filteredBookings.filter(booking => {
+      const bookingDate = new Date(booking.date_time);
+      return bookingDate.toDateString() === date.toDateString();
+    });
+    
+    if (dayBookings.length > 0) {
+      setSelectedDate(date);
+      setSelectedDayBookings(dayBookings);
+      setDayBookingsDialogOpen(true);
+    }
+  };
+
+  // Get bookings count for a specific date
+  const getBookingsForDate = (date: Date) => {
+    return filteredBookings.filter(booking => {
+      const bookingDate = new Date(booking.date_time);
+      return bookingDate.toDateString() === date.toDateString();
+    });
+  };
+
+  // Custom day cell component with booking count
+  const CustomDayCell = ({ date, ...props }: any) => {
+    const dayBookings = getBookingsForDate(date);
+    const bookingCount = dayBookings.length;
+    
+    return (
+      <div 
+        className="relative h-full w-full cursor-pointer hover:bg-blue-50 transition-colors"
+        onClick={() => handleDayClick(date)}
+        {...props}
+      >
+        {bookingCount > 0 && (
+          <div className="absolute top-1 right-1 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold shadow-sm">
+            {bookingCount}
+          </div>
+        )}
+      </div>
+    );
   };
 
   useEffect(() => {
@@ -899,6 +945,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                       {!event.resource.cleaner && <div className="text-red-200">Unsigned</div>}
                     </div>
                   ),
+                  dateCellWrapper: CustomDayCell,
                 }}
               />
             </div>
@@ -1023,6 +1070,21 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
           setPaymentDialogOpen(false);
           setSelectedBookingForPayment(null);
         }}
+      />
+
+      <DayBookingsDialog
+        open={dayBookingsDialogOpen}
+        onOpenChange={setDayBookingsDialogOpen}
+        selectedDate={selectedDate}
+        bookings={selectedDayBookings}
+        onEdit={handleEdit}
+        onDuplicate={handleDuplicate}
+        onAssignCleaner={handleAssignCleaner}
+        onMakeRecurring={handleMakeRecurring}
+        onPaymentAction={handlePaymentAction}
+        onCancel={handleCancel}
+        onDelete={handleDelete}
+        getCleanerName={getCleanerName}
       />
     </div>
   );
