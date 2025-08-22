@@ -24,9 +24,9 @@ const CustomerCompletedBookings = () => {
   }
 
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
-        <UnifiedSidebar 
+        <UnifiedSidebar
           navigationItems={customerNavigation}
           user={user}
           onSignOut={handleSignOut}

@@ -112,7 +112,7 @@ const AdminGuard: React.FC<AdminGuardProps> = ({
   if (verificationError) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="max-w-md w-full">
+        <div className="max-w-md w-full space-y-6">
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription className="space-y-2">
@@ -123,6 +123,31 @@ const AdminGuard: React.FC<AdminGuardProps> = ({
               </div>
             </AlertDescription>
           </Alert>
+          
+          {/* Manual Navigation Options */}
+          <div className="bg-white rounded-lg p-6 shadow-sm border">
+            <h3 className="text-lg font-semibold mb-4 text-center">Go to Your Dashboard</h3>
+            <div className="space-y-3">
+              <button
+                onClick={() => window.location.href = '/customer-dashboard'}
+                className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                I'm a Customer
+              </button>
+              <button
+                onClick={() => window.location.href = '/cleaner-dashboard'}
+                className="w-full py-3 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+              >
+                I'm a Cleaner
+              </button>
+              <button
+                onClick={() => window.location.href = '/admin-dashboard'}
+                className="w-full py-3 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+              >
+                I'm an Admin
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
