@@ -64,6 +64,28 @@ const handler = async (req: Request): Promise<Response> => {
         break;
       }
 
+      case 'checkout.session.completed': {
+        console.log('Processing checkout.session.completed event');
+        const session = event.data.object;
+        
+        // Sync payment method if one was collected during checkout
+        if (session.payment_method && session.customer) {
+          await syncPaymentMethodToDatabase(stripe, supabaseAdmin, session.customer, session.payment_method);
+        }
+        break;
+      }
+
+      case 'payment_intent.succeeded': {
+        console.log('Processing payment_intent.succeeded event');
+        const paymentIntent = event.data.object;
+        
+        // Sync payment method if one was used for the payment
+        if (paymentIntent.payment_method && paymentIntent.customer) {
+          await syncPaymentMethodToDatabase(stripe, supabaseAdmin, paymentIntent.customer, paymentIntent.payment_method);
+        }
+        break;
+      }
+
       default:
         console.log(`Unhandled event type: ${event.type}`);
     }
@@ -97,38 +119,24 @@ async function syncPaymentMethodToDatabase(
     const paymentMethod = await stripe.paymentMethods.retrieve(paymentMethodId);
     console.log('Retrieved payment method from Stripe:', paymentMethod.id);
 
-    // Find the customer in our database using Stripe customer ID
+    // Get customer from Stripe metadata first (this is more reliable)
+    const stripeCustomer = await stripe.customers.retrieve(stripeCustomerId);
+    const customerIdFromMetadata = stripeCustomer.metadata?.customer_id;
+    
+    if (!customerIdFromMetadata) {
+      console.error('No customer_id in Stripe customer metadata for customer:', stripeCustomerId);
+      return;
+    }
+
     const { data: customerData, error: customerError } = await supabaseAdmin
       .from('customers')
       .select('id')
-      .eq('id', stripeCustomerId.replace('cus_', '').substring(0, 10)) // This is a rough match, we need better customer linking
+      .eq('id', parseInt(customerIdFromMetadata))
       .single();
 
     if (customerError) {
-      console.log('Customer not found by Stripe ID, trying to find by metadata...');
-      
-      // If not found, try to get customer from Stripe metadata
-      const stripeCustomer = await stripe.customers.retrieve(stripeCustomerId);
-      const customerIdFromMetadata = stripeCustomer.metadata?.customer_id;
-      
-      if (!customerIdFromMetadata) {
-        console.error('No customer_id in Stripe customer metadata');
-        return;
-      }
-
-      const { data: customerByMetadata, error: metadataError } = await supabaseAdmin
-        .from('customers')
-        .select('id')
-        .eq('id', parseInt(customerIdFromMetadata))
-        .single();
-
-      if (metadataError) {
-        console.error('Customer not found in database:', metadataError);
-        return;
-      }
-
-      // Update customer variable
-      customerData = customerByMetadata;
+      console.error('Customer not found in database with ID:', customerIdFromMetadata, customerError);
+      return;
     }
 
     if (!customerData) {
@@ -151,6 +159,14 @@ async function syncPaymentMethodToDatabase(
       return;
     }
 
+    // Check if this is the first payment method for this customer
+    const { data: existingMethods } = await supabaseAdmin
+      .from('customer_payment_methods')
+      .select('id')
+      .eq('customer_id', customerData.id);
+
+    const isFirstPaymentMethod = !existingMethods || existingMethods.length === 0;
+
     // Insert the payment method into our database
     const { error: insertError } = await supabaseAdmin
       .from('customer_payment_methods')
@@ -162,7 +178,7 @@ async function syncPaymentMethodToDatabase(
         card_last4: paymentMethod.card?.last4 || null,
         card_exp_month: paymentMethod.card?.exp_month || null,
         card_exp_year: paymentMethod.card?.exp_year || null,
-        is_default: true // Set as default for now
+        is_default: isFirstPaymentMethod // First payment method becomes default
       });
 
     if (insertError) {
