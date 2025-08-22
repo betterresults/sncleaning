@@ -19,19 +19,19 @@ const Index = () => {
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { user, userRole, cleanerId, loading: authLoading } = useAuth();
+  const { user, userRole, cleanerId, customerId, loading: authLoading } = useAuth();
 
-  console.log('Index - Current auth state:', { user: !!user, userRole, cleanerId, authLoading });
+  console.log('Index - Current auth state:', { user: !!user, userRole, cleanerId, customerId, authLoading });
 
   // Redirect if already authenticated
   useEffect(() => {
     if (!authLoading && user) {
       console.log('Index - User authenticated, checking redirect...');
     }
-  }, [user, userRole, cleanerId, authLoading]);
+  }, [user, userRole, cleanerId, customerId, authLoading]);
 
   if (!authLoading && user) {
-    console.log('Index - Redirecting authenticated user:', { userRole, cleanerId });
+    console.log('Index - Redirecting authenticated user:', { userRole, cleanerId, customerId });
     
     // Redirect cleaners to cleaner dashboard
     if (userRole === 'user' && cleanerId) {
@@ -39,14 +39,26 @@ const Index = () => {
       return <Navigate to="/cleaner-dashboard" replace />;
     }
     
-    // Redirect admins to dashboard
-    if (userRole === 'admin') {
-      console.log('Index - Redirecting admin to /dashboard');
-      return <Navigate to="/dashboard" replace />;
+    // Redirect customers to customer dashboard
+    if (userRole === 'guest' && customerId) {
+      console.log('Index - Redirecting customer to /customer-dashboard');
+      return <Navigate to="/customer-dashboard" replace />;
     }
     
-    // Default redirect to main dashboard
-    return <Navigate to="/dashboard" replace />;
+    // Redirect admins to admin dashboard
+    if (userRole === 'admin') {
+      console.log('Index - Redirecting admin to /admin-dashboard');
+      return <Navigate to="/admin-dashboard" replace />;
+    }
+    
+    // Default redirect for guests without customer ID
+    if (userRole === 'guest') {
+      console.log('Index - Redirecting guest to /customer-dashboard');
+      return <Navigate to="/customer-dashboard" replace />;
+    }
+    
+    // Fallback redirect to auth page for unrecognized users
+    return <Navigate to="/auth" replace />;
   }
 
   if (authLoading) {
