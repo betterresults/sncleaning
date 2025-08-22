@@ -53,14 +53,7 @@ const Auth = () => {
   }, [user, userRole, cleanerId, authLoading]);
 
   if (!authLoading && user) {
-    console.log('AUTH DEBUG - Redirecting authenticated user:', { 
-      userRole, 
-      cleanerId, 
-      customerId, 
-      userEmail: user.email,
-      authLoading,
-      userExists: !!user 
-    });
+    console.log('Auth - Redirecting authenticated user:', { userRole, cleanerId, customerId });
     
     // Check if there's a specific redirect requested
     const redirectParam = searchParams.get('redirect');
@@ -76,14 +69,13 @@ const Auth = () => {
     
     // Redirect customers to customer dashboard  
     if (userRole === 'guest' && customerId) {
-      console.log('AUTH DEBUG - Redirecting guest user to customer dashboard:', { userRole, customerId });
       return <Navigate to="/customer-dashboard" replace />;
     }
     
     // Redirect admins to dashboard
     if (userRole === 'admin') {
       console.log('AUTH DEBUG - Redirecting admin user to admin dashboard:', { userRole });
-      return <Navigate to="/dashboard" replace />;
+      return <Navigate to="/admin-dashboard" replace />;
     }
     
     // Default redirect for guests without customer ID
