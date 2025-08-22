@@ -167,13 +167,9 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
               className="transition-all duration-200 hover:bg-white/10 !text-white hover:!text-white border-0 justify-start px-2 py-2 rounded-lg h-auto cursor-pointer"
               onClick={() => {
                 // Navigate to appropriate settings page based on user role
-                const settingsRoutes = {
-                  admin: '/admin-settings',
-                  user: '/cleaner-settings', // for cleaners
-                  guest: '/customer-settings' // for customers
-                };
-                const currentRole = user?.role || 'guest';
-                window.location.href = settingsRoutes[currentRole as keyof typeof settingsRoutes] || '/customer-settings';
+                if (typeof window !== 'undefined') {
+                  window.location.href = '/customer-settings';
+                }
               }}
             >
               <div className="w-8 h-8 bg-gradient-to-br from-[#18A5A5] to-[#18A5A5]/80 rounded-full flex items-center justify-center flex-shrink-0">

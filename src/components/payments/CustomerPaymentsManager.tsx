@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
-import { Calendar, DollarSign, Clock, User } from 'lucide-react';
+import { Calendar, DollarSign, Clock, User, CreditCard } from 'lucide-react';
 import { CollectPaymentMethodDialog } from './CollectPaymentMethodDialog';
+import SyncPaymentMethodsButton from './SyncPaymentMethodsButton';
 
 interface Customer {
   id: number;
@@ -35,6 +36,7 @@ const CustomerPaymentsManager = () => {
   const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
   const [period, setPeriod] = useState<'last_month' | 'current_month'>('last_month');
   const [loading, setLoading] = useState(false);
+  const [collectPaymentDialogOpen, setCollectPaymentDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchCustomers();
@@ -159,15 +161,49 @@ const CustomerPaymentsManager = () => {
       {selectedCustomer && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              {selectedCustomer.first_name} {selectedCustomer.last_name}
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Period: {format(start, 'MMM dd, yyyy')} - {format(end, 'MMM dd, yyyy')}
-            </p>
+            <div className="flex justify-between items-start">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  {selectedCustomer.first_name} {selectedCustomer.last_name}
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Period: {format(start, 'MMM dd, yyyy')} - {format(end, 'MMM dd, yyyy')}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <SyncPaymentMethodsButton 
+                  customerId={selectedCustomer.id}
+                  onSyncComplete={() => {
+                    toast.success('Payment methods synced successfully');
+                  }}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCollectPaymentDialogOpen(true)}
+                  className="flex items-center gap-2"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  Collect Payment Method
+                </Button>
+              </div>
+            </div>
           </CardHeader>
         </Card>
+      )}
+
+      {selectedCustomer && (
+        <CollectPaymentMethodDialog 
+          customer={{
+            id: selectedCustomer.id,
+            first_name: selectedCustomer.first_name,
+            last_name: selectedCustomer.last_name,
+            email: selectedCustomer.email
+          }}
+          open={collectPaymentDialogOpen}
+          onOpenChange={setCollectPaymentDialogOpen}
+        />
       )}
 
       {loading ? (
