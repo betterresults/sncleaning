@@ -77,6 +77,22 @@ export const adminNavigation = [
     icon: Home,
   },
   {
+    title: "Views",
+    icon: BarChart3,
+    subItems: [
+      {
+        title: "Cleaner Dashboard",
+        url: "/cleaner-dashboard",
+        icon: UserCheck,
+      },
+      {
+        title: "Customer Dashboard", 
+        url: "/customer-dashboard",
+        icon: UserPlus,
+      },
+    ],
+  },
+  {
     title: "Bookings",
     icon: Calendar,
     subItems: [
