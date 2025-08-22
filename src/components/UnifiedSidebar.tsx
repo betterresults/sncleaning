@@ -47,16 +47,16 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
 
   return (
     <Sidebar className="border-r-0 bg-[#185166]" collapsible="offcanvas">
-      <SidebarHeader className="border-b border-white/10 bg-[#185166] px-6 py-4">
-        <div className="text-lg font-bold text-white">
+      <SidebarHeader className="border-b border-white/10 bg-[#185166] px-6 py-6">
+        <div className="text-xl font-semibold text-white tracking-wide">
           SN Cleaning
         </div>
       </SidebarHeader>
       
       <SidebarContent className="p-0 bg-[#185166]">
         <SidebarGroup>
-          <SidebarGroupContent className="px-3 py-2">
-            <SidebarMenu className="space-y-1">
+          <SidebarGroupContent className="px-4 py-4">
+            <SidebarMenu className="space-y-3">
               {navigationItems.map((item) => {
                 const isActive = item.url && location.pathname === item.url && !item.disabled;
                 const hasSubItems = item.subItems && item.subItems.length > 0;
@@ -82,44 +82,44 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
                     <SidebarMenuButton 
                       asChild={!item.disabled && !hasSubItems}
                       onClick={hasSubItems ? toggleExpanded : undefined}
-                      className={`h-12 transition-all duration-200 border-0 justify-start px-4 rounded-lg mx-2 ${
+                      className={`h-14 transition-all duration-300 border-0 justify-start px-5 rounded-xl font-medium text-base ${
                         isActive || hasActiveSubItem
-                          ? "!bg-white/20 !text-white shadow-sm hover:!bg-white/25 hover:!text-white" 
-                          : "!text-white/90 hover:!text-white hover:!bg-white/10"
+                          ? "!bg-white !text-[#185166] shadow-lg hover:!bg-white hover:!text-[#185166] border-l-4 border-[#18A5A5]" 
+                          : "!text-white hover:!text-white hover:!bg-white/15"
                       } ${item.disabled ? "opacity-60 cursor-not-allowed" : ""} ${hasSubItems ? "cursor-pointer" : ""}`}
                     >
                       {item.disabled ? (
-                        <div className="flex items-center w-full !text-white">
-                          <item.icon className="h-5 w-5 flex-shrink-0 !text-white" />
-                          <div className="ml-3 flex flex-col">
-                            <span className="font-medium text-sm !text-white">
+                        <div className="flex items-center w-full">
+                          <item.icon className="h-6 w-6 flex-shrink-0" />
+                          <div className="ml-4 flex flex-col">
+                            <span className="font-medium text-base leading-tight">
                               {item.title}
                             </span>
                             {item.subtitle && (
-                              <span className="text-xs !text-white/60">
+                              <span className="text-sm opacity-70 mt-0.5">
                                 {item.subtitle}
                               </span>
                             )}
                           </div>
                         </div>
                       ) : hasSubItems ? (
-                        <div className="flex items-center justify-between w-full !text-white hover:!text-white">
+                        <div className="flex items-center justify-between w-full">
                           <div className="flex items-center">
-                            <item.icon className="h-5 w-5 flex-shrink-0 !text-white" />
-                            <span className="ml-3 font-medium text-sm !text-white">
+                            <item.icon className="h-6 w-6 flex-shrink-0" />
+                            <span className="ml-4 font-medium text-base leading-tight">
                               {item.title}
                             </span>
                           </div>
                           {isExpanded ? (
-                            <ChevronDown className="h-4 w-4 !text-white" />
+                            <ChevronDown className="h-5 w-5" />
                           ) : (
-                            <ChevronRight className="h-4 w-4 !text-white" />
+                            <ChevronRight className="h-5 w-5" />
                           )}
                         </div>
                       ) : (
-                        <Link to={item.url!} className="flex items-center w-full !text-white hover:!text-white">
-                          <item.icon className="h-5 w-5 flex-shrink-0 !text-white" />
-                          <span className="ml-3 font-medium text-sm !text-white">
+                        <Link to={item.url!} className="flex items-center w-full">
+                          <item.icon className="h-6 w-6 flex-shrink-0" />
+                          <span className="ml-4 font-medium text-base leading-tight">
                             {item.title}
                           </span>
                         </Link>
@@ -127,19 +127,22 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
                     </SidebarMenuButton>
                     
                     {hasSubItems && isExpanded && (
-                      <SidebarMenuSub>
+                      <SidebarMenuSub className="mt-2 ml-2">
                         {item.subItems?.map((subItem) => {
                           const isSubActive = location.pathname === subItem.url;
                           return (
                             <SidebarMenuSubItem key={subItem.title}>
                               <SidebarMenuSubButton 
                                 asChild
-                                isActive={isSubActive}
-                                className="!text-white/80 hover:!text-white hover:!bg-white/10"
+                                className={`h-12 transition-all duration-300 rounded-lg mb-1 px-4 font-medium text-sm ${
+                                  isSubActive
+                                    ? "!bg-white/20 !text-white border-l-3 border-[#18A5A5] ml-2"
+                                    : "!text-white/80 hover:!text-white hover:!bg-white/10"
+                                }`}
                               >
                                 <Link to={subItem.url} className="flex items-center w-full">
-                                  <subItem.icon className="h-4 w-4 flex-shrink-0 !text-white/80" />
-                                  <span className="ml-2 text-sm">
+                                  <subItem.icon className="h-5 w-5 flex-shrink-0 ml-2" />
+                                  <span className="ml-3 leading-tight">
                                     {subItem.title}
                                   </span>
                                 </Link>
@@ -157,21 +160,21 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-white/10 bg-[#185166] px-4 py-6">
+      <SidebarFooter className="border-t border-white/10 bg-[#185166] px-5 py-6">
         <SidebarMenu className="space-y-4">
           <SidebarMenuItem>
             <SidebarMenuButton 
-              className="transition-all duration-200 hover:bg-white/10 !text-white hover:!text-white border-0 justify-start px-4 py-4 rounded-lg"
+              className="transition-all duration-300 hover:bg-white/10 !text-white hover:!text-white border-0 justify-start px-4 py-4 rounded-xl h-auto"
             >
-              <div className="w-8 h-8 bg-gradient-to-br from-[#18A5A5] to-[#18A5A5]/80 rounded-full flex items-center justify-center flex-shrink-0">
-                <User className="h-4 w-4 text-white" />
+              <div className="w-10 h-10 bg-gradient-to-br from-[#18A5A5] to-[#18A5A5]/80 rounded-full flex items-center justify-center flex-shrink-0">
+                <User className="h-5 w-5 text-white" />
               </div>
-              <div className="ml-3 flex flex-col items-start min-w-0">
-                <span className="text-sm font-medium !text-white truncate w-full">
+              <div className="ml-4 flex flex-col items-start min-w-0">
+                <span className="text-base font-semibold !text-white truncate w-full leading-tight">
                   {user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'User'}
                 </span>
-                <span className="text-xs !text-white/60 truncate w-full">
-                  {user?.email}
+                <span className="text-sm !text-white/70 truncate w-full mt-0.5">
+                  View profile
                 </span>
               </div>
             </SidebarMenuButton>
@@ -179,9 +182,9 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
           <SidebarMenuItem>
             <Button 
               onClick={onSignOut} 
-              className="w-full h-11 font-medium !bg-white/10 !text-white border-white/30 hover:!bg-white/20 hover:!text-white hover:border-white/50 transition-all duration-200"
+              className="w-full h-12 font-semibold text-base !bg-white/10 !text-white border-white/30 hover:!bg-white/20 hover:!text-white hover:border-white/50 transition-all duration-300 rounded-xl"
             >
-              Sign Out
+              Sign out
             </Button>
           </SidebarMenuItem>
         </SidebarMenu>
