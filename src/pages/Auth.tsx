@@ -116,6 +116,8 @@ const Auth = () => {
           description: 'Logged in successfully!',
         });
       } else {
+        // SECURITY: Public signups can ONLY create guest accounts (customers)
+        // Admin accounts can ONLY be created by existing admins through the admin panel
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -123,7 +125,7 @@ const Auth = () => {
             data: {
               first_name: firstName,
               last_name: lastName,
-              role: 'guest', // Default role for public signups
+              role: 'guest', // FORCED to guest - no exceptions for public signup
             },
           },
         });

@@ -25,8 +25,80 @@ Deno.serve(async (req) => {
       }
     )
 
+    // SECURITY LAYER 1: Verify the request is authenticated
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      console.error('No authorization header provided')
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - No authentication provided' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Create client with the user's auth token to verify their identity
+    const supabaseUser = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        },
+        global: {
+          headers: {
+            Authorization: authHeader
+          }
+        }
+      }
+    )
+
     // Get the request body
     const { email, password, firstName, lastName, role } = await req.json()
+
+    // SECURITY LAYER 2: If trying to create an admin, verify the requesting user is an admin
+    if (role === 'admin') {
+      console.log('Admin role requested, verifying requesting user...')
+      
+      // Get the current user from the auth token
+      const { data: { user }, error: userError } = await supabaseUser.auth.getUser()
+      
+      if (userError || !user) {
+        console.error('Failed to get requesting user:', userError)
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized - Invalid authentication' }),
+          { 
+            status: 401, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+
+      // Check if the requesting user has admin role
+      const { data: userRole, error: roleError } = await supabaseAdmin
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single()
+
+      if (roleError || !userRole || userRole.role !== 'admin') {
+        console.error('Requesting user is not an admin:', { userId: user.id, userRole: userRole?.role })
+        return new Response(
+          JSON.stringify({ 
+            error: 'Forbidden - Only existing administrators can create admin accounts',
+            details: 'Admin accounts can only be created by verified administrators for security purposes.'
+          }),
+          { 
+            status: 403, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+
+      console.log('Admin role verification successful for user:', user.id)
+    }
 
     console.log('Creating user with role:', role)
 

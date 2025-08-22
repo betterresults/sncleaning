@@ -39,14 +39,16 @@ const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
       setCreating(true);
       console.log('Creating user with data:', newUser);
       
-      // Call the Edge Function to create user with admin privileges
+      // SECURITY: Call the Edge Function with admin verification
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: {
           email: newUser.email,
           password: newUser.password,
           firstName: newUser.firstName,
           lastName: newUser.lastName,
-          role: newUser.role
+          role: newUser.role,
+          // Pass auth header for server-side admin verification
+          requestingUserAuth: true
         }
       });
 
