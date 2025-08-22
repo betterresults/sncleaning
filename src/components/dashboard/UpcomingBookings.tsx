@@ -458,7 +458,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
         
         {/* Show booking count badge */}
         {bookingCount > 0 && (
-          <div className="absolute bottom-1 right-1 bg-blue-600 text-white text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center font-semibold shadow-sm px-1">
+          <div className="absolute top-2 right-2 bg-emerald-500 text-white text-sm font-bold rounded-lg px-2 py-1 shadow-md border-2 border-white min-w-[24px] text-center">
             {bookingCount}
           </div>
         )}
