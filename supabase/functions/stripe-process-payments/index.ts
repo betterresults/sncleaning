@@ -24,6 +24,8 @@ serve(async (req) => {
 
     console.log('Processing payments at:', now.toISOString())
 
+    let bookingsWithPaymentMethods = []
+
     // 1. Find bookings that need payment authorization (24 hours before)
     const { data: bookingsToAuthorize, error: authorizeError } = await supabaseClient
       .from('bookings')
@@ -36,9 +38,31 @@ serve(async (req) => {
     if (authorizeError) {
       console.error('Error fetching bookings to authorize:', authorizeError)
     } else if (bookingsToAuthorize && bookingsToAuthorize.length > 0) {
-      console.log(`Found ${bookingsToAuthorize.length} bookings needing authorization`)
+      console.log(`Found ${bookingsToAuthorize.length} potential bookings for authorization`)
       
+      // Filter bookings to only include customers with payment methods
       for (const booking of bookingsToAuthorize) {
+        const { data: paymentMethods, error: pmError } = await supabaseClient
+          .from('customer_payment_methods')
+          .select('id')
+          .eq('customer_id', booking.customer)
+          .limit(1)
+        
+        if (pmError) {
+          console.error(`Error checking payment methods for customer ${booking.customer}:`, pmError)
+          continue
+        }
+        
+        if (paymentMethods && paymentMethods.length > 0) {
+          bookingsWithPaymentMethods.push(booking)
+        } else {
+          console.log(`Skipping booking ${booking.id} - customer ${booking.customer} has no payment methods`)
+        }
+      }
+      
+      console.log(`Processing ${bookingsWithPaymentMethods.length} bookings with payment methods`)
+      
+      for (const booking of bookingsWithPaymentMethods) {
         try {
           // Call authorize payment function
           const { error: authError } = await supabaseClient.functions.invoke('stripe-authorize-payment', {
@@ -90,7 +114,7 @@ serve(async (req) => {
 
     const summary = {
       processed_at: now.toISOString(),
-      bookings_authorized: bookingsToAuthorize?.length || 0,
+      bookings_authorized: bookingsWithPaymentMethods?.length || 0,
       bookings_captured: bookingsToCapture?.length || 0,
     }
 
