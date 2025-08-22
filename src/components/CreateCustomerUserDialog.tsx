@@ -63,11 +63,21 @@ const CreateCustomerUserDialog = ({ customer, onSuccess }: CreateCustomerUserDia
       
     } catch (error: any) {
       console.error('Error creating user account:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to create user account',
-        variant: 'destructive',
-      });
+      
+      // Check if it's an "email already exists" error
+      if (error.message && error.message.includes('already been registered')) {
+        toast({
+          title: 'Account Already Exists',
+          description: `A user account with email ${customer.email} already exists. This customer may already have login access to the system.`,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to create user account',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setLoading(false);
     }

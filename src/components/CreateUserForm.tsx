@@ -75,11 +75,21 @@ const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
       
     } catch (error: any) {
       console.error('Error creating user:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to create user',
-        variant: 'destructive',
-      });
+      
+      // Check if it's an "email already exists" error
+      if (error.message && error.message.includes('already been registered')) {
+        toast({
+          title: 'Account Already Exists',
+          description: `A user account with email ${newUser.email} already exists in the system. Please use a different email address or check if this user already has access.`,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to create user',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setCreating(false);
     }

@@ -129,17 +129,36 @@ const CreateCustomerDialog = ({ children, onCustomerCreated }: CreateCustomerDia
       let authAccountCreated = false;
       if (userError) {
         console.error('Error creating user account:', userError);
-        // Still successful but inform about login limitation
-        toast({
-          title: "Customer Created",
-          description: "Customer created successfully. Login account will be created automatically when they first sign up.",
-        });
+        
+        // Check if it's an "email already exists" error
+        if (userError.message && userError.message.includes('already been registered')) {
+          toast({
+            title: "Customer Created - Account Exists",
+            description: `Customer record created successfully. A user account with email ${formData.email} already exists, so they can log in to access their bookings.`,
+          });
+        } else {
+          // Still successful but inform about login limitation
+          toast({
+            title: "Customer Created",
+            description: "Customer created successfully. Login account will be created automatically when they first sign up.",
+          });
+        }
       } else if (!userResult || !userResult.success) {
-        console.error('User creation failed:', userResult?.error || 'Unknown error');
-        toast({
-          title: "Customer Created", 
-          description: "Customer created successfully. Login account will be created automatically when they first sign up.",
-        });
+        const errorMsg = userResult?.error || 'Unknown error';
+        console.error('User creation failed:', errorMsg);
+        
+        // Check if it's an "email already exists" error in the result
+        if (errorMsg && errorMsg.includes('already been registered')) {
+          toast({
+            title: "Customer Created - Account Exists",
+            description: `Customer record created successfully. A user account with email ${formData.email} already exists, so they can log in to access their bookings.`,
+          });
+        } else {
+          toast({
+            title: "Customer Created", 
+            description: "Customer created successfully. Login account will be created automatically when they first sign up.",
+          });
+        }
       } else {
         console.log('Auth user created successfully:', userResult);
         authAccountCreated = true;
