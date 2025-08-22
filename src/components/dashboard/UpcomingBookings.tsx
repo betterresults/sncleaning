@@ -449,13 +449,16 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
     
     return (
       <div 
-        className="relative h-full w-full cursor-pointer hover:bg-blue-50 transition-colors min-h-[80px]"
+        className="relative h-full w-full cursor-pointer hover:bg-blue-50 transition-colors min-h-[100px] p-1"
         onClick={() => handleDayClick(value)}
         {...props}
       >
+        {/* Render the default calendar day content (date number) */}
         {children}
+        
+        {/* Show booking count badge */}
         {bookingCount > 0 && (
-          <div className="absolute top-1 right-1 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold shadow-sm z-10">
+          <div className="absolute bottom-1 right-1 bg-blue-600 text-white text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center font-semibold shadow-sm px-1">
             {bookingCount}
           </div>
         )}
