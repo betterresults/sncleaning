@@ -67,8 +67,8 @@ const Auth = () => {
       return <Navigate to="/cleaner-dashboard" replace />;
     }
     
-    // Redirect users with customer ID to customer dashboard  
-    if (userRole === 'user' && customerId) {
+    // Redirect customers to customer dashboard  
+    if (userRole === 'guest' && customerId) {
       return <Navigate to="/customer-dashboard" replace />;
     }
     
@@ -77,8 +77,13 @@ const Auth = () => {
       return <Navigate to="/dashboard" replace />;
     }
     
-    // Default redirect to main dashboard
-    return <Navigate to="/dashboard" replace />;
+    // Default redirect for guests without customer ID
+    if (userRole === 'guest') {
+      return <Navigate to="/customer-dashboard" replace />;
+    }
+    
+    // Fallback to auth page
+    return <Navigate to="/auth" replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
