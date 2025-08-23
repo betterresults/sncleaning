@@ -45,6 +45,8 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
   const { open, setOpen } = useSidebar();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
+  console.log('UnifiedSidebar render:', { open, hasUser: !!user, hasOnSignOut: !!onSignOut });
+
   return (
     <Sidebar 
       className="border-r-0 bg-[#185166] flex flex-col h-screen" 
@@ -169,14 +171,23 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-white/10 bg-[#185166] px-3 py-3 flex-shrink-0" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
-        <div className="space-y-2">
+      <SidebarFooter 
+        className="border-t border-white/10 bg-[#185166] px-3 py-3 flex-shrink-0 min-h-[120px] !block !visible !opacity-100" 
+        style={{ 
+          paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
+          position: 'sticky',
+          bottom: 0,
+          zIndex: 10
+        }}
+      >
+        <div className="space-y-2 w-full">
           <div 
-            className="transition-all duration-200 hover:bg-white/10 text-white hover:text-white border-0 justify-start px-2 py-2 rounded-lg cursor-pointer flex items-center"
+            className="transition-all duration-200 hover:bg-white/10 text-white hover:text-white border-0 justify-start px-2 py-2 rounded-lg cursor-pointer flex items-center w-full"
             onClick={() => {
+              console.log('Profile clicked');
               // Navigate to appropriate settings page based on user role
               if (typeof window !== 'undefined') {
-                window.location.href = '/customer-settings';
+                window.location.href = '/admin-settings';
               }
             }}
           >
@@ -195,6 +206,7 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
           
           <Button 
             onClick={() => {
+              console.log('Logout clicked');
               onSignOut();
               setOpen?.(false); // Close sidebar after logout
             }} 
