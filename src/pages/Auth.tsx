@@ -74,6 +74,13 @@ const Auth = () => {
     
     // Check if there's a specific redirect requested
     const redirectParam = searchParams.get('redirect');
+    const paymentSetup = searchParams.get('payment_setup');
+    
+    // If user came back from payment setup, stay on auth page to show success message
+    if (paymentSetup === 'success') {
+      // Don't redirect, stay on auth page to show the success message
+      return null;
+    }
     
     if (redirectParam === 'customer' && customerId) {
       return <Navigate to="/customer-dashboard" replace />;
