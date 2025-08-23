@@ -17,6 +17,7 @@ import CustomerMessages from "./pages/CustomerMessages";
 import CleanerMessages from "./pages/CleanerMessages";
 import AdminChatManagement from "./pages/AdminChatManagement";
 import AdminPricingFormulas from "./pages/AdminPricingFormulas";
+import AdminAirbnbPricing from "./pages/AdminAirbnbPricing";
 import CleanerPastBookings from "./pages/CleanerPastBookings";
 import CleanerEarnings from "./pages/CleanerEarnings";
 import CleanerAvailableBookings from "./pages/CleanerAvailableBookings";
@@ -70,7 +71,8 @@ const App = () => (
            <Route path="/customer-messages" element={<CustomerMessages />} />
            <Route path="/cleaner-messages" element={<CleanerMessages />} />
            <Route path="/admin-chat-management" element={<AdminChatManagement />} />
-           <Route path="/admin-pricing-formulas" element={<AdminPricingFormulas />} />
+            <Route path="/admin-pricing-formulas" element={<AdminPricingFormulas />} />
+            <Route path="/admin-airbnb-pricing" element={<AdminAirbnbPricing />} />
               <Route path="/cleaner-available-bookings" element={<CleanerAvailableBookings />} />
               <Route path="/cleaner-past-bookings" element={<CleanerPastBookings />} />
               <Route path="/cleaner-earnings" element={<CleanerEarnings />} />
