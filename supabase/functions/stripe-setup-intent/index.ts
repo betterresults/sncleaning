@@ -91,6 +91,7 @@ serve(async (req) => {
         body: new URLSearchParams({
           email: customer.email || '',
           name: `${customer.first_name || ''} ${customer.last_name || ''}`.trim(),
+          'metadata[customer_id]': targetCustomerId.toString(),
         }),
       })
 
