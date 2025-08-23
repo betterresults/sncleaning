@@ -19,10 +19,7 @@ const CleanerAvailableBookings = () => {
   console.log('CleanerAvailableBookings - cleanerId:', cleanerId);
 
   const fetchAvailableBookings = async () => {
-    if (!cleanerId) {
-      console.warn('cleanerId is null or undefined. Skipping fetch.');
-      return [];
-    }
+    console.log('Fetching available bookings (unassigned)...');
 
     const { data, error } = await supabase
       .from('bookings')
@@ -41,9 +38,8 @@ const CleanerAvailableBookings = () => {
   };
 
     const { data: bookings = [], isLoading, error } = useQuery({
-      queryKey: ['available-bookings', cleanerId],
+      queryKey: ['available-bookings'],
       queryFn: fetchAvailableBookings,
-      enabled: !!cleanerId,
       refetchInterval: 30000, // Refetch every 30 seconds to keep data fresh
     });
 
