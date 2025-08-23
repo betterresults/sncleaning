@@ -21,6 +21,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 
 interface NewBookingFormProps {
   onBookingCreated: () => void;
+  isCustomerView?: boolean;
+  preselectedCustomer?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string;
+  };
 }
 
 interface BookingData {
@@ -80,7 +88,7 @@ interface BookingData {
   additionalDetails: string;
 }
 
-const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
+const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedCustomer }: NewBookingFormProps) => {
   console.log('NewBookingForm: Component rendering started');
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -129,6 +137,20 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
   const navigate = useNavigate();
   
   console.log('NewBookingForm: State initialized, formData:', formData);
+
+  // Auto-populate customer information if in customer view
+  useEffect(() => {
+    if (isCustomerView && preselectedCustomer) {
+      setFormData(prev => ({
+        ...prev,
+        customerId: preselectedCustomer.id,
+        firstName: preselectedCustomer.first_name || '',
+        lastName: preselectedCustomer.last_name || '',
+        email: preselectedCustomer.email || '',
+        phoneNumber: preselectedCustomer.phone || ''
+      }));
+    }
+  }, [isCustomerView, preselectedCustomer]);
 
   const serviceTypes = [
     { value: 'domestic', label: 'Domestic Cleaning', color: 'from-blue-500 to-cyan-500' },
@@ -606,65 +628,89 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
       <form onSubmit={handleSubmit} className="max-w-6xl mx-auto space-y-8">
 
-        {/* Customer Selection */}
-        <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-          <CardHeader className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-t-lg">
-            <CardTitle className="flex items-center gap-3 text-xl">
-              <User className="h-6 w-6" />
-              Customer Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6 p-6">
-            <CustomerSelector onCustomerSelect={handleCustomerSelect} />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="firstName" className="text-sm font-semibold text-gray-700">First Name *</Label>
-                <Input
-                  id="firstName"
-                  value={formData.firstName}
-                  onChange={(e) => handleInputChange('firstName', e.target.value)}
-                  className="border-2 border-gray-200 focus:border-blue-500 transition-colors"
-                  required
-                />
+        {/* Customer Selection - Only show for admin view */}
+        {!isCustomerView && (
+          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-t-lg">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <User className="h-6 w-6" />
+                Customer Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6 p-6">
+              <CustomerSelector onCustomerSelect={handleCustomerSelect} />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName" className="text-sm font-semibold text-gray-700">First Name *</Label>
+                  <Input
+                    id="firstName"
+                    value={formData.firstName}
+                    onChange={(e) => handleInputChange('firstName', e.target.value)}
+                    className="border-2 border-gray-200 focus:border-blue-500 transition-colors"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName" className="text-sm font-semibold text-gray-700">Last Name *</Label>
+                  <Input
+                    id="lastName"
+                    value={formData.lastName}
+                    onChange={(e) => handleInputChange('lastName', e.target.value)}
+                    className="border-2 border-gray-200 focus:border-blue-500 transition-colors"
+                    required
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName" className="text-sm font-semibold text-gray-700">Last Name *</Label>
-                <Input
-                  id="lastName"
-                  value={formData.lastName}
-                  onChange={(e) => handleInputChange('lastName', e.target.value)}
-                  className="border-2 border-gray-200 focus:border-blue-500 transition-colors"
-                  required
-                />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm font-semibold text-gray-700">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    className="border-2 border-gray-200 focus:border-blue-500 transition-colors"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phoneNumber" className="text-sm font-semibold text-gray-700">Phone Number *</Label>
+                  <Input
+                    id="phoneNumber"
+                    value={formData.phoneNumber}
+                    onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                    className="border-2 border-gray-200 focus:border-blue-500 transition-colors"
+                    required
+                  />
+                </div>
               </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-semibold text-gray-700">Email *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="border-2 border-gray-200 focus:border-blue-500 transition-colors"
-                  required
-                />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Customer Information Display - Only show for customer view */}
+        {isCustomerView && preselectedCustomer && (
+          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-t-lg">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <User className="h-6 w-6" />
+                Your Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 p-6">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-600 mb-2">Booking for:</p>
+                <p className="font-semibold text-gray-800">
+                  {preselectedCustomer.first_name} {preselectedCustomer.last_name}
+                </p>
+                <p className="text-gray-600">{preselectedCustomer.email}</p>
+                <p className="text-gray-600">{preselectedCustomer.phone}</p>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="phoneNumber" className="text-sm font-semibold text-gray-700">Phone Number *</Label>
-                <Input
-                  id="phoneNumber"
-                  value={formData.phoneNumber}
-                  onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                  className="border-2 border-gray-200 focus:border-blue-500 transition-colors"
-                  required
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Date & Time Selection */}
         <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">

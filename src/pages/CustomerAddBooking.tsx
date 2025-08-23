@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
@@ -9,10 +9,31 @@ import { Button } from '@/components/ui/button';
 import ServiceSelection from '@/components/booking/ServiceSelection';
 import NewBookingForm from '@/components/booking/NewBookingForm';
 import { ArrowLeft } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const CustomerAddBooking = () => {
-  const { user, userRole, signOut } = useAuth();
+  const { user, userRole, signOut, customerId } = useAuth();
   const [selectedService, setSelectedService] = useState<string | null>(null);
+  const [customerData, setCustomerData] = useState<any>(null);
+
+  // Fetch customer data when component mounts
+  useEffect(() => {
+    const fetchCustomerData = async () => {
+      if (customerId) {
+        const { data, error } = await supabase
+          .from('customers')
+          .select('*')
+          .eq('id', customerId)
+          .single();
+        
+        if (data && !error) {
+          setCustomerData(data);
+        }
+      }
+    };
+
+    fetchCustomerData();
+  }, [customerId]);
 
   const handleSignOut = async () => {
     try {
@@ -66,6 +87,8 @@ const CustomerAddBooking = () => {
                   <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl p-6">
                     <NewBookingForm 
                       onBookingCreated={handleBookingCreated}
+                      isCustomerView={true}
+                      preselectedCustomer={customerData}
                     />
                   </div>
                 </div>
