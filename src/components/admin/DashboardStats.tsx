@@ -177,17 +177,6 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
           </CardContent>
         </Card>
       </div>
-
-      {stats.unassignedBookings > 0 && (
-        <div className="bg-gradient-to-r from-red-50 to-rose-100 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center justify-center space-x-2">
-            <AlertTriangle className="h-5 w-5 text-red-600 animate-pulse" />
-            <span className="text-red-800 font-semibold">
-              {stats.unassignedBookings} unassigned booking{stats.unassignedBookings > 1 ? 's' : ''} require{stats.unassignedBookings === 1 ? 's' : ''} attention
-            </span>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
