@@ -17,10 +17,12 @@ const CustomerAddBooking = () => {
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [customerData, setCustomerData] = useState<any>(null);
 
-  // Fetch customer data when component mounts
+  // Fetch customer data when component mounts or for testing as admin
   useEffect(() => {
     const fetchCustomerData = async () => {
       console.log('CustomerId from auth:', customerId);
+      console.log('UserRole:', userRole);
+      
       if (customerId) {
         const { data, error } = await supabase
           .from('customers')
@@ -34,11 +36,22 @@ const CustomerAddBooking = () => {
         } else if (error) {
           console.error('Error fetching customer data:', error);
         }
+      } else if (userRole === 'admin') {
+        // For admin testing, use the first available customer
+        const { data, error } = await supabase
+          .from('customers')
+          .select('*')
+          .limit(1);
+        
+        console.log('Admin test customer data:', { data, error });
+        if (data && data.length > 0) {
+          setCustomerData(data[0]);
+        }
       }
     };
 
     fetchCustomerData();
-  }, [customerId]);
+  }, [customerId, userRole]);
 
   const handleSignOut = async () => {
     try {
