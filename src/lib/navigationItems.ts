@@ -22,6 +22,8 @@ export const cleanerNavigation = [
     title: "Available Bookings",
     url: "/cleaner-available-bookings",
     icon: Briefcase,
+    showCount: true,
+    countKey: "available-bookings-count",
   },
   {
     title: "Completed Bookings",

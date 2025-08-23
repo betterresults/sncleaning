@@ -28,6 +28,7 @@ const CleanerAvailableBookings = () => {
       .from('bookings')
       .select('*')
       .is('cleaner', null)
+      .gte('date_time', new Date().toISOString()) // Only future bookings  
       .order('date_time', { ascending: true });
 
     if (error) {
@@ -39,11 +40,12 @@ const CleanerAvailableBookings = () => {
     return data;
   };
 
-  const { data: bookings = [], isLoading, error } = useQuery({
-    queryKey: ['available-bookings', cleanerId],
-    queryFn: fetchAvailableBookings,
-    enabled: !!cleanerId,
-  });
+    const { data: bookings = [], isLoading, error } = useQuery({
+      queryKey: ['available-bookings', cleanerId],
+      queryFn: fetchAvailableBookings,
+      enabled: !!cleanerId,
+      refetchInterval: 30000, // Refetch every 30 seconds to keep data fresh
+    });
 
   const assignBookingMutation = useMutation({
     mutationFn: async (bookingId: number) => {

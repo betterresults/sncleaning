@@ -18,6 +18,8 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
+import { useAvailableBookingsCount } from '@/hooks/useAvailableBookingsCount';
+import { useQuery } from '@tanstack/react-query';
 
 interface NavigationSubItem {
   title: string;
@@ -32,6 +34,8 @@ interface NavigationItem {
   disabled?: boolean;
   subtitle?: string;
   subItems?: NavigationSubItem[];
+  showCount?: boolean;
+  countKey?: string;
 }
 
 interface UnifiedSidebarProps {
@@ -44,8 +48,9 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
   const location = useLocation();
   const { open, setOpen } = useSidebar();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const { data: availableCount } = useAvailableBookingsCount();
 
-  console.log('UnifiedSidebar render:', { open, hasUser: !!user, hasOnSignOut: !!onSignOut });
+  console.log('UnifiedSidebar render:', { open, hasUser: !!user, hasOnSignOut: !!onSignOut, availableCount });
 
   return (
     <Sidebar 
@@ -126,13 +131,20 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
                       ) : (
                         <Link 
                           to={item.url!} 
-                          className="flex items-center w-full"
+                          className="flex items-center w-full justify-between"
                           onClick={() => setOpen?.(false)} // Close sidebar on navigation
                         >
-                          <item.icon className="h-5 w-5 flex-shrink-0" />
-                          <span className="ml-3 font-medium text-base leading-tight">
-                            {item.title}
-                          </span>
+                          <div className="flex items-center">
+                            <item.icon className="h-5 w-5 flex-shrink-0" />
+                            <span className="ml-3 font-medium text-base leading-tight">
+                              {item.title}
+                            </span>
+                          </div>
+                          {item.showCount && item.countKey === 'available-bookings-count' && availableCount && availableCount > 0 && (
+                            <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full ml-2 flex-shrink-0">
+                              {availableCount}
+                            </span>
+                          )}
                         </Link>
                       )}
                     </SidebarMenuButton>
