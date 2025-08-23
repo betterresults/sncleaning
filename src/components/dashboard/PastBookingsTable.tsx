@@ -84,7 +84,7 @@ const PastBookingsTable = () => {
     cleanerId: 'all',
     customerId: 'all',
     customerSearch: '',
-    timePeriod: 'all',
+    timePeriod: 'last-week',
   });
   const { toast } = useToast();
   const [duplicateDialog, setDuplicateDialog] = useState(false);
