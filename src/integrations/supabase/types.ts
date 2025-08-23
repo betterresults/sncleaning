@@ -1349,6 +1349,10 @@ export type Database = {
           start_date: string
         }[]
       }
+      test_stripe_webhook_sync: {
+        Args: { p_customer_email: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_permission:
