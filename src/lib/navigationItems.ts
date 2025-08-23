@@ -184,11 +184,6 @@ export const adminNavigation = [
         url: "/admin-pricing-formulas",
         icon: Calculator,
       },
-      {
-        title: "Airbnb Pricing",
-        url: "/admin-airbnb-pricing",
-        icon: DollarSign,
-      },
     ],
   },
 ];

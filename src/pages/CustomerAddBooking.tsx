@@ -17,12 +17,9 @@ const CustomerAddBooking = () => {
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [customerData, setCustomerData] = useState<any>(null);
 
-  // Fetch customer data when component mounts or for testing as admin
+  // Fetch customer data when component mounts
   useEffect(() => {
     const fetchCustomerData = async () => {
-      console.log('CustomerId from auth:', customerId);
-      console.log('UserRole:', userRole);
-      
       if (customerId) {
         const { data, error } = await supabase
           .from('customers')
@@ -30,28 +27,14 @@ const CustomerAddBooking = () => {
           .eq('id', customerId)
           .single();
         
-        console.log('Customer data fetch result:', { data, error });
         if (data && !error) {
           setCustomerData(data);
-        } else if (error) {
-          console.error('Error fetching customer data:', error);
-        }
-      } else if (userRole === 'admin') {
-        // For admin testing, use the first available customer
-        const { data, error } = await supabase
-          .from('customers')
-          .select('*')
-          .limit(1);
-        
-        console.log('Admin test customer data:', { data, error });
-        if (data && data.length > 0) {
-          setCustomerData(data[0]);
         }
       }
     };
 
     fetchCustomerData();
-  }, [customerId, userRole]);
+  }, [customerId]);
 
   const handleSignOut = async () => {
     try {
@@ -104,18 +87,12 @@ const CustomerAddBooking = () => {
                     </Button>
                   )}
                   
-                  {selectedService === 'airbnb-cleaning' ? (
-                    customerData ? (
-                      <AirbnbBookingForm 
-                        customerData={customerData}
-                        onBookingCreated={handleBookingCreated}
-                      />
-                    ) : (
-                      <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl p-6">
-                        <p className="text-center text-gray-600">Loading customer data...</p>
-                      </div>
-                    )
-                  ) : (
+                  {selectedService === 'airbnb-cleaning' && customerData ? (
+                    <AirbnbBookingForm 
+                      customerData={customerData}
+                      onBookingCreated={handleBookingCreated}
+                    />
+                  ) : selectedService !== 'airbnb-cleaning' ? (
                     <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl p-6">
                       <NewBookingForm 
                         onBookingCreated={handleBookingCreated}
@@ -123,7 +100,7 @@ const CustomerAddBooking = () => {
                         preselectedCustomer={customerData}
                       />
                     </div>
-                  )}
+                  ) : null}
                 </div>
               ) : (
                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl p-8">
