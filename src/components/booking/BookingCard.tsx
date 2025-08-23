@@ -175,21 +175,32 @@ const BookingCard = <T extends BaseBooking>({
           )}
           
           {type === 'completed' && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onReview?.(booking)}
-              className={`${
-                hasReview 
-                  ? 'bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 border-green-200 hover:border-green-300 dark:bg-green-950/20 dark:hover:bg-green-950/40 dark:text-green-400 dark:border-green-800/30'
-                  : 'bg-yellow-50 hover:bg-yellow-100 text-yellow-600 hover:text-yellow-700 border-yellow-200 hover:border-yellow-300 dark:bg-yellow-950/20 dark:hover:bg-yellow-950/40 dark:text-yellow-400 dark:border-yellow-800/30'
-              }`}
-            >
-              <Star className="h-4 w-4" />
-              <span className="ml-1 hidden sm:inline">
-                {hasReview ? 'View Review' : 'Leave Review'}
-              </span>
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onEdit?.(booking)}
+                className="bg-[#185166] hover:bg-[#18A5A5] text-white border-[#185166] hover:border-[#18A5A5]"
+              >
+                <Edit className="h-4 w-4" />
+                <span className="ml-1 hidden sm:inline">Edit</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onReview?.(booking)}
+                className={`${
+                  hasReview 
+                    ? 'bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 border-green-200 hover:border-green-300 dark:bg-green-950/20 dark:hover:bg-green-950/40 dark:text-green-400 dark:border-green-800/30'
+                    : 'bg-yellow-50 hover:bg-yellow-100 text-yellow-600 hover:text-yellow-700 border-yellow-200 hover:border-yellow-300 dark:bg-yellow-950/20 dark:hover:bg-yellow-950/40 dark:text-yellow-400 dark:border-yellow-800/30'
+                }`}
+              >
+                <Star className="h-4 w-4" />
+                <span className="ml-1 hidden sm:inline">
+                  {hasReview ? 'View Review' : 'Leave Review'}
+                </span>
+              </Button>
+            </>
           )}
         </div>
       </div>

@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import BookingCard from '@/components/booking/BookingCard';
 import CleaningPhotosViewDialog from './CleaningPhotosViewDialog';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
+import EditBookingDialog from './EditBookingDialog';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,6 +55,8 @@ const CustomerPastBookings = () => {
   const [reviewText, setReviewText] = useState('');
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<PastBooking | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<PastBooking | null>(null);
   
   // Filter states
   const [timePeriod, setTimePeriod] = useState('all');
@@ -390,6 +393,11 @@ const CustomerPastBookings = () => {
   const handlePaymentAction = (booking: PastBooking) => {
     setSelectedBookingForPayment(booking);
     setPaymentDialogOpen(true);
+  };
+
+  const handleEdit = (booking: PastBooking) => {
+    setSelectedBookingForEdit(booking);
+    setEditDialogOpen(true);
   };
 
   if (loading) {
@@ -773,6 +781,7 @@ const CustomerPastBookings = () => {
                       onReview={(b) => handleReview(booking)}
                       onSeePhotos={booking.has_photos ? (b) => handleSeePhotos(booking) : undefined}
                       onPaymentAction={(b) => handlePaymentAction(booking)}
+                      onEdit={(b) => handleEdit(booking)}
                       hasReview={reviews[booking.id] || false}
                     />
                   ))}
@@ -930,6 +939,31 @@ const CustomerPastBookings = () => {
           fetchPastBookings();
           setPaymentDialogOpen(false);
           setSelectedBookingForPayment(null);
+        }}
+      />
+
+      <EditBookingDialog
+        booking={selectedBookingForEdit ? {
+          id: selectedBookingForEdit.id,
+          date_time: selectedBookingForEdit.date_time,
+          additional_details: null,
+          property_details: null,
+          parking_details: null,
+          key_collection: null,
+          access: null,
+          address: selectedBookingForEdit.address,
+          postcode: selectedBookingForEdit.postcode,
+          total_hours: selectedBookingForEdit.total_hours,
+          cleaning_cost_per_hour: null,
+          total_cost: parseFloat(selectedBookingForEdit.total_cost) || 0,
+          same_day: selectedBookingForEdit.same_day === 'true'
+        } : null}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onBookingUpdated={() => {
+          fetchPastBookings();
+          setEditDialogOpen(false);
+          setSelectedBookingForEdit(null);
         }}
       />
     </div>
