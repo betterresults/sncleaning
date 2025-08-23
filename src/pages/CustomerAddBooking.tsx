@@ -20,6 +20,7 @@ const CustomerAddBooking = () => {
   // Fetch customer data when component mounts
   useEffect(() => {
     const fetchCustomerData = async () => {
+      console.log('CustomerId from auth:', customerId);
       if (customerId) {
         const { data, error } = await supabase
           .from('customers')
@@ -27,8 +28,11 @@ const CustomerAddBooking = () => {
           .eq('id', customerId)
           .single();
         
+        console.log('Customer data fetch result:', { data, error });
         if (data && !error) {
           setCustomerData(data);
+        } else if (error) {
+          console.error('Error fetching customer data:', error);
         }
       }
     };
@@ -87,12 +91,18 @@ const CustomerAddBooking = () => {
                     </Button>
                   )}
                   
-                  {selectedService === 'airbnb-cleaning' && customerData ? (
-                    <AirbnbBookingForm 
-                      customerData={customerData}
-                      onBookingCreated={handleBookingCreated}
-                    />
-                  ) : selectedService !== 'airbnb-cleaning' ? (
+                  {selectedService === 'airbnb-cleaning' ? (
+                    customerData ? (
+                      <AirbnbBookingForm 
+                        customerData={customerData}
+                        onBookingCreated={handleBookingCreated}
+                      />
+                    ) : (
+                      <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl p-6">
+                        <p className="text-center text-gray-600">Loading customer data...</p>
+                      </div>
+                    )
+                  ) : (
                     <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl p-6">
                       <NewBookingForm 
                         onBookingCreated={handleBookingCreated}
@@ -100,7 +110,7 @@ const CustomerAddBooking = () => {
                         preselectedCustomer={customerData}
                       />
                     </div>
-                  ) : null}
+                  )}
                 </div>
               ) : (
                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl p-8">
