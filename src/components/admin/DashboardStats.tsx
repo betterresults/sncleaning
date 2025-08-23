@@ -65,6 +65,18 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
       // Calculate stats
       const upcomingBookings = bookings?.length || 0;
       const unassignedBookings = bookings?.filter(booking => !booking.cleaner).length || 0;
+      
+      // Debug logging
+      console.log('DashboardStats debug:', {
+        totalBookings: upcomingBookings,
+        unassignedBookings,
+        bookingsWithoutCleaner: bookings?.filter(booking => !booking.cleaner).map(b => ({
+          id: b.customer,
+          cleaner: b.cleaner,
+          hasCleanerProperty: 'cleaner' in b
+        }))
+      });
+      
       const expectedRevenue = bookings?.reduce((sum, booking) => {
         return sum + (parseFloat(String(booking.total_cost)) || 0);
       }, 0) || 0;
