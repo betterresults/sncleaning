@@ -20,11 +20,12 @@ serve(async (req) => {
 
     const now = new Date()
     const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
-    const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000)
+    const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000) // Changed: 2 hours AGO instead of from now
 
     console.log('Processing payments at:', now.toISOString())
 
     let bookingsWithPaymentMethods = []
+    let readyToCapture = [] // Initialize here for scope
 
     // 1. Find bookings that need payment authorization (24 hours before)
     const { data: bookingsToAuthorize, error: authorizeError } = await supabaseClient
@@ -80,21 +81,29 @@ serve(async (req) => {
       }
     }
 
-    // 2. Find bookings that need payment capture (2 hours before)
+    // 2. Find bookings that need payment capture (2 hours AFTER completion)
+    // We need to find bookings where: booking_end_time + 2 hours <= current_time
     const { data: bookingsToCapture, error: captureError } = await supabaseClient
       .from('bookings')
-      .select('id, date_time, invoice_id')
-      .gte('date_time', now.toISOString())
-      .lte('date_time', twoHoursFromNow.toISOString())
+      .select('id, date_time, invoice_id, total_hours')
       .eq('payment_status', 'collecting')
       .not('invoice_id', 'is', null)
+      .not('total_hours', 'is', null)
 
     if (captureError) {
       console.error('Error fetching bookings to capture:', captureError)
     } else if (bookingsToCapture && bookingsToCapture.length > 0) {
-      console.log(`Found ${bookingsToCapture.length} bookings needing capture`)
+      // Filter bookings where service ended + 2 hours ago
+      readyToCapture = bookingsToCapture.filter(booking => {
+        const bookingStart = new Date(booking.date_time)
+        const bookingEnd = new Date(bookingStart.getTime() + (booking.total_hours || 0) * 60 * 60 * 1000)
+        const captureTime = new Date(bookingEnd.getTime() + 2 * 60 * 60 * 1000) // 2 hours after service ends
+        return now >= captureTime
+      })
       
-      for (const booking of bookingsToCapture) {
+      console.log(`Found ${readyToCapture.length} bookings ready for capture (${bookingsToCapture.length} total with collecting status)`)
+      
+      for (const booking of readyToCapture) {
         try {
           // Call capture payment function
           const { error: captureErr } = await supabaseClient.functions.invoke('stripe-capture-payment', {
@@ -115,7 +124,7 @@ serve(async (req) => {
     const summary = {
       processed_at: now.toISOString(),
       bookings_authorized: bookingsWithPaymentMethods?.length || 0,
-      bookings_captured: bookingsToCapture?.length || 0,
+      bookings_captured: readyToCapture?.length || 0,
     }
 
     console.log('Payment processing summary:', summary)
