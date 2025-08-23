@@ -12,6 +12,8 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
+  let bookingId = null // Store bookingId in outer scope
+
   try {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -23,7 +25,9 @@ serve(async (req) => {
       throw new Error('Stripe secret key not configured')
     }
 
-    const { bookingId } = await req.json()
+    // Parse request body once and store it
+    const requestData = await req.json()
+    bookingId = requestData.bookingId // Store in outer scope
 
     if (!bookingId) {
       throw new Error('Booking ID is required')
@@ -114,19 +118,16 @@ serve(async (req) => {
     console.error('Error authorizing payment:', error)
     
     // If authorization fails, update booking status
-    if (req.body) {
+    if (bookingId) {
       try {
         const supabaseClient = createClient(
           Deno.env.get('SUPABASE_URL') ?? '',
           Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
         )
-        const { bookingId } = await req.json()
-        if (bookingId) {
-          await supabaseClient
-            .from('bookings')
-            .update({ payment_status: 'failed' })
-            .eq('id', bookingId)
-        }
+        await supabaseClient
+          .from('bookings')
+          .update({ payment_status: 'failed' })
+          .eq('id', bookingId)
       } catch (updateError) {
         console.error('Failed to update booking status:', updateError)
       }
