@@ -47,21 +47,21 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
 
   return (
     <Sidebar 
-      className="border-r-0 bg-[#185166]" 
+      className="border-r-0 bg-[#185166] flex flex-col h-screen" 
       collapsible="offcanvas"
       side="left"
       variant="sidebar"
     >
-      <SidebarHeader className="border-b border-white/10 bg-[#185166] px-4 py-3">
+      <SidebarHeader className="border-b border-white/10 bg-[#185166] px-4 py-3 flex-shrink-0">
         <div className="text-lg font-semibold text-white">
           SN Cleaning
         </div>
       </SidebarHeader>
       
-      <SidebarContent className="p-0 bg-[#185166] flex-1 flex flex-col">
-        <SidebarGroup className="flex-1">
-          <SidebarGroupContent className="px-2 py-1 flex-1">
-            <SidebarMenu className="space-y-0.5 flex-1">
+      <SidebarContent className="p-0 bg-[#185166] flex-1 overflow-y-auto min-h-0">
+        <SidebarGroup className="h-full">
+          <SidebarGroupContent className="px-2 py-1 h-full">
+            <SidebarMenu className="space-y-0.5 h-full">
               {navigationItems.map((item) => {
                 const isActive = item.url && location.pathname === item.url && !item.disabled;
                 const hasSubItems = item.subItems && item.subItems.length > 0;
@@ -169,44 +169,41 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-white/10 bg-[#185166] px-3 py-3 sidebar-footer-safe mt-auto">
-        <SidebarMenu className="space-y-2">
-          <SidebarMenuItem>
-            <SidebarMenuButton 
-              className="transition-all duration-200 hover:bg-white/10 !text-white hover:!text-white border-0 justify-start px-2 py-2 rounded-lg h-auto cursor-pointer"
-              onClick={() => {
-                // Navigate to appropriate settings page based on user role
-                if (typeof window !== 'undefined') {
-                  window.location.href = '/customer-settings';
-                }
-              }}
-            >
-              <div className="w-8 h-8 bg-gradient-to-br from-[#18A5A5] to-[#18A5A5]/80 rounded-full flex items-center justify-center flex-shrink-0">
-                <User className="h-4 w-4 text-white" />
-              </div>
-              <div className="ml-2.5 flex flex-col items-start min-w-0 flex-1">
-                <span className="text-sm font-semibold !text-white truncate w-full leading-tight">
-                  {user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Admin'}
-                </span>
-                <span className="text-xs !text-white/70 truncate w-full">
-                  View profile
-                </span>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <Button 
-              onClick={() => {
-                onSignOut();
-                setOpen?.(false); // Close sidebar after logout
-              }} 
-              className="w-full h-10 font-medium text-sm !bg-white/10 !text-white border-white/30 hover:!bg-white/15 hover:!text-white hover:border-white/50 transition-all duration-200 rounded-lg"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign out
-            </Button>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarFooter className="border-t border-white/10 bg-[#185166] px-3 py-3 flex-shrink-0" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
+        <div className="space-y-2">
+          <div 
+            className="transition-all duration-200 hover:bg-white/10 text-white hover:text-white border-0 justify-start px-2 py-2 rounded-lg cursor-pointer flex items-center"
+            onClick={() => {
+              // Navigate to appropriate settings page based on user role
+              if (typeof window !== 'undefined') {
+                window.location.href = '/customer-settings';
+              }
+            }}
+          >
+            <div className="w-8 h-8 bg-gradient-to-br from-[#18A5A5] to-[#18A5A5]/80 rounded-full flex items-center justify-center flex-shrink-0">
+              <User className="h-4 w-4 text-white" />
+            </div>
+            <div className="ml-2.5 flex flex-col items-start min-w-0 flex-1">
+              <span className="text-sm font-semibold text-white truncate w-full leading-tight">
+                {user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Admin'}
+              </span>
+              <span className="text-xs text-white/70 truncate w-full">
+                View profile
+              </span>
+            </div>
+          </div>
+          
+          <Button 
+            onClick={() => {
+              onSignOut();
+              setOpen?.(false); // Close sidebar after logout
+            }} 
+            className="w-full h-10 font-medium text-sm bg-white/10 text-white border-white/30 hover:bg-white/15 hover:text-white hover:border-white/50 transition-all duration-200 rounded-lg"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign out
+          </Button>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );
