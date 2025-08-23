@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Users, Droplets, Home, HardHat, Layers, Building, Waves } from 'lucide-react';
@@ -61,6 +62,16 @@ const services = [
 ];
 
 const ServiceSelection = ({ onServiceSelect }: ServiceSelectionProps) => {
+  const navigate = useNavigate();
+
+  const handleServiceClick = (serviceId: string) => {
+    if (serviceId === 'airbnb-cleaning') {
+      navigate('/customer/airbnb-form');
+    } else {
+      onServiceSelect(serviceId);
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="text-center">
@@ -81,7 +92,7 @@ const ServiceSelection = ({ onServiceSelect }: ServiceSelectionProps) => {
                   ? 'cursor-pointer hover:scale-105 border-2 border-transparent hover:border-[#18A5A5]' 
                   : 'cursor-not-allowed opacity-75'
               }`}
-              onClick={() => service.available && onServiceSelect(service.id)}
+              onClick={() => service.available && handleServiceClick(service.id)}
             >
               {!service.available && (
                 <div className="absolute top-4 right-4 z-10">
