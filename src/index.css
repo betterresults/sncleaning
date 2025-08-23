@@ -8,6 +8,13 @@
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
   }
+  
+  /* Ensure header content is not covered by notches or status bars */
+  .header-safe {
+    padding-top: max(0px, env(safe-area-inset-top));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
 }
 
 /* Ensure sidebar footer has safe bottom padding */
