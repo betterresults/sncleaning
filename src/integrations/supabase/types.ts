@@ -58,6 +58,42 @@ export type Database = {
           },
         ]
       }
+      airbnb_field_pricing: {
+        Row: {
+          base_cost: number | null
+          created_at: string
+          field_name: string
+          field_value: string
+          id: string
+          is_active: boolean | null
+          multiplier_factor: number | null
+          pricing_rules: Json | null
+          updated_at: string
+        }
+        Insert: {
+          base_cost?: number | null
+          created_at?: string
+          field_name: string
+          field_value: string
+          id?: string
+          is_active?: boolean | null
+          multiplier_factor?: number | null
+          pricing_rules?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          base_cost?: number | null
+          created_at?: string
+          field_name?: string
+          field_value?: string
+          id?: string
+          is_active?: boolean | null
+          multiplier_factor?: number | null
+          pricing_rules?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           access: string | null
