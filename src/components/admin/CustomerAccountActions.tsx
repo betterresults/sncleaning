@@ -121,11 +121,11 @@ export const CustomerAccountActions = ({ customer, onAccountCreated }: CustomerA
     setResetLoading(true);
     try {
       console.log('Attempting password reset for:', customer.email);
-      console.log('Redirect URL:', `${window.location.origin}/auth`);
+      console.log('Redirect URL:', `https://account.sncleaningservices.co.uk/auth`);
       
       // Use Supabase's built-in password reset with custom email template
       const { data, error } = await supabase.auth.resetPasswordForEmail(customer.email, {
-        redirectTo: `${window.location.origin}/auth`,
+        redirectTo: `https://account.sncleaningservices.co.uk/auth`,
       });
 
       console.log('Password reset response:', { data, error });

@@ -511,7 +511,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
     setResetLoading(userId);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth`,
+        redirectTo: `https://account.sncleaningservices.co.uk/auth`,
       });
 
       if (error) throw error;

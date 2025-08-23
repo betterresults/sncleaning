@@ -61,7 +61,7 @@ const PaymentSetupForm = ({ clientSecret, onSuccess, onCancel, customerId }: {
         elements,
         clientSecret,
         confirmParams: {
-          return_url: `${window.location.origin}/auth?payment_setup=success`,
+          return_url: `https://account.sncleaningservices.co.uk/auth?payment_setup=success`,
         },
         redirect: 'if_required',
       });

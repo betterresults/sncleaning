@@ -95,7 +95,7 @@ export const CleanerAccountActions = ({ cleaner, onAccountCreated }: CleanerAcco
     setResetLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(cleaner.email, {
-        redirectTo: `${window.location.origin}/auth`,
+        redirectTo: `https://account.sncleaningservices.co.uk/auth`,
       });
 
       if (error) throw error;

@@ -107,7 +107,7 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
           customer_id: booking.customer,
           email: booking.email,
           name: `${booking.first_name} ${booking.last_name}`.trim(),
-          return_url: `${window.location.origin}/payment-method-success`
+          return_url: `https://account.sncleaningservices.co.uk/payment-method-success`
         }
       });
 

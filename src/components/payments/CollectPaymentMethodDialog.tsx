@@ -49,7 +49,7 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
           customer_id: customer.id,
           email: customer.email,
           name: `${customer.first_name} ${customer.last_name}`.trim(),
-          return_url: `${window.location.origin}/auth?payment_setup=success&redirect=customer`
+          return_url: `https://account.sncleaningservices.co.uk/auth?payment_setup=success&redirect=customer`
         }
       });
 

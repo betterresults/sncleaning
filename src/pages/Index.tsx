@@ -76,7 +76,7 @@ const Index = () => {
     try {
       if (isForgotPassword) {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `https://account.sncleaningservices.co.uk/`,
         });
 
         if (error) throw error;
