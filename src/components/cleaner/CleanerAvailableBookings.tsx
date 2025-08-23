@@ -83,89 +83,12 @@ const CleanerAvailableBookings = () => {
     },
   });
 
-  const assignAsSubCleanerMutation = useMutation({
-    mutationFn: async ({ bookingId, hoursAssigned, paymentMethod, rate }: {
-      bookingId: number;
-      hoursAssigned: number;
-      paymentMethod: 'hourly' | 'percentage';
-      rate: number;
-    }) => {
-      console.log('Creating sub-booking for:', bookingId, 'cleaner:', cleanerId);
-
-      if (!cleanerId) {
-        throw new Error('Cleaner ID is required to create a sub-booking.');
-      }
-
-      // Get cleaner's default rates
-      const { data: cleanerData, error: cleanerError } = await supabase
-        .from('cleaners')
-        .select('hourly_rate, presentage_rate')
-        .eq('id', cleanerId)
-        .single();
-
-      if (cleanerError) {
-        console.error('Error fetching cleaner data:', cleanerError);
-        throw cleanerError;
-      }
-
-      const subBookingData = {
-        primary_booking_id: bookingId,
-        cleaner_id: cleanerId,
-        payment_method: paymentMethod,
-        hourly_rate: paymentMethod === 'hourly' ? (rate || cleanerData.hourly_rate) : null,
-        percentage_rate: paymentMethod === 'percentage' ? (rate || cleanerData.presentage_rate) : null,
-        hours_assigned: hoursAssigned
-      };
-
-      const { data, error } = await supabase
-        .from('sub_bookings')
-        .insert([subBookingData])
-        .select();
-
-      if (error) {
-        console.error('Error creating sub-booking:', error);
-        throw error;
-      }
-
-      console.log('Successfully created sub-booking:', data);
-      return data;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Successfully joined as additional cleaner",
-        description: "You have been added as an additional cleaner for this booking.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['available-bookings'] });
-      queryClient.invalidateQueries({ queryKey: ['cleaner-bookings'] });
-    },
-    onError: (error) => {
-      console.error('Sub-booking creation error:', error);
-      toast({
-        title: "Error joining booking",
-        description: "There was an error adding you as an additional cleaner. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
 
   const handleAssignBooking = (bookingId: number) => {
     console.log('Assigning booking:', bookingId, 'to cleaner:', cleanerId);
     assignBookingMutation.mutate(bookingId);
   };
 
-  const handleJoinAsSubCleaner = (bookingId: number) => {
-    // For simplicity, using default values. In a real app, you'd want a dialog to collect these
-    const hoursAssigned = 2; // Default 2 hours
-    const paymentMethod = 'percentage' as const;
-    const rate = 70; // Default 70%
-    
-    assignAsSubCleanerMutation.mutate({
-      bookingId,
-      hoursAssigned,
-      paymentMethod,
-      rate
-    });
-  };
 
   if (isLoading) {
     return (
@@ -228,7 +151,17 @@ const CleanerAvailableBookings = () => {
                   <div className="flex items-center space-x-2">
                     <Banknote className="h-4 w-4 text-green-600" />
                     <span className="font-semibold text-green-600 text-lg">
-                      £{booking.cleaner_pay?.toFixed(2) || '0.00'}
+                      £{(() => {
+                        // Calculate potential pay using default rates
+                        if (booking.total_hours && booking.total_hours > 0) {
+                          // Hourly booking - use default £15/hour
+                          return (booking.total_hours * 15).toFixed(2);
+                        } else if (booking.total_cost) {
+                          // Percentage booking - use default 75%
+                          return (booking.total_cost * 0.75).toFixed(2);
+                        }
+                        return '0.00';
+                      })()}
                     </span>
                   </div>
                 </div>
@@ -286,24 +219,14 @@ const CleanerAvailableBookings = () => {
                   </div>
                 )}
                 
-                <div className="flex justify-end gap-2 pt-4">
-                  <Button
-                    onClick={() => handleJoinAsSubCleaner(booking.id)}
-                    disabled={assignAsSubCleanerMutation.isPending}
-                    variant="outline"
-                    className="text-blue-600 hover:text-blue-700 border-blue-300 hover:bg-blue-50"
-                  >
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    {assignAsSubCleanerMutation.isPending ? 'Joining...' : 'Join as Helper'}
-                  </Button>
-                  
+                <div className="flex justify-end pt-4">
                   <Button
                     onClick={() => handleAssignBooking(booking.id)}
                     disabled={assignBookingMutation.isPending}
                     className="bg-green-600 hover:bg-green-700 text-white"
                   >
                     <UserPlus className="h-4 w-4 mr-2" />
-                    {assignBookingMutation.isPending ? 'Assigning...' : 'Take Main Role'}
+                    {assignBookingMutation.isPending ? 'Getting Job...' : 'Get Job'}
                   </Button>
                 </div>
               </CardContent>
