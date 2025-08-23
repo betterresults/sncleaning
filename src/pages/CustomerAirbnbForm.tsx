@@ -67,10 +67,25 @@ const CustomerAirbnbForm = () => {
   }, [customerId]);
 
   return (
-    <div className="w-full h-screen overflow-hidden p-0 m-0">
-      {/* Embedded form container - completely full screen */}
-      <div id="form_238370_1" className="w-full h-full p-0 m-0 border-0"></div>
-    </div>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 to-blue-50">
+        <UnifiedSidebar 
+          navigationItems={customerNavigation}
+          user={user}
+          onSignOut={handleSignOut}
+        />
+        <SidebarInset className="flex-1 flex flex-col p-0">
+          <UnifiedHeader 
+            title="Airbnb Cleaning Booking 🏠"
+            user={user}
+            userRole={userRole}
+          />
+          
+          {/* Form takes full remaining space without any padding */}
+          <div id="form_238370_1" className="flex-1 w-full p-0 m-0 border-0"></div>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
 };
 
