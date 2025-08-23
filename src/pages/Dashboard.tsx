@@ -76,6 +76,7 @@ const Dashboard = () => {
               title="Admin Dashboard 📊"
               user={user}
               userRole={userRole}
+              onSignOut={handleSignOut}
             />
             
             <main className="flex-1 p-4 space-y-6 max-w-full overflow-x-hidden">
