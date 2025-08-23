@@ -1,13 +1,18 @@
 import React from 'react';
+import { LogOut } from 'lucide-react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface UnifiedHeaderProps {
   title: string;
   user: any;
   userRole?: string;
+  onSignOut?: () => void;
 }
 
-export function UnifiedHeader({ title, user, userRole }: UnifiedHeaderProps) {
+export function UnifiedHeader({ title, user, userRole, onSignOut }: UnifiedHeaderProps) {
+  const isMobile = useIsMobile();
   const getGreeting = () => {
     const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'User';
     
@@ -27,10 +32,20 @@ export function UnifiedHeader({ title, user, userRole }: UnifiedHeaderProps) {
       <div className="text-base font-semibold text-white truncate">
         {title}
       </div>
-      <div className="flex-1 flex justify-end">
+      <div className="flex-1 flex justify-end items-center gap-3">
         <div className="text-sm text-white/80 truncate">
           {getGreeting()}
         </div>
+        {isMobile && onSignOut && (
+          <Button
+            onClick={onSignOut}
+            size="sm"
+            variant="ghost"
+            className="h-8 w-8 p-0 text-white hover:bg-white/10 hover:text-white"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </header>
   );

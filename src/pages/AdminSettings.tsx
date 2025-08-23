@@ -110,6 +110,7 @@ const AdminSettings = () => {
             title="Admin Settings ⚙️"
             user={user}
             userRole={userRole}
+            onSignOut={handleSignOut}
           />
           
           <main className="flex-1 p-2 sm:p-4 space-y-3 sm:space-y-4 w-full overflow-x-hidden">
