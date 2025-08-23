@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Edit, Trash2, Filter, Search, Settings, Copy, X, UserPlus, DollarSign, Repeat, Calendar, List, MoreHorizontal, CalendarDays, Clock, MapPin, User, Mail, Phone, Banknote, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Edit, Trash2, Filter, Search, Settings, Copy, X, UserPlus, DollarSign, Repeat, Calendar, List, MoreHorizontal, CalendarDays, Clock, MapPin, User, Mail, Phone, Banknote, CheckCircle, XCircle, AlertCircle, AlertTriangle } from 'lucide-react';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import { format } from 'date-fns';
@@ -536,8 +536,22 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
     );
   }
 
+  // Calculate unassigned bookings
+  const unassignedBookings = filteredBookings.filter(booking => !booking.cleaner);
+
   return (
     <div className="space-y-6">
+      {/* Unassigned Bookings Notification */}
+      {unassignedBookings.length > 0 && (
+        <div className="bg-gradient-to-r from-red-50 to-rose-100 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center justify-center space-x-2">
+            <AlertTriangle className="h-5 w-5 text-red-600 animate-pulse" />
+            <span className="text-red-800 font-semibold">
+              {unassignedBookings.length} unassigned booking{unassignedBookings.length > 1 ? 's' : ''} require{unassignedBookings.length === 1 ? 's' : ''} attention
+            </span>
+          </div>
+        </div>
+      )}
 
       <Card>
         <CardHeader className="pb-3">
