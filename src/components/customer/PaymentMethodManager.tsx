@@ -153,6 +153,12 @@ const PaymentMethodManager = () => {
   const { selectedCustomerId } = useAdminCustomer();
   const { toast } = useToast();
   
+  // All hooks must be called before any conditional logic
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showSetupDialog, setShowSetupDialog] = useState(false);
+  const [setupClientSecret, setSetupClientSecret] = useState<string>('');
+  
   // Use selected customer ID if admin is viewing, otherwise use the logged-in user's customer ID  
   const activeCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
   
@@ -175,10 +181,6 @@ const PaymentMethodManager = () => {
       </Card>
     );
   }
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showSetupDialog, setShowSetupDialog] = useState(false);
-  const [setupClientSecret, setSetupClientSecret] = useState<string>('');
 
   useEffect(() => {
     if (activeCustomerId) {
