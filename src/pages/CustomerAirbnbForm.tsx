@@ -31,6 +31,11 @@ const CustomerAirbnbForm = () => {
       window.history.replaceState({}, '', currentUrl.toString());
     }
 
+    // Override body padding for this page
+    const originalBodyStyle = document.body.style.cssText;
+    document.body.style.padding = '0';
+    document.body.style.margin = '0';
+
     // Load the embedded form script
     const script = document.createElement('script');
     script.type = 'text/javascript';
@@ -60,6 +65,9 @@ const CustomerAirbnbForm = () => {
 
     // Cleanup function
     return () => {
+      // Restore original body styling
+      document.body.style.cssText = originalBodyStyle;
+      
       if (head && script.parentNode === head) {
         head.removeChild(script);
       }
