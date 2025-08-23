@@ -20,3 +20,6 @@ verify_jwt = true
 
 [functions.manual-authorize-booking]
 verify_jwt = false
+
+[functions.test-gabrielle-auth]
+verify_jwt = false

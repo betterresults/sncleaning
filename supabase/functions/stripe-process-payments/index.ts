@@ -21,19 +21,23 @@ serve(async (req) => {
     const now = new Date()
     const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
     const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000) // Changed: 2 hours AGO instead of from now
+    
+    // For authorization: look for bookings happening within the next 24 hours (including ones starting now)
+    const authorizationWindowStart = new Date(now.getTime() - 2 * 60 * 60 * 1000) // 2 hours ago to catch any we missed
+    const authorizationWindowEnd = twentyFourHoursFromNow
 
     console.log('Processing payments at:', now.toISOString())
 
     let bookingsWithPaymentMethods = []
     let readyToCapture = [] // Initialize here for scope
 
-    // 1. Find bookings that need payment authorization (24 hours before)
+    // 1. Find bookings that need payment authorization (within next 24 hours, including 2hrs buffer for missed ones)
     const { data: bookingsToAuthorize, error: authorizeError } = await supabaseClient
       .from('bookings')
       .select('id, date_time, total_cost, customer')
-      .gte('date_time', now.toISOString())
-      .lte('date_time', twentyFourHoursFromNow.toISOString())
-      .in('payment_status', ['Unpaid', 'pending'])
+      .gte('date_time', authorizationWindowStart.toISOString())
+      .lte('date_time', authorizationWindowEnd.toISOString())
+      .in('payment_status', ['Unpaid', 'pending', 'failed']) // Include 'failed' to retry
       .not('customer', 'is', null)
 
     if (authorizeError) {
