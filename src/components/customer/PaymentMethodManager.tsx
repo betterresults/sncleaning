@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -161,34 +161,8 @@ const PaymentMethodManager = () => {
   
   // Use selected customer ID if admin is viewing, otherwise use the logged-in user's customer ID  
   const activeCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
-  
-  // Show message if admin hasn't selected a customer
-  if (userRole === 'admin' && !selectedCustomerId) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Payment Methods
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Select a customer first to manage their payment methods</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
-  useEffect(() => {
-    if (activeCustomerId) {
-      fetchPaymentMethods();
-    }
-  }, [activeCustomerId]);
-
-  const fetchPaymentMethods = async () => {
+  const fetchPaymentMethods = useCallback(async () => {
     if (!activeCustomerId) {
       console.log('PaymentMethodManager: No activeCustomerId, skipping fetch');
       return;
@@ -234,7 +208,33 @@ const PaymentMethodManager = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeCustomerId, toast]);
+
+  useEffect(() => {
+    if (activeCustomerId) {
+      fetchPaymentMethods();
+    }
+  }, [activeCustomerId, fetchPaymentMethods]);
+  
+  // Show message if admin hasn't selected a customer
+  if (userRole === 'admin' && !selectedCustomerId) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Payment Methods
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>Select a customer first to manage their payment methods</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const addPaymentMethod = async () => {
     if (!user) return;
