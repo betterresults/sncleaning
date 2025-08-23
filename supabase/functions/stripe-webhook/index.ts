@@ -121,27 +121,59 @@ async function syncPaymentMethodToDatabase(
 
     // Get customer from Stripe metadata first (this is more reliable)
     const stripeCustomer = await stripe.customers.retrieve(stripeCustomerId);
-    const customerIdFromMetadata = stripeCustomer.metadata?.customer_id;
-    
-    if (!customerIdFromMetadata) {
-      console.error('No customer_id in Stripe customer metadata for customer:', stripeCustomerId);
-      return;
+    let customerIdFromMetadata = stripeCustomer.metadata?.customer_id;
+    let customerData;
+
+    if (customerIdFromMetadata) {
+      // Try to find customer using metadata
+      const { data: metadataCustomer, error: metadataError } = await supabaseAdmin
+        .from('customers')
+        .select('id')
+        .eq('id', parseInt(customerIdFromMetadata))
+        .single();
+      
+      if (!metadataError && metadataCustomer) {
+        customerData = metadataCustomer;
+        console.log('Found customer using metadata:', customerData.id);
+      }
     }
 
-    const { data: customerData, error: customerError } = await supabaseAdmin
-      .from('customers')
-      .select('id')
-      .eq('id', parseInt(customerIdFromMetadata))
-      .single();
-
-    if (customerError) {
-      console.error('Customer not found in database with ID:', customerIdFromMetadata, customerError);
-      return;
-    }
-
+    // Fallback: If no customer found via metadata, try finding by email
     if (!customerData) {
-      console.error('Customer not found in database');
-      return;
+      console.log('No customer found via metadata, trying email fallback for:', stripeCustomer.email);
+      
+      if (!stripeCustomer.email) {
+        console.error('No email available for Stripe customer:', stripeCustomerId);
+        return;
+      }
+
+      const { data: emailCustomer, error: emailError } = await supabaseAdmin
+        .from('customers')
+        .select('id')
+        .eq('email', stripeCustomer.email)
+        .single();
+
+      if (emailError || !emailCustomer) {
+        console.error('Customer not found by email:', stripeCustomer.email, emailError);
+        return;
+      }
+
+      customerData = emailCustomer;
+      console.log('Found customer by email:', customerData.id);
+
+      // Update Stripe customer metadata for future use
+      try {
+        await stripe.customers.update(stripeCustomerId, {
+          metadata: {
+            customer_id: customerData.id.toString(),
+            internal_customer_id: customerData.id.toString()
+          }
+        });
+        console.log('Updated Stripe customer metadata with customer_id:', customerData.id);
+      } catch (updateError) {
+        console.error('Failed to update Stripe customer metadata:', updateError);
+        // Continue anyway - we found the customer
+      }
     }
 
     console.log('Found customer in database:', customerData.id);
