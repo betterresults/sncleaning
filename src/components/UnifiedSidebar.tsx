@@ -200,7 +200,7 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
                 onSignOut();
                 setOpen?.(false); // Close sidebar after logout
               }} 
-              className="w-full h-10 font-medium text-sm !bg-red-600/90 !text-white border-red-500/30 hover:!bg-red-700 hover:!text-white hover:border-red-500/50 transition-all duration-200 rounded-lg"
+              className="w-full h-10 font-medium text-sm !bg-white/10 !text-white border-white/30 hover:!bg-white/15 hover:!text-white hover:border-white/50 transition-all duration-200 rounded-lg"
             >
               <LogOut className="h-4 w-4 mr-2" />
               Sign out
