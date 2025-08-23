@@ -70,23 +70,10 @@ const CustomerAirbnbForm = () => {
             userRole={userRole}
           />
           
-          <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
-            <div className="max-w-4xl mx-auto">
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl p-8">
-                <div className="text-center mb-8">
-                  <h2 className="text-3xl font-bold text-[#185166] mb-4">
-                    Airbnb Cleaning Service
-                  </h2>
-                  <p className="text-gray-600">
-                    Fill out the form below to get a quote for your Airbnb cleaning needs
-                  </p>
-                </div>
-                
-                <div className="w-full">
-                  {/* Embedded form container */}
-                  <div id="form_238370_1" className="w-full min-h-[500px]"></div>
-                </div>
-              </div>
+          <main className="flex-1 w-full h-full">
+            <div className="w-full h-full">
+              {/* Embedded form container */}
+              <div id="form_238370_1" className="w-full h-full min-h-screen"></div>
             </div>
           </main>
         </SidebarInset>
