@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { User, Menu, ChevronDown, ChevronRight } from 'lucide-react';
+import { User, LogOut, ChevronDown, ChevronRight } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -42,11 +42,16 @@ interface UnifiedSidebarProps {
 
 export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSidebarProps) {
   const location = useLocation();
-  const { open } = useSidebar();
+  const { open, setOpen } = useSidebar();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   return (
-    <Sidebar className="border-r-0 bg-[#185166]" collapsible="offcanvas">
+    <Sidebar 
+      className="border-r-0 bg-[#185166]" 
+      collapsible="offcanvas"
+      side="left"
+      variant="sidebar"
+    >
       <SidebarHeader className="border-b border-white/10 bg-[#185166] px-4 py-3">
         <div className="text-lg font-semibold text-white">
           SN Cleaning
@@ -111,13 +116,17 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
                             </span>
                           </div>
                           {isExpanded ? (
-                            <ChevronDown className="h-4 w-4" />
+                            <ChevronDown className="h-4 w-4 flex-shrink-0" />
                           ) : (
-                            <ChevronRight className="h-4 w-4" />
+                            <ChevronRight className="h-4 w-4 flex-shrink-0" />
                           )}
                         </div>
                       ) : (
-                        <Link to={item.url!} className="flex items-center w-full">
+                        <Link 
+                          to={item.url!} 
+                          className="flex items-center w-full"
+                          onClick={() => setOpen?.(false)} // Close sidebar on navigation
+                        >
                           <item.icon className="h-5 w-5 flex-shrink-0" />
                           <span className="ml-3 font-medium text-base leading-tight">
                             {item.title}
@@ -187,9 +196,13 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
           </SidebarMenuItem>
           <SidebarMenuItem>
             <Button 
-              onClick={onSignOut} 
-              className="w-full h-9 font-medium text-sm !bg-white/10 !text-white border-white/30 hover:!bg-white/15 hover:!text-white hover:border-white/50 transition-all duration-200 rounded-lg"
+              onClick={() => {
+                onSignOut();
+                setOpen?.(false); // Close sidebar after logout
+              }} 
+              className="w-full h-10 font-medium text-sm !bg-red-600/90 !text-white border-red-500/30 hover:!bg-red-700 hover:!text-white hover:border-red-500/50 transition-all duration-200 rounded-lg"
             >
+              <LogOut className="h-4 w-4 mr-2" />
               Sign out
             </Button>
           </SidebarMenuItem>
