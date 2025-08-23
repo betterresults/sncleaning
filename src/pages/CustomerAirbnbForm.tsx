@@ -24,6 +24,13 @@ const CustomerAirbnbForm = () => {
   };
 
   useEffect(() => {
+    // Add customer_id to URL parameters for the form
+    const currentUrl = new URL(window.location.href);
+    if (customerId && !currentUrl.searchParams.has('customer_id')) {
+      currentUrl.searchParams.set('customer_id', customerId.toString());
+      window.history.replaceState({}, '', currentUrl.toString());
+    }
+
     // Load the embedded form script
     const script = document.createElement('script');
     script.type = 'text/javascript';
@@ -31,7 +38,7 @@ const CustomerAirbnbForm = () => {
     script.async = true;
     script.src = `${window.location.protocol}//book.sncleaningservices.co.uk/js/iform.js?v=0.0.3`;
 
-    // Initialize the form configuration
+    // Initialize the form configuration with customer_id
     window.fdforms = window.fdforms || [];
     window.fdforms.push({
       formId: 238370,
@@ -40,7 +47,11 @@ const CustomerAirbnbForm = () => {
       el: "form_238370_1",
       center: 1,
       scroll: 0,
-      customer_id: customerId // Pass customer_id to the form
+      customer_id: customerId,
+      // Also try passing it as form data
+      formData: {
+        customer_id: customerId
+      }
     });
 
     // Add script to document
@@ -63,18 +74,16 @@ const CustomerAirbnbForm = () => {
           user={user}
           onSignOut={handleSignOut}
         />
-        <SidebarInset className="flex-1">
+        <SidebarInset className="flex-1 p-0">
           <UnifiedHeader 
             title="Airbnb Cleaning Booking 🏠"
             user={user}
             userRole={userRole}
           />
           
-          <main className="flex-1 w-full h-full">
-            <div className="w-full h-full">
-              {/* Embedded form container */}
-              <div id="form_238370_1" className="w-full h-full min-h-screen"></div>
-            </div>
+          <main className="w-full h-full p-0 m-0">
+            {/* Embedded form container */}
+            <div id="form_238370_1" className="w-full h-full min-h-screen p-0 m-0"></div>
           </main>
         </SidebarInset>
       </div>
