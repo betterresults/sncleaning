@@ -47,8 +47,15 @@ const AdminGuard: React.FC<AdminGuardProps> = ({
         return;
       }
 
+      // Skip database verification if we already verified successfully
+      // and user/userRole haven't changed to prevent infinite loops
+      if (isVerifiedAdmin && userRole === 'admin') {
+        setIsVerifying(false);
+        return;
+      }
+
       try {
-        // Layer 2: Server-side verification
+        // Layer 2: Server-side verification - only do this once per user session
         console.log('AdminGuard: Performing server-side admin verification...');
         
         const { data: roleData, error } = await supabase
@@ -92,8 +99,11 @@ const AdminGuard: React.FC<AdminGuardProps> = ({
       }
     };
 
-    verifyAdminAccess();
-  }, [user, userRole, loading]);
+    // Only verify if we haven't already verified successfully for this user
+    if (!isVerifiedAdmin || !user || userRole !== 'admin') {
+      verifyAdminAccess();
+    }
+  }, [user?.id, userRole, loading]); // Only depend on user ID, not the full user object
 
   // Show loading state
   if (loading || isVerifying) {
