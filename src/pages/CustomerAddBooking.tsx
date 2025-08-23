@@ -8,6 +8,7 @@ import { customerNavigation } from '@/lib/navigationItems';
 import { Button } from '@/components/ui/button';
 import ServiceSelection from '@/components/booking/ServiceSelection';
 import NewBookingForm from '@/components/booking/NewBookingForm';
+import AirbnbBookingForm from '@/components/booking/AirbnbBookingForm';
 import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -75,22 +76,31 @@ const CustomerAddBooking = () => {
             <div className="max-w-7xl mx-auto">
               {selectedService ? (
                 <div className="space-y-6">
-                  <Button
-                    variant="outline"
-                    onClick={handleBackToServices}
-                    className="flex items-center gap-2 text-[#185166] border-[#185166] hover:bg-[#185166] hover:text-white"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    Back to Services
-                  </Button>
+                  {selectedService !== 'airbnb' && (
+                    <Button
+                      variant="outline"
+                      onClick={handleBackToServices}
+                      className="flex items-center gap-2 text-[#185166] border-[#185166] hover:bg-[#185166] hover:text-white"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Back to Services
+                    </Button>
+                  )}
                   
-                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl p-6">
-                    <NewBookingForm 
+                  {selectedService === 'airbnb' && customerData ? (
+                    <AirbnbBookingForm 
+                      customerData={customerData}
                       onBookingCreated={handleBookingCreated}
-                      isCustomerView={true}
-                      preselectedCustomer={customerData}
                     />
-                  </div>
+                  ) : selectedService !== 'airbnb' ? (
+                    <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl p-6">
+                      <NewBookingForm 
+                        onBookingCreated={handleBookingCreated}
+                        isCustomerView={true}
+                        preselectedCustomer={customerData}
+                      />
+                    </div>
+                  ) : null}
                 </div>
               ) : (
                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl p-8">
