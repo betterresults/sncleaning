@@ -91,8 +91,8 @@ const Auth = () => {
     
     // Redirect admins to dashboard
     if (userRole === 'admin') {
-      console.log('AUTH DEBUG - Redirecting admin user to admin dashboard:', { userRole });
-      return <Navigate to="/admin-dashboard" replace />;
+      console.log('AUTH DEBUG - Redirecting admin user to dashboard:', { userRole });
+      return <Navigate to="/dashboard" replace />;
     }
     
     // Default redirect for guests without customer ID

@@ -45,10 +45,10 @@ const Index = () => {
       return <Navigate to="/customer-dashboard" replace />;
     }
     
-    // Redirect admins to admin dashboard
+    // Redirect admins to dashboard
     if (userRole === 'admin') {
-      console.log('Index - Redirecting admin to /admin-dashboard');
-      return <Navigate to="/admin-dashboard" replace />;
+      console.log('Index - Redirecting admin to /dashboard');
+      return <Navigate to="/dashboard" replace />;
     }
     
     // Default redirect for guests without customer ID

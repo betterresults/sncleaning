@@ -141,7 +141,7 @@ const AdminGuard: React.FC<AdminGuardProps> = ({
                 I'm a Cleaner
               </button>
               <button
-                onClick={() => window.location.href = '/admin-dashboard'}
+                onClick={() => window.location.href = '/dashboard'}
                 className="w-full py-3 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
               >
                 I'm an Admin
