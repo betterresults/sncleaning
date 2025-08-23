@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import BulkEditPastBookingsDialog from './BulkEditPastBookingsDialog';
 import ConvertToRecurringDialog from './ConvertToRecurringDialog';
+import EditPastBookingDialog from './EditPastBookingDialog';
 
 interface PastBooking {
   id: number;
@@ -94,6 +95,8 @@ const PastBookingsTable = () => {
   const [selectedBookingForRecurring, setSelectedBookingForRecurring] = useState<PastBooking | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState<number | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<PastBooking | null>(null);
 
   const getTimePeriodDates = (period: string) => {
     const now = new Date();
@@ -335,6 +338,11 @@ const PastBookingsTable = () => {
   const handleMakeRecurring = (booking: PastBooking) => {
     setSelectedBookingForRecurring(booking);
     setConvertToRecurringOpen(true);
+  };
+
+  const handleEdit = (booking: PastBooking) => {
+    setSelectedBookingForEdit(booking);
+    setEditDialogOpen(true);
   };
 
   const handleDelete = (bookingId: number) => {
@@ -761,6 +769,13 @@ const PastBookingsTable = () => {
                               <DropdownMenuContent align="end" className="w-40">
                                 <DropdownMenuItem 
                                   className="cursor-pointer"
+                                  onClick={() => handleEdit(booking)}
+                                >
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="cursor-pointer"
                                   onClick={() => handleDuplicate(booking)}
                                 >
                                   <Copy className="mr-2 h-4 w-4" />
@@ -941,6 +956,13 @@ const PastBookingsTable = () => {
                               <DropdownMenuContent align="end" className="w-40">
                                 <DropdownMenuItem 
                                   className="cursor-pointer"
+                                  onClick={() => handleEdit(booking)}
+                                >
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="cursor-pointer"
                                   onClick={() => handleDuplicate(booking)}
                                 >
                                   <Copy className="mr-2 h-4 w-4" />
@@ -1092,6 +1114,17 @@ const PastBookingsTable = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <EditPastBookingDialog
+        booking={selectedBookingForEdit}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onBookingUpdated={() => {
+          fetchData();
+          setEditDialogOpen(false);
+          setSelectedBookingForEdit(null);
+        }}
+      />
     </div>
   );
 };
