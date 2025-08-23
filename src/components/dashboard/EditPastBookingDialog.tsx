@@ -28,7 +28,7 @@ interface PastBooking {
   cleaner_pay: number;
   payment_status: string;
   booking_status: string;
-  hours_required: number;
+  total_hours: number;
   property_details: string;
   additional_details: string;
 }
@@ -60,7 +60,7 @@ const EditPastBookingDialog: React.FC<EditPastBookingDialogProps> = ({
     postcode: '',
     cleaning_type: '',
     total_cost: '',
-    hours_required: 0,
+    total_hours: 0,
     property_details: '',
     additional_details: '',
     payment_status: '',
@@ -82,7 +82,7 @@ const EditPastBookingDialog: React.FC<EditPastBookingDialogProps> = ({
         postcode: booking.postcode || '',
         cleaning_type: booking.cleaning_type || '',
         total_cost: booking.total_cost || '',
-        hours_required: booking.hours_required || 0,
+        total_hours: booking.total_hours || 0,
         property_details: booking.property_details || '',
         additional_details: booking.additional_details || '',
         payment_status: booking.payment_status || '',
@@ -259,12 +259,12 @@ const EditPastBookingDialog: React.FC<EditPastBookingDialogProps> = ({
                 />
               </div>
               <div>
-                <Label>Hours Required</Label>
+                <Label>Total Hours</Label>
                 <Input
                   type="number"
                   step="0.5"
-                  value={formData.hours_required}
-                  onChange={(e) => setFormData(prev => ({ ...prev, hours_required: parseFloat(e.target.value) || 0 }))}
+                  value={formData.total_hours}
+                  onChange={(e) => setFormData(prev => ({ ...prev, total_hours: parseFloat(e.target.value) || 0 }))}
                 />
               </div>
             </div>

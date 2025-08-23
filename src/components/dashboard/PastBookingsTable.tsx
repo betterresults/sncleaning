@@ -32,7 +32,7 @@ interface PastBooking {
   cleaner_pay: number;
   payment_status: string;
   booking_status: string;
-  hours_required: number;
+  total_hours: number;
   property_details: string;
   additional_details: string;
   cleaners?: {
@@ -401,7 +401,7 @@ const PastBookingsTable = () => {
         date_time: newDateTime,
         address: selectedBooking.address,
         postcode: selectedBooking.postcode,
-        hours_required: selectedBooking.hours_required,
+        total_hours: selectedBooking.total_hours,
         total_cost: typeof selectedBooking.total_cost === 'string' ? parseFloat(selectedBooking.total_cost) : selectedBooking.total_cost,
         cleaner_pay: selectedBooking.cleaner_pay,
         cleaning_type: selectedBooking.cleaning_type,
