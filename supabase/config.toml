@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.sync-customer-payment-methods]
 verify_jwt = true
+
+[functions.manual-authorize-booking]
+verify_jwt = false

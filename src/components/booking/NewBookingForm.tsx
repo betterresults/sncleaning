@@ -455,11 +455,18 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
         return;
       }
 
-      // Combine date and time
+      // Combine date and time with proper timezone handling
       const time24h = convertTo24Hour(formData.selectedTime);
       const [hours, minutes] = time24h.split(':');
+      
+      // Create date in local timezone but store the intended local time
+      // The user sees 10:00 in Bulgaria, they mean 10:00 Bulgaria time
       const dateTime = new Date(formData.selectedDate);
       dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      
+      // Convert to UTC by adding the timezone offset to get the correct local time
+      const timezoneOffset = dateTime.getTimezoneOffset() * 60000; // offset in milliseconds
+      const localDateTime = new Date(dateTime.getTime() - timezoneOffset);
 
       // Determine form_name based on service type and sub type
       let formName = '';
@@ -536,7 +543,7 @@ const NewBookingForm = ({ onBookingCreated }: NewBookingFormProps) => {
         last_name: formData.lastName,
         email: formData.email,
         phone_number: formData.phoneNumber,
-        date_time: dateTime.toISOString(),
+        date_time: localDateTime.toISOString(),
         address: formData.address,
         postcode: formData.postcode,
         total_hours: requiresHours ? formData.totalHours : null,
