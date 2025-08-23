@@ -2,6 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+/* PWA Safe Area Support */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* Ensure sidebar footer has safe bottom padding */
+.sidebar-footer-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* Ensure main content has safe bottom padding */
+.main-content-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

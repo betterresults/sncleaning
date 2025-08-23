@@ -160,7 +160,7 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-white/10 bg-[#185166] px-3 py-3">
+      <SidebarFooter className="border-t border-white/10 bg-[#185166] px-3 py-3 sidebar-footer-safe">
         <SidebarMenu className="space-y-2">
           <SidebarMenuItem>
             <SidebarMenuButton 
