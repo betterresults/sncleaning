@@ -76,7 +76,7 @@ const CustomerAddBooking = () => {
             <div className="max-w-7xl mx-auto">
               {selectedService ? (
                 <div className="space-y-6">
-                  {selectedService !== 'airbnb' && (
+                  {selectedService !== 'airbnb-cleaning' && (
                     <Button
                       variant="outline"
                       onClick={handleBackToServices}
@@ -87,12 +87,12 @@ const CustomerAddBooking = () => {
                     </Button>
                   )}
                   
-                  {selectedService === 'airbnb' && customerData ? (
+                  {selectedService === 'airbnb-cleaning' && customerData ? (
                     <AirbnbBookingForm 
                       customerData={customerData}
                       onBookingCreated={handleBookingCreated}
                     />
-                  ) : selectedService !== 'airbnb' ? (
+                  ) : selectedService !== 'airbnb-cleaning' ? (
                     <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl p-6">
                       <NewBookingForm 
                         onBookingCreated={handleBookingCreated}
