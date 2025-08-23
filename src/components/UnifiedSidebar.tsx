@@ -58,10 +58,10 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
         </div>
       </SidebarHeader>
       
-      <SidebarContent className="p-0 bg-[#185166]">
-        <SidebarGroup>
-          <SidebarGroupContent className="px-2 py-1">
-            <SidebarMenu className="space-y-0.5">
+      <SidebarContent className="p-0 bg-[#185166] flex-1 flex flex-col">
+        <SidebarGroup className="flex-1">
+          <SidebarGroupContent className="px-2 py-1 flex-1">
+            <SidebarMenu className="space-y-0.5 flex-1">
               {navigationItems.map((item) => {
                 const isActive = item.url && location.pathname === item.url && !item.disabled;
                 const hasSubItems = item.subItems && item.subItems.length > 0;
@@ -169,7 +169,7 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-white/10 bg-[#185166] px-3 py-3 sidebar-footer-safe">
+      <SidebarFooter className="border-t border-white/10 bg-[#185166] px-3 py-3 sidebar-footer-safe mt-auto">
         <SidebarMenu className="space-y-2">
           <SidebarMenuItem>
             <SidebarMenuButton 
@@ -184,7 +184,7 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
               <div className="w-8 h-8 bg-gradient-to-br from-[#18A5A5] to-[#18A5A5]/80 rounded-full flex items-center justify-center flex-shrink-0">
                 <User className="h-4 w-4 text-white" />
               </div>
-              <div className="ml-2.5 flex flex-col items-start min-w-0">
+              <div className="ml-2.5 flex flex-col items-start min-w-0 flex-1">
                 <span className="text-sm font-semibold !text-white truncate w-full leading-tight">
                   {user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Admin'}
                 </span>
