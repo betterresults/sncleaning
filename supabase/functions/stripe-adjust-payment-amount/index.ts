@@ -149,12 +149,13 @@ serve(async (req) => {
       differenceAmount
     });
 
-    // Update booking with new total cost and additional payment info
+    // Update booking with new total cost and payment status
     const updateData = {
       total_cost: newAmount,
+      payment_status: 'partially_authorized', // Only part of the amount is authorized
       // Keep original invoice_id but add additional payment details
       additional_details: (booking.additional_details || '') + 
-        `\n\nAdditional payment authorized: £${differenceAmount} (${booking.invoice_id ? 'Original: ' + booking.invoice_id + ', ' : ''}Additional: ${paymentIntent.id}). Total: £${currentAmount} → £${newAmount}${reason ? '. Reason: ' + reason : ''}`
+        `\n\nAdditional payment authorized: £${differenceAmount} (${booking.invoice_id ? 'Original: ' + booking.invoice_id + ', ' : ''}Additional: ${paymentIntent.id}). WARNING: Only £${differenceAmount} of £${newAmount} is currently authorized. Original authorization may have been canceled.${reason ? ' Reason: ' + reason : ''}`
     };
 
     const { error: updateError } = await supabase
