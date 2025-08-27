@@ -230,16 +230,22 @@ serve(async (req) => {
           throw new Error(`Capture failed: ${captureResult.error.message}`)
         }
 
-        // Update payment status in correct table
+        // Update payment status in correct table - clear any partial authorization details
         if (isUpcoming) {
           await supabaseClient
             .from('bookings')
-            .update({ payment_status: 'paid' })
+            .update({ 
+              payment_status: 'paid',
+              additional_details: null // Clear any partial auth details since payment is now complete
+            })
             .eq('id', bookingId)
         } else if (isPast) {
           await supabaseClient
             .from('past_bookings')
-            .update({ payment_status: 'paid' })
+            .update({ 
+              payment_status: 'paid',
+              additional_details: null // Clear any partial auth details since payment is now complete
+            })
             .eq('id', bookingId)
         }
 
@@ -274,13 +280,14 @@ serve(async (req) => {
           throw new Error(`Payment failed: ${paymentIntent.error.message}`)
         }
 
-        // Update payment status in correct table
+        // Update payment status in correct table - clear any partial authorization details
         if (isUpcoming) {
           await supabaseClient
             .from('bookings')
             .update({
               payment_status: 'paid',
-              invoice_id: paymentIntent.id
+              invoice_id: paymentIntent.id,
+              additional_details: null // Clear any partial auth details since payment is now complete
             })
             .eq('id', bookingId)
         } else if (isPast) {
@@ -288,7 +295,8 @@ serve(async (req) => {
             .from('past_bookings')
             .update({
               payment_status: 'paid',
-              invoice_id: paymentIntent.id
+              invoice_id: paymentIntent.id,
+              additional_details: null // Clear any partial auth details since payment is now complete
             })
             .eq('id', bookingId)
         }
