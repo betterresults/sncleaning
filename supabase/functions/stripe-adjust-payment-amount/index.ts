@@ -17,10 +17,23 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let body: any = {};
+  try {
+    body = await req.json();
+  } catch (e) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Invalid JSON in request body'
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 400,
+    });
+  }
+
   try {
     logStep("Starting payment amount adjustment");
 
-    const { bookingId, newAmount, reason } = await req.json();
+    const { bookingId, newAmount, reason } = body;
     
     if (!bookingId || !newAmount) {
       throw new Error('Missing required fields: bookingId and newAmount');
@@ -191,7 +204,7 @@ serve(async (req) => {
     
     // Try to update booking status to indicate error
     try {
-      const { bookingId } = await req.json();
+      const { bookingId } = body; // Use the already parsed body
       if (bookingId) {
         const supabase = createClient(
           Deno.env.get('SUPABASE_URL') ?? '',
