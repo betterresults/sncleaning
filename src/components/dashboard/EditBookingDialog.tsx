@@ -8,10 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { User, Calendar, MapPin, CreditCard, UserCheck, Clock, Home, Phone, Mail } from 'lucide-react';
+import { User, Calendar, MapPin, CreditCard, UserCheck, Clock, Home, Phone, Mail, AlertTriangle } from 'lucide-react';
 
 interface EditBookingDialogProps {
   booking: any;
@@ -128,6 +129,53 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
     setLoading(true);
 
     try {
+      // Check if total cost has changed and payment needs adjustment
+      const originalCost = booking.total_cost || 0;
+      const newCost = formData.totalCost || 0;
+      const costChanged = Math.abs(originalCost - newCost) > 0.01; // Account for floating point precision
+      const needsPaymentAdjustment = costChanged && 
+        ['authorized', 'paid'].includes(booking.payment_status?.toLowerCase()) &&
+        ['stripe'].includes(booking.payment_method?.toLowerCase());
+
+      // If payment adjustment is needed, handle it first
+      if (needsPaymentAdjustment) {
+        toast({
+          title: "Adjusting Payment",
+          description: `Updating payment from £${originalCost} to £${newCost}...`,
+        });
+
+        try {
+          const { data: adjustmentData, error: adjustmentError } = await supabase.functions.invoke('stripe-adjust-payment-amount', {
+            body: {
+              bookingId: booking.id,
+              newAmount: newCost,
+              reason: `Booking updated: Cost changed from £${originalCost} to £${newCost}`
+            }
+          });
+
+          if (adjustmentError || !adjustmentData?.success) {
+            throw new Error(adjustmentData?.error || adjustmentError?.message || 'Payment adjustment failed');
+          }
+
+          toast({
+            title: "Payment Adjusted",
+            description: `Payment successfully updated to £${newCost}`,
+          });
+        } catch (paymentError) {
+          console.error('Payment adjustment failed:', paymentError);
+          toast({
+            title: "Payment Adjustment Failed",
+            description: paymentError.message || "Failed to adjust payment. Please try using the manual payment adjustment.",
+            variant: "destructive",
+          });
+          
+          // Don't proceed with booking update if payment adjustment failed
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Proceed with booking update
       const { error } = await supabase
         .from('bookings')
         .update({
@@ -167,7 +215,9 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
 
       toast({
         title: "Success",
-        description: "Booking updated successfully!",
+        description: needsPaymentAdjustment 
+          ? "Booking and payment updated successfully!" 
+          : "Booking updated successfully!",
       });
 
       onBookingUpdated();
@@ -441,6 +491,35 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                       </Select>
                     </div>
                   </div>
+                  
+                  {/* Payment Adjustment Alert */}
+                  {(() => {
+                    const originalCost = booking?.total_cost || 0;
+                    const newCost = formData.totalCost || 0;
+                    const costChanged = Math.abs(originalCost - newCost) > 0.01;
+                    const hasStripePayment = ['stripe'].includes(booking?.payment_method?.toLowerCase());
+                    const isPaymentAdjustable = ['authorized', 'paid'].includes(booking?.payment_status?.toLowerCase());
+                    
+                    if (costChanged && hasStripePayment && isPaymentAdjustable) {
+                      const difference = newCost - originalCost;
+                      const isIncrease = difference > 0;
+                      
+                      return (
+                        <Alert className={`mb-4 ${isIncrease ? 'border-orange-200 bg-orange-50' : 'border-blue-200 bg-blue-50'}`}>
+                          <AlertTriangle className="h-4 w-4" />
+                          <AlertDescription>
+                            <div className="font-medium mb-1">Payment will be automatically adjusted</div>
+                            <div className="text-sm">
+                              Cost change: £{originalCost.toFixed(2)} → £{newCost.toFixed(2)} ({isIncrease ? '+' : ''}£{difference.toFixed(2)})
+                              <br />
+                              The system will cancel the existing authorization and create a new one for £{newCost.toFixed(2)}.
+                            </div>
+                          </AlertDescription>
+                        </Alert>
+                      );
+                    }
+                    return null;
+                  })()}
                   
                   {/* Client Payment Details */}
                   <div className="mt-6 p-4 bg-purple-25 rounded-lg border border-purple-200">
