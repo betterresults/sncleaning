@@ -62,20 +62,20 @@ serve(async (req) => {
       invoiceId: booking.invoice_id 
     });
 
-    // Check if there's an existing authorization to cancel
-    if (booking.invoice_id && booking.payment_status === 'authorized') {
-      try {
-        logStep("Canceling existing payment intent", { paymentIntentId: booking.invoice_id });
-        
-        // Cancel the existing payment intent
-        await stripe.paymentIntents.cancel(booking.invoice_id);
-        logStep("Successfully canceled existing payment intent");
-        
-      } catch (cancelError) {
-        logStep("Warning: Could not cancel existing payment intent", { error: cancelError.message });
-        // Continue with creating new authorization even if cancel fails
-      }
+    // Calculate the difference amount - only authorize the additional amount needed
+    const currentAmount = booking.total_cost || 0;
+    const differenceAmount = newAmount - currentAmount;
+    
+    if (differenceAmount <= 0) {
+      throw new Error('New amount must be greater than current amount');
     }
+    
+    logStep("Authorizing additional amount only", { 
+      currentAmount, 
+      newAmount, 
+      differenceAmount,
+      existingPaymentIntent: booking.invoice_id 
+    });
 
     // Get customer's default payment method
     logStep("Fetching customer's default payment method");
@@ -116,9 +116,9 @@ serve(async (req) => {
 
     logStep("Default payment method found", { paymentMethodId: paymentMethods.stripe_payment_method_id });
 
-    // Create new payment intent for the adjusted amount
+    // Create payment intent for the difference amount only
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(newAmount * 100), // Convert to cents
+      amount: Math.round(differenceAmount * 100), // Convert to cents
       currency: 'gbp',
       customer: paymentMethods.stripe_customer_id,
       payment_method: paymentMethods.stripe_payment_method_id,
@@ -128,30 +128,27 @@ serve(async (req) => {
       return_url: 'https://your-return-url.com', // Required for some payment methods
       metadata: {
         booking_id: bookingId.toString(),
-        adjustment_reason: reason || 'Amount adjustment',
+        adjustment_reason: reason || 'Additional amount authorization',
         original_amount: booking.total_cost?.toString() || '0',
-        new_amount: newAmount.toString()
+        additional_amount: differenceAmount.toString(),
+        new_total: newAmount.toString()
       }
     });
 
-    logStep("New payment intent created", { 
+    logStep("Additional payment intent created", { 
       paymentIntentId: paymentIntent.id,
       status: paymentIntent.status,
-      amount: paymentIntent.amount 
+      amount: paymentIntent.amount,
+      differenceAmount
     });
 
-    // Update booking with new payment details
+    // Update booking with new total cost and additional payment info
     const updateData = {
       total_cost: newAmount,
-      invoice_id: paymentIntent.id,
-      payment_status: paymentIntent.status === 'requires_capture' ? 'authorized' : paymentIntent.status,
-      updated_at: new Date().toISOString()
+      // Keep original invoice_id but add additional payment details
+      additional_details: (booking.additional_details || '') + 
+        `\n\nAdditional payment authorized: £${differenceAmount} (${booking.invoice_id ? 'Original: ' + booking.invoice_id + ', ' : ''}Additional: ${paymentIntent.id}). Total: £${currentAmount} → £${newAmount}${reason ? '. Reason: ' + reason : ''}`
     };
-
-    if (reason) {
-      updateData.additional_details = (booking.additional_details || '') + 
-        `\n\nPayment amount adjusted: £${booking.total_cost || 0} → £${newAmount}. Reason: ${reason}`;
-    }
 
     const { error: updateError } = await supabase
       .from('bookings')
