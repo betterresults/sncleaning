@@ -173,6 +173,7 @@ serve(async (req) => {
           payment_method: selectedPaymentMethod.stripe_payment_method_id,
           capture_method: 'manual',
           confirm: 'true',
+          return_url: `${req.headers.get("origin") || "https://your-domain.com"}/payment-return`, // Required for 3D Secure
           description: `Authorization for booking ${bookingId}`,
         }),
       })
@@ -183,8 +184,14 @@ serve(async (req) => {
         throw new Error(`Authorization failed: ${paymentIntent.error.message}`)
       }
 
-      // Check if payment intent is in the correct status for authorization
-      if (paymentIntent.status !== 'requires_capture') {
+      // Handle different payment statuses - including 3D Secure requirements
+      if (paymentIntent.status === 'requires_action') {
+        throw new Error(`Payment requires additional authentication. Please ask the customer to complete 3D Secure verification. Payment Intent: ${paymentIntent.id}`)
+      } else if (paymentIntent.status === 'requires_payment_method') {
+        throw new Error(`Payment method was declined. Please ask the customer to add a different payment method.`)
+      } else if (paymentIntent.status === 'processing') {
+        throw new Error(`Payment is still processing. Please wait a few minutes and try again. Payment Intent: ${paymentIntent.id}`)
+      } else if (paymentIntent.status !== 'requires_capture') {
         throw new Error(`Authorization incomplete: Payment status is ${paymentIntent.status}. Expected 'requires_capture' but got '${paymentIntent.status}'. This usually means the customer's card was declined or requires additional verification.`)
       }
 
@@ -280,6 +287,7 @@ serve(async (req) => {
             payment_method: selectedPaymentMethod.stripe_payment_method_id,
             capture_method: 'automatic',
             confirm: 'true',
+            return_url: `${req.headers.get("origin") || "https://your-domain.com"}/payment-return`, // Required for 3D Secure
             description: `Payment for booking ${bookingId}`,
           }),
         })
@@ -290,8 +298,14 @@ serve(async (req) => {
           throw new Error(`Payment failed: ${paymentIntent.error.message}`)
         }
 
-        // Check if payment was actually successful
-        if (paymentIntent.status !== 'succeeded') {
+        // Handle different payment statuses including 3D Secure and processing states
+        if (paymentIntent.status === 'requires_action') {
+          throw new Error(`Payment requires additional authentication. Please ask the customer to complete 3D Secure verification. Payment Intent: ${paymentIntent.id}`)
+        } else if (paymentIntent.status === 'requires_payment_method') {
+          throw new Error(`Payment method was declined. Please ask the customer to add a different payment method.`)
+        } else if (paymentIntent.status === 'processing') {
+          throw new Error(`Payment is still processing. Please wait a few minutes and check again. Payment Intent: ${paymentIntent.id}`)
+        } else if (paymentIntent.status !== 'succeeded') {
           throw new Error(`Payment incomplete: Payment status is ${paymentIntent.status}. Expected 'succeeded' but got '${paymentIntent.status}'. This usually means the customer's card was declined or requires additional verification.`)
         }
 
@@ -339,6 +353,7 @@ serve(async (req) => {
           payment_method: selectedPaymentMethod.stripe_payment_method_id,
           capture_method: 'automatic',
           confirm: 'true',
+          return_url: `${req.headers.get("origin") || "https://your-domain.com"}/payment-return`, // Required for 3D Secure
           description: `Retry payment for booking ${bookingId}`,
         }),
       })
@@ -362,8 +377,53 @@ serve(async (req) => {
         throw new Error(`Retry failed: ${paymentIntent.error.message}`)
       }
 
-      // Check if retry payment was actually successful
-      if (paymentIntent.status !== 'succeeded') {
+      // Handle different payment statuses including 3D Secure and processing states
+      if (paymentIntent.status === 'requires_action') {
+        // Update booking status to indicate action required
+        if (isUpcoming) {
+          await supabaseClient
+            .from('bookings')
+            .update({ payment_status: 'requires_action' })
+            .eq('id', bookingId)
+        } else if (isPast) {
+          await supabaseClient
+            .from('past_bookings')
+            .update({ payment_status: 'requires_action' })
+            .eq('id', bookingId)
+        }
+
+        throw new Error(`Payment requires additional authentication. Please ask the customer to complete 3D Secure verification. Payment Intent: ${paymentIntent.id}`)
+      } else if (paymentIntent.status === 'requires_payment_method') {
+        // Update booking status to failed in correct table
+        if (isUpcoming) {
+          await supabaseClient
+            .from('bookings')
+            .update({ payment_status: 'failed' })
+            .eq('id', bookingId)
+        } else if (isPast) {
+          await supabaseClient
+            .from('past_bookings')
+            .update({ payment_status: 'failed' })
+            .eq('id', bookingId)
+        }
+
+        throw new Error(`Payment method was declined. Please ask the customer to add a different payment method.`)
+      } else if (paymentIntent.status === 'processing') {
+        // Update booking status to processing
+        if (isUpcoming) {
+          await supabaseClient
+            .from('bookings')
+            .update({ payment_status: 'processing' })
+            .eq('id', bookingId)
+        } else if (isPast) {
+          await supabaseClient
+            .from('past_bookings')
+            .update({ payment_status: 'processing' })
+            .eq('id', bookingId)
+        }
+
+        throw new Error(`Payment is still processing. Please wait a few minutes and check again. Payment Intent: ${paymentIntent.id}`)
+      } else if (paymentIntent.status !== 'succeeded') {
         // Update booking status to failed in correct table
         if (isUpcoming) {
           await supabaseClient
