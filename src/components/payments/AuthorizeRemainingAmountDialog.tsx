@@ -27,21 +27,47 @@ export function AuthorizeRemainingAmountDialog({ booking, onSuccess }: Authorize
   // Calculate remaining amount from additional_details
   const getAuthorizedAmounts = () => {
     const details = booking.additional_details || '';
-    const matches = details.match(/Additional payment authorized: £([\d.]+)/);
-    const authorizedAmount = matches ? parseFloat(matches[1]) : 0;
+    
+    // Look for different patterns of partial authorization
+    let authorizedAmount = 0;
+    
+    // Pattern 1: "Additional payment authorized: £X.XX"
+    const additionalPaymentMatch = details.match(/Additional payment authorized: £([\d.]+)/);
+    if (additionalPaymentMatch) {
+      authorizedAmount = parseFloat(additionalPaymentMatch[1]);
+    }
+    
+    // Pattern 2: "Partial authorization: £X.XX of £Y.YY"
+    const partialAuthMatch = details.match(/Partial authorization: £([\d.]+) of £[\d.]+/);
+    if (partialAuthMatch) {
+      authorizedAmount = parseFloat(partialAuthMatch[1]);
+    }
+    
+    // If no patterns match but payment status suggests partial auth, show a warning
+    if (authorizedAmount === 0 && (booking.payment_status === 'partially_authorized' || 
+        booking.payment_status === 'authorized')) {
+      // For now, assume a partial authorization if status is authorized but we want to check
+      // This allows manual review of potentially partial authorizations
+    }
+    
     const remainingAmount = booking.total_cost - authorizedAmount;
     
     return {
       authorizedAmount,
       remainingAmount,
-      totalAmount: booking.total_cost
+      totalAmount: booking.total_cost,
+      hasPartialInfo: authorizedAmount > 0
     };
   };
 
-  const { authorizedAmount, remainingAmount, totalAmount } = getAuthorizedAmounts();
+  const { authorizedAmount, remainingAmount, totalAmount, hasPartialInfo } = getAuthorizedAmounts();
 
-  // Only show if there's a remaining amount to authorize
-  const hasRemainingAmount = remainingAmount > 0 && booking.payment_status === 'partially_authorized';
+  // Show if there's evidence of partial authorization OR if payment is authorized but we suspect it might be partial
+  const hasRemainingAmount = (
+    (hasPartialInfo && remainingAmount > 0) || 
+    (booking.payment_status === 'partially_authorized') ||
+    (booking.payment_status === 'authorized' && authorizedAmount === 0 && booking.total_cost > 100) // Show for manual check on larger amounts
+  );
 
   const handleAuthorizeRemaining = async () => {
     if (remainingAmount <= 0) {
@@ -119,9 +145,14 @@ export function AuthorizeRemainingAmountDialog({ booking, onSuccess }: Authorize
             <div className="flex items-start gap-2">
               <AlertTriangle className="h-5 w-5 text-orange-500 mt-0.5" />
               <div>
-                <h4 className="font-medium text-orange-800">Partial Authorization Detected</h4>
+                <h4 className="font-medium text-orange-800">
+                  {hasPartialInfo ? 'Partial Authorization Detected' : 'Check Authorization Amount'}
+                </h4>
                 <p className="text-sm text-orange-700 mt-1">
-                  This booking has only partial payment authorization. Complete the full authorization to process the booking.
+                  {hasPartialInfo 
+                    ? 'This booking has only partial payment authorization. Complete the full authorization to process the booking.'
+                    : 'Please verify if the full amount is authorized. If only partial, use this to authorize the remaining amount.'
+                  }
                 </p>
               </div>
             </div>
@@ -136,11 +167,15 @@ export function AuthorizeRemainingAmountDialog({ booking, onSuccess }: Authorize
               </div>
               <div className="flex justify-between">
                 <span>Currently Authorized:</span>
-                <span className="text-green-600 font-medium">£{authorizedAmount.toFixed(2)}</span>
+                <span className="text-green-600 font-medium">
+                  £{hasPartialInfo ? authorizedAmount.toFixed(2) : '? (Please verify)'}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Remaining to Authorize:</span>
-                <span className="text-orange-600 font-medium">£{remainingAmount.toFixed(2)}</span>
+                <span className="text-orange-600 font-medium">
+                  £{hasPartialInfo ? remainingAmount.toFixed(2) : totalAmount.toFixed(2)}
+                </span>
               </div>
               <hr className="my-2" />
               <div className="flex justify-between font-medium">
@@ -151,7 +186,8 @@ export function AuthorizeRemainingAmountDialog({ booking, onSuccess }: Authorize
           </div>
 
           <p className="text-sm text-gray-600">
-            This will create an additional authorization for £{remainingAmount.toFixed(2)} to complete the full payment authorization.
+            This will create an additional authorization for £{hasPartialInfo ? remainingAmount.toFixed(2) : totalAmount.toFixed(2)} 
+            {hasPartialInfo ? ' to complete the full payment authorization.' : ' (full amount - adjust if only partial authorization needed).'}
           </p>
 
           <div className="flex gap-2 pt-4">
