@@ -1,5 +1,8 @@
 project_id = "dkomihipebixlegygnoy"
 
+[functions.stripe-adjust-payment-amount]
+verify_jwt = true
+
 [functions.send-photo-notification]
 verify_jwt = false
 

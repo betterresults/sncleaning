@@ -79,7 +79,7 @@ serve(async (req) => {
 
     // Get customer's default payment method
     logStep("Fetching customer's default payment method");
-    const { data: paymentMethods, error: pmError } = await supabase
+    let { data: paymentMethods, error: pmError } = await supabase
       .from('customer_payment_methods')
       .select('*')
       .eq('customer_id', booking.customer)
@@ -87,7 +87,31 @@ serve(async (req) => {
       .single();
 
     if (pmError || !paymentMethods) {
-      throw new Error('No default payment method found for customer');
+      logStep("No default payment method found", { 
+        customerId: booking.customer, 
+        error: pmError?.message,
+        searchQuery: `customer_id = ${booking.customer} AND is_default = true`
+      });
+      
+      // Try to get any payment method for this customer
+      const { data: anyPaymentMethod, error: anyPmError } = await supabase
+        .from('customer_payment_methods')
+        .select('*')
+        .eq('customer_id', booking.customer)
+        .limit(1)
+        .single();
+        
+      if (anyPmError || !anyPaymentMethod) {
+        logStep("No payment methods found at all for customer", { 
+          customerId: booking.customer,
+          anyPmError: anyPmError?.message 
+        });
+        throw new Error(`No payment methods found for customer ID ${booking.customer}. Please add a payment method first.`);
+      } else {
+        logStep("Found non-default payment method, using it", { paymentMethodId: anyPaymentMethod.stripe_payment_method_id });
+        // Use the non-default payment method
+        paymentMethods = anyPaymentMethod;
+      }
     }
 
     logStep("Default payment method found", { paymentMethodId: paymentMethods.stripe_payment_method_id });

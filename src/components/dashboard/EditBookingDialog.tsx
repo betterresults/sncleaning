@@ -154,7 +154,9 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
           });
 
           if (adjustmentError || !adjustmentData?.success) {
-            throw new Error(adjustmentData?.error || adjustmentError?.message || 'Payment adjustment failed');
+            const errorMessage = adjustmentData?.error || adjustmentError?.message || 'Payment adjustment failed';
+            console.error('Payment adjustment details:', { adjustmentError, adjustmentData });
+            throw new Error(errorMessage);
           }
 
           toast({
