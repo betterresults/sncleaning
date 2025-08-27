@@ -183,6 +183,11 @@ serve(async (req) => {
         throw new Error(`Authorization failed: ${paymentIntent.error.message}`)
       }
 
+      // Check if payment intent is in the correct status for authorization
+      if (paymentIntent.status !== 'requires_capture') {
+        throw new Error(`Authorization incomplete: Payment status is ${paymentIntent.status}. Expected 'requires_capture' but got '${paymentIntent.status}'. This usually means the customer's card was declined or requires additional verification.`)
+      }
+
       // Update booking with payment intent ID and status in correct table
       if (isUpcoming) {
         await supabaseClient
@@ -228,6 +233,11 @@ serve(async (req) => {
 
         if (captureResult.error) {
           throw new Error(`Capture failed: ${captureResult.error.message}`)
+        }
+
+        // Check if capture was actually successful
+        if (captureResult.status !== 'succeeded') {
+          throw new Error(`Capture incomplete: Payment status is ${captureResult.status}. Expected 'succeeded' but got '${captureResult.status}'. This usually means the payment was declined or is still processing.`)
         }
 
         // Update payment status in correct table - clear any partial authorization details
@@ -278,6 +288,11 @@ serve(async (req) => {
 
         if (paymentIntent.error) {
           throw new Error(`Payment failed: ${paymentIntent.error.message}`)
+        }
+
+        // Check if payment was actually successful
+        if (paymentIntent.status !== 'succeeded') {
+          throw new Error(`Payment incomplete: Payment status is ${paymentIntent.status}. Expected 'succeeded' but got '${paymentIntent.status}'. This usually means the customer's card was declined or requires additional verification.`)
         }
 
         // Update payment status in correct table - clear any partial authorization details
@@ -345,6 +360,24 @@ serve(async (req) => {
         }
 
         throw new Error(`Retry failed: ${paymentIntent.error.message}`)
+      }
+
+      // Check if retry payment was actually successful
+      if (paymentIntent.status !== 'succeeded') {
+        // Update booking status to failed in correct table
+        if (isUpcoming) {
+          await supabaseClient
+            .from('bookings')
+            .update({ payment_status: 'failed' })
+            .eq('id', bookingId)
+        } else if (isPast) {
+          await supabaseClient
+            .from('past_bookings')
+            .update({ payment_status: 'failed' })
+            .eq('id', bookingId)
+        }
+
+        throw new Error(`Retry incomplete: Payment status is ${paymentIntent.status}. Expected 'succeeded' but got '${paymentIntent.status}'. This usually means the customer's card was declined or requires additional verification.`)
       }
 
       // Update payment status in correct table
