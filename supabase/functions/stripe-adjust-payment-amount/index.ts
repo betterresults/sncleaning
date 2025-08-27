@@ -67,7 +67,14 @@ serve(async (req) => {
     const differenceAmount = newAmount - currentAmount;
     
     if (differenceAmount <= 0) {
-      throw new Error('New amount must be greater than current amount');
+      throw new Error('New amount must be greater than current amount. Current: £' + currentAmount + ', New: £' + newAmount);
+    }
+
+    // Check if we already have an additional authorization for this booking
+    const existingAdjustments = (booking.additional_details || '').includes('Additional payment authorized');
+    if (existingAdjustments) {
+      logStep("Additional authorization already exists", { bookingId, additionalDetails: booking.additional_details });
+      throw new Error('This booking already has payment adjustments. Please contact support to modify further.');
     }
     
     logStep("Authorizing additional amount only", { 
