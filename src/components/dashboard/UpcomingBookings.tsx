@@ -20,6 +20,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { AuthorizeRemainingAmountDialog } from '@/components/payments/AuthorizeRemainingAmountDialog';
 
 import BulkEditBookingsDialog from './BulkEditBookingsDialog';
 import EditBookingDialog from './EditBookingDialog';
@@ -45,6 +46,7 @@ interface Booking {
   customer: number;
   cleaner_pay: number | null;
   total_hours: number | null;
+  additional_details?: string;
   cleaners?: {
     id: number;
     first_name: string;
@@ -833,16 +835,24 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center space-x-2">
-                              <PaymentStatusIndicator 
-                                status={booking.payment_status} 
-                                isClickable={true}
-                                onClick={() => handlePaymentAction(booking)}
-                                size="sm"
+                            <div className="space-y-2">
+                              <div className="flex items-center space-x-2">
+                                <PaymentStatusIndicator 
+                                  status={booking.payment_status} 
+                                  isClickable={true}
+                                  onClick={() => handlePaymentAction(booking)}
+                                  size="sm"
+                                />
+                                <span className="font-semibold text-base">
+                                  £{booking.total_cost?.toFixed(2) || '0.00'}
+                                </span>
+                              </div>
+                              
+                              {/* Show AuthorizeRemainingAmountDialog for partially authorized bookings */}
+                              <AuthorizeRemainingAmountDialog
+                                booking={booking}
+                                onSuccess={fetchData}
                               />
-                              <span className="font-semibold text-base">
-                                £{booking.total_cost?.toFixed(2) || '0.00'}
-                              </span>
                             </div>
                           </TableCell>
                           <TableCell>
