@@ -168,11 +168,11 @@ export function AuthorizeRemainingAmountDialog({ booking, onSuccess }: Authorize
               <div className="flex justify-between">
                 <span>Currently Authorized:</span>
                 <span className="text-green-600 font-medium">
-                  £{hasPartialInfo ? authorizedAmount.toFixed(2) : '? (Please verify)'}
+                  £{hasPartialInfo ? authorizedAmount.toFixed(2) : '0.00 (assumed)'}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Remaining to Authorize:</span>
+                <span>Amount to Authorize:</span>
                 <span className="text-orange-600 font-medium">
                   £{hasPartialInfo ? remainingAmount.toFixed(2) : totalAmount.toFixed(2)}
                 </span>
@@ -183,11 +183,23 @@ export function AuthorizeRemainingAmountDialog({ booking, onSuccess }: Authorize
                 <span>£{totalAmount.toFixed(2)}</span>
               </div>
             </div>
+            
+            {!hasPartialInfo && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
+                <p className="text-blue-800 font-medium mb-1">💡 How to verify current authorization:</p>
+                <p className="text-blue-700 text-xs">
+                  1. Check your Stripe Dashboard → Payments<br/>
+                  2. Search for customer "{booking.first_name} {booking.last_name}"<br/>
+                  3. Look for today's payment intent<br/>
+                  4. If partially authorized, use this button to authorize the remaining amount
+                </p>
+              </div>
+            )}
           </div>
 
           <p className="text-sm text-gray-600">
-            This will create an additional authorization for £{hasPartialInfo ? remainingAmount.toFixed(2) : totalAmount.toFixed(2)} 
-            {hasPartialInfo ? ' to complete the full payment authorization.' : ' (full amount - adjust if only partial authorization needed).'}
+            This will create an additional authorization for £{hasPartialInfo ? remainingAmount.toFixed(2) : totalAmount.toFixed(2)}.
+            {!hasPartialInfo && ' If the full amount is already authorized, this will create a duplicate authorization.'}
           </p>
 
           <div className="flex gap-2 pt-4">
