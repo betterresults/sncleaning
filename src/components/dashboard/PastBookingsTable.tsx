@@ -1016,12 +1016,20 @@ const PastBookingsTable = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <PaymentStatusIndicator 
-                            status={booking.payment_status || 'unpaid'} 
-                            isClickable={true}
-                            onClick={() => handlePaymentAction(booking)}
-                            size="md"
-                          />
+                          <div className="flex items-center space-x-2">
+                            <PaymentStatusIndicator 
+                              status={booking.payment_status || 'unpaid'} 
+                              isClickable={true}
+                              onClick={() => handlePaymentAction(booking)}
+                              size="md"
+                            />
+                            <span className="font-semibold text-base">
+                              £{typeof booking.total_cost === 'string' 
+                                ? parseFloat(booking.total_cost || '0').toFixed(2)
+                                : ((booking.total_cost as number) || 0).toFixed(2)
+                              }
+                            </span>
+                          </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex justify-center">
