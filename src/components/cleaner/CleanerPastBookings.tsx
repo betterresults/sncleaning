@@ -9,8 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
-import { CalendarDays, MapPin, User, Banknote, Search, Filter, X, Upload } from 'lucide-react';
+import { CalendarDays, MapPin, User, Banknote, Search, Filter, X, Upload, CreditCard, Send, Plus } from 'lucide-react';
 import CleaningPhotosUploadDialog from './CleaningPhotosUploadDialog';
+import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
+import { AdjustPaymentAmountDialog } from '@/components/payments/AdjustPaymentAmountDialog';
+import { CollectPaymentMethodDialog } from '@/components/payments/CollectPaymentMethodDialog';
 
 interface PastBooking {
   id: number;
@@ -63,6 +66,10 @@ const CleanerPastBookings = () => {
   });
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedBookingForUpload, setSelectedBookingForUpload] = useState<PastBooking | null>(null);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [adjustPaymentDialogOpen, setAdjustPaymentDialogOpen] = useState(false);
+  const [collectPaymentDialogOpen, setCollectPaymentDialogOpen] = useState(false);
+  const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<PastBooking | null>(null);
 
   const getTimePeriodDates = (period: string) => {
     const now = new Date();
@@ -146,6 +153,21 @@ const CleanerPastBookings = () => {
       customer: booking.customer || 0
     });
     setUploadDialogOpen(true);
+  };
+
+  const handlePaymentAction = (booking: PastBooking) => {
+    setSelectedBookingForPayment(booking);
+    setPaymentDialogOpen(true);
+  };
+
+  const handleAdjustPayment = (booking: PastBooking) => {
+    setSelectedBookingForPayment(booking);
+    setAdjustPaymentDialogOpen(true);
+  };
+
+  const handleCollectPayment = (booking: PastBooking) => {
+    setSelectedBookingForPayment(booking);
+    setCollectPaymentDialogOpen(true);
   };
 
   const fetchPastBookings = async () => {
@@ -254,15 +276,27 @@ const CleanerPastBookings = () => {
           </a>
         </div>
         
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleUploadPhotos(booking)}
-          className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/30 sm:ml-4"
-        >
-          <Upload className="h-4 w-4" />
-          <span className="ml-1 hidden sm:inline">Upload Photos</span>
-        </Button>
+        <div className="flex gap-2 sm:ml-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleUploadPhotos(booking)}
+            className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/30"
+          >
+            <Upload className="h-4 w-4" />
+            <span className="ml-1 hidden sm:inline">Photos</span>
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePaymentAction(booking)}
+            className="bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 border-green-200 hover:border-green-300"
+          >
+            <CreditCard className="h-4 w-4" />
+            <span className="ml-1 hidden sm:inline">Payment</span>
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -452,6 +486,58 @@ const CleanerPastBookings = () => {
             date_time: selectedBookingForUpload.date_time
           }}
         />
+      )}
+
+      {/* Payment Management Dialogs */}
+      {selectedBookingForPayment && (
+        <>
+          <ManualPaymentDialog
+            isOpen={paymentDialogOpen}
+            onClose={() => setPaymentDialogOpen(false)}
+            booking={{
+              id: selectedBookingForPayment.id,
+              customer: selectedBookingForPayment.customer || 0,
+              first_name: selectedBookingForPayment.first_name,
+              last_name: selectedBookingForPayment.last_name,
+              email: selectedBookingForPayment.email,
+              total_cost: parseFloat(selectedBookingForPayment.total_cost) || 0,
+              payment_status: selectedBookingForPayment.payment_status || 'unpaid',
+              date_time: selectedBookingForPayment.date_time,
+              address: selectedBookingForPayment.address
+            }}
+            onSuccess={() => {
+              fetchPastBookings();
+              setPaymentDialogOpen(false);
+            }}
+          />
+
+          <AdjustPaymentAmountDialog
+            isOpen={adjustPaymentDialogOpen}
+            onClose={() => setAdjustPaymentDialogOpen(false)}
+            booking={{
+              id: selectedBookingForPayment.id,
+              total_cost: parseFloat(selectedBookingForPayment.total_cost) || 0,
+              payment_status: selectedBookingForPayment.payment_status || 'unpaid',
+              first_name: selectedBookingForPayment.first_name,
+              last_name: selectedBookingForPayment.last_name
+            }}
+            onSuccess={() => {
+              fetchPastBookings();
+              setAdjustPaymentDialogOpen(false);
+            }}
+          />
+
+          <CollectPaymentMethodDialog
+            open={collectPaymentDialogOpen}
+            onOpenChange={setCollectPaymentDialogOpen}
+            customer={{
+              id: selectedBookingForPayment.customer || 0,
+              email: selectedBookingForPayment.email,
+              first_name: selectedBookingForPayment.first_name,
+              last_name: selectedBookingForPayment.last_name
+            }}
+          />
+        </>
       )}
     </div>
   );

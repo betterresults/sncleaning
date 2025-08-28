@@ -9,6 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import BookingCard from '@/components/booking/BookingCard';
 import CleaningPhotosViewDialog from './CleaningPhotosViewDialog';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
+import { AdjustPaymentAmountDialog } from '@/components/payments/AdjustPaymentAmountDialog';
+import { CollectPaymentMethodDialog } from '@/components/payments/CollectPaymentMethodDialog';
 import EditBookingDialog from './EditBookingDialog';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -54,6 +56,8 @@ const CustomerPastBookings = () => {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewText, setReviewText] = useState('');
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [adjustPaymentDialogOpen, setAdjustPaymentDialogOpen] = useState(false);
+  const [collectPaymentDialogOpen, setCollectPaymentDialogOpen] = useState(false);
   const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<PastBooking | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<PastBooking | null>(null);
@@ -393,6 +397,16 @@ const CustomerPastBookings = () => {
   const handlePaymentAction = (booking: PastBooking) => {
     setSelectedBookingForPayment(booking);
     setPaymentDialogOpen(true);
+  };
+
+  const handleAdjustPayment = (booking: PastBooking) => {
+    setSelectedBookingForPayment(booking);
+    setAdjustPaymentDialogOpen(true);
+  };
+
+  const handleCollectPayment = (booking: PastBooking) => {
+    setSelectedBookingForPayment(booking);
+    setCollectPaymentDialogOpen(true);
   };
 
   const handleEdit = (booking: PastBooking) => {

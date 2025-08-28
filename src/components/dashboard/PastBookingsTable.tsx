@@ -9,13 +9,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Edit, Trash2, Copy, Filter, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail, Banknote, CheckCircle, XCircle, AlertCircle, X, Edit3, Repeat, Camera } from 'lucide-react';
+import { Edit, Trash2, Copy, Filter, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail, Banknote, CheckCircle, XCircle, AlertCircle, X, Edit3, Repeat, Camera, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import BulkEditPastBookingsDialog from './BulkEditPastBookingsDialog';
 import ConvertToRecurringDialog from './ConvertToRecurringDialog';
 import EditPastBookingDialog from './EditPastBookingDialog';
 import PhotoManagementDialog from './PhotoManagementDialog';
+import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
+import { AdjustPaymentAmountDialog } from '@/components/payments/AdjustPaymentAmountDialog';
+import { CollectPaymentMethodDialog } from '@/components/payments/CollectPaymentMethodDialog';
 
 interface PastBooking {
   id: number;
@@ -101,6 +104,10 @@ const PastBookingsTable = () => {
   const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<PastBooking | null>(null);
   const [photoManagementOpen, setPhotoManagementOpen] = useState(false);
   const [selectedBookingForPhotos, setSelectedBookingForPhotos] = useState<PastBooking | null>(null);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [adjustPaymentDialogOpen, setAdjustPaymentDialogOpen] = useState(false);
+  const [collectPaymentDialogOpen, setCollectPaymentDialogOpen] = useState(false);
+  const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<PastBooking | null>(null);
 
   const getTimePeriodDates = (period: string) => {
     const now = new Date();
@@ -357,6 +364,21 @@ const PastBookingsTable = () => {
   const handleManagePhotos = (booking: PastBooking) => {
     setSelectedBookingForPhotos(booking);
     setPhotoManagementOpen(true);
+  };
+
+  const handlePaymentAction = (booking: PastBooking) => {
+    setSelectedBookingForPayment(booking);
+    setPaymentDialogOpen(true);
+  };
+
+  const handleAdjustPayment = (booking: PastBooking) => {
+    setSelectedBookingForPayment(booking);
+    setAdjustPaymentDialogOpen(true);
+  };
+
+  const handleCollectPayment = (booking: PastBooking) => {
+    setSelectedBookingForPayment(booking);
+    setCollectPaymentDialogOpen(true);
   };
 
   const confirmDelete = async () => {
@@ -785,6 +807,13 @@ const PastBookingsTable = () => {
                                 </DropdownMenuItem>
                                 <DropdownMenuItem 
                                   className="cursor-pointer"
+                                  onClick={() => handlePaymentAction(booking)}
+                                >
+                                  <CreditCard className="mr-2 h-4 w-4" />
+                                  Payment Actions
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="cursor-pointer"
                                   onClick={() => handleEdit(booking)}
                                 >
                                   <Edit className="mr-2 h-4 w-4" />
@@ -1020,6 +1049,13 @@ const PastBookingsTable = () => {
                                 </DropdownMenuItem>
                                 <DropdownMenuItem 
                                   className="cursor-pointer"
+                                  onClick={() => handlePaymentAction(booking)}
+                                >
+                                  <CreditCard className="mr-2 h-4 w-4" />
+                                  Payment Actions
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="cursor-pointer"
                                   onClick={() => handleEdit(booking)}
                                 >
                                   <Edit className="mr-2 h-4 w-4" />
@@ -1197,6 +1233,58 @@ const PastBookingsTable = () => {
           onOpenChange={setPhotoManagementOpen}
           booking={selectedBookingForPhotos}
         />
+      )}
+
+      {/* Payment Management Dialogs */}
+      {selectedBookingForPayment && (
+        <>
+          <ManualPaymentDialog
+            isOpen={paymentDialogOpen}
+            onClose={() => setPaymentDialogOpen(false)}
+            booking={{
+              id: selectedBookingForPayment.id,
+              customer: selectedBookingForPayment.customer,
+              first_name: selectedBookingForPayment.first_name,
+              last_name: selectedBookingForPayment.last_name,
+              email: selectedBookingForPayment.email,
+              total_cost: typeof selectedBookingForPayment.total_cost === 'string' ? parseFloat(selectedBookingForPayment.total_cost) : selectedBookingForPayment.total_cost,
+              payment_status: selectedBookingForPayment.payment_status,
+              date_time: selectedBookingForPayment.date_time,
+              address: selectedBookingForPayment.address
+            }}
+            onSuccess={() => {
+              fetchData();
+              setPaymentDialogOpen(false);
+            }}
+          />
+
+          <AdjustPaymentAmountDialog
+            isOpen={adjustPaymentDialogOpen}
+            onClose={() => setAdjustPaymentDialogOpen(false)}
+            booking={{
+              id: selectedBookingForPayment.id,
+              total_cost: typeof selectedBookingForPayment.total_cost === 'string' ? parseFloat(selectedBookingForPayment.total_cost) : selectedBookingForPayment.total_cost,
+              payment_status: selectedBookingForPayment.payment_status,
+              first_name: selectedBookingForPayment.first_name,
+              last_name: selectedBookingForPayment.last_name
+            }}
+            onSuccess={() => {
+              fetchData();
+              setAdjustPaymentDialogOpen(false);
+            }}
+          />
+
+          <CollectPaymentMethodDialog
+            open={collectPaymentDialogOpen}
+            onOpenChange={setCollectPaymentDialogOpen}
+            customer={{
+              id: selectedBookingForPayment.customer,
+              email: selectedBookingForPayment.email,
+              first_name: selectedBookingForPayment.first_name,
+              last_name: selectedBookingForPayment.last_name
+            }}
+          />
+        </>
       )}
     </div>
   );
