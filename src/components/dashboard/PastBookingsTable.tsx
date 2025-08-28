@@ -9,12 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Edit, Trash2, Copy, Filter, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail, Banknote, CheckCircle, XCircle, AlertCircle, X, Edit3, Repeat } from 'lucide-react';
+import { Edit, Trash2, Copy, Filter, Search, MoreHorizontal, CalendarDays, MapPin, Clock, User, Phone, Mail, Banknote, CheckCircle, XCircle, AlertCircle, X, Edit3, Repeat, Camera } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import BulkEditPastBookingsDialog from './BulkEditPastBookingsDialog';
 import ConvertToRecurringDialog from './ConvertToRecurringDialog';
 import EditPastBookingDialog from './EditPastBookingDialog';
+import PhotoManagementDialog from './PhotoManagementDialog';
 
 interface PastBooking {
   id: number;
@@ -35,6 +36,7 @@ interface PastBooking {
   total_hours: number;
   property_details: string;
   additional_details: string;
+  has_photos: boolean;
   cleaners?: {
     id: number;
     first_name: string;
@@ -97,6 +99,8 @@ const PastBookingsTable = () => {
   const [bookingToDelete, setBookingToDelete] = useState<number | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<PastBooking | null>(null);
+  const [photoManagementOpen, setPhotoManagementOpen] = useState(false);
+  const [selectedBookingForPhotos, setSelectedBookingForPhotos] = useState<PastBooking | null>(null);
 
   const getTimePeriodDates = (period: string) => {
     const now = new Date();
@@ -348,6 +352,11 @@ const PastBookingsTable = () => {
   const handleDelete = (bookingId: number) => {
     setBookingToDelete(bookingId);
     setDeleteDialogOpen(true);
+  };
+
+  const handleManagePhotos = (booking: PastBooking) => {
+    setSelectedBookingForPhotos(booking);
+    setPhotoManagementOpen(true);
   };
 
   const confirmDelete = async () => {
@@ -766,7 +775,14 @@ const PastBookingsTable = () => {
                                   <MoreHorizontal className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-40">
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem 
+                                  className="cursor-pointer"
+                                  onClick={() => handleManagePhotos(booking)}
+                                >
+                                  <Camera className="mr-2 h-4 w-4" />
+                                  {booking.has_photos ? 'Manage Photos' : 'Upload Photos'}
+                                </DropdownMenuItem>
                                 <DropdownMenuItem 
                                   className="cursor-pointer"
                                   onClick={() => handleEdit(booking)}
@@ -837,14 +853,34 @@ const PastBookingsTable = () => {
                             </div>
                           </div>
 
-                          {/* Cost and Payment Status */}
-                          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                            <div className="text-xs text-green-600 font-medium flex items-center">
-                              <Banknote className="h-3 w-3 mr-1" />
-                              Pay: £{cleanerInfo.pay.toFixed(2)}
-                            </div>
-                            {getPaymentStatusIcon(booking.payment_status, cost)}
-                          </div>
+          {/* Cost and Payment Status */}
+          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+            <div className="flex items-center gap-4">
+              <div className="text-xs text-green-600 font-medium flex items-center">
+                <Banknote className="h-3 w-3 mr-1" />
+                Pay: £{cleanerInfo.pay.toFixed(2)}
+              </div>
+              <div className="flex items-center">
+                {booking.has_photos ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleManagePhotos(booking)}
+                    className="text-green-600 hover:text-green-700 p-1 h-6"
+                  >
+                    <Camera className="h-4 w-4 mr-1" />
+                    <span className="text-xs">Photos</span>
+                  </Button>
+                ) : (
+                  <div className="flex items-center text-gray-400">
+                    <Camera className="h-3 w-3 mr-1" />
+                    <span className="text-xs">No photos</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            {getPaymentStatusIcon(booking.payment_status, cost)}
+          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -864,6 +900,7 @@ const PastBookingsTable = () => {
                   <TableHead className="font-semibold text-base">Address</TableHead>
                   <TableHead className="font-semibold text-base">Service</TableHead>
                   <TableHead className="font-semibold text-base">Cleaner</TableHead>
+                  <TableHead className="font-semibold text-base">Photos</TableHead>
                   <TableHead className="font-semibold text-base">Cost</TableHead>
                   <TableHead className="font-semibold text-center text-base">Actions</TableHead>
                 </TableRow>
@@ -871,7 +908,7 @@ const PastBookingsTable = () => {
               <TableBody>
                 {paginatedBookings.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-gray-500 text-base">
+                    <TableCell colSpan={8} className="text-center py-8 text-gray-500 text-base">
                       No past bookings found
                     </TableCell>
                   </TableRow>
@@ -943,6 +980,26 @@ const PastBookingsTable = () => {
                           </div>
                         </TableCell>
                         <TableCell>
+                          <div className="flex items-center justify-center">
+                            {booking.has_photos ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleManagePhotos(booking)}
+                                className="text-green-600 hover:text-green-700 p-1"
+                                title="Photos available - Click to manage"
+                              >
+                                <Camera className="h-5 w-5" />
+                              </Button>
+                            ) : (
+                              <div className="flex items-center text-gray-400" title="No photos uploaded">
+                                <Camera className="h-4 w-4" />
+                                <span className="text-xs ml-1">None</span>
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
                           {getPaymentStatusIcon(booking.payment_status, cost)}
                         </TableCell>
                         <TableCell>
@@ -953,7 +1010,14 @@ const PastBookingsTable = () => {
                                   <MoreHorizontal className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-40">
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem 
+                                  className="cursor-pointer"
+                                  onClick={() => handleManagePhotos(booking)}
+                                >
+                                  <Camera className="mr-2 h-4 w-4" />
+                                  {booking.has_photos ? 'Manage Photos' : 'Upload Photos'}
+                                </DropdownMenuItem>
                                 <DropdownMenuItem 
                                   className="cursor-pointer"
                                   onClick={() => handleEdit(booking)}
@@ -1125,6 +1189,15 @@ const PastBookingsTable = () => {
           setSelectedBookingForEdit(null);
         }}
       />
+
+      {/* Photo Management Dialog */}
+      {selectedBookingForPhotos && (
+        <PhotoManagementDialog
+          open={photoManagementOpen}
+          onOpenChange={setPhotoManagementOpen}
+          booking={selectedBookingForPhotos}
+        />
+      )}
     </div>
   );
 };
