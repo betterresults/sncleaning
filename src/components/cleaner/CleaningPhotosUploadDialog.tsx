@@ -25,6 +25,8 @@ interface CleaningPhotosUploadDialogProps {
 const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPhotosUploadDialogProps) => {
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState('');
+  const [uploadStep, setUploadStep] = useState('');
   const [beforeFiles, setBeforeFiles] = useState<File[]>([]);
   const [afterFiles, setAfterFiles] = useState<File[]>([]);
   const [additionalFiles, setAdditionalFiles] = useState<File[]>([]);
@@ -77,11 +79,15 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   };
 
   const uploadFiles = async (files: File[], photoType: 'before' | 'after' | 'additional') => {
+    const totalFiles = files.length;
+    setUploadStep(`Uploading ${photoType} photos...`);
+    
     const uploadPromises = files.map(async (file, index) => {
       const timestamp = Date.now();
       const fileName = `${timestamp}_${index}_${file.name}`;
       const filePath = `${folderPath}/${photoType}/${fileName}`;
 
+      setUploadProgress(`Uploading ${file.name} (${index + 1}/${totalFiles})`);
       console.log('Attempting to upload file:', { filePath, fileSize: file.size, fileType: file.type });
 
       // Upload to storage with detailed error logging
@@ -100,6 +106,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       }
 
       console.log('File uploaded successfully:', { filePath, uploadData });
+      setUploadProgress(`Saving ${file.name} metadata (${index + 1}/${totalFiles})`);
 
       // Save metadata to database with better error handling
       console.log('Saving photo metadata to database:', {
@@ -131,6 +138,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       }
 
       console.log('Photo metadata saved successfully for:', filePath);
+      setUploadProgress(`✓ ${file.name} completed`);
 
       return filePath;
     });
@@ -149,16 +157,26 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     }
 
     setUploading(true);
+    setUploadStep('Starting upload...');
+    setUploadProgress('Preparing files...');
 
     try {
-      const uploadPromises = [];
+      const totalFiles = beforeFiles.length + afterFiles.length + additionalFiles.length;
+      let completedFiles = 0;
+
+      const updateProgress = () => {
+        completedFiles++;
+        setUploadProgress(`Completed ${completedFiles}/${totalFiles} photos`);
+      };
 
       if (beforeFiles.length > 0) {
-        uploadPromises.push(uploadFiles(beforeFiles, 'before'));
+        await uploadFiles(beforeFiles, 'before');
+        completedFiles += beforeFiles.length;
       }
 
       if (afterFiles.length > 0) {
-        uploadPromises.push(uploadFiles(afterFiles, 'after'));
+        await uploadFiles(afterFiles, 'after');
+        completedFiles += afterFiles.length;
       }
 
       if (additionalFiles.length > 0) {
@@ -169,14 +187,18 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
             variant: 'destructive'
           });
           setUploading(false);
+          setUploadStep('');
+          setUploadProgress('');
           return;
         }
-        uploadPromises.push(uploadFiles(additionalFiles, 'additional'));
+        await uploadFiles(additionalFiles, 'additional');
+        completedFiles += additionalFiles.length;
       }
 
-      await Promise.all(uploadPromises);
-
       // Send customer notification about photos being ready
+      setUploadStep('Sending notification to customer...');
+      setUploadProgress('Almost done...');
+      
       try {
         const folderName = `${booking.id}_${booking.postcode}_${bookingDate}_${booking.customer}`;
         await supabase.functions.invoke('send-photo-notification', {
@@ -185,7 +207,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
             customer_id: booking.customer,
             cleaner_id: booking.cleaner,
             folder_name: folderName,
-            total_photos: beforeFiles.length + afterFiles.length + additionalFiles.length
+            total_photos: totalFiles
           }
         });
       } catch (notificationError) {
@@ -193,28 +215,44 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
         // Don't fail the upload if notification fails
       }
 
+      setUploadStep('Upload completed successfully!');
+      setUploadProgress(`✓ All ${totalFiles} photos uploaded`);
+
       toast({
         title: 'Photos Uploaded Successfully',
-        description: `Uploaded ${beforeFiles.length + afterFiles.length + additionalFiles.length} photos. Customer will be notified.`
+        description: `Uploaded ${totalFiles} photos. Customer will be notified.`
       });
 
-      // Reset form
-      setBeforeFiles([]);
-      setAfterFiles([]);
-      setAdditionalFiles([]);
-      setAdditionalDetails('');
-      setShowAdditionalTab(false);
-      onOpenChange(false);
+      // Reset form after a short delay
+      setTimeout(() => {
+        setBeforeFiles([]);
+        setAfterFiles([]);
+        setAdditionalFiles([]);
+        setAdditionalDetails('');
+        setShowAdditionalTab(false);
+        setUploadStep('');
+        setUploadProgress('');
+        onOpenChange(false);
+      }, 2000);
 
     } catch (error) {
       console.error('Upload error:', error);
+      setUploadStep('Upload failed');
+      setUploadProgress('Please try again');
+      
       toast({
         title: 'Upload Failed',
-        description: 'Failed to upload photos. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to upload photos. Please try again.',
         variant: 'destructive'
       });
     } finally {
-      setUploading(false);
+      setTimeout(() => {
+        setUploading(false);
+        if (!uploading) {
+          setUploadStep('');
+          setUploadProgress('');
+        }
+      }, 2000);
     }
   };
 
@@ -389,10 +427,28 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
           </Tabs>
         </div>
 
+        {/* Upload Progress Indicator */}
+        {uploading && (
+          <div className="flex-shrink-0 bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-blue-800 truncate">
+                  {uploadStep}
+                </p>
+                <p className="text-xs text-blue-600 truncate">
+                  {uploadProgress}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex-shrink-0 flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t mt-4">
           <Button 
             variant="outline" 
             onClick={() => onOpenChange(false)}
+            disabled={uploading}
             className="w-full sm:w-auto py-3 sm:py-2 text-sm sm:text-base"
           >
             Cancel
@@ -402,7 +458,14 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
             disabled={uploading}
             className="w-full sm:w-auto py-3 sm:py-2 text-sm sm:text-base"
           >
-            {uploading ? 'Uploading...' : 'Upload Photos'}
+            {uploading ? (
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span>Uploading...</span>
+              </div>
+            ) : (
+              'Upload Photos'
+            )}
           </Button>
         </div>
       </DialogContent>
