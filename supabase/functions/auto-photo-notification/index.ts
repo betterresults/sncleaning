@@ -40,62 +40,69 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // Check if notification already sent for this booking
-    const { data: existingNotification } = await supabase
+    // Try to create notification record (will fail if already exists due to unique constraint)
+    const { data: existingNotification, error: insertError } = await supabase
       .from('photo_completion_notifications')
-      .select('*')
-      .eq('booking_id', booking_id)
+      .insert({
+        booking_id,
+        email_sent: false,
+        notification_sent_at: new Date().toISOString()
+      })
+      .select()
       .single();
 
-    if (existingNotification) {
-      console.log('Notification already exists for booking:', booking_id);
+    if (insertError && insertError.code === '23505') {
+      // Unique constraint violation - notification already exists
+      console.log('Notification already exists for booking:', booking_id, '- checking status');
       
-      if (existingNotification.email_sent) {
+      const { data: existing } = await supabase
+        .from('photo_completion_notifications')
+        .select('*')
+        .eq('booking_id', booking_id)
+        .single();
+
+      if (existing?.email_sent) {
         console.log('Email already sent for booking:', booking_id);
         return new Response(JSON.stringify({ message: 'Email already sent for this booking' }), {
           status: 200,
           headers: { "Content-Type": "application/json", ...corsHeaders },
         });
       }
-      
+
       // Check if 15 minutes have passed since first upload
-      const firstUploadTime = new Date(existingNotification.created_at);
-      const now = new Date();
-      const timeDiffMinutes = (now.getTime() - firstUploadTime.getTime()) / (1000 * 60);
-      
-      console.log('Time since first upload:', timeDiffMinutes, 'minutes');
-      
-      if (timeDiffMinutes >= 15) {
-        // Send the consolidated notification
-        await sendConsolidatedNotification(supabase, booking_id, postcode, booking_date);
+      if (existing) {
+        const firstUploadTime = new Date(existing.created_at);
+        const now = new Date();
+        const timeDiffMinutes = (now.getTime() - firstUploadTime.getTime()) / (1000 * 60);
         
-        // Mark as sent
-        await supabase
-          .from('photo_completion_notifications')
-          .update({
-            email_sent: true,
-            notification_sent_at: new Date().toISOString()
-          })
-          .eq('booking_id', booking_id);
+        console.log('Time since first upload:', timeDiffMinutes, 'minutes');
+        
+        if (timeDiffMinutes >= 15) {
+          // Send the consolidated notification
+          await sendConsolidatedNotification(supabase, booking_id, postcode, booking_date);
           
-        console.log('Consolidated notification sent for booking:', booking_id);
-      } else {
-        console.log('Waiting for 15-minute window to complete. Time remaining:', 15 - timeDiffMinutes, 'minutes');
+          // Mark as sent
+          await supabase
+            .from('photo_completion_notifications')
+            .update({
+              email_sent: true,
+              notification_sent_at: new Date().toISOString()
+            })
+            .eq('booking_id', booking_id);
+            
+          console.log('Consolidated notification sent for booking:', booking_id);
+        } else {
+          console.log('Timer already running. Time remaining:', 15 - timeDiffMinutes, 'minutes');
+        }
       }
-    } else {
-      // First photo upload for this booking - create notification record
+    } else if (!insertError) {
+      // Successfully created notification record - this is the first photo upload
       console.log('First photo upload for booking:', booking_id, 'starting 15-minute timer');
       
-      await supabase
-        .from('photo_completion_notifications')
-        .insert({
-          booking_id,
-          email_sent: false,
-          notification_sent_at: new Date().toISOString()
-        });
-
       // Schedule the delayed notification using a background task
       EdgeRuntime.waitUntil(scheduleDelayedNotification(supabase, booking_id, postcode, booking_date));
+    } else {
+      console.error('Error creating notification record:', insertError);
     }
 
     return new Response(JSON.stringify({ 
