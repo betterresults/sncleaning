@@ -1006,7 +1006,7 @@ export type Database = {
           {
             foreignKeyName: "photo_completion_notifications_booking_id_fkey"
             columns: ["booking_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "bookings"
             referencedColumns: ["id"]
           },
