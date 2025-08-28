@@ -1004,22 +1004,15 @@ const PastBookingsTable = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-center">
-                            {booking.has_photos ? (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleManagePhotos(booking)}
-                                className="text-green-600 hover:text-green-700 p-1"
-                                title="Photos available - Click to manage"
-                              >
-                                <Camera className="h-5 w-5" />
-                              </Button>
-                            ) : (
-                              <div className="flex items-center text-gray-400" title="No photos uploaded">
-                                <Camera className="h-4 w-4" />
-                                <span className="text-xs ml-1">None</span>
-                              </div>
-                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleManagePhotos(booking)}
+                              className={booking.has_photos ? "text-green-600 hover:text-green-700 p-1" : "text-gray-400 hover:text-gray-600 p-1"}
+                              title={booking.has_photos ? "Photos available - Click to manage" : "No photos - Click to upload"}
+                            >
+                              <Camera className="h-5 w-5" />
+                            </Button>
                           </div>
                         </TableCell>
                         <TableCell>
