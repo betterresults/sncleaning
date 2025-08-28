@@ -225,7 +225,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     onRemove: (index: number) => void;
   }) => (
     <div className="space-y-4">
-      <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center hover:border-gray-300 transition-colors">
+      <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 sm:p-6 text-center hover:border-gray-300 transition-colors touch-manipulation">
         <input
           type="file"
           accept="image/*"
@@ -234,10 +234,13 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
           className="hidden"
           id={`file-${type}`}
         />
-        <label htmlFor={`file-${type}`} className="cursor-pointer">
-          <Camera className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-          <p className="text-sm text-gray-600">
-            Click to select {type} photos or drag and drop
+        <label htmlFor={`file-${type}`} className="cursor-pointer block">
+          <Camera className="h-10 w-10 sm:h-8 sm:w-8 mx-auto mb-2 text-gray-400" />
+          <p className="text-sm sm:text-base text-gray-600 font-medium">
+            Select {type} photos
+          </p>
+          <p className="text-xs text-gray-400 mt-1 hidden sm:block">
+            Click to select or drag and drop
           </p>
           <p className="text-xs text-gray-400 mt-1">
             JPG, PNG, WebP up to 5MB each
@@ -246,19 +249,20 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       </div>
 
       {files.length > 0 && (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {files.map((file, index) => (
-            <div key={index} className="relative">
+            <div key={index} className="relative group">
               <img
                 src={URL.createObjectURL(file)}
                 alt={`${type} photo ${index + 1}`}
-                className="w-full h-24 object-cover rounded border"
+                className="w-full h-32 sm:h-24 object-cover rounded border shadow-sm"
               />
               <button
                 onClick={() => onRemove(index)}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-2 sm:p-1 hover:bg-red-600 touch-manipulation shadow-lg"
+                aria-label={`Remove ${type} photo ${index + 1}`}
               >
-                <X className="h-3 w-3" />
+                <X className="h-4 w-4 sm:h-3 sm:w-3" />
               </button>
             </div>
           ))}
@@ -269,110 +273,135 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5" />
-            Upload Cleaning Photos
+      <DialogContent className="w-full max-w-md sm:max-w-lg md:max-w-2xl h-[95vh] sm:max-h-[90vh] flex flex-col p-4 sm:p-6">
+        <DialogHeader className="flex-shrink-0 space-y-2 sm:space-y-1">
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Upload className="h-5 w-5 flex-shrink-0" />
+            <span className="truncate">Upload Cleaning Photos</span>
           </DialogTitle>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Booking #{booking.id} - {booking.postcode} ({bookingDate})
           </p>
         </DialogHeader>
 
-        <Tabs defaultValue="before" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="before">Before Photos</TabsTrigger>
-            <TabsTrigger value="after">After Photos</TabsTrigger>
-            <TabsTrigger 
-              value="additional" 
-              className={showAdditionalTab ? "text-orange-600" : ""}
-            >
-              <AlertTriangle className="h-4 w-4 mr-1" />
-              Additional Info
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="before" className="space-y-4">
-            <FileUploadArea
-              type="before"
-              files={beforeFiles}
-              onFileSelect={(files) => handleFileSelect(files, 'before')}
-              onRemove={(index) => removeFile(index, 'before')}
-            />
-          </TabsContent>
-
-          <TabsContent value="after" className="space-y-4">
-            <FileUploadArea
-              type="after"
-              files={afterFiles}
-              onFileSelect={(files) => handleFileSelect(files, 'after')}
-              onRemove={(index) => removeFile(index, 'after')}
-            />
-          </TabsContent>
-
-          <TabsContent value="additional" className="space-y-4">
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="h-4 w-4 text-orange-600" />
-                <h4 className="font-medium text-orange-800">Additional Information</h4>
-              </div>
-              <p className="text-sm text-orange-700">
-                Use this section to report damage, missing items, or any other additional information.
-              </p>
-            </div>
-
-            {!showAdditionalTab ? (
-              <Button
-                variant="outline"
-                onClick={() => setShowAdditionalTab(true)}
-                className="w-full border-orange-200 text-orange-600 hover:bg-orange-50"
+        <div className="flex-1 min-h-0 mt-4">
+          <Tabs defaultValue="before" className="h-full flex flex-col">
+            <TabsList className="grid w-full grid-cols-3 mb-4 h-auto p-1">
+              <TabsTrigger value="before" className="text-xs sm:text-sm py-2 px-1">
+                Before
+              </TabsTrigger>
+              <TabsTrigger value="after" className="text-xs sm:text-sm py-2 px-1">
+                After
+              </TabsTrigger>
+              <TabsTrigger 
+                value="additional" 
+                className={`text-xs sm:text-sm py-2 px-1 ${showAdditionalTab ? "text-orange-600" : ""}`}
               >
-                <AlertTriangle className="h-4 w-4 mr-2" />
-                Add Additional Information
-              </Button>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="additional-details">Additional Details *</Label>
-                  <Textarea
-                    id="additional-details"
-                    placeholder="Describe any damage, missing items, or other important information..."
-                    value={additionalDetails}
-                    onChange={(e) => setAdditionalDetails(e.target.value)}
-                    className="mt-1"
-                    rows={3}
+                <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
+                <span className="hidden sm:inline">Additional</span>
+                <span className="sm:hidden">Info</span>
+              </TabsTrigger>
+            </TabsList>
+
+            <div className="flex-1 overflow-y-auto space-y-0">
+              <TabsContent value="before" className="mt-0 h-full">
+                <div className="space-y-4">
+                  <FileUploadArea
+                    type="before"
+                    files={beforeFiles}
+                    onFileSelect={(files) => handleFileSelect(files, 'before')}
+                    onRemove={(index) => removeFile(index, 'before')}
                   />
                 </div>
+              </TabsContent>
 
-                <FileUploadArea
-                  type="additional"
-                  files={additionalFiles}
-                  onFileSelect={(files) => handleFileSelect(files, 'additional')}
-                  onRemove={(index) => removeFile(index, 'additional')}
-                />
+              <TabsContent value="after" className="mt-0 h-full">
+                <div className="space-y-4">
+                  <FileUploadArea
+                    type="after"
+                    files={afterFiles}
+                    onFileSelect={(files) => handleFileSelect(files, 'after')}
+                    onRemove={(index) => removeFile(index, 'after')}
+                  />
+                </div>
+              </TabsContent>
 
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setShowAdditionalTab(false);
-                    setAdditionalFiles([]);
-                    setAdditionalDetails('');
-                  }}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  Cancel Additional Info
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+              <TabsContent value="additional" className="mt-0 h-full">
+                <div className="space-y-4">
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 sm:p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertTriangle className="h-4 w-4 text-orange-600 flex-shrink-0" />
+                      <h4 className="font-medium text-orange-800 text-sm sm:text-base">Additional Information</h4>
+                    </div>
+                    <p className="text-xs sm:text-sm text-orange-700">
+                      Use this section to report damage, missing items, or any other additional information.
+                    </p>
+                  </div>
 
-        <div className="flex justify-end gap-2 pt-4 border-t">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+                  {!showAdditionalTab ? (
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowAdditionalTab(true)}
+                      className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 py-3 sm:py-2 text-sm sm:text-base"
+                    >
+                      <AlertTriangle className="h-4 w-4 mr-2 flex-shrink-0" />
+                      Add Additional Information
+                    </Button>
+                  ) : (
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="additional-details" className="text-sm font-medium">
+                          Additional Details *
+                        </Label>
+                        <Textarea
+                          id="additional-details"
+                          placeholder="Describe any damage, missing items, or other important information..."
+                          value={additionalDetails}
+                          onChange={(e) => setAdditionalDetails(e.target.value)}
+                          className="mt-2 text-sm sm:text-base min-h-[80px]"
+                          rows={3}
+                        />
+                      </div>
+
+                      <FileUploadArea
+                        type="additional"
+                        files={additionalFiles}
+                        onFileSelect={(files) => handleFileSelect(files, 'additional')}
+                        onRemove={(index) => removeFile(index, 'additional')}
+                      />
+
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setShowAdditionalTab(false);
+                          setAdditionalFiles([]);
+                          setAdditionalDetails('');
+                        }}
+                        className="text-gray-500 hover:text-gray-700 text-sm w-full sm:w-auto"
+                      >
+                        Cancel Additional Info
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </div>
+          </Tabs>
+        </div>
+
+        <div className="flex-shrink-0 flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t mt-4">
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+            className="w-full sm:w-auto py-3 sm:py-2 text-sm sm:text-base"
+          >
             Cancel
           </Button>
-          <Button onClick={handleUpload} disabled={uploading}>
+          <Button 
+            onClick={handleUpload} 
+            disabled={uploading}
+            className="w-full sm:w-auto py-3 sm:py-2 text-sm sm:text-base"
+          >
             {uploading ? 'Uploading...' : 'Upload Photos'}
           </Button>
         </div>
