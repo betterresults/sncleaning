@@ -39,9 +39,15 @@ const PaymentStatusIndicator = ({ status, onClick, size = 'md', isClickable = fa
         };
       case 'unpaid':
       case 'not paid':
+        return {
+          label: 'Unpaid',
+          className: 'bg-gray-500 hover:bg-gray-600',
+          icon: AlertCircle,
+          color: 'text-white'
+        };
       case 'collecting':
         return {
-          label: normalizedStatus === 'collecting' ? 'Collecting' : 'Unpaid',
+          label: 'Collecting',
           className: 'bg-yellow-500 hover:bg-yellow-600',
           icon: AlertCircle,
           color: 'text-white'
