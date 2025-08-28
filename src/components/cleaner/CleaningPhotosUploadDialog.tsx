@@ -311,10 +311,10 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-md sm:max-w-lg md:max-w-2xl h-[95vh] sm:max-h-[90vh] flex flex-col p-4 sm:p-6">
-        <DialogHeader className="flex-shrink-0 space-y-2 sm:space-y-1">
-          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Upload className="h-5 w-5 flex-shrink-0" />
+      <DialogContent className="w-[95vw] max-w-md sm:max-w-lg md:max-w-2xl h-[90vh] sm:max-h-[85vh] flex flex-col p-3 sm:p-6 m-2">
+        <DialogHeader className="flex-shrink-0 space-y-2 pb-3">
+          <DialogTitle className="flex items-center gap-2 text-sm sm:text-lg">
+            <Upload className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
             <span className="truncate">Upload Cleaning Photos</span>
           </DialogTitle>
           <p className="text-xs sm:text-sm text-muted-foreground">
@@ -322,9 +322,9 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
           </p>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 mt-4">
+        <div className="flex-1 min-h-0 overflow-hidden">
           <Tabs defaultValue="before" className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-3 mb-4 h-auto p-1">
+            <TabsList className="grid w-full grid-cols-3 mb-3 h-auto p-1 shrink-0">
               <TabsTrigger value="before" className="text-xs sm:text-sm py-2 px-1">
                 Before
               </TabsTrigger>
@@ -341,9 +341,9 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
               </TabsTrigger>
             </TabsList>
 
-            <div className="flex-1 overflow-y-auto space-y-0">
-              <TabsContent value="before" className="mt-0 h-full">
-                <div className="space-y-4">
+            <div className="flex-1 overflow-y-auto pb-3">
+              <TabsContent value="before" className="mt-0 h-auto">
+                <div className="space-y-3">
                   <FileUploadArea
                     type="before"
                     files={beforeFiles}
@@ -353,8 +353,8 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
                 </div>
               </TabsContent>
 
-              <TabsContent value="after" className="mt-0 h-full">
-                <div className="space-y-4">
+              <TabsContent value="after" className="mt-0 h-auto">
+                <div className="space-y-3">
                   <FileUploadArea
                     type="after"
                     files={afterFiles}
@@ -364,14 +364,14 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
                 </div>
               </TabsContent>
 
-              <TabsContent value="additional" className="mt-0 h-full">
-                <div className="space-y-4">
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 sm:p-4">
+              <TabsContent value="additional" className="mt-0 h-auto">
+                <div className="space-y-3">
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
                     <div className="flex items-center gap-2 mb-2">
                       <AlertTriangle className="h-4 w-4 text-orange-600 flex-shrink-0" />
-                      <h4 className="font-medium text-orange-800 text-sm sm:text-base">Additional Information</h4>
+                      <h4 className="font-medium text-orange-800 text-sm">Additional Information</h4>
                     </div>
-                    <p className="text-xs sm:text-sm text-orange-700">
+                    <p className="text-xs text-orange-700">
                       Use this section to report damage, missing items, or any other additional information.
                     </p>
                   </div>
@@ -380,13 +380,13 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
                     <Button
                       variant="outline"
                       onClick={() => setShowAdditionalTab(true)}
-                      className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 py-3 sm:py-2 text-sm sm:text-base"
+                      className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 py-3 text-sm"
                     >
                       <AlertTriangle className="h-4 w-4 mr-2 flex-shrink-0" />
                       Add Additional Information
                     </Button>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       <div>
                         <Label htmlFor="additional-details" className="text-sm font-medium">
                           Additional Details *
@@ -396,8 +396,8 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
                           placeholder="Describe any damage, missing items, or other important information..."
                           value={additionalDetails}
                           onChange={(e) => setAdditionalDetails(e.target.value)}
-                          className="mt-2 text-sm sm:text-base min-h-[80px]"
-                          rows={3}
+                          className="mt-2 text-sm min-h-[60px]"
+                          rows={2}
                         />
                       </div>
 
@@ -415,7 +415,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
                           setAdditionalFiles([]);
                           setAdditionalDetails('');
                         }}
-                        className="text-gray-500 hover:text-gray-700 text-sm w-full sm:w-auto"
+                        className="text-gray-500 hover:text-gray-700 text-sm w-full py-2"
                       >
                         Cancel Additional Info
                       </Button>
@@ -429,9 +429,9 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
 
         {/* Upload Progress Indicator */}
         {uploading && (
-          <div className="flex-shrink-0 bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <div className="flex-shrink-0 bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
             <div className="flex items-center gap-3">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 flex-shrink-0"></div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-blue-800 truncate">
                   {uploadStep}
@@ -444,29 +444,31 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
           </div>
         )}
 
-        <div className="flex-shrink-0 flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t mt-4">
-          <Button 
-            variant="outline" 
-            onClick={() => onOpenChange(false)}
-            disabled={uploading}
-            className="w-full sm:w-auto py-3 sm:py-2 text-sm sm:text-base"
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleUpload} 
-            disabled={uploading}
-            className="w-full sm:w-auto py-3 sm:py-2 text-sm sm:text-base"
-          >
-            {uploading ? (
-              <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                <span>Uploading...</span>
-              </div>
-            ) : (
-              'Upload Photos'
-            )}
-          </Button>
+        <div className="flex-shrink-0 border-t pt-3">
+          <div className="flex flex-col gap-2">
+            <Button 
+              onClick={handleUpload} 
+              disabled={uploading}
+              className="w-full py-4 text-base font-medium"
+            >
+              {uploading ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Uploading...</span>
+                </div>
+              ) : (
+                'Upload Photos'
+              )}
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              disabled={uploading}
+              className="w-full py-3 text-sm"
+            >
+              Cancel
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
