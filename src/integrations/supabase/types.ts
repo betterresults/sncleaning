@@ -1002,15 +1002,7 @@ export type Database = {
           id?: string
           notification_sent_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "photo_completion_notifications_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       profiles: {
         Row: {

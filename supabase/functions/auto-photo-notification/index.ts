@@ -166,15 +166,26 @@ async function scheduleDelayedNotification(supabase: any, booking_id: number, po
 
 async function sendConsolidatedNotification(supabase: any, booking_id: number, postcode?: string, booking_date?: string) {
   try {
-    // Get booking details
-    const { data: booking } = await supabase
+    // Get booking details - check both active and past bookings tables
+    let { data: booking } = await supabase
       .from('bookings')
       .select('customer, first_name, last_name, email, address, postcode, date_time')
       .eq('id', booking_id)
-      .single();
+      .maybeSingle();
+
+    // If not found in active bookings, check past bookings
+    if (!booking) {
+      const { data: pastBooking } = await supabase
+        .from('past_bookings')
+        .select('customer, first_name, last_name, email, address, postcode, date_time')
+        .eq('id', booking_id)
+        .maybeSingle();
+      
+      booking = pastBooking;
+    }
 
     if (!booking) {
-      console.log('Booking not found:', booking_id);
+      console.log('Booking not found in either bookings or past_bookings:', booking_id);
       return;
     }
 
