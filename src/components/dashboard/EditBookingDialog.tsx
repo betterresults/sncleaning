@@ -280,7 +280,10 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
       <SheetContent side="right" className="w-full sm:max-w-4xl">
         <SheetHeader className="pb-6 border-b">
           <div className="flex items-center justify-between">
-            <SheetTitle className="text-2xl font-bold text-gray-900">Edit Booking</SheetTitle>
+            <div>
+              <SheetTitle className="text-2xl font-bold text-gray-900">Edit Booking</SheetTitle>
+              <p className="text-sm text-gray-500 mt-1">Booking #{booking?.id}</p>
+            </div>
             <div className="flex gap-2">
               <Badge className={getStatusColor(formData.bookingStatus)}>
                 {formData.bookingStatus}

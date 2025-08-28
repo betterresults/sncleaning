@@ -38,6 +38,7 @@ interface Filters {
   dateTo: string;
   customerSearch: string;
   timePeriod: string;
+  bookingIdSearch: string;
 }
 
 const CleanerPastBookings = () => {
@@ -63,6 +64,7 @@ const CleanerPastBookings = () => {
     dateTo: '',
     customerSearch: '',
     timePeriod: 'current-month',
+    bookingIdSearch: '',
   });
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedBookingForUpload, setSelectedBookingForUpload] = useState<PastBooking | null>(null);
@@ -127,6 +129,13 @@ const CleanerPastBookings = () => {
       );
     }
 
+    // Booking ID search
+    if (filters.bookingIdSearch) {
+      filtered = filtered.filter(booking => 
+        booking.id.toString().includes(filters.bookingIdSearch)
+      );
+    }
+
     setFilteredBookings(filtered);
   };
 
@@ -136,6 +145,7 @@ const CleanerPastBookings = () => {
       dateTo: '',
       customerSearch: '',
       timePeriod: 'current-month',
+      bookingIdSearch: '',
     });
   };
 
@@ -241,8 +251,13 @@ const CleanerPastBookings = () => {
       
       {/* Header with Service Type and Earnings */}
       <div className="flex items-start justify-between mb-3 sm:mb-4">
-        <div className="flex items-center gap-2">
-          <h3 className="text-lg sm:text-xl font-bold text-foreground tracking-tight">{booking.cleaning_type || 'Standard Cleaning'}</h3>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg sm:text-xl font-bold text-foreground tracking-tight">{booking.cleaning_type || 'Standard Cleaning'}</h3>
+          </div>
+          <div className="text-xs text-muted-foreground font-medium">
+            Booking #{booking.id}
+          </div>
         </div>
         <div className="text-right">
           <div className="text-xl sm:text-2xl font-bold text-green-600">£{booking.cleaner_pay?.toFixed(2) || '0.00'}</div>
@@ -439,6 +454,20 @@ const CleanerPastBookings = () => {
                         placeholder="Search by name or email"
                         value={filters.customerSearch}
                         onChange={(e) => setFilters({...filters, customerSearch: e.target.value})}
+                        className="pl-8 h-9"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="bookingIdSearch" className="text-sm font-medium">Search Booking ID</Label>
+                    <div className="relative">
+                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="bookingIdSearch"
+                        placeholder="Search by booking ID..."
+                        value={filters.bookingIdSearch}
+                        onChange={(e) => setFilters({...filters, bookingIdSearch: e.target.value})}
                         className="pl-8 h-9"
                       />
                     </div>

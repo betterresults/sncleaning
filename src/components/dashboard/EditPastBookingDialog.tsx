@@ -136,7 +136,10 @@ const EditPastBookingDialog: React.FC<EditPastBookingDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Past Booking</DialogTitle>
+          <div>
+            <DialogTitle>Edit Past Booking</DialogTitle>
+            <p className="text-sm text-gray-500 mt-1">Booking #{booking?.id}</p>
+          </div>
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

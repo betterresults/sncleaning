@@ -78,6 +78,7 @@ interface Filters {
   customerId: string;
   customerSearch: string;
   paymentStatus: string;
+  bookingIdSearch: string;
 }
 
 interface UpcomingBookingsProps {
@@ -104,6 +105,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
     customerId: 'all',
     customerSearch: '',
     paymentStatus: 'all',
+    bookingIdSearch: '',
   });
   const [filtersCollapsed, setFiltersCollapsed] = useState(true);
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
@@ -249,11 +251,18 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
       );
     }
 
+    // Booking ID search
+    if (filters.bookingIdSearch) {
+      filtered = filtered.filter(booking => 
+        booking.id.toString().includes(filters.bookingIdSearch)
+      );
+    }
+
     setFilteredBookings(filtered);
     setCurrentPage(1);
   };
 
-  const clearFilters = () => {
+    const clearFilters = () => {
     setFilters({
       dateFrom: '',
       dateTo: '',
@@ -261,6 +270,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
       customerId: 'all',
       customerSearch: '',
       paymentStatus: 'all',
+      bookingIdSearch: '',
     });
   };
 
@@ -528,7 +538,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                           (filters.cleanerId && filters.cleanerId !== 'all') || 
                           (filters.customerId && filters.customerId !== 'all') || 
                           (filters.paymentStatus && filters.paymentStatus !== 'all') ||
-                          filters.customerSearch;
+                          filters.customerSearch || filters.bookingIdSearch;
 
   if (loading) {
     return (
@@ -585,7 +595,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
         </CardHeader>
         {!filtersCollapsed && (
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
               {/* Date From */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium">From</Label>
@@ -706,6 +716,20 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                     <SelectItem value="processing">Processing</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Booking ID Search */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Booking ID</Label>
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search by booking ID..."
+                    value={filters.bookingIdSearch}
+                    onChange={(e) => setFilters({...filters, bookingIdSearch: e.target.value})}
+                    className="pl-8"
+                  />
+                </div>
               </div>
             </div>
 

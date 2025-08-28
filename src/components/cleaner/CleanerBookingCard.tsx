@@ -40,13 +40,18 @@ const CleanerBookingCard = ({
       
       {/* Header with Service Type and Earnings */}
       <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <h3 className="text-xl font-bold text-foreground tracking-tight">{booking.cleaning_type || booking.service_type}</h3>
-          {isSameDay && (
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
-              Same Day
-            </span>
-          )}
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <h3 className="text-xl font-bold text-foreground tracking-tight">{booking.cleaning_type || booking.service_type}</h3>
+            {isSameDay && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+                Same Day
+              </span>
+            )}
+          </div>
+          <div className="text-xs text-muted-foreground font-medium">
+            Booking #{booking.id}
+          </div>
         </div>
         <div className="text-right">
           <div className="text-2xl font-bold text-green-600">£{booking.cleaner_pay || 0}</div>

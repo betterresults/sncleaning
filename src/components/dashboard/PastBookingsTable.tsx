@@ -61,6 +61,7 @@ interface Filters {
   customerId: string;
   customerSearch: string;
   timePeriod: string;
+  bookingIdSearch: string;
 }
 
 interface Stats {
@@ -91,6 +92,7 @@ const PastBookingsTable = () => {
     customerId: 'all',
     customerSearch: '',
     timePeriod: 'last-week',
+    bookingIdSearch: '',
   });
   const { toast } = useToast();
   const [duplicateDialog, setDuplicateDialog] = useState(false);
@@ -242,6 +244,13 @@ const PastBookingsTable = () => {
       );
     }
 
+    // Booking ID search
+    if (filters.bookingIdSearch) {
+      filtered = filtered.filter(booking => 
+        booking.id.toString().includes(filters.bookingIdSearch)
+      );
+    }
+
     setFilteredBookings(filtered);
     setCurrentPage(1);
 
@@ -267,6 +276,7 @@ const PastBookingsTable = () => {
       customerId: 'all',
       customerSearch: '',
       timePeriod: 'all',
+      bookingIdSearch: '',
     });
   };
 
@@ -696,6 +706,20 @@ const PastBookingsTable = () => {
                   placeholder="Search by name or email"
                   value={filters.customerSearch}
                   onChange={(e) => setFilters({...filters, customerSearch: e.target.value})}
+                  className="pl-7 sm:pl-8 h-8 sm:h-9 text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bookingIdSearch" className="text-xs sm:text-sm font-medium">Search Booking ID</Label>
+              <div className="relative">
+                <Search className="absolute left-2 top-2 sm:top-2.5 h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
+                <Input
+                  id="bookingIdSearch"
+                  placeholder="Search by booking ID..."
+                  value={filters.bookingIdSearch}
+                  onChange={(e) => setFilters({...filters, bookingIdSearch: e.target.value})}
                   className="pl-7 sm:pl-8 h-8 sm:h-9 text-sm"
                 />
               </div>
