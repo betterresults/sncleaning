@@ -16,6 +16,7 @@ import BulkEditPastBookingsDialog from './BulkEditPastBookingsDialog';
 import ConvertToRecurringDialog from './ConvertToRecurringDialog';
 import EditPastBookingDialog from './EditPastBookingDialog';
 import PhotoManagementDialog from './PhotoManagementDialog';
+import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import { AdjustPaymentAmountDialog } from '@/components/payments/AdjustPaymentAmountDialog';
 import { CollectPaymentMethodDialog } from '@/components/payments/CollectPaymentMethodDialog';
@@ -805,17 +806,10 @@ const PastBookingsTable = () => {
                                   <Camera className="mr-2 h-4 w-4" />
                                   {booking.has_photos ? 'Manage Photos' : 'Upload Photos'}
                                 </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  className="cursor-pointer"
-                                  onClick={() => handlePaymentAction(booking)}
-                                >
-                                  <CreditCard className="mr-2 h-4 w-4" />
-                                  Payment Actions
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  className="cursor-pointer"
-                                  onClick={() => handleEdit(booking)}
-                                >
+                                 <DropdownMenuItem 
+                                   className="cursor-pointer"
+                                   onClick={() => handleEdit(booking)}
+                                 >
                                   <Edit className="mr-2 h-4 w-4" />
                                   Edit
                                 </DropdownMenuItem>
@@ -930,7 +924,7 @@ const PastBookingsTable = () => {
                   <TableHead className="font-semibold text-base">Service</TableHead>
                   <TableHead className="font-semibold text-base">Cleaner</TableHead>
                   <TableHead className="font-semibold text-base">Photos</TableHead>
-                  <TableHead className="font-semibold text-base">Cost</TableHead>
+                  <TableHead className="font-semibold text-base">Payment</TableHead>
                   <TableHead className="font-semibold text-center text-base">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -1029,7 +1023,12 @@ const PastBookingsTable = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {getPaymentStatusIcon(booking.payment_status, cost)}
+                          <PaymentStatusIndicator 
+                            status={booking.payment_status || 'unpaid'} 
+                            isClickable={true}
+                            onClick={() => handlePaymentAction(booking)}
+                            size="md"
+                          />
                         </TableCell>
                         <TableCell>
                           <div className="flex justify-center">
@@ -1047,17 +1046,10 @@ const PastBookingsTable = () => {
                                   <Camera className="mr-2 h-4 w-4" />
                                   {booking.has_photos ? 'Manage Photos' : 'Upload Photos'}
                                 </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  className="cursor-pointer"
-                                  onClick={() => handlePaymentAction(booking)}
-                                >
-                                  <CreditCard className="mr-2 h-4 w-4" />
-                                  Payment Actions
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  className="cursor-pointer"
-                                  onClick={() => handleEdit(booking)}
-                                >
+                                 <DropdownMenuItem 
+                                   className="cursor-pointer"
+                                   onClick={() => handleEdit(booking)}
+                                 >
                                   <Edit className="mr-2 h-4 w-4" />
                                   Edit
                                 </DropdownMenuItem>
