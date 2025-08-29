@@ -79,7 +79,7 @@ const BookingCard = <T extends BaseBooking>({
         </div>
         <div className="text-right flex items-center gap-3">
           <div className="text-2xl font-bold text-[#18A5A5]">£{booking.total_cost}</div>
-          {booking.payment_status && isWithin24Hours() && (
+          {booking.payment_status && (type === 'upcoming' ? isWithin24Hours() : true) && (
             <PaymentStatusIndicator 
               status={booking.payment_status} 
               isClickable={!booking.payment_status.toLowerCase().includes('paid') && !!onPaymentAction}
