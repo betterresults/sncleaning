@@ -73,11 +73,22 @@ export const useCustomerLinenAccess = () => {
 
         console.log('Past bookings with linen check:', pastBookings, 'Error:', pastBookingsError);
 
+        // Also check for any bookings with non-null linen_used field  
+        const { data: bookingsWithLinen, error: bookingsWithLinenError } = await supabase
+          .from('bookings')
+          .select('id')
+          .eq('customer', profile.customer_id)
+          .not('linen_used', 'is', null)
+          .limit(1);
+
+        console.log('Bookings with linen_used check:', bookingsWithLinen, 'Error:', bookingsWithLinenError);
+
         const hasAccess = 
           (inventory && inventory.length > 0) ||
           (orders && orders.length > 0) ||
           (bookings && bookings.length > 0) ||
-          (pastBookings && pastBookings.length > 0);
+          (pastBookings && pastBookings.length > 0) ||
+          (bookingsWithLinen && bookingsWithLinen.length > 0);
 
         console.log('Final linen access decision:', hasAccess);
         setHasLinenAccess(hasAccess);
