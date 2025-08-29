@@ -194,14 +194,24 @@ export const InventoryManager = () => {
     return "bg-yellow-500";
   };
 
-  const getLinenIcon = (productType: string) => {
+  const getLinenIcon = (productType: string, productName: string) => {
     const type = productType?.toLowerCase() || '';
-    if (type.includes('king') || type.includes('bed')) return '🛏️';
-    if (type.includes('towel')) return '🏊';
-    if (type.includes('pillow')) return '🛌';  
-    if (type.includes('duvet') || type.includes('comforter')) return '🌙';
-    if (type.includes('sheet')) return '📄';
-    return '🏠';
+    const name = productName?.toLowerCase() || '';
+    
+    // Check for bed sizes first
+    if (name.includes('king') || type.includes('king')) return '👑';
+    if (name.includes('queen') || type.includes('queen')) return '♛'; 
+    if (name.includes('double') || type.includes('double')) return '🛏️';
+    if (name.includes('single') || type.includes('single')) return '🛌';
+    
+    // Then check for linen types
+    if (type.includes('towel') || name.includes('towel')) return '🏊';
+    if (type.includes('pillow') || name.includes('pillow')) return '🛌';  
+    if (type.includes('duvet') || name.includes('duvet') || type.includes('comforter')) return '🌙';
+    if (type.includes('sheet') || name.includes('sheet')) return '📋';
+    
+    // Default for bed linens
+    return '🛡️';
   };
 
   if (isLoading) {
@@ -272,14 +282,14 @@ export const InventoryManager = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <div className="text-2xl">
-                      {getLinenIcon(item.linen_products?.type || '')}
+                      {getLinenIcon(item.linen_products?.type || '', item.linen_products?.name || '')}
                     </div>
                     <div>
                       <CardTitle className="text-lg font-bold">
-                        {item.linen_products?.name}
+                        {item.linen_products?.name?.replace(/wash and iron/gi, '').trim()}
                       </CardTitle>
                       <CardDescription className="text-sm font-medium">
-                        {item.linen_products?.type} • £{item.linen_products?.price?.toFixed(2)} each
+                        {item.linen_products?.type?.replace(/wash and iron/gi, '').trim()} • £{item.linen_products?.price?.toFixed(2)} each
                       </CardDescription>
                     </div>
                   </div>

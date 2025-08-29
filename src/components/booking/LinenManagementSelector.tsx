@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Plus, Package } from 'lucide-react';
+import { Trash2, Plus, Package, Minus } from 'lucide-react';
 import { useLinenProducts, LinenUsageItem } from '@/hooks/useLinenProducts';
 import { useToast } from '@/hooks/use-toast';
 
@@ -31,6 +31,26 @@ const LinenManagementSelector = ({
   const { toast } = useToast();
   const [selectedProduct, setSelectedProduct] = useState<string>('');
   const [selectedQuantity, setSelectedQuantity] = useState<number>(1);
+
+  const getLinenIcon = (productName: string, productType: string) => {
+    const name = productName?.toLowerCase() || '';
+    const type = productType?.toLowerCase() || '';
+    
+    // Check for bed sizes first
+    if (name.includes('king') || type.includes('king')) return '👑';
+    if (name.includes('queen') || type.includes('queen')) return '♛'; 
+    if (name.includes('double') || type.includes('double')) return '🛏️';
+    if (name.includes('single') || type.includes('single')) return '🛌';
+    
+    // Then check for linen types
+    if (type.includes('towel') || name.includes('towel')) return '🏊';
+    if (type.includes('pillow') || name.includes('pillow')) return '🛌';  
+    if (type.includes('duvet') || name.includes('duvet') || type.includes('comforter')) return '🌙';
+    if (type.includes('sheet') || name.includes('sheet')) return '📋';
+    
+    // Default for bed linens
+    return '🛡️';
+  };
 
   const handleAddLinenItem = () => {
     if (!selectedProduct) {
@@ -107,6 +127,10 @@ const LinenManagementSelector = ({
     onLinenUsedChange(updatedLinenUsed);
   };
 
+  const updateQuantity = (productId: string, newQuantity: number) => {
+    handleUpdateQuantity(productId, newQuantity);
+  };
+
   const totalItemsUsed = linenUsed.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
@@ -135,94 +159,68 @@ const LinenManagementSelector = ({
               Select which linen products will be used in this cleaning. Items will be moved from clean to dirty inventory when the booking is completed.
             </div>
 
-            {/* Add Linen Item Section */}
-            <div className="flex gap-2 items-end">
-              <div className="flex-1">
-                <Label htmlFor="productSelect" className="text-xs">Product</Label>
-                <Select value={selectedProduct} onValueChange={setSelectedProduct}>
-                  <SelectTrigger id="productSelect">
-                    <SelectValue placeholder="Select a product" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {loading ? (
-                      <SelectItem value="loading" disabled>Loading products...</SelectItem>
-                    ) : products.length === 0 ? (
-                      <SelectItem value="no-products" disabled>No products available</SelectItem>
-                    ) : (
-                      products.map(product => {
-                        const available = getAvailableQuantity(product.id);
-                        const alreadyUsed = linenUsed.find(item => item.product_id === product.id)?.quantity || 0;
-                        const remainingAvailable = available - alreadyUsed;
-                        
-                        return (
-                          <SelectItem 
-                            key={product.id} 
-                            value={product.id}
-                            disabled={remainingAvailable <= 0}
+            {/* Product Selection */}
+            {products.length > 0 && (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Available Products:</Label>
+                {products.map(product => {
+                  const currentQuantity = linenUsed.find(item => item.product_id === product.id)?.quantity || 0;
+                  
+                  return (
+                    <div key={product.id}>
+                      <div className="flex items-center gap-3 p-3 border rounded-lg bg-card">
+                        <div className="text-xl">
+                          {getLinenIcon(product.name, product.type)}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium">
+                            {product.name.replace(/wash and iron/gi, '').trim()}
+                          </h4>
+                          <p className="text-sm text-muted-foreground">
+                            {product.type.replace(/wash and iron/gi, '').trim()} • £{product.price} each
+                          </p>
+                          {inventory.length > 0 && (
+                            <p className="text-xs text-blue-600 mt-1">
+                              Available: {getAvailableQuantity(product.id)} clean
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateQuantity(product.id, Math.max(0, currentQuantity - 1))}
+                            disabled={currentQuantity <= 0}
                           >
-                            {product.name} ({remainingAvailable} available)
-                          </SelectItem>
-                        );
-                      })
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="w-20">
-                <Label htmlFor="quantityInput" className="text-xs">Qty</Label>
-                <Input
-                  id="quantityInput"
-                  type="number"
-                  min="1"
-                  max={selectedProduct ? getAvailableQuantity(selectedProduct) : 999}
-                  value={selectedQuantity}
-                  onChange={(e) => setSelectedQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                />
-              </div>
-              <Button 
-                type="button"
-                onClick={handleAddLinenItem}
-                disabled={!selectedProduct}
-                size="sm"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {/* Selected Linen Items */}
-            {linenUsed.length > 0 && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Selected Items ({totalItemsUsed} total):</Label>
-                <div className="space-y-2">
-                  {linenUsed.map(item => (
-                    <div key={item.product_id} className="flex items-center gap-2 p-2 bg-background rounded border">
-                      <div className="flex-1">
-                        <span className="font-medium">{item.product_name}</span>
-                        <span className="text-sm text-muted-foreground ml-2">
-                          ({getAvailableQuantity(item.product_id)} available)
-                        </span>
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="min-w-[2rem] text-center font-medium">
+                            {currentQuantity}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateQuantity(product.id, currentQuantity + 1)}
+                            disabled={inventory.length > 0 && currentQuantity >= getAvailableQuantity(product.id)}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="w-16">
-                        <Input
-                          type="number"
-                          min="1"
-                          max={getAvailableQuantity(item.product_id)}
-                          value={item.quantity}
-                          onChange={(e) => handleUpdateQuantity(item.product_id, parseInt(e.target.value) || 0)}
-                          className="h-8 text-sm"
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveLinenItem(item.product_id)}
-                        className="text-destructive hover:text-destructive p-1 h-8 w-8"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </div>
-                  ))}
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Summary */}
+            {linenUsed.length > 0 && (
+              <div className="pt-3 border-t">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Total Items Selected:</Label>
+                  <Badge variant="outline">{totalItemsUsed}</Badge>
                 </div>
               </div>
             )}
