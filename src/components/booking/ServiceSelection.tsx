@@ -74,6 +74,19 @@ const ServiceSelection = ({ onServiceSelect }: ServiceSelectionProps) => {
 
   return (
     <div className="space-y-8">
+      {/* Development Notice - Moved to Top */}
+      <div className="p-6 bg-primary/5 rounded-xl border border-primary/20 space-y-3">
+        <h3 className="text-lg font-semibold text-[#185166]">
+          📋 Booking forms in our app are currently under development
+        </h3>
+        <p className="text-gray-600">
+          While we're perfecting the booking experience, you can easily create new bookings by duplicating from your completed ones in the <strong>Completed Bookings</strong> tab.
+        </p>
+        <div className="text-sm text-gray-500">
+          Simply find a completed booking, click duplicate, and choose your new date and time!
+        </div>
+      </div>
+
       <div className="text-center">
         <h2 className="text-3xl font-bold text-[#185166] mb-4">
           Choose the service you would like to book
@@ -125,20 +138,6 @@ const ServiceSelection = ({ onServiceSelect }: ServiceSelectionProps) => {
             </Card>
           );
         })}
-      </div>
-
-      <div className="text-center pt-8">
-        <div className="p-6 bg-primary/5 rounded-xl border border-primary/20 space-y-3">
-          <h3 className="text-lg font-semibold text-[#185166]">
-            📋 Booking forms in our app are currently under development
-          </h3>
-          <p className="text-gray-600">
-            While we're perfecting the booking experience, you can easily create new bookings by duplicating from your completed ones in the <strong>Completed Bookings</strong> tab.
-          </p>
-          <div className="text-sm text-gray-500">
-            Simply find a past booking, click duplicate, and choose your new date and time!
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -53,7 +53,7 @@ const AirbnbBookingForm: React.FC<AirbnbBookingFormProps> = ({ customerData, onB
                 </div>
                 <div className="space-y-1">
                   <p className="font-medium text-[#185166]">Go to Completed Bookings</p>
-                  <p className="text-sm text-gray-600">Find your past cleaning bookings</p>
+                  <p className="text-sm text-gray-600">Find your completed cleaning bookings</p>
                 </div>
               </div>
 
