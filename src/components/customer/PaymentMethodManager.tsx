@@ -355,8 +355,8 @@ const PaymentMethodManager = () => {
     <Card className="border-0">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-3 text-[#185166] text-xl">
-          <div className="p-2 bg-[#18A5A5]/10 rounded-lg">
-            <CreditCard className="h-5 w-5 text-[#18A5A5]" />
+          <div className="p-2 bg-[#18A5A5] rounded-lg border border-white/20 shadow-sm">
+            <CreditCard className="h-5 w-5 text-white" />
           </div>
           Payment Methods
         </CardTitle>

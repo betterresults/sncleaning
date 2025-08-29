@@ -147,12 +147,12 @@ const CustomerSettings = () => {
                       {/* Change Password */}
                       <Card className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl">
                         <CardHeader className="pb-4">
-                          <CardTitle className="flex items-center gap-3 text-[#185166] text-xl">
-                            <div className="p-2 bg-[#18A5A5]/10 rounded-lg">
-                              <Lock className="h-5 w-5 text-[#18A5A5]" />
-                            </div>
-                            Change Password
-                          </CardTitle>
+                        <CardTitle className="flex items-center gap-3 text-[#185166] text-xl">
+                          <div className="p-2 bg-[#18A5A5] rounded-lg border border-white/20 shadow-sm">
+                            <Lock className="h-5 w-5 text-white" />
+                          </div>
+                          Change Password
+                        </CardTitle>
                         </CardHeader>
                         <CardContent>
                           <form onSubmit={handlePasswordChange} className="space-y-6">

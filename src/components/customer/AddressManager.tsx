@@ -281,8 +281,8 @@ const AddressManager = () => {
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center justify-between text-[#185166] text-xl">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-[#18A5A5]/10 rounded-lg">
-              <MapPin className="h-5 w-5 text-[#18A5A5]" />
+            <div className="p-2 bg-[#18A5A5] rounded-lg border border-white/20 shadow-sm">
+              <MapPin className="h-5 w-5 text-white" />
             </div>
             Addresses
           </div>

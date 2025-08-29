@@ -105,12 +105,12 @@ const PersonalInfoEditor = () => {
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center justify-between text-[#185166] text-xl">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-[#18A5A5]/10 rounded-lg">
-              <User className="h-5 w-5 text-[#18A5A5]" />
+            <div className="p-2 bg-[#18A5A5] rounded-lg border border-white/20 shadow-sm">
+              <User className="h-5 w-5 text-white" />
             </div>
             Personal Information
           </div>
-          {!isEditing ? (
+          {!isEditing && (
             <Button 
               variant="outline" 
               size="sm" 
@@ -120,27 +120,6 @@ const PersonalInfoEditor = () => {
               <Edit className="h-4 w-4 mr-2" />
               Edit
             </Button>
-          ) : (
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleCancel}
-                className="border-gray-300 text-gray-600 hover:bg-gray-50"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Cancel
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={handleSave} 
-                disabled={loading}
-                className="bg-[#18A5A5] hover:bg-[#185166] text-white"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save
-              </Button>
-            </div>
           )}
         </CardTitle>
       </CardHeader>
@@ -188,6 +167,29 @@ const PersonalInfoEditor = () => {
             className={`border-gray-200 focus:border-[#18A5A5] focus:ring-[#18A5A5]/20 rounded-xl ${!isEditing ? 'bg-gray-50' : ''}`}
           />
         </div>
+        
+        {isEditing && (
+          <div className="flex justify-end gap-2 pt-4 border-t border-gray-100">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleCancel}
+              className="border-gray-300 text-gray-600 hover:bg-gray-50"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+            <Button 
+              size="sm" 
+              onClick={handleSave} 
+              disabled={loading}
+              className="bg-[#18A5A5] hover:bg-[#185166] text-white"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
