@@ -58,42 +58,6 @@ export type Database = {
           },
         ]
       }
-      airbnb_field_pricing: {
-        Row: {
-          base_cost: number | null
-          created_at: string
-          field_name: string
-          field_value: string
-          id: string
-          is_active: boolean | null
-          multiplier_factor: number | null
-          pricing_rules: Json | null
-          updated_at: string
-        }
-        Insert: {
-          base_cost?: number | null
-          created_at?: string
-          field_name: string
-          field_value: string
-          id?: string
-          is_active?: boolean | null
-          multiplier_factor?: number | null
-          pricing_rules?: Json | null
-          updated_at?: string
-        }
-        Update: {
-          base_cost?: number | null
-          created_at?: string
-          field_name?: string
-          field_value?: string
-          id?: string
-          is_active?: boolean | null
-          multiplier_factor?: number | null
-          pricing_rules?: Json | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       bookings: {
         Row: {
           access: string | null
@@ -738,6 +702,7 @@ export type Database = {
           email: string | null
           first_name: string | null
           full_name: string | null
+          google_review: string | null
           id: number
           image: string | null
           last_name: string | null
@@ -752,6 +717,7 @@ export type Database = {
           email?: string | null
           first_name?: string | null
           full_name?: string | null
+          google_review?: string | null
           id?: number
           image?: string | null
           last_name?: string | null
@@ -766,11 +732,173 @@ export type Database = {
           email?: string | null
           first_name?: string | null
           full_name?: string | null
+          google_review?: string | null
           id?: number
           image?: string | null
           last_name?: string | null
           phone?: string | null
           whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      linen_inventory: {
+        Row: {
+          address_id: string
+          clean_quantity: number
+          customer_id: number
+          dirty_quantity: number
+          id: string
+          last_updated: string
+          product_id: string
+        }
+        Insert: {
+          address_id: string
+          clean_quantity?: number
+          customer_id: number
+          dirty_quantity?: number
+          id?: string
+          last_updated?: string
+          product_id: string
+        }
+        Update: {
+          address_id?: string
+          clean_quantity?: number
+          customer_id?: number
+          dirty_quantity?: number
+          id?: string
+          last_updated?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "linen_inventory_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "linen_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      linen_order_items: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string
+          product_id: string
+          quantity: number
+          subtotal: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id: string
+          product_id: string
+          quantity?: number
+          subtotal?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string
+          product_id?: string
+          quantity?: number
+          subtotal?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "linen_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "linen_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "linen_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "linen_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      linen_orders: {
+        Row: {
+          address_id: string
+          created_at: string
+          customer_id: number
+          delivery_date: string | null
+          id: string
+          notes: string | null
+          order_date: string
+          pickup_date: string | null
+          status: string
+          total_cost: number
+          updated_at: string
+        }
+        Insert: {
+          address_id: string
+          created_at?: string
+          customer_id: number
+          delivery_date?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          pickup_date?: string | null
+          status?: string
+          total_cost?: number
+          updated_at?: string
+        }
+        Update: {
+          address_id?: string
+          created_at?: string
+          customer_id?: number
+          delivery_date?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          pickup_date?: string | null
+          status?: string
+          total_cost?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      linen_products: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          items_included: string | null
+          name: string
+          price: number
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          items_included?: string | null
+          name: string
+          price?: number
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          items_included?: string | null
+          name?: string
+          price?: number
+          type?: string
+          updated_at?: string
         }
         Relationships: []
       }
