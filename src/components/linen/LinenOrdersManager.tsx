@@ -9,10 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, ShoppingCart, Edit, Eye, Calendar, Package } from "lucide-react";
+import { Plus, ShoppingCart, Edit, Eye, Calendar, Package, CreditCard, MapPin, User, Banknote } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { EditOrderDialog } from "./EditOrderDialog";
 
 interface LinenOrder {
   id: string;
@@ -22,6 +22,8 @@ interface LinenOrder {
   delivery_date?: string;
   pickup_date?: string;
   status: 'scheduled' | 'delivered' | 'picked_up' | 'cancelled' | 'postponed';
+  payment_status: 'unpaid' | 'paid' | 'pending' | 'refunded';
+  payment_method: 'cash' | 'card' | 'bank_transfer' | 'stripe' | 'invoice';
   total_cost: number;
   notes?: string;
   created_at: string;
@@ -69,6 +71,8 @@ interface OrderFormData {
 
 export const LinenOrdersManager = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<string>("");
   const [formData, setFormData] = useState<OrderFormData>({
     customer_id: "",
@@ -318,6 +322,26 @@ export const LinenOrdersManager = () => {
     );
   };
 
+  const getPaymentStatusBadge = (status: string) => {
+    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+      paid: "default",
+      unpaid: "destructive",
+      pending: "outline",
+      refunded: "secondary"
+    };
+    
+    return (
+      <Badge variant={variants[status] || "outline"}>
+        {status.toUpperCase()}
+      </Badge>
+    );
+  };
+
+  const openEditDialog = (order: any) => {
+    setSelectedOrder(order);
+    setIsEditDialogOpen(true);
+  };
+
   if (ordersLoading) {
     return <div className="text-center py-8">Loading orders...</div>;
   }
@@ -539,72 +563,107 @@ export const LinenOrdersManager = () => {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order #</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Address</TableHead>
-                  <TableHead>Order Date</TableHead>
-                  <TableHead>Delivery Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {orders.map((order: any) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-mono text-sm">
-                      #{order.id.slice(-8).toUpperCase()}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">
-                          {order.customers?.first_name} {order.customers?.last_name}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {order.customers?.email}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="max-w-xs">
-                      <p className="truncate text-sm">
-                        {order.addresses?.address}, {order.addresses?.postcode}
+        <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
+          {orders.map((order: any) => (
+            <Card key={order.id} className="hover:shadow-lg transition-shadow duration-200">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShoppingCart className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base font-semibold">
+                      Order #{order.id.slice(-8).toUpperCase()}
+                    </CardTitle>
+                  </div>
+                  <div className="flex gap-2">
+                    {getStatusBadge(order.status)}
+                    {order.payment_status && getPaymentStatusBadge(order.payment_status)}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Customer Info */}
+                <div className="flex items-center gap-3">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium text-sm">
+                      {order.customers?.first_name} {order.customers?.last_name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {order.customers?.email}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Address */}
+                <div className="flex items-start gap-3">
+                  <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                  <div>
+                    <p className="text-sm">
+                      {order.addresses?.address}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {order.addresses?.postcode}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Dates */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Order Date</p>
+                      <p className="text-sm font-medium">
+                        {format(new Date(order.order_date), 'MMM dd, yyyy')}
                       </p>
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(order.order_date), 'MMM dd, yyyy')}
-                    </TableCell>
-                    <TableCell>
-                      {order.delivery_date 
-                        ? format(new Date(order.delivery_date), 'MMM dd, yyyy')
-                        : 'Not set'
-                      }
-                    </TableCell>
-                    <TableCell>{getStatusBadge(order.status)}</TableCell>
-                    <TableCell className="font-medium">
-                      £{order.total_cost.toFixed(2)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-1">
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Package className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Delivery</p>
+                      <p className="text-sm font-medium">
+                        {order.delivery_date 
+                          ? format(new Date(order.delivery_date), 'MMM dd, yyyy')
+                          : 'Not set'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment & Cost */}
+                <div className="flex items-center justify-between pt-3 border-t">
+                  <div className="flex items-center gap-2">
+                    <Banknote className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Total Cost</p>
+                      <p className="text-lg font-bold">£{order.total_cost.toFixed(2)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => openEditDialog(order)}
+                    >
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
+
+      {/* Edit Order Dialog */}
+      <EditOrderDialog 
+        order={selectedOrder}
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+      />
     </div>
   );
 };

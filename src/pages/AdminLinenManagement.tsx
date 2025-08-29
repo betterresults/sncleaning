@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Package, ShoppingCart, BarChart3 } from "lucide-react";
 import { LinenProductsManager } from "@/components/linen/LinenProductsManager";
 import { LinenOrdersManager } from "@/components/linen/LinenOrdersManager";
+import { InventoryManager } from "@/components/linen/InventoryManager";
 
 const AdminLinenManagement = () => {
   const [activeTab, setActiveTab] = useState("products");
@@ -46,10 +47,9 @@ const AdminLinenManagement = () => {
                   <ShoppingCart className="h-4 w-4" />
                   Orders
                 </TabsTrigger>
-                <TabsTrigger value="inventory" className="flex items-center gap-2" disabled>
+                <TabsTrigger value="inventory" className="flex items-center gap-2">
                   <BarChart3 className="h-4 w-4" />
                   Inventory
-                  <span className="text-xs text-muted-foreground">(Coming Soon)</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -95,13 +95,11 @@ const AdminLinenManagement = () => {
                       Inventory Management
                     </CardTitle>
                     <CardDescription>
-                      Track linen inventory at customer properties (Coming Soon)
+                      Track and manage linen inventory at customer properties
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-12 text-muted-foreground">
-                      Inventory management will be available after order creation is completed.
-                    </div>
+                    <InventoryManager />
                   </CardContent>
                 </Card>
               </TabsContent>
