@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Minus, X, AlertCircle } from 'lucide-react';
+import { Plus, Minus, X, AlertCircle, MapPin, Calendar, Package, FileText } from 'lucide-react';
 import { useLinenProducts } from '@/hooks/useLinenProducts';
 import { useCustomerLinenOrders } from '@/hooks/useCustomerLinenOrders';
 import { useAuth } from '@/contexts/AuthContext';
@@ -170,49 +170,72 @@ export const CreateLinenOrderDialog: React.FC<CreateLinenOrderDialogProps> = ({
 
         <div className="space-y-6">
           {/* Address Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="address">Delivery Address</Label>
-            <Select value={selectedAddress} onValueChange={setSelectedAddress}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select delivery address..." />
-              </SelectTrigger>
-              <SelectContent>
-                {addresses?.map((address) => (
-                  <SelectItem key={address.id} value={address.id}>
-                    {address.address}, {address.postcode}
-                    {address.is_default && ' (Default)'}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Delivery Address
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="address">Select delivery address *</Label>
+                <Select value={selectedAddress} onValueChange={setSelectedAddress}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select delivery address..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {addresses?.map((address) => (
+                      <SelectItem key={address.id} value={address.id}>
+                        {address.address}, {address.postcode}
+                        {address.is_default && ' (Default)'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Dates */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="delivery">Delivery Date (Optional)</Label>
-              <Input
-                id="delivery"
-                type="date"
-                value={deliveryDate}
-                onChange={(e) => setDeliveryDate(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="pickup">Pickup Date (Optional)</Label>
-              <Input
-                id="pickup"
-                type="date"
-                value={pickupDate}
-                onChange={(e) => setPickupDate(e.target.value)}
-              />
-            </div>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Schedule & Dates
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="delivery">Delivery Date (Optional)</Label>
+                  <Input
+                    id="delivery"
+                    type="date"
+                    value={deliveryDate}
+                    onChange={(e) => setDeliveryDate(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="pickup">Pickup Date (Optional)</Label>
+                  <Input
+                    id="pickup"
+                    type="date"
+                    value={pickupDate}
+                    onChange={(e) => setPickupDate(e.target.value)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Product Selection */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Select Linen Products</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Select Linen Products
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex gap-2">
@@ -228,7 +251,11 @@ export const CreateLinenOrderDialog: React.FC<CreateLinenOrderDialogProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
-                <Button onClick={addProduct} disabled={!selectedProduct}>
+                <Button 
+                  onClick={addProduct} 
+                  disabled={!selectedProduct}
+                  className="bg-[#18A5A5] hover:bg-[#185166] text-white"
+                >
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
@@ -236,7 +263,7 @@ export const CreateLinenOrderDialog: React.FC<CreateLinenOrderDialogProps> = ({
               {/* Order Items */}
               <div className="space-y-2">
                 {orderItems.map((item) => (
-                  <div key={item.productId} className="flex items-center gap-2 p-3 border rounded-lg">
+                  <div key={item.productId} className="flex items-center gap-2 p-3 border rounded-lg bg-gray-50">
                     <Badge variant="secondary" className="flex-1">
                       {item.productName}
                     </Badge>
@@ -267,7 +294,7 @@ export const CreateLinenOrderDialog: React.FC<CreateLinenOrderDialogProps> = ({
                       </Button>
                     </div>
 
-                    <div className="text-sm font-medium w-20 text-right">
+                    <div className="text-sm font-medium w-20 text-right text-[#185166]">
                       £{item.subtotal.toFixed(2)}
                     </div>
 
@@ -283,17 +310,18 @@ export const CreateLinenOrderDialog: React.FC<CreateLinenOrderDialogProps> = ({
               </div>
 
               {orderItems.length === 0 && (
-                <p className="text-muted-foreground text-center py-4">
-                  No items selected. Add products above.
-                </p>
+                <div className="text-center py-8 text-muted-foreground">
+                  <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No items selected. Add products above.</p>
+                </div>
               )}
 
               {/* Total and Minimum Check */}
               {orderItems.length > 0 && (
                 <div className="pt-4 border-t space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="font-medium">Total Cost:</span>
-                    <span className="text-lg font-bold">£{totalCost.toFixed(2)}</span>
+                    <span className="font-medium text-[#185166]">Total Cost:</span>
+                    <span className="text-lg font-bold text-[#18A5A5]">£{totalCost.toFixed(2)}</span>
                   </div>
                   
                   {!meetsMinimum && (
@@ -311,25 +339,40 @@ export const CreateLinenOrderDialog: React.FC<CreateLinenOrderDialogProps> = ({
           </Card>
 
           {/* Notes */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">Order Notes (Optional)</Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Any special instructions or notes for this order..."
-              rows={3}
-            />
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Order Notes
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="notes">Special instructions or notes (Optional)</Label>
+                <Textarea
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Any special instructions or notes for this order..."
+                  rows={3}
+                />
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              className="border-[#18A5A5] text-[#18A5A5] hover:bg-[#18A5A5] hover:text-white"
+            >
               Cancel
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={!selectedAddress || orderItems.length === 0 || !meetsMinimum || loading}
+              className="bg-[#18A5A5] hover:bg-[#185166] text-white font-semibold"
             >
               {loading ? 'Creating Order...' : `Create Order (£${totalCost.toFixed(2)})`}
             </Button>
