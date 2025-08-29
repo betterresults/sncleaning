@@ -3,7 +3,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { customerNavigation } from '@/lib/navigationItems';
+import { getCustomerNavigation } from '@/lib/navigationItems';
+import { useCustomerLinenAccess } from '@/hooks/useCustomerLinenAccess';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Construction, Copy, Calendar, ArrowRight } from 'lucide-react';
@@ -11,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 
 const CustomerAirbnbForm = () => {
   const { user, userRole, signOut } = useAuth();
+  const { hasLinenAccess } = useCustomerLinenAccess();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -25,7 +27,7 @@ const CustomerAirbnbForm = () => {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 to-blue-50">
         <UnifiedSidebar 
-          navigationItems={customerNavigation}
+          navigationItems={getCustomerNavigation(hasLinenAccess)}
           user={user}
           onSignOut={handleSignOut}
         />

@@ -4,7 +4,8 @@ import { Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { customerNavigation } from '@/lib/navigationItems';
+import { getCustomerNavigation } from '@/lib/navigationItems';
+import { useCustomerLinenAccess } from '@/hooks/useCustomerLinenAccess';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PersonalInfoEditor from '@/components/customer/PersonalInfoEditor';
 import PaymentMethodManager from '@/components/customer/PaymentMethodManager';
@@ -19,7 +20,9 @@ import { useToast } from '@/hooks/use-toast';
 
 const CustomerSettings = () => {
   const { user, userRole, customerId, signOut } = useAuth();
+  const { hasLinenAccess } = useCustomerLinenAccess();
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState('personal');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
@@ -94,7 +97,7 @@ const CustomerSettings = () => {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 to-blue-50 overflow-x-hidden">
         <UnifiedSidebar 
-          navigationItems={customerNavigation}
+          navigationItems={getCustomerNavigation(hasLinenAccess)}
           user={user}
           onSignOut={handleSignOut}
         />

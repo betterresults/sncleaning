@@ -4,12 +4,14 @@ import { Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { customerNavigation } from '@/lib/navigationItems';
+import { getCustomerNavigation } from '@/lib/navigationItems';
+import { useCustomerLinenAccess } from '@/hooks/useCustomerLinenAccess';
 import CustomerPastBookings from '@/components/customer/CustomerPastBookings';
 import AdminCustomerSelector from '@/components/admin/AdminCustomerSelector';
 
 const CustomerCompletedBookings = () => {
   const { user, userRole, customerId, loading, signOut } = useAuth();
+  const { hasLinenAccess } = useCustomerLinenAccess();
 
   const handleSignOut = async () => {
     try {
@@ -45,7 +47,7 @@ const CustomerCompletedBookings = () => {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
         <UnifiedSidebar
-          navigationItems={customerNavigation}
+          navigationItems={getCustomerNavigation(hasLinenAccess)}
           user={user}
           onSignOut={handleSignOut}
         />

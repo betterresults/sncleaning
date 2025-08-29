@@ -5,7 +5,8 @@ import { Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { customerNavigation } from '@/lib/navigationItems';
+import { getCustomerNavigation } from '@/lib/navigationItems';
+import { useCustomerLinenAccess } from '@/hooks/useCustomerLinenAccess';
 import CustomerContacts from '@/components/chat/CustomerContacts';
 import ChatInterface from '@/components/chat/ChatInterface';
 import AdminCustomerSelector from '@/components/admin/AdminCustomerSelector';
@@ -14,7 +15,9 @@ import { ChatType } from '@/types/chat';
 
 const CustomerMessages = () => {
   const { user, userRole, customerId, loading, signOut } = useAuth();
+  const { hasLinenAccess } = useCustomerLinenAccess();
   const { selectedCustomerId } = useAdminCustomer();
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   
   // Use selectedCustomerId for admin, otherwise use authenticated customer's ID
   const effectiveCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
@@ -100,7 +103,7 @@ const CustomerMessages = () => {
     <SidebarProvider>
       <div className="h-screen flex w-full bg-gray-50 overflow-hidden">
         <UnifiedSidebar 
-          navigationItems={customerNavigation}
+          navigationItems={getCustomerNavigation(hasLinenAccess)}
           user={user}
           onSignOut={handleSignOut}
         />

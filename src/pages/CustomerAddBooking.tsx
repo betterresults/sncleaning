@@ -4,7 +4,8 @@ import { Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { customerNavigation } from '@/lib/navigationItems';
+import { getCustomerNavigation } from '@/lib/navigationItems';
+import { useCustomerLinenAccess } from '@/hooks/useCustomerLinenAccess';
 import { Button } from '@/components/ui/button';
 import ServiceSelection from '@/components/booking/ServiceSelection';
 import NewBookingForm from '@/components/booking/NewBookingForm';
@@ -14,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const CustomerAddBooking = () => {
   const { user, userRole, signOut, customerId } = useAuth();
+  const { hasLinenAccess } = useCustomerLinenAccess();
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [customerData, setCustomerData] = useState<any>(null);
 
@@ -61,7 +63,7 @@ const CustomerAddBooking = () => {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 to-blue-50">
         <UnifiedSidebar 
-          navigationItems={customerNavigation}
+          navigationItems={getCustomerNavigation(hasLinenAccess)}
           user={user}
           onSignOut={handleSignOut}
         />

@@ -14,8 +14,10 @@ import CustomerUpcomingBookings from '@/components/customer/CustomerUpcomingBook
 
 const CustomerDashboard = () => {
   const { user, userRole, signOut } = useAuth();
-  const { hasLinenAccess } = useCustomerLinenAccess();
+  const { hasLinenAccess, loading: linenLoading } = useCustomerLinenAccess();
   const isAdminViewing = userRole === 'admin';
+
+  console.log('CustomerDashboard render - hasLinenAccess:', hasLinenAccess, 'loading:', linenLoading);
 
   const handleSignOut = async () => {
     try {
