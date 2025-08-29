@@ -1,4 +1,4 @@
-import { Calendar, History, DollarSign, Briefcase, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Calculator, Repeat, CreditCard, Shield, UserCheck, UserPlus } from 'lucide-react';
+import { Calendar, History, DollarSign, Briefcase, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Calculator, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package } from 'lucide-react';
 
 export const cleanerNavigation = [
   {
@@ -171,6 +171,11 @@ export const adminNavigation = [
         icon: UserPlus,
       },
     ],
+  },
+  {
+    title: "Linen Management",
+    url: "/admin-linen-management",
+    icon: Package,
   },
   {
     title: "Settings",

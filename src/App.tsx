@@ -40,6 +40,7 @@ import UpcomingBookings from "./pages/UpcomingBookings";
 import UsersAdmins from "./pages/UsersAdmins";
 import UsersCleaners from "./pages/UsersCleaners";
 import UsersCustomers from "./pages/UsersCustomers";
+import AdminLinenManagement from "./pages/AdminLinenManagement";
 import NotFound from "./pages/NotFound";
 import { AdminCustomerProvider } from "./contexts/AdminCustomerContext";
 import { AdminCleanerProvider } from "./contexts/AdminCleanerContext";
@@ -89,11 +90,12 @@ const App = () => (
                  <Route path="/admin-cleaner-payments" element={<AdminCleanerPayments />} />
                  <Route path="/admin-customer-payments" element={<AdminCustomerPayments />} />
                  <Route path="/admin-payment-management" element={<AdminPaymentManagement />} />
-                 <Route path="/users/admins" element={<UsersAdmins />} />
-                 <Route path="/users/cleaners" element={<UsersCleaners />} />
-                 <Route path="/users/customers" element={<UsersCustomers />} />
-                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-               <Route path="*" element={<NotFound />} />
+                  <Route path="/users/admins" element={<UsersAdmins />} />
+                  <Route path="/users/cleaners" element={<UsersCleaners />} />
+                  <Route path="/users/customers" element={<UsersCustomers />} />
+                  <Route path="/admin-linen-management" element={<AdminLinenManagement />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
             </Routes>
               </AdminCleanerProvider>
             </AdminCustomerProvider>
