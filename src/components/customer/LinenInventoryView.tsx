@@ -44,7 +44,10 @@ const LinenInventoryView = () => {
     queryKey: ['customer-linen-inventory', profile?.customer_id],
     queryFn: async () => {
       if (!profile?.customer_id) return [];
-      const { data } = await supabase
+      
+      console.log('Fetching linen inventory for customer_id:', profile.customer_id);
+      
+      const { data, error } = await supabase
         .from('linen_inventory')
         .select(`
           *,
@@ -60,6 +63,9 @@ const LinenInventoryView = () => {
           )
         `)
         .eq('customer_id', profile.customer_id);
+        
+      console.log('Linen inventory query result:', data, 'Error:', error);
+      
       return data || [];
     },
     enabled: !!profile?.customer_id

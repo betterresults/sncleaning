@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Calendar, Package, Truck, CheckCircle, Clock } from 'lucide-react';
+import { Plus, Calendar, Package, CheckCircle, Clock, Truck } from 'lucide-react';
 import { useCustomerLinenOrders } from '@/hooks/useCustomerLinenOrders';
 import { CreateLinenOrderDialog } from './CreateLinenOrderDialog';
 import { format } from 'date-fns';
@@ -85,69 +85,83 @@ const LinenOrdersView = () => {
           ) : (
             <div className="space-y-4">
               {orders.map((order) => (
-                <Card key={order.id} className="p-4">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        {getStatusIcon(order.status)}
-                        <h4 className="font-medium">
-                          Order #{order.id.slice(-8)}
-                        </h4>
-                        {getStatusBadge(order.status)}
-                        {getPaymentStatusBadge(order.payment_status)}
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Order Date: {format(new Date(order.order_date), 'dd MMM yyyy')}
-                      </p>
-                      {order.delivery_date && (
-                        <p className="text-sm text-muted-foreground">
-                          Delivery: {format(new Date(order.delivery_date), 'dd MMM yyyy')}
-                        </p>
-                      )}
-                      {order.pickup_date && (
-                        <p className="text-sm text-muted-foreground">
-                          Pickup: {format(new Date(order.pickup_date), 'dd MMM yyyy')}
-                        </p>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-semibold">
-                        £{order.total_cost.toFixed(2)}
-                      </div>
-                      {order.payment_method && (
-                        <div className="text-sm text-muted-foreground capitalize">
-                          {order.payment_method}
+                <Card key={order.id} className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 lg:gap-6">
+                      <div className="flex-1 space-y-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {getStatusIcon(order.status)}
+                          <h4 className="font-semibold text-lg text-[#185166]">
+                            Order #{order.id.slice(-8)}
+                          </h4>
+                          {getStatusBadge(order.status)}
+                          {getPaymentStatusBadge(order.payment_status)}
                         </div>
-                      )}
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">Order:</span>
+                            <span className="font-medium">{format(new Date(order.order_date), 'dd MMM yyyy')}</span>
+                          </div>
+                          {order.delivery_date && (
+                            <div className="flex items-center gap-2">
+                              <Truck className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-muted-foreground">Delivery:</span>
+                              <span className="font-medium">{format(new Date(order.delivery_date), 'dd MMM yyyy')}</span>
+                            </div>
+                          )}
+                          {order.pickup_date && (
+                            <div className="flex items-center gap-2">
+                              <Package className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-muted-foreground">Pickup:</span>
+                              <span className="font-medium">{format(new Date(order.pickup_date), 'dd MMM yyyy')}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="lg:text-right">
+                        <div className="text-2xl font-bold text-[#185166]">
+                          £{order.total_cost.toFixed(2)}
+                        </div>
+                        {order.payment_method && (
+                          <div className="text-sm text-muted-foreground capitalize">
+                            {order.payment_method}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <h5 className="font-medium text-sm">Items:</h5>
-                    {order.linen_order_items.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between text-sm bg-gray-50 p-2 rounded">
-                        <div>
-                          <span className="font-medium">{item.linen_products.name}</span>
-                          <span className="text-muted-foreground ml-2">
-                            ({item.linen_products.type})
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <span>Qty: {item.quantity}</span>
-                          <span>£{item.unit_price.toFixed(2)} each</span>
-                          <span className="font-medium">£{item.subtotal.toFixed(2)}</span>
-                        </div>
+                    <div className="mt-4 space-y-2">
+                      <h5 className="font-semibold text-[#185166]">Items:</h5>
+                      <div className="grid gap-2">
+                        {order.linen_order_items.map((item) => (
+                          <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                            <div className="flex-1">
+                              <span className="font-medium text-[#185166]">{item.linen_products.name}</span>
+                              <span className="text-muted-foreground ml-2 text-sm">
+                                ({item.linen_products.type})
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm">
+                              <span className="text-muted-foreground">Qty: <span className="font-medium text-[#185166]">{item.quantity}</span></span>
+                              <span className="text-muted-foreground">Unit: <span className="font-medium text-[#185166]">£{item.unit_price.toFixed(2)}</span></span>
+                              <span className="font-semibold text-[#185166]">£{item.subtotal.toFixed(2)}</span>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-
-                  {order.notes && (
-                    <div className="mt-4 p-3 bg-blue-50 rounded">
-                      <p className="text-sm">
-                        <strong>Notes:</strong> {order.notes}
-                      </p>
                     </div>
-                  )}
+
+                    {order.notes && (
+                      <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-sm text-blue-800">
+                          <strong>Notes:</strong> {order.notes}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
                 </Card>
               ))}
             </div>
