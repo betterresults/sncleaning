@@ -46,6 +46,13 @@ const BookingCard = <T extends BaseBooking>({
   onPaymentAction,
   hasReview
 }: BookingCardProps<T>) => {
+  // Check if booking is within 24 hours
+  const isWithin24Hours = () => {
+    const now = new Date();
+    const bookingDate = new Date(booking.date_time);
+    const diffInHours = (bookingDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+    return diffInHours <= 24 && diffInHours >= 0;
+  };
   return (
     <div className={`group relative overflow-hidden rounded-2xl border p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/30 ${
       booking.same_day 
@@ -72,7 +79,7 @@ const BookingCard = <T extends BaseBooking>({
         </div>
         <div className="text-right flex items-center gap-3">
           <div className="text-2xl font-bold text-[#18A5A5]">£{booking.total_cost}</div>
-          {booking.payment_status && (
+          {booking.payment_status && isWithin24Hours() && (
             <PaymentStatusIndicator 
               status={booking.payment_status} 
               isClickable={!booking.payment_status.toLowerCase().includes('paid') && !!onPaymentAction}
@@ -122,7 +129,8 @@ const BookingCard = <T extends BaseBooking>({
       {/* Separator and Actions */}
       <div className="pt-3 border-t border-border/40">
         {type === 'upcoming' && (
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center justify-between w-full">
+            {/* Cancel button - Left */}
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
@@ -150,6 +158,7 @@ const BookingCard = <T extends BaseBooking>({
               </AlertDialogContent>
             </AlertDialog>
             
+            {/* Duplicate button - Center */}
             <Button
               variant="outline"
               size="sm"
@@ -159,6 +168,8 @@ const BookingCard = <T extends BaseBooking>({
               <span className="mr-1">📋</span>
               <span className="hidden sm:inline">Duplicate</span>
             </Button>
+            
+            {/* Edit button - Right */}
             <Button
               variant="outline"
               size="sm"
