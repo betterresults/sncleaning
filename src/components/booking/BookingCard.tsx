@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Calendar, Clock, MapPin, User, Edit, Star, CreditCard } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Edit, Star, CreditCard, Camera } from 'lucide-react';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 
 interface BaseBooking {
@@ -52,7 +52,7 @@ const BookingCard = <T extends BaseBooking>({
         : 'border-border/60 bg-white hover:shadow-primary/5'
     }`}>
       
-      {/* Header with Service Type and Cost */}
+      {/* Header with Service Type, Photos and Cost */}
       <div className="flex items-start justify-between mb-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -61,6 +61,18 @@ const BookingCard = <T extends BaseBooking>({
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
                 Same Day
               </span>
+            )}
+            {/* Photos Button for Completed Bookings */}
+            {type === 'completed' && onSeePhotos && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onSeePhotos?.(booking)}
+                className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/30"
+              >
+                <Camera className="h-4 w-4" />
+                <span className="ml-1 hidden sm:inline">Photos</span>
+              </Button>
             )}
           </div>
           <div className="text-xs text-gray-500 font-medium">
@@ -212,20 +224,6 @@ const BookingCard = <T extends BaseBooking>({
                 );
                 
                 // Conditionally add other actions
-                if (onSeePhotos) {
-                  actions.push(
-                    <Button
-                      key="photos"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onSeePhotos?.(booking)}
-                      className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/30"
-                    >
-                      📷 <span className="ml-1 hidden sm:inline">Photos</span>
-                    </Button>
-                  );
-                }
-                
                 if (onPaymentAction && !booking.payment_status?.toLowerCase().includes('paid')) {
                   actions.push(
                     <Button
@@ -260,17 +258,6 @@ const BookingCard = <T extends BaseBooking>({
                     <>
                       {actions[0]}
                       {actions[2]}
-                      {actions[1]}
-                    </>
-                  );
-                } else if (actions.length === 4) {
-                  return (
-                    <>
-                      {actions[0]}
-                      <div className="flex gap-2">
-                        {actions[2]}
-                        {actions[3]}
-                      </div>
                       {actions[1]}
                     </>
                   );
