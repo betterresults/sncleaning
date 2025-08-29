@@ -259,8 +259,9 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
                 <div className="flex items-start gap-2 mt-2">
                   <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
                   <p className="text-xs text-gray-600 leading-relaxed">
-                    Same day bookings involve additional management complexity. If cleaners cancel 
-                    due to illness, we need to pay others double to cover last-minute assignments.
+                    Same day bookings require immediate scheduling and coordination which involves additional 
+                    management complexity. The £3 per hour surcharge covers urgent staff allocation, 
+                    priority scheduling, and expedited service preparation to ensure your cleaning is completed today.
                   </p>
                 </div>
               </div>
@@ -278,7 +279,7 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-full justify-start text-left font-normal mt-1.5 border-[#185166]/20 hover:border-[#185166]",
+                        "w-full justify-start text-left font-normal mt-1.5 border-gray-200 hover:border-gray-300 focus:border-[#185166]",
                         !selectedDate && "text-muted-foreground"
                       )}
                     >
@@ -303,7 +304,7 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
                 <Label className="text-sm font-medium text-gray-700">Time *</Label>
                 <div className="flex gap-2 mt-1.5">
                   <Select value={selectedHour} onValueChange={setSelectedHour}>
-                    <SelectTrigger className="border-[#185166]/20 hover:border-[#185166] focus:border-[#185166]">
+                    <SelectTrigger className="border-gray-200 hover:border-gray-300 focus:border-[#185166]">
                       <SelectValue placeholder="Hour" />
                     </SelectTrigger>
                     <SelectContent>
@@ -316,7 +317,7 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
                   </Select>
                   
                   <Select value={selectedMinute} onValueChange={setSelectedMinute}>
-                    <SelectTrigger className="w-20 border-[#185166]/20 hover:border-[#185166] focus:border-[#185166]">
+                    <SelectTrigger className="w-20 border-gray-200 hover:border-gray-300 focus:border-[#185166]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
