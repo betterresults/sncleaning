@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Calendar, Package, CheckCircle, Clock, Truck } from 'lucide-react';
+import { Plus, Calendar, Package, CheckCircle, Clock, Truck, XCircle, DollarSign } from 'lucide-react';
 import { useCustomerLinenOrders } from '@/hooks/useCustomerLinenOrders';
 import { CreateLinenOrderDialog } from './CreateLinenOrderDialog';
 import { format } from 'date-fns';
@@ -37,16 +37,16 @@ const LinenOrdersView = () => {
     }
   };
 
-  const getPaymentStatusBadge = (status: string) => {
+  const getPaymentStatusIcon = (status: string) => {
     switch (status) {
       case 'paid':
-        return <Badge className="bg-green-100 text-green-800">Paid</Badge>;
+        return <CheckCircle className="h-5 w-5 text-green-600" />;
       case 'unpaid':
-        return <Badge variant="destructive">Unpaid</Badge>;
+        return <XCircle className="h-5 w-5 text-red-600" />;
       case 'pending':
-        return <Badge variant="secondary">Pending</Badge>;
+        return <Clock className="h-5 w-5 text-yellow-600" />;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <DollarSign className="h-5 w-5 text-gray-600" />;
     }
   };
 
@@ -97,36 +97,28 @@ const LinenOrdersView = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     {getStatusBadge(order.status)}
-                    {getPaymentStatusBadge(order.payment_status)}
                   </div>
                   <div className="w-full h-px bg-border/40 mt-2"></div>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-[#18A5A5]">£{Number(order.total_cost).toFixed(2)}</div>
+                  <div className="flex items-center gap-2 justify-end">
+                    <div className="text-2xl font-bold text-[#18A5A5]">£{Number(order.total_cost).toFixed(2)}</div>
+                    {getPaymentStatusIcon(order.payment_status)}
+                  </div>
                 </div>
               </div>
               
-              {/* Date Information */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 text-sm gap-3 sm:gap-0">
-                <div className="flex items-center gap-2 text-[#185166]">
+              {/* Delivery Date Information */}
+              {order.delivery_date && (
+                <div className="flex items-center gap-2 text-[#185166] mb-4 text-sm">
                   <Calendar className="h-4 w-4 text-gray-600" />
-                  <span className="font-medium">Ordered: {new Date(order.order_date).toLocaleDateString('en-GB', { 
+                  <span className="font-medium">Delivery: {new Date(order.delivery_date).toLocaleDateString('en-GB', { 
                     day: 'numeric', 
                     month: 'long', 
                     year: 'numeric' 
                   })}</span>
                 </div>
-                {order.delivery_date && (
-                  <div className="flex items-center gap-2 text-[#185166]">
-                    <Calendar className="h-4 w-4 text-gray-600" />
-                    <span className="font-medium">Delivery: {new Date(order.delivery_date).toLocaleDateString('en-GB', { 
-                      day: 'numeric', 
-                      month: 'long', 
-                      year: 'numeric' 
-                    })}</span>
-                  </div>
-                )}
-              </div>
+              )}
 
               {/* Items */}
               <div className="mb-4">
