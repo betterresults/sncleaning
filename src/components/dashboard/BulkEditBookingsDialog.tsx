@@ -21,6 +21,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Search, Filter, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { LinenUsageEditor } from './LinenUsageEditor';
 
 interface Booking {
   id: number;
@@ -95,6 +96,7 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [editType, setEditType] = useState<string>('total_cost');
   const [newValue, setNewValue] = useState<string>('');
+  const [linenUsage, setLinenUsage] = useState<any[]>([]);
   const [editTypeOpen, setEditTypeOpen] = useState(false);
   const [filters, setFilters] = useState<Filters>({
     dateFrom: '',
@@ -285,8 +287,8 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
       return;
     }
 
-    // Skip validation for boolean fields
-    if (editType !== 'linen_management' && (!newValue || (typeof newValue === 'string' && newValue.trim() === ''))) {
+    // Skip validation for boolean fields and special fields
+    if (editType !== 'linen_management' && editType !== 'linen_used' && (!newValue || (typeof newValue === 'string' && newValue.trim() === ''))) {
       toast({
         title: "Invalid Value",
         description: "Please enter a valid value.",
@@ -339,6 +341,9 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
           // Convert string to boolean
           const boolValue = newValue === 'true';
           updateData = { linen_management: boolValue };
+          break;
+        case 'linen_used':
+          updateData = { linen_used: linenUsage };
           break;
         default:
           // Text fields
@@ -432,6 +437,7 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
       extras: 'Extras',
       linens: 'Old Linens (Legacy)',
       linen_management: 'Linen Management',
+      linen_used: 'Linen Usage',
       ironing: 'Ironing',
       first_name: 'First Name',
       last_name: 'Last Name',
@@ -468,6 +474,7 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
       { value: 'extras', label: 'Extras' },
       { value: 'linens', label: 'Old Linens (Legacy)' },
       { value: 'linen_management', label: 'Linen Management' },
+      { value: 'linen_used', label: 'Linen Usage' },
       { value: 'ironing', label: 'Ironing' },
       { value: 'first_name', label: 'First Name' },
       { value: 'last_name', label: 'Last Name' },
@@ -761,7 +768,14 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
             
             <div>
               <Label htmlFor="newValue">New {getFieldLabel()}</Label>
-              {renderValueInput()}
+              {editType === 'linen_used' ? (
+                <LinenUsageEditor 
+                  value={linenUsage} 
+                  onChange={setLinenUsage}
+                />
+              ) : (
+                renderValueInput()
+              )}
             </div>
 
             <div className="flex items-end">
