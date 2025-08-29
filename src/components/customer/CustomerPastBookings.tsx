@@ -55,6 +55,7 @@ const CustomerPastBookings = () => {
   const [selectedBookingForReview, setSelectedBookingForReview] = useState<PastBooking | null>(null);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewText, setReviewText] = useState('');
+  const [additionalFiltersOpen, setAdditionalFiltersOpen] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [adjustPaymentDialogOpen, setAdjustPaymentDialogOpen] = useState(false);
   const [collectPaymentDialogOpen, setCollectPaymentDialogOpen] = useState(false);
@@ -130,123 +131,109 @@ const CustomerPastBookings = () => {
     }
   };
 
-  // Filter bookings when filters change
+    // Filter bookings when filters change
   useEffect(() => {
     applyFilters();
   }, [bookings, timePeriod, dateFrom, dateTo, cleanerFilter, paymentFilter, ratingFilter, reviews]);
 
   const fetchPastBookings = async () => {
-    if (!activeCustomerId) {
-      console.log('CustomerPastBookings - fetchPastBookings called but no activeCustomerId');
-      return;
-    }
-
-    console.log('CustomerPastBookings - Fetching past bookings for customer:', activeCustomerId);
-
+    if (!activeCustomerId) return;
+    
     try {
+      setLoading(true);
+      console.log('Fetching past bookings for customer:', activeCustomerId);
+      
       const { data, error } = await supabase
         .from('past_bookings')
         .select(`
-          id,
-          date_time,
-          address,
-          postcode,
-          service_type,
-          total_hours,
-          total_cost,
-          booking_status,
-          payment_status,
-          same_day,
-          cleaner
+          *,
+          cleaner:cleaners(id, first_name, last_name)
         `)
         .eq('customer', activeCustomerId)
         .order('date_time', { ascending: false });
 
-      console.log('CustomerPastBookings - Past bookings query result:', { data, error });
+      if (error) {
+        console.error('Error fetching past bookings:', error);
+        throw error;
+      }
 
-      if (error) throw error;
-      
-      // Transform the data to include cleaner info and check for photos
-      const bookingsWithCleanerInfo = await Promise.all(
+      console.log('Raw past bookings data:', data);
+
+      // Process the data to include photo availability
+      const bookingsWithPhotos = await Promise.all(
         (data || []).map(async (booking) => {
-          let cleanerData = null;
-          let hasPhotos = false;
-          let photoFolderName = '';
-
-          // Get cleaner info
-          if (booking.cleaner) {
-            const { data: cleanerResult } = await supabase
-              .from('cleaners')
-              .select('first_name, last_name')
-              .eq('id', booking.cleaner)
-              .maybeSingle();
-            cleanerData = cleanerResult;
-          }
-
-          // Get photos info for this booking
-          const { data: photosData } = await supabase
+          const { data: photos } = await supabase
             .from('cleaning_photos')
-            .select('file_path')
+            .select('id')
             .eq('booking_id', booking.id)
             .limit(1);
           
-          if (photosData && photosData.length > 0) {
-            hasPhotos = true;
-            // Extract folder name from the file path
-            const filePath = photosData[0].file_path;
-            const folderMatch = filePath.match(/^([^\/]+)\//);
-            if (folderMatch) {
-              photoFolderName = folderMatch[1];
-            }
-          }
-            
           return {
             ...booking,
-            cleaner: cleanerData,
-            cleaner_id: booking.cleaner,
-            has_photos: hasPhotos,
-            photo_folder_name: photoFolderName
+            has_photos: photos && photos.length > 0,
+            total_cost: booking.total_cost || '0'
           };
         })
       );
-      
-      setBookings(bookingsWithCleanerInfo);
-      
-      // Extract unique service types for filter
-      const uniqueServiceTypes = [...new Set(bookingsWithCleanerInfo.map(b => b.service_type).filter(Boolean))];
-      setServiceTypes(uniqueServiceTypes);
 
-      // Extract unique cleaners for filter
-      const uniqueCleaners = bookingsWithCleanerInfo
-        .filter(b => b.cleaner)
-        .map(b => ({
-          id: b.cleaner_id!,
-          name: `${b.cleaner!.first_name} ${b.cleaner!.last_name}`
-        }))
-        .filter((cleaner, index, self) => 
-          index === self.findIndex(c => c.id === cleaner.id)
-        );
-      setAvailableCleaners(uniqueCleaners);
+      console.log('Processed bookings with photos:', bookingsWithPhotos);
+      setBookings(bookingsWithPhotos);
 
-      // Fetch reviews for these bookings
-      const { data: reviewData } = await supabase
-        .from('reviews')
-        .select('past_booking_id')
-        .in('past_booking_id', bookingsWithCleanerInfo.map(b => b.id));
+      // Extract service types
+      const types = [...new Set(bookingsWithPhotos.map(b => b.service_type).filter(Boolean))];
+      setServiceTypes(types);
 
-      const reviewsMap: {[key: number]: boolean} = {};
-      reviewData?.forEach(review => {
-        reviewsMap[review.past_booking_id] = true;
-      });
-      setReviews(reviewsMap);
+      // Extract cleaners from bookings and fetch all cleaners
+      const bookingCleaners = bookingsWithPhotos
+        .map(b => b.cleaner)
+        .filter(Boolean)
+        .map(c => ({
+          id: c.id,
+          name: `${c.first_name} ${c.last_name}`
+        }));
 
+      // Fetch all cleaners from the cleaners table
+      const { data: allCleanersData, error: cleanersError } = await supabase
+        .from('cleaners')
+        .select('id, first_name, last_name')
+        .order('first_name');
+
+      if (cleanersError) {
+        console.error('Error fetching all cleaners:', cleanersError);
+      } else {
+        const allCleaners = allCleanersData?.map(c => ({
+          id: c.id,
+          name: `${c.first_name} ${c.last_name}`
+        })) || [];
+
+        // Combine all cleaners with booking cleaners, removing duplicates
+        const combinedCleaners = [...allCleaners];
+        bookingCleaners.forEach(bookingCleaner => {
+          if (!combinedCleaners.some(c => c.id === bookingCleaner.id)) {
+            combinedCleaners.push(bookingCleaner);
+          }
+        });
+
+        setAvailableCleaners(combinedCleaners);
+      }
+
+      // Fetch review status for all bookings
+      if (bookingsWithPhotos.length > 0) {
+        const bookingIds = bookingsWithPhotos.map(b => b.id);
+        const { data: reviews } = await supabase
+          .from('reviews')
+          .select('past_booking_id')
+          .in('past_booking_id', bookingIds);
+
+        const reviewStatusMap: { [key: number]: boolean } = {};
+        reviews?.forEach(review => {
+          reviewStatusMap[review.past_booking_id] = true;
+        });
+
+        setReviews(reviewStatusMap);
+      }
     } catch (error) {
-      console.error('Error fetching past bookings:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load completed bookings',
-        variant: 'destructive'
-      });
+      console.error('Error in fetchPastBookings:', error);
     } finally {
       setLoading(false);
     }
@@ -535,10 +522,10 @@ const CustomerPastBookings = () => {
         </Card>
       </div>
 
-      {/* Compact Filters */}
+      {/* Compact One-Line Filters */}
       <Card className="shadow-sm">
         <CardContent className="p-4">
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center justify-between">
             {/* Time Period Filter */}
             <div className="flex items-center gap-2">
               <CalendarDays className="h-4 w-4 text-gray-600" />
@@ -556,59 +543,88 @@ const CustomerPastBookings = () => {
               </Select>
             </div>
 
-            {/* Cleaner Filter */}
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-gray-600" />
-              <Select value={cleanerFilter} onValueChange={setCleanerFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="All cleaners" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All cleaners</SelectItem>
-                  {availableCleaners.map((cleaner) => (
-                    <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
-                      {cleaner.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Payment Filter */}
-            <div className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-gray-600" />
-              <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Payment" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="paid">Paid</SelectItem>
-                  <SelectItem value="unpaid">Unpaid</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Review Filter */}
-            <div className="flex items-center gap-2">
-              <Star className="h-4 w-4 text-gray-600" />
-              <Select value={ratingFilter} onValueChange={setRatingFilter}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Reviews" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="reviewed">Reviewed</SelectItem>
-                  <SelectItem value="not-reviewed">Not reviewed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Clear Filters */}
-            <Button onClick={clearFilters} variant="outline" size="sm">
-              Clear All
+            {/* Additional Filters Toggle */}
+            <Button
+              variant="outline"
+              onClick={() => setAdditionalFiltersOpen(!additionalFiltersOpen)}
+              className="flex items-center gap-2"
+            >
+              <Filter className="h-4 w-4" />
+              Additional Filters
+              {additionalFiltersOpen ? <X className="h-4 w-4" /> : <span className="text-xs">+</span>}
             </Button>
           </div>
+
+          {/* Additional Filters Panel */}
+          {additionalFiltersOpen && (
+            <div className="mt-4 pt-4 border-t border-border/40">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Cleaner Filter */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Cleaner
+                  </Label>
+                  <Select value={cleanerFilter} onValueChange={setCleanerFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All cleaners" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All cleaners</SelectItem>
+                      {availableCleaners.map((cleaner) => (
+                        <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
+                          {cleaner.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Payment Filter */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    Payment
+                  </Label>
+                  <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="paid">Paid</SelectItem>
+                      <SelectItem value="unpaid">Unpaid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Review Filter */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Star className="h-4 w-4" />
+                    Reviews
+                  </Label>
+                  <Select value={ratingFilter} onValueChange={setRatingFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="reviewed">Reviewed</SelectItem>
+                      <SelectItem value="not-reviewed">Not reviewed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Clear Filters */}
+                <div className="flex items-end">
+                  <Button onClick={clearFilters} variant="outline" size="sm" className="w-full">
+                    Clear All
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
