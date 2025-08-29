@@ -792,13 +792,13 @@ const CustomerPastBookings = () => {
                         <div
                           key={booking.id}
                           className="text-xs p-1 mb-1 rounded truncate bg-green-100 text-green-800 hover:bg-green-200 cursor-pointer"
-                          title={`${booking.service_type} - ${booking.address} - ${new Date(booking.date_time).toLocaleTimeString('en-GB', { 
+                          title={`${booking.cleaning_type || booking.service_type} - ${booking.address} - ${new Date(booking.date_time).toLocaleTimeString('en-GB', { 
                             hour: 'numeric', 
                             minute: '2-digit',
                             hour12: true 
                           })}`}
                         >
-                          <div className="font-medium">{booking.service_type}</div>
+                          <div className="font-medium">{booking.cleaning_type || booking.service_type}</div>
                           <div className="text-[10px] opacity-80">{booking.address}</div>
                         </div>
                       ))}
