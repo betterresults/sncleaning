@@ -207,22 +207,29 @@ const CustomerPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: Customer
           {!isPaid && (
             <div className="space-y-3">
               {!hasPaymentMethods ? (
-                <div className="text-center py-6 space-y-3">
-                  <CreditCard className="h-12 w-12 mx-auto text-gray-400" />
-                  <div>
-                    <p className="font-medium text-gray-900">Add your payment method</p>
-                    <p className="text-sm text-gray-500">
-                      You'll need to add a payment method to complete this payment
+                <div className="text-center py-6 space-y-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <CreditCard className="h-16 w-16 mx-auto text-yellow-600" />
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-semibold text-yellow-800">Payment Method Required</h3>
+                    <p className="font-medium text-yellow-700">
+                      Please add a payment card to pay for your booking
+                    </p>
+                    <p className="text-sm text-yellow-600">
+                      You need to securely add your payment card details before you can complete this payment.
                     </p>
                   </div>
                   <Button
                     onClick={handleAddPaymentMethod}
                     disabled={loading}
-                    className="bg-[#18A5A5] hover:bg-[#185166] text-white"
+                    className="bg-[#18A5A5] hover:bg-[#185166] text-white px-6 py-2"
+                    size="lg"
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    {loading ? 'Adding...' : 'Add Payment Method'}
+                    {loading ? 'Setting up...' : 'Add Payment Card Now'}
                   </Button>
+                  <p className="text-xs text-yellow-600">
+                    🔒 Your payment information is securely encrypted and processed by Stripe
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-3">
