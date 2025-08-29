@@ -52,14 +52,10 @@ export const InventoryManager = () => {
   const { data: inventory = [], isLoading } = useQuery({
     queryKey: ['linen-inventory', selectedCustomer, selectedAddress],
     queryFn: async () => {
+      // First get the inventory items
       let query = supabase
         .from('linen_inventory')
-        .select(`
-          *,
-          linen_products:product_id (name, type, price),
-          customers:customer_id (first_name, last_name),
-          addresses:address_id (address, postcode)
-        `)
+        .select('*')
         .order('last_updated', { ascending: false });
 
       if (selectedCustomer) {
@@ -69,9 +65,41 @@ export const InventoryManager = () => {
         query = query.eq('address_id', selectedAddress);
       }
 
-      const { data, error } = await query;
+      const { data: inventoryData, error } = await query;
       if (error) throw error;
-      return data as any[]; // Temporarily disable strict typing until linen_inventory_movements is in types
+
+      if (!inventoryData || inventoryData.length === 0) {
+        return [];
+      }
+
+      // Get unique IDs for related data
+      const productIds = [...new Set(inventoryData.map(item => item.product_id))];
+      const customerIds = [...new Set(inventoryData.map(item => item.customer_id))];
+      const addressIds = [...new Set(inventoryData.map(item => item.address_id))];
+
+      // Fetch related data separately
+      const [productsResult, customersResult, addressesResult] = await Promise.all([
+        supabase.from('linen_products').select('id, name, type, price').in('id', productIds),
+        supabase.from('customers').select('id, first_name, last_name').in('id', customerIds),
+        supabase.from('addresses').select('id, address, postcode').in('id', addressIds)
+      ]);
+
+      if (productsResult.error) throw productsResult.error;
+      if (customersResult.error) throw customersResult.error;
+      if (addressesResult.error) throw addressesResult.error;
+
+      // Create lookup maps
+      const productsMap = new Map(productsResult.data?.map(p => [p.id, p]) || []);
+      const customersMap = new Map(customersResult.data?.map(c => [c.id, c]) || []);
+      const addressesMap = new Map(addressesResult.data?.map(a => [a.id, a]) || []);
+
+      // Combine data
+      return inventoryData.map(item => ({
+        ...item,
+        linen_products: productsMap.get(item.product_id) || null,
+        customers: customersMap.get(item.customer_id) || null,
+        addresses: addressesMap.get(item.address_id) || null
+      }));
     }
   });
 
