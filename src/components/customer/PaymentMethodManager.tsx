@@ -352,10 +352,12 @@ const PaymentMethodManager = () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CreditCard className="h-5 w-5" />
+    <Card className="border-0">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-3 text-[#185166] text-xl">
+          <div className="p-2 bg-[#18A5A5]/10 rounded-lg">
+            <CreditCard className="h-5 w-5 text-[#18A5A5]" />
+          </div>
           Payment Methods
         </CardTitle>
       </CardHeader>
@@ -371,12 +373,12 @@ const PaymentMethodManager = () => {
             {paymentMethods.map((method) => (
               <div
                 key={method.id}
-                className="flex items-center justify-between p-4 border rounded-lg"
+                className="flex items-center justify-between p-4 border border-gray-100 rounded-xl bg-white shadow-sm hover:shadow-md transition-all duration-300"
               >
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2">
                     <CreditCard className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-medium capitalize">
+                    <span className="font-medium capitalize text-[#185166]">
                       {method.card_brand} •••• {method.card_last4}
                     </span>
                   </div>
@@ -396,6 +398,7 @@ const PaymentMethodManager = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => setAsDefault(method.id)}
+                      className="border-[#18A5A5] text-[#18A5A5] hover:bg-[#18A5A5] hover:text-white"
                     >
                       Set as Default
                     </Button>
@@ -404,6 +407,7 @@ const PaymentMethodManager = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => deletePaymentMethod(method.id)}
+                    className="border-gray-300 text-gray-600 hover:bg-red-50 hover:border-red-300 hover:text-red-600"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -415,7 +419,7 @@ const PaymentMethodManager = () => {
 
         <Button
           onClick={addPaymentMethod}
-          className="w-full"
+          className="w-full bg-[#18A5A5] hover:bg-[#185166] text-white"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Payment Method

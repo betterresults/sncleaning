@@ -277,16 +277,21 @@ const AddressManager = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
+    <Card className="border-0">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center justify-between text-[#185166] text-xl">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-[#18A5A5]/10 rounded-lg">
+              <MapPin className="h-5 w-5 text-[#18A5A5]" />
+            </div>
             Addresses
           </div>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button size="sm">
+              <Button 
+                size="sm"
+                className="bg-[#18A5A5] hover:bg-[#185166] text-white"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Address
               </Button>
@@ -431,9 +436,9 @@ const AddressCard = ({ address, isEditing, onEdit, onCancel, onSave, onDelete, l
   };
 
   return (
-    <div className="border rounded-lg p-4 space-y-3">
+    <div className="border border-gray-100 rounded-xl p-4 space-y-3 bg-white shadow-sm hover:shadow-md transition-all duration-300">
       {address.is_default && (
-        <div className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+        <div className="inline-block bg-[#18A5A5]/10 text-[#18A5A5] text-xs px-2 py-1 rounded font-medium">
           Default Address
         </div>
       )}
@@ -441,27 +446,39 @@ const AddressCard = ({ address, isEditing, onEdit, onCancel, onSave, onDelete, l
       {isEditing ? (
         <div className="space-y-3">
           <div>
-            <Label htmlFor={`edit-address-${address.id}`}>Address</Label>
+            <Label htmlFor={`edit-address-${address.id}`} className="text-sm font-medium text-[#185166]">Address</Label>
             <Input
               id={`edit-address-${address.id}`}
               value={editData.address}
               onChange={(e) => setEditData({ ...editData, address: e.target.value })}
+              className="border-gray-200 focus:border-[#18A5A5] focus:ring-[#18A5A5]/20 rounded-xl"
             />
           </div>
           <div>
-            <Label htmlFor={`edit-postcode-${address.id}`}>Postcode</Label>
+            <Label htmlFor={`edit-postcode-${address.id}`} className="text-sm font-medium text-[#185166]">Postcode</Label>
             <Input
               id={`edit-postcode-${address.id}`}
               value={editData.postcode}
               onChange={(e) => setEditData({ ...editData, postcode: e.target.value })}
+              className="border-gray-200 focus:border-[#18A5A5] focus:ring-[#18A5A5]/20 rounded-xl"
             />
           </div>
           <div className="flex justify-end space-x-2">
-            <Button variant="outline" size="sm" onClick={handleCancel}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleCancel}
+              className="border-gray-300 text-gray-600 hover:bg-gray-50"
+            >
               <X className="h-4 w-4 mr-2" />
               Cancel
             </Button>
-            <Button size="sm" onClick={handleSave} disabled={loading}>
+            <Button 
+              size="sm" 
+              onClick={handleSave} 
+              disabled={loading}
+              className="bg-[#18A5A5] hover:bg-[#185166] text-white"
+            >
               <Save className="h-4 w-4 mr-2" />
               Save
             </Button>
@@ -469,14 +486,25 @@ const AddressCard = ({ address, isEditing, onEdit, onCancel, onSave, onDelete, l
         </div>
       ) : (
         <div>
-          <p className="font-medium">{address.address}</p>
+          <p className="font-medium text-[#185166]">{address.address}</p>
           <p className="text-sm text-muted-foreground">{address.postcode}</p>
           <div className="flex justify-end space-x-2 mt-3">
-            <Button variant="outline" size="sm" onClick={onEdit}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onEdit}
+              className="border-[#18A5A5] text-[#18A5A5] hover:bg-[#18A5A5] hover:text-white"
+            >
               <Edit className="h-4 w-4 mr-2" />
               Edit
             </Button>
-            <Button variant="outline" size="sm" onClick={onDelete} disabled={loading}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onDelete} 
+              disabled={loading}
+              className="border-gray-300 text-gray-600 hover:bg-red-50 hover:border-red-300 hover:text-red-600"
+            >
               <Trash2 className="h-4 w-4 mr-2" />
               Delete
             </Button>

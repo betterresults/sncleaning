@@ -101,25 +101,42 @@ const PersonalInfoEditor = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <User className="h-5 w-5" />
+    <Card className="border-0">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center justify-between text-[#185166] text-xl">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-[#18A5A5]/10 rounded-lg">
+              <User className="h-5 w-5 text-[#18A5A5]" />
+            </div>
             Personal Information
           </div>
           {!isEditing ? (
-            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsEditing(true)}
+              className="border-[#18A5A5] text-[#18A5A5] hover:bg-[#18A5A5] hover:text-white transition-all duration-300"
+            >
               <Edit className="h-4 w-4 mr-2" />
               Edit
             </Button>
           ) : (
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleCancel}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleCancel}
+                className="border-gray-300 text-gray-600 hover:bg-gray-50"
+              >
                 <X className="h-4 w-4 mr-2" />
                 Cancel
               </Button>
-              <Button size="sm" onClick={handleSave} disabled={loading}>
+              <Button 
+                size="sm" 
+                onClick={handleSave} 
+                disabled={loading}
+                className="bg-[#18A5A5] hover:bg-[#185166] text-white"
+              >
                 <Save className="h-4 w-4 mr-2" />
                 Save
               </Button>
@@ -130,45 +147,45 @@ const PersonalInfoEditor = () => {
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="firstName">First Name</Label>
+            <Label htmlFor="firstName" className="text-sm font-medium text-[#185166]">First Name</Label>
             <Input
               id="firstName"
               value={customerData.first_name}
               onChange={(e) => setCustomerData({ ...customerData, first_name: e.target.value })}
               disabled={!isEditing}
-              className={!isEditing ? 'bg-gray-50' : ''}
+              className={`border-gray-200 focus:border-[#18A5A5] focus:ring-[#18A5A5]/20 rounded-xl ${!isEditing ? 'bg-gray-50' : ''}`}
             />
           </div>
           <div>
-            <Label htmlFor="lastName">Last Name</Label>
+            <Label htmlFor="lastName" className="text-sm font-medium text-[#185166]">Last Name</Label>
             <Input
               id="lastName"
               value={customerData.last_name}
               onChange={(e) => setCustomerData({ ...customerData, last_name: e.target.value })}
               disabled={!isEditing}
-              className={!isEditing ? 'bg-gray-50' : ''}
+              className={`border-gray-200 focus:border-[#18A5A5] focus:ring-[#18A5A5]/20 rounded-xl ${!isEditing ? 'bg-gray-50' : ''}`}
             />
           </div>
         </div>
         <div>
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email" className="text-sm font-medium text-[#185166]">Email</Label>
           <Input
             id="email"
             type="email"
             value={customerData.email}
             onChange={(e) => setCustomerData({ ...customerData, email: e.target.value })}
             disabled={!isEditing}
-            className={!isEditing ? 'bg-gray-50' : ''}
+            className={`border-gray-200 focus:border-[#18A5A5] focus:ring-[#18A5A5]/20 rounded-xl ${!isEditing ? 'bg-gray-50' : ''}`}
           />
         </div>
         <div>
-          <Label htmlFor="phone">Phone Number</Label>
+          <Label htmlFor="phone" className="text-sm font-medium text-[#185166]">Phone Number</Label>
           <Input
             id="phone"
             value={customerData.phone}
             onChange={(e) => setCustomerData({ ...customerData, phone: e.target.value })}
             disabled={!isEditing}
-            className={!isEditing ? 'bg-gray-50' : ''}
+            className={`border-gray-200 focus:border-[#18A5A5] focus:ring-[#18A5A5]/20 rounded-xl ${!isEditing ? 'bg-gray-50' : ''}`}
           />
         </div>
       </CardContent>

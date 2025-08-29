@@ -109,31 +109,28 @@ const CustomerSettings = () => {
             <div className="p-2 sm:p-4 space-y-3 sm:space-y-4 max-w-full">
               <div className="max-w-6xl mx-auto space-y-6">
                 <div className="text-center mb-8">
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-[#185166] to-[#18A5A5] bg-clip-text text-transparent">
-                    Account Settings
-                  </h1>
                   <p className="text-muted-foreground mt-2">Manage your account preferences and security</p>
                 </div>
 
                 <Tabs defaultValue="account" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 mb-8 bg-white/50 backdrop-blur-sm border border-white/20 shadow-lg rounded-2xl p-2">
+                  <TabsList className="grid w-full grid-cols-3 mb-8 bg-white border-gray-100 shadow-sm rounded-2xl p-2">
                     <TabsTrigger 
                       value="account" 
-                      className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#185166] data-[state=active]:to-[#18A5A5] data-[state=active]:text-white rounded-xl transition-all duration-300"
+                      className="flex items-center gap-2 data-[state=active]:bg-[#18A5A5] data-[state=active]:text-white rounded-xl transition-all duration-300"
                     >
                       <User className="h-4 w-4" />
                       <span className="hidden sm:inline">Account</span>
                     </TabsTrigger>
                     <TabsTrigger 
                       value="addresses" 
-                      className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#185166] data-[state=active]:to-[#18A5A5] data-[state=active]:text-white rounded-xl transition-all duration-300"
+                      className="flex items-center gap-2 data-[state=active]:bg-[#18A5A5] data-[state=active]:text-white rounded-xl transition-all duration-300"
                     >
                       <MapPin className="h-4 w-4" />
                       <span className="hidden sm:inline">Addresses</span>
                     </TabsTrigger>
                     <TabsTrigger 
                       value="payments" 
-                      className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#185166] data-[state=active]:to-[#18A5A5] data-[state=active]:text-white rounded-xl transition-all duration-300"
+                      className="flex items-center gap-2 data-[state=active]:bg-[#18A5A5] data-[state=active]:text-white rounded-xl transition-all duration-300"
                     >
                       <CreditCard className="h-4 w-4" />
                       <span className="hidden sm:inline">Payments</span>
@@ -143,16 +140,16 @@ const CustomerSettings = () => {
                   <TabsContent value="account" className="space-y-6">
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                       {/* Personal Information */}
-                      <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl">
+                      <div className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl">
                         <PersonalInfoEditor />
                       </div>
                       
                       {/* Change Password */}
-                      <Card className="bg-white/80 backdrop-blur-sm border-white/20 shadow-xl rounded-2xl">
+                      <Card className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl">
                         <CardHeader className="pb-4">
                           <CardTitle className="flex items-center gap-3 text-[#185166] text-xl">
-                            <div className="p-2 bg-gradient-to-r from-[#185166] to-[#18A5A5] rounded-lg">
-                              <Lock className="h-5 w-5 text-white" />
+                            <div className="p-2 bg-[#18A5A5]/10 rounded-lg">
+                              <Lock className="h-5 w-5 text-[#18A5A5]" />
                             </div>
                             Change Password
                           </CardTitle>
@@ -221,7 +218,7 @@ const CustomerSettings = () => {
 
                             <Button 
                               type="submit" 
-                              className="w-full bg-gradient-to-r from-[#185166] to-[#18A5A5] hover:from-[#185166]/90 hover:to-[#18A5A5]/90 text-white font-medium py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
+                              className="w-full bg-[#18A5A5] hover:bg-[#185166] text-white font-medium py-3 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md"
                               disabled={passwordLoading}
                             >
                               {passwordLoading ? 'Updating...' : 'Update Password'}
@@ -233,13 +230,13 @@ const CustomerSettings = () => {
                   </TabsContent>
 
                   <TabsContent value="addresses" className="space-y-6">
-                    <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl">
+                    <div className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl">
                       <AddressManager />
                     </div>
                   </TabsContent>
 
                   <TabsContent value="payments" className="space-y-6">
-                    <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl">
+                    <div className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl">
                       <PaymentMethodManager />
                     </div>
                   </TabsContent>
