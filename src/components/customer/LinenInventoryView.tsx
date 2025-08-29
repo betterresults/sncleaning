@@ -341,16 +341,46 @@ const LinenInventoryView = () => {
                   {addressData.items.map((item: InventoryItem) => {
                     const totalQuantity = item.clean_quantity + item.dirty_quantity + item.in_use_quantity;
                     return (
-                      <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div key={item.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                         <div className="flex-1">
                           <h5 className="font-semibold text-[#185166]">{item.linen_products.name}</h5>
                           <p className="text-sm text-muted-foreground capitalize">
-                            {totalQuantity} {totalQuantity === 1 ? 'item' : 'items'}
+                            {item.linen_products.type}
                           </p>
                         </div>
                         
-                        <div>
-                          {getStatusBadge(item.clean_quantity, item.dirty_quantity, item.in_use_quantity)}
+                        <div className="flex items-center gap-4">
+                          <div className="text-center">
+                            <div className="text-sm font-semibold text-green-600">
+                              {item.clean_quantity}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Clean</div>
+                          </div>
+                          
+                          <div className="text-center">
+                            <div className="text-sm font-semibold text-blue-600">
+                              {item.in_use_quantity}
+                            </div>
+                            <div className="text-xs text-muted-foreground">In Use</div>
+                          </div>
+                          
+                          <div className="text-center">
+                            <div className="text-sm font-semibold text-red-600">
+                              {item.dirty_quantity}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Dirty</div>
+                          </div>
+                          
+                          <div className="text-center border-l pl-4">
+                            <div className="text-lg font-bold text-[#185166]">
+                              {totalQuantity}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Total</div>
+                          </div>
+                          
+                          <div className="ml-4">
+                            {getStatusBadge(item.clean_quantity, item.dirty_quantity, item.in_use_quantity)}
+                          </div>
                         </div>
                       </div>
                     );
