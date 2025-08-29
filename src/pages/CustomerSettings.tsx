@@ -116,21 +116,21 @@ const CustomerSettings = () => {
                   <TabsList className="grid w-full grid-cols-3 mb-8 bg-white border-gray-100 shadow-sm rounded-2xl p-2">
                     <TabsTrigger 
                       value="account" 
-                      className="flex items-center gap-2 data-[state=active]:bg-[#18A5A5] data-[state=active]:text-white rounded-xl transition-all duration-300"
+                      className="flex items-center gap-2 data-[state=active]:bg-[#185166] data-[state=active]:text-white rounded-xl transition-all duration-300"
                     >
                       <User className="h-4 w-4" />
                       <span className="hidden sm:inline">Account</span>
                     </TabsTrigger>
                     <TabsTrigger 
                       value="addresses" 
-                      className="flex items-center gap-2 data-[state=active]:bg-[#18A5A5] data-[state=active]:text-white rounded-xl transition-all duration-300"
+                      className="flex items-center gap-2 data-[state=active]:bg-[#185166] data-[state=active]:text-white rounded-xl transition-all duration-300"
                     >
                       <MapPin className="h-4 w-4" />
                       <span className="hidden sm:inline">Addresses</span>
                     </TabsTrigger>
                     <TabsTrigger 
                       value="payments" 
-                      className="flex items-center gap-2 data-[state=active]:bg-[#18A5A5] data-[state=active]:text-white rounded-xl transition-all duration-300"
+                      className="flex items-center gap-2 data-[state=active]:bg-[#185166] data-[state=active]:text-white rounded-xl transition-all duration-300"
                     >
                       <CreditCard className="h-4 w-4" />
                       <span className="hidden sm:inline">Payments</span>
