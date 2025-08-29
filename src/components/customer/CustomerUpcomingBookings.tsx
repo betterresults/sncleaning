@@ -35,6 +35,8 @@ interface Booking {
   phone_number: string | null;
   email: string | null;
   same_day: boolean;
+  linen_management: boolean;
+  linen_used: any;
   cleaner?: {
     first_name: string;
     last_name: string;
