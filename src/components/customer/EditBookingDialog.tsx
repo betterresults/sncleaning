@@ -217,7 +217,7 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[95vh] overflow-y-auto">
         <DialogHeader className="pb-4">
           <DialogTitle className="text-xl font-bold text-[#185166]">Edit Booking</DialogTitle>
         </DialogHeader>
