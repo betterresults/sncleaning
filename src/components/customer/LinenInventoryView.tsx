@@ -7,6 +7,35 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+interface InventoryItem {
+  id: string;
+  address_id: string;
+  product_id: string;
+  customer_id: number;
+  clean_quantity: number;
+  dirty_quantity: number;
+  in_use_quantity: number;
+  last_updated: string;
+  linen_products: {
+    id: string;
+    name: string;
+    type: string;
+    price: number;
+  };
+  addresses: {
+    address: string;
+    postcode: string;
+  };
+}
+
+interface GroupedInventory {
+  address: {
+    address: string;
+    postcode: string;
+  };
+  items: InventoryItem[];
+}
+
 const LinenInventoryView = () => {
   const { user } = useAuth();
 
@@ -40,35 +69,93 @@ const LinenInventoryView = () => {
   });
 
   // Get inventory for all addresses
-  const { data: inventory } = useQuery({
+  const { data: inventory, isLoading: inventoryLoading, error: inventoryError } = useQuery({
     queryKey: ['customer-linen-inventory', profile?.customer_id],
     queryFn: async () => {
-      if (!profile?.customer_id) return [];
+      if (!profile?.customer_id) {
+        console.log('❌ No customer_id found in profile:', profile);
+        return [];
+      }
       
-      console.log('Fetching linen inventory for customer_id:', profile.customer_id);
+      console.log('🔍 Fetching linen inventory for customer_id:', profile.customer_id);
       
+      // First, try a simple query to see if we get any data at all
+      const { data: simpleData, error: simpleError } = await supabase
+        .from('linen_inventory')
+        .select('*')
+        .eq('customer_id', profile.customer_id);
+      
+      console.log('📦 Simple inventory query result:', simpleData, 'Error:', simpleError);
+      
+      if (simpleError) {
+        console.error('❌ Simple query error:', simpleError);
+        throw simpleError;
+      }
+      
+      if (!simpleData || simpleData.length === 0) {
+        console.log('⚠️ No inventory found for customer_id:', profile.customer_id);
+        return [];
+      }
+      
+      // Now try the full query with joins
       const { data, error } = await supabase
         .from('linen_inventory')
         .select(`
           *,
-          linen_products (
+          linen_products!inner (
             id,
             name,
             type,
             price
           ),
-          addresses (
+          addresses!inner (
             address,
             postcode
           )
         `)
         .eq('customer_id', profile.customer_id);
         
-      console.log('Linen inventory query result:', data, 'Error:', error);
+      console.log('🔗 Full inventory query result:', data, 'Error:', error);
+      
+      if (error) {
+        console.error('❌ Full query error:', error);
+        // Fallback to manual joins if the nested query fails
+        const inventory = [];
+        for (const item of simpleData) {
+          const { data: product } = await supabase
+            .from('linen_products')
+            .select('id, name, type, price')
+            .eq('id', item.product_id)
+            .single();
+            
+          const { data: address } = await supabase
+            .from('addresses')
+            .select('address, postcode')
+            .eq('id', item.address_id)
+            .single();
+            
+          inventory.push({
+            ...item,
+            linen_products: product,
+            addresses: address
+          });
+        }
+        console.log('🔄 Fallback inventory result:', inventory);
+        return inventory;
+      }
       
       return data || [];
     },
     enabled: !!profile?.customer_id
+  });
+  
+  console.log('📊 Final inventory state:', {
+    hasProfile: !!profile,
+    customerId: profile?.customer_id,
+    inventoryLoading,
+    inventoryError,
+    inventoryCount: inventory?.length || 0,
+    inventory: inventory
   });
 
   if (!inventory || inventory.length === 0) {
@@ -102,7 +189,7 @@ const LinenInventoryView = () => {
     }
     acc[addressKey].items.push(item);
     return acc;
-  }, {} as Record<string, any>);
+  }, {} as Record<string, GroupedInventory>);
 
   const getStatusBadge = (clean: number, dirty: number, inUse: number) => {
     const total = clean + dirty + inUse;
@@ -148,7 +235,7 @@ const LinenInventoryView = () => {
         </CardContent>
       </Card>
 
-      {Object.entries(inventoryByAddress).map(([addressId, addressData]) => (
+      {Object.entries(inventoryByAddress).map(([addressId, addressData]: [string, GroupedInventory]) => (
         <Card key={addressId}>
           <CardHeader>
             <CardTitle className="text-lg">
@@ -157,7 +244,7 @@ const LinenInventoryView = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {addressData.items.map((item: any) => (
+              {addressData.items.map((item: InventoryItem) => (
                 <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex-1">
                     <h4 className="font-medium">{item.linen_products.name}</h4>
