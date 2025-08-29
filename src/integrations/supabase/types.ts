@@ -104,6 +104,8 @@ export type Database = {
           ironing_hours: number | null
           key_collection: string | null
           last_name: string | null
+          linen_management: boolean | null
+          linen_used: Json | null
           linens: string | null
           mattress_items: string | null
           occupied: string | null
@@ -173,6 +175,8 @@ export type Database = {
           ironing_hours?: number | null
           key_collection?: string | null
           last_name?: string | null
+          linen_management?: boolean | null
+          linen_used?: Json | null
           linens?: string | null
           mattress_items?: string | null
           occupied?: string | null
@@ -242,6 +246,8 @@ export type Database = {
           ironing_hours?: number | null
           key_collection?: string | null
           last_name?: string | null
+          linen_management?: boolean | null
+          linen_used?: Json | null
           linens?: string | null
           mattress_items?: string | null
           occupied?: string | null
