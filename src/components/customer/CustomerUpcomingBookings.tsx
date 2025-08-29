@@ -178,12 +178,12 @@ const CustomerUpcomingBookings = () => {
       if (countError) throw countError;
       setCompletedBookingsCount(count || 0);
 
-      // Fetch unpaid completed bookings count
+      // Fetch unpaid completed bookings count - must be from past_bookings where payment not paid
       const { count: unpaidCount, error: unpaidCountError } = await supabase
         .from('past_bookings')
         .select('*', { count: 'exact', head: true })
         .eq('customer', activeCustomerId)
-        .neq('payment_status', 'paid');
+        .not('payment_status', 'ilike', '%paid%');
 
       if (unpaidCountError) throw unpaidCountError;
       setUnpaidCompletedBookingsCount(unpaidCount || 0);
