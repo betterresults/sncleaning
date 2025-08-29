@@ -248,7 +248,7 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                 <div className="flex items-center gap-2">
                   <Input
                     type="number"
-                    min="1"
+                    min="2"
                     max="24"
                     step="0.5"
                     value={totalHours}
@@ -417,7 +417,7 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
           </Button>
           <Button
             onClick={handleSave}
-            disabled={loading || !selectedDate || !selectedHour || !selectedMinute || totalHours <= 0}
+            disabled={loading || !selectedDate || !selectedHour || !selectedMinute || totalHours < 2}
             className="px-6 bg-[#18A5A5] hover:bg-[#185166] text-white font-semibold"
           >
             {loading ? 'Saving...' : 'Save Changes'}
