@@ -82,30 +82,62 @@ export const LinenOrdersManager = () => {
   const queryClient = useQueryClient();
 
   // Fetch orders with customer info
-  const { data: orders = [], isLoading: ordersLoading } = useQuery({
+  const { data: orders = [], isLoading: ordersLoading, error: ordersError } = useQuery({
     queryKey: ['linen-orders'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      console.log('Fetching linen orders...');
+      
+      // First get the orders
+      const { data: ordersData, error: ordersError } = await supabase
         .from('linen_orders')
-        .select(`
-          *,
-          customers:customer_id (
-            id,
-            first_name,
-            last_name,
-            email,
-            phone
-          ),
-          addresses:address_id (
-            id,
-            address,
-            postcode
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
-      return data;
+      if (ordersError) {
+        console.error('Linen orders query error:', ordersError);
+        throw ordersError;
+      }
+      
+      if (!ordersData || ordersData.length === 0) {
+        console.log('No orders found');
+        return [];
+      }
+      
+      // Get unique customer IDs and address IDs
+      const customerIds = [...new Set(ordersData.map(o => o.customer_id))];
+      const addressIds = [...new Set(ordersData.map(o => o.address_id))];
+      
+      // Fetch customers
+      const { data: customersData, error: customersError } = await supabase
+        .from('customers')
+        .select('id, first_name, last_name, email, phone')
+        .in('id', customerIds);
+        
+      if (customersError) {
+        console.error('Customers query error:', customersError);
+        throw customersError;
+      }
+      
+      // Fetch addresses
+      const { data: addressesData, error: addressesError } = await supabase
+        .from('addresses')
+        .select('id, address, postcode')
+        .in('id', addressIds);
+        
+      if (addressesError) {
+        console.error('Addresses query error:', addressesError);
+        throw addressesError;
+      }
+      
+      // Combine the data
+      const enrichedOrders = ordersData.map(order => ({
+        ...order,
+        customers: customersData?.find(c => c.id === order.customer_id) || null,
+        addresses: addressesData?.find(a => a.id === order.address_id) || null
+      }));
+      
+      console.log('Fetched linen orders:', enrichedOrders);
+      return enrichedOrders;
     }
   });
 
@@ -288,6 +320,15 @@ export const LinenOrdersManager = () => {
 
   if (ordersLoading) {
     return <div className="text-center py-8">Loading orders...</div>;
+  }
+
+  if (ordersError) {
+    console.error('Orders loading error:', ordersError);
+    return (
+      <div className="text-center py-8 text-destructive">
+        Error loading orders: {ordersError.message}
+      </div>
+    );
   }
 
   return (
