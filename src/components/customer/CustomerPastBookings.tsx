@@ -1264,17 +1264,17 @@ const CustomerPastBookings = () => {
         booking={selectedBookingForEdit ? {
           id: selectedBookingForEdit.id,
           date_time: selectedBookingForEdit.date_time,
-          additional_details: null,
-          property_details: null,
-          parking_details: null,
-          key_collection: null,
-          access: null,
+          cleaning_type: selectedBookingForEdit.cleaning_type || selectedBookingForEdit.service_type,
+          service_type: selectedBookingForEdit.service_type,
           address: selectedBookingForEdit.address,
           postcode: selectedBookingForEdit.postcode,
           total_hours: selectedBookingForEdit.total_hours,
           cleaning_cost_per_hour: null,
           total_cost: parseFloat(selectedBookingForEdit.total_cost) || 0,
-          same_day: selectedBookingForEdit.same_day === 'true'
+          same_day: selectedBookingForEdit.same_day === 'true',
+          access: null,
+          first_name: null,
+          last_name: null
         } : null}
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
