@@ -111,15 +111,15 @@ const CleaningPhotosViewDialog = ({ open, onOpenChange, booking }: CleaningPhoto
 
     if (typePhotos.length === 0) {
       return (
-        <div className="text-center py-8">
-          <Camera className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-          <p className="text-gray-500">No {type} photos available</p>
+        <div className="text-center py-6 sm:py-8">
+          <Camera className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-4 text-gray-300" />
+          <p className="text-sm sm:text-base text-gray-500">No {type} photos available</p>
         </div>
       );
     }
 
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {typePhotos.map((photo) => (
           <PhotoItem key={photo.id} photo={photo} onSelect={setSelectedPhoto} />
         ))}
@@ -150,12 +150,12 @@ const CleaningPhotosViewDialog = ({ open, onOpenChange, booking }: CleaningPhoto
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <Camera className="h-8 w-8 text-gray-400" />
+              <Camera className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400" />
             </div>
           )}
         </div>
         
-        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute top-1 right-1 sm:top-2 sm:right-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
           <Button
             size="sm"
             variant="secondary"
@@ -163,9 +163,9 @@ const CleaningPhotosViewDialog = ({ open, onOpenChange, booking }: CleaningPhoto
               e.stopPropagation();
               downloadPhoto(photo.file_path, `${photo.photo_type}_${photo.id}.jpg`);
             }}
-            className="h-8 w-8 p-0"
+            className="h-6 w-6 sm:h-8 sm:w-8 p-0 text-xs"
           >
-            <Download className="h-4 w-4" />
+            <Download className="h-3 w-3 sm:h-4 sm:w-4" />
           </Button>
         </div>
 
@@ -175,11 +175,11 @@ const CleaningPhotosViewDialog = ({ open, onOpenChange, booking }: CleaningPhoto
               <AlertTriangle className="h-3 w-3 text-orange-600" />
               <span className="font-medium text-orange-800">Damage Report</span>
             </div>
-            <p className="text-orange-700">{photo.damage_details}</p>
+            <p className="text-orange-700 text-xs">{photo.damage_details}</p>
           </div>
         )}
 
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-[10px] sm:text-xs text-gray-500 mt-1">
           {new Date(photo.created_at).toLocaleDateString()}
         </p>
       </div>
@@ -226,83 +226,86 @@ const CleaningPhotosViewDialog = ({ open, onOpenChange, booking }: CleaningPhoto
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Camera className="h-5 w-5" />
+            <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
+              <Camera className="h-4 w-4 sm:h-5 sm:w-5" />
               Cleaning Photos
             </DialogTitle>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
-                {booking.address} ({booking.postcode})
+                <MapPin className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="truncate">{booking.address} ({booking.postcode})</span>
               </div>
               <div className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
+                <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
                 {new Date(booking.date_time).toLocaleDateString()}
               </div>
-              <Badge variant="outline">{booking.service_type}</Badge>
+              <Badge variant="outline" className="text-xs">{booking.service_type}</Badge>
             </div>
           </DialogHeader>
 
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="text-center">
-                <Camera className="h-12 w-12 mx-auto mb-4 text-gray-400 animate-pulse" />
-                <p className="text-gray-500">Loading photos...</p>
+                <Camera className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-4 text-gray-400 animate-pulse" />
+                <p className="text-sm sm:text-base text-gray-500">Loading photos...</p>
               </div>
             </div>
           ) : photos.length === 0 ? (
             <div className="text-center py-8">
-              <Camera className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p className="text-gray-500">No photos available for this booking</p>
+              <Camera className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-4 text-gray-300" />
+              <p className="text-sm sm:text-base text-gray-500">No photos available for this booking</p>
             </div>
           ) : (
             <Tabs defaultValue="before" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="before" className="flex items-center gap-2">
-                  Before Photos
+              <TabsList className="grid w-full grid-cols-3 text-xs sm:text-sm">
+                <TabsTrigger value="before" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                  <span className="hidden sm:inline">Before Photos</span>
+                  <span className="sm:hidden">Before</span>
                   {beforePhotos.length > 0 && (
-                    <Badge variant="secondary" className="ml-1 text-xs">
+                    <Badge variant="secondary" className="ml-1 text-[10px] sm:text-xs px-1">
                       {beforePhotos.length}
                     </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="after" className="flex items-center gap-2">
-                  After Photos
+                <TabsTrigger value="after" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                  <span className="hidden sm:inline">After Photos</span>
+                  <span className="sm:hidden">After</span>
                   {afterPhotos.length > 0 && (
-                    <Badge variant="secondary" className="ml-1 text-xs">
+                    <Badge variant="secondary" className="ml-1 text-[10px] sm:text-xs px-1">
                       {afterPhotos.length}
                     </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="damage" className="flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4" />
-                  Damage Reports
+                <TabsTrigger value="damage" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                  <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Damage Reports</span>
+                  <span className="sm:hidden">Damage</span>
                   {damagePhotos.length > 0 && (
-                    <Badge variant="destructive" className="ml-1 text-xs">
+                    <Badge variant="destructive" className="ml-1 text-[10px] sm:text-xs px-1">
                       {damagePhotos.length}
                     </Badge>
                   )}
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="before" className="mt-6">
+              <TabsContent value="before" className="mt-4 sm:mt-6">
                 <PhotoGrid photos={photos} type="before" />
               </TabsContent>
 
-              <TabsContent value="after" className="mt-6">
+              <TabsContent value="after" className="mt-4 sm:mt-6">
                 <PhotoGrid photos={photos} type="after" />
               </TabsContent>
 
-              <TabsContent value="damage" className="mt-6">
+              <TabsContent value="damage" className="mt-4 sm:mt-6">
                 {damagePhotos.length > 0 && (
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
                     <div className="flex items-center gap-2 mb-2">
-                      <AlertTriangle className="h-4 w-4 text-orange-600" />
-                      <h4 className="font-medium text-orange-800">Damage Reports Found</h4>
+                      <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
+                      <h4 className="font-medium text-orange-800 text-sm sm:text-base">Damage Reports Found</h4>
                     </div>
-                    <p className="text-sm text-orange-700">
+                    <p className="text-xs sm:text-sm text-orange-700">
                       The cleaner has reported {damagePhotos.length} issue(s) during the cleaning.
                     </p>
                   </div>

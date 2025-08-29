@@ -918,7 +918,7 @@ const CustomerPastBookings = () => {
 
       {/* Review Dialog */}
       <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] bg-white border-[#18A5A5]/20 mx-4">
+        <DialogContent className="sm:max-w-[500px] bg-white border-[#18A5A5]/20 mx-2 sm:mx-4">
           <DialogHeader className="text-center">
             <DialogTitle className="text-[#185166] text-xl sm:text-2xl font-semibold text-center">Leave a Review</DialogTitle>
             <DialogDescription className="text-gray-600 text-center mt-2">

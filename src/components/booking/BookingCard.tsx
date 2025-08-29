@@ -58,17 +58,17 @@ const BookingCard = <T extends BaseBooking>({
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <h3 className="text-xl font-bold text-[#185166] tracking-tight">{booking.cleaning_type || booking.service_type}</h3>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500 font-medium">Booking #{booking.id}</span>
             {booking.same_day && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
                 Same Day
               </span>
             )}
           </div>
-          <div className="text-xs text-gray-500 font-medium">
-            Booking #{booking.id}
-          </div>
-          {/* Green line under booking ID */}
-          <div className="w-16 h-1 bg-green-500 rounded-full"></div>
+          {/* Separator line matching the bottom separator */}
+          <div className="w-full h-px bg-border/40 mt-2"></div>
         </div>
         <div className="text-right flex items-center gap-3">
           <div className="text-2xl font-bold text-[#18A5A5]">£{booking.total_cost}</div>
