@@ -58,6 +58,7 @@ const CustomerPastBookings = () => {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewText, setReviewText] = useState('');
   const [bulkReviewDialogOpen, setBulkReviewDialogOpen] = useState(false);
+  const [excludedFromBulk, setExcludedFromBulk] = useState<Set<number>>(new Set());
   const [additionalFiltersOpen, setAdditionalFiltersOpen] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [adjustPaymentDialogOpen, setAdjustPaymentDialogOpen] = useState(false);
@@ -423,18 +424,18 @@ const CustomerPastBookings = () => {
   };
 
   const handleBulkReviewSubmit = async () => {
-    if (unreviewedBookings.length === 0) {
+    if (includedBookings.length === 0) {
       toast({
         title: 'No Reviews',
-        description: 'No unreviewed bookings found.',
+        description: 'No bookings selected for review.',
         variant: 'destructive'
       });
       return;
     }
 
     try {
-      // Apply the same rating and comment to all unreviewed bookings
-      const reviewInserts = unreviewedBookings.map((booking) => ({
+      // Apply the same rating and comment to all included bookings
+      const reviewInserts = includedBookings.map((booking) => ({
         past_booking_id: booking.id,
         rating: reviewRating,
         review_text: reviewText
@@ -448,16 +449,14 @@ const CustomerPastBookings = () => {
 
       toast({
         title: 'Success',
-        description: `Review submitted for ${unreviewedBookings.length} booking${unreviewedBookings.length > 1 ? 's' : ''}!`
+        description: `Review submitted for ${includedBookings.length} booking${includedBookings.length > 1 ? 's' : ''}!`
       });
 
-      setBulkReviewDialogOpen(false);
-      setReviewRating(5);
-      setReviewText('');
+      resetBulkReviewState();
       
       // Update reviews state for all submitted bookings
       const newReviews = { ...reviews };
-      unreviewedBookings.forEach((booking) => {
+      includedBookings.forEach((booking) => {
         newReviews[booking.id] = true;
       });
       setReviews(newReviews);
@@ -474,6 +473,28 @@ const CustomerPastBookings = () => {
   };
 
   const unreviewedBookings = filteredBookings.filter(booking => !reviews[booking.id]);
+  
+  // Get bookings included in bulk review (not excluded)
+  const includedBookings = unreviewedBookings.filter(booking => !excludedFromBulk.has(booking.id));
+
+  const toggleExcludeFromBulk = (bookingId: number) => {
+    setExcludedFromBulk(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(bookingId)) {
+        newSet.delete(bookingId);
+      } else {
+        newSet.add(bookingId);
+      }
+      return newSet;
+    });
+  };
+
+  const resetBulkReviewState = () => {
+    setBulkReviewDialogOpen(false);
+    setReviewRating(5);
+    setReviewText('');
+    setExcludedFromBulk(new Set());
+  };
 
   const handleSeePhotos = (booking: PastBooking) => {
     if (!booking.photo_folder_name) {
@@ -1048,7 +1069,12 @@ const CustomerPastBookings = () => {
           <DialogHeader className="text-center">
             <DialogTitle className="text-[#185166] text-xl sm:text-2xl font-semibold text-center">Review Multiple Bookings</DialogTitle>
             <DialogDescription className="text-gray-600 text-center mt-2">
-              Leave the same review for all {unreviewedBookings.length} unreviewed bookings at once
+              Leave the same review for {includedBookings.length > 0 ? `${includedBookings.length} selected bookings` : 'selected bookings'} at once
+              {excludedFromBulk.size > 0 && (
+                <span className="block text-sm text-orange-600 mt-1">
+                  ({excludedFromBulk.size} booking{excludedFromBulk.size !== 1 ? 's' : ''} excluded)
+                </span>
+              )}
             </DialogDescription>
           </DialogHeader>
           
@@ -1062,15 +1088,45 @@ const CustomerPastBookings = () => {
             <div className="space-y-6 py-6">
               {/* Show list of bookings that will be reviewed */}
               <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="font-semibold text-[#185166] mb-3">Bookings to be reviewed ({unreviewedBookings.length}):</h3>
+                <h3 className="font-semibold text-[#185166] mb-3">
+                  Bookings to be reviewed ({includedBookings.length} of {unreviewedBookings.length}):
+                </h3>
                 <div className="space-y-2 max-h-32 overflow-y-auto">
                   {unreviewedBookings.map((booking) => (
-                    <div key={booking.id} className="flex justify-between items-center text-sm">
-                      <span>{booking.cleaning_type || booking.service_type} - {booking.cleaner?.first_name} {booking.cleaner?.last_name}</span>
-                      <span className="text-gray-500">{new Date(booking.date_time).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })}</span>
+                    <div key={booking.id} className={`flex justify-between items-center text-sm p-2 rounded transition-all ${
+                      excludedFromBulk.has(booking.id) ? 'bg-red-50 opacity-60' : 'bg-white'
+                    }`}>
+                      <div className="flex-1">
+                        <span className={excludedFromBulk.has(booking.id) ? 'line-through text-gray-500' : ''}>
+                          {booking.cleaning_type || booking.service_type} - {booking.cleaner?.first_name} {booking.cleaner?.last_name}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-500 text-xs">
+                          {new Date(booking.date_time).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleExcludeFromBulk(booking.id)}
+                          className={`h-6 w-6 p-0 rounded-full ${
+                            excludedFromBulk.has(booking.id) 
+                              ? 'text-green-600 hover:text-green-700 hover:bg-green-100' 
+                              : 'text-red-600 hover:text-red-700 hover:bg-red-100'
+                          }`}
+                          title={excludedFromBulk.has(booking.id) ? 'Include in bulk review' : 'Exclude from bulk review'}
+                        >
+                          {excludedFromBulk.has(booking.id) ? '↩️' : '✕'}
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
+                {excludedFromBulk.size > 0 && (
+                  <p className="text-xs text-gray-600 mt-2">
+                    💡 Excluded bookings can be reviewed individually later
+                  </p>
+                )}
               </div>
 
               {/* Single review form for all bookings */}
@@ -1123,20 +1179,17 @@ const CustomerPastBookings = () => {
             <DialogFooter className="flex flex-col sm:flex-row gap-3 sm:gap-2">
               <Button 
                 variant="outline" 
-                onClick={() => {
-                  setBulkReviewDialogOpen(false);
-                  setReviewRating(5);
-                  setReviewText('');
-                }}
+                onClick={resetBulkReviewState}
                 className="border-gray-200 text-gray-600 hover:bg-gray-50 w-full sm:w-auto order-2 sm:order-1"
               >
                 Cancel
               </Button>
               <Button 
                 onClick={handleBulkReviewSubmit}
-                className="bg-[#18A5A5] hover:bg-[#185166] text-white w-full sm:w-auto order-1 sm:order-2"
+                disabled={includedBookings.length === 0}
+                className="bg-[#18A5A5] hover:bg-[#185166] text-white w-full sm:w-auto order-1 sm:order-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Submit Review for {unreviewedBookings.length} Booking{unreviewedBookings.length !== 1 ? 's' : ''}
+                Submit Review for {includedBookings.length} Booking{includedBookings.length !== 1 ? 's' : ''}
               </Button>
             </DialogFooter>
           )}
