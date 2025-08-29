@@ -230,12 +230,13 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
                 </div>
               )}
               {booking.cleaning_cost_per_hour && (
-                <div className="text-xs text-gray-500 mt-2 space-y-1">
-                  <div>Standard rate: £{booking.cleaning_cost_per_hour}/hour</div>
-                  {isSameDay && (
+                <div className="text-xs text-gray-500 mt-2">
+                  {isSameDay ? (
                     <div className="text-orange-600 font-medium">
-                      Same day surcharge: +£3/hour (Total rate: £{booking.cleaning_cost_per_hour + 3}/hour)
+                      Same day rate: £{booking.cleaning_cost_per_hour + 3}/hour
                     </div>
+                  ) : (
+                    <div>Rate: £{booking.cleaning_cost_per_hour}/hour</div>
                   )}
                 </div>
               )}
@@ -258,16 +259,10 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
                 <div className="flex items-start gap-2 mt-2">
                   <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
                   <p className="text-xs text-gray-600 leading-relaxed">
-                    Same day bookings require immediate scheduling and coordination which involves additional 
-                    management complexity. The £3 per hour surcharge covers urgent staff allocation, 
-                    priority scheduling, and expedited service preparation to ensure your cleaning is completed today.
+                    Same day bookings involve additional management complexity. If cleaners cancel 
+                    due to illness, we need to pay others double to cover last-minute assignments.
                   </p>
                 </div>
-                {isSameDay && (
-                  <div className="mt-2 p-2 bg-orange-100 rounded text-xs font-medium text-orange-800">
-                    Additional cost: £{hours * 3} (£3 × {hours} hours)
-                  </div>
-                )}
               </div>
             </div>
           </div>
