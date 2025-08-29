@@ -21,24 +21,39 @@ export const useCustomerUnpaidBookings = () => {
   const { toast } = useToast();
 
   const fetchUnpaidBookings = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user found, skipping unpaid bookings fetch');
+      return;
+    }
 
     try {
       setLoading(true);
+      console.log('Fetching unpaid bookings for user:', user.id);
 
       // Get customer profile
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('customer_id')
         .eq('user_id', user.id)
         .single();
 
-      if (!profile?.customer_id) return;
+      console.log('Customer profile result:', { profile, profileError });
+
+      if (profileError) {
+        console.error('Profile fetch error:', profileError);
+        return;
+      }
+
+      if (!profile?.customer_id) {
+        console.log('No customer_id found in profile');
+        return;
+      }
+
+      console.log('Fetching data for customer_id:', profile.customer_id);
 
       // Fetch BOTH unpaid completed bookings AND unpaid linen orders
       const [pastBookingsResponse, linenOrdersResponse] = await Promise.all([
         // Past bookings (completed cleanings that haven't been paid)
-        // Exclude anything with 'paid' or 'confirmed' in the status
         supabase
           .from('past_bookings')
           .select('id, date_time, address, postcode, total_cost, cleaning_type, payment_status')
@@ -48,27 +63,60 @@ export const useCustomerUnpaidBookings = () => {
           .order('date_time', { ascending: false }),
         
         // Unpaid linen orders  
-        // Exclude anything with 'paid' in the status (but keep delivered as they can still be unpaid)
         supabase
           .from('linen_orders')
           .select('id, order_date, total_cost, payment_status, address_id')
           .eq('customer_id', profile.customer_id)
-          .not('payment_status', 'ilike', '%paid%')
+          .neq('payment_status', 'paid')
           .order('order_date', { ascending: false })
       ]);
+
+      console.log('Database responses:', {
+        pastBookings: { data: pastBookingsResponse.data, error: pastBookingsResponse.error },
+        linenOrders: { data: linenOrdersResponse.data, error: linenOrdersResponse.error }
+      });
+
+      if (pastBookingsResponse.error) {
+        console.error('Past bookings error:', pastBookingsResponse.error);
+      }
+      
+      if (linenOrdersResponse.error) {
+        console.error('Linen orders error:', linenOrdersResponse.error);
+      }
 
       const pastBookings = pastBookingsResponse.data || [];
       const linenOrders = linenOrdersResponse.data || [];
 
+      console.log('Raw data:', {
+        pastBookingsCount: pastBookings.length,
+        linenOrdersCount: linenOrders.length,
+        pastBookings: pastBookings,
+        linenOrders: linenOrders
+      });
+
       // Get addresses for linen orders
       const addressIds = linenOrders.map(order => order.address_id).filter(Boolean);
-      const { data: addresses } = addressIds.length > 0 ? await supabase
-        .from('addresses')
-        .select('id, address, postcode')
-        .in('id', addressIds) : { data: [] };
+      let addresses = [];
+      let addressesError = null;
+      
+      if (addressIds.length > 0) {
+        const { data: addressesData, error: addressesFetchError } = await supabase
+          .from('addresses')
+          .select('id, address, postcode')
+          .in('id', addressIds);
+          
+        addresses = addressesData || [];
+        addressesError = addressesFetchError;
+        
+        if (addressesError) {
+          console.error('Addresses fetch error:', addressesError);
+        }
+      }
+
+      console.log('Addresses data:', addresses);
 
       // Create address lookup
-      const addressLookup = (addresses || []).reduce((acc, addr) => {
+      const addressLookup = addresses.reduce((acc, addr) => {
         acc[addr.id] = addr;
         return acc;
       }, {} as Record<string, any>);
@@ -102,12 +150,11 @@ export const useCustomerUnpaidBookings = () => {
         })
       ];
 
-      console.log('Outstanding payments breakdown:', {
-        pastBookingsCount: pastBookings.length,
-        linenOrdersCount: linenOrders.length,
-        totalUnpaidItems: allUnpaidItems.length,
-        pastBookings: pastBookings.map(b => ({ id: b.id, cost: b.total_cost, status: b.payment_status })),
-        linenOrders: linenOrders.map(o => ({ id: o.id, cost: o.total_cost, status: o.payment_status }))
+      console.log('Final unpaid items:', {
+        totalCount: allUnpaidItems.length,
+        pastBookingsProcessed: allUnpaidItems.filter(i => i.source === 'past_booking').length,
+        linenOrdersProcessed: allUnpaidItems.filter(i => i.source === 'linen_order').length,
+        items: allUnpaidItems
       });
 
       setUnpaidBookings(allUnpaidItems);
