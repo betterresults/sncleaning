@@ -52,7 +52,7 @@ const BookingCard = <T extends BaseBooking>({
         : 'border-border/60 bg-white hover:shadow-primary/5'
     }`}>
       
-      {/* Header with Service Type, Photos and Cost */}
+      {/* Header with Service Type and Cost */}
       <div className="flex items-start justify-between mb-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -61,18 +61,6 @@ const BookingCard = <T extends BaseBooking>({
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
                 Same Day
               </span>
-            )}
-            {/* Photos Button for Completed Bookings */}
-            {type === 'completed' && onSeePhotos && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onSeePhotos?.(booking)}
-                className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/30"
-              >
-                <Camera className="h-4 w-4" />
-                <span className="ml-1 hidden sm:inline">Photos</span>
-              </Button>
             )}
           </div>
           <div className="text-xs text-gray-500 font-medium">
@@ -84,17 +72,17 @@ const BookingCard = <T extends BaseBooking>({
           {booking.payment_status && (
             <PaymentStatusIndicator 
               status={booking.payment_status} 
-              isClickable={type === 'upcoming' && !!onPaymentAction}
-              onClick={type === 'upcoming' && onPaymentAction ? () => onPaymentAction(booking) : undefined}
+              isClickable={!booking.payment_status.toLowerCase().includes('paid') && !!onPaymentAction}
+              onClick={!booking.payment_status.toLowerCase().includes('paid') && onPaymentAction ? () => onPaymentAction(booking) : undefined}
               size="md"
             />
           )}
         </div>
       </div>
       
-      {/* Date, Time, Hours and Cleaner in a compact row */}
-      <div className="flex items-center justify-between mb-4 text-sm">
-        <div className="flex items-center gap-6">
+      {/* Date, Time, Hours and Cleaner - Mobile Responsive */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 text-sm gap-3 sm:gap-0">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
           <div className="flex items-center gap-2 text-[#185166]">
             <Calendar className="h-4 w-4 text-gray-600" />
             <span className="font-medium">{new Date(booking.date_time).toLocaleDateString('en-GB', { 
@@ -192,19 +180,8 @@ const BookingCard = <T extends BaseBooking>({
               {(() => {
                 const actions = [];
                 
-                // Always include Edit and Review buttons
+                // Always include Review button
                 actions.push(
-                  <Button
-                    key="edit"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onEdit?.(booking)}
-                    className="bg-[#185166] hover:bg-[#18A5A5] text-white border-[#185166] hover:border-[#18A5A5]"
-                  >
-                    <Edit className="h-4 w-4" />
-                    <span className="ml-1 hidden sm:inline">Edit</span>
-                  </Button>,
-                  
                   <Button
                     key="review"
                     variant="outline"
@@ -223,41 +200,36 @@ const BookingCard = <T extends BaseBooking>({
                   </Button>
                 );
                 
-                // Conditionally add other actions
-                if (onPaymentAction && !booking.payment_status?.toLowerCase().includes('paid')) {
+                // Add Photos button if available
+                if (onSeePhotos) {
                   actions.push(
                     <Button
-                      key="payment"
+                      key="photos"
                       variant="outline"
                       size="sm"
-                      onClick={() => onPaymentAction?.(booking)}
-                      className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+                      onClick={() => onSeePhotos?.(booking)}
+                      className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/30"
                     >
-                      <CreditCard className="h-4 w-4" />
-                      <span className="ml-1 hidden sm:inline">
-                        {booking.payment_status?.toLowerCase().includes('process')
-                          ? 'Pay Now'
-                          : 'Add Card'
-                        }
-                      </span>
+                      <Camera className="h-4 w-4" />
+                      <span className="ml-1 hidden sm:inline">Photos</span>
                     </Button>
                   );
                 }
                 
                 // Render based on number of actions
-                if (actions.length === 2) {
+                if (actions.length === 1) {
                   return (
                     <>
                       {actions[0]}
                       <div></div>
-                      {actions[1]}
+                      <div></div>
                     </>
                   );
-                } else if (actions.length === 3) {
+                } else if (actions.length === 2) {
                   return (
                     <>
                       {actions[0]}
-                      {actions[2]}
+                      <div></div>
                       {actions[1]}
                     </>
                   );
