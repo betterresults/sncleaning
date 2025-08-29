@@ -46,6 +46,7 @@ interface Booking {
   customer: number;
   cleaner_pay: number | null;
   total_hours: number | null;
+  linen_management?: boolean;
   additional_details?: string;
   cleaners?: {
     id: number;
@@ -826,6 +827,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                     <TableHead className="font-semibold text-base">Customer</TableHead>
                     <TableHead className="font-semibold text-base">Address</TableHead>
                     <TableHead className="font-semibold text-base">Service</TableHead>
+                    <TableHead className="font-semibold text-base">Linen</TableHead>
                     <TableHead className="font-semibold text-base">Cleaner</TableHead>
                     <TableHead className="font-semibold text-base">Cost</TableHead>
                     <TableHead className="text-center font-semibold text-base">Actions</TableHead>
@@ -834,7 +836,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                 <TableBody>
                   {paginatedBookings.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-gray-500 text-base">
+                      <TableCell colSpan={8} className="text-center py-8 text-gray-500 text-base">
                         No bookings found
                       </TableCell>
                     </TableRow>
@@ -902,6 +904,17 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                               {booking.cleaning_type || 'Standard Cleaning'}
                             </span>
+                          </TableCell>
+                          <TableCell>
+                            {booking.linen_management ? (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                Enabled
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                Disabled
+                              </span>
+                            )}
                           </TableCell>
                           <TableCell>
                             <div className="space-y-1">
