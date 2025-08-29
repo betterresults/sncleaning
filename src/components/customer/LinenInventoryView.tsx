@@ -236,7 +236,6 @@ const LinenInventoryView = () => {
     const total = clean + dirty + inUse;
     if (total === 0) return <Badge variant="outline">No Items</Badge>;
     if (dirty > 0) return <Badge variant="destructive">Needs Cleaning</Badge>;
-    if (inUse > 0) return <Badge variant="secondary">In Use</Badge>;
     return <Badge className="bg-green-100 text-green-800">All Clean</Badge>;
   };
 
