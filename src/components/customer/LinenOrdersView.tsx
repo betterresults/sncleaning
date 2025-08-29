@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Calendar, Package, CheckCircle, Clock, Truck, XCircle, DollarSign } from 'lucide-react';
+import { Plus, Calendar, Package, CheckCircle, Clock, Truck, XCircle, DollarSign, AlertTriangle, AlertCircle } from 'lucide-react';
 import { useCustomerLinenOrders } from '@/hooks/useCustomerLinenOrders';
 import { CreateLinenOrderDialog } from './CreateLinenOrderDialog';
 import { format } from 'date-fns';
@@ -37,16 +37,25 @@ const LinenOrdersView = () => {
     }
   };
 
-  const getPaymentStatusIcon = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return <CheckCircle className="h-5 w-5 text-green-600" />;
-      case 'unpaid':
-        return <XCircle className="h-5 w-5 text-red-600" />;
-      case 'pending':
-        return <Clock className="h-5 w-5 text-yellow-600" />;
-      default:
-        return <DollarSign className="h-5 w-5 text-gray-600" />;
+  const getPaymentStatusIcon = (status: string, cost: number) => {
+    const normalizedStatus = status?.toLowerCase() || 'unpaid';
+    
+    if (normalizedStatus === 'paid' || normalizedStatus.includes('paid')) {
+      return <CheckCircle className="h-5 w-5 text-green-600" />;
+    } else if (normalizedStatus === 'pending' || normalizedStatus.includes('pending')) {
+      return <Clock className="h-5 w-5 text-yellow-600" />;
+    } else if (normalizedStatus === 'processing' || normalizedStatus.includes('processing')) {
+      return <AlertCircle className="h-5 w-5 text-blue-600" />;
+    } else if (normalizedStatus === 'failed' || normalizedStatus.includes('failed')) {
+      return <XCircle className="h-5 w-5 text-red-600" />;
+    } else if (normalizedStatus === 'cancelled' || normalizedStatus.includes('cancelled')) {
+      return <XCircle className="h-5 w-5 text-gray-600" />;
+    } else {
+      // Unpaid - show different icons based on amount
+      if (cost > 0) {
+        return <AlertTriangle className="h-5 w-5 text-red-500" />;
+      }
+      return <XCircle className="h-5 w-5 text-red-600" />;
     }
   };
 
@@ -69,7 +78,10 @@ const LinenOrdersView = () => {
               <Package className="h-5 w-5" />
               Linen Orders
             </CardTitle>
-            <Button onClick={() => setShowCreateDialog(true)}>
+            <Button 
+              onClick={() => setShowCreateDialog(true)}
+              className="bg-[#18A5A5] hover:bg-[#185166] text-white font-semibold px-6 py-2 rounded-lg transition-colors ml-6"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Create New Order
             </Button>
@@ -103,7 +115,7 @@ const LinenOrdersView = () => {
                 <div className="text-right">
                   <div className="flex items-center gap-2 justify-end">
                     <div className="text-2xl font-bold text-[#18A5A5]">£{Number(order.total_cost).toFixed(2)}</div>
-                    {getPaymentStatusIcon(order.payment_status)}
+                    {getPaymentStatusIcon(order.payment_status, Number(order.total_cost))}
                   </div>
                 </div>
               </div>
