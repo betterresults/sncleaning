@@ -754,6 +754,7 @@ export type Database = {
           customer_id: number
           dirty_quantity: number
           id: string
+          in_use_quantity: number
           last_updated: string
           product_id: string
         }
@@ -763,6 +764,7 @@ export type Database = {
           customer_id: number
           dirty_quantity?: number
           id?: string
+          in_use_quantity?: number
           last_updated?: string
           product_id: string
         }
@@ -772,6 +774,7 @@ export type Database = {
           customer_id?: number
           dirty_quantity?: number
           id?: string
+          in_use_quantity?: number
           last_updated?: string
           product_id?: string
         }

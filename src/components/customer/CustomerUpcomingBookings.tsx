@@ -156,6 +156,8 @@ const CustomerUpcomingBookings = () => {
           phone_number,
           email,
           same_day,
+          linen_management,
+          linen_used,
           cleaner:cleaners(first_name, last_name)
         `)
         .eq('customer', activeCustomerId)
@@ -167,7 +169,9 @@ const CustomerUpcomingBookings = () => {
       // Map cleaning_type to service_type for BookingCard compatibility
       const processedBookings = (data || []).map(booking => ({
         ...booking,
-        service_type: booking.cleaning_type
+        service_type: booking.cleaning_type,
+        linen_management: booking.linen_management || false,
+        linen_used: booking.linen_used || []
       }));
       setBookings(processedBookings);
 
