@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import InstallPrompt from '@/components/InstallPrompt';
+import PWAInstallButton from '@/components/PWAInstallButton';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -193,6 +194,9 @@ const Auth = () => {
       <div className="w-full max-w-md">
         {/* Modern Title */}
         <div className="text-center mb-8">
+          <div className="flex justify-center mb-4">
+            <PWAInstallButton />
+          </div>
           <h1 className="text-5xl font-black text-white mb-8 tracking-tight">
             SN CLEANING
             <span className="block text-3xl font-light mt-2 opacity-90">SERVICES</span>
