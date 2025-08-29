@@ -67,7 +67,49 @@ export const EditOrderDialog = ({ order, open, onOpenChange }: EditOrderDialogPr
   });
 
   const handleSubmit = () => {
-    updateOrderMutation.mutate(formData);
+    // Only send fields that have values or have been changed from original
+    const updateData: any = {};
+    
+    // Always include status and payment status as they should have values
+    if (formData.status !== order.status) {
+      updateData.status = formData.status;
+    }
+    
+    if (formData.payment_status !== order.payment_status) {
+      updateData.payment_status = formData.payment_status;
+    }
+    
+    // Only include payment method if it has a value
+    if (formData.payment_method && formData.payment_method !== order.payment_method) {
+      updateData.payment_method = formData.payment_method;
+    }
+    
+    // Only include dates if they have values and are different from original
+    if (formData.delivery_date && formData.delivery_date !== order.delivery_date) {
+      updateData.delivery_date = formData.delivery_date;
+    }
+    
+    if (formData.pickup_date && formData.pickup_date !== order.pickup_date) {
+      updateData.pickup_date = formData.pickup_date;
+    }
+    
+    // Only include notes if changed
+    if (formData.notes !== order.notes) {
+      updateData.notes = formData.notes;
+    }
+    
+    // Only proceed if there are actual changes
+    if (Object.keys(updateData).length === 0) {
+      toast({ 
+        title: "No changes to save", 
+        description: "No fields were modified", 
+        variant: "default" 
+      });
+      return;
+    }
+    
+    console.log('Sending update data:', updateData);
+    updateOrderMutation.mutate(updateData);
   };
 
   const statusOptions = [
