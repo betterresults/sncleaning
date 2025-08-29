@@ -35,8 +35,8 @@ interface InventoryItem {
 }
 
 export const InventoryManager = () => {
-  const [selectedCustomer, setSelectedCustomer] = useState<string>("");
-  const [selectedAddress, setSelectedAddress] = useState<string>("");
+  const [selectedCustomer, setSelectedCustomer] = useState<string>("all");
+  const [selectedAddress, setSelectedAddress] = useState<string>("all");
   const [isAdjustmentDialogOpen, setIsAdjustmentDialogOpen] = useState(false);
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<InventoryItem | null>(null);
   const [adjustmentData, setAdjustmentData] = useState({
@@ -58,10 +58,10 @@ export const InventoryManager = () => {
         .select('*')
         .order('last_updated', { ascending: false });
 
-      if (selectedCustomer) {
+      if (selectedCustomer && selectedCustomer !== "all") {
         query = query.eq('customer_id', parseInt(selectedCustomer));
       }
-      if (selectedAddress) {
+      if (selectedAddress && selectedAddress !== "all") {
         query = query.eq('address_id', selectedAddress);
       }
 
@@ -120,7 +120,7 @@ export const InventoryManager = () => {
   const { data: addresses = [] } = useQuery({
     queryKey: ['addresses-for-inventory', selectedCustomer],
     queryFn: async () => {
-      if (!selectedCustomer) return [];
+      if (!selectedCustomer || selectedCustomer === "all") return [];
       const { data, error } = await supabase
         .from('addresses')
         .select('id, address, postcode')
@@ -129,7 +129,7 @@ export const InventoryManager = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !!selectedCustomer
+    enabled: !!selectedCustomer && selectedCustomer !== "all"
   });
 
   // Create inventory adjustment mutation (simplified version)
@@ -202,13 +202,13 @@ export const InventoryManager = () => {
           <Label htmlFor="customer-filter">Filter by Customer</Label>
           <Select value={selectedCustomer} onValueChange={(value) => {
             setSelectedCustomer(value);
-            setSelectedAddress(""); // Reset address when customer changes
+            setSelectedAddress("all"); // Reset address when customer changes
           }}>
             <SelectTrigger>
               <SelectValue placeholder="All customers..." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All customers</SelectItem>
+              <SelectItem value="all">All customers</SelectItem>
               {customers.map((customer) => (
                 <SelectItem key={customer.id} value={customer.id.toString()}>
                   {customer.first_name} {customer.last_name}
@@ -218,7 +218,7 @@ export const InventoryManager = () => {
           </Select>
         </div>
 
-        {selectedCustomer && (
+        {selectedCustomer && selectedCustomer !== "all" && (
           <div className="flex-1">
             <Label htmlFor="address-filter">Filter by Address</Label>
             <Select value={selectedAddress} onValueChange={setSelectedAddress}>
@@ -226,7 +226,7 @@ export const InventoryManager = () => {
                 <SelectValue placeholder="All addresses..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All addresses</SelectItem>
+                <SelectItem value="all">All addresses</SelectItem>
                 {addresses.map((address) => (
                   <SelectItem key={address.id} value={address.id}>
                     {address.address}, {address.postcode}
