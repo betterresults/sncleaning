@@ -522,7 +522,11 @@ const CustomerUpcomingBookings = () => {
       )}
       
       <EditBookingDialog
-        booking={editingBooking}
+        booking={editingBooking ? {
+          ...editingBooking,
+          linen_management: editingBooking.linen_management || false,
+          linen_used: editingBooking.linen_used || []
+        } : null}
         open={showEditDialog}
         onOpenChange={setShowEditDialog}
         onBookingUpdated={handleBookingUpdated}

@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
+import LinenManagementSelector from '@/components/booking/LinenManagementSelector';
 
 interface Booking {
   id: number;
@@ -29,6 +30,8 @@ interface Booking {
   access: string | null;
   first_name: string | null;
   last_name: string | null;
+  linen_management: boolean;
+  linen_used: any;
 }
 
 interface Address {
@@ -64,6 +67,8 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   const [totalHours, setTotalHours] = useState(0);
   const [totalCost, setTotalCost] = useState(0);
   const [isSameDay, setIsSameDay] = useState(false);
+  const [linenManagement, setLinenManagement] = useState(false);
+  const [selectedLinenProducts, setSelectedLinenProducts] = useState<Array<{product_id: string, quantity: number, product_name: string}>>([]);
   
   const [formData, setFormData] = useState({
     access: ''
@@ -105,6 +110,8 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       setTotalHours(booking.total_hours || 0);
       setTotalCost(booking.total_cost || 0);
       setIsSameDay(booking.same_day || false);
+      setLinenManagement(booking.linen_management || false);
+      setSelectedLinenProducts(booking.linen_used || []);
       
       // Find matching address
       const matchingAddress = addresses.find(addr => 
@@ -187,7 +194,9 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
           address: addressData.address,
           postcode: addressData.postcode,
           same_day: isSameDay,
-          access: formData.access
+          access: formData.access,
+          linen_management: linenManagement,
+          linen_used: selectedLinenProducts
         })
         .eq('id', booking.id);
 
@@ -395,6 +404,17 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
               </Select>
             </div>
           )}
+
+          {/* Linen Management Section */}
+          <div className="space-y-4">
+            <h4 className="font-semibold text-[#185166]">Linen Management</h4>
+            <LinenManagementSelector
+              enabled={linenManagement}
+              onEnabledChange={setLinenManagement}
+              linenUsed={selectedLinenProducts}
+              onLinenUsedChange={setSelectedLinenProducts}
+            />
+          </div>
 
           {/* Access Field */}
           <div className="space-y-2">

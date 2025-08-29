@@ -1274,7 +1274,9 @@ const CustomerPastBookings = () => {
           same_day: selectedBookingForEdit.same_day === 'true',
           access: null,
           first_name: null,
-          last_name: null
+          last_name: null,
+          linen_management: false,
+          linen_used: []
         } : null}
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}

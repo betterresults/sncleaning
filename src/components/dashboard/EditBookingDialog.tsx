@@ -10,9 +10,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
+import LinenManagementSelector from '@/components/booking/LinenManagementSelector';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { User, Calendar, MapPin, CreditCard, UserCheck, Clock, Home, Phone, Mail, AlertTriangle } from 'lucide-react';
+import { User, Calendar, MapPin, CreditCard, UserCheck, Clock, Home, Phone, Mail, AlertTriangle, Settings } from 'lucide-react';
 
 interface EditBookingDialogProps {
   booking: any;
@@ -54,7 +55,9 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
     formName: '',
     additionalDetails: '',
     propertyDetails: '',
-    deposit: 0
+    deposit: 0,
+    linenManagement: false,
+    linenUsed: []
   });
 
   // Format datetime for input field
@@ -102,7 +105,9 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         formName: booking.cleaning_type || '',
         additionalDetails: booking.additional_details || '',
         propertyDetails: booking.property_details || '',
-        deposit: booking.deposit || 0
+        deposit: booking.deposit || 0,
+        linenManagement: booking.linen_management || false,
+        linenUsed: booking.linen_used || []
       });
     }
   }, [booking, open]);
@@ -201,7 +206,9 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
           cleaning_type: formData.formName,
           additional_details: formData.additionalDetails,
           property_details: formData.propertyDetails,
-          deposit: formData.deposit
+          deposit: formData.deposit,
+          linen_management: formData.linenManagement,
+          linen_used: formData.linenUsed
         })
         .eq('id', booking.id);
 
@@ -236,7 +243,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
     }
   };
 
-  const handleInputChange = (field: string, value: string | number | null) => {
+  const handleInputChange = (field: string, value: string | number | boolean | null | any[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -590,6 +597,26 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                       </div>
                     </div>
                   </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              {/* Linen Management Section */}
+              <AccordionItem value="linen" className="border rounded-lg">
+                <AccordionTrigger className="px-6 py-4 bg-teal-50 hover:bg-teal-100 rounded-t-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-teal-500 rounded-full">
+                      <Settings className="h-4 w-4 text-white" />
+                    </div>
+                    <span className="text-lg font-semibold text-teal-900">Linen Management</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 py-4 bg-white">
+                  <LinenManagementSelector
+                    enabled={formData.linenManagement}
+                    onEnabledChange={(enabled) => handleInputChange('linenManagement', enabled)}
+                    linenUsed={formData.linenUsed}
+                    onLinenUsedChange={(products) => handleInputChange('linenUsed', products)}
+                  />
                 </AccordionContent>
               </AccordionItem>
 
