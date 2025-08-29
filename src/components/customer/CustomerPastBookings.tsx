@@ -27,6 +27,7 @@ interface PastBooking {
   address: string;
   postcode: string;
   service_type: string;
+  cleaning_type?: string;
   total_hours: number;
   total_cost: string;
   booking_status: string;
@@ -559,36 +560,62 @@ const CustomerPastBookings = () => {
       {/* Compact One-Line Filters */}
       <Card className="shadow-sm">
         <CardContent className="p-3 sm:p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-            {/* Time Period Filter */}
-            <div className="flex items-center gap-2 flex-1">
-              <CalendarDays className="h-4 w-4 text-gray-600 flex-shrink-0" />
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            {/* Time Period Filter - Left Half */}
+            <div className="flex items-center gap-2">
               <Select value={timePeriod} onValueChange={setTimePeriod}>
-                <SelectTrigger className="w-full sm:w-48">
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="current-month">Current Month</SelectItem>
-                  <SelectItem value="last-month">Last Month</SelectItem>
-                  <SelectItem value="last-3-months">Last 3 Months</SelectItem>
-                  <SelectItem value="last-6-months">Last 6 Months</SelectItem>
-                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="current-month">
+                    <div className="flex items-center gap-2">
+                      <CalendarDays className="h-4 w-4" />
+                      Current Month
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="last-month">
+                    <div className="flex items-center gap-2">
+                      <CalendarDays className="h-4 w-4" />
+                      Last Month
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="last-3-months">
+                    <div className="flex items-center gap-2">
+                      <CalendarDays className="h-4 w-4" />
+                      Last 3 Months
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="last-6-months">
+                    <div className="flex items-center gap-2">
+                      <CalendarDays className="h-4 w-4" />
+                      Last 6 Months
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="all">
+                    <div className="flex items-center gap-2">
+                      <CalendarDays className="h-4 w-4" />
+                      All Time
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Additional Filters Toggle */}
-            <Button
-              variant="outline"
-              onClick={() => setAdditionalFiltersOpen(!additionalFiltersOpen)}
-              className="flex items-center gap-2 justify-center sm:justify-start flex-shrink-0"
-              size="sm"
-            >
-              <Filter className="h-4 w-4" />
-              <span className="hidden xs:inline sm:inline">Additional Filters</span>
-              <span className="xs:hidden sm:hidden">Filters</span>
-              {additionalFiltersOpen ? <X className="h-4 w-4" /> : <span className="text-xs">+</span>}
-            </Button>
+            {/* Additional Filters - Right Half */}
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setAdditionalFiltersOpen(!additionalFiltersOpen)}
+                className="flex items-center gap-2 justify-center flex-shrink-0"
+                size="sm"
+              >
+                <Filter className="h-4 w-4" />
+                <span className="hidden xs:inline sm:inline">Additional Filters</span>
+                <span className="xs:hidden sm:hidden">Filters</span>
+                {additionalFiltersOpen ? <X className="h-4 w-4" /> : <span className="text-xs">+</span>}
+              </Button>
+            </div>
           </div>
 
           {/* Additional Filters Panel */}
@@ -808,6 +835,7 @@ const CustomerPastBookings = () => {
                         address: booking.address,
                         postcode: booking.postcode,
                         service_type: booking.service_type,
+                        cleaning_type: booking.cleaning_type,
                         total_hours: booking.total_hours,
                         total_cost: parseFloat(booking.total_cost) || 0,
                         booking_status: booking.booking_status,
