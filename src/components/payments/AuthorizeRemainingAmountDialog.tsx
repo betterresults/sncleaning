@@ -60,11 +60,12 @@ export function AuthorizeRemainingAmountDialog({ booking, onSuccess }: Authorize
 
   const { authorizedAmount, remainingAmount, totalAmount, hasPartialInfo } = getAuthorizedAmounts();
 
-  // Show if there's evidence of partial authorization OR if payment is authorized but we suspect it might be partial
+  // Only show for genuinely partial authorizations
   const hasRemainingAmount = (
     (hasPartialInfo && remainingAmount > 0) || 
     (booking.payment_status === 'partially_authorized') ||
-    (booking.payment_status === 'authorized' && authorizedAmount === 0) // Show for manual check on any authorized amount
+    // Only show for 'authorized' status if we have clear evidence of partial authorization
+    (booking.payment_status === 'authorized' && hasPartialInfo && remainingAmount > 0)
   );
 
   const handleAuthorizeRemaining = async () => {
