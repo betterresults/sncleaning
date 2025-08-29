@@ -285,7 +285,8 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
       return;
     }
 
-    if (!newValue || newValue.trim() === '') {
+    // Skip validation for boolean fields
+    if (editType !== 'linen_management' && (!newValue || (typeof newValue === 'string' && newValue.trim() === ''))) {
       toast({
         title: "Invalid Value",
         description: "Please enter a valid value.",
