@@ -166,30 +166,30 @@ const PersonalInfoEditor = () => {
             disabled={!isEditing}
             className={`border-white/20 bg-white/5 text-white placeholder:text-white/60 focus:border-[#18A5A5] focus:ring-[#18A5A5]/20 rounded-xl ${!isEditing ? 'bg-white/5' : 'bg-white/10'}`}
           />
-          
-          {isEditing && (
-            <div className="flex justify-end gap-2 pt-4 mt-4 border-t border-white/20">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleCancel}
-                className="border-white/20 text-white hover:bg-white/10"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Cancel
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={handleSave} 
-                disabled={loading}
-                className="bg-[#18A5A5] hover:bg-[#18A5A5]/80 text-white"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save
-              </Button>
-            </div>
-          )}
         </div>
+        
+        {isEditing && (
+          <div className="flex justify-end gap-2 pt-4 mt-4 border-t border-white/20">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleCancel}
+              className="border-white/20 text-white hover:bg-white/10"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+            <Button 
+              size="sm" 
+              onClick={handleSave} 
+              disabled={loading}
+              className="bg-[#18A5A5] hover:bg-[#18A5A5]/80 text-white"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
