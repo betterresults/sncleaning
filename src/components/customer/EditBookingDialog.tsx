@@ -296,14 +296,16 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                 <Label htmlFor="same-day" className="text-sm font-semibold text-[#185166] cursor-pointer">
                   Same Day Cleaning (+£3 per hour)
                 </Label>
-                <div className="flex items-start gap-2 mt-2">
-                  <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    Same day bookings require immediate scheduling and coordination which involves additional 
-                    management complexity. The £3 per hour surcharge covers urgent staff allocation, 
-                    priority scheduling, and expedited service preparation to ensure your cleaning is completed today.
-                  </p>
-                </div>
+                {isSameDay && (
+                  <div className="flex items-start gap-2 mt-2">
+                    <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-gray-600 leading-relaxed">
+                      Same day bookings require immediate scheduling and coordination which involves additional 
+                      management complexity. The £3 per hour surcharge covers urgent staff allocation, 
+                      priority scheduling, and expedited service preparation to ensure your cleaning is completed today.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
