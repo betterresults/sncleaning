@@ -164,7 +164,7 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
         postcode: booking.postcode 
       };
       
-      if (selectedAddressId) {
+      if (selectedAddressId && selectedAddressId !== 'current') {
         const selectedAddress = addresses.find(addr => addr.id === selectedAddressId);
         if (selectedAddress) {
           addressData = {
@@ -382,7 +382,7 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                   <SelectValue placeholder="Keep current address or select different one" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Keep current address</SelectItem>
+                  <SelectItem value="current">Keep current address</SelectItem>
                   {addresses.map((address) => (
                     <SelectItem key={address.id} value={address.id}>
                       {address.address}, {address.postcode}
