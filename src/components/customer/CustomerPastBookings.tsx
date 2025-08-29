@@ -86,15 +86,28 @@ const CustomerPastBookings = () => {
   // Use selected customer ID if admin is viewing, otherwise use the logged-in user's customer ID
   const activeCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
 
+  console.log('CustomerPastBookings - Debug info:', {
+    userRole,
+    customerId,
+    selectedCustomerId,
+    activeCustomerId
+  });
+
   useEffect(() => {
     if (activeCustomerId) {
       fetchPastBookings();
     } else {
+      console.log('CustomerPastBookings - No activeCustomerId, setting empty state');
       setBookings([]);
       setFilteredBookings([]);
       setLoading(false);
     }
   }, [activeCustomerId]);
+
+  // Set default time period to 'all' to show all bookings
+  useEffect(() => {
+    setTimePeriod('all');
+  }, []);
 
   const getTimePeriodDates = (period: string) => {
     const now = new Date();
@@ -123,7 +136,12 @@ const CustomerPastBookings = () => {
   }, [bookings, timePeriod, dateFrom, dateTo, cleanerFilter, paymentFilter, ratingFilter, reviews]);
 
   const fetchPastBookings = async () => {
-    if (!activeCustomerId) return;
+    if (!activeCustomerId) {
+      console.log('CustomerPastBookings - fetchPastBookings called but no activeCustomerId');
+      return;
+    }
+
+    console.log('CustomerPastBookings - Fetching past bookings for customer:', activeCustomerId);
 
     try {
       const { data, error } = await supabase
@@ -143,6 +161,8 @@ const CustomerPastBookings = () => {
         `)
         .eq('customer', activeCustomerId)
         .order('date_time', { ascending: false });
+
+      console.log('CustomerPastBookings - Past bookings query result:', { data, error });
 
       if (error) throw error;
       
@@ -311,7 +331,7 @@ const CustomerPastBookings = () => {
   const clearFilters = () => {
     setDateFrom(undefined);
     setDateTo(undefined);
-    setTimePeriod('current-month');
+    setTimePeriod('all'); // Changed from 'current-month' to 'all'
     setCleanerFilter('all');
     setPaymentFilter('all');
     setRatingFilter('all');
@@ -420,6 +440,31 @@ const CustomerPastBookings = () => {
         <div className="text-center py-8 text-muted-foreground">
           Loading completed bookings...
         </div>
+      </div>
+    );
+  }
+
+  // Show message when no customer ID is available
+  if (!activeCustomerId) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5" />
+              Completed Bookings
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8 text-muted-foreground space-y-4">
+              <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <div>
+                <p className="text-lg font-medium">No Customer Account Found</p>
+                <p className="text-sm">Please contact support to link your account to view completed bookings.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
