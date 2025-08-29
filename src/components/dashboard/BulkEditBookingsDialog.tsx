@@ -370,6 +370,17 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
       
       // Refresh the bookings data
       await fetchBookings();
+      
+      // Update local filtered bookings to reflect the changes immediately
+      setFilteredBookings(prevBookings => 
+        prevBookings.map(booking => {
+          if (selectedBookings.includes(booking.id)) {
+            return { ...booking, ...updateData };
+          }
+          return booking;
+        })
+      );
+      
       onSuccess();
       
       // Clear selections and reset form, but keep dialog open
