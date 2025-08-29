@@ -36,20 +36,21 @@ const LinenManagementSelector = ({
     const name = productName?.toLowerCase() || '';
     const type = productType?.toLowerCase() || '';
     
-    // Check for bed sizes first
-    if (name.includes('king') || type.includes('king')) return '👑';
-    if (name.includes('queen') || type.includes('queen')) return '♛'; 
+    // Check for bed sizes first - use bed/pillow icons for bed linens
+    if (name.includes('king') || type.includes('king')) return '🛏️';
+    if (name.includes('queen') || type.includes('queen')) return '🛏️'; 
     if (name.includes('double') || type.includes('double')) return '🛏️';
-    if (name.includes('single') || type.includes('single')) return '🛌';
+    if (name.includes('single') || type.includes('single')) return '🛏️';
     
     // Then check for linen types
     if (type.includes('towel') || name.includes('towel')) return '🏊';
-    if (type.includes('pillow') || name.includes('pillow')) return '🛌';  
-    if (type.includes('duvet') || name.includes('duvet') || type.includes('comforter')) return '🌙';
-    if (type.includes('sheet') || name.includes('sheet')) return '📋';
+    if (name.includes('bath mat') || name.includes('bathmat')) return '🛁';
+    if (type.includes('pillow') || name.includes('pillow')) return '🛏️';  
+    if (type.includes('duvet') || name.includes('duvet') || type.includes('comforter')) return '🛏️';
+    if (type.includes('sheet') || name.includes('sheet')) return '🛏️';
     
     // Default for bed linens
-    return '🛡️';
+    return '🛏️';
   };
 
   const handleAddLinenItem = () => {
@@ -174,10 +175,10 @@ const LinenManagementSelector = ({
                         </div>
                         <div className="flex-1">
                           <h4 className="font-medium">
-                            {product.name.replace(/wash and iron/gi, '').trim()}
+                            {product.name.replace(/\(wash and iron\)/gi, '').replace(/wash and iron/gi, '').trim()}
                           </h4>
                           <p className="text-sm text-muted-foreground">
-                            {product.type.replace(/wash and iron/gi, '').trim()} • £{product.price} each
+                            {product.type.replace(/\(wash and iron\)/gi, '').replace(/wash and iron/gi, '').trim()} • £{product.price} each
                           </p>
                           {inventory.length > 0 && (
                             <p className="text-xs text-blue-600 mt-1">

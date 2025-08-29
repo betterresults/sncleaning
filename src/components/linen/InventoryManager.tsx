@@ -198,20 +198,21 @@ export const InventoryManager = () => {
     const type = productType?.toLowerCase() || '';
     const name = productName?.toLowerCase() || '';
     
-    // Check for bed sizes first
-    if (name.includes('king') || type.includes('king')) return '👑';
-    if (name.includes('queen') || type.includes('queen')) return '♛'; 
+    // Check for bed sizes first - use bed/pillow icons for bed linens
+    if (name.includes('king') || type.includes('king')) return '🛏️';
+    if (name.includes('queen') || type.includes('queen')) return '🛏️'; 
     if (name.includes('double') || type.includes('double')) return '🛏️';
-    if (name.includes('single') || type.includes('single')) return '🛌';
+    if (name.includes('single') || type.includes('single')) return '🛏️';
     
     // Then check for linen types
     if (type.includes('towel') || name.includes('towel')) return '🏊';
-    if (type.includes('pillow') || name.includes('pillow')) return '🛌';  
-    if (type.includes('duvet') || name.includes('duvet') || type.includes('comforter')) return '🌙';
-    if (type.includes('sheet') || name.includes('sheet')) return '📋';
+    if (name.includes('bath mat') || name.includes('bathmat')) return '🛁';
+    if (type.includes('pillow') || name.includes('pillow')) return '🛏️';  
+    if (type.includes('duvet') || name.includes('duvet') || type.includes('comforter')) return '🛏️';
+    if (type.includes('sheet') || name.includes('sheet')) return '🛏️';
     
     // Default for bed linens
-    return '🛡️';
+    return '🛏️';
   };
 
   if (isLoading) {
@@ -286,10 +287,10 @@ export const InventoryManager = () => {
                     </div>
                     <div>
                       <CardTitle className="text-lg font-bold">
-                        {item.linen_products?.name?.replace(/wash and iron/gi, '').trim()}
+                        {item.linen_products?.name?.replace(/\(wash and iron\)/gi, '').replace(/wash and iron/gi, '').trim()}
                       </CardTitle>
                       <CardDescription className="text-sm font-medium">
-                        {item.linen_products?.type?.replace(/wash and iron/gi, '').trim()} • £{item.linen_products?.price?.toFixed(2)} each
+                        {item.linen_products?.type?.replace(/\(wash and iron\)/gi, '').replace(/wash and iron/gi, '').trim()} • £{item.linen_products?.price?.toFixed(2)} each
                       </CardDescription>
                     </div>
                   </div>
