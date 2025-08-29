@@ -956,6 +956,43 @@ const CustomerPastBookings = () => {
         }}
       />
 
+      <AdjustPaymentAmountDialog
+        booking={selectedBookingForPayment ? {
+          id: selectedBookingForPayment.id,
+          first_name: selectedBookingForPayment.cleaner?.first_name || '',
+          last_name: selectedBookingForPayment.cleaner?.last_name || '',
+          total_cost: parseFloat(selectedBookingForPayment.total_cost) || 0,
+          payment_status: selectedBookingForPayment.payment_status
+        } : null}
+        isOpen={adjustPaymentDialogOpen}
+        onClose={() => {
+          setAdjustPaymentDialogOpen(false);
+          setSelectedBookingForPayment(null);
+        }}
+        onSuccess={() => {
+          fetchPastBookings();
+          setAdjustPaymentDialogOpen(false);
+          setSelectedBookingForPayment(null);
+        }}
+      />
+
+      <CollectPaymentMethodDialog
+        open={collectPaymentDialogOpen}
+        onOpenChange={setCollectPaymentDialogOpen}
+        customer={{
+          id: activeCustomerId || 0,
+          first_name: selectedBookingForPayment?.cleaner?.first_name || '',
+          last_name: selectedBookingForPayment?.cleaner?.last_name || '',
+          email: '' // Past bookings don't have email in this structure
+        }}
+        booking={selectedBookingForPayment ? {
+          id: selectedBookingForPayment.id,
+          total_cost: parseFloat(selectedBookingForPayment.total_cost) || 0,
+          cleaning_type: selectedBookingForPayment.service_type,
+          address: selectedBookingForPayment.address
+        } : undefined}
+      />
+
       <EditBookingDialog
         booking={selectedBookingForEdit ? {
           id: selectedBookingForEdit.id,

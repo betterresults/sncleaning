@@ -771,11 +771,11 @@ const PastBookingsTable = () => {
 
           <Button
             onClick={() => setBulkEditDialog(true)}
-            className="flex items-center gap-2 h-7 sm:h-8 text-xs sm:text-sm"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-md transition-all duration-200"
             size="sm"
           >
-            <Edit3 className="h-3 w-3 sm:h-4 sm:w-4" />
-            Bulk Edit
+            <Edit3 className="h-4 w-4" />
+            Bulk Edit Past Bookings
           </Button>
         </div>
 
