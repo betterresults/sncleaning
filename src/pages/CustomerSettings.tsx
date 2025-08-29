@@ -145,9 +145,9 @@ const CustomerSettings = () => {
                       </div>
                       
                       {/* Change Password */}
-                      <Card className="bg-[#185166] shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl">
+                      <Card className="shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl">
                         <CardHeader className="pb-4">
-                        <CardTitle className="flex items-center gap-3 text-white text-xl">
+                        <CardTitle className="flex items-center gap-3 text-foreground text-xl">
                           <div className="p-2 bg-[#18A5A5] rounded-lg border border-white/20 shadow-sm">
                             <Lock className="h-5 w-5 text-white" />
                           </div>
@@ -157,7 +157,7 @@ const CustomerSettings = () => {
                         <CardContent>
                           <form onSubmit={handlePasswordChange} className="space-y-6">
                             <div className="space-y-2">
-                              <Label htmlFor="newPassword" className="text-sm font-medium text-white">
+                              <Label htmlFor="newPassword" className="text-sm font-medium text-foreground">
                                 New Password
                               </Label>
                               <div className="relative">
@@ -168,7 +168,7 @@ const CustomerSettings = () => {
                                   onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
                                   placeholder="Enter new password"
                                   required
-                                  className="pr-10 border-white/20 bg-white/5 text-white placeholder:text-white/60 focus:border-[#18A5A5] focus:ring-[#18A5A5]/20 rounded-xl"
+                                  className="pr-10 rounded-xl"
                                 />
                                 <Button
                                   type="button"
@@ -178,16 +178,16 @@ const CustomerSettings = () => {
                                   onClick={() => setShowPassword(!showPassword)}
                                 >
                                   {showPassword ? (
-                                    <EyeOff className="h-4 w-4 text-white/60" />
+                                    <EyeOff className="h-4 w-4 text-muted-foreground" />
                                   ) : (
-                                    <Eye className="h-4 w-4 text-white/60" />
+                                    <Eye className="h-4 w-4 text-muted-foreground" />
                                   )}
                                 </Button>
                               </div>
                             </div>
 
                             <div className="space-y-2">
-                              <Label htmlFor="confirmPassword" className="text-sm font-medium text-white">
+                              <Label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
                                 Confirm New Password
                               </Label>
                               <div className="relative">
@@ -198,7 +198,7 @@ const CustomerSettings = () => {
                                   onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                                   placeholder="Confirm new password"
                                   required
-                                  className="pr-10 border-white/20 bg-white/5 text-white placeholder:text-white/60 focus:border-[#18A5A5] focus:ring-[#18A5A5]/20 rounded-xl"
+                                  className="pr-10 rounded-xl"
                                 />
                                 <Button
                                   type="button"
@@ -208,9 +208,9 @@ const CustomerSettings = () => {
                                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                 >
                                   {showConfirmPassword ? (
-                                    <EyeOff className="h-4 w-4 text-white/60" />
+                                    <EyeOff className="h-4 w-4 text-muted-foreground" />
                                   ) : (
-                                    <Eye className="h-4 w-4 text-white/60" />
+                                    <Eye className="h-4 w-4 text-muted-foreground" />
                                   )}
                                 </Button>
                               </div>
