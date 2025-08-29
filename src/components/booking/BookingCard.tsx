@@ -109,28 +109,15 @@ const BookingCard = <T extends BaseBooking>({
       </div>
       
       {/* Address and Actions on same line */}
-      <div className="flex items-center justify-between pt-3 border-t border-border/40">
+      <div className="pt-3 border-t border-border/40">
         {type === 'upcoming' && (
-          <div className="flex items-center gap-2 text-sm text-[#185166]">
-            <MapPin className="h-4 w-4 text-gray-600 flex-shrink-0" />
-            <span className="font-bold truncate">{booking.address}</span>
-          </div>
-        )}
-        
-        {type === 'completed' && onSeePhotos && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onSeePhotos?.(booking)}
-            className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/30"
-          >
-            📷 See Photos
-          </Button>
-        )}
-        
-        <div className="flex items-center gap-2">
-          {type === 'upcoming' && (
-            <>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-[#185166]">
+              <MapPin className="h-4 w-4 text-gray-600 flex-shrink-0" />
+              <span className="font-bold truncate">{booking.address}</span>
+            </div>
+            
+            <div className="flex items-center gap-2">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
@@ -176,56 +163,124 @@ const BookingCard = <T extends BaseBooking>({
                 <Edit className="h-4 w-4" />
                 <span className="ml-1 hidden sm:inline">Edit</span>
               </Button>
-            </>
-          )}
-          
-          {type === 'completed' && (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onEdit?.(booking)}
-                className="bg-[#185166] hover:bg-[#18A5A5] text-white border-[#185166] hover:border-[#18A5A5]"
-              >
-                <Edit className="h-4 w-4" />
-                <span className="ml-1 hidden sm:inline">Edit</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onReview?.(booking)}
-                className={`${
-                  hasReview 
-                    ? 'bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 border-green-200 hover:border-green-300 dark:bg-green-950/20 dark:hover:bg-green-950/40 dark:text-green-400 dark:border-green-800/30'
-                    : 'bg-yellow-50 hover:bg-yellow-100 text-yellow-600 hover:text-yellow-700 border-yellow-200 hover:border-yellow-300 dark:bg-yellow-950/20 dark:hover:bg-yellow-950/40 dark:text-yellow-400 dark:border-yellow-800/30'
-                }`}
-              >
-                <Star className="h-4 w-4" />
-                <span className="ml-1 hidden sm:inline">
-                  {hasReview ? 'View Review' : 'Leave Review'}
-                </span>
-              </Button>
-              
-              {/* Payment Action Button - Only show for unpaid bookings */}
-              {onPaymentAction && !booking.payment_status?.toLowerCase().includes('paid') && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onPaymentAction?.(booking)}
-                  className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
-                >
-                  <CreditCard className="h-4 w-4" />
-                  <span className="ml-1 hidden sm:inline">
-                    {booking.payment_status?.toLowerCase().includes('process')
-                      ? 'Pay Now'
-                      : 'Add Card to Pay'
-                    }
-                  </span>
-                </Button>
-              )}
-            </>
-          )}
-        </div>
+            </div>
+          </div>
+        )}
+        
+        {type === 'completed' && (
+          <div className="space-y-3">
+            {/* Address */}
+            <div className="flex items-center gap-2 text-sm text-[#185166]">
+              <MapPin className="h-4 w-4 text-gray-600 flex-shrink-0" />
+              <span className="font-bold">{booking.address}</span>
+            </div>
+            
+            {/* Action Buttons - Distributed Layout */}
+            <div className="flex items-center justify-between">
+              {(() => {
+                const actions = [];
+                
+                // Always include Edit and Review buttons
+                actions.push(
+                  <Button
+                    key="edit"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onEdit?.(booking)}
+                    className="bg-[#185166] hover:bg-[#18A5A5] text-white border-[#185166] hover:border-[#18A5A5]"
+                  >
+                    <Edit className="h-4 w-4" />
+                    <span className="ml-1 hidden sm:inline">Edit</span>
+                  </Button>,
+                  
+                  <Button
+                    key="review"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onReview?.(booking)}
+                    className={`${
+                      hasReview 
+                        ? 'bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 border-green-200 hover:border-green-300 dark:bg-green-950/20 dark:hover:bg-green-950/40 dark:text-green-400 dark:border-green-800/30'
+                        : 'bg-yellow-50 hover:bg-yellow-100 text-yellow-600 hover:text-yellow-700 border-yellow-200 hover:border-yellow-300 dark:bg-yellow-950/20 dark:hover:bg-yellow-950/40 dark:text-yellow-400 dark:border-yellow-800/30'
+                    }`}
+                  >
+                    <Star className="h-4 w-4" />
+                    <span className="ml-1 hidden sm:inline">
+                      {hasReview ? 'View Review' : 'Leave Review'}
+                    </span>
+                  </Button>
+                );
+                
+                // Conditionally add other actions
+                if (onSeePhotos) {
+                  actions.push(
+                    <Button
+                      key="photos"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onSeePhotos?.(booking)}
+                      className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/30"
+                    >
+                      📷 <span className="ml-1 hidden sm:inline">Photos</span>
+                    </Button>
+                  );
+                }
+                
+                if (onPaymentAction && !booking.payment_status?.toLowerCase().includes('paid')) {
+                  actions.push(
+                    <Button
+                      key="payment"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onPaymentAction?.(booking)}
+                      className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+                    >
+                      <CreditCard className="h-4 w-4" />
+                      <span className="ml-1 hidden sm:inline">
+                        {booking.payment_status?.toLowerCase().includes('process')
+                          ? 'Pay Now'
+                          : 'Add Card'
+                        }
+                      </span>
+                    </Button>
+                  );
+                }
+                
+                // Render based on number of actions
+                if (actions.length === 2) {
+                  return (
+                    <>
+                      {actions[0]}
+                      <div></div>
+                      {actions[1]}
+                    </>
+                  );
+                } else if (actions.length === 3) {
+                  return (
+                    <>
+                      {actions[0]}
+                      {actions[2]}
+                      {actions[1]}
+                    </>
+                  );
+                } else if (actions.length === 4) {
+                  return (
+                    <>
+                      {actions[0]}
+                      <div className="flex gap-2">
+                        {actions[2]}
+                        {actions[3]}
+                      </div>
+                      {actions[1]}
+                    </>
+                  );
+                } else {
+                  return actions;
+                }
+              })()}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
