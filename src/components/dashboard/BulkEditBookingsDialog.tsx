@@ -334,6 +334,11 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
           }
           updateData = { cleaner: cleanerId };
           break;
+        case 'linen_management':
+          // Convert string to boolean
+          const boolValue = newValue === 'true';
+          updateData = { linen_management: boolValue };
+          break;
         default:
           // Text fields
           updateData = { [editType]: newValue };
