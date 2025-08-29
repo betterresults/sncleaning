@@ -1,18 +1,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Calendar, DollarSign, Star, CalendarDays, Filter, X, Grid, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CheckCircle, Calendar, DollarSign, Star, CalendarDays, Filter, X, Grid, ChevronLeft, ChevronRight, User, CreditCard } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import BookingCard from '@/components/booking/BookingCard';
 import CleaningPhotosViewDialog from './CleaningPhotosViewDialog';
-import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import { AdjustPaymentAmountDialog } from '@/components/payments/AdjustPaymentAmountDialog';
 import { CollectPaymentMethodDialog } from '@/components/payments/CollectPaymentMethodDialog';
 import EditBookingDialog from './EditBookingDialog';
-import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { format, isAfter, isBefore, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import CustomerBookingPaymentDialog from '@/components/customer/CustomerBookingPaymentDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -55,7 +55,7 @@ const CustomerPastBookings = () => {
   const [selectedBookingForReview, setSelectedBookingForReview] = useState<PastBooking | null>(null);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewText, setReviewText] = useState('');
-  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [adjustPaymentDialogOpen, setAdjustPaymentDialogOpen] = useState(false);
   const [collectPaymentDialogOpen, setCollectPaymentDialogOpen] = useState(false);
   const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<PastBooking | null>(null);
@@ -416,7 +416,7 @@ const CustomerPastBookings = () => {
 
   const handlePaymentAction = (booking: PastBooking) => {
     setSelectedBookingForPayment(booking);
-    setPaymentDialogOpen(true);
+    setShowPaymentDialog(true);
   };
 
   const handleAdjustPayment = (booking: PastBooking) => {
@@ -535,153 +535,80 @@ const CustomerPastBookings = () => {
         </Card>
       </div>
 
-      {/* Time Period Filter */}
-      {/* Time Period Filter */}
+      {/* Compact Filters */}
       <Card className="shadow-sm">
-        <CardContent className="p-0">
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="period" className="border-0">
-              <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                <div className="flex items-center space-x-2">
-                  <CalendarDays className="h-4 w-4" />
-                  <span className="font-medium">
-                    {timePeriod === 'current-month' && 'Current Month'}
-                    {timePeriod === 'last-month' && 'Last Month'}
-                    {timePeriod === 'last-3-months' && 'Last 3 Months'}
-                    {timePeriod === 'last-6-months' && 'Last 6 Months'}
-                    {timePeriod === 'all' && 'All Time'}
-                  </span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-4 pb-4">
-                <div className="grid grid-cols-1 gap-2">
-                  <Button
-                    variant={timePeriod === 'current-month' ? 'default' : 'outline'}
-                    onClick={() => setTimePeriod('current-month')}
-                    className="w-full justify-start"
-                  >
-                    Current Month
-                  </Button>
-                  <Button
-                    variant={timePeriod === 'last-month' ? 'default' : 'outline'}
-                    onClick={() => setTimePeriod('last-month')}
-                    className="w-full justify-start"
-                  >
-                    Last Month
-                  </Button>
-                  <Button
-                    variant={timePeriod === 'last-3-months' ? 'default' : 'outline'}
-                    onClick={() => setTimePeriod('last-3-months')}
-                    className="w-full justify-start"
-                  >
-                    Last 3 Months
-                  </Button>
-                  <Button
-                    variant={timePeriod === 'last-6-months' ? 'default' : 'outline'}
-                    onClick={() => setTimePeriod('last-6-months')}
-                    className="w-full justify-start"
-                  >
-                    Last 6 Months
-                  </Button>
-                  <Button
-                    variant={timePeriod === 'all' ? 'default' : 'outline'}
-                    onClick={() => setTimePeriod('all')}
-                    className="w-full justify-start"
-                  >
-                    All Time
-                  </Button>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </CardContent>
-      </Card>
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-center gap-4">
+            {/* Time Period Filter */}
+            <div className="flex items-center gap-2">
+              <CalendarDays className="h-4 w-4 text-gray-600" />
+              <Select value={timePeriod} onValueChange={setTimePeriod}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="current-month">Current Month</SelectItem>
+                  <SelectItem value="last-month">Last Month</SelectItem>
+                  <SelectItem value="last-3-months">Last 3 Months</SelectItem>
+                  <SelectItem value="last-6-months">Last 6 Months</SelectItem>
+                  <SelectItem value="all">All Time</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-      {/* Filters Card */}
-      <Card className="shadow-sm">
-        <CardContent className="p-0">
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="filters" className="border-0">
-              <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                <div className="flex items-center space-x-2">
-                  <Filter className="h-4 w-4" />
-                  <span className="font-medium">Additional Filters</span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-4 pb-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>Cleaner</Label>
-                    <Select value={cleanerFilter} onValueChange={setCleanerFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="All cleaners" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All cleaners</SelectItem>
-                        {availableCleaners.map((cleaner) => (
-                          <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
-                            {cleaner.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Payment Status</Label>
-                    <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="All payments" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All payments</SelectItem>
-                        <SelectItem value="paid">Paid</SelectItem>
-                        <SelectItem value="unpaid">Unpaid</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Review Status</Label>
-                    <Select value={ratingFilter} onValueChange={setRatingFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="All reviews" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All reviews</SelectItem>
-                        <SelectItem value="reviewed">Reviewed</SelectItem>
-                        <SelectItem value="not-reviewed">Not reviewed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Date From</Label>
-                    <Input
-                      type="date"
-                      value={dateFrom ? format(dateFrom, 'yyyy-MM-dd') : ''}
-                      onChange={(e) => setDateFrom(e.target.value ? new Date(e.target.value) : undefined)}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Date To</Label>
-                    <Input
-                      type="date"
-                      value={dateTo ? format(dateTo, 'yyyy-MM-dd') : ''}
-                      onChange={(e) => setDateTo(e.target.value ? new Date(e.target.value) : undefined)}
-                    />
-                  </div>
-                  
-                  <div className="flex items-end">
-                    <Button onClick={clearFilters} variant="outline" className="w-full">
-                      Clear Filters
-                    </Button>
-                  </div>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+            {/* Cleaner Filter */}
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-gray-600" />
+              <Select value={cleanerFilter} onValueChange={setCleanerFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="All cleaners" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All cleaners</SelectItem>
+                  {availableCleaners.map((cleaner) => (
+                    <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
+                      {cleaner.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Payment Filter */}
+            <div className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-gray-600" />
+              <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Payment" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="unpaid">Unpaid</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Review Filter */}
+            <div className="flex items-center gap-2">
+              <Star className="h-4 w-4 text-gray-600" />
+              <Select value={ratingFilter} onValueChange={setRatingFilter}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Reviews" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="reviewed">Reviewed</SelectItem>
+                  <SelectItem value="not-reviewed">Not reviewed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Clear Filters */}
+            <Button onClick={clearFilters} variant="outline" size="sm">
+              Clear All
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -838,9 +765,9 @@ const CustomerPastBookings = () => {
                       }}
                       type="completed"
                       onReview={(b) => handleReview(booking)}
-                      onSeePhotos={booking.has_photos ? (b) => handleSeePhotos(booking) : undefined}
-                      onPaymentAction={(b) => handlePaymentAction(booking)}
-                      onEdit={(b) => handleEdit(booking)}
+              onSeePhotos={booking.has_photos ? (b) => handleSeePhotos(booking) : undefined}
+              onPaymentAction={booking.payment_status?.toLowerCase().includes('paid') ? undefined : (b) => handlePaymentAction(booking)}
+              onEdit={(b) => handleEdit(booking)}
                       hasReview={reviews[booking.id] || false}
                     />
                   ))}
@@ -977,26 +904,25 @@ const CustomerPastBookings = () => {
         </DialogContent>
       </Dialog>
       
-      <ManualPaymentDialog
+      <CustomerBookingPaymentDialog
         booking={selectedBookingForPayment ? {
           id: selectedBookingForPayment.id,
-          customer: activeCustomerId || 0,
-          first_name: selectedBookingForPayment.cleaner?.first_name || '',
-          last_name: selectedBookingForPayment.cleaner?.last_name || '',
-          email: '', // Past bookings don't have email in this structure
+          service_type: selectedBookingForPayment.service_type,
+          address: selectedBookingForPayment.address,
+          date_time: selectedBookingForPayment.date_time,
+          total_hours: selectedBookingForPayment.total_hours,
           total_cost: parseFloat(selectedBookingForPayment.total_cost) || 0,
           payment_status: selectedBookingForPayment.payment_status,
-          date_time: selectedBookingForPayment.date_time,
-          address: selectedBookingForPayment.address
+          customer: activeCustomerId || 0
         } : null}
-        isOpen={paymentDialogOpen}
+        isOpen={showPaymentDialog}
         onClose={() => {
-          setPaymentDialogOpen(false);
+          setShowPaymentDialog(false);
           setSelectedBookingForPayment(null);
         }}
         onSuccess={() => {
           fetchPastBookings();
-          setPaymentDialogOpen(false);
+          setShowPaymentDialog(false);
           setSelectedBookingForPayment(null);
         }}
       />

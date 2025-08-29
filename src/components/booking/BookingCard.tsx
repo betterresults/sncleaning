@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Calendar, Clock, MapPin, User, Edit, Star } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Edit, Star, CreditCard } from 'lucide-react';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 
 interface BaseBooking {
@@ -206,25 +206,17 @@ const BookingCard = <T extends BaseBooking>({
                 </span>
               </Button>
               
-              {/* Payment Action Button for Completed Bookings */}
-              {onPaymentAction && (
+              {/* Payment Action Button - Only show for unpaid bookings */}
+              {onPaymentAction && !booking.payment_status?.toLowerCase().includes('paid') && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => onPaymentAction?.(booking)}
-                  className={`${
-                    booking.payment_status?.toLowerCase().includes('paid')
-                      ? 'bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 border-green-200 hover:border-green-300'
-                      : 'bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200 hover:border-red-300'
-                  }`}
+                  className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
                 >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                  </svg>
+                  <CreditCard className="h-4 w-4" />
                   <span className="ml-1 hidden sm:inline">
-                    {booking.payment_status?.toLowerCase().includes('paid') 
-                      ? 'View Payment' 
-                      : booking.payment_status?.toLowerCase().includes('process')
+                    {booking.payment_status?.toLowerCase().includes('process')
                       ? 'Pay Now'
                       : 'Add Card to Pay'
                     }
