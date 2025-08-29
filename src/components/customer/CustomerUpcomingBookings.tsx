@@ -18,7 +18,8 @@ interface Booking {
   date_time: string;
   address: string;
   postcode: string;
-  service_type: string;
+  cleaning_type: string;
+  service_type: string; // Required for BookingCard compatibility
   total_hours: number;
   total_cost: number;
   cleaning_cost_per_hour: number | null;
@@ -47,6 +48,7 @@ const CustomerUpcomingBookings = () => {
   const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [completedBookingsCount, setCompletedBookingsCount] = useState(0);
+  const [unpaidCompletedBookingsCount, setUnpaidCompletedBookingsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -127,7 +129,7 @@ const CustomerUpcomingBookings = () => {
           date_time,
           address,
           postcode,
-          service_type,
+          cleaning_type,
           total_hours,
           total_cost,
           cleaning_cost_per_hour,
@@ -150,7 +152,13 @@ const CustomerUpcomingBookings = () => {
         .order('date_time', { ascending: true });
 
       if (error) throw error;
-      setBookings(data || []);
+      
+      // Map cleaning_type to service_type for BookingCard compatibility
+      const processedBookings = (data || []).map(booking => ({
+        ...booking,
+        service_type: booking.cleaning_type
+      }));
+      setBookings(processedBookings);
 
       // Fetch completed bookings count
       const { count, error: countError } = await supabase
@@ -160,6 +168,16 @@ const CustomerUpcomingBookings = () => {
 
       if (countError) throw countError;
       setCompletedBookingsCount(count || 0);
+
+      // Fetch unpaid completed bookings count
+      const { count: unpaidCount, error: unpaidCountError } = await supabase
+        .from('past_bookings')
+        .select('*', { count: 'exact', head: true })
+        .eq('customer', activeCustomerId)
+        .neq('payment_status', 'paid');
+
+      if (unpaidCountError) throw unpaidCountError;
+      setUnpaidCompletedBookingsCount(unpaidCount || 0);
 
     } catch (error) {
       console.error('Error fetching upcoming bookings:', error);
@@ -193,8 +211,6 @@ const CustomerUpcomingBookings = () => {
 
   // Calculate statistics
   const totalBookings = bookings.length;
-  const unpaidBookings = bookings.filter(b => b.booking_status?.toLowerCase() !== 'paid').length;
-  const pendingBookings = bookings.filter(b => b.booking_status?.toLowerCase() === 'pending').length;
 
   return (
     <div className="w-full space-y-4 sm:space-y-6">
@@ -231,7 +247,10 @@ const CustomerUpcomingBookings = () => {
           </CardContent>
         </Card>
         
-        <Card className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 sm:col-span-2 lg:col-span-1">
+        <Card 
+          className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 sm:col-span-2 lg:col-span-1 cursor-pointer"
+          onClick={() => navigate('/customer-completed-bookings')}
+        >
           <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="p-2 bg-red-100 rounded-lg">
@@ -239,7 +258,7 @@ const CustomerUpcomingBookings = () => {
               </div>
               <div>
                 <p className="text-xs sm:text-sm font-medium text-gray-500">Needs Payment</p>
-                <p className="text-lg sm:text-2xl font-bold text-[#185166]">{unpaidBookings}</p>
+                <p className="text-lg sm:text-2xl font-bold text-[#185166]">{unpaidCompletedBookingsCount}</p>
               </div>
             </div>
           </CardContent>
@@ -353,14 +372,14 @@ const CustomerUpcomingBookings = () => {
                               : 'bg-primary/10 text-primary hover:bg-primary/20'
                           }`}
                           onClick={() => handleEditBooking(booking)}
-                          title={`Click to edit: ${booking.service_type}${booking.same_day ? ' (Same Day)' : ''} - ${booking.address} - ${new Date(booking.date_time).toLocaleTimeString('en-GB', { 
+                          title={`Click to edit: ${booking.cleaning_type}${booking.same_day ? ' (Same Day)' : ''} - ${booking.address} - ${new Date(booking.date_time).toLocaleTimeString('en-GB', { 
                             hour: 'numeric', 
                             minute: '2-digit',
                             hour12: true 
                           })}`}
                         >
                           <div className="font-medium flex items-center justify-between">
-                            <span>{booking.service_type}</span>
+                            <span>{booking.cleaning_type}</span>
                             {booking.same_day && <span className="text-[8px] font-bold">SD</span>}
                           </div>
                           <div className="text-[10px] opacity-80">{booking.address}</div>
