@@ -1,15 +1,15 @@
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
 const SignOutButton = () => {
+  const { signOut } = useAuth();
   const { toast } = useToast();
 
   const handleSignOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      await signOut();
       
       toast({
         title: 'Signed out successfully',
