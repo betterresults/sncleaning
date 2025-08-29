@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -143,9 +144,8 @@ const CreateUserForm = ({ onSuccess }: CreateUserFormProps) => {
           </div>
           <div>
             <Label htmlFor="userPassword">Password</Label>
-            <Input
+            <PasswordInput
               id="userPassword"
-              type="password"
               value={newUser.password}
               onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
               placeholder="Enter password"
