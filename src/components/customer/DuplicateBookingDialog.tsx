@@ -7,8 +7,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { CalendarIcon, Clock, MapPin, User, Edit3 } from 'lucide-react';
+import { CalendarIcon, Clock, MapPin, User, Edit3, AlertCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -59,6 +60,7 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
   const [selectedMinute, setSelectedMinute] = useState('00');
   const [hours, setHours] = useState(0);
   const [totalCost, setTotalCost] = useState(0);
+  const [isSameDay, setIsSameDay] = useState(false);
   
   const [formData, setFormData] = useState({
     access: ''
@@ -90,12 +92,14 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
     }
   }, [booking, open]);
 
-  // Calculate total cost when hours change
+  // Calculate total cost when hours or same day option changes
   React.useEffect(() => {
     if (booking?.cleaning_cost_per_hour && hours > 0) {
-      setTotalCost(hours * booking.cleaning_cost_per_hour);
+      const baseCost = hours * booking.cleaning_cost_per_hour;
+      const sameDaySurcharge = isSameDay ? hours * 3 : 0; // £3 per hour extra
+      setTotalCost(baseCost + sameDaySurcharge);
     }
-  }, [hours, booking?.cleaning_cost_per_hour]);
+  }, [hours, isSameDay, booking?.cleaning_cost_per_hour]);
 
   // Generate hour options (6 AM to 5 PM)
   const hourOptions = React.useMemo(() => {
@@ -144,6 +148,7 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
           email: booking.email,
           booking_status: 'active',
           payment_status: 'Unpaid',
+          same_day: isSameDay,
           access: formData.access
         });
 
@@ -225,10 +230,45 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
                 </div>
               )}
               {booking.cleaning_cost_per_hour && (
-                <div className="text-xs text-gray-500 mt-2">
-                  Rate: £{booking.cleaning_cost_per_hour}/hour
+                <div className="text-xs text-gray-500 mt-2 space-y-1">
+                  <div>Standard rate: £{booking.cleaning_cost_per_hour}/hour</div>
+                  {isSameDay && (
+                    <div className="text-orange-600 font-medium">
+                      Same day surcharge: +£3/hour (Total rate: £{booking.cleaning_cost_per_hour + 3}/hour)
+                    </div>
+                  )}
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Same Day Cleaning Option */}
+          <div className="space-y-3 p-4 border border-orange-200 rounded-lg bg-orange-50/50">
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="same-day"
+                checked={isSameDay}
+                onCheckedChange={(checked) => setIsSameDay(checked as boolean)}
+                className="mt-0.5"
+              />
+              <div className="flex-1">
+                <Label htmlFor="same-day" className="text-sm font-semibold text-[#185166] cursor-pointer">
+                  Same Day Cleaning (+£3 per hour)
+                </Label>
+                <div className="flex items-start gap-2 mt-2">
+                  <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Same day bookings require immediate scheduling and coordination which involves additional 
+                    management complexity. The £3 per hour surcharge covers urgent staff allocation, 
+                    priority scheduling, and expedited service preparation to ensure your cleaning is completed today.
+                  </p>
+                </div>
+                {isSameDay && (
+                  <div className="mt-2 p-2 bg-orange-100 rounded text-xs font-medium text-orange-800">
+                    Additional cost: £{hours * 3} (£3 × {hours} hours)
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
