@@ -64,11 +64,20 @@ const CustomerUpcomingBookings = () => {
   // Use selected customer ID if admin is viewing, otherwise use the logged-in user's customer ID
   const activeCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
 
+  console.log('CustomerUpcomingBookings - Debug info:', {
+    userRole,
+    customerId,
+    selectedCustomerId,
+    activeCustomerId
+  });
+
   useEffect(() => {
     if (activeCustomerId) {
       fetchUpcomingBookings();
     } else {
       setBookings([]);
+      setCompletedBookingsCount(0);
+      setUnpaidCompletedBookingsCount(0);
       setLoading(false);
     }
   }, [activeCustomerId]);
@@ -203,6 +212,29 @@ const CustomerUpcomingBookings = () => {
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
             Loading bookings...
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show message for admin when no customer is selected
+  if (userRole === 'admin' && !selectedCustomerId) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Customer Dashboard
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground space-y-4">
+            <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <div>
+              <p className="text-lg font-medium">Select a Customer</p>
+              <p className="text-sm">Please select a customer from the dropdown above to view their dashboard.</p>
+            </div>
           </div>
         </CardContent>
       </Card>
