@@ -57,6 +57,8 @@ const CustomerPastBookings = () => {
   const [selectedBookingForReview, setSelectedBookingForReview] = useState<PastBooking | null>(null);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewText, setReviewText] = useState('');
+  const [bulkReviewDialogOpen, setBulkReviewDialogOpen] = useState(false);
+  const [bulkReviews, setBulkReviews] = useState<{[key: number]: {rating: number, text: string}}>({});
   const [additionalFiltersOpen, setAdditionalFiltersOpen] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [adjustPaymentDialogOpen, setAdjustPaymentDialogOpen] = useState(false);
@@ -421,6 +423,66 @@ const CustomerPastBookings = () => {
     }
   };
 
+  const handleBulkReviewSubmit = async () => {
+    const reviewsToSubmit = Object.entries(bulkReviews);
+    if (reviewsToSubmit.length === 0) {
+      toast({
+        title: 'No Reviews',
+        description: 'Please provide at least one review.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      const reviewInserts = reviewsToSubmit.map(([bookingId, review]) => ({
+        past_booking_id: parseInt(bookingId),
+        rating: review.rating,
+        review_text: review.text
+      }));
+
+      const { error } = await supabase
+        .from('reviews')
+        .insert(reviewInserts);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: `${reviewsToSubmit.length} review${reviewsToSubmit.length > 1 ? 's' : ''} submitted successfully!`
+      });
+
+      setBulkReviewDialogOpen(false);
+      setBulkReviews({});
+      
+      // Update reviews state
+      const newReviews = { ...reviews };
+      reviewsToSubmit.forEach(([bookingId]) => {
+        newReviews[parseInt(bookingId)] = true;
+      });
+      setReviews(newReviews);
+      
+      fetchPastBookings();
+    } catch (error) {
+      console.error('Error submitting bulk reviews:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to submit reviews. Please try again.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const updateBulkReview = (bookingId: number, rating: number, text: string) => {
+    setBulkReviews(prev => ({
+      ...prev,
+      [bookingId]: { rating, text }
+    }));
+  };
+
+  // Get unreviewed bookings for bulk review
+  const unreviewedBookings = filteredBookings.filter(booking => !reviews[booking.id]);
+
   const handleSeePhotos = (booking: PastBooking) => {
     if (!booking.photo_folder_name) {
       toast({
@@ -541,16 +603,20 @@ const CustomerPastBookings = () => {
           </CardContent>
         </Card>
         
-        <Card className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
+        <Card className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer" 
+              onClick={() => setBulkReviewDialogOpen(true)}>
           <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="p-2 bg-yellow-100 rounded-lg">
                 <Star className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600" />
               </div>
-              <div>
+              <div className="flex-1">
                 <p className="text-xs sm:text-sm font-medium text-gray-500">Reviews Left</p>
                 <p className="text-lg sm:text-2xl font-bold text-[#185166]">{stats.reviewedBookings}/{stats.totalBookings}</p>
                 <p className="text-xs text-gray-400">{reviewPercentage}% reviewed</p>
+                {stats.totalBookings - stats.reviewedBookings > 0 && (
+                  <p className="text-xs text-blue-600 font-medium mt-1">Review in Bulk →</p>
+                )}
               </div>
             </div>
           </CardContent>
@@ -981,6 +1047,102 @@ const CustomerPastBookings = () => {
               Submit Review
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Bulk Review Dialog */}
+      <Dialog open={bulkReviewDialogOpen} onOpenChange={setBulkReviewDialogOpen}>
+        <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto bg-white border-[#18A5A5]/20 mx-2 sm:mx-4">
+          <DialogHeader className="text-center">
+            <DialogTitle className="text-[#185166] text-xl sm:text-2xl font-semibold text-center">Review Multiple Bookings</DialogTitle>
+            <DialogDescription className="text-gray-600 text-center mt-2">
+              Leave reviews for all your unreviewed bookings at once ({unreviewedBookings.length} pending)
+            </DialogDescription>
+          </DialogHeader>
+          
+          {unreviewedBookings.length === 0 ? (
+            <div className="text-center py-8">
+              <Star className="h-12 w-12 mx-auto mb-4 text-yellow-400" />
+              <p className="text-lg font-medium text-[#185166] mb-2">All Bookings Reviewed!</p>
+              <p className="text-gray-600">You have reviewed all your completed bookings.</p>
+            </div>
+          ) : (
+            <div className="space-y-6 py-4 max-h-[50vh] overflow-y-auto">
+              {unreviewedBookings.map((booking) => (
+                <div key={booking.id} className="border rounded-lg p-4 space-y-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-semibold text-[#185166]">{booking.cleaning_type || booking.service_type}</h3>
+                      <p className="text-sm text-gray-600">{booking.address}, {booking.postcode}</p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(booking.date_time).toLocaleDateString('en-GB')} - {booking.cleaner?.first_name} {booking.cleaner?.last_name}
+                      </p>
+                    </div>
+                    <span className="text-lg font-bold text-[#18A5A5]">£{booking.total_cost}</span>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-sm font-medium text-[#185166] block mb-2">Rating</Label>
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => updateBulkReview(booking.id, star, bulkReviews[booking.id]?.text || "")}
+                            className={`text-2xl transition-all duration-200 ${
+                              star <= (bulkReviews[booking.id]?.rating || 5)
+                                ? "text-yellow-400 hover:text-yellow-500"
+                                : "text-gray-300 hover:text-yellow-400"
+                            }`}
+                          >
+                            ★
+                          </button>
+                        ))}
+                        <span className="ml-3 text-sm font-medium text-[#185166]">
+                          {bulkReviews[booking.id]?.rating === 1 && "😞 Poor"}
+                          {bulkReviews[booking.id]?.rating === 2 && "😐 Fair"}
+                          {(bulkReviews[booking.id]?.rating === 3 || (!bulkReviews[booking.id]?.rating && 3 <= 5)) && "🙂 Good"}
+                          {bulkReviews[booking.id]?.rating === 4 && "😊 Very Good"}
+                          {(bulkReviews[booking.id]?.rating === 5 || !bulkReviews[booking.id]?.rating) && "🤩 Excellent"}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label className="text-sm font-medium text-[#185166] block mb-2">Comment (Optional)</Label>
+                      <Textarea
+                        placeholder={`Tell us about your experience with ${booking.cleaner?.first_name}'s service...`}
+                        value={bulkReviews[booking.id]?.text || ""}
+                        onChange={(e) => updateBulkReview(booking.id, bulkReviews[booking.id]?.rating || 5, e.target.value)}
+                        rows={2}
+                        className="border-gray-200 focus:border-[#18A5A5] focus:ring-[#18A5A5]/20 text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {unreviewedBookings.length > 0 && (
+            <DialogFooter className="flex flex-col sm:flex-row gap-3 sm:gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setBulkReviewDialogOpen(false)}
+                className="border-gray-200 text-gray-600 hover:bg-gray-50 w-full sm:w-auto order-2 sm:order-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleBulkReviewSubmit}
+                className="bg-[#18A5A5] hover:bg-[#185166] text-white w-full sm:w-auto order-1 sm:order-2"
+                disabled={Object.keys(bulkReviews).length === 0}
+              >
+                Submit {Object.keys(bulkReviews).length} Review{Object.keys(bulkReviews).length !== 1 ? 's' : ''}
+              </Button>
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
       
