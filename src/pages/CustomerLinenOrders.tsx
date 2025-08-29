@@ -1,21 +1,15 @@
-
 import React from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { customerNavigation } from '@/lib/navigationItems';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Clock, MapPin } from 'lucide-react';
+import { getCustomerNavigation } from '@/lib/navigationItems';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCustomerLinenAccess } from '@/hooks/useCustomerLinenAccess';
-import { getCustomerNavigation } from '@/lib/navigationItems';
-import AdminCustomerSelector from '@/components/admin/AdminCustomerSelector';
-import CustomerUpcomingBookings from '@/components/customer/CustomerUpcomingBookings';
+import LinenOrdersView from '@/components/customer/LinenOrdersView';
 
-const CustomerDashboard = () => {
+const CustomerLinenOrders = () => {
   const { user, userRole, signOut } = useAuth();
   const { hasLinenAccess } = useCustomerLinenAccess();
-  const isAdminViewing = userRole === 'admin';
 
   const handleSignOut = async () => {
     try {
@@ -35,15 +29,14 @@ const CustomerDashboard = () => {
         />
         <SidebarInset className="flex-1 flex flex-col w-full">
           <UnifiedHeader 
-            title="Customer Dashboard 🏠"
+            title="Linen Orders 📋"
             user={user}
             userRole={userRole}
           />
           
           <main className="flex-1 p-2 sm:p-4 lg:p-6 w-full overflow-x-hidden">
-            <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-6">
-              {isAdminViewing && <AdminCustomerSelector />}
-              <CustomerUpcomingBookings />
+            <div className="w-full max-w-7xl mx-auto">
+              <LinenOrdersView />
             </div>
           </main>
         </SidebarInset>
@@ -52,4 +45,4 @@ const CustomerDashboard = () => {
   );
 };
 
-export default CustomerDashboard;
+export default CustomerLinenOrders;

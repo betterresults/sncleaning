@@ -42,7 +42,7 @@ export const cleanerNavigation = [
   },
 ];
 
-export const customerNavigation = [
+export const getCustomerNavigation = (hasLinenAccess: boolean = false) => [
   {
     title: "Dashboard",
     url: "/customer-dashboard",
@@ -58,6 +58,22 @@ export const customerNavigation = [
     url: "/customer-completed-bookings",
     icon: Calendar,
   },
+  ...(hasLinenAccess ? [{
+    title: "Linen Management",
+    icon: Package,
+    subItems: [
+      {
+        title: "Inventory",
+        url: "/customer-linen-inventory",
+        icon: Package,
+      },
+      {
+        title: "Orders",
+        url: "/customer-linen-orders",
+        icon: Calendar,
+      },
+    ],
+  }] : []),
   {
     title: "Messages",
     url: "#",
@@ -71,6 +87,8 @@ export const customerNavigation = [
     icon: Settings,
   },
 ];
+
+export const customerNavigation = getCustomerNavigation();
 
 export const adminNavigation = [
   {

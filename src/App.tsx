@@ -26,6 +26,8 @@ import CustomerSettings from "./pages/CustomerSettings";
 import CustomerAddBooking from "./pages/CustomerAddBooking";
 import CustomerPhotos from "./pages/CustomerPhotos";
 import CustomerAirbnbForm from "./pages/CustomerAirbnbForm";
+import CustomerLinenInventory from "./pages/CustomerLinenInventory";
+import CustomerLinenOrders from "./pages/CustomerLinenOrders";
 import CreateCustomerAccounts from "./pages/CreateCustomerAccounts";
 import AdminAddBooking from "./pages/AdminAddBooking";
 import CleanerSettings from "./pages/CleanerSettings";
@@ -78,9 +80,11 @@ const App = () => (
               <Route path="/cleaner-earnings" element={<CleanerEarnings />} />
               <Route path="/customer-dashboard" element={<CustomerDashboard />} />
               <Route path="/customer-completed-bookings" element={<CustomerCompletedBookings />} />
-               <Route path="/customer-settings" element={<CustomerSettings />} />
-                <Route path="/customer-add-booking" element={<CustomerAddBooking />} />
-                <Route path="/customer/airbnb-form" element={<CustomerAirbnbForm />} />
+                <Route path="/customer-settings" element={<CustomerSettings />} />
+                 <Route path="/customer-add-booking" element={<CustomerAddBooking />} />
+                 <Route path="/customer-linen-inventory" element={<CustomerLinenInventory />} />
+                 <Route path="/customer-linen-orders" element={<CustomerLinenOrders />} />
+                 <Route path="/customer/airbnb-form" element={<CustomerAirbnbForm />} />
                <Route path="/admin-add-booking" element={<AdminAddBooking />} />
                <Route path="/photos/:folderName" element={<CustomerPhotos />} />
                <Route path="/create-customer-accounts" element={<CreateCustomerAccounts />} />
