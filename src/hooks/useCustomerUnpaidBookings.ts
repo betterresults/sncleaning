@@ -11,6 +11,7 @@ interface UnpaidBooking {
   total_cost: number;
   cleaning_type: string;
   payment_status: string;
+  source?: string;
 }
 
 export const useCustomerUnpaidBookings = () => {
@@ -34,24 +35,22 @@ export const useCustomerUnpaidBookings = () => {
 
       if (!profile?.customer_id) return;
 
-      // Only fetch unpaid PAST bookings (completed cleanings) and unpaid linen orders
-      // Do NOT include upcoming bookings as they are not charged until completed
+      // Fetch BOTH unpaid completed bookings AND unpaid linen orders
       const [pastBookingsResponse, linenOrdersResponse] = await Promise.all([
         // Past bookings (completed cleanings that haven't been paid)
-        // Use the same logic as CustomerUpcomingBookings - exclude anything with 'paid' in the status
         supabase
           .from('past_bookings')
           .select('id, date_time, address, postcode, total_cost, cleaning_type, payment_status')
           .eq('customer', profile.customer_id)
-          .not('payment_status', 'ilike', '%paid%')
+          .in('payment_status', ['Unpaid', 'unpaid', 'Not Paid', 'not paid', 'Pending', 'pending', null])
           .order('date_time', { ascending: false }),
         
-        // Unpaid linen orders
+        // Unpaid linen orders  
         supabase
           .from('linen_orders')
           .select('id, order_date, total_cost, payment_status, address_id')
           .eq('customer_id', profile.customer_id)
-          .not('payment_status', 'ilike', '%paid%')
+          .in('payment_status', ['unpaid', 'pending', null])
           .order('order_date', { ascending: false })
       ]);
 
@@ -71,29 +70,42 @@ export const useCustomerUnpaidBookings = () => {
         return acc;
       }, {} as Record<string, any>);
 
-      // Combine past bookings and linen orders
+      // Combine BOTH past bookings AND linen orders into one array
       const allUnpaidItems = [
-        // Past bookings (completed cleanings)
+        // Include ALL past bookings (completed cleanings that are unpaid)
         ...pastBookings.map(booking => ({
-          ...booking,
-          id: booking.id.toString(),
+          id: `booking_${booking.id}`,
+          date_time: booking.date_time,
+          address: booking.address || '',
+          postcode: booking.postcode || '',
           total_cost: parseFloat(booking.total_cost?.toString() || '0'),
-          cleaning_type: booking.cleaning_type || 'Cleaning Service'
+          cleaning_type: booking.cleaning_type || 'Cleaning Service',
+          payment_status: booking.payment_status,
+          source: 'past_booking'
         })),
-        // Linen orders
+        // Include ALL unpaid linen orders
         ...linenOrders.map(order => {
           const orderAddress = addressLookup[order.address_id];
           return {
-            id: order.id.toString(),
+            id: `linen_${order.id}`,
             date_time: order.order_date,
             address: orderAddress?.address || 'Linen Order',
             postcode: orderAddress?.postcode || '',
             total_cost: parseFloat(order.total_cost?.toString() || '0'),
             cleaning_type: 'Linen Order',
-            payment_status: order.payment_status
+            payment_status: order.payment_status,
+            source: 'linen_order'
           };
         })
       ];
+
+      console.log('Outstanding payments breakdown:', {
+        pastBookingsCount: pastBookings.length,
+        linenOrdersCount: linenOrders.length,
+        totalUnpaidItems: allUnpaidItems.length,
+        pastBookings: pastBookings.map(b => ({ id: b.id, cost: b.total_cost, status: b.payment_status })),
+        linenOrders: linenOrders.map(o => ({ id: o.id, cost: o.total_cost, status: o.payment_status }))
+      });
 
       setUnpaidBookings(allUnpaidItems);
     } catch (error) {
