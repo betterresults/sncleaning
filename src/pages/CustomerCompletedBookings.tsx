@@ -9,7 +9,7 @@ import CustomerPastBookings from '@/components/customer/CustomerPastBookings';
 import AdminCustomerSelector from '@/components/admin/AdminCustomerSelector';
 
 const CustomerCompletedBookings = () => {
-  const { user, userRole, customerId, signOut } = useAuth();
+  const { user, userRole, customerId, loading, signOut } = useAuth();
 
   const handleSignOut = async () => {
     try {
@@ -19,8 +19,26 @@ const CustomerCompletedBookings = () => {
     }
   };
 
-  if (!user || (!customerId && userRole !== 'admin')) {
+  // Show loading state while auth is loading
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center py-8 text-muted-foreground">
+          Loading...
+        </div>
+      </div>
+    );
+  }
+
+  // Only redirect if not authenticated at all
+  if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // For customers, we don't need to check customerId here since the component will handle it
+  // For non-admins who aren't customers, redirect to appropriate dashboard
+  if (userRole === 'user') {
+    return <Navigate to="/cleaner-dashboard" replace />;
   }
 
   return (
