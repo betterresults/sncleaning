@@ -12,6 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import CustomerSelector from './CustomerSelector';
 import CleanerSelector from './CleanerSelector';
+import LinenManagementSelector from './LinenManagementSelector';
+import { LinenUsageItem } from '@/hooks/useLinenProducts';
 
 interface BookingFormProps {
   onBookingCreated: () => void;
@@ -52,6 +54,10 @@ interface BookingData {
   
   // Recurring booking support
   recurringGroupId?: string | null;
+  
+  // Linen management
+  linenManagement: boolean;
+  linenUsed: LinenUsageItem[];
 }
 
 const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
@@ -80,7 +86,9 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
     carpetCleaning: false,
     paymentMethod: 'Cash',
     paymentStatus: 'Unpaid',
-    recurringGroupId: null
+    recurringGroupId: null,
+    linenManagement: false,
+    linenUsed: []
   });
 
   const handleInputChange = (field: keyof BookingData, value: string | number | boolean) => {
@@ -193,7 +201,9 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
         additional_details: `${formData.additionalDetails}${formData.carpetCleaning ? ' - Carpet cleaning included' : ''}`,
         payment_method: formData.paymentMethod,
         payment_status: formData.paymentStatus,
-        booking_status: 'Confirmed'
+        booking_status: 'Confirmed',
+        linen_management: formData.linenManagement,
+        linen_used: formData.linenManagement && formData.linenUsed.length > 0 ? JSON.parse(JSON.stringify(formData.linenUsed)) : null
       };
 
       const { error } = await supabase
@@ -496,6 +506,17 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Linen Management */}
+      {(formData.cleaningType === 'Air BnB' || formData.formName === 'Standard Cleaning' || formData.formName === 'Deep Cleaning') && (
+        <LinenManagementSelector
+          enabled={formData.linenManagement}
+          onEnabledChange={(enabled) => setFormData(prev => ({ ...prev, linenManagement: enabled, linenUsed: enabled ? prev.linenUsed : [] }))}
+          linenUsed={formData.linenUsed}
+          onLinenUsedChange={(linenUsed) => setFormData(prev => ({ ...prev, linenUsed }))}
+          customerId={formData.customerId || undefined}
+        />
+      )}
 
       {/* Cleaner Assignment */}
       <Card>

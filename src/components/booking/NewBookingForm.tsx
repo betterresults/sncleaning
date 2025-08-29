@@ -18,6 +18,8 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import LinenManagementSelector from './LinenManagementSelector';
+import { LinenUsageItem } from '@/hooks/useLinenProducts';
 
 interface NewBookingFormProps {
   onBookingCreated: () => void;
@@ -86,6 +88,10 @@ interface BookingData {
   // Additional details
   propertyDetails: string;
   additionalDetails: string;
+  
+  // Linen management
+  linenManagement: boolean;
+  linenUsed: LinenUsageItem[];
 }
 
 const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedCustomer }: NewBookingFormProps) => {
@@ -127,7 +133,9 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
     cleanerHourlyRate: 0,
     cleanerPercentage: 70,
     propertyDetails: '',
-    additionalDetails: ''
+    additionalDetails: '',
+    linenManagement: false,
+    linenUsed: []
   });
 
   const [showAddPropertyAccessDialog, setShowAddPropertyAccessDialog] = useState(false);
@@ -584,7 +592,9 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
         frequently: frequently,
         access: buildAccessDetails(),
         key_collection: formData.keyPickupAddress || null,
-        cleaning_cost_per_hour: requiresHours ? formData.costPerHour : null
+        cleaning_cost_per_hour: requiresHours ? formData.costPerHour : null,
+        linen_management: formData.linenManagement,
+        linen_used: formData.linenManagement && formData.linenUsed.length > 0 ? JSON.parse(JSON.stringify(formData.linenUsed)) : null
       };
 
       const { error } = await supabase
@@ -1249,6 +1259,17 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
             </div>
           </CardContent>
         </Card>
+
+        {/* Linen Management */}
+        {(formData.serviceType === 'airbnb' || formData.cleaningSubType === 'standard_cleaning' || formData.cleaningSubType === 'deep_cleaning') && (
+          <LinenManagementSelector
+            enabled={formData.linenManagement}
+            onEnabledChange={(enabled) => setFormData(prev => ({ ...prev, linenManagement: enabled, linenUsed: enabled ? prev.linenUsed : [] }))}
+            linenUsed={formData.linenUsed}
+            onLinenUsedChange={(linenUsed) => setFormData(prev => ({ ...prev, linenUsed }))}
+            customerId={formData.customerId || undefined}
+          />
+        )}
 
         {/* Cleaner Assignment */}
         <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
