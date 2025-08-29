@@ -7,7 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { CalendarIcon, Clock, ChevronDown, MapPin, User, Edit3 } from 'lucide-react';
+import { CalendarIcon, Clock, MapPin, User, Edit3 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -54,13 +55,12 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-  const [selectedTime, setSelectedTime] = useState('');
+  const [selectedHour, setSelectedHour] = useState('');
+  const [selectedMinute, setSelectedMinute] = useState('00');
   const [hours, setHours] = useState(0);
   const [totalCost, setTotalCost] = useState(0);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   
   const [formData, setFormData] = useState({
-    property_details: '',
     access: ''
   });
 
@@ -73,12 +73,18 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
       const nextWeek = new Date(booking.date_time);
       nextWeek.setDate(nextWeek.getDate() + 7);
       setSelectedDate(nextWeek);
-      setSelectedTime(format(new Date(booking.date_time), 'HH:mm'));
+      
+      // Set default time
+      const originalTime = new Date(booking.date_time);
+      const hour24 = originalTime.getHours();
+      const minutes = originalTime.getMinutes() >= 30 ? '30' : '00';
+      setSelectedHour(hour24.toString());
+      setSelectedMinute(minutes);
+      
       setHours(booking.total_hours);
       setTotalCost(booking.total_cost);
       
       setFormData({
-        property_details: booking.property_details || '',
         access: booking.access || ''
       });
     }
@@ -91,38 +97,34 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
     }
   }, [hours, booking?.cleaning_cost_per_hour]);
 
-  // Generate time options (6 AM to 5 PM, :00 and :30 only)
-  const timeOptions = React.useMemo(() => {
+  // Generate hour options (6 AM to 5 PM)
+  const hourOptions = React.useMemo(() => {
     const options = [];
     for (let hour = 6; hour <= 17; hour++) {
       const hour12 = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
       const ampm = hour >= 12 ? 'PM' : 'AM';
-      const hourStr = hour.toString().padStart(2, '0');
       
       options.push({
-        value: `${hourStr}:00`,
-        label: `${hour12}:00 ${ampm}`
+        value: hour.toString(),
+        label: `${hour12} ${ampm}`
       });
-      
-      if (hour < 17) { // Don't add :30 for the last hour (5 PM)
-        options.push({
-          value: `${hourStr}:30`,
-          label: `${hour12}:30 ${ampm}`
-        });
-      }
     }
     return options;
   }, []);
 
+  const minuteOptions = [
+    { value: '00', label: ':00' },
+    { value: '30', label: ':30' }
+  ];
+
   const handleDuplicate = async () => {
-    if (!booking || !selectedDate || !selectedTime) return;
+    if (!booking || !selectedDate || !selectedHour || !selectedMinute) return;
 
     setLoading(true);
     try {
       // Combine date and time
-      const [timeHours, minutes] = selectedTime.split(':').map(Number);
       const newDateTime = new Date(selectedDate);
-      newDateTime.setHours(timeHours, minutes, 0, 0);
+      newDateTime.setHours(parseInt(selectedHour), parseInt(selectedMinute), 0, 0);
 
       const { error } = await supabase
         .from('bookings')
@@ -142,7 +144,7 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
           email: booking.email,
           booking_status: 'active',
           payment_status: 'Unpaid',
-          ...formData
+          access: formData.access
         });
 
       if (error) throw error;
@@ -264,71 +266,47 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
 
               <div>
                 <Label className="text-sm font-medium text-gray-700">Time *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal mt-1.5 border-[#185166]/20 hover:border-[#185166]",
-                        !selectedTime && "text-muted-foreground"
-                      )}
-                    >
-                      <Clock className="mr-2 h-4 w-4" />
-                      {selectedTime ? timeOptions.find(opt => opt.value === selectedTime)?.label : "Select time"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <div className="max-h-60 overflow-y-auto">
-                      {timeOptions.map((option) => (
-                        <Button
-                          key={option.value}
-                          variant="ghost"
-                          className="w-full justify-start text-left h-10 hover:bg-[#185166]/10"
-                          onClick={() => setSelectedTime(option.value)}
-                        >
+                <div className="flex gap-2 mt-1.5">
+                  <Select value={selectedHour} onValueChange={setSelectedHour}>
+                    <SelectTrigger className="border-[#185166]/20 hover:border-[#185166] focus:border-[#185166]">
+                      <SelectValue placeholder="Hour" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {hourOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
                           {option.label}
-                        </Button>
+                        </SelectItem>
                       ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={selectedMinute} onValueChange={setSelectedMinute}>
+                    <SelectTrigger className="w-20 border-[#185166]/20 hover:border-[#185166] focus:border-[#185166]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {minuteOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Simplified Additional Details */}
-          <Collapsible open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-            <CollapsibleTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full border-[#185166]/20 hover:border-[#185166] hover:bg-[#185166]/5"
-              >
-                <ChevronDown className={cn("h-4 w-4 mr-2 transition-transform", isDetailsOpen && "rotate-180")} />
-                Additional Details (Optional)
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-4 mt-4 p-4 border border-border/40 rounded-lg bg-gray-50/50">
-              <div>
-                <Label className="text-sm font-medium text-gray-700">Property Details</Label>
-                <Input
-                  value={formData.property_details}
-                  onChange={(e) => setFormData(prev => ({ ...prev, property_details: e.target.value }))}
-                  placeholder="Property type, size, special requirements..."
-                  className="mt-1.5 border-[#185166]/20 focus:border-[#185166]"
-                />
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-700">Access Instructions</Label>
-                <Input
-                  value={formData.access}
-                  onChange={(e) => setFormData(prev => ({ ...prev, access: e.target.value }))}
-                  placeholder="Access codes, key location, special entry instructions..."
-                  className="mt-1.5 border-[#185166]/20 focus:border-[#185166]"
-                />
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+          {/* Access Field */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700">Access Instructions (Optional)</Label>
+            <Input
+              value={formData.access}
+              onChange={(e) => setFormData(prev => ({ ...prev, access: e.target.value }))}
+              placeholder="Access codes, key location, special entry instructions..."
+              className="border-[#185166]/20 hover:border-[#185166] focus:border-[#185166]"
+            />
+          </div>
         </div>
 
         <div className="flex justify-between gap-3 pt-6 border-t border-border/40">
@@ -342,7 +320,7 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
           </Button>
           <Button
             onClick={handleDuplicate}
-            disabled={loading || !selectedDate || !selectedTime || hours <= 0}
+            disabled={loading || !selectedDate || !selectedHour || !selectedMinute || hours <= 0}
             className="px-6 bg-[#18A5A5] hover:bg-[#185166] text-white font-semibold"
           >
             {loading ? 'Creating...' : 'Duplicate Booking'}
