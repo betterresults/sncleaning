@@ -346,16 +346,31 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
           break;
       }
       
-      const { error } = await supabase
+      console.log('Update data:', updateData);
+      console.log('Selected bookings:', selectedBookings);
+      
+      const { data, error, count } = await supabase
         .from('bookings')
         .update(updateData)
-        .in('id', selectedBookings);
+        .in('id', selectedBookings)
+        .select();
+
+      console.log('Update result:', { data, error, count });
 
       if (error) {
         console.error('Error updating bookings:', error);
         toast({
           title: "Update Failed",
           description: "Error updating bookings: " + error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        toast({
+          title: "Update Failed",
+          description: "No bookings were updated. Please check your selection.",
           variant: "destructive",
         });
         return;
@@ -518,8 +533,8 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
         { value: 'One-off', label: 'One-off' }
       ],
       linen_management: [
-        { value: true, label: 'Enabled' },
-        { value: false, label: 'Disabled' }
+        { value: 'true', label: 'Enabled' },
+        { value: 'false', label: 'Disabled' }
       ],
       ironing: [
         { value: 'Yes', label: 'Yes' },
