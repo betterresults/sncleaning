@@ -17,7 +17,7 @@ interface AdjustPaymentAmountDialogProps {
     first_name: string;
     last_name: string;
     invoice_id?: string;
-  };
+  } | null;
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
@@ -30,13 +30,18 @@ export const AdjustPaymentAmountDialog: React.FC<AdjustPaymentAmountDialogProps>
   onSuccess,
 }) => {
   const { toast } = useToast();
-  const [newAmount, setNewAmount] = useState(booking.total_cost?.toString() || '0');
+  const [newAmount, setNewAmount] = useState(booking?.total_cost?.toString() || '0');
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const difference = parseFloat(newAmount) - (booking.total_cost || 0);
+  const difference = parseFloat(newAmount) - (booking?.total_cost || 0);
   const isIncrease = difference > 0;
   const isDecrease = difference < 0;
+
+  // Don't render dialog if booking is null
+  if (!booking) {
+    return null;
+  }
 
   const handleAdjustPayment = async () => {
     if (!newAmount || parseFloat(newAmount) <= 0) {
