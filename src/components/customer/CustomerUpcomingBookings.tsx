@@ -279,22 +279,24 @@ const CustomerUpcomingBookings = () => {
           </CardContent>
         </Card>
         
-        <Card 
-          className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 sm:col-span-2 lg:col-span-1 cursor-pointer"
-          onClick={() => navigate('/customer-completed-bookings')}
-        >
-          <CardContent className="p-3 sm:p-4">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <User className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
+        {unpaidCompletedBookingsCount > 0 && (
+          <Card 
+            className="bg-white border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 sm:col-span-2 lg:col-span-1 cursor-pointer"
+            onClick={() => navigate('/customer-completed-bookings?filter=unpaid')}
+          >
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-2 bg-red-100 rounded-lg">
+                  <User className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
+                </div>
+                <div>
+                  <p className="text-xs sm:text-sm font-medium text-gray-500">Needs Payment</p>
+                  <p className="text-lg sm:text-2xl font-bold text-[#185166]">{unpaidCompletedBookingsCount}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-gray-500">Needs Payment</p>
-                <p className="text-lg sm:text-2xl font-bold text-[#185166]">{unpaidCompletedBookingsCount}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* View Toggle */}

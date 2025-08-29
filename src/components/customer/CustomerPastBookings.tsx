@@ -20,6 +20,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { useSearchParams } from 'react-router-dom';
 
 interface PastBooking {
   id: number;
@@ -47,6 +48,9 @@ const CustomerPastBookings = () => {
   const { customerId, userRole } = useAuth();
   const { selectedCustomerId } = useAdminCustomer();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const filterParam = searchParams.get('filter');
+  
   const [bookings, setBookings] = useState<PastBooking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<PastBooking[]>([]);
   const [reviews, setReviews] = useState<{[key: number]: boolean}>({});
@@ -77,7 +81,7 @@ const CustomerPastBookings = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const bookingsPerPage = 10;
   const [cleanerFilter, setCleanerFilter] = useState('all');
-  const [paymentFilter, setPaymentFilter] = useState('all');
+  const [paymentFilter, setPaymentFilter] = useState(filterParam === 'unpaid' ? 'unpaid' : 'all');
   const [ratingFilter, setRatingFilter] = useState('all');
   const [availableCleaners, setAvailableCleaners] = useState<{id: number, name: string}[]>([]);
   
