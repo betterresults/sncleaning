@@ -1,11 +1,13 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Package, Package2, PackageX } from 'lucide-react';
-import { useLinenProducts } from '@/hooks/useLinenProducts';
+import { Button } from '@/components/ui/button';
+import { Package, ShoppingCart, DollarSign, Calendar, MapPin, CreditCard, PackageX } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useCustomerLinenOrders } from '@/hooks/useCustomerLinenOrders';
 
 interface InventoryItem {
   id: string;
@@ -38,6 +40,8 @@ interface GroupedInventory {
 
 const LinenInventoryView = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const { orders: linenOrders } = useCustomerLinenOrders();
 
   // Get customer profile and addresses
   const { data: profile } = useQuery({
@@ -191,100 +195,158 @@ const LinenInventoryView = () => {
     return acc;
   }, {} as Record<string, GroupedInventory>);
 
-  const getStatusBadge = (clean: number, dirty: number, inUse: number) => {
-    const total = clean + dirty + inUse;
-    if (clean === total) return <Badge className="bg-green-100 text-green-800">All Clean</Badge>;
-    if (dirty > 0) return <Badge variant="destructive">Needs Cleaning</Badge>;
-    if (inUse > 0) return <Badge variant="secondary">In Use</Badge>;
-    return <Badge variant="outline">Available</Badge>;
+  const handlePayment = async (orderId: string) => {
+    try {
+      // Here you would integrate with your payment system
+      toast({
+        title: "Payment initiated",
+        description: "Redirecting to payment...",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to process payment",
+        variant: "destructive",
+      });
+    }
   };
 
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Linen Inventory Overview
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <Package2 className="h-8 w-8 mx-auto mb-2 text-green-600" />
-              <div className="text-2xl font-bold text-green-600">
-                {inventory.reduce((sum, item) => sum + item.clean_quantity, 0)}
-              </div>
-              <div className="text-sm text-green-700">Clean Items</div>
-            </div>
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <Package className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-              <div className="text-2xl font-bold text-blue-600">
-                {inventory.reduce((sum, item) => sum + item.in_use_quantity, 0)}
-              </div>
-              <div className="text-sm text-blue-700">In Use</div>
-            </div>
-            <div className="text-center p-4 bg-red-50 rounded-lg">
-              <PackageX className="h-8 w-8 mx-auto mb-2 text-red-600" />
-              <div className="text-2xl font-bold text-red-600">
-                {inventory.reduce((sum, item) => sum + item.dirty_quantity, 0)}
-              </div>
-              <div className="text-sm text-red-700">Dirty Items</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+  const getStatusBadge = (clean: number, dirty: number, inUse: number) => {
+    const total = clean + dirty + inUse;
+    if (total === 0) return <Badge variant="outline">No Items</Badge>;
+    if (dirty > 0) return <Badge variant="destructive">Needs Cleaning</Badge>;
+    if (inUse > 0) return <Badge variant="secondary">In Use</Badge>;
+    return <Badge className="bg-green-100 text-green-800">All Clean</Badge>;
+  };
 
-      {Object.entries(inventoryByAddress).map(([addressId, addressData]: [string, GroupedInventory]) => (
-        <Card key={addressId}>
-          <CardHeader>
-            <CardTitle className="text-lg">
-              {addressData.address?.address}, {addressData.address?.postcode}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {addressData.items.map((item: InventoryItem) => (
-                <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex-1">
-                    <h4 className="font-medium">{item.linen_products.name}</h4>
-                    <p className="text-sm text-muted-foreground capitalize">
-                      {item.linen_products.type}
-                    </p>
+  const unpaidOrders = linenOrders?.filter(order => 
+    order.payment_status === 'unpaid' || order.payment_status === 'pending'
+  ) || [];
+
+  return (
+    <div className="space-y-4">
+      {/* Unpaid Orders Section */}
+      {unpaidOrders.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-[#185166] flex items-center gap-2">
+            <ShoppingCart className="h-5 w-5 text-red-500" />
+            Unpaid Orders
+          </h3>
+          {unpaidOrders.map((order) => (
+            <Card key={order.id} className="bg-white border-red-200 hover:shadow-md transition-all duration-300">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-red-50 rounded-lg">
+                      <ShoppingCart className="h-5 w-5 text-red-500" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4 text-red-500" />
+                        <span className="font-bold text-lg text-red-600">£{Number(order.total_cost).toFixed(2)}</span>
+                      </div>
+                      <Badge variant="destructive" className="text-xs">
+                        {order.payment_status === 'unpaid' ? 'Payment Due' : 'Pending'}
+                      </Badge>
+                    </div>
                   </div>
-                  
-                  <div className="flex items-center gap-4">
-                    <div className="text-center">
-                      <div className="text-lg font-semibold text-green-600">
-                        {item.clean_quantity}
-                      </div>
-                      <div className="text-xs text-muted-foreground">Clean</div>
+                  <Button 
+                    size="sm"
+                    className="bg-red-500 hover:bg-red-600 text-white"
+                    onClick={() => handlePayment(order.id)}
+                  >
+                    <CreditCard className="h-4 w-4 mr-1" />
+                    Pay Now
+                  </Button>
+                </div>
+                
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    <span>Ordered: {new Date(order.order_date).toLocaleDateString()}</span>
+                  </div>
+                  {order.delivery_date && (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      <span>Delivery: {new Date(order.delivery_date).toLocaleDateString()}</span>
                     </div>
-                    
-                    <div className="text-center">
-                      <div className="text-lg font-semibold text-blue-600">
-                        {item.in_use_quantity}
-                      </div>
-                      <div className="text-xs text-muted-foreground">In Use</div>
-                    </div>
-                    
-                    <div className="text-center">
-                      <div className="text-lg font-semibold text-red-600">
-                        {item.dirty_quantity}
-                      </div>
-                      <div className="text-xs text-muted-foreground">Dirty</div>
-                    </div>
-                    
-                    <div className="ml-4">
-                      {getStatusBadge(item.clean_quantity, item.dirty_quantity, item.in_use_quantity)}
-                    </div>
+                  )}
+                </div>
+
+                <div className="mt-3 pt-3 border-t">
+                  <div className="text-xs text-muted-foreground">
+                    {order.linen_order_items?.length || 0} items
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Linen Inventory Section */}
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold text-[#185166] flex items-center gap-2">
+          <Package className="h-5 w-5" />
+          Linen Inventory
+        </h3>
+
+        {!inventory || inventory.length === 0 ? (
+          <Card className="bg-white border-gray-100">
+            <CardContent className="p-6 text-center">
+              <Package className="h-12 w-12 mx-auto mb-4 opacity-50 text-muted-foreground" />
+              <p className="text-muted-foreground">No linen inventory found</p>
+              <p className="text-sm text-muted-foreground">Your linen items will appear here once delivered</p>
+            </CardContent>
+          </Card>
+        ) : (
+          Object.entries(inventoryByAddress).map(([addressId, addressData]: [string, GroupedInventory]) => (
+            <Card key={addressId} className="bg-white border-gray-100 hover:shadow-md transition-all duration-300">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <MapPin className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-[#185166]">
+                      {addressData.address?.address}
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      {addressData.address?.postcode}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {addressData.items.map((item: InventoryItem) => (
+                    <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex-1">
+                        <h5 className="font-medium text-[#185166]">{item.linen_products.name}</h5>
+                        <p className="text-sm text-muted-foreground capitalize">
+                          {item.linen_products.type}
+                        </p>
+                      </div>
+                      
+                      <div className="flex items-center gap-4">
+                        <div className="text-center">
+                          <div className="text-lg font-bold text-[#185166]">
+                            {item.clean_quantity + item.dirty_quantity + item.in_use_quantity}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Total Items</div>
+                        </div>
+                        
+                        <div>
+                          {getStatusBadge(item.clean_quantity, item.dirty_quantity, item.in_use_quantity)}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 };
