@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { CreditCard, Calendar, MapPin, AlertCircle } from 'lucide-react';
+import { CreditCard, Calendar, MapPin, AlertCircle, Sparkles, Package } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +19,7 @@ interface UnpaidBooking {
   total_cost: number;
   cleaning_type: string;
   payment_status: string;
+  source?: string;
 }
 
 interface BulkPaymentDialogProps {
@@ -147,45 +148,111 @@ export const BulkPaymentDialog: React.FC<BulkPaymentDialogProps> = ({
                 </div>
               </div>
 
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {unpaidBookings.map((booking) => (
-                  <Card key={booking.id} className={`p-4 transition-colors ${
-                    selectedBookings.includes(booking.id) ? 'bg-blue-50 border-blue-200' : ''
-                  }`}>
-                    <div className="flex items-start gap-3">
-                      <Checkbox
-                        checked={selectedBookings.includes(booking.id)}
-                        onCheckedChange={(checked) => 
-                          handleBookingSelect(booking.id, checked as boolean)
-                        }
-                        className="mt-1"
-                      />
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">
-                              {format(new Date(booking.date_time), 'dd MMM yyyy, HH:mm')}
-                            </span>
-                            <Badge variant="destructive">{booking.payment_status}</Badge>
+              <div className="space-y-6 max-h-96 overflow-y-auto">
+                {(() => {
+                  const cleaningBookings = unpaidBookings.filter(b => b.source === 'past_booking');
+                  const linenOrders = unpaidBookings.filter(b => b.source === 'linen_order');
+                  
+                  return (
+                    <>
+                      {/* Completed Cleaning Services */}
+                      {cleaningBookings.length > 0 && (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground border-b pb-2">
+                            <Sparkles className="h-4 w-4" />
+                            <span>Completed Cleaning Services ({cleaningBookings.length})</span>
                           </div>
-                          <div className="text-lg font-semibold">
-                            £{booking.total_cost.toFixed(2)}
+                          {cleaningBookings.map((booking) => (
+                            <Card key={booking.id} className={`p-4 transition-colors ${
+                              selectedBookings.includes(booking.id) ? 'bg-blue-50 border-blue-200' : ''
+                            }`}>
+                              <div className="flex items-start gap-3">
+                                <Checkbox
+                                  checked={selectedBookings.includes(booking.id)}
+                                  onCheckedChange={(checked) => 
+                                    handleBookingSelect(booking.id, checked as boolean)
+                                  }
+                                  className="mt-1"
+                                />
+                                <div className="flex-1 space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                                      <span className="font-medium">
+                                        {format(new Date(booking.date_time), 'dd MMM yyyy, HH:mm')}
+                                      </span>
+                                      <Badge variant="destructive">{booking.payment_status}</Badge>
+                                    </div>
+                                    <div className="text-lg font-semibold">
+                                      £{booking.total_cost.toFixed(2)}
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <MapPin className="h-3 w-3" />
+                                    <span>{booking.address}, {booking.postcode}</span>
+                                  </div>
+                                  
+                                  <div className="text-sm">
+                                    <span className="font-medium">Service:</span> {booking.cleaning_type}
+                                  </div>
+                                </div>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Linen Orders */}
+                      {linenOrders.length > 0 && (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground border-b pb-2">
+                            <Package className="h-4 w-4" />
+                            <span>Linen Orders ({linenOrders.length})</span>
                           </div>
+                          {linenOrders.map((booking) => (
+                            <Card key={booking.id} className={`p-4 transition-colors ${
+                              selectedBookings.includes(booking.id) ? 'bg-blue-50 border-blue-200' : ''
+                            }`}>
+                              <div className="flex items-start gap-3">
+                                <Checkbox
+                                  checked={selectedBookings.includes(booking.id)}
+                                  onCheckedChange={(checked) => 
+                                    handleBookingSelect(booking.id, checked as boolean)
+                                  }
+                                  className="mt-1"
+                                />
+                                <div className="flex-1 space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                                      <span className="font-medium">
+                                        {format(new Date(booking.date_time), 'dd MMM yyyy')}
+                                      </span>
+                                      <Badge variant="destructive">{booking.payment_status}</Badge>
+                                    </div>
+                                    <div className="text-lg font-semibold">
+                                      £{booking.total_cost.toFixed(2)}
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <MapPin className="h-3 w-3" />
+                                    <span>{booking.address}, {booking.postcode}</span>
+                                  </div>
+                                  
+                                  <div className="text-sm">
+                                    <span className="font-medium">Service:</span> {booking.cleaning_type}
+                                  </div>
+                                </div>
+                              </div>
+                            </Card>
+                          ))}
                         </div>
-                        
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <MapPin className="h-3 w-3" />
-                          <span>{booking.address}, {booking.postcode}</span>
-                        </div>
-                        
-                        <div className="text-sm">
-                          <span className="font-medium">Service:</span> {booking.cleaning_type}
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+                      )}
+                    </>
+                  );
+                })()}
               </div>
 
               {selectedBookings.length > 0 && (

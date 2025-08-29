@@ -38,19 +38,22 @@ export const useCustomerUnpaidBookings = () => {
       // Fetch BOTH unpaid completed bookings AND unpaid linen orders
       const [pastBookingsResponse, linenOrdersResponse] = await Promise.all([
         // Past bookings (completed cleanings that haven't been paid)
+        // Exclude anything with 'paid' or 'confirmed' in the status
         supabase
           .from('past_bookings')
           .select('id, date_time, address, postcode, total_cost, cleaning_type, payment_status')
           .eq('customer', profile.customer_id)
-          .in('payment_status', ['Unpaid', 'unpaid', 'Not Paid', 'not paid', 'Pending', 'pending', null])
+          .not('payment_status', 'ilike', '%paid%')
+          .not('payment_status', 'ilike', '%confirmed%')
           .order('date_time', { ascending: false }),
         
         // Unpaid linen orders  
+        // Exclude anything with 'paid' in the status (but keep delivered as they can still be unpaid)
         supabase
           .from('linen_orders')
           .select('id, order_date, total_cost, payment_status, address_id')
           .eq('customer_id', profile.customer_id)
-          .in('payment_status', ['unpaid', 'pending', null])
+          .not('payment_status', 'ilike', '%paid%')
           .order('order_date', { ascending: false })
       ]);
 

@@ -62,12 +62,27 @@ const CustomerDashboard = () => {
                   <CardContent>
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-muted-foreground">
-                          You have {unpaidBookings.length} unpaid booking{unpaidBookings.length !== 1 ? 's' : ''}
-                        </p>
-                        <p className="text-lg font-semibold">
-                          Total: £{unpaidBookings.reduce((sum, booking) => sum + booking.total_cost, 0).toFixed(2)}
-                        </p>
+                        {(() => {
+                          const cleaningCount = unpaidBookings.filter(b => b.source === 'past_booking').length;
+                          const linenCount = unpaidBookings.filter(b => b.source === 'linen_order').length;
+                          const totalAmount = unpaidBookings.reduce((sum, booking) => sum + booking.total_cost, 0);
+                          
+                          return (
+                            <div>
+                              <p className="text-sm text-muted-foreground">
+                                {cleaningCount > 0 && linenCount > 0 
+                                  ? `${cleaningCount} Completed Cleaning${cleaningCount !== 1 ? 's' : ''} • ${linenCount} Linen Order${linenCount !== 1 ? 's' : ''}`
+                                  : cleaningCount > 0 
+                                    ? `${cleaningCount} Completed Cleaning${cleaningCount !== 1 ? 's' : ''}`
+                                    : `${linenCount} Linen Order${linenCount !== 1 ? 's' : ''}`
+                                }
+                              </p>
+                              <p className="text-lg font-semibold">
+                                Total: £{totalAmount.toFixed(2)}
+                              </p>
+                            </div>
+                          );
+                        })()}
                       </div>
                       <Button onClick={() => setShowBulkPayment(true)}>
                         <CreditCard className="h-4 w-4 mr-2" />
