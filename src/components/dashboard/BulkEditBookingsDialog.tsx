@@ -47,6 +47,8 @@ interface Booking {
   frequently: string;
   extras: string;
   linens: string;
+  linen_management: boolean;
+  linen_used: any;
   ironing: string;
   property_details: string;
   additional_details: string;
@@ -153,6 +155,8 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
           frequently,
           extras,
           linens,
+          linen_management,
+          linen_used,
           ironing,
           property_details,
           additional_details,
@@ -394,7 +398,8 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
       occupied: 'Occupied',
       frequently: 'Frequency',
       extras: 'Extras',
-      linens: 'Linens',
+      linens: 'Old Linens (Legacy)',
+      linen_management: 'Linen Management',
       ironing: 'Ironing',
       first_name: 'First Name',
       last_name: 'Last Name',
@@ -429,7 +434,8 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
       { value: 'occupied', label: 'Occupied' },
       { value: 'frequently', label: 'Frequency' },
       { value: 'extras', label: 'Extras' },
-      { value: 'linens', label: 'Linens' },
+      { value: 'linens', label: 'Old Linens (Legacy)' },
+      { value: 'linen_management', label: 'Linen Management' },
       { value: 'ironing', label: 'Ironing' },
       { value: 'first_name', label: 'First Name' },
       { value: 'last_name', label: 'Last Name' },
@@ -494,9 +500,9 @@ const BulkEditBookingsDialog: React.FC<BulkEditBookingsDialogProps> = ({
         { value: 'Monthly', label: 'Monthly' },
         { value: 'One-off', label: 'One-off' }
       ],
-      linens: [
-        { value: 'Yes', label: 'Yes' },
-        { value: 'No', label: 'No' }
+      linen_management: [
+        { value: true, label: 'Enabled' },
+        { value: false, label: 'Disabled' }
       ],
       ironing: [
         { value: 'Yes', label: 'Yes' },
