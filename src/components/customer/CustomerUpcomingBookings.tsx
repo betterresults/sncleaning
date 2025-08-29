@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, MapPin, User, Edit, Grid, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Edit, Grid, CheckCircle, ChevronLeft, ChevronRight, CreditCard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/contexts/AuthContext';
@@ -287,7 +287,7 @@ const CustomerUpcomingBookings = () => {
             <CardContent className="p-3 sm:p-4">
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="p-2 bg-red-100 rounded-lg">
-                  <User className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
+                  <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
                 </div>
                 <div>
                   <p className="text-xs sm:text-sm font-medium text-gray-500">Needs Payment</p>
