@@ -33,6 +33,7 @@ interface PastBooking {
   payment_status: string;
   same_day?: string;
   cleaner?: {
+    id: number;
     first_name: string;
     last_name: string;
   } | null;
@@ -131,10 +132,15 @@ const CustomerPastBookings = () => {
     }
   };
 
-    // Filter bookings when filters change
+  // Filter bookings when filters change
   useEffect(() => {
     applyFilters();
   }, [bookings, timePeriod, dateFrom, dateTo, cleanerFilter, paymentFilter, ratingFilter, reviews]);
+
+  // Update available cleaners when filtered bookings change (excluding cleaner filter)
+  useEffect(() => {
+    updateAvailableCleaners();
+  }, [bookings, timePeriod, dateFrom, dateTo, paymentFilter, ratingFilter, reviews]);
 
   const fetchPastBookings = async () => {
     if (!activeCustomerId) return;
@@ -183,40 +189,6 @@ const CustomerPastBookings = () => {
       const types = [...new Set(bookingsWithPhotos.map(b => b.service_type).filter(Boolean))];
       setServiceTypes(types);
 
-      // Extract cleaners from bookings and fetch all cleaners
-      const bookingCleaners = bookingsWithPhotos
-        .map(b => b.cleaner)
-        .filter(Boolean)
-        .map(c => ({
-          id: c.id,
-          name: `${c.first_name} ${c.last_name}`
-        }));
-
-      // Fetch all cleaners from the cleaners table
-      const { data: allCleanersData, error: cleanersError } = await supabase
-        .from('cleaners')
-        .select('id, first_name, last_name')
-        .order('first_name');
-
-      if (cleanersError) {
-        console.error('Error fetching all cleaners:', cleanersError);
-      } else {
-        const allCleaners = allCleanersData?.map(c => ({
-          id: c.id,
-          name: `${c.first_name} ${c.last_name}`
-        })) || [];
-
-        // Combine all cleaners with booking cleaners, removing duplicates
-        const combinedCleaners = [...allCleaners];
-        bookingCleaners.forEach(bookingCleaner => {
-          if (!combinedCleaners.some(c => c.id === bookingCleaner.id)) {
-            combinedCleaners.push(bookingCleaner);
-          }
-        });
-
-        setAvailableCleaners(combinedCleaners);
-      }
-
       // Fetch review status for all bookings
       if (bookingsWithPhotos.length > 0) {
         const bookingIds = bookingsWithPhotos.map(b => b.id);
@@ -237,6 +209,68 @@ const CustomerPastBookings = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const updateAvailableCleaners = () => {
+    let filtered = [...bookings];
+
+    // Apply all filters except cleaner filter to determine available cleaners
+    if (timePeriod !== 'all') {
+      const periodDates = getTimePeriodDates(timePeriod);
+      if (periodDates) {
+        filtered = filtered.filter(booking => {
+          const bookingDate = new Date(booking.date_time);
+          return bookingDate >= periodDates.from && bookingDate <= periodDates.to;
+        });
+      }
+    }
+
+    if (dateFrom) {
+      filtered = filtered.filter(booking => 
+        new Date(booking.date_time) >= dateFrom
+      );
+    }
+    if (dateTo) {
+      filtered = filtered.filter(booking => 
+        new Date(booking.date_time) <= dateTo
+      );
+    }
+
+    if (paymentFilter !== 'all') {
+      if (paymentFilter === 'paid') {
+        filtered = filtered.filter(booking => 
+          booking.payment_status && booking.payment_status.toLowerCase().includes('paid')
+        );
+      } else if (paymentFilter === 'unpaid') {
+        filtered = filtered.filter(booking => 
+          !booking.payment_status || !booking.payment_status.toLowerCase().includes('paid')
+        );
+      }
+    }
+
+    if (ratingFilter !== 'all') {
+      if (ratingFilter === 'reviewed') {
+        filtered = filtered.filter(booking => reviews[booking.id]);
+      } else if (ratingFilter === 'not-reviewed') {
+        filtered = filtered.filter(booking => !reviews[booking.id]);
+      }
+    }
+
+    // Extract cleaners from the filtered bookings
+    const cleanersFromFiltered = filtered
+      .map(b => b.cleaner)
+      .filter(Boolean)
+      .reduce((unique, cleaner) => {
+        if (!unique.some(c => c.id === cleaner.id)) {
+          unique.push({
+            id: cleaner.id,
+            name: `${cleaner.first_name} ${cleaner.last_name}`
+          });
+        }
+        return unique;
+      }, [] as {id: number, name: string}[]);
+
+    setAvailableCleaners(cleanersFromFiltered);
   };
 
   const applyFilters = () => {
@@ -268,7 +302,7 @@ const CustomerPastBookings = () => {
     // Cleaner filter
     if (cleanerFilter !== 'all') {
       filtered = filtered.filter(booking => 
-        booking.cleaner_id === parseInt(cleanerFilter)
+        booking.cleaner?.id === parseInt(cleanerFilter)
       );
     }
 
@@ -524,13 +558,13 @@ const CustomerPastBookings = () => {
 
       {/* Compact One-Line Filters */}
       <Card className="shadow-sm">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             {/* Time Period Filter */}
-            <div className="flex items-center gap-2">
-              <CalendarDays className="h-4 w-4 text-gray-600" />
+            <div className="flex items-center gap-2 flex-1">
+              <CalendarDays className="h-4 w-4 text-gray-600 flex-shrink-0" />
               <Select value={timePeriod} onValueChange={setTimePeriod}>
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-full sm:w-48">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -547,10 +581,12 @@ const CustomerPastBookings = () => {
             <Button
               variant="outline"
               onClick={() => setAdditionalFiltersOpen(!additionalFiltersOpen)}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 justify-center sm:justify-start flex-shrink-0"
+              size="sm"
             >
               <Filter className="h-4 w-4" />
-              Additional Filters
+              <span className="hidden xs:inline sm:inline">Additional Filters</span>
+              <span className="xs:hidden sm:hidden">Filters</span>
               {additionalFiltersOpen ? <X className="h-4 w-4" /> : <span className="text-xs">+</span>}
             </Button>
           </div>
@@ -558,15 +594,15 @@ const CustomerPastBookings = () => {
           {/* Additional Filters Panel */}
           {additionalFiltersOpen && (
             <div className="mt-4 pt-4 border-t border-border/40">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {/* Cleaner Filter */}
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
+                  <Label className="flex items-center gap-2 text-sm">
                     <User className="h-4 w-4" />
                     Cleaner
                   </Label>
                   <Select value={cleanerFilter} onValueChange={setCleanerFilter}>
-                    <SelectTrigger>
+                    <SelectTrigger className="text-sm">
                       <SelectValue placeholder="All cleaners" />
                     </SelectTrigger>
                     <SelectContent>
@@ -582,12 +618,12 @@ const CustomerPastBookings = () => {
 
                 {/* Payment Filter */}
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
+                  <Label className="flex items-center gap-2 text-sm">
                     <CreditCard className="h-4 w-4" />
                     Payment
                   </Label>
                   <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-                    <SelectTrigger>
+                    <SelectTrigger className="text-sm">
                       <SelectValue placeholder="All" />
                     </SelectTrigger>
                     <SelectContent>
@@ -600,12 +636,12 @@ const CustomerPastBookings = () => {
 
                 {/* Review Filter */}
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
+                  <Label className="flex items-center gap-2 text-sm">
                     <Star className="h-4 w-4" />
                     Reviews
                   </Label>
                   <Select value={ratingFilter} onValueChange={setRatingFilter}>
-                    <SelectTrigger>
+                    <SelectTrigger className="text-sm">
                       <SelectValue placeholder="All" />
                     </SelectTrigger>
                     <SelectContent>
@@ -617,8 +653,8 @@ const CustomerPastBookings = () => {
                 </div>
 
                 {/* Clear Filters */}
-                <div className="flex items-end">
-                  <Button onClick={clearFilters} variant="outline" size="sm" className="w-full">
+                <div className="flex items-end xs:col-span-2 lg:col-span-1">
+                  <Button onClick={clearFilters} variant="outline" size="sm" className="w-full text-sm">
                     Clear All
                   </Button>
                 </div>
