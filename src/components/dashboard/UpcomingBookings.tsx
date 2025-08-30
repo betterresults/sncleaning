@@ -166,9 +166,6 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
           .gte('date_time', new Date().toISOString());
       }
 
-      // Exclude cancelled bookings (consistent with customer dashboard)
-      bookingsQuery = bookingsQuery.neq('booking_status', 'cancelled');
-
       const { data: bookingsData, error: bookingsError } = await bookingsQuery
         .order('date_time', { ascending: sortOrder === 'asc' });
 
