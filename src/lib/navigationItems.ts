@@ -58,11 +58,6 @@ export const getCustomerNavigation = (hasLinenAccess: boolean = false) => [
     url: "/customer-completed-bookings",
     icon: Calendar,
   },
-  ...(hasLinenAccess ? [{
-    title: "Linen Management",
-    url: "/customer-linen-management",
-    icon: Package,
-  }] : []),
   {
     title: "Messages",
     url: "#",
