@@ -28,6 +28,7 @@ interface Booking {
   total_cost: number;
   same_day: boolean;
   access: string | null;
+  additional_details?: string | null;
   first_name: string | null;
   last_name: string | null;
   linen_management: boolean;
@@ -71,7 +72,8 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   const [selectedLinenProducts, setSelectedLinenProducts] = useState<Array<{product_id: string, quantity: number, product_name: string}>>([]);
   
   const [formData, setFormData] = useState({
-    access: ''
+    access: '',
+    additional_details: ''
   });
 
   // Get active customer ID  
@@ -120,7 +122,8 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       setSelectedAddressId(matchingAddress?.id || '');
       
       setFormData({
-        access: booking.access || ''
+        access: booking.access || '',
+        additional_details: booking.additional_details || ''
       });
     }
   }, [booking, open, addresses]);
@@ -195,6 +198,7 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
           postcode: addressData.postcode,
           same_day: isSameDay,
           access: formData.access,
+          additional_details: formData.additional_details,
           linen_management: linenManagement,
           linen_used: selectedLinenProducts
         })
@@ -203,8 +207,10 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: "Booking updated successfully",
+        title: "✅ Booking Updated",
+        description: "Your booking has been updated successfully",
+        className: "bg-green-50 border-green-200 text-green-800",
+        duration: 3000,
       });
 
       onBookingUpdated();
@@ -423,6 +429,17 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
               value={formData.access}
               onChange={(e) => setFormData(prev => ({ ...prev, access: e.target.value }))}
               placeholder="Access codes, key location, special entry instructions..."
+              className="border-gray-200 hover:border-gray-300 focus:border-[#185166]"
+            />
+          </div>
+
+          {/* Additional Notes Field */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700">Additional Notes (Optional)</Label>
+            <Input
+              value={formData.additional_details}
+              onChange={(e) => setFormData(prev => ({ ...prev, additional_details: e.target.value }))}
+              placeholder="Property details, special requirements, cleaning notes..."
               className="border-gray-200 hover:border-gray-300 focus:border-[#185166]"
             />
           </div>

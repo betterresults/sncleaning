@@ -223,10 +223,12 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
       }
 
       toast({
-        title: "Success",
+        title: "✅ Booking Updated",
         description: needsPaymentAdjustment 
           ? "Booking and payment updated successfully!" 
           : "Booking updated successfully!",
+        className: "bg-green-50 border-green-200 text-green-800",
+        duration: 3000,
       });
 
       onBookingUpdated();
