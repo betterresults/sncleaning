@@ -51,11 +51,8 @@ const LinenOrdersView = () => {
     } else if (normalizedStatus === 'cancelled' || normalizedStatus.includes('cancelled')) {
       return <XCircle className="h-5 w-5 text-gray-600" />;
     } else {
-      // Unpaid - show different icons based on amount
-      if (cost > 0) {
-        return <AlertTriangle className="h-5 w-5 text-red-500" />;
-      }
-      return <XCircle className="h-5 w-5 text-red-600" />;
+      // Unpaid or any other status - always show unpaid icon
+      return <AlertTriangle className="h-5 w-5 text-red-500" />;
     }
   };
 

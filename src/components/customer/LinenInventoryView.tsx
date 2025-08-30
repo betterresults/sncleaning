@@ -366,9 +366,11 @@ const LinenInventoryView = () => {
                     return (
                       <div key={item.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                         <div className="flex-1">
-                          <h5 className="font-semibold text-[#185166]">{item.linen_products.name}</h5>
+                          <h5 className="font-semibold text-[#185166]">
+                            {item.linen_products.type === 'pack' ? `${item.linen_products.name} Set` : item.linen_products.name}
+                          </h5>
                           <p className="text-sm text-muted-foreground capitalize">
-                            {item.linen_products.type}
+                            {item.linen_products.type === 'pack' ? 'pack' : item.linen_products.type}
                           </p>
                         </div>
                         
