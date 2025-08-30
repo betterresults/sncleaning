@@ -99,8 +99,10 @@ const CustomerUpcomingBookings = () => {
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: "Booking cancelled successfully",
+        title: "✅ Booking Cancelled",
+        description: "Your booking has been cancelled successfully",
+        className: "bg-green-50 border-green-200 text-green-800",
+        duration: 3000, // 3 seconds
       });
 
       fetchUpcomingBookings();
