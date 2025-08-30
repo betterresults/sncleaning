@@ -69,6 +69,7 @@ const Dashboard = () => {
           <UnifiedSidebar 
             navigationItems={adminNavigation}
             user={user}
+            userRole={userRole}
             onSignOut={handleSignOut}
           />
           <SidebarInset className="flex-1">

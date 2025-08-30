@@ -37,6 +37,7 @@ const CustomerDashboard = () => {
         <UnifiedSidebar
           navigationItems={getCustomerNavigation(hasLinenAccess)}
           user={user}
+          userRole={userRole}
           onSignOut={handleSignOut}
         />
         <SidebarInset className="flex-1 flex flex-col w-full">

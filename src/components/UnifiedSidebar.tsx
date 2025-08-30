@@ -41,10 +41,11 @@ interface NavigationItem {
 interface UnifiedSidebarProps {
   navigationItems: NavigationItem[];
   user: any;
+  userRole?: string;
   onSignOut: () => void;
 }
 
-export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSidebarProps) {
+export function UnifiedSidebar({ navigationItems, user, userRole, onSignOut }: UnifiedSidebarProps) {
   const location = useLocation();
   const { open, setOpen } = useSidebar();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
@@ -199,7 +200,10 @@ export function UnifiedSidebar({ navigationItems, user, onSignOut }: UnifiedSide
               console.log('Profile clicked');
               // Navigate to appropriate settings page based on user role
               if (typeof window !== 'undefined') {
-                window.location.href = '/admin-settings';
+                const settingsUrl = userRole === 'customer' ? '/customer-settings' : 
+                                  userRole === 'cleaner' ? '/cleaner-settings' : 
+                                  '/admin-settings';
+                window.location.href = settingsUrl;
               }
             }}
           >

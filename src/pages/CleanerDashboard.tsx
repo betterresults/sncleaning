@@ -43,6 +43,7 @@ const CleanerDashboard = () => {
         <UnifiedSidebar
           navigationItems={cleanerNavigation}
           user={user}
+          userRole={userRole}
           onSignOut={handleSignOut}
         />
         <SidebarInset className="flex-1 overflow-x-hidden max-w-full">

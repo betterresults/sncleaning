@@ -103,6 +103,7 @@ const CleanerSettings = () => {
         <UnifiedSidebar 
           navigationItems={cleanerNavigation}
           user={user}
+          userRole={userRole}
           onSignOut={handleSignOut}
         />
         <SidebarInset className="flex-1">

@@ -99,6 +99,7 @@ const CustomerSettings = () => {
         <UnifiedSidebar 
           navigationItems={getCustomerNavigation(hasLinenAccess)}
           user={user}
+          userRole={userRole}
           onSignOut={handleSignOut}
         />
         <SidebarInset className="flex-1 overflow-x-hidden max-w-full">
