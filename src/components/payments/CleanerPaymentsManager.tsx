@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
@@ -453,32 +453,34 @@ const CleanerPaymentsManager = () => {
                     value={cleanerSearchQuery}
                     onValueChange={setCleanerSearchQuery}
                   />
-                  <CommandEmpty>No cleaners found.</CommandEmpty>
-                  <CommandGroup className="max-h-64 overflow-auto">
-                    <CommandItem
-                      onSelect={handleSelectAllCleaners}
-                      className="cursor-pointer"
-                    >
-                      <Checkbox
-                        checked={selectedCleanerIds.length === cleaners.length}
-                        className="mr-2"
-                      />
-                      All cleaners
-                    </CommandItem>
-                    {filteredCleaners.map((cleaner) => (
+                  <CommandList>
+                    <CommandEmpty>No cleaners found.</CommandEmpty>
+                    <CommandGroup className="max-h-64 overflow-auto">
                       <CommandItem
-                        key={cleaner.id}
-                        onSelect={() => handleCleanerToggle(cleaner.id.toString(), !selectedCleanerIds.includes(cleaner.id.toString()))}
+                        onSelect={handleSelectAllCleaners}
                         className="cursor-pointer"
                       >
                         <Checkbox
-                          checked={selectedCleanerIds.includes(cleaner.id.toString())}
+                          checked={selectedCleanerIds.length === cleaners.length}
                           className="mr-2"
                         />
-                        {cleaner.first_name} {cleaner.last_name}
+                        All cleaners
                       </CommandItem>
-                    ))}
-                  </CommandGroup>
+                      {filteredCleaners.map((cleaner) => (
+                        <CommandItem
+                          key={cleaner.id}
+                          onSelect={() => handleCleanerToggle(cleaner.id.toString(), !selectedCleanerIds.includes(cleaner.id.toString()))}
+                          className="cursor-pointer"
+                        >
+                          <Checkbox
+                            checked={selectedCleanerIds.includes(cleaner.id.toString())}
+                            className="mr-2"
+                          />
+                          {cleaner.first_name} {cleaner.last_name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
                 </Command>
               </PopoverContent>
             </Popover>
