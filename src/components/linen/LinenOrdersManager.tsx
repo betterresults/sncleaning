@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, ShoppingCart, Edit, Eye, Calendar, Package, CreditCard, MapPin, User, Banknote } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Plus, ShoppingCart, Edit, Eye, Calendar, Package, CreditCard, MapPin, User, Banknote, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { EditOrderDialog } from "./EditOrderDialog";
@@ -234,6 +235,41 @@ export const LinenOrdersManager = () => {
     },
     onError: (error) => {
       toast({ title: "Error creating order", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const deleteOrderMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      // First delete order items
+      const { error: itemsError } = await supabase
+        .from('linen_order_items')
+        .delete()
+        .eq('order_id', orderId);
+      
+      if (itemsError) throw itemsError;
+
+      // Then delete the order
+      const { error: orderError } = await supabase
+        .from('linen_orders')
+        .delete()
+        .eq('id', orderId);
+      
+      if (orderError) throw orderError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['linen-orders'] });
+      toast({ 
+        title: "✅ Order Deleted", 
+        description: "The order has been successfully deleted",
+        className: "bg-green-50 border-green-200 text-green-800",
+      });
+    },
+    onError: (error) => {
+      toast({ 
+        title: "Error deleting order", 
+        description: error.message, 
+        variant: "destructive" 
+      });
     }
   });
 
@@ -650,6 +686,37 @@ export const LinenOrdersManager = () => {
                       <Edit className="h-4 w-4 mr-1" />
                       Edit
                     </Button>
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Order</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this order? This action cannot be undone and will remove the order and all associated items.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => deleteOrderMutation.mutate(order.id)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            disabled={deleteOrderMutation.isPending}
+                          >
+                            {deleteOrderMutation.isPending ? "Deleting..." : "Delete Order"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               </CardContent>
