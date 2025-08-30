@@ -202,24 +202,27 @@ const LinenInventoryView = () => {
         description: "Please wait while we set up your payment",
       });
 
-      const { data, error } = await supabase.functions.invoke('stripe-send-payment-link', {
+      // Use the same payment flow as completed bookings
+      const { data, error } = await supabase.functions.invoke('create-bulk-payment', {
         body: {
-          order_id: orderId,
-          amount: Math.round(amount * 100), // Convert to cents
-          currency: 'gbp',
-          success_url: `${window.location.origin}/customer-linen-management?payment=success`,
-          cancel_url: `${window.location.origin}/customer-linen-management?payment=cancelled`
+          bookings: [{
+            id: orderId,
+            amount: Math.round(amount * 100), // Convert to cents
+            description: `Linen Order #${orderId.slice(0, 8).toUpperCase()}`
+          }],
+          totalAmount: Math.round(amount * 100)
         }
       });
 
       if (error) throw error;
 
-      if (data?.payment_link) {
-        // Open payment link in new tab
-        window.open(data.payment_link, '_blank');
+      if (data?.url) {
+        // Open Stripe checkout in a new tab
+        window.open(data.url, '_blank');
+        
         toast({
-          title: "Payment link opened",
-          description: "Complete your payment in the new tab",
+          title: "Payment processing",
+          description: "You've been redirected to Stripe to complete your payment.",
         });
       }
     } catch (error) {
@@ -236,7 +239,7 @@ const LinenInventoryView = () => {
     const total = clean + dirty + inUse;
     if (total === 0) return <Badge variant="outline">No Items</Badge>;
     if (dirty > 0) return <Badge variant="destructive">Needs Cleaning</Badge>;
-    return <Badge className="bg-green-100 text-green-800">All Clean</Badge>;
+    return null; // Remove "All Clean" badge
   };
 
   const unpaidOrders = linenOrders?.filter(order => 
@@ -253,50 +256,71 @@ const LinenInventoryView = () => {
             Unpaid Orders
           </h3>
           {unpaidOrders.map((order) => (
-            <Card key={order.id} className="bg-white border-gray-100 hover:shadow-md transition-all duration-300 cursor-pointer">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-red-50 rounded-lg">
-                      <ShoppingCart className="h-5 w-5 text-red-500" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-[#185166]">Linen Order</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {order.linen_order_items?.length || 0} items • £{Number(order.total_cost).toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge variant="destructive">
-                    {order.payment_status === 'unpaid' ? 'Unpaid' : 'Pending'}
-                  </Badge>
-                </div>
-
-                <div className="space-y-2 text-sm text-muted-foreground mb-4">
+            <div key={order.id} className="group relative overflow-hidden rounded-2xl border p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/30 border-red-200 bg-red-50/30 hover:shadow-red-500/5">
+              {/* Header with Order ID and Cost */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    <span>Ordered: {new Date(order.order_date).toLocaleDateString()}</span>
+                    <h3 className="text-xl font-bold text-[#185166] tracking-tight">
+                      Linen Order #{order.id.slice(0, 8).toUpperCase()}
+                    </h3>
                   </div>
-                  {order.delivery_date && (
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4" />
-                      <span>Delivery: {new Date(order.delivery_date).toLocaleDateString()}</span>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="destructive">
+                      {order.payment_status === 'unpaid' ? 'Unpaid' : 'Pending'}
+                    </Badge>
+                  </div>
+                  <div className="w-full h-px bg-border/40 mt-2"></div>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-red-600">£{Number(order.total_cost).toFixed(2)}</div>
+                </div>
+              </div>
+              
+              {/* Order Details */}
+              <div className="space-y-2 text-sm text-muted-foreground mb-4">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  <span>Ordered: {new Date(order.order_date).toLocaleDateString('en-GB')}</span>
+                </div>
+                {order.delivery_date && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    <span>Delivery: {new Date(order.delivery_date).toLocaleDateString('en-GB')}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Items */}
+              <div className="mb-4">
+                <h4 className="font-medium text-[#185166] mb-3">Items:</h4>
+                <div className="space-y-2">
+                  {order.linen_order_items?.slice(0, 2).map((item) => (
+                    <div key={item.id} className="flex items-center justify-between text-sm">
+                      <span className="text-[#185166]">{item.linen_products.name}</span>
+                      <span className="font-medium">£{Number(item.subtotal).toFixed(2)}</span>
+                    </div>
+                  ))}
+                  {(order.linen_order_items?.length || 0) > 2 && (
+                    <div className="text-sm text-muted-foreground">
+                      + {(order.linen_order_items?.length || 0) - 2} more items
                     </div>
                   )}
                 </div>
+              </div>
 
-                <div className="flex justify-end">
-                  <Button 
-                    size="sm"
-                    className="bg-[#18A5A5] hover:bg-[#185166] text-white"
-                    onClick={() => handlePayment(order.id, order.total_cost)}
-                  >
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Pay £{Number(order.total_cost).toFixed(2)}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+              {/* Pay Button */}
+              <div className="flex justify-end">
+                <Button 
+                  size="sm"
+                  className="bg-[#18A5A5] hover:bg-[#185166] text-white"
+                  onClick={() => handlePayment(order.id, order.total_cost)}
+                >
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Pay Now
+                </Button>
+              </div>
+            </div>
           ))}
         </div>
       )}
@@ -377,9 +401,11 @@ const LinenInventoryView = () => {
                             <div className="text-xs text-muted-foreground">Total</div>
                           </div>
                           
-                          <div className="ml-4">
-                            {getStatusBadge(item.clean_quantity, item.dirty_quantity, item.in_use_quantity)}
-                          </div>
+                          {getStatusBadge(item.clean_quantity, item.dirty_quantity, item.in_use_quantity) && (
+                            <div className="ml-4">
+                              {getStatusBadge(item.clean_quantity, item.dirty_quantity, item.in_use_quantity)}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
