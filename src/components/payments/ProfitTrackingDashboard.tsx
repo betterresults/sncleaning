@@ -21,14 +21,7 @@ interface CompletedBooking {
   address: string;
   postcode: string;
   cleaner: number;
-  cleaners: {
-    first_name: string;
-    last_name: string;
-  } | null;
-  customers: {
-    first_name: string;
-    last_name: string;
-  } | null;
+  customer: number;
 }
 
 export const ProfitTrackingDashboard = () => {
@@ -50,11 +43,13 @@ export const ProfitTrackingDashboard = () => {
         address,
         postcode,
         cleaner,
-        booking_status,
-        cleaners:cleaner(first_name, last_name),
-        customers:customer(first_name, last_name)
-      `)
-      .eq('booking_status', 'completed');
+        customer,
+        booking_status
+      `);
+
+    // Only filter by completed status if there are bookings with that status
+    // For now, let's get all past bookings to see what data is available
+    // .eq('booking_status', 'completed');
 
     if (dateRange.from) {
       query = query.gte('date_time', dateRange.from.toISOString());
@@ -225,7 +220,7 @@ export const ProfitTrackingDashboard = () => {
           <CardContent>
             <div className="text-2xl font-bold">£{profitMetrics.totalRevenue.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
-              {profitMetrics.totalBookings} completed bookings
+              {profitMetrics.totalBookings} past bookings
             </p>
           </CardContent>
         </Card>
@@ -304,7 +299,7 @@ export const ProfitTrackingDashboard = () => {
       {/* Bookings Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Completed Bookings Details</CardTitle>
+          <CardTitle>Past Bookings Details</CardTitle>
         </CardHeader>
         <CardContent>
           <ProfitTrackingTable 

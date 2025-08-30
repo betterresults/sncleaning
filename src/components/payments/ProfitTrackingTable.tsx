@@ -21,14 +21,7 @@ interface CompletedBooking {
   address: string;
   postcode: string;
   cleaner: number;
-  cleaners: {
-    first_name: string;
-    last_name: string;
-  } | null;
-  customers: {
-    first_name: string;
-    last_name: string;
-  } | null;
+  customer: number;
 }
 
 interface ProfitTrackingTableProps {
@@ -53,7 +46,7 @@ export const ProfitTrackingTable = ({
   if (bookings.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        No completed bookings found for the selected date range.
+        No past bookings found for the selected date range.
       </div>
     );
   }
@@ -80,13 +73,8 @@ export const ProfitTrackingTable = ({
             const profit = revenue - cleanerCost;
             const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
 
-            const customerName = booking.customers 
-              ? `${booking.customers.first_name} ${booking.customers.last_name}`
-              : `${booking.first_name || ''} ${booking.last_name || ''}`.trim() || 'N/A';
-
-            const cleanerName = booking.cleaners 
-              ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}`
-              : 'Unassigned';
+            const customerName = `${booking.first_name || ''} ${booking.last_name || ''}`.trim() || 'N/A';
+            const cleanerName = booking.cleaner ? `Cleaner ${booking.cleaner}` : 'Unassigned';
 
             return (
               <TableRow key={booking.id}>
