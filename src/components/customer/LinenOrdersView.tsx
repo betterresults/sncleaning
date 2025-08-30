@@ -40,18 +40,21 @@ const LinenOrdersView = () => {
   const getPaymentStatusIcon = (status: string, cost: number) => {
     const normalizedStatus = status?.toLowerCase() || 'unpaid';
     
-    if (normalizedStatus === 'paid' || normalizedStatus.includes('paid')) {
+    console.log('Payment status for order:', { status, normalizedStatus, cost });
+    
+    // Be very explicit about payment status matching
+    if (normalizedStatus === 'paid') {
       return <CheckCircle className="h-5 w-5 text-green-600" />;
-    } else if (normalizedStatus === 'pending' || normalizedStatus.includes('pending')) {
+    } else if (normalizedStatus === 'pending') {
       return <Clock className="h-5 w-5 text-yellow-600" />;
-    } else if (normalizedStatus === 'processing' || normalizedStatus.includes('processing')) {
+    } else if (normalizedStatus === 'processing') {
       return <AlertCircle className="h-5 w-5 text-blue-600" />;
-    } else if (normalizedStatus === 'failed' || normalizedStatus.includes('failed')) {
+    } else if (normalizedStatus === 'failed') {
       return <XCircle className="h-5 w-5 text-red-600" />;
-    } else if (normalizedStatus === 'cancelled' || normalizedStatus.includes('cancelled')) {
+    } else if (normalizedStatus === 'cancelled') {
       return <XCircle className="h-5 w-5 text-gray-600" />;
     } else {
-      // Unpaid or any other status - always show unpaid icon
+      // Default to unpaid for any other status including 'unpaid'
       return <AlertTriangle className="h-5 w-5 text-red-500" />;
     }
   };
