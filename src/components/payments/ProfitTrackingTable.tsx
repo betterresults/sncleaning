@@ -1,4 +1,4 @@
-import React from 'react';
+
 import {
   Table,
   TableBody,
@@ -36,10 +36,10 @@ interface ProfitTrackingTableProps {
   isLoading: boolean;
 }
 
-export const ProfitTrackingTable: React.FC<ProfitTrackingTableProps> = ({
+export const ProfitTrackingTable = ({
   bookings,
   isLoading
-}) => {
+}: ProfitTrackingTableProps) => {
   if (isLoading) {
     return (
       <div className="space-y-3">
