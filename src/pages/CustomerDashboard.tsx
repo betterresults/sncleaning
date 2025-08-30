@@ -121,10 +121,9 @@ const CustomerDashboard = () => {
                                             {new Date(booking.date_time).toLocaleDateString('en-GB')} • {booking.address}
                                           </div>
                                         </div>
-                                        <div className="text-right">
-                                          <div className="font-bold text-red-600">£{booking.total_cost.toFixed(2)}</div>
-                                          <div className="text-xs text-red-500">{booking.payment_status}</div>
-                                        </div>
+                                         <div className="text-right">
+                                           <div className="font-bold text-red-600">£{booking.total_cost.toFixed(2)}</div>
+                                         </div>
                                       </div>
                                     ))}
                                     {cleaningBookings.length > 3 && (
@@ -152,10 +151,9 @@ const CustomerDashboard = () => {
                                             {new Date(order.date_time).toLocaleDateString('en-GB')} • {order.address}
                                           </div>
                                         </div>
-                                        <div className="text-right">
-                                          <div className="font-bold text-red-600">£{order.total_cost.toFixed(2)}</div>
-                                          <div className="text-xs text-red-500">{order.payment_status}</div>
-                                        </div>
+                                         <div className="text-right">
+                                           <div className="font-bold text-red-600">£{order.total_cost.toFixed(2)}</div>
+                                         </div>
                                       </div>
                                     ))}
                                     {linenOrders.length > 3 && (
