@@ -13,7 +13,7 @@ import { InventoryManager } from "@/components/linen/InventoryManager";
 
 const AdminLinenManagement = () => {
   const [activeTab, setActiveTab] = useState("products");
-  const { user, signOut } = useAuth();
+  const { user, userRole, customerId, cleanerId, signOut } = useAuth();
 
   return (
     <SidebarProvider>
@@ -21,13 +21,16 @@ const AdminLinenManagement = () => {
         <UnifiedSidebar 
           navigationItems={adminNavigation}
           user={user}
+          userRole={userRole}
+          customerId={customerId}
+          cleanerId={cleanerId}
           onSignOut={signOut}
         />
         <div className="flex-1 flex flex-col overflow-hidden">
           <UnifiedHeader 
             title="Linen Management"
             user={user}
-            userRole="admin"
+            userRole={userRole}
             onSignOut={signOut}
           />
         <main className="flex-1 overflow-y-auto p-6">

@@ -8,7 +8,7 @@ import { adminNavigation } from '@/lib/navigationItems';
 import CustomerPaymentsManager from '@/components/payments/CustomerPaymentsManager';
 
 const AdminCustomerPayments = () => {
-  const { user, userRole, loading, signOut } = useAuth();
+  const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
 
   const handleSignOut = async () => {
     try {
@@ -36,6 +36,9 @@ const AdminCustomerPayments = () => {
         <UnifiedSidebar 
           navigationItems={adminNavigation}
           user={user}
+          userRole={userRole}
+          customerId={customerId}
+          cleanerId={cleanerId}
           onSignOut={handleSignOut}
         />
         <SidebarInset className="flex-1">

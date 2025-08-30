@@ -8,7 +8,7 @@ import { adminNavigation } from '@/lib/navigationItems';
 import PricingFormulasManager from '@/components/admin/PricingFormulasManager';
 
 const AdminPricingFormulas = () => {
-  const { user, userRole, signOut } = useAuth();
+  const { user, userRole, customerId, cleanerId, signOut } = useAuth();
 
   const handleSignOut = async () => {
     try {
@@ -28,6 +28,9 @@ const AdminPricingFormulas = () => {
         <UnifiedSidebar 
           navigationItems={adminNavigation}
           user={user}
+          userRole={userRole}
+          customerId={customerId}
+          cleanerId={cleanerId}
           onSignOut={handleSignOut}
         />
         <SidebarInset className="flex-1">

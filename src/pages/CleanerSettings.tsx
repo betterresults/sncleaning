@@ -14,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const CleanerSettings = () => {
-  const { user, userRole, cleanerId, loading, signOut } = useAuth();
+  const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -104,6 +104,8 @@ const CleanerSettings = () => {
           navigationItems={cleanerNavigation}
           user={user}
           userRole={userRole}
+          customerId={customerId}
+          cleanerId={cleanerId}
           onSignOut={handleSignOut}
         />
         <SidebarInset className="flex-1">

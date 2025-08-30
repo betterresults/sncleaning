@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Home } from 'lucide-react';
 
 const AdminAddBooking = () => {
-  const { user, userRole, signOut } = useAuth();
+  const { user, userRole, customerId, cleanerId, signOut } = useAuth();
   const [showBulkAirbnb, setShowBulkAirbnb] = React.useState(false);
 
   const handleSignOut = async () => {
@@ -30,8 +30,11 @@ const AdminAddBooking = () => {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
         <UnifiedSidebar 
-          navigationItems={adminNavigation}
+          navigationItems={adminNavigation} 
           user={user}
+          userRole={userRole}
+          customerId={customerId}
+          cleanerId={cleanerId}
           onSignOut={handleSignOut}
         />
         <SidebarInset className="flex-1">

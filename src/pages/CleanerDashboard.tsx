@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
 const CleanerDashboard = () => {
-  const { user, userRole, cleanerId, loading, signOut } = useAuth();
+  const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
   const { selectedCleanerId } = useAdminCleaner();
   
   const handleSignOut = async () => {
@@ -44,6 +44,8 @@ const CleanerDashboard = () => {
           navigationItems={cleanerNavigation}
           user={user}
           userRole={userRole}
+          customerId={customerId}
+          cleanerId={cleanerId}
           onSignOut={handleSignOut}
         />
         <SidebarInset className="flex-1 overflow-x-hidden max-w-full">
