@@ -42,6 +42,7 @@ import UsersAdmins from "./pages/UsersAdmins";
 import UsersCleaners from "./pages/UsersCleaners";
 import UsersCustomers from "./pages/UsersCustomers";
 import AdminLinenManagement from "./pages/AdminLinenManagement";
+import AdminProfitTracking from "./pages/AdminProfitTracking";
 import NotFound from "./pages/NotFound";
 import { AdminCustomerProvider } from "./contexts/AdminCustomerContext";
 import { AdminCleanerProvider } from "./contexts/AdminCleanerContext";
@@ -95,8 +96,9 @@ const App = () => (
                   <Route path="/users/admins" element={<UsersAdmins />} />
                   <Route path="/users/cleaners" element={<UsersCleaners />} />
                   <Route path="/users/customers" element={<UsersCustomers />} />
-                  <Route path="/admin-linen-management" element={<AdminLinenManagement />} />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                   <Route path="/admin-linen-management" element={<AdminLinenManagement />} />
+                   <Route path="/admin-profit-tracking" element={<AdminProfitTracking />} />
+                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
             </Routes>
               </AdminCleanerProvider>
