@@ -364,51 +364,59 @@ const LinenInventoryView = () => {
                   {addressData.items.map((item: InventoryItem) => {
                     const totalQuantity = item.clean_quantity + item.dirty_quantity + item.in_use_quantity;
                     return (
-                      <div key={item.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div className="flex-1">
-                          <h5 className="font-semibold text-[#185166]">
-                            {item.linen_products.type === 'pack' ? `${item.linen_products.name} Set` : item.linen_products.name}
-                          </h5>
-                          <p className="text-sm text-muted-foreground capitalize">
-                            {item.linen_products.type === 'pack' ? 'pack' : item.linen_products.type}
-                          </p>
+                      <div key={item.id} className="hover:shadow-lg transition-all duration-200 border-2 rounded-lg p-4">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="text-2xl">
+                              {item.linen_products.type?.toLowerCase().includes('towel') ? '🏊' : 
+                               item.linen_products.name?.toLowerCase().includes('bath mat') ? '🛁' : '🛏️'}
+                            </div>
+                            <div>
+                              <h5 className="text-lg font-bold text-[#185166]">
+                                {item.linen_products.name?.replace(/\bset\b/gi, '').trim()}
+                              </h5>
+                              <p className="text-sm font-medium text-muted-foreground capitalize">
+                                {item.linen_products.type} • £{item.linen_products.price?.toFixed(2)} each
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-bold text-[#185166]">
+                              {totalQuantity} Total
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              £{(totalQuantity * (item.linen_products.price || 0)).toFixed(2)} value
+                            </div>
+                          </div>
                         </div>
                         
-                        <div className="flex items-center gap-4">
-                          <div className="text-center">
-                            <div className="text-sm font-semibold text-green-600">
+                        {/* Colorful quantity boxes */}
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg text-center">
+                            <div className="text-xl font-bold text-green-700 dark:text-green-400">
                               {item.clean_quantity}
                             </div>
-                            <div className="text-xs text-muted-foreground">Clean</div>
+                            <div className="text-xs text-green-600 dark:text-green-500 font-medium">Clean</div>
                           </div>
-                          
-                          <div className="text-center">
-                            <div className="text-sm font-semibold text-blue-600">
-                              {item.in_use_quantity}
-                            </div>
-                            <div className="text-xs text-muted-foreground">In Use</div>
-                          </div>
-                          
-                          <div className="text-center">
-                            <div className="text-sm font-semibold text-red-600">
+                          <div className="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg text-center">
+                            <div className="text-xl font-bold text-red-700 dark:text-red-400">
                               {item.dirty_quantity}
                             </div>
-                            <div className="text-xs text-muted-foreground">Dirty</div>
+                            <div className="text-xs text-red-600 dark:text-red-500 font-medium">Dirty</div>
                           </div>
-                          
-                          <div className="text-center border-l pl-4">
-                            <div className="text-lg font-bold text-[#185166]">
-                              {totalQuantity}
+                          <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg text-center">
+                            <div className="text-xl font-bold text-blue-700 dark:text-blue-400">
+                              {item.in_use_quantity}
                             </div>
-                            <div className="text-xs text-muted-foreground">Total</div>
+                            <div className="text-xs text-blue-600 dark:text-blue-500 font-medium">In Use</div>
                           </div>
-                          
-                          {getStatusBadge(item.clean_quantity, item.dirty_quantity, item.in_use_quantity) && (
-                            <div className="ml-4">
-                              {getStatusBadge(item.clean_quantity, item.dirty_quantity, item.in_use_quantity)}
-                            </div>
-                          )}
                         </div>
+                        
+                        {getStatusBadge(item.clean_quantity, item.dirty_quantity, item.in_use_quantity) && (
+                          <div className="mt-3 flex justify-center">
+                            {getStatusBadge(item.clean_quantity, item.dirty_quantity, item.in_use_quantity)}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
