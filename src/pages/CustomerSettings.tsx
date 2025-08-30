@@ -83,7 +83,11 @@ const CustomerSettings = () => {
 
   const handleSignOut = async () => {
     try {
+      console.log('CustomerSettings: Starting sign out process...');
       await signOut();
+      console.log('CustomerSettings: Sign out completed');
+      // Redirect to auth page after successful sign out
+      window.location.href = '/auth';
     } catch (error) {
       console.error('Error signing out:', error);
     }

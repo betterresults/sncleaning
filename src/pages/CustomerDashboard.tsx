@@ -25,7 +25,11 @@ const CustomerDashboard = () => {
 
   const handleSignOut = async () => {
     try {
+      console.log('Starting sign out process...');
       await signOut();
+      console.log('Sign out completed');
+      // Redirect to auth page after successful sign out
+      window.location.href = '/auth';
     } catch (error) {
       console.error('Error signing out:', error);
     }
@@ -51,8 +55,8 @@ const CustomerDashboard = () => {
             <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-6">
               {isAdminViewing && <AdminCustomerSelector />}
               
-              {/* Outstanding Payments Card - More Prominent */}
-              {(unpaidBookings.length > 0 || paymentsLoading) && (
+              {/* Outstanding Payments Card - Only show for customers with actual outstanding payments */}
+              {userRole !== 'admin' && !paymentsLoading && unpaidBookings.length > 0 && (
                 <Card className="border-2 border-red-200 bg-red-50/30 shadow-lg">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-red-800">

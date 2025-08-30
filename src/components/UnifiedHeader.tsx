@@ -16,13 +16,13 @@ export function UnifiedHeader({ title, user, userRole, onSignOut }: UnifiedHeade
   
   console.log('UnifiedHeader render:', { isMobile, hasOnSignOut: !!onSignOut });
   const getGreeting = () => {
-    const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'User';
-    
+    // For customers, try to get the name from user metadata or email
+    // For admins, show "Admin" or their actual name if available
     if (userRole === 'admin') {
-      return `Hello ${firstName}`;
-    } else if (userRole === 'user') {
-      return `Hello ${firstName}`;
+      const adminName = user?.user_metadata?.first_name || 'Admin';
+      return `Hello ${adminName}`;
     } else {
+      const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'User';
       return `Hello ${firstName}`;
     }
   };

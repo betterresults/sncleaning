@@ -23,6 +23,7 @@ export const useCustomerUnpaidBookings = () => {
   const fetchUnpaidBookings = async () => {
     if (!user) {
       console.log('No user found, skipping unpaid bookings fetch');
+      setLoading(false);
       return;
     }
 
@@ -39,13 +40,10 @@ export const useCustomerUnpaidBookings = () => {
 
       console.log('Customer profile result:', { profile, profileError });
 
-      if (profileError) {
-        console.error('Profile fetch error:', profileError);
-        return;
-      }
-
-      if (!profile?.customer_id) {
-        console.log('No customer_id found in profile');
+      if (profileError || !profile?.customer_id) {
+        console.log('No customer_id found in profile, user might be admin or cleaner');
+        setUnpaidBookings([]);
+        setLoading(false);
         return;
       }
 
