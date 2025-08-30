@@ -42,6 +42,7 @@ export const CreateLinenOrderDialog: React.FC<CreateLinenOrderDialogProps> = ({
   const [requestedDate, setRequestedDate] = useState('');
   const [notes, setNotes] = useState('');
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const { user } = useAuth();
@@ -77,14 +78,18 @@ export const CreateLinenOrderDialog: React.FC<CreateLinenOrderDialogProps> = ({
     enabled: !!profile?.customer_id
   });
 
+  const toggleProductExpansion = (productId: string) => {
+    setExpandedProduct(expandedProduct === productId ? null : productId);
+  };
+
   const addProduct = (productId: string) => {
     const product = products.find(p => p.id === productId);
     if (!product) return;
 
     // Check if product already added
     if (orderItems.some(item => item.productId === productId)) {
-      // If already added, increase quantity
-      updateQuantity(productId, orderItems.find(item => item.productId === productId)!.quantity + 1);
+      // If already added, just expand it for quantity adjustment
+      setExpandedProduct(productId);
       return;
     }
 
@@ -98,6 +103,7 @@ export const CreateLinenOrderDialog: React.FC<CreateLinenOrderDialogProps> = ({
     };
 
     setOrderItems([...orderItems, newItem]);
+    setExpandedProduct(productId); // Auto-expand when added
   };
 
   const updateQuantity = (productId: string, quantity: number) => {
@@ -119,19 +125,29 @@ export const CreateLinenOrderDialog: React.FC<CreateLinenOrderDialogProps> = ({
     setOrderItems(items => items.filter(item => item.productId !== productId));
   };
 
+  const getOrderItem = (productId: string): OrderItem | null => {
+    return orderItems.find(item => item.productId === productId) || null;
+  };
+
+  const getProductQuantity = (productId: string): number => {
+    const item = orderItems.find(item => item.productId === productId);
+    return item?.quantity || 0;
+  };
+
   const totalCost = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
   const meetsMinimum = totalCost >= 150;
   
-  // Get products not yet added to order
-  const availableProducts = products.filter(p => !orderItems.some(item => item.productId === p.id));
+  // Get products not yet added to order - but keep them all visible for quantity adjustment
+  const availableProducts = products;
 
-  // Categorize available products
+  // Categorize products (show all, including those in cart)
   const setsProducts = availableProducts.filter(p => 
-    p.name.toLowerCase().includes('set') || 
+    p.name.toLowerCase().includes('bed') && p.name.toLowerCase().includes('set') || 
     p.type.toLowerCase().includes('set')
   );
 
   const mattressProducts = availableProducts.filter(p => 
+    !p.name.toLowerCase().includes('bed') &&
     !p.name.toLowerCase().includes('set') && 
     !p.type.toLowerCase().includes('set') &&
     (p.name.toLowerCase().includes('mattress') || 
@@ -140,6 +156,7 @@ export const CreateLinenOrderDialog: React.FC<CreateLinenOrderDialogProps> = ({
   );
 
   const individualProducts = availableProducts.filter(p => 
+    !p.name.toLowerCase().includes('bed') &&
     !p.name.toLowerCase().includes('set') && 
     !p.type.toLowerCase().includes('set') &&
     !p.name.toLowerCase().includes('mattress') && 
@@ -177,11 +194,7 @@ export const CreateLinenOrderDialog: React.FC<CreateLinenOrderDialogProps> = ({
       const success = await createOrder(orderData);
 
       if (success) {
-        // Reset form
-        setSelectedAddress('');
-        setScheduleOption('flexible');
-        setRequestedDate('');
-        setNotes('');
+        setExpandedProduct(null);
         setOrderItems([]);
         onOrderCreated();
       }
@@ -195,6 +208,7 @@ export const CreateLinenOrderDialog: React.FC<CreateLinenOrderDialogProps> = ({
     setScheduleOption('flexible');
     setRequestedDate('');
     setNotes('');
+    setExpandedProduct(null);
     setOrderItems([]);
   };
 
@@ -346,26 +360,144 @@ export const CreateLinenOrderDialog: React.FC<CreateLinenOrderDialogProps> = ({
                       Sets
                     </h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {setsProducts.map((product) => (
-                        <div
-                          key={product.id}
-                          className="group cursor-pointer border-2 border-gray-200 rounded-lg p-4 hover:border-[#18A5A5] hover:bg-[#18A5A5]/5 transition-all duration-200 hover:shadow-md"
-                          onClick={() => addProduct(product.id)}
-                        >
-                          <div className="text-center space-y-2">
-                            <div className="w-12 h-12 bg-[#18A5A5]/10 rounded-lg flex items-center justify-center mx-auto group-hover:bg-[#18A5A5]/20 transition-colors">
-                              <Package className="h-6 w-6 text-[#18A5A5]" />
+                      {setsProducts.map((product) => {
+                        const orderItem = getOrderItem(product.id);
+                        const isExpanded = expandedProduct === product.id;
+                        const hasItems = orderItem && orderItem.quantity > 0;
+                        
+                        return (
+                          <div key={product.id} className="space-y-2">
+                            <div
+                              className={`group cursor-pointer border-2 rounded-lg p-4 transition-all duration-200 hover:shadow-md ${
+                                hasItems 
+                                  ? 'border-[#18A5A5] bg-[#18A5A5]/5' 
+                                  : 'border-gray-200 hover:border-[#18A5A5] hover:bg-[#18A5A5]/5'
+                              }`}
+                              onClick={() => toggleProductExpansion(product.id)}
+                            >
+                              <div className="text-center space-y-2">
+                                <div className={`w-12 h-12 rounded-lg flex items-center justify-center mx-auto transition-colors ${
+                                  hasItems 
+                                    ? 'bg-[#18A5A5]/20' 
+                                    : 'bg-[#18A5A5]/10 group-hover:bg-[#18A5A5]/20'
+                                }`}>
+                                  <Package className="h-6 w-6 text-[#18A5A5]" />
+                                </div>
+                                <div className="font-medium text-[#185166] text-sm">
+                                  {product.name}
+                                </div>
+                                <div className="text-xs text-gray-500">{product.type}</div>
+                                <div className="text-lg font-bold text-[#18A5A5]">
+                                  £{product.price.toFixed(2)}
+                                </div>
+                                {hasItems && (
+                                  <div className="text-sm font-medium text-[#18A5A5]">
+                                    Quantity: {orderItem.quantity}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                            <div className="font-medium text-[#185166] text-sm">
-                              {formatProductName(product)}
-                            </div>
-                            <div className="text-xs text-gray-500">{product.type}</div>
-                            <div className="text-lg font-bold text-[#18A5A5]">
-                              £{product.price.toFixed(2)}
-                            </div>
+                            
+                            {/* Expanded Quantity Controls */}
+                            {isExpanded && (
+                              <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 space-y-3">
+                                <div className="text-sm font-medium text-[#185166] text-center">
+                                  Select Quantity
+                                </div>
+                                
+                                <div className="flex items-center justify-center gap-3">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (hasItems) {
+                                        updateQuantity(product.id, Math.max(0, orderItem.quantity - 1));
+                                      }
+                                    }}
+                                    disabled={!hasItems || orderItem.quantity <= 0}
+                                    className="h-8 w-8 p-0 border-gray-300 hover:border-[#18A5A5]"
+                                  >
+                                    <Minus className="h-4 w-4" />
+                                  </Button>
+                                  
+                                  <div className="w-16 text-center">
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      value={getProductQuantity(product.id)}
+                                      onChange={(e) => {
+                                        e.stopPropagation();
+                                        const quantity = parseInt(e.target.value) || 0;
+                                        if (quantity > 0) {
+                                          if (!hasItems) {
+                                            addProduct(product.id);
+                                          }
+                                          updateQuantity(product.id, quantity);
+                                        } else if (hasItems) {
+                                          removeItem(product.id);
+                                        }
+                                      }}
+                                      className="w-full h-8 text-center border-gray-300 focus:border-[#18A5A5]"
+                                    />
+                                  </div>
+                                  
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (!hasItems) {
+                                        addProduct(product.id);
+                                      } else {
+                                        updateQuantity(product.id, orderItem.quantity + 1);
+                                      }
+                                    }}
+                                    className="h-8 w-8 p-0 border-gray-300 hover:border-[#18A5A5]"
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                                
+                                {hasItems && (
+                                  <div className="text-center space-y-2">
+                                    <div className="text-sm font-bold text-[#18A5A5]">
+                                      Subtotal: £{orderItem.subtotal.toFixed(2)}
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        removeItem(product.id);
+                                        setExpandedProduct(null);
+                                      }}
+                                      className="h-8 text-xs"
+                                    >
+                                      Remove from Order
+                                    </Button>
+                                  </div>
+                                )}
+                                
+                                {!hasItems && (
+                                  <div className="text-center">
+                                    <Button
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        addProduct(product.id);
+                                      }}
+                                      className="h-8 bg-[#18A5A5] hover:bg-[#185166] text-white text-xs"
+                                    >
+                                      Add to Order
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
