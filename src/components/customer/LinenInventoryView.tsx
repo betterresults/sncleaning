@@ -23,6 +23,8 @@ interface InventoryItem {
     name: string;
     type: string;
     price: number;
+    description?: string;
+    items_included?: string;
   };
   addresses: {
     address: string;
@@ -110,7 +112,9 @@ const LinenInventoryView = () => {
             id,
             name,
             type,
-            price
+            price,
+            description,
+            items_included
           ),
           addresses!inner (
             address,
@@ -128,7 +132,7 @@ const LinenInventoryView = () => {
         for (const item of simpleData) {
           const { data: product } = await supabase
             .from('linen_products')
-            .select('id, name, type, price')
+            .select('id, name, type, price, description, items_included')
             .eq('id', item.product_id)
             .single();
             
@@ -373,11 +377,16 @@ const LinenInventoryView = () => {
                             </div>
                             <div>
                               <h5 className="text-lg font-bold text-[#185166]">
-                                {item.linen_products.name?.replace(/\bset\b/gi, '').trim()}
+                                {item.linen_products.name}
                               </h5>
                               <p className="text-sm font-medium text-muted-foreground capitalize">
                                 {item.linen_products.type} • £{item.linen_products.price?.toFixed(2)} each
                               </p>
+                              {(item.linen_products.description || item.linen_products.items_included) && (
+                                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                                  {item.linen_products.items_included || item.linen_products.description}
+                                </p>
+                              )}
                             </div>
                           </div>
                           <div className="text-right">
