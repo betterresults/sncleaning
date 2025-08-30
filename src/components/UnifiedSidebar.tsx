@@ -42,10 +42,12 @@ interface UnifiedSidebarProps {
   navigationItems: NavigationItem[];
   user: any;
   userRole?: string;
+  customerId?: number | null;
+  cleanerId?: number | null;
   onSignOut: () => void;
 }
 
-export function UnifiedSidebar({ navigationItems, user, userRole, onSignOut }: UnifiedSidebarProps) {
+export function UnifiedSidebar({ navigationItems, user, userRole, customerId, cleanerId, onSignOut }: UnifiedSidebarProps) {
   const location = useLocation();
   const { open, setOpen } = useSidebar();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
@@ -197,12 +199,20 @@ export function UnifiedSidebar({ navigationItems, user, userRole, onSignOut }: U
           <div 
             className="transition-all duration-200 hover:bg-white/10 text-white hover:text-white border-0 justify-start px-2 py-2 rounded-lg cursor-pointer flex items-center w-full"
             onClick={() => {
-              console.log('Profile clicked');
-              // Navigate to appropriate settings page based on user role
+              console.log('Profile clicked, userRole:', userRole, 'customerId:', customerId);
+              // Navigate to appropriate settings page based on user role and IDs
               if (typeof window !== 'undefined') {
-                const settingsUrl = userRole === 'customer' ? '/customer-settings' : 
-                                  userRole === 'cleaner' ? '/cleaner-settings' : 
-                                  '/admin-settings';
+                let settingsUrl = '/admin-settings'; // default
+                
+                if (customerId || userRole === 'guest') {
+                  settingsUrl = '/customer-settings';
+                } else if (userRole === 'user' || cleanerId) {
+                  settingsUrl = '/cleaner-settings';
+                } else if (userRole === 'admin') {
+                  settingsUrl = '/admin-settings';
+                }
+                
+                console.log('Redirecting to:', settingsUrl);
                 window.location.href = settingsUrl;
               }
             }}

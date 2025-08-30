@@ -10,7 +10,7 @@ import CustomerPastBookings from '@/components/customer/CustomerPastBookings';
 import AdminCustomerSelector from '@/components/admin/AdminCustomerSelector';
 
 const CustomerCompletedBookings = () => {
-  const { user, userRole, customerId, loading, signOut } = useAuth();
+  const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
   const { hasLinenAccess } = useCustomerLinenAccess();
 
   const handleSignOut = async () => {
@@ -50,6 +50,8 @@ const CustomerCompletedBookings = () => {
           navigationItems={getCustomerNavigation(hasLinenAccess)}
           user={user}
           userRole={userRole}
+          customerId={customerId}
+          cleanerId={cleanerId}
           onSignOut={handleSignOut}
         />
         <SidebarInset className="flex-1 flex flex-col w-full">

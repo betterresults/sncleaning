@@ -10,7 +10,7 @@ import LinenInventoryView from '@/components/customer/LinenInventoryView';
 import LinenOrdersView from '@/components/customer/LinenOrdersView';
 
 const CustomerLinenManagement = () => {
-  const { user, userRole, signOut } = useAuth();
+  const { user, userRole, customerId, cleanerId, signOut } = useAuth();
   const { hasLinenAccess } = useCustomerLinenAccess();
   const [activeTab, setActiveTab] = useState('inventory');
 
@@ -29,6 +29,8 @@ const CustomerLinenManagement = () => {
           navigationItems={getCustomerNavigation(hasLinenAccess)}
           user={user}
           userRole={userRole}
+          customerId={customerId}
+          cleanerId={cleanerId}
           onSignOut={handleSignOut}
         />
         <SidebarInset className="flex-1 flex flex-col w-full">

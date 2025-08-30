@@ -19,7 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const CustomerSettings = () => {
-  const { user, userRole, customerId, signOut } = useAuth();
+  const { user, userRole, customerId, cleanerId, signOut } = useAuth();
   const { hasLinenAccess } = useCustomerLinenAccess();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('personal');
@@ -104,6 +104,8 @@ const CustomerSettings = () => {
           navigationItems={getCustomerNavigation(hasLinenAccess)}
           user={user}
           userRole={userRole}
+          customerId={customerId}
+          cleanerId={cleanerId}
           onSignOut={handleSignOut}
         />
         <SidebarInset className="flex-1 overflow-x-hidden max-w-full">

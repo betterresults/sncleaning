@@ -15,7 +15,7 @@ import { BulkPaymentDialog } from '@/components/customer/BulkPaymentDialog';
 import { useCustomerUnpaidBookings } from '@/hooks/useCustomerUnpaidBookings';
 
 const CustomerDashboard = () => {
-  const { user, userRole, signOut } = useAuth();
+  const { user, userRole, customerId, cleanerId, signOut } = useAuth();
   const { hasLinenAccess, loading: linenLoading } = useCustomerLinenAccess();
   const { unpaidBookings, loading: paymentsLoading, refetch: refetchPayments } = useCustomerUnpaidBookings();
   const [showBulkPayment, setShowBulkPayment] = useState(false);
@@ -42,6 +42,8 @@ const CustomerDashboard = () => {
           navigationItems={getCustomerNavigation(hasLinenAccess)}
           user={user}
           userRole={userRole}
+          customerId={customerId}
+          cleanerId={cleanerId}
           onSignOut={handleSignOut}
         />
         <SidebarInset className="flex-1 flex flex-col w-full">
