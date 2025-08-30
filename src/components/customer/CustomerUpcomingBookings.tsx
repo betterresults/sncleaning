@@ -98,14 +98,35 @@ const CustomerUpcomingBookings = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "✅ Booking Cancelled",
-        description: "Your booking has been cancelled successfully",
-        className: "bg-green-50 border-green-200 text-green-800",
-        duration: 3000, // 3 seconds
-      });
+      // Refresh the bookings list first
+      await fetchUpcomingBookings();
+      
+      // Check if the booking actually disappeared from the list
+      const updatedBookings = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('customer', activeCustomerId)
+        .eq('id', booking.id)
+        .gte('date_time', new Date().toISOString())
+        .neq('booking_status', 'cancelled');
 
-      fetchUpcomingBookings();
+      if (updatedBookings.data && updatedBookings.data.length === 0) {
+        // Booking successfully cancelled and moved/hidden
+        toast({
+          title: "✅ Booking Cancelled",
+          description: "Your booking has been cancelled successfully",
+          className: "bg-green-50 border-green-200 text-green-800",
+          duration: 3000,
+        });
+      } else {
+        // Booking status changed but still visible - something went wrong
+        toast({
+          title: "Warning",
+          description: "Booking status updated but may need manual review",
+          className: "bg-yellow-50 border-yellow-200 text-yellow-800",
+          duration: 5000,
+        });
+      }
     } catch (error) {
       console.error('Error cancelling booking:', error);
       toast({
@@ -134,7 +155,7 @@ const CustomerUpcomingBookings = () => {
     if (!activeCustomerId) return;
 
     try {
-      // Fetch upcoming bookings
+      // Fetch upcoming bookings - exclude cancelled bookings
       const { data, error } = await supabase
         .from('bookings')
         .select(`
@@ -164,6 +185,7 @@ const CustomerUpcomingBookings = () => {
         `)
         .eq('customer', activeCustomerId)
         .gte('date_time', new Date().toISOString())
+        .neq('booking_status', 'cancelled')
         .order('date_time', { ascending: true });
 
       if (error) throw error;
