@@ -148,6 +148,10 @@ export const CreateLinenOrderDialog: React.FC<CreateLinenOrderDialogProps> = ({
   );
 
   const formatProductName = (product: any) => {
+    const isSet = product.name.toLowerCase().includes('set') || product.type.toLowerCase().includes('set');
+    if (isSet && !product.name.toLowerCase().startsWith('set ')) {
+      return `Set ${product.name}`;
+    }
     return product.name;
   };
 
