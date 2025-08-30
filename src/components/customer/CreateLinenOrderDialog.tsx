@@ -502,161 +502,347 @@ export const CreateLinenOrderDialog: React.FC<CreateLinenOrderDialogProps> = ({
                   </div>
                 )}
 
-                {/* Mattress Protection Category */}
-                {mattressProducts.length > 0 && (
-                  <div>
-                    <h4 className="text-base font-semibold text-[#185166] mb-3 flex items-center gap-2">
-                      <Package className="h-4 w-4" />
-                      Mattress Protection
-                    </h4>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {mattressProducts.map((product) => (
-                        <div
-                          key={product.id}
-                          className="group cursor-pointer border-2 border-gray-200 rounded-lg p-4 hover:border-[#18A5A5] hover:bg-[#18A5A5]/5 transition-all duration-200 hover:shadow-md"
-                          onClick={() => addProduct(product.id)}
-                        >
-                          <div className="text-center space-y-2">
-                            <div className="w-12 h-12 bg-[#18A5A5]/10 rounded-lg flex items-center justify-center mx-auto group-hover:bg-[#18A5A5]/20 transition-colors">
-                              <Package className="h-6 w-6 text-[#18A5A5]" />
-                            </div>
-                            <div className="font-medium text-[#185166] text-sm">
-                              {product.name}
-                            </div>
-                            <div className="text-xs text-gray-500">{product.type}</div>
-                            <div className="text-lg font-bold text-[#18A5A5]">
-                              £{product.price.toFixed(2)}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Individual Items Category */}
-                {individualProducts.length > 0 && (
-                  <div>
-                    <h4 className="text-base font-semibold text-[#185166] mb-3 flex items-center gap-2">
-                      <Package className="h-4 w-4" />
-                      Individual Items
-                    </h4>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {individualProducts.map((product) => (
-                        <div
-                          key={product.id}
-                          className="group cursor-pointer border-2 border-gray-200 rounded-lg p-4 hover:border-[#18A5A5] hover:bg-[#18A5A5]/5 transition-all duration-200 hover:shadow-md"
-                          onClick={() => addProduct(product.id)}
-                        >
-                          <div className="text-center space-y-2">
-                            <div className="w-12 h-12 bg-[#18A5A5]/10 rounded-lg flex items-center justify-center mx-auto group-hover:bg-[#18A5A5]/20 transition-colors">
-                              <Package className="h-6 w-6 text-[#18A5A5]" />
-                            </div>
-                            <div className="font-medium text-[#185166] text-sm">
-                              {product.name}
-                            </div>
-                            <div className="text-xs text-gray-500">{product.type}</div>
-                            <div className="text-lg font-bold text-[#18A5A5]">
-                              £{product.price.toFixed(2)}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Selected Items with Quantity */}
-              {orderItems.length > 0 && (
-                <div className="space-y-4">
-                  <h4 className="text-base font-semibold text-[#185166] flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4" />
-                    Selected Items ({orderItems.length})
+              {/* Mattress Protection Category */}
+              {mattressProducts.length > 0 && (
+                <div>
+                  <h4 className="text-base font-semibold text-[#185166] mb-3 flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Mattress Protection
                   </h4>
-                  <div className="space-y-3">
-                    {orderItems.map((item) => (
-                      <div key={item.productId} className="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-lg bg-gray-50">
-                        <div className="flex-1">
-                          <div className="font-medium text-[#185166]">{formatProductName(item)}</div>
-                          <div className="text-sm text-gray-500">Type: {item.productType}</div>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                            className="h-8 w-8 p-0 border-gray-300 hover:border-[#18A5A5]"
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {mattressProducts.map((product) => {
+                      const orderItem = getOrderItem(product.id);
+                      const isExpanded = expandedProduct === product.id;
+                      const hasItems = orderItem && orderItem.quantity > 0;
+                      
+                      return (
+                        <div key={product.id} className="space-y-2">
+                          <div
+                            className={`group cursor-pointer border-2 rounded-lg p-4 transition-all duration-200 hover:shadow-md ${
+                              hasItems 
+                                ? 'border-[#18A5A5] bg-[#18A5A5]/5' 
+                                : 'border-gray-200 hover:border-[#18A5A5] hover:bg-[#18A5A5]/5'
+                            }`}
+                            onClick={() => toggleProductExpansion(product.id)}
                           >
-                            <Minus className="h-4 w-4" />
-                          </Button>
+                            <div className="text-center space-y-2">
+                              <div className={`w-12 h-12 rounded-lg flex items-center justify-center mx-auto transition-colors ${
+                                hasItems 
+                                  ? 'bg-[#18A5A5]/20' 
+                                  : 'bg-[#18A5A5]/10 group-hover:bg-[#18A5A5]/20'
+                              }`}>
+                                <Package className="h-6 w-6 text-[#18A5A5]" />
+                              </div>
+                              <div className="font-medium text-[#185166] text-sm">
+                                {product.name}
+                              </div>
+                              <div className="text-xs text-gray-500">{product.type}</div>
+                              <div className="text-lg font-bold text-[#18A5A5]">
+                                £{product.price.toFixed(2)}
+                              </div>
+                              {hasItems && (
+                                <div className="text-sm font-medium text-[#18A5A5]">
+                                  Quantity: {orderItem.quantity}
+                                </div>
+                              )}
+                            </div>
+                          </div>
                           
-                          <Input
-                            type="number"
-                            min="1"
-                            value={item.quantity}
-                            onChange={(e) => updateQuantity(item.productId, parseInt(e.target.value) || 1)}
-                            className="w-16 h-8 text-center border-gray-300 focus:border-[#18A5A5]"
-                          />
-                          
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                            className="h-8 w-8 p-0 border-gray-300 hover:border-[#18A5A5]"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
+                          {/* Expanded Quantity Controls */}
+                          {isExpanded && (
+                            <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 space-y-3">
+                              <div className="text-sm font-medium text-[#185166] text-center">
+                                Select Quantity
+                              </div>
+                              
+                              <div className="flex items-center justify-center gap-3">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (hasItems) {
+                                      updateQuantity(product.id, Math.max(0, orderItem.quantity - 1));
+                                    }
+                                  }}
+                                  disabled={!hasItems || orderItem.quantity <= 0}
+                                  className="h-8 w-8 p-0 border-gray-300 hover:border-[#18A5A5]"
+                                >
+                                  <Minus className="h-4 w-4" />
+                                </Button>
+                                
+                                <div className="w-16 text-center">
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={getProductQuantity(product.id)}
+                                    onChange={(e) => {
+                                      e.stopPropagation();
+                                      const quantity = parseInt(e.target.value) || 0;
+                                      if (quantity > 0) {
+                                        if (!hasItems) {
+                                          addProduct(product.id);
+                                        }
+                                        updateQuantity(product.id, quantity);
+                                      } else if (hasItems) {
+                                        removeItem(product.id);
+                                      }
+                                    }}
+                                    className="w-full h-8 text-center border-gray-300 focus:border-[#18A5A5]"
+                                  />
+                                </div>
+                                
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (!hasItems) {
+                                      addProduct(product.id);
+                                    } else {
+                                      updateQuantity(product.id, orderItem.quantity + 1);
+                                    }
+                                  }}
+                                  className="h-8 w-8 p-0 border-gray-300 hover:border-[#18A5A5]"
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              
+                              {hasItems && (
+                                <div className="text-center space-y-2">
+                                  <div className="text-sm font-bold text-[#18A5A5]">
+                                    Subtotal: £{orderItem.subtotal.toFixed(2)}
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removeItem(product.id);
+                                      setExpandedProduct(null);
+                                    }}
+                                    className="h-8 text-xs"
+                                  >
+                                    Remove from Order
+                                  </Button>
+                                </div>
+                              )}
+                              
+                              {!hasItems && (
+                                <div className="text-center">
+                                  <Button
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      addProduct(product.id);
+                                    }}
+                                    className="h-8 bg-[#18A5A5] hover:bg-[#185166] text-white text-xs"
+                                  >
+                                    Add to Order
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
-
-                        <div className="text-lg font-bold text-[#18A5A5] w-20 text-right">
-                          £{item.subtotal.toFixed(2)}
-                        </div>
-
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => removeItem(item.productId)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
-              {/* Minimum Order Alert */}
-              {orderItems.length > 0 && !meetsMinimum && (
-                <Alert className="border-yellow-200 bg-yellow-50">
-                  <AlertCircle className="h-5 w-5 text-yellow-600" />
-                  <AlertDescription className="text-yellow-800">
-                    Minimum order value is £150. Current total: £{totalCost.toFixed(2)}
-                  </AlertDescription>
-                </Alert>
+              {/* Individual Items Category */}
+              {individualProducts.length > 0 && (
+                <div>
+                  <h4 className="text-base font-semibold text-[#185166] mb-3 flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Individual Items
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {individualProducts.map((product) => {
+                      const orderItem = getOrderItem(product.id);
+                      const isExpanded = expandedProduct === product.id;
+                      const hasItems = orderItem && orderItem.quantity > 0;
+                      
+                      return (
+                        <div key={product.id} className="space-y-2">
+                          <div
+                            className={`group cursor-pointer border-2 rounded-lg p-4 transition-all duration-200 hover:shadow-md ${
+                              hasItems 
+                                ? 'border-[#18A5A5] bg-[#18A5A5]/5' 
+                                : 'border-gray-200 hover:border-[#18A5A5] hover:bg-[#18A5A5]/5'
+                            }`}
+                            onClick={() => toggleProductExpansion(product.id)}
+                          >
+                            <div className="text-center space-y-2">
+                              <div className={`w-12 h-12 rounded-lg flex items-center justify-center mx-auto transition-colors ${
+                                hasItems 
+                                  ? 'bg-[#18A5A5]/20' 
+                                  : 'bg-[#18A5A5]/10 group-hover:bg-[#18A5A5]/20'
+                              }`}>
+                                <Package className="h-6 w-6 text-[#18A5A5]" />
+                              </div>
+                              <div className="font-medium text-[#185166] text-sm">
+                                {product.name}
+                              </div>
+                              <div className="text-xs text-gray-500">{product.type}</div>
+                              <div className="text-lg font-bold text-[#18A5A5]">
+                                £{product.price.toFixed(2)}
+                              </div>
+                              {hasItems && (
+                                <div className="text-sm font-medium text-[#18A5A5]">
+                                  Quantity: {orderItem.quantity}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Expanded Quantity Controls */}
+                          {isExpanded && (
+                            <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 space-y-3">
+                              <div className="text-sm font-medium text-[#185166] text-center">
+                                Select Quantity
+                              </div>
+                              
+                              <div className="flex items-center justify-center gap-3">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (hasItems) {
+                                      updateQuantity(product.id, Math.max(0, orderItem.quantity - 1));
+                                    }
+                                  }}
+                                  disabled={!hasItems || orderItem.quantity <= 0}
+                                  className="h-8 w-8 p-0 border-gray-300 hover:border-[#18A5A5]"
+                                >
+                                  <Minus className="h-4 w-4" />
+                                </Button>
+                                
+                                <div className="w-16 text-center">
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={getProductQuantity(product.id)}
+                                    onChange={(e) => {
+                                      e.stopPropagation();
+                                      const quantity = parseInt(e.target.value) || 0;
+                                      if (quantity > 0) {
+                                        if (!hasItems) {
+                                          addProduct(product.id);
+                                        }
+                                        updateQuantity(product.id, quantity);
+                                      } else if (hasItems) {
+                                        removeItem(product.id);
+                                      }
+                                    }}
+                                    className="w-full h-8 text-center border-gray-300 focus:border-[#18A5A5]"
+                                  />
+                                </div>
+                                
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (!hasItems) {
+                                      addProduct(product.id);
+                                    } else {
+                                      updateQuantity(product.id, orderItem.quantity + 1);
+                                    }
+                                  }}
+                                  className="h-8 w-8 p-0 border-gray-300 hover:border-[#18A5A5]"
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              
+                              {hasItems && (
+                                <div className="text-center space-y-2">
+                                  <div className="text-sm font-bold text-[#18A5A5]">
+                                    Subtotal: £{orderItem.subtotal.toFixed(2)}
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removeItem(product.id);
+                                      setExpandedProduct(null);
+                                    }}
+                                    className="h-8 text-xs"
+                                  >
+                                    Remove from Order
+                                  </Button>
+                                </div>
+                              )}
+                              
+                              {!hasItems && (
+                                <div className="text-center">
+                                  <Button
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      addProduct(product.id);
+                                    }}
+                                    className="h-8 bg-[#18A5A5] hover:bg-[#185166] text-white text-xs"
+                                  >
+                                    Add to Order
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
+            </div>
 
-              {orderItems.length > 0 && meetsMinimum && (
-                <div className="flex items-center justify-between p-4 bg-green-50 border-2 border-green-200 rounded-lg">
+            {/* Order Summary */}
+            {orderItems.length > 0 && (
+              <div className="bg-gradient-to-r from-[#18A5A5]/10 to-[#185166]/10 border-2 border-[#18A5A5]/20 rounded-lg p-4">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                    <span className="font-medium text-green-800">Order meets minimum requirement</span>
+                    <CheckCircle className="h-5 w-5 text-[#18A5A5]" />
+                    <span className="font-medium text-[#185166]">
+                      {orderItems.length} item{orderItems.length > 1 ? 's' : ''} selected
+                    </span>
                   </div>
                   <div className="text-xl font-bold text-[#185166]">
                     Total: £{totalCost.toFixed(2)}
                   </div>
                 </div>
-              )}
+                
+                {!meetsMinimum && (
+                  <div className="flex items-center gap-2 mt-2 text-orange-600">
+                    <AlertCircle className="h-4 w-4" />
+                    <span className="text-sm">
+                      Minimum order £150. Add £{(150 - totalCost).toFixed(2)} more.
+                    </span>
+                  </div>
+                )}
+                
+                {meetsMinimum && (
+                  <div className="flex items-center gap-2 mt-2 text-green-600">
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="text-sm font-medium">Order meets minimum requirement</span>
+                  </div>
+                )}
+              </div>
+            )}
 
-              {orderItems.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <Package className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                  <p>No items selected yet</p>
-                  <p className="text-sm">Click on items above to add them to your order</p>
-                </div>
-              )}
+            {orderItems.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <Package className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                <p>No items selected yet</p>
+                <p className="text-sm">Click on items above to add them to your order</p>
+              </div>
+            )}
             </div>
           </div>
 
