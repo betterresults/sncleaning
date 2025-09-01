@@ -49,6 +49,21 @@ export const useActivityLogger = () => {
   const logSearch = (searchTerm: string, searchType: string) => 
     logActivity('search_performed', 'search', searchType, { term: searchTerm });
 
+  const logNavigation = (page: string, fromPage?: string) =>
+    logActivity('page_navigation', 'navigation', page, { from: fromPage });
+
+  const logBulkAction = (actionType: string, count: number, details?: any) =>
+    logActivity('bulk_action', 'bulk', actionType, { count, ...details });
+
+  const logEmailSent = (emailType: string, recipient: string, details?: any) =>
+    logActivity('email_sent', 'email', emailType, { recipient, ...details });
+
+  const logFileOperation = (operation: string, fileName: string, details?: any) =>
+    logActivity('file_operation', 'file', operation, { fileName, ...details });
+
+  const logPaymentAction = (action: string, amount?: number, details?: any) =>
+    logActivity('payment_action', 'payment', action, { amount, ...details });
+
   return {
     logActivity,
     logLogin,
@@ -57,6 +72,11 @@ export const useActivityLogger = () => {
     logCustomerView,
     logSettingsUpdate,
     logExport,
-    logSearch
+    logSearch,
+    logNavigation,
+    logBulkAction,
+    logEmailSent,
+    logFileOperation,
+    logPaymentAction
   };
 };

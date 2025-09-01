@@ -16,7 +16,8 @@ import {
   LogOut,
   Search,
   Filter,
-  RefreshCw
+  RefreshCw,
+  Package
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -112,6 +113,26 @@ const ActivityLogsManager = () => {
         return <CreditCard className="h-4 w-4 text-green-600" />;
       case 'payment_method_removed':
         return <CreditCard className="h-4 w-4 text-red-600" />;
+      case 'linen_order_created':
+      case 'linen_order_status_changed':
+      case 'linen_order_payment_status_changed':
+        return <Package className="h-4 w-4 text-blue-600" />;
+      case 'linen_inventory_updated':
+        return <Package className="h-4 w-4 text-yellow-600" />;
+      case 'cleaner_rates_updated':
+      case 'cleaner_contact_updated':
+        return <User className="h-4 w-4 text-blue-600" />;
+      case 'sub_cleaner_assigned':
+      case 'sub_cleaner_removed':
+        return <UserPlus className="h-4 w-4 text-green-600" />;
+      case 'pricing_formula_created':
+      case 'pricing_formula_updated':
+      case 'pricing_formula_deleted':
+        return <Edit className="h-4 w-4 text-purple-600" />;
+      case 'user_role_assigned':
+      case 'user_role_changed':
+      case 'user_role_removed':
+        return <UserPlus className="h-4 w-4 text-orange-600" />;
       default:
         return <Activity className="h-4 w-4 text-gray-600" />;
     }
@@ -131,6 +152,23 @@ const ActivityLogsManager = () => {
       case 'booking_cancelled':
       case 'payment_method_removed':
         return <Badge variant="destructive">Removed</Badge>;
+      case 'linen_order_created':
+      case 'pricing_formula_created':
+      case 'sub_cleaner_assigned':
+      case 'user_role_assigned':
+        return <Badge className="bg-green-100 text-green-800">Created</Badge>;
+      case 'linen_order_status_changed':
+      case 'linen_order_payment_status_changed':
+      case 'linen_inventory_updated':
+      case 'cleaner_rates_updated':
+      case 'cleaner_contact_updated':
+      case 'pricing_formula_updated':
+      case 'user_role_changed':
+        return <Badge variant="secondary">Updated</Badge>;
+      case 'pricing_formula_deleted':
+      case 'sub_cleaner_removed':
+      case 'user_role_removed':
+        return <Badge variant="destructive">Deleted</Badge>;
       default:
         return <Badge variant="outline">Action</Badge>;
     }
@@ -158,6 +196,36 @@ const ActivityLogsManager = () => {
         return `User logged in`;
       case 'logout':
         return `User logged out`;
+      case 'linen_order_created':
+        return `Created linen order - £${details.total_cost} (Customer ID: ${details.customer_id})`;
+      case 'linen_order_status_changed':
+        return `Changed linen order status from ${details.old_status} to ${details.new_status}`;
+      case 'linen_order_payment_status_changed':
+        return `Changed linen order payment status from ${details.old_payment_status} to ${details.new_payment_status}`;
+      case 'linen_order_cost_updated':
+        return `Updated linen order cost from £${details.old_total_cost} to £${details.new_total_cost}`;
+      case 'linen_inventory_updated':
+        return `Updated linen inventory - Clean: ${details.old_clean}→${details.new_clean}, Dirty: ${details.old_dirty}→${details.new_dirty}`;
+      case 'cleaner_rates_updated':
+        return `Updated ${details.name} rates - Hourly: £${details.old_hourly_rate}→£${details.new_hourly_rate}, Percentage: ${details.old_percentage_rate}%→${details.new_percentage_rate}%`;
+      case 'cleaner_contact_updated':
+        return `Updated ${details.name} contact info`;
+      case 'sub_cleaner_assigned':
+        return `Assigned sub-cleaner to booking ${details.primary_booking_id} - ${details.hours_assigned} hours, £${details.cleaner_pay} pay`;
+      case 'sub_cleaner_removed':
+        return `Removed sub-cleaner from booking ${details.primary_booking_id}`;
+      case 'pricing_formula_created':
+        return `Created pricing formula: ${details.formula_name} for ${details.service_type}`;
+      case 'pricing_formula_updated':
+        return `Updated pricing formula: ${details.formula_name} - Rate: £${details.old_base_rate}→£${details.new_base_rate}`;
+      case 'pricing_formula_deleted':
+        return `Deleted pricing formula: ${details.formula_name}`;
+      case 'user_role_assigned':
+        return `Assigned role ${details.role} to user`;
+      case 'user_role_changed':
+        return `Changed user role from ${details.old_role} to ${details.new_role}`;
+      case 'user_role_removed':
+        return `Removed role ${details.role} from user`;
       default:
         return log.action_type.replace(/_/g, ' ');
     }
@@ -211,7 +279,17 @@ const ActivityLogsManager = () => {
                 <SelectItem value="customer_created">Customer Created</SelectItem>
                 <SelectItem value="customer_updated">Customer Updated</SelectItem>
                 <SelectItem value="payment_method_added">Payment Added</SelectItem>
-                <SelectItem value="payment_method_removed">Payment Removed</SelectItem>
+        <SelectItem value="pricing_formula_created">Formula Created</SelectItem>
+        <SelectItem value="pricing_formula_updated">Formula Updated</SelectItem>
+        <SelectItem value="pricing_formula_deleted">Formula Deleted</SelectItem>
+        <SelectItem value="linen_order_created">Linen Order Created</SelectItem>
+        <SelectItem value="linen_order_status_changed">Linen Status Changed</SelectItem>
+        <SelectItem value="linen_order_payment_status_changed">Linen Payment Changed</SelectItem>
+        <SelectItem value="linen_inventory_updated">Inventory Updated</SelectItem>
+        <SelectItem value="cleaner_rates_updated">Cleaner Rates Updated</SelectItem>
+        <SelectItem value="sub_cleaner_assigned">Sub-Cleaner Assigned</SelectItem>
+        <SelectItem value="user_role_assigned">Role Assigned</SelectItem>
+        <SelectItem value="user_role_changed">Role Changed</SelectItem>
               </SelectContent>
             </Select>
 
