@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          details: Json | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+          user_email: string | null
+          user_id: string | null
+          user_role: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+          user_role?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+          user_role?: string | null
+        }
+        Relationships: []
+      }
       addresses: {
         Row: {
           access: string | null
@@ -1500,11 +1542,25 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: string
       }
+      log_activity: {
+        Args: {
+          p_action_type: string
+          p_details?: Json
+          p_entity_id?: string
+          p_entity_type?: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       move_sub_bookings_to_past: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
       move_to_past_bookings_table: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      populate_sample_activity_logs: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
