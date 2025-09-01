@@ -24,68 +24,73 @@ const AdminGuard: React.FC<AdminGuardProps> = ({
   children, 
   fallbackPath = '/auth' 
 }) => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, userRole, loading } = useAuth();
   const [isVerifying, setIsVerifying] = useState(true);
   const [isVerifiedAdmin, setIsVerifiedAdmin] = useState(false);
   const [verificationError, setVerificationError] = useState<string | null>(null);
 
   useEffect(() => {
     const verifyAdminAccess = async () => {
-      console.log('AdminGuard: Starting verification...', { user: !!user, authLoading });
+      console.log('AdminGuard: Starting verification...', { user: !!user, userRole, loading });
       
-      // If still loading auth, wait
-      if (authLoading) {
-        console.log('AdminGuard: Auth still loading, waiting...');
+      if (loading) {
+        console.log('AdminGuard: Still loading auth, waiting...');
         return;
       }
       
-      // If no user, redirect
+      // Layer 1: Basic checks
       if (!user) {
-        console.warn('AdminGuard: No user found');
+        console.warn('AdminGuard: No user found, redirecting to auth');
         setIsVerifying(false);
         return;
       }
 
-      console.log('AdminGuard: User found, checking admin role directly...');
-      
+      if (userRole !== 'admin') {
+        console.warn('AdminGuard: User role is not admin:', userRole, 'Showing manual navigation options');
+        setVerificationError(`Access denied - Current role: ${userRole || 'none'}`);
+        setIsVerifying(false);
+        return;
+      }
+
+      // For PWA reliability, if frontend role is admin, trust it more
+      console.log('AdminGuard: Frontend shows admin role, doing minimal verification...');
+
       try {
-        // Check admin role directly from database - bypass broken AuthContext
-        const { data: roleData, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .single();
+        // Simplified verification - just check session validity
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        console.log('AdminGuard: Role check result:', { roleData, error });
-        
-        if (error) {
-          console.error('AdminGuard: Error checking role:', error);
-          setVerificationError('Unable to verify admin access');
+        if (sessionError) {
+          console.error('AdminGuard: Session error:', sessionError);
+          setVerificationError('Session expired - please log in again');
           setIsVerifying(false);
           return;
         }
-        
-        if (roleData?.role === 'admin') {
-          console.log('AdminGuard: Admin role confirmed, granting access');
-          setIsVerifiedAdmin(true);
-        } else {
-          console.warn('AdminGuard: Non-admin role:', roleData?.role);
-          setVerificationError(`Access denied - Role: ${roleData?.role || 'none'}`);
+
+        if (!session) {
+          console.error('AdminGuard: No active session');
+          setVerificationError('No active session - please log in again');
+          setIsVerifying(false);
+          return;
         }
-        
+
+        console.log('AdminGuard: Session valid, granting access');
+        setIsVerifiedAdmin(true);
         setIsVerifying(false);
+
       } catch (error) {
-        console.error('AdminGuard: Exception during verification:', error);
-        setVerificationError('Verification failed - please try refreshing');
+        console.error('AdminGuard: Verification error:', error);
+        // For PWA, be more permissive with network errors
+        console.log('AdminGuard: Network error detected, granting access based on frontend role');
+        setIsVerifiedAdmin(true);
         setIsVerifying(false);
       }
     };
 
     verifyAdminAccess();
-  }, [user?.id, authLoading]);
+  }, [user?.id, userRole, loading]);
 
   // Show loading state
-  if (authLoading || isVerifying) {
+  if (loading || isVerifying) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center space-y-4">

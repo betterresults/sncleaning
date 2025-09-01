@@ -43,7 +43,6 @@ import UsersCleaners from "./pages/UsersCleaners";
 import UsersCustomers from "./pages/UsersCustomers";
 import AdminLinenManagement from "./pages/AdminLinenManagement";
 import AdminProfitTracking from "./pages/AdminProfitTracking";
-import AdminActivityLogs from "./pages/AdminActivityLogs";
 import NotFound from "./pages/NotFound";
 import { AdminCustomerProvider } from "./contexts/AdminCustomerContext";
 import { AdminCleanerProvider } from "./contexts/AdminCleanerContext";
@@ -75,8 +74,7 @@ const App = () => (
            <Route path="/customer-messages" element={<CustomerMessages />} />
            <Route path="/cleaner-messages" element={<CleanerMessages />} />
            <Route path="/admin-chat-management" element={<AdminChatManagement />} />
-          <Route path="/admin-pricing-formulas" element={<AdminPricingFormulas />} />
-          <Route path="/admin-activity-logs" element={<AdminActivityLogs />} />
+           <Route path="/admin-pricing-formulas" element={<AdminPricingFormulas />} />
               <Route path="/cleaner-available-bookings" element={<CleanerAvailableBookings />} />
               <Route path="/cleaner-past-bookings" element={<CleanerPastBookings />} />
               <Route path="/cleaner-earnings" element={<CleanerEarnings />} />
