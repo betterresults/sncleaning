@@ -16,6 +16,20 @@ interface ActivityLog {
   entity_type?: string;
   entity_id?: string;
   details?: any;
+  // Enhanced data
+  booking_info?: {
+    id: number;
+    date_time: string;
+    address: string;
+    customer_name: string;
+    total_cost: number;
+  };
+  customer_info?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+    email: string;
+  };
 }
 
 const ActivityLogsView = () => {
@@ -39,7 +53,148 @@ const ActivityLogsView = () => {
         .limit(100);
 
       if (error) throw error;
-      setLogs(data || []);
+      
+      // Enhance logs with booking and customer info
+      const enhancedLogs = await Promise.all((data || []).map(async (log) => {
+        const enhanced: ActivityLog = { ...log };
+        
+        // If it's a booking-related log, fetch booking details
+        if (log.entity_type === 'booking' && log.entity_id) {
+          try {
+            const { data: booking } = await supabase
+              .from('bookings')
+              .select(`
+                id, date_time, address, total_cost,
+                first_name, last_name, customer
+              `)
+              .eq('id', parseInt(log.entity_id))
+              .single();
+            
+            if (booking) {
+              enhanced.booking_info = {
+                id: booking.id,
+                date_time: booking.date_time,
+                address: booking.address || 'No address',
+                customer_name: `${booking.first_name || ''} ${booking.last_name || ''}`.trim() || 'Unknown',
+                total_cost: booking.total_cost || 0
+              };
+            }
+          } catch (bookingError) {
+            // Try past_bookings if not found in bookings
+            try {
+              const { data: pastBooking } = await supabase
+                .from('past_bookings')
+                .select(`
+                  id, date_time, address, total_cost,
+                  first_name, last_name, customer
+                `)
+                .eq('id', parseInt(log.entity_id))
+                .single();
+              
+              if (pastBooking) {
+                enhanced.booking_info = {
+                  id: pastBooking.id,
+                  date_time: pastBooking.date_time,
+                  address: pastBooking.address || 'No address',
+                  customer_name: `${pastBooking.first_name || ''} ${pastBooking.last_name || ''}`.trim() || 'Unknown',
+                  total_cost: parseFloat(pastBooking.total_cost || '0')
+                };
+              }
+            } catch (pastBookingError) {
+              console.warn('Booking not found:', log.entity_id);
+            }
+          }
+        }
+        
+        // If it's a customer-related log, fetch customer details
+        if (log.entity_type === 'customer' && log.entity_id) {
+          try {
+            const { data: customer } = await supabase
+              .from('customers')
+              .select('id, first_name, last_name, email')
+              .eq('id', parseInt(log.entity_id))
+              .single();
+            
+            if (customer) {
+              enhanced.customer_info = customer;
+            }
+          } catch (customerError) {
+            console.warn('Customer not found:', log.entity_id);
+          }
+        }
+        
+        // Also check if details contain customer_id or booking_id
+        if (log.details && typeof log.details === 'object' && log.details !== null) {
+          const details = log.details as Record<string, any>;
+          
+          if (details.customer_id && !enhanced.customer_info) {
+            try {
+              const { data: customer } = await supabase
+                .from('customers')
+                .select('id, first_name, last_name, email')
+                .eq('id', parseInt(details.customer_id))
+                .single();
+              
+              if (customer) {
+                enhanced.customer_info = customer;
+              }
+            } catch (customerError) {
+              console.warn('Customer not found in details:', details.customer_id);
+            }
+          }
+          
+          if (details.booking_id && !enhanced.booking_info) {
+            try {
+              const { data: booking } = await supabase
+                .from('bookings')
+                .select(`
+                  id, date_time, address, total_cost,
+                  first_name, last_name, customer
+                `)
+                .eq('id', parseInt(details.booking_id))
+                .single();
+              
+              if (booking) {
+                enhanced.booking_info = {
+                  id: booking.id,
+                  date_time: booking.date_time,
+                  address: booking.address || 'No address',
+                  customer_name: `${booking.first_name || ''} ${booking.last_name || ''}`.trim() || 'Unknown',
+                  total_cost: booking.total_cost || 0
+                };
+              }
+            } catch (bookingError) {
+              // Try past_bookings
+              try {
+                const { data: pastBooking } = await supabase
+                  .from('past_bookings')
+                  .select(`
+                    id, date_time, address, total_cost,
+                    first_name, last_name, customer
+                  `)
+                  .eq('id', parseInt(details.booking_id))
+                  .single();
+                
+                if (pastBooking) {
+                  enhanced.booking_info = {
+                    id: pastBooking.id,
+                    date_time: pastBooking.date_time,
+                    address: pastBooking.address || 'No address',
+                    customer_name: `${pastBooking.first_name || ''} ${pastBooking.last_name || ''}`.trim() || 'Unknown',
+                    total_cost: parseFloat(pastBooking.total_cost || '0')
+                  };
+                }
+              } catch (pastBookingError) {
+                console.warn('Booking not found in details:', details.booking_id);
+              }
+            }
+          }
+        }
+        
+        return enhanced;
+      }));
+      
+      setLogs(enhancedLogs);
     } catch (error) {
       console.error('Error fetching activity logs:', error);
     } finally {
@@ -120,6 +275,8 @@ const ActivityLogsView = () => {
                   <TableHead>Role</TableHead>
                   <TableHead>Action</TableHead>
                   <TableHead>Entity</TableHead>
+                  <TableHead>Booking Info</TableHead>
+                  <TableHead>Customer Info</TableHead>
                   <TableHead>Details</TableHead>
                 </TableRow>
               </TableHeader>
@@ -146,6 +303,42 @@ const ActivityLogsView = () => {
                           {log.entity_type}
                           {log.entity_id && ` #${log.entity_id}`}
                         </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {log.booking_info && (
+                        <div className="space-y-1">
+                          <div className="font-medium">#{log.booking_info.id}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {format(new Date(log.booking_info.date_time), 'MMM dd, HH:mm')}
+                          </div>
+                          <div className="text-xs text-muted-foreground max-w-32 truncate">
+                            {log.booking_info.address}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            £{log.booking_info.total_cost}
+                          </div>
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {log.customer_info && (
+                        <div className="space-y-1">
+                          <div className="font-medium">
+                            {log.customer_info.first_name} {log.customer_info.last_name}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            #{log.customer_info.id}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {log.customer_info.email}
+                          </div>
+                        </div>
+                      )}
+                      {log.booking_info && !log.customer_info && (
+                        <div className="text-xs text-muted-foreground">
+                          {log.booking_info.customer_name}
+                        </div>
                       )}
                     </TableCell>
                     <TableCell className="text-sm max-w-xs">
