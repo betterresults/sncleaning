@@ -44,16 +44,28 @@ serve(async (req) => {
       throw new Error('Booking not found')
     }
 
-    // Get customer's default payment method
-    const { data: paymentMethod, error: pmError } = await supabaseClient
+    // Get customer's payment methods (try default first, then any available)
+    const { data: defaultPaymentMethods } = await supabaseClient
       .from('customer_payment_methods')
       .select('*')
       .eq('customer_id', booking.customer)
       .eq('is_default', true)
-      .single()
 
-    if (pmError || !paymentMethod) {
-      throw new Error('No default payment method found for customer')
+    let paymentMethod = defaultPaymentMethods?.[0]
+
+    // If no default payment method, get any available payment method
+    if (!paymentMethod) {
+      const { data: anyPaymentMethods } = await supabaseClient
+        .from('customer_payment_methods')
+        .select('*')
+        .eq('customer_id', booking.customer)
+        .limit(1)
+
+      paymentMethod = anyPaymentMethods?.[0]
+    }
+
+    if (!paymentMethod) {
+      throw new Error('No payment method found for customer')
     }
 
     // Create Payment Intent (authorization)
