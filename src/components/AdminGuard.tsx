@@ -33,14 +33,8 @@ const AdminGuard: React.FC<AdminGuardProps> = ({
     const verifyAdminAccess = async () => {
       console.log('AdminGuard: Starting verification...', { user: !!user, userRole, loading });
       
-      // Don't start verification until auth is fully loaded
-      if (loading) {
-        console.log('AdminGuard: Still loading auth, waiting...');
-        return;
-      }
-      
       // If no user, allow redirect
-      if (!user) {
+      if (!user && !loading) {
         console.warn('AdminGuard: No user found');
         setIsVerifying(false);
         return;
@@ -54,24 +48,58 @@ const AdminGuard: React.FC<AdminGuardProps> = ({
         return;
       }
 
-      // If role is not admin, check if it's still loading or actually denied
-      if (userRole === null) {
-        console.log('AdminGuard: Role still loading, waiting...');
-        // Give it a bit more time for role to load
-        setTimeout(() => {
-          if (userRole === null) {
-            console.warn('AdminGuard: Role loading timeout, denying access');
-            setVerificationError('Unable to verify admin access - please try refreshing');
+      // If we have a user but role is still loading, wait with timeout
+      if (user && userRole === null) {
+        console.log('AdminGuard: User exists but role is null, checking directly...');
+        
+        // Check role directly from database as fallback
+        try {
+          const { data: roleData, error } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', user.id)
+            .single();
+          
+          console.log('AdminGuard: Direct role check result:', { roleData, error });
+          
+          if (roleData?.role === 'admin') {
+            console.log('AdminGuard: Direct check confirms admin role, granting access');
+            setIsVerifiedAdmin(true);
             setIsVerifying(false);
+            return;
           }
-        }, 3000); // 3 second timeout
+          
+          // Not an admin
+          console.warn('AdminGuard: Direct check shows non-admin role:', roleData?.role);
+          setVerificationError(`Access denied - Role: ${roleData?.role || 'none'}`);
+          setIsVerifying(false);
+        } catch (error) {
+          console.error('AdminGuard: Error in direct role check:', error);
+          setVerificationError('Unable to verify admin access - please try refreshing');
+          setIsVerifying(false);
+        }
         return;
       }
 
       // Role is loaded but not admin
-      console.warn('AdminGuard: User role is not admin:', userRole);
-      setVerificationError(`Access denied - Current role: ${userRole}`);
-      setIsVerifying(false);
+      if (userRole && userRole !== 'admin') {
+        console.warn('AdminGuard: User role is not admin:', userRole);
+        setVerificationError(`Access denied - Current role: ${userRole}`);
+        setIsVerifying(false);
+        return;
+      }
+
+      // Still loading - set a timeout
+      if (loading) {
+        console.log('AdminGuard: Still loading, setting timeout...');
+        setTimeout(() => {
+          console.log('AdminGuard: Timeout reached, current state:', { user: !!user, userRole, loading });
+          if (loading || userRole === null) {
+            setVerificationError('Loading timeout - please refresh the page');
+            setIsVerifying(false);
+          }
+        }, 5000); // 5 second timeout
+      }
     };
 
     verifyAdminAccess();
