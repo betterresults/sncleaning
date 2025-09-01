@@ -195,23 +195,22 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
         completedFiles += additionalFiles.length;
       }
 
-      // Send customer notification about photos being ready
-      setUploadStep('Sending notification to customer...');
+      // Trigger automatic photo notification with 15-minute delay
+      setUploadStep('Setting up customer notification...');
       setUploadProgress('Almost done...');
       
       try {
-        const folderName = `${booking.id}_${booking.postcode}_${bookingDate}_${booking.customer}`;
-        await supabase.functions.invoke('send-photo-notification', {
+        await supabase.functions.invoke('auto-photo-notification', {
           body: {
+            file_path: `${folderPath}/after/sample`, // Just a reference for the notification
             booking_id: booking.id,
             customer_id: booking.customer,
-            cleaner_id: booking.cleaner,
-            folder_name: folderName,
-            total_photos: totalFiles
+            postcode: booking.postcode,
+            booking_date: bookingDate
           }
         });
       } catch (notificationError) {
-        console.error('Failed to send photo notification:', notificationError);
+        console.error('Failed to trigger photo notification:', notificationError);
         // Don't fail the upload if notification fails
       }
 
@@ -220,7 +219,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
 
       toast({
         title: 'Photos Uploaded Successfully',
-        description: `Uploaded ${totalFiles} photos. Customer will be notified.`
+        description: `Uploaded ${totalFiles} photos. Customer will be notified in 15 minutes.`
       });
 
       // Reset form after a short delay
