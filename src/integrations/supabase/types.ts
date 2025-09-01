@@ -1560,6 +1560,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      populate_sample_activity_logs: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       test_generate_recurring_bookings: {
         Args: Record<PropertyKey, never>
         Returns: {
