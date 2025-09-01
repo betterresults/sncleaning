@@ -33,57 +33,45 @@ const AdminGuard: React.FC<AdminGuardProps> = ({
     const verifyAdminAccess = async () => {
       console.log('AdminGuard: Starting verification...', { user: !!user, userRole, loading });
       
+      // Don't start verification until auth is fully loaded
       if (loading) {
         console.log('AdminGuard: Still loading auth, waiting...');
         return;
       }
       
-      // Layer 1: Basic checks
+      // If no user, allow redirect
       if (!user) {
-        console.warn('AdminGuard: No user found, redirecting to auth');
+        console.warn('AdminGuard: No user found');
         setIsVerifying(false);
         return;
       }
 
-      if (userRole !== 'admin') {
-        console.warn('AdminGuard: User role is not admin:', userRole, 'Showing manual navigation options');
-        setVerificationError(`Access denied - Current role: ${userRole || 'none'}`);
+      // If user role is admin, grant access immediately
+      if (userRole === 'admin') {
+        console.log('AdminGuard: Admin role confirmed, granting access');
+        setIsVerifiedAdmin(true);
         setIsVerifying(false);
         return;
       }
 
-      // For PWA reliability, if frontend role is admin, trust it more
-      console.log('AdminGuard: Frontend shows admin role, doing minimal verification...');
-
-      try {
-        // Simplified verification - just check session validity
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error('AdminGuard: Session error:', sessionError);
-          setVerificationError('Session expired - please log in again');
-          setIsVerifying(false);
-          return;
-        }
-
-        if (!session) {
-          console.error('AdminGuard: No active session');
-          setVerificationError('No active session - please log in again');
-          setIsVerifying(false);
-          return;
-        }
-
-        console.log('AdminGuard: Session valid, granting access');
-        setIsVerifiedAdmin(true);
-        setIsVerifying(false);
-
-      } catch (error) {
-        console.error('AdminGuard: Verification error:', error);
-        // For PWA, be more permissive with network errors
-        console.log('AdminGuard: Network error detected, granting access based on frontend role');
-        setIsVerifiedAdmin(true);
-        setIsVerifying(false);
+      // If role is not admin, check if it's still loading or actually denied
+      if (userRole === null) {
+        console.log('AdminGuard: Role still loading, waiting...');
+        // Give it a bit more time for role to load
+        setTimeout(() => {
+          if (userRole === null) {
+            console.warn('AdminGuard: Role loading timeout, denying access');
+            setVerificationError('Unable to verify admin access - please try refreshing');
+            setIsVerifying(false);
+          }
+        }, 3000); // 3 second timeout
+        return;
       }
+
+      // Role is loaded but not admin
+      console.warn('AdminGuard: User role is not admin:', userRole);
+      setVerificationError(`Access denied - Current role: ${userRole}`);
+      setIsVerifying(false);
     };
 
     verifyAdminAccess();
