@@ -33,6 +33,133 @@ interface CleaningPhoto {
   created_at: string;
 }
 
+const PhotoItem = ({ photo }: { photo: CleaningPhoto }) => {
+  const [imageUrl, setImageUrl] = useState<string>('');
+  const [loadingImage, setLoadingImage] = useState(true);
+
+  const getSignedUrl = async (filePath: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('cleaning.photos')
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
+
+      if (error) throw error;
+      return data.signedUrl;
+    } catch (error) {
+      console.error('Error getting signed URL:', error);
+      return null;
+    }
+  };
+
+  const handleViewPhoto = async (filePath: string) => {
+    const signedUrl = await getSignedUrl(filePath);
+    if (signedUrl) {
+      window.open(signedUrl, '_blank');
+    }
+  };
+
+  const handleDownloadPhoto = async (filePath: string, fileName: string) => {
+    const signedUrl = await getSignedUrl(filePath);
+    if (signedUrl) {
+      const link = document.createElement('a');
+      link.href = signedUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  useEffect(() => {
+    getSignedUrl(photo.file_path).then(url => {
+      if (url) {
+        setImageUrl(url);
+      }
+      setLoadingImage(false);
+    });
+  }, [photo.file_path]);
+
+  return (
+    <div className="relative group border rounded-lg overflow-hidden">
+      <div className="aspect-square bg-gray-100 flex items-center justify-center">
+        {loadingImage ? (
+          <Camera className="h-8 w-8 text-gray-400 animate-pulse" />
+        ) : imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={`${photo.photo_type} photo`}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <Camera className="h-8 w-8 text-gray-400" />
+        )}
+      </div>
+      <div className="p-2">
+        <p className="text-xs text-gray-500 truncate">
+          {photo.file_path.split('/').pop()}
+        </p>
+        <p className="text-xs text-gray-400">
+          {new Date(photo.created_at).toLocaleDateString()}
+        </p>
+        {photo.damage_details && (
+          <p className="text-xs text-orange-600 mt-1 truncate" title={photo.damage_details}>
+            {photo.damage_details}
+          </p>
+        )}
+      </div>
+      <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => handleViewPhoto(photo.file_path)}
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => handleDownloadPhoto(photo.file_path, photo.file_path.split('/').pop() || 'photo')}
+        >
+          <Download className="h-4 w-4" />
+        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              size="sm"
+              variant="destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Photo</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this photo? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  // Call parent delete function - we'll need to pass this down
+                  const event = new CustomEvent('deletePhoto', { 
+                    detail: { id: photo.id, filePath: photo.file_path } 
+                  });
+                  window.dispatchEvent(event);
+                }}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </div>
+  );
+};
+
 const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementDialogProps) => {
   const { toast } = useToast();
   const [photos, setPhotos] = useState<CleaningPhoto[]>([]);
@@ -304,6 +431,18 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
     if (open) {
       fetchPhotos();
     }
+
+    // Add event listener for photo deletion
+    const handleDeleteEvent = (event: CustomEvent) => {
+      const { id, filePath } = event.detail;
+      handleDeletePhoto(id, filePath);
+    };
+
+    window.addEventListener('deletePhoto', handleDeleteEvent as EventListener);
+
+    return () => {
+      window.removeEventListener('deletePhoto', handleDeleteEvent as EventListener);
+    };
   }, [open, booking.id]);
 
   const FileUploadArea = ({ type, files, onFileSelect, onRemove }: {
@@ -390,73 +529,13 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
                 No photos found for this booking.
               </div>
             ) : (
-              <div className="space-y-6">
+                  <div className="space-y-6">
                 {Object.entries(groupedPhotos).map(([type, typePhotos]) => (
                   <div key={type} className="space-y-2">
                     <h3 className="font-semibold capitalize text-lg">{type} Photos ({typePhotos.length})</h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       {typePhotos.map((photo) => (
-                        <div key={photo.id} className="relative group border rounded-lg overflow-hidden">
-                          <div className="aspect-square bg-gray-100 flex items-center justify-center">
-                            <Camera className="h-8 w-8 text-gray-400" />
-                          </div>
-                          <div className="p-2">
-                            <p className="text-xs text-gray-500 truncate">
-                              {photo.file_path.split('/').pop()}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              {new Date(photo.created_at).toLocaleDateString()}
-                            </p>
-                            {photo.damage_details && (
-                              <p className="text-xs text-orange-600 mt-1 truncate" title={photo.damage_details}>
-                                {photo.damage_details}
-                              </p>
-                            )}
-                          </div>
-                          <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => handleViewPhoto(photo.file_path)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => handleDownloadPhoto(photo.file_path, photo.file_path.split('/').pop() || 'photo')}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Photo</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to delete this photo? This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleDeletePhoto(photo.id, photo.file_path)}
-                                    className="bg-red-600 hover:bg-red-700"
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </div>
+                        <PhotoItem key={photo.id} photo={photo} />
                       ))}
                     </div>
                   </div>
