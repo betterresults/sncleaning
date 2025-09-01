@@ -203,6 +203,11 @@ export const adminNavigation = [
         url: "/admin-pricing-formulas",
         icon: Calculator,
       },
+      {
+        title: "Activity Logs",
+        url: "/admin-activity-logs",
+        icon: BarChart3,
+      },
     ],
   },
 ];
