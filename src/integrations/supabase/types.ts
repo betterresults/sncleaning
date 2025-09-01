@@ -836,6 +836,7 @@ export type Database = {
       linen_orders: {
         Row: {
           address_id: string
+          admin_cost: number | null
           created_at: string
           customer_id: number
           delivery_date: string | null
@@ -851,6 +852,7 @@ export type Database = {
         }
         Insert: {
           address_id: string
+          admin_cost?: number | null
           created_at?: string
           customer_id: number
           delivery_date?: string | null
@@ -866,6 +868,7 @@ export type Database = {
         }
         Update: {
           address_id?: string
+          admin_cost?: number | null
           created_at?: string
           customer_id?: number
           delivery_date?: string | null

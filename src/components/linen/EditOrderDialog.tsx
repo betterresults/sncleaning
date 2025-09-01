@@ -24,7 +24,8 @@ export const EditOrderDialog = ({ order, open, onOpenChange }: EditOrderDialogPr
     status: "",
     payment_status: "",
     payment_method: "",
-    notes: ""
+    notes: "",
+    admin_cost: 0
   });
 
   const { toast } = useToast();
@@ -38,7 +39,8 @@ export const EditOrderDialog = ({ order, open, onOpenChange }: EditOrderDialogPr
         status: order.status || "scheduled",
         payment_status: order.payment_status || "unpaid",
         payment_method: order.payment_method || "",
-        notes: order.notes || ""
+        notes: order.notes || "",
+        admin_cost: order.admin_cost || 0
       });
     }
   }, [order]);
@@ -96,6 +98,11 @@ export const EditOrderDialog = ({ order, open, onOpenChange }: EditOrderDialogPr
     // Only include notes if changed
     if (formData.notes !== order.notes) {
       updateData.notes = formData.notes;
+    }
+    
+    // Only include admin cost if changed
+    if (formData.admin_cost !== (order.admin_cost || 0)) {
+      updateData.admin_cost = formData.admin_cost;
     }
     
     // Only proceed if there are actual changes
@@ -164,6 +171,49 @@ export const EditOrderDialog = ({ order, open, onOpenChange }: EditOrderDialogPr
               <Label className="text-sm font-medium text-muted-foreground">Address</Label>
               <div className="font-medium">{order.addresses?.address}</div>
               <div className="text-sm text-muted-foreground">{order.addresses?.postcode}</div>
+            </div>
+          </div>
+
+          {/* Cost Tracking */}
+          <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+            <div className="flex items-center gap-2 mb-4">
+              <CreditCard className="h-5 w-5 text-orange-600" />
+              <h3 className="font-medium text-orange-800">Cost Tracking</h3>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="admin_cost">Admin Cost (Your Cost) *</Label>
+                <Input
+                  id="admin_cost"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.admin_cost}
+                  onChange={(e) => setFormData(prev => ({ ...prev, admin_cost: parseFloat(e.target.value) || 0 }))}
+                  placeholder="0.00"
+                />
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Customer Total</Label>
+                <div className="h-9 flex items-center px-3 bg-muted rounded border">
+                  <span className="font-medium text-green-600">
+                    £{order.total_cost?.toFixed(2) || '0.00'}
+                  </span>
+                </div>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Profit</Label>
+                <div className="h-9 flex items-center px-3 bg-muted rounded border">
+                  <span className={`font-medium ${
+                    (order.total_cost - formData.admin_cost) >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    £{((order.total_cost || 0) - formData.admin_cost).toFixed(2)}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 

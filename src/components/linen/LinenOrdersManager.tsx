@@ -26,6 +26,7 @@ interface LinenOrder {
   payment_status: 'unpaid' | 'paid' | 'pending' | 'refunded';
   payment_method: 'cash' | 'card' | 'bank_transfer' | 'stripe' | 'invoice';
   total_cost: number;
+  admin_cost: number;
   notes?: string;
   created_at: string;
 }
@@ -669,15 +670,36 @@ export const LinenOrdersManager = () => {
                 </div>
 
                 {/* Payment & Cost */}
-                <div className="flex items-center justify-between pt-3 border-t">
-                  <div className="flex items-center gap-2">
-                    <Banknote className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Total Cost</p>
-                      <p className="text-lg font-bold">£{order.total_cost.toFixed(2)}</p>
+                <div className="space-y-2 pt-3 border-t">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Banknote className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Customer Total</p>
+                        <p className="text-lg font-bold text-green-600">£{order.total_cost.toFixed(2)}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Admin Cost</p>
+                        <p className="text-lg font-bold text-red-600">
+                          £{(order.admin_cost || 0).toFixed(2)}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1">
+                  {order.total_cost > 0 && order.admin_cost > 0 && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Profit:</span>
+                      <span className={`font-medium ${
+                        (order.total_cost - order.admin_cost) >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        £{(order.total_cost - order.admin_cost).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1 pt-2">
                     <Button 
                       variant="outline" 
                       size="sm"
