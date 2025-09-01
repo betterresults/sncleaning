@@ -393,9 +393,6 @@ const LinenInventoryView = () => {
                             <div className="text-lg font-bold text-[#185166]">
                               {totalQuantity} Total
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              £{(totalQuantity * (item.linen_products.price || 0)).toFixed(2)} value
-                            </div>
                           </div>
                         </div>
                         
