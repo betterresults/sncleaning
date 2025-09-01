@@ -52,6 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('Error fetching profile:', profileError);
         console.log('Setting role to guest due to profile error');
         setUserRole('guest');
+        setLoading(false);
         return;
       }
       
@@ -78,6 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUserRole(finalRole);
       setCleanerId(profileData?.cleaner_id || null);
       setCustomerId(profileData?.customer_id || null);
+      setLoading(false);
       
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
@@ -85,6 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUserRole('guest');
       setCleanerId(null);
       setCustomerId(null);
+      setLoading(false);
     }
   };
 
@@ -106,7 +109,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setTimeout(async () => {
             if (mounted) {
               await fetchUserRole(session.user.id);
-              setLoading(false);
             }
           }, 0);
         } else {
@@ -131,9 +133,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           await fetchUserRole(session.user.id);
+        } else {
+          setLoading(false);
         }
         
-        setLoading(false);
       } catch (error) {
         console.error('Error checking session:', error);
         if (mounted) {
