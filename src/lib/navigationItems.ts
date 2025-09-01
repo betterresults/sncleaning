@@ -1,4 +1,4 @@
-import { Calendar, History, DollarSign, Briefcase, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Calculator, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package, TrendingUp } from 'lucide-react';
+import { Calendar, History, DollarSign, Briefcase, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Calculator, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package, TrendingUp, Activity } from 'lucide-react';
 
 export const cleanerNavigation = [
   {
@@ -188,6 +188,11 @@ export const adminNavigation = [
     title: "Linen Management",
     url: "/admin-linen-management",
     icon: Package,
+  },
+  {
+    title: "Activity Logs",
+    url: "/admin-activity-logs",
+    icon: Activity,
   },
   {
     title: "Settings",

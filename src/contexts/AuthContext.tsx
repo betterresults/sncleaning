@@ -102,6 +102,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         
         if (session?.user) {
+          // Log login activity
+          try {
+            await supabase.rpc('log_activity', {
+              p_user_id: session.user.id,
+              p_action_type: 'login',
+              p_entity_type: null,
+              p_entity_id: null,
+              p_details: null
+            });
+          } catch (error) {
+            console.error('Error logging login activity:', error);
+          }
+          
           // Use setTimeout to defer the async operation and prevent deadlock
           setTimeout(async () => {
             if (mounted) {
@@ -110,6 +123,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }, 0);
         } else {
+          // Log logout activity for previous user if exists
+          if (user) {
+            try {
+              await supabase.rpc('log_activity', {
+                p_user_id: user.id,
+                p_action_type: 'logout',
+                p_entity_type: null,
+                p_entity_id: null,
+                p_details: null
+              });
+            } catch (error) {
+              console.error('Error logging logout activity:', error);
+            }
+          }
+          
           setUserRole(null);
           setCleanerId(null);
           setCustomerId(null);
