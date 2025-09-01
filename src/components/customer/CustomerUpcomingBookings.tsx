@@ -155,6 +155,12 @@ const CustomerUpcomingBookings = () => {
     if (!activeCustomerId) return;
 
     try {
+      console.log('CustomerUpcomingBookings - Fetching for customer:', {
+        activeCustomerId,
+        userRole,
+        currentTime: new Date().toISOString()
+      });
+
       // Fetch upcoming bookings - exclude cancelled bookings
       const { data, error } = await supabase
         .from('bookings')
@@ -187,6 +193,13 @@ const CustomerUpcomingBookings = () => {
         .gte('date_time', new Date().toISOString())
         .neq('booking_status', 'cancelled')
         .order('date_time', { ascending: true });
+
+      console.log('CustomerUpcomingBookings - Raw query result:', {
+        data,
+        error,
+        dataLength: data?.length,
+        bookingIds: data?.map(b => ({ id: b.id, date: b.date_time, status: b.booking_status }))
+      });
 
       if (error) throw error;
       
