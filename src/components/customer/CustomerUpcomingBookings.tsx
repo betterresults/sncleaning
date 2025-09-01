@@ -155,7 +155,7 @@ const CustomerUpcomingBookings = () => {
     if (!activeCustomerId) return;
 
     try {
-      // Fetch upcoming bookings - show ALL future bookings except cancelled or completed
+      // Fetch upcoming bookings - show ALL future bookings regardless of status, only hide cancelled and completed
       const { data, error } = await supabase
         .from('bookings')
         .select(`
@@ -185,7 +185,7 @@ const CustomerUpcomingBookings = () => {
         `)
         .eq('customer', activeCustomerId)
         .gte('date_time', new Date().toISOString())
-        .not('booking_status', 'in', '("cancelled","completed")')
+        .or(`booking_status.is.null,booking_status.not.ilike.%cancelled%,booking_status.not.ilike.%completed%`)
         .order('date_time', { ascending: true });
 
       if (error) throw error;
