@@ -161,15 +161,14 @@ export default function AddRecurringBooking() {
         const originalDate = new Date(data.date_time);
         console.log('Original date from booking:', originalDate);
         
-        // Use the local date/time as displayed to the user (no timezone adjustment)
-        const localDate = new Date(originalDate.getTime() + (originalDate.getTimezoneOffset() * 60000));
-        console.log('Adjusted local date:', localDate);
+        // No timezone adjustment needed - use the date as is
+        console.log('Using date as is:', originalDate);
         
-        const dayName = localDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+        const dayName = originalDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
         console.log('Day name:', dayName);
         
-        // Set the corrected date as selected date
-        setSelectedDate(localDate);
+        // Set the date as selected date
+        setSelectedDate(originalDate);
         
         // Auto-select the day of the week
         setSelectedDays([dayName]);
@@ -177,7 +176,7 @@ export default function AddRecurringBooking() {
           ...prev,
           days_of_the_week: dayName,
           days_number: '1',
-          start_date: localDate.toISOString().split('T')[0],
+          start_date: originalDate.toISOString().split('T')[0],
           cleaner_rate: data.cleaner_rate?.toString() || prev.cleaner_rate
         }));
       }

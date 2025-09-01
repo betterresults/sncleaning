@@ -485,18 +485,16 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
         return;
       }
 
-      // Combine date and time with proper timezone handling
+      // Combine date and time properly
       const time24h = convertTo24Hour(formData.selectedTime);
       const [hours, minutes] = time24h.split(':');
       
-      // Create date in local timezone but store the intended local time
-      // The user sees 10:00 in Bulgaria, they mean 10:00 Bulgaria time
+      // Create the datetime in local timezone - no manual offset manipulation needed
+      // The browser will handle the timezone conversion when sending to the database
       const dateTime = new Date(formData.selectedDate);
       dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
       
-      // Convert to UTC by adding the timezone offset to get the correct local time
-      const timezoneOffset = dateTime.getTimezoneOffset() * 60000; // offset in milliseconds
-      const localDateTime = new Date(dateTime.getTime() - timezoneOffset);
+      const localDateTime = dateTime;
 
       // Determine form_name based on service type and sub type
       let formName = '';
