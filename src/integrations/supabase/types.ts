@@ -789,6 +789,45 @@ export type Database = {
         }
         Relationships: []
       }
+      email_notification_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          html_content: string
+          id: string
+          is_active: boolean
+          name: string
+          subject: string
+          text_content: string | null
+          updated_at: string
+          variables: Json | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          html_content: string
+          id?: string
+          is_active?: boolean
+          name: string
+          subject: string
+          text_content?: string | null
+          updated_at?: string
+          variables?: Json | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          html_content?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          subject?: string
+          text_content?: string | null
+          updated_at?: string
+          variables?: Json | null
+        }
+        Relationships: []
+      }
       linen_inventory: {
         Row: {
           address_id: string
@@ -961,6 +1000,216 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      notification_logs: {
+        Row: {
+          content: string
+          created_at: string
+          delivered_at: string | null
+          delivery_id: string | null
+          entity_id: string | null
+          entity_type: string | null
+          error_message: string | null
+          id: string
+          opened_at: string | null
+          recipient_email: string
+          recipient_type: string
+          sent_at: string | null
+          status: string
+          subject: string
+          template_id: string | null
+          trigger_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          delivered_at?: string | null
+          delivery_id?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          id?: string
+          opened_at?: string | null
+          recipient_email: string
+          recipient_type: string
+          sent_at?: string | null
+          status?: string
+          subject: string
+          template_id?: string | null
+          trigger_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          delivered_at?: string | null
+          delivery_id?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          id?: string
+          opened_at?: string | null
+          recipient_email?: string
+          recipient_type?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          template_id?: string | null
+          trigger_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_logs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_notification_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_logs_trigger_id_fkey"
+            columns: ["trigger_id"]
+            isOneToOne: false
+            referencedRelation: "notification_triggers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_schedules: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          recipient_email: string
+          recipient_type: string
+          scheduled_for: string
+          status: string
+          trigger_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          recipient_email: string
+          recipient_type: string
+          scheduled_for: string
+          status?: string
+          trigger_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          recipient_email?: string
+          recipient_type?: string
+          scheduled_for?: string
+          status?: string
+          trigger_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_schedules_trigger_id_fkey"
+            columns: ["trigger_id"]
+            isOneToOne: false
+            referencedRelation: "notification_triggers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_settings: {
+        Row: {
+          created_at: string
+          custom_recipients: string[] | null
+          custom_timing_offset: number | null
+          id: string
+          is_enabled: boolean
+          trigger_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          custom_recipients?: string[] | null
+          custom_timing_offset?: number | null
+          id?: string
+          is_enabled?: boolean
+          trigger_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          custom_recipients?: string[] | null
+          custom_timing_offset?: number | null
+          id?: string
+          is_enabled?: boolean
+          trigger_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_settings_trigger_id_fkey"
+            columns: ["trigger_id"]
+            isOneToOne: false
+            referencedRelation: "notification_triggers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_triggers: {
+        Row: {
+          conditions: Json | null
+          created_at: string
+          id: string
+          is_enabled: boolean
+          name: string
+          recipient_types: string[]
+          template_id: string | null
+          timing_offset: number | null
+          timing_unit: string | null
+          trigger_event: string
+          updated_at: string
+        }
+        Insert: {
+          conditions?: Json | null
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          name: string
+          recipient_types?: string[]
+          template_id?: string | null
+          timing_offset?: number | null
+          timing_unit?: string | null
+          trigger_event: string
+          updated_at?: string
+        }
+        Update: {
+          conditions?: Json | null
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          name?: string
+          recipient_types?: string[]
+          template_id?: string | null
+          timing_offset?: number | null
+          timing_unit?: string | null
+          trigger_event?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_triggers_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_notification_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       past_bookings: {
         Row: {
