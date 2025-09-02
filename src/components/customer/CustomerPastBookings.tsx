@@ -339,9 +339,11 @@ const CustomerPastBookings = () => {
 
     // Calculate statistics for filtered results
     const totalBookings = filtered.length;
-    const paidBookings = filtered.filter(b => 
-      b.payment_status && b.payment_status.toLowerCase().includes('paid')
-    ).length;
+    const paidBookings = filtered.filter(b => {
+      if (!b.payment_status) return false;
+      const status = b.payment_status.toLowerCase();
+      return status === 'paid' || status === 'confirmed' || status === 'complete' || status === 'completed';
+    }).length;
     const reviewedBookings = filtered.filter(b => reviews[b.id]).length;
     const totalPaid = filtered.reduce((sum, booking) => {
       const cost = parseFloat(booking.total_cost) || 0;
