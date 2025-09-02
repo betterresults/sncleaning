@@ -14,6 +14,8 @@ import LinenManagementSelector from '@/components/booking/LinenManagementSelecto
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { User, Calendar, MapPin, CreditCard, UserCheck, Clock, Home, Phone, Mail, AlertTriangle, Settings } from 'lucide-react';
+import { EmailNotificationConfirmDialog } from '@/components/notifications/EmailNotificationConfirmDialog';
+import { useBookingEmailPrompt } from '@/hooks/useBookingEmailPrompt';
 
 interface EditBookingDialogProps {
   booking: any;
@@ -34,6 +36,20 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
+  const {
+    showConfirmDialog,
+    setShowConfirmDialog,
+    pendingEmailOptions,
+    promptForEmail,
+    handleConfirmEmail,
+    handleCancelEmail,
+    isLoading: emailLoading
+  } = useBookingEmailPrompt({
+    onComplete: () => {
+      onBookingUpdated();
+      onOpenChange(false);
+    }
+  });
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -231,8 +247,29 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         duration: 3000,
       });
 
-      onBookingUpdated();
-      onOpenChange(false);
+      // Determine if significant changes were made that warrant an email
+      const hasSignificantChanges = 
+        formData.dateTime !== formatDateTimeForInput(booking.date_time) || // Date/time changed
+        formData.address !== (booking.address || '') || // Address changed
+        formData.bookingStatus !== (booking.booking_status || 'Confirmed') || // Status changed
+        Math.abs((formData.totalCost || 0) - (booking.total_cost || 0)) > 0.01; // Cost changed
+
+      if (hasSignificantChanges) {
+        // Prompt for email notification
+        const emailType = formData.bookingStatus === 'completed' ? 'booking_completion' :
+          formData.bookingStatus !== (booking.booking_status || 'Confirmed') ? 'booking_status_update' :
+          'booking_status_update'; // Default for other significant changes
+
+        promptForEmail({
+          bookingId: booking.id,
+          emailType,
+          customerName: `${formData.firstName} ${formData.lastName}`.trim(),
+        });
+      } else {
+        // No significant changes, just close
+        onBookingUpdated();
+        onOpenChange(false);
+      }
     } catch (error) {
       console.error('Error updating booking:', error);
       toast({
@@ -712,6 +749,18 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
           </form>
         </ScrollArea>
       </SheetContent>
+      
+      {/* Email Notification Confirmation Dialog */}
+      <EmailNotificationConfirmDialog
+        open={showConfirmDialog}
+        onOpenChange={setShowConfirmDialog}
+        onConfirm={handleConfirmEmail}
+        onCancel={handleCancelEmail}
+        title="Send Booking Update Email?"
+        description="The booking has been updated successfully. Would you like to send an email notification to the customer about these changes?"
+        customerName={pendingEmailOptions?.customerName}
+        emailType={pendingEmailOptions?.emailType}
+      />
     </Sheet>
   );
 };

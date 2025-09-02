@@ -14,6 +14,8 @@ import CustomerSelector from './CustomerSelector';
 import CleanerSelector from './CleanerSelector';
 import LinenManagementSelector from './LinenManagementSelector';
 import { LinenUsageItem } from '@/hooks/useLinenProducts';
+import { EmailNotificationConfirmDialog } from '@/components/notifications/EmailNotificationConfirmDialog';
+import { useBookingEmailPrompt } from '@/hooks/useBookingEmailPrompt';
 
 interface BookingFormProps {
   onBookingCreated: () => void;
@@ -63,6 +65,19 @@ interface BookingData {
 const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const {
+    showConfirmDialog,
+    setShowConfirmDialog,
+    pendingEmailOptions,
+    promptForEmail,
+    handleConfirmEmail,
+    handleCancelEmail,
+    isLoading: emailLoading
+  } = useBookingEmailPrompt({
+    onComplete: () => {
+      onBookingCreated();
+    }
+  });
   const [formData, setFormData] = useState<BookingData>({
     customerId: null,
     firstName: '',
@@ -206,11 +221,12 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
         linen_used: formData.linenManagement && formData.linenUsed.length > 0 ? JSON.parse(JSON.stringify(formData.linenUsed)) : null
       };
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('bookings')
-        .insert([bookingData]);
+        .insert([bookingData])
+        .select('id');
 
-      if (error) {
+      if (error || !data?.[0]?.id) {
         console.error('Error creating booking:', error);
         toast({
           title: "Error",
@@ -249,7 +265,12 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
         description: "Booking created successfully!",
       });
 
-      onBookingCreated();
+      // Prompt for email notification after successful booking creation
+      promptForEmail({
+        bookingId: data[0].id,
+        emailType: 'booking_confirmation',
+        customerName: `${formData.firstName} ${formData.lastName}`.trim(),
+      });
     } catch (error) {
       console.error('Error creating booking:', error);
       toast({

@@ -1821,6 +1821,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      send_manual_booking_email: {
+        Args: {
+          p_additional_variables?: Json
+          p_booking_id: number
+          p_email_type: string
+        }
+        Returns: Json
+      }
       test_generate_recurring_bookings: {
         Args: Record<PropertyKey, never>
         Returns: {
