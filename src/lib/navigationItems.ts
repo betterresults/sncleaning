@@ -1,4 +1,4 @@
-import { Calendar, History, DollarSign, Briefcase, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Calculator, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package, TrendingUp, Activity } from 'lucide-react';
+import { Calendar, History, DollarSign, Briefcase, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Calculator, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package, TrendingUp, Activity, Bell } from 'lucide-react';
 
 export const cleanerNavigation = [
   {
@@ -207,6 +207,11 @@ export const adminNavigation = [
         title: "Pricing Formulas",
         url: "/admin-pricing-formulas",
         icon: Calculator,
+      },
+      {
+        title: "Email Notifications",
+        url: "/admin-notification-management",
+        icon: Bell,
       },
     ],
   },
