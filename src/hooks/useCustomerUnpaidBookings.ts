@@ -56,9 +56,7 @@ export const useCustomerUnpaidBookings = () => {
           .from('past_bookings')
           .select('id, date_time, address, postcode, total_cost, cleaning_type, payment_status')
           .eq('customer', profile.customer_id)
-          .not('payment_status', 'ilike', '%paid%')
-          .not('payment_status', 'ilike', '%confirmed%')
-          .not('payment_status', 'ilike', '%complete%')
+          .or('payment_status.ilike.%unpaid%,payment_status.ilike.%collecting%,payment_status.ilike.%outstanding%,payment_status.ilike.%pending%,payment_status.is.null')
           .order('date_time', { ascending: false }),
         
         // Unpaid linen orders  
