@@ -58,6 +58,7 @@ export const useCustomerUnpaidBookings = () => {
           .eq('customer', profile.customer_id)
           .not('payment_status', 'ilike', '%paid%')
           .not('payment_status', 'ilike', '%confirmed%')
+          .not('payment_status', 'ilike', '%complete%')
           .order('date_time', { ascending: false }),
         
         // Unpaid linen orders  
