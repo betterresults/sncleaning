@@ -1813,6 +1813,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      send_email_notification: {
+        Args: {
+          p_recipient_email: string
+          p_template_id: string
+          p_variables?: Json
+        }
+        Returns: undefined
+      }
       test_generate_recurring_bookings: {
         Args: Record<PropertyKey, never>
         Returns: {
