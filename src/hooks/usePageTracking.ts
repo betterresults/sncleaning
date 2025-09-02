@@ -10,7 +10,7 @@ export const usePageTracking = (pageName?: string) => {
   useEffect(() => {
     const pageTitle = pageName || getPageNameFromPath(location.pathname);
     logPageVisit(pageTitle);
-  }, [location.pathname, pageName, logPageVisit]);
+  }, [location.pathname, pageName]); // Removed logPageVisit dependency to prevent duplicates
 };
 
 // Helper function to get page name from pathname
@@ -37,7 +37,8 @@ const getPageNameFromPath = (pathname: string): string => {
     '/admin-settings': 'Admin Settings',
     '/admin-payment-management': 'Payment Management',
     '/admin-linen-management': 'Linen Management',
-    '/admin-chat-management': 'Chat Management'
+    '/admin-chat-management': 'Chat Management',
+    '/admin-activity-logs': 'Admin Activity Logs'
   };
 
   return pathMap[pathname] || pathname.replace('/', '').replace(/-/g, ' ');
