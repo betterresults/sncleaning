@@ -346,8 +346,15 @@ const CustomerPastBookings = () => {
     }).length;
     const reviewedBookings = filtered.filter(b => reviews[b.id]).length;
     const totalPaid = filtered.reduce((sum, booking) => {
-      const cost = parseFloat(booking.total_cost) || 0;
-      return sum + cost;
+      // Only count cost if booking is actually paid
+      if (!booking.payment_status) return sum;
+      const status = booking.payment_status.toLowerCase();
+      const isPaid = status === 'paid' || status === 'confirmed' || status === 'complete' || status === 'completed';
+      if (isPaid) {
+        const cost = parseFloat(booking.total_cost) || 0;
+        return sum + cost;
+      }
+      return sum;
     }, 0);
 
     setStats({
