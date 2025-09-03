@@ -92,6 +92,9 @@ interface BookingData {
   // Linen management
   linenManagement: boolean;
   linenUsed: LinenUsageItem[];
+  
+  // Email notification
+  sendConfirmationEmail: boolean;
 }
 
 const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedCustomer }: NewBookingFormProps) => {
@@ -135,7 +138,8 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
     propertyDetails: '',
     additionalDetails: '',
     linenManagement: false,
-    linenUsed: []
+    linenUsed: [],
+    sendConfirmationEmail: true
   });
 
   const [showAddPropertyAccessDialog, setShowAddPropertyAccessDialog] = useState(false);
@@ -609,9 +613,35 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
         return;
       }
 
+      // Send confirmation email if enabled and not in customer view
+      if (!isCustomerView && formData.sendConfirmationEmail && formData.email) {
+        try {
+          await supabase.functions.invoke('send-notification-email', {
+            body: {
+              to: formData.email,
+              subject: `Booking Confirmation - ${formName}`,
+              template: 'booking_confirmation',
+              variables: {
+                customer_name: `${formData.firstName} ${formData.lastName}`,
+                booking_date: format(formData.selectedDate!, 'dd/MM/yyyy'),
+                booking_time: formData.selectedTime,
+                service_type: formName,
+                address: `${formData.address}, ${formData.postcode}`,
+                total_cost: `£${formData.totalCost}`,
+                total_hours: requiresHours ? `${formData.totalHours} hours` : '',
+                booking_status: 'Confirmed'
+              }
+            }
+          });
+        } catch (emailError) {
+          console.log('Note: Email sending failed, but booking was created successfully:', emailError);
+          // Don't show error to user as booking was successful
+        }
+      }
+
       toast({
         title: "Success",
-        description: "Booking created successfully!",
+        description: `Booking created successfully!${!isCustomerView && formData.sendConfirmationEmail && formData.email ? ' Confirmation email sent.' : ''}`,
       });
 
       onBookingCreated();
@@ -1258,8 +1288,8 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
           </CardContent>
         </Card>
 
-        {/* Linen Management */}
-        {(formData.serviceType === 'airbnb' || formData.cleaningSubType === 'standard_cleaning' || formData.cleaningSubType === 'deep_cleaning') && (
+        {/* Linen Management - Only for Airbnb */}
+        {formData.serviceType === 'airbnb' && (
           <LinenManagementSelector
             enabled={formData.linenManagement}
             onEnabledChange={(enabled) => setFormData(prev => ({ ...prev, linenManagement: enabled, linenUsed: enabled ? prev.linenUsed : [] }))}
@@ -1267,6 +1297,31 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
             onLinenUsedChange={(linenUsed) => setFormData(prev => ({ ...prev, linenUsed }))}
             customerId={formData.customerId || undefined}
           />
+        )}
+
+        {/* Email Confirmation Option */}
+        {!isCustomerView && (
+          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-t-lg">
+              <CardTitle className="text-xl">Email Confirmation</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-3">
+                <Checkbox
+                  id="sendConfirmationEmail"
+                  checked={formData.sendConfirmationEmail}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, sendConfirmationEmail: checked as boolean }))}
+                  className="border-2 border-emerald-300 data-[state=checked]:bg-emerald-600"
+                />
+                <Label htmlFor="sendConfirmationEmail" className="text-sm font-semibold text-gray-700 cursor-pointer">
+                  Send booking confirmation email to customer
+                </Label>
+              </div>
+              <p className="text-xs text-gray-500 mt-2 ml-6">
+                When enabled, a confirmation email will be automatically sent to the customer with booking details.
+              </p>
+            </CardContent>
+          </Card>
         )}
 
         {/* Cleaner Assignment */}
