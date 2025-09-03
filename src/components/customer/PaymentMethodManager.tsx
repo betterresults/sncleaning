@@ -23,7 +23,8 @@ interface PaymentMethod {
 }
 
 // Payment Setup Form Component
-const PaymentSetupForm = ({ onSuccess, onCancel, customerId }: {
+const PaymentSetupForm = ({ clientSecret, onSuccess, onCancel, customerId }: {
+  clientSecret: string;
   onSuccess: () => void;
   onCancel: () => void;
   customerId: number | null;
@@ -32,44 +33,6 @@ const PaymentSetupForm = ({ onSuccess, onCancel, customerId }: {
   const elements = useElements();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [clientSecret, setClientSecret] = useState<string>('');
-  const [isLoadingSetup, setIsLoadingSetup] = useState(true);
-
-  // Create setup intent when component mounts
-  useEffect(() => {
-    const createSetupIntent = async () => {
-      try {
-        console.log('Creating setup intent for customer:', customerId);
-        const { data, error } = await supabase.functions.invoke('stripe-setup-intent', {
-          headers: {
-            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-          },
-          body: {
-            customerId: customerId
-          }
-        });
-
-        if (error) {
-          console.error('Setup intent error:', error);
-          throw error;
-        }
-
-        console.log('Setup intent created:', data);
-        setClientSecret(data.clientSecret);
-        setIsLoadingSetup(false);
-      } catch (error) {
-        console.error('Error creating setup intent:', error);
-        toast({
-          title: "Error",
-          description: "Failed to initialize payment setup",
-          variant: "destructive",
-        });
-        onCancel(); // Close dialog on error
-      }
-    };
-
-    createSetupIntent();
-  }, [customerId, onCancel, toast]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -168,65 +131,20 @@ const PaymentSetupForm = ({ onSuccess, onCancel, customerId }: {
     setIsProcessing(false);
   };
 
-  if (isLoadingSetup) {
-    return (
-      <div className="space-y-4">
-        <div className="p-8 text-center">
-          <div className="animate-spin h-8 w-8 border-4 border-[#18A5A5] border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-[#185166] font-medium">Setting up payment form...</p>
-          <p className="text-sm text-muted-foreground">This will just take a moment</p>
-        </div>
-        <div className="flex justify-end">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!clientSecret) {
-    return (
-      <div className="space-y-4">
-        <div className="p-8 text-center text-red-600">
-          <p>Failed to initialize payment setup</p>
-        </div>
-        <div className="flex justify-end">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Close
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <Elements 
-      stripe={stripePromise} 
-      options={{ 
-        clientSecret: clientSecret,
-        appearance: { 
-          theme: 'stripe',
-          variables: {
-            colorPrimary: '#18A5A5',
-          }
-        }
-      }}
-    >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="p-4 border border-gray-100 rounded-lg bg-gray-50">
-          <PaymentElement />
-        </div>
-        <div className="flex gap-2 justify-end">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={!stripe || isProcessing} className="bg-[#18A5A5] hover:bg-[#185166] text-white">
-            {isProcessing ? 'Processing...' : 'Add Payment Method'}
-          </Button>
-        </div>
-      </form>
-    </Elements>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="p-4 border border-gray-100 rounded-lg bg-gray-50">
+        <PaymentElement />
+      </div>
+      <div className="flex gap-2 justify-end">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={!stripe || isProcessing} className="bg-[#18A5A5] hover:bg-[#185166] text-white">
+          {isProcessing ? 'Processing...' : 'Add Payment Method'}
+        </Button>
+      </div>
+    </form>
   );
 };
 
@@ -313,8 +231,34 @@ const PaymentMethodManager = () => {
   const addPaymentMethod = async () => {
     if (!user) return;
     
-    // Show dialog immediately - no waiting for Stripe setup
-    setShowSetupDialog(true);
+    try {
+      console.log('Starting payment method setup for customer:', activeCustomerId);
+      // Get Setup Intent from backend - let stripe-setup-intent handle customer creation
+      const { data, error } = await supabase.functions.invoke('stripe-setup-intent', {
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+        body: {
+          customerId: activeCustomerId  // This can be null for new customers
+        }
+      });
+
+      if (error) {
+        console.error('Setup intent error:', error);
+        throw error;
+      }
+
+      console.log('Setup intent created:', data);
+      setSetupClientSecret(data.clientSecret);
+      setShowSetupDialog(true);
+    } catch (error) {
+      console.error('Error adding payment method:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add payment method",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSetupSuccess = async () => {
@@ -482,11 +426,27 @@ const PaymentMethodManager = () => {
                 Add Payment Method
               </DialogTitle>
             </DialogHeader>
-            <PaymentSetupForm
-              onSuccess={handleSetupSuccess}
-              onCancel={() => setShowSetupDialog(false)}
-              customerId={activeCustomerId}
-            />
+            {setupClientSecret && (
+              <Elements 
+                stripe={stripePromise} 
+                options={{ 
+                  clientSecret: setupClientSecret,
+                  appearance: { 
+                    theme: 'stripe',
+                    variables: {
+                      colorPrimary: '#18A5A5',
+                    }
+                  }
+                }}
+              >
+                <PaymentSetupForm
+                  clientSecret={setupClientSecret}
+                  onSuccess={handleSetupSuccess}
+                  onCancel={() => setShowSetupDialog(false)}
+                  customerId={activeCustomerId}
+                />
+              </Elements>
+            )}
           </DialogContent>
         </Dialog>
       </CardContent>
