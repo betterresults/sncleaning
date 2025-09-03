@@ -215,8 +215,11 @@ export const NotificationTestInterface = () => {
       photos_link: `${window.location.origin}/customer-photos?booking=${booking.id}`,
     };
 
+    // Update variables state with the formatted data
     setVariables(prev => ({ ...prev, ...sampleVariables }));
     setTestEmail(customer.email);
+    
+    console.log('Sample data loaded:', sampleVariables);
   };
 
   const sendTestEmail = async () => {
