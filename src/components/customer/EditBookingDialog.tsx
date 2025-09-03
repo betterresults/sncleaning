@@ -26,7 +26,7 @@ interface Booking {
   total_hours: number;
   cleaning_cost_per_hour: number | null;
   total_cost: number;
-  same_day: boolean;
+  same_day: boolean | string;
   access: string | null;
   additional_details?: string | null;
   first_name: string | null;
@@ -109,7 +109,8 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       
       setTotalHours(booking.total_hours || 0);
       setTotalCost(booking.total_cost || 0);
-      setIsSameDay(booking.same_day || false);
+      // Properly convert same_day to boolean (handles both string and boolean values)
+      setIsSameDay(booking.same_day === true || booking.same_day === 'true');
       
       // Find matching address
       const matchingAddress = addresses.find(addr => 
