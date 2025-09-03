@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Edit, Trash2, Filter, Search, Settings, Copy, X, UserPlus, DollarSign, Repeat, Calendar, List, MoreHorizontal, CalendarDays, Clock, MapPin, User, Mail, Phone, Banknote, CheckCircle, XCircle, AlertCircle, AlertTriangle } from 'lucide-react';
+import { Edit, Trash2, Filter, Search, Settings, Copy, X, UserPlus, DollarSign, Repeat, Calendar, List, MoreHorizontal, CalendarDays, Clock, MapPin, User, Mail, Phone, Banknote, CheckCircle, XCircle, AlertCircle, AlertTriangle, Send } from 'lucide-react';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import { format } from 'date-fns';
@@ -28,6 +28,7 @@ import AssignCleanerDialog from './AssignCleanerDialog';
 import DuplicateBookingDialog from './DuplicateBookingDialog';
 import ConvertToRecurringDialog from './ConvertToRecurringDialog';
 import DayBookingsDialog from './DayBookingsDialog';
+import ManualEmailDialog from './ManualEmailDialog';
 
 interface Booking {
   id: number;
@@ -119,7 +120,11 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState<number | null>(null);
   const [convertToRecurringOpen, setConvertToRecurringOpen] = useState(false);
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
+  const [showConvertToRecurringDialog, setShowConvertToRecurringDialog] = useState(false);
   const [selectedBookingForRecurring, setSelectedBookingForRecurring] = useState<Booking | null>(null);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [selectedBookingForEmail, setSelectedBookingForEmail] = useState<Booking | null>(null);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState<number | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
@@ -432,7 +437,12 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
 
   const handleMakeRecurring = (booking: Booking) => {
     setSelectedBookingForRecurring(booking);
-    setConvertToRecurringOpen(true);
+    setShowConvertToRecurringDialog(true);
+  };
+
+  const handleSendEmail = (booking: Booking) => {
+    setSelectedBookingForEmail(booking);
+    setShowEmailDialog(true);
   };
 
   // Handle day click in calendar
@@ -1002,16 +1012,25 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                                      <Repeat className="w-4 h-4 mr-2" />
                                      Make Recurring
                                    </DropdownMenuItem>
-                                   <DropdownMenuSeparator />
-                                   <DropdownMenuItem
-                                     onClick={(e) => {
-                                       e.stopPropagation();
-                                       handlePaymentAction(booking);
-                                     }}
-                                   >
-                                     <DollarSign className="w-4 h-4 mr-2" />
-                                     Manage Payment
-                                   </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleSendEmail(booking);
+                                      }}
+                                    >
+                                      <Send className="w-4 h-4 mr-2" />
+                                      Send Email
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handlePaymentAction(booking);
+                                      }}
+                                    >
+                                      <DollarSign className="w-4 h-4 mr-2" />
+                                      Manage Payment
+                                    </DropdownMenuItem>
                                    <DropdownMenuSeparator />
                                   <DropdownMenuItem
                                     onClick={(e) => {
@@ -1203,6 +1222,14 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
         onDelete={handleDelete}
         getCleanerName={getCleanerName}
       />
+
+      {selectedBookingForEmail && (
+        <ManualEmailDialog
+          open={showEmailDialog}
+          onOpenChange={setShowEmailDialog}
+          booking={selectedBookingForEmail}
+        />
+      )}
     </div>
   );
 };
