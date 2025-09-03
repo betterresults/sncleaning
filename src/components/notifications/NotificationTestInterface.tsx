@@ -32,12 +32,20 @@ interface Booking {
   address: string;
   total_cost: number;
   customer: number;
+  cleaner?: number;
+}
+
+interface Cleaner {
+  id: number;
+  first_name: string;
+  last_name: string;
 }
 
 export const NotificationTestInterface = () => {
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [testEmail, setTestEmail] = useState('');
   const [variables, setVariables] = useState<Record<string, string>>({});
@@ -58,7 +66,7 @@ export const NotificationTestInterface = () => {
 
   const fetchData = async () => {
     try {
-      const [templatesResult, customersResult, bookingsResult] = await Promise.all([
+      const [templatesResult, customersResult, bookingsResult, cleanersResult] = await Promise.all([
         supabase
           .from('email_notification_templates')
           .select('*')
@@ -71,14 +79,19 @@ export const NotificationTestInterface = () => {
           .order('created_at', { ascending: false }),
         supabase
           .from('bookings')
-          .select('id, date_time, service_type, address, total_cost, customer')
+          .select('id, date_time, service_type, address, total_cost, customer, cleaner')
           .limit(10)
-          .order('date_time', { ascending: false })
+          .order('date_time', { ascending: false }),
+        supabase
+          .from('cleaners')
+          .select('id, first_name, last_name')
+          .limit(10)
       ]);
 
       if (templatesResult.error) throw templatesResult.error;
       if (customersResult.error) throw customersResult.error;
       if (bookingsResult.error) throw bookingsResult.error;
+      if (cleanersResult.error) throw cleanersResult.error;
 
       setTemplates((templatesResult.data || []).map(template => ({
         ...template,
@@ -86,6 +99,7 @@ export const NotificationTestInterface = () => {
       })));
       setCustomers(customersResult.data || []);
       setBookings(bookingsResult.data || []);
+      setCleaners(cleanersResult.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -132,8 +146,19 @@ export const NotificationTestInterface = () => {
   const loadSampleData = (bookingId?: string) => {
     const booking = bookings.find(b => b.id.toString() === bookingId) || bookings[0];
     const customer = customers.find(c => c.id === booking?.customer) || customers[0];
+    const cleaner = booking?.cleaner ? cleaners.find(c => c.id === booking.cleaner) : null;
 
     if (!booking || !customer) return;
+
+    // Format service type properly
+    const formatServiceType = (serviceType: string) => {
+      switch (serviceType) {
+        case 'Domestic': return 'Domestic Cleaning';
+        case 'Air BnB': return 'Airbnb Cleaning';
+        case 'Standard Cleaning': return 'Standard Cleaning';
+        default: return serviceType || 'Cleaning Service';
+      }
+    };
 
     const sampleVariables = {
       customer_name: `${customer.first_name} ${customer.last_name}`,
@@ -142,10 +167,11 @@ export const NotificationTestInterface = () => {
       customer_email: customer.email,
       booking_date: new Date(booking.date_time).toLocaleDateString(),
       booking_time: new Date(booking.date_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      service_type: booking.service_type || 'Standard Cleaning',
+      service_type: formatServiceType(booking.service_type),
       address: booking.address || 'Sample Address',
       total_cost: booking.total_cost?.toString() || '0',
       booking_id: booking.id.toString(),
+      cleaner_name: cleaner ? `${cleaner.first_name} ${cleaner.last_name}` : 'To be assigned',
       photos_link: `${window.location.origin}/customer-photos?booking=${booking.id}`,
     };
 
