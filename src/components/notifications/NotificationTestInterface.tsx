@@ -221,7 +221,7 @@ export const NotificationTestInterface = () => {
       address: booking.address || 'Address not specified',
       total_cost: booking.total_cost?.toString() || '0',
       booking_id: booking.id.toString(),
-      cleaner_name: cleaner ? `${cleaner.first_name} ${cleaner.last_name}` : 'To be assigned',
+      cleaner_name: cleaner ? `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim() || 'Cleaner name not available' : 'To be confirmed',
       photos_link: `${window.location.origin}/customer-photos?booking=${booking.id}`,
     };
 
