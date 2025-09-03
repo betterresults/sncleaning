@@ -33,6 +33,64 @@ const PaymentSetupForm = ({ clientSecret, onSuccess, onCancel, customerId }: {
   const elements = useElements();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [elementError, setElementError] = useState<string | null>(null);
+
+  // Handle Stripe element errors
+  useEffect(() => {
+    const handleElementError = (event: any) => {
+      console.error('Stripe Element error:', event.error);
+      setElementError(event.error?.message || 'Payment form error');
+      toast({
+        title: "Payment Setup Error",
+        description: event.error?.message || 'There was an error setting up the payment form. Please try again.',
+        variant: "destructive",
+      });
+    };
+
+    // Listen for element errors
+    if (elements) {
+      const paymentElement = elements.getElement('payment');
+      if (paymentElement) {
+        paymentElement.on('loaderror', handleElementError);
+        return () => {
+          paymentElement.off('loaderror', handleElementError);
+        };
+      }
+    }
+  }, [elements, toast]);
+
+  if (elementError) {
+    return (
+      <div className="space-y-4">
+        <div className="p-6 text-center border border-red-200 rounded-lg bg-red-50">
+          <div className="text-red-600 mb-2">
+            <svg className="h-8 w-8 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h3 className="font-medium text-red-800 mb-2">Payment Setup Error</h3>
+          <p className="text-sm text-red-600 mb-4">{elementError}</p>
+          <p className="text-xs text-red-500">Please contact support if this error persists.</p>
+        </div>
+        <div className="flex gap-2 justify-end">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Close
+          </Button>
+          <Button 
+            type="button" 
+            onClick={() => {
+              setElementError(null);
+              // Trigger a retry by calling onCancel and letting user try again
+              onCancel();
+            }}
+            className="bg-[#18A5A5] hover:bg-[#185166] text-white"
+          >
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -134,7 +192,13 @@ const PaymentSetupForm = ({ clientSecret, onSuccess, onCancel, customerId }: {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="p-4 border border-gray-100 rounded-lg bg-gray-50">
-        <PaymentElement />
+        <PaymentElement 
+          onReady={() => console.log('PaymentElement ready')}
+          onLoadError={(error) => {
+            console.error('PaymentElement load error:', error);
+            setElementError(error?.error?.message || 'Failed to load payment form');
+          }}
+        />
       </div>
       <div className="flex gap-2 justify-end">
         <Button type="button" variant="outline" onClick={onCancel}>
@@ -249,16 +313,20 @@ const PaymentMethodManager = () => {
 
       if (error) {
         console.error('Setup intent error:', error);
-        throw error;
+        throw new Error(error.message || 'Failed to create payment setup');
       }
 
-      console.log('Setup intent created:', data);
+      if (!data?.clientSecret) {
+        throw new Error('No client secret returned from payment setup');
+      }
+
+      console.log('Setup intent created successfully');
       setSetupClientSecret(data.clientSecret);
     } catch (error) {
       console.error('Error adding payment method:', error);
       toast({
         title: "Error",
-        description: "Failed to add payment method",
+        description: error.message || "Failed to add payment method. Please try again.",
         variant: "destructive",
       });
       setShowSetupDialog(false); // Close dialog on error
