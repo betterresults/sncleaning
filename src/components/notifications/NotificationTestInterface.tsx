@@ -189,8 +189,13 @@ export const NotificationTestInterface = () => {
   };
 
   const loadSampleData = (bookingId?: string) => {
+    console.log('Loading sample data for booking ID:', bookingId);
     const booking = bookings.find(b => b.id.toString() === bookingId) || bookings[0];
     const customer = customers.find(c => c.id === booking?.customer) || customers[0];
+    
+    console.log('Selected booking:', booking);
+    console.log('Selected customer:', customer);
+    console.log('Booking cleaner field:', booking?.cleaner);
     
     if (!booking || !customer) return;
 
@@ -208,7 +213,7 @@ export const NotificationTestInterface = () => {
     const cleaner = booking.cleaner ? cleaners.find(c => c.id === booking.cleaner) : null;
     console.log('Booking cleaner ID:', booking.cleaner);
     console.log('Found cleaner:', cleaner);
-    console.log('Available cleaners:', cleaners);
+    console.log('All available cleaners:', cleaners.map(c => ({ id: c.id, name: `${c.first_name} ${c.last_name}` })));
 
     const actualVariables = {
       customer_name: `${customer.first_name} ${customer.last_name}`,
@@ -229,7 +234,7 @@ export const NotificationTestInterface = () => {
     setVariables(actualVariables);
     setTestEmail(customer.email);
     
-    console.log('Actual booking variables loaded:', actualVariables);
+    console.log('Final variables set:', actualVariables);
   };
 
   const sendTestEmail = async () => {
