@@ -115,24 +115,34 @@ const CustomerPaymentDialog = ({
     setLoading(true);
     try {
       const newMethods = paymentMethods.filter(pm => !pm.already_imported);
+      const paymentMethodIds = newMethods.map(pm => pm.id);
       
-      for (const pm of newMethods) {
-        const { error } = await supabase.functions.invoke('manual-sync-payment-method', {
-          body: {
-            customerId: customerId,
-            stripeCustomerId,
-            paymentMethodId: pm.id
-          }
+      if (paymentMethodIds.length === 0) {
+        toast({
+          title: 'No New Payment Methods',
+          description: 'All payment methods have already been imported.',
         });
+        setLoading(false);
+        return;
+      }
 
-        if (error) {
-          console.error(`Failed to import payment method ${pm.id}:`, error);
+      const { error } = await supabase.functions.invoke('import-stripe-payment-methods', {
+        body: {
+          customerId: customerId,
+          stripeCustomerId,
+          paymentMethodIds: paymentMethodIds,
+          setFirstAsDefault: false
         }
+      });
+
+      if (error) {
+        console.error('Failed to import payment methods:', error);
+        throw new Error(error.message || 'Failed to import payment methods');
       }
 
       toast({
         title: 'Payment Methods Imported',
-        description: `Successfully imported ${newMethods.length} payment method(s) for ${customerName}.`,
+        description: `Successfully imported ${paymentMethodIds.length} payment method(s) for ${customerName}.`,
       });
       
       fetchPaymentMethods();
