@@ -109,8 +109,9 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       
       setTotalHours(booking.total_hours || 0);
       setTotalCost(booking.total_cost || 0);
-      // Properly convert same_day to boolean (handles both string and boolean values)
-      setIsSameDay(booking.same_day === true || booking.same_day === 'true');
+      // Only allow same_day for Airbnb bookings
+      const isAirbnbBooking = booking.service_type === 'Air BnB' || booking.cleaning_type === 'Air BnB';
+      setIsSameDay(isAirbnbBooking && (booking.same_day === true || booking.same_day === 'true'));
       
       // Find matching address
       const matchingAddress = addresses.find(addr => 
@@ -185,6 +186,10 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       const newDateTime = new Date(selectedDate);
       newDateTime.setHours(parseInt(selectedHour), parseInt(selectedMinute), 0, 0);
 
+      // Ensure same_day is only saved for Airbnb bookings
+      const isAirbnbBooking = booking.service_type === 'Air BnB' || booking.cleaning_type === 'Air BnB';
+      const finalSameDay = isAirbnbBooking ? isSameDay : false;
+
       const { error } = await supabase
         .from('bookings')
         .update({
@@ -193,7 +198,7 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
           total_cost: totalCost,
           address: addressData.address,
           postcode: addressData.postcode,
-          same_day: isSameDay,
+          same_day: finalSameDay,
           access: formData.access,
           additional_details: formData.additional_details
         })
@@ -293,32 +298,34 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
             </div>
           </div>
 
-          {/* Same Day Cleaning Option */}
-          <div className="space-y-3 p-4 border border-orange-200 rounded-lg bg-orange-50/50">
-            <div className="flex items-start gap-3">
-              <Checkbox
-                id="same-day"
-                checked={isSameDay}
-                onCheckedChange={(checked) => setIsSameDay(checked as boolean)}
-                className="mt-0.5"
-              />
-              <div className="flex-1">
-                <Label htmlFor="same-day" className="text-sm font-semibold text-[#185166] cursor-pointer">
-                  Same Day Cleaning (+£3 per hour)
-                </Label>
-                {isSameDay && (
-                  <div className="flex items-start gap-2 mt-2">
-                    <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
-                    <p className="text-xs text-gray-600 leading-relaxed">
-                      Same day bookings require immediate scheduling and coordination which involves additional 
-                      management complexity. The £3 per hour surcharge covers urgent staff allocation, 
-                      priority scheduling, and expedited service preparation to ensure your cleaning is completed today.
-                    </p>
-                  </div>
-                )}
+          {/* Same Day Cleaning Option - Only for Airbnb */}
+          {(booking.service_type === 'Air BnB' || booking.cleaning_type === 'Air BnB') && (
+            <div className="space-y-3 p-4 border border-orange-200 rounded-lg bg-orange-50/50">
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="same-day"
+                  checked={isSameDay}
+                  onCheckedChange={(checked) => setIsSameDay(checked as boolean)}
+                  className="mt-0.5"
+                />
+                <div className="flex-1">
+                  <Label htmlFor="same-day" className="text-sm font-semibold text-[#185166] cursor-pointer">
+                    Same Day Cleaning (+£3 per hour)
+                  </Label>
+                  {isSameDay && (
+                    <div className="flex items-start gap-2 mt-2">
+                      <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-gray-600 leading-relaxed">
+                        Same day bookings require immediate scheduling and coordination which involves additional 
+                        management complexity. The £3 per hour surcharge covers urgent staff allocation, 
+                        priority scheduling, and expedited service preparation to ensure your cleaning is completed today.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Date and Time Selection */}
           <div className="space-y-4">
