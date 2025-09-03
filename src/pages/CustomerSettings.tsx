@@ -93,8 +93,14 @@ const CustomerSettings = () => {
     }
   };
 
-  if (!user || (!customerId && userRole !== 'admin')) {
+  if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Only redirect guests who aren't admin
+  if (userRole === 'guest' && !customerId) {
+    // For guest users without customer_id, we'll allow them to access settings
+    // The PaymentMethodManager will handle creating their customer record as needed
   }
 
   return (

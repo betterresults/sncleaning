@@ -238,48 +238,23 @@ const PaymentMethodManager = () => {
 
   // Show message if customer doesn't have a customer ID
   if (userRole !== 'admin' && !customerId) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Payment Methods
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Customer account setup incomplete</p>
-            <p className="text-sm">Please contact support to complete your account setup before adding payment methods.</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    // For customers without customer_id, we'll allow them to proceed
+    // The stripe-setup-intent function will handle creating their customer record
+    console.log('PaymentMethodManager: Customer has no customer_id, but allowing payment method creation');
   }
 
   const addPaymentMethod = async () => {
     if (!user) return;
     
-    // Check if we have a valid customer ID
-    if (!activeCustomerId) {
-      console.error('No customer ID available');
-      toast({
-        title: "Error",
-        description: "Customer ID not found. Please contact support.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     try {
       console.log('Starting payment method setup for customer:', activeCustomerId);
-      // Get Setup Intent from backend
+      // Get Setup Intent from backend - let stripe-setup-intent handle customer creation
       const { data, error } = await supabase.functions.invoke('stripe-setup-intent', {
         headers: {
           Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
         },
         body: {
-          customerId: activeCustomerId
+          customerId: activeCustomerId  // This can be null for new customers
         }
       });
 
