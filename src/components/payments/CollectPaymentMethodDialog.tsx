@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { CreditCard, Link, Mail } from 'lucide-react';
+import { CreditCard, Link, Mail, Search, Check, X } from 'lucide-react';
 
 interface CollectPaymentMethodDialogProps {
   open: boolean;
@@ -34,12 +34,91 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
 }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<'collect_only' | 'payment_link'>('collect_only');
+  const [mode, setMode] = useState<'search' | 'collect_only' | 'payment_link'>('search');
   const [amount, setAmount] = useState(booking?.total_cost?.toString() || '');
   const [description, setDescription] = useState(
     booking ? `${booking.cleaning_type} - ${booking.address}` : 'Cleaning Service Payment'
   );
   const [collectForFuture, setCollectForFuture] = useState(true);
+  const [searching, setSearching] = useState(false);
+  const [stripeCustomers, setStripeCustomers] = useState<any[]>([]);
+  const [searchCompleted, setSearchCompleted] = useState(false);
+
+  const handleSearchStripe = async () => {
+    setSearching(true);
+    setSearchCompleted(false);
+    try {
+      const { data, error } = await supabase.functions.invoke('search-stripe-customer', {
+        body: {
+          customerId: customer.id,
+          email: customer.email
+        }
+      });
+
+      if (error) throw error;
+
+      setStripeCustomers(data.customers || []);
+      setSearchCompleted(true);
+      
+      if (data.customers?.length > 0) {
+        toast({
+          title: 'Search Complete',
+          description: `Found ${data.customers.length} existing Stripe customer(s) with ${data.customers.reduce((total: number, c: any) => total + c.new_payment_methods, 0)} new payment methods available to import.`,
+        });
+      } else {
+        toast({
+          title: 'No Existing Customers Found',
+          description: 'No existing Stripe customers found for this email. You can collect a new payment method.',
+        });
+      }
+    } catch (error: any) {
+      console.error('Error searching Stripe:', error);
+      toast({
+        title: 'Search Error',
+        description: error.message || 'Failed to search Stripe customers',
+        variant: 'destructive',
+      });
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleImportPaymentMethods = async (stripeCustomerId: string, paymentMethods: any[]) => {
+    setLoading(true);
+    try {
+      const newMethods = paymentMethods.filter(pm => !pm.already_imported);
+      
+      for (const pm of newMethods) {
+        const { error } = await supabase.functions.invoke('manual-sync-payment-method', {
+          body: {
+            customerId: customer.id,
+            stripeCustomerId,
+            paymentMethodId: pm.id
+          }
+        });
+
+        if (error) {
+          console.error(`Failed to import payment method ${pm.id}:`, error);
+        }
+      }
+
+      toast({
+        title: 'Payment Methods Imported',
+        description: `Successfully imported ${newMethods.length} payment method(s) for ${customer.first_name} ${customer.last_name}.`,
+      });
+      
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error('Error importing payment methods:', error);
+      toast({
+        title: 'Import Error',
+        description: error.message || 'Failed to import payment methods',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCollectPaymentMethod = async () => {
     setLoading(true);
@@ -138,26 +217,111 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
             <p className="text-sm text-muted-foreground">{customer.email}</p>
           </div>
 
-          <div className="flex space-x-2">
+          <div className="grid grid-cols-3 gap-2">
+            <Button
+              variant={mode === 'search' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setMode('search')}
+            >
+              <Search className="h-4 w-4 mr-1" />
+              Search Stripe
+            </Button>
             <Button
               variant={mode === 'collect_only' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setMode('collect_only')}
-              className="flex-1"
             >
               <CreditCard className="h-4 w-4 mr-1" />
-              Collect Card Only
+              Collect New
             </Button>
             <Button
               variant={mode === 'payment_link' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setMode('payment_link')}
-              className="flex-1"
             >
               <Link className="h-4 w-4 mr-1" />
               Payment Link
             </Button>
           </div>
+
+          {mode === 'search' && (
+            <div className="space-y-4">
+              <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  Search for existing Stripe customers and import their saved payment methods instead of asking them to re-enter details.
+                </p>
+              </div>
+              
+              <Button
+                onClick={handleSearchStripe}
+                disabled={searching}
+                className="w-full"
+              >
+                <Search className={`h-4 w-4 mr-2 ${searching ? 'animate-spin' : ''}`} />
+                {searching ? 'Searching Stripe...' : `Search for ${customer.email} in Stripe`}
+              </Button>
+
+              {searchCompleted && stripeCustomers.length === 0 && (
+                <div className="text-center py-4 text-muted-foreground">
+                  <p>No existing Stripe customers found for this email.</p>
+                  <p className="text-sm">Use "Collect New" to create a new payment method.</p>
+                </div>
+              )}
+
+              {stripeCustomers.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-medium">Found Existing Stripe Customers:</h4>
+                  {stripeCustomers.map((stripeCustomer, index) => (
+                    <div key={stripeCustomer.stripe_customer_id} className="border rounded-lg p-3 space-y-2">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium">{stripeCustomer.name || 'No name'}</p>
+                          <p className="text-sm text-muted-foreground">{stripeCustomer.email}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Customer ID: {stripeCustomer.stripe_customer_id}
+                          </p>
+                        </div>
+                        <div className="text-right text-sm">
+                          <p>{stripeCustomer.total_payment_methods} total methods</p>
+                          <p className="text-green-600">{stripeCustomer.new_payment_methods} new available</p>
+                        </div>
+                      </div>
+                      
+                      {stripeCustomer.payment_methods.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium">Payment Methods:</p>
+                          {stripeCustomer.payment_methods.map((pm: any) => (
+                            <div key={pm.id} className="flex items-center justify-between text-sm bg-muted/30 p-2 rounded">
+                              <span>**** **** **** {pm.last4} ({pm.brand.toUpperCase()}) {pm.exp_month}/{pm.exp_year}</span>
+                              {pm.already_imported ? (
+                                <span className="text-green-600 flex items-center gap-1">
+                                  <Check className="h-3 w-3" />
+                                  Already imported
+                                </span>
+                              ) : (
+                                <span className="text-blue-600">Available to import</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {stripeCustomer.new_payment_methods > 0 && (
+                        <Button
+                          onClick={() => handleImportPaymentMethods(stripeCustomer.stripe_customer_id, stripeCustomer.payment_methods)}
+                          disabled={loading}
+                          size="sm"
+                          className="w-full"
+                        >
+                          {loading ? 'Importing...' : `Import ${stripeCustomer.new_payment_methods} Payment Method(s)`}
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {mode === 'payment_link' && (
             <>
@@ -209,21 +373,30 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
               Cancel
             </Button>
             <Button
-              onClick={mode === 'collect_only' ? handleCollectPaymentMethod : handleSendPaymentLink}
-              disabled={loading}
+              onClick={
+                mode === 'collect_only' ? handleCollectPaymentMethod : 
+                mode === 'payment_link' ? handleSendPaymentLink : 
+                handleSearchStripe
+              }
+              disabled={loading || searching || (mode === 'search' && !searchCompleted && stripeCustomers.length === 0)}
               className="flex-1"
             >
-              {loading ? (
-                'Creating...'
+              {loading || searching ? (
+                'Processing...'
               ) : mode === 'collect_only' ? (
                 <>
                   <CreditCard className="h-4 w-4 mr-1" />
                   Collect Card
                 </>
-              ) : (
+              ) : mode === 'payment_link' ? (
                 <>
                   <Mail className="h-4 w-4 mr-1" />
                   Send Payment Link
+                </>
+              ) : (
+                <>
+                  <Search className="h-4 w-4 mr-1" />
+                  Search Stripe
                 </>
               )}
             </Button>
