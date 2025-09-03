@@ -100,6 +100,11 @@ export const NotificationTestInterface = () => {
       setCustomers(customersResult.data || []);
       setBookings(bookingsResult.data || []);
       setCleaners(cleanersResult.data || []);
+      
+      console.log('Fetched data:');
+      console.log('Bookings:', bookingsResult.data);
+      console.log('Cleaners:', cleanersResult.data);
+      console.log('Customers:', customersResult.data);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
