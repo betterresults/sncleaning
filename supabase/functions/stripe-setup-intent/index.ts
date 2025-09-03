@@ -38,19 +38,18 @@ serve(async (req) => {
 
     let targetCustomerId = requestCustomerId;
 
-    // If no customerId provided in request, get it from user's profile
+    // If no customerId provided in request, try to get it from user's profile
     if (!targetCustomerId) {
-      const { data: profile, error: profileError } = await supabaseClient
+      const { data: profile } = await supabaseClient
         .from('profiles')
         .select('customer_id')
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle()
 
-      if (profileError || !profile?.customer_id) {
-        throw new Error('Customer profile not found')
+      if (profile?.customer_id) {
+        targetCustomerId = profile.customer_id;
       }
-      
-      targetCustomerId = profile.customer_id;
+      // If still no customer_id, we'll handle this as a new customer without a database record
     }
 
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY')
@@ -60,26 +59,45 @@ serve(async (req) => {
 
     let stripeCustomerId = null;
 
-    // Check if one exists for this customer
-    const { data: existingPaymentMethod } = await supabaseClient
-      .from('customer_payment_methods')
-      .select('stripe_customer_id')
-      .eq('customer_id', targetCustomerId)
-      .limit(1)
-      .maybeSingle()
+    // Check if one exists for this customer (only if we have a customer ID)
+    if (targetCustomerId) {
+      const { data: existingPaymentMethod } = await supabaseClient
+        .from('customer_payment_methods')
+        .select('stripe_customer_id')
+        .eq('customer_id', targetCustomerId)
+        .limit(1)
+        .maybeSingle()
 
-    if (existingPaymentMethod) {
-      stripeCustomerId = existingPaymentMethod.stripe_customer_id
-    } else {
-      // Create new Stripe customer
-      const { data: customer } = await supabaseClient
+      if (existingPaymentMethod) {
+        stripeCustomerId = existingPaymentMethod.stripe_customer_id
+      }
+    }
+
+    if (!stripeCustomerId) {
+      // Create new Stripe customer - try to get customer details, fallback to user auth info
+      let customerEmail = user.email;
+      let customerName = '';
+      let customerDbId = targetCustomerId;
+
+      // Try to get customer details from customers table (only if we have a customer ID)
+      const { data: customer } = targetCustomerId ? await supabaseClient
         .from('customers')
         .select('email, first_name, last_name')
         .eq('id', targetCustomerId)
-        .single()
+        .maybeSingle() : { data: null }
 
-      if (!customer) {
-        throw new Error('Customer not found')
+      if (customer) {
+        // Use customer data if available
+        customerEmail = customer.email || user.email;
+        customerName = `${customer.first_name || ''} ${customer.last_name || ''}`.trim();
+      } else {
+        // For new customers without a customer record, use auth user info
+        console.log('No customer record found, using auth user info for Stripe customer creation');
+        customerName = user.user_metadata?.first_name || user.user_metadata?.name || '';
+        if (user.user_metadata?.last_name) {
+          customerName += ` ${user.user_metadata.last_name}`;
+        }
+        customerName = customerName.trim();
       }
 
       const stripeCustomerResponse = await fetch('https://api.stripe.com/v1/customers', {
@@ -89,9 +107,10 @@ serve(async (req) => {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
-          email: customer.email || '',
-          name: `${customer.first_name || ''} ${customer.last_name || ''}`.trim(),
-          'metadata[customer_id]': targetCustomerId.toString(),
+          email: customerEmail || '',
+          name: customerName || 'Customer',
+          'metadata[customer_id]': customerDbId ? customerDbId.toString() : '',
+          'metadata[user_id]': user.id,
         }),
       })
 
