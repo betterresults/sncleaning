@@ -25,37 +25,51 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    console.log("Received request data");
     const { template_id, recipient_email, variables, is_test = false }: NotificationRequest = await req.json();
+    console.log("Parsed request:", { template_id, recipient_email, variables, is_test });
+
+    // Check if RESEND_API_KEY is available first
+    const apiKey = Deno.env.get("RESEND_API_KEY");
+    console.log("API key check:", apiKey ? "API key present" : "API key missing");
+    if (!apiKey) {
+      throw new Error("RESEND_API_KEY is not configured");
+    }
 
     // Get the email template
+    console.log("Fetching template with ID:", template_id);
     const { data: template, error: templateError } = await supabase
       .from('email_notification_templates')
       .select('*')
       .eq('id', template_id)
       .single();
 
-    if (templateError || !template) {
+    if (templateError) {
+      console.error("Template fetch error:", templateError);
+      throw new Error(`Template fetch error: ${templateError.message}`);
+    }
+
+    if (!template) {
+      console.error("Template not found for ID:", template_id);
       throw new Error('Template not found');
     }
+
+    console.log("Template found:", template.subject);
 
     // Replace variables in subject and content
     let subject = template.subject;
     let htmlContent = template.html_content;
 
+    console.log("Processing variables:", Object.keys(variables));
     Object.entries(variables).forEach(([key, value]) => {
       const regex = new RegExp(`{{${key}}}`, 'g');
       subject = subject.replace(regex, value);
       htmlContent = htmlContent.replace(regex, value);
     });
 
-    // Check if RESEND_API_KEY is available
-    const apiKey = Deno.env.get("RESEND_API_KEY");
-    if (!apiKey) {
-      throw new Error("RESEND_API_KEY is not configured");
-    }
-
+    console.log("Final subject:", subject);
     console.log("Sending email to:", recipient_email);
-    console.log("Subject:", subject);
 
     // Send email using Resend
     const emailResult = await resend.emails.send({
@@ -65,14 +79,15 @@ const handler = async (req: Request): Promise<Response> => {
       html: htmlContent,
     });
 
-    console.log("Email result:", emailResult);
+    console.log("Full Resend API response:", JSON.stringify(emailResult, null, 2));
 
     if (emailResult.error) {
-      console.error("Resend error:", emailResult.error);
-      throw new Error(`Failed to send email: ${emailResult.error.message}`);
+      console.error("Resend API error:", emailResult.error);
+      throw new Error(`Resend API error: ${emailResult.error.message}`);
     }
 
     if (!emailResult.data) {
+      console.error("No data returned from Resend API");
       throw new Error("No data returned from Resend API");
     }
 
