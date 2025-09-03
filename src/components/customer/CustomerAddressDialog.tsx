@@ -15,6 +15,7 @@ interface Address {
   address: string;
   postcode: string;
   is_default: boolean;
+  deatails?: string; // Note: keeping the original column name from database
 }
 
 interface PastBookingAddress {
@@ -36,7 +37,7 @@ const CustomerAddressDialog = ({ customerId, addressCount, onAddressChange, chil
   const [open, setOpen] = useState(false);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(false);
-  const [newAddress, setNewAddress] = useState({ address: '', postcode: '' });
+  const [newAddress, setNewAddress] = useState({ address: '', postcode: '', deatails: '' });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [pastBookingAddresses, setPastBookingAddresses] = useState<PastBookingAddress[]>([]);
@@ -141,7 +142,8 @@ const CustomerAddressDialog = ({ customerId, addressCount, onAddressChange, chil
   const handleImportFromPastBooking = (pastAddress: PastBookingAddress) => {
     setNewAddress({
       address: pastAddress.address,
-      postcode: pastAddress.postcode
+      postcode: pastAddress.postcode,
+      deatails: ''
     });
     toast({
       title: 'Address imported',
@@ -167,6 +169,7 @@ const CustomerAddressDialog = ({ customerId, addressCount, onAddressChange, chil
           customer_id: customerId,
           address: newAddress.address,
           postcode: newAddress.postcode,
+          deatails: newAddress.deatails || null,
           is_default: addresses.length === 0
         });
 
@@ -177,7 +180,7 @@ const CustomerAddressDialog = ({ customerId, addressCount, onAddressChange, chil
         description: 'Address added successfully'
       });
 
-      setNewAddress({ address: '', postcode: '' });
+      setNewAddress({ address: '', postcode: '', deatails: '' });
       fetchAddresses();
       setHasChanges(true);
     } catch (error) {
@@ -290,7 +293,8 @@ const CustomerAddressDialog = ({ customerId, addressCount, onAddressChange, chil
   const handleDuplicateAddress = (address: Address) => {
     setNewAddress({
       address: address.address,
-      postcode: address.postcode
+      postcode: address.postcode,
+      deatails: address.deatails || ''
     });
     toast({
       title: 'Address copied',
@@ -366,7 +370,7 @@ const CustomerAddressDialog = ({ customerId, addressCount, onAddressChange, chil
 
             <Separator />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="newAddress" className="text-sm font-medium">Address *</Label>
                 <Input
@@ -384,6 +388,16 @@ const CustomerAddressDialog = ({ customerId, addressCount, onAddressChange, chil
                   value={newAddress.postcode}
                   onChange={(e) => setNewAddress({ ...newAddress, postcode: e.target.value })}
                   placeholder="Enter postcode"
+                  className="border-primary/20 focus:border-primary"
+                />
+              </div>
+              <div>
+                <Label htmlFor="newDetails" className="text-sm font-medium">Details (Optional)</Label>
+                <Input
+                  id="newDetails"
+                  value={newAddress.deatails}
+                  onChange={(e) => setNewAddress({ ...newAddress, deatails: e.target.value })}
+                  placeholder="e.g., Parent's house, Office"
                   className="border-primary/20 focus:border-primary"
                 />
               </div>
@@ -458,7 +472,8 @@ interface AddressCardProps {
 const AddressCard = ({ address, isEditing, onEdit, onCancel, onSave, onSetAsDefault, onDelete, onDuplicate, loading, isOnlyAddress, hasMultipleAddresses }: AddressCardProps) => {
   const [editData, setEditData] = useState({
     address: address.address,
-    postcode: address.postcode
+    postcode: address.postcode,
+    deatails: address.deatails || ''
   });
 
   const handleSave = () => {
@@ -468,7 +483,8 @@ const AddressCard = ({ address, isEditing, onEdit, onCancel, onSave, onSetAsDefa
   const handleCancel = () => {
     setEditData({
       address: address.address,
-      postcode: address.postcode
+      postcode: address.postcode,
+      deatails: address.deatails || ''
     });
     onCancel();
   };
@@ -483,7 +499,7 @@ const AddressCard = ({ address, isEditing, onEdit, onCancel, onSave, onSetAsDefa
       
       {isEditing ? (
         <div className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label htmlFor={`edit-address-${address.id}`} className="text-sm font-medium">Address</Label>
               <Input
@@ -499,6 +515,16 @@ const AddressCard = ({ address, isEditing, onEdit, onCancel, onSave, onSetAsDefa
                 id={`edit-postcode-${address.id}`}
                 value={editData.postcode}
                 onChange={(e) => setEditData({ ...editData, postcode: e.target.value })}
+                className="border-primary/20 focus:border-primary"
+              />
+            </div>
+            <div>
+              <Label htmlFor={`edit-details-${address.id}`} className="text-sm font-medium">Details (Optional)</Label>
+              <Input
+                id={`edit-details-${address.id}`}
+                value={editData.deatails}
+                onChange={(e) => setEditData({ ...editData, deatails: e.target.value })}
+                placeholder="e.g., Parent's house, Office"
                 className="border-primary/20 focus:border-primary"
               />
             </div>
@@ -521,6 +547,9 @@ const AddressCard = ({ address, isEditing, onEdit, onCancel, onSave, onSetAsDefa
         <div>
           <p className="font-medium text-foreground">{address.address}</p>
           <p className="text-sm text-muted-foreground">{address.postcode}</p>
+          {address.deatails && (
+            <p className="text-sm text-blue-600 font-medium mt-1">{address.deatails}</p>
+          )}
           <div className="flex justify-between items-center mt-4">
             <div className="flex gap-2">
               {hasMultipleAddresses && !address.is_default && (
