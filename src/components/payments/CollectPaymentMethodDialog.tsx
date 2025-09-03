@@ -102,12 +102,17 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
         }
       }
 
-      toast({
-        title: 'Payment Methods Imported',
-        description: `Successfully imported ${newMethods.length} payment method(s) for ${customer.first_name} ${customer.last_name}.`,
-      });
-      
-      onOpenChange(false);
+        toast({
+          title: 'Payment Methods Imported',
+          description: `Successfully imported ${newMethods.length} payment method(s) for ${customer.first_name} ${customer.last_name}.`,
+        });
+        
+        // Trigger page refresh to show updated payment method status
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+        
+        onOpenChange(false);
     } catch (error: any) {
       console.error('Error importing payment methods:', error);
       toast({
@@ -139,6 +144,12 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
           title: 'Email Sent Successfully',
           description: `Payment method collection link sent to ${customer.email}. Customer can securely add their card details.`,
         });
+        
+        // Auto-refresh after successful payment method collection
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+        
         onOpenChange(false);
       }
     } catch (error: any) {
@@ -187,6 +198,12 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
           title: 'Payment Link Created',
           description: `Payment link sent to ${customer.email}. Customer can pay £${amount}${collectForFuture ? ' and save their card for future invoices' : ''}.`,
         });
+        
+        // Auto-refresh after successful payment link creation
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+        
         onOpenChange(false);
       }
     } catch (error: any) {
@@ -258,7 +275,7 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
                 className="w-full"
               >
                 <Search className={`h-4 w-4 mr-2 ${searching ? 'animate-spin' : ''}`} />
-                {searching ? 'Searching Stripe...' : `Search for ${customer.email} in Stripe`}
+                {searching ? 'Searching Stripe...' : `Search in Stripe for ${customer.first_name} ${customer.last_name}`}
               </Button>
 
               {searchCompleted && stripeCustomers.length === 0 && (

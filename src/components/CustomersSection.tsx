@@ -7,6 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Edit, Trash2, Search } from 'lucide-react';
 import { CustomerAccountActions } from '@/components/admin/CustomerAccountActions';
+import PaymentMethodStatusIcon from '@/components/customer/PaymentMethodStatusBadge';
+import { CollectPaymentMethodDialog } from '@/components/payments/CollectPaymentMethodDialog';
+import { useCustomerPaymentMethods } from '@/hooks/useCustomerPaymentMethods';
 
 interface CustomerData {
   id: number;
@@ -36,6 +39,8 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
   const [editingCustomer, setEditingCustomer] = useState<number | null>(null);
   const [editCustomerData, setEditCustomerData] = useState<Partial<CustomerData>>({});
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCustomerForPayment, setSelectedCustomerForPayment] = useState<CustomerData | null>(null);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
     firstName: '',
     lastName: '',
@@ -45,6 +50,7 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
     postcode: ''
   });
   const { toast } = useToast();
+  const { paymentData, loading: paymentDataLoading } = useCustomerPaymentMethods(customers.map(c => c.id));
 
   const fetchCustomers = async () => {
     try {
@@ -450,6 +456,14 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
                         onAccountCreated={fetchCustomers}
                       />
                       <div className="flex gap-2">
+                        <PaymentMethodStatusIcon
+                          paymentMethodCount={paymentData[customer.id]?.payment_method_count || 0}
+                          hasStripeAccount={paymentData[customer.id]?.has_stripe_account || false}
+                          onClick={() => {
+                            setSelectedCustomerForPayment(customer);
+                            setShowPaymentDialog(true);
+                          }}
+                        />
                         <Button
                           onClick={() => startEditingCustomer(customer)}
                           variant="outline"
@@ -477,6 +491,15 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
           </div>
         )}
       </div>
+      
+      {/* Payment Method Dialog */}
+      {selectedCustomerForPayment && (
+        <CollectPaymentMethodDialog
+          open={showPaymentDialog}
+          onOpenChange={setShowPaymentDialog}
+          customer={selectedCustomerForPayment}
+        />
+      )}
     </div>
   );
 };
