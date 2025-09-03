@@ -24,6 +24,7 @@ interface Address {
   address: string;
   postcode: string;
   is_default: boolean;
+  deatails?: string; // Note: keeping the original column name from database
 }
 
 interface PastBookingAddress {
@@ -45,7 +46,7 @@ const AddressManager = () => {
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newAddress, setNewAddress] = useState({ address: '', postcode: '' });
+  const [newAddress, setNewAddress] = useState({ address: '', postcode: '', deatails: '' });
   const [pastBookingAddresses, setPastBookingAddresses] = useState<PastBookingAddress[]>([]);
   const [loadingPastAddresses, setLoadingPastAddresses] = useState(false);
 
@@ -109,6 +110,7 @@ const AddressManager = () => {
           customer_id: activeCustomerId,
           address: newAddress.address,
           postcode: newAddress.postcode,
+          deatails: newAddress.deatails || null,
           is_default: addresses.length === 0 // First address becomes default
         });
 
@@ -119,7 +121,7 @@ const AddressManager = () => {
         description: 'Address added successfully'
       });
 
-      setNewAddress({ address: '', postcode: '' });
+      setNewAddress({ address: '', postcode: '', deatails: '' });
       setIsAddDialogOpen(false);
       fetchAddresses();
     } catch (error) {
@@ -272,7 +274,8 @@ const AddressManager = () => {
   const handleImportFromPastBooking = (pastAddress: PastBookingAddress) => {
     setNewAddress({
       address: pastAddress.address,
-      postcode: pastAddress.postcode
+      postcode: pastAddress.postcode,
+      deatails: ''
     });
   };
 
@@ -366,6 +369,15 @@ const AddressManager = () => {
                     placeholder="Enter postcode"
                   />
                 </div>
+                <div>
+                  <Label htmlFor="newDetails">Details (Optional)</Label>
+                  <Input
+                    id="newDetails"
+                    value={newAddress.deatails}
+                    onChange={(e) => setNewAddress({ ...newAddress, deatails: e.target.value })}
+                    placeholder="e.g., Parent's house, Office, etc."
+                  />
+                </div>
                 <div className="flex justify-end space-x-2">
                   <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                     Cancel
@@ -420,7 +432,8 @@ interface AddressCardProps {
 const AddressCard = ({ address, isEditing, onEdit, onCancel, onSave, onDelete, loading }: AddressCardProps) => {
   const [editData, setEditData] = useState({
     address: address.address,
-    postcode: address.postcode
+    postcode: address.postcode,
+    deatails: address.deatails || ''
   });
 
   const handleSave = () => {
@@ -430,7 +443,8 @@ const AddressCard = ({ address, isEditing, onEdit, onCancel, onSave, onDelete, l
   const handleCancel = () => {
     setEditData({
       address: address.address,
-      postcode: address.postcode
+      postcode: address.postcode,
+      deatails: address.deatails || ''
     });
     onCancel();
   };
@@ -463,6 +477,16 @@ const AddressCard = ({ address, isEditing, onEdit, onCancel, onSave, onDelete, l
               className="border-gray-200 focus:border-[#18A5A5] focus:ring-[#18A5A5]/20 rounded-xl"
             />
           </div>
+          <div>
+            <Label htmlFor={`edit-details-${address.id}`} className="text-sm font-medium text-[#185166]">Details (Optional)</Label>
+            <Input
+              id={`edit-details-${address.id}`}
+              value={editData.deatails}
+              onChange={(e) => setEditData({ ...editData, deatails: e.target.value })}
+              placeholder="e.g., Parent's house, Office, etc."
+              className="border-gray-200 focus:border-[#18A5A5] focus:ring-[#18A5A5]/20 rounded-xl"
+            />
+          </div>
           <div className="flex justify-end space-x-2">
             <Button 
               variant="outline" 
@@ -488,6 +512,9 @@ const AddressCard = ({ address, isEditing, onEdit, onCancel, onSave, onDelete, l
         <div>
           <p className="font-medium text-[#185166]">{address.address}</p>
           <p className="text-sm text-muted-foreground">{address.postcode}</p>
+          {address.deatails && (
+            <p className="text-sm text-blue-600 font-medium mt-1">{address.deatails}</p>
+          )}
           <div className="flex justify-end space-x-2 mt-3">
             <Button 
               variant="outline" 
