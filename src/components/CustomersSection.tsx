@@ -498,6 +498,7 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
           open={showPaymentDialog}
           onOpenChange={setShowPaymentDialog}
           customer={selectedCustomerForPayment}
+          onPaymentMethodsUpdated={fetchCustomers}
         />
       )}
     </div>

@@ -24,13 +24,15 @@ interface CollectPaymentMethodDialogProps {
     cleaning_type: string;
     address: string;
   };
+  onPaymentMethodsUpdated?: () => void;
 }
 
 export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProps> = ({
   open,
   onOpenChange,
   customer,
-  booking
+  booking,
+  onPaymentMethodsUpdated
 }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -87,32 +89,42 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
     setLoading(true);
     try {
       const newMethods = paymentMethods.filter(pm => !pm.already_imported);
+      const paymentMethodIds = newMethods.map(pm => pm.id);
       
-      for (const pm of newMethods) {
-        const { error } = await supabase.functions.invoke('manual-sync-payment-method', {
-          body: {
-            customerId: customer.id,
-            stripeCustomerId,
-            paymentMethodId: pm.id
-          }
+      if (paymentMethodIds.length === 0) {
+        toast({
+          title: 'No New Payment Methods',
+          description: 'All payment methods have already been imported.',
         });
-
-        if (error) {
-          console.error(`Failed to import payment method ${pm.id}:`, error);
-        }
+        setLoading(false);
+        return;
       }
 
-        toast({
-          title: 'Payment Methods Imported',
-          description: `Successfully imported ${newMethods.length} payment method(s) for ${customer.first_name} ${customer.last_name}.`,
-        });
-        
-        // Trigger page refresh to show updated payment method status
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
-        
-        onOpenChange(false);
+      const { error } = await supabase.functions.invoke('import-stripe-payment-methods', {
+        body: {
+          customerId: customer.id,
+          stripeCustomerId,
+          paymentMethodIds: paymentMethodIds,
+          setFirstAsDefault: false
+        }
+      });
+
+      if (error) {
+        console.error('Failed to import payment methods:', error);
+        throw new Error(error.message || 'Failed to import payment methods');
+      }
+
+      toast({
+        title: 'Payment Methods Imported',
+        description: `Successfully imported ${paymentMethodIds.length} payment method(s) for ${customer.first_name} ${customer.last_name}.`,
+      });
+      
+      // Refresh the customer data to show updated payment method status
+      if (onPaymentMethodsUpdated) {
+        onPaymentMethodsUpdated();
+      }
+      
+      onOpenChange(false);
     } catch (error: any) {
       console.error('Error importing payment methods:', error);
       toast({
@@ -144,11 +156,6 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
           title: 'Email Sent Successfully',
           description: `Payment method collection link sent to ${customer.email}. Customer can securely add their card details.`,
         });
-        
-        // Auto-refresh after successful payment method collection
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
         
         onOpenChange(false);
       }
@@ -198,11 +205,6 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
           title: 'Payment Link Created',
           description: `Payment link sent to ${customer.email}. Customer can pay £${amount}${collectForFuture ? ' and save their card for future invoices' : ''}.`,
         });
-        
-        // Auto-refresh after successful payment link creation
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
         
         onOpenChange(false);
       }

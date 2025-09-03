@@ -145,13 +145,9 @@ const CustomerPaymentDialog = ({
         description: `Successfully imported ${paymentMethodIds.length} payment method(s) for ${customerName}.`,
       });
       
-      fetchPaymentMethods();
+      // Refresh the data without reloading the page
+      await fetchPaymentMethods();
       onPaymentMethodsChange();
-      
-      // Auto-refresh after successful import
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
       
     } catch (error: any) {
       console.error('Error importing payment methods:', error);
@@ -185,11 +181,6 @@ const CustomerPaymentDialog = ({
           title: 'Add Payment Method',
           description: 'Customer will be redirected to securely add their payment method.',
         });
-        
-        // Auto-refresh after successful payment method collection
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
         
         onOpenChange(false);
       }
