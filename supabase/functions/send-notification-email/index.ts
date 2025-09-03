@@ -59,7 +59,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email using Resend
     const emailResult = await resend.emails.send({
-      from: 'SN Cleaning Services <no-reply@sncleaningservices.co.uk>',
+      from: 'SN Cleaning <noreply@notifications.sncleaningservices.co.uk>',
       to: [recipient_email],
       subject: subject,
       html: htmlContent,
