@@ -209,17 +209,6 @@ export const NotificationTestInterface = () => {
       }
     };
 
-    // Find cleaner - convert both to numbers to ensure proper matching
-    const cleanerId = Number(booking.cleaner);
-    const cleaner = cleanerId ? cleaners.find(c => Number(c.id) === cleanerId) : null;
-    
-    console.log('=== CLEANER DEBUGGING ===');
-    console.log('booking.cleaner (raw):', booking.cleaner);
-    console.log('cleanerId (converted):', cleanerId);
-    console.log('cleaners array:', cleaners);
-    console.log('found cleaner:', cleaner);
-    console.log('=========================');
-
     const actualVariables = {
       customer_name: `${customer.first_name} ${customer.last_name}`,
       customer_first_name: customer.first_name,
@@ -231,7 +220,6 @@ export const NotificationTestInterface = () => {
       address: booking.address || 'Address not specified',
       total_cost: booking.total_cost?.toString() || '0',
       booking_id: booking.id.toString(),
-      cleaner_name: cleaner ? `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim() || 'Cleaner name not available' : 'To be confirmed',
       photos_link: `${window.location.origin}/customer-photos?booking=${booking.id}`,
     };
 
