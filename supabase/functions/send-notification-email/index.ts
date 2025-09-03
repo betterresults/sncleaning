@@ -12,10 +12,17 @@ const corsHeaders = {
 };
 
 interface NotificationRequest {
-  template_id: string;
-  recipient_email: string;
+  template_id?: string;
+  recipient_email?: string;
   variables: Record<string, string>;
   is_test?: boolean;
+  // Legacy format support
+  to?: string;
+  subject?: string;
+  template?: string;
+  // Custom overrides
+  custom_subject?: string;
+  custom_content?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -27,8 +34,8 @@ const handler = async (req: Request): Promise<Response> => {
     const supabase = createClient(supabaseUrl, supabaseKey);
     
     console.log("Received request data");
-    const { template_id, recipient_email, variables, is_test = false }: NotificationRequest = await req.json();
-    console.log("Parsed request:", { template_id, recipient_email, variables, is_test });
+    const requestData: NotificationRequest = await req.json();
+    console.log("Raw request data:", requestData);
 
     // Check if RESEND_API_KEY is available first
     const apiKey = Deno.env.get("RESEND_API_KEY");
@@ -36,6 +43,39 @@ const handler = async (req: Request): Promise<Response> => {
     if (!apiKey) {
       throw new Error("RESEND_API_KEY is not configured");
     }
+
+    // Handle different request formats
+    let template_id = requestData.template_id;
+    let recipient_email = requestData.recipient_email || requestData.to;
+    let variables = requestData.variables || {};
+    let is_test = requestData.is_test || false;
+    let custom_subject = requestData.custom_subject || requestData.subject;
+    let custom_content = requestData.custom_content;
+
+    // Legacy format handling - if template is a string, try to find by name
+    if (!template_id && requestData.template) {
+      console.log("Looking up template by name:", requestData.template);
+      const { data: templateByName, error: nameError } = await supabase
+        .from('email_notification_templates')
+        .select('*')
+        .eq('name', requestData.template)
+        .single();
+      
+      if (!nameError && templateByName) {
+        template_id = templateByName.id;
+        console.log("Found template by name, ID:", template_id);
+      }
+    }
+
+    if (!template_id) {
+      throw new Error('No template specified or found');
+    }
+
+    if (!recipient_email) {
+      throw new Error('No recipient email specified');
+    }
+
+    console.log("Final params:", { template_id, recipient_email, custom_subject });
 
     // Get the email template
     console.log("Fetching template with ID:", template_id);
@@ -57,9 +97,9 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Template found:", template.subject);
 
-    // Replace variables in subject and content
-    let subject = template.subject;
-    let htmlContent = template.html_content;
+    // Use custom subject/content if provided, otherwise use template
+    let subject = custom_subject || template.subject;
+    let htmlContent = custom_content || template.html_content;
 
     console.log("Processing variables:", Object.keys(variables));
     Object.entries(variables).forEach(([key, value]) => {
