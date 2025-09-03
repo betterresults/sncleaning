@@ -74,8 +74,8 @@ const handler = async (req: Request): Promise<Response> => {
       customer: stripeCustomer.id,
       mode: 'setup',
       payment_method_types: ['card'],
-      success_url: return_url || `${origin}/auth?payment_method_added=true`,
-      cancel_url: return_url || `${origin}/auth?payment_method_cancelled=true`,
+      success_url: return_url || `${origin}/customer-settings?payment_method_added=true`,
+      cancel_url: return_url || `${origin}/customer-settings?payment_method_cancelled=true`,
       metadata: {
         customer_id: customer_id.toString(),
         setup_intent_id: setupIntent.id
