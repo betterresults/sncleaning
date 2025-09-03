@@ -78,6 +78,12 @@ const Auth = () => {
     const redirectParam = searchParams.get('redirect');
     const paymentSetup = searchParams.get('payment_setup');
     
+    // If user came from payment method setup, redirect to customer settings
+    const paymentMethodAdded = searchParams.get('payment_method_added');
+    if (paymentMethodAdded === 'true' && userRole === 'guest' && customerId) {
+      return <Navigate to="/customer-settings?payment_method_added=true" replace />;
+    }
+    
     // If user came from payment setup, redirect to appropriate dashboard after showing success
     // Don't prevent the redirect - let the normal flow handle it
     
