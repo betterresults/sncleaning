@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { CreditCard, Plus, Trash2, CheckCircle, Search, Check, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PaymentMethod {
   id: string;
@@ -41,6 +42,10 @@ const CustomerPaymentDialog = ({
   const [stripeCustomers, setStripeCustomers] = useState<any[]>([]);
   const [searchCompleted, setSearchCompleted] = useState(false);
   const { toast } = useToast();
+  const { user, userRole } = useAuth();
+  
+  // Check if current user is admin
+  const isAdmin = userRole === 'admin';
 
   useEffect(() => {
     if (open && customerId) {
@@ -267,7 +272,7 @@ const CustomerPaymentDialog = ({
             Customer: {customerName} ({customerEmail})
           </div>
 
-          {/* Mode Selection */}
+          {/* Mode Selection - Only show Search in Stripe for admins */}
           <div className="flex gap-2">
             <Button
               variant={mode === 'view' ? 'default' : 'outline'}
@@ -277,14 +282,16 @@ const CustomerPaymentDialog = ({
               <CreditCard className="h-4 w-4 mr-1" />
               View Methods
             </Button>
-            <Button
-              variant={mode === 'search' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setMode('search')}
-            >
-              <Search className="h-4 w-4 mr-1" />
-              Search in Stripe
-            </Button>
+            {isAdmin && (
+              <Button
+                variant={mode === 'search' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setMode('search')}
+              >
+                <Search className="h-4 w-4 mr-1" />
+                Search in Stripe
+              </Button>
+            )}
           </div>
 
           {mode === 'view' ? (
@@ -361,9 +368,9 @@ const CustomerPaymentDialog = ({
                 {loading ? 'Creating...' : 'Add New Payment Method'}
               </Button>
             </>
-          ) : (
+          ) : isAdmin ? (
             <>
-              {/* Search in Stripe Section */}
+              {/* Search in Stripe Section - Admin Only */}
               <div className="space-y-4">
                 <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
                   <p className="text-sm text-blue-800 dark:text-blue-200">
@@ -441,6 +448,14 @@ const CustomerPaymentDialog = ({
                 )}
               </div>
             </>
+          ) : (
+            // Non-admin users trying to access search mode - redirect to view mode
+            <div className="text-center py-4 text-muted-foreground">
+              <p>Search functionality is not available.</p>
+              <Button onClick={() => setMode('view')} size="sm" className="mt-2">
+                View Payment Methods
+              </Button>
+            </div>
           )}
 
           {/* Close Button */}
