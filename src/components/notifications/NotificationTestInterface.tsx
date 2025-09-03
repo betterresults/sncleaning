@@ -186,21 +186,26 @@ export const NotificationTestInterface = () => {
   const loadSampleData = (bookingId?: string) => {
     const booking = bookings.find(b => b.id.toString() === bookingId) || bookings[0];
     const customer = customers.find(c => c.id === booking?.customer) || customers[0];
-    const cleaner = booking?.cleaner ? cleaners.find(c => c.id === booking.cleaner) : null;
-
+    
     if (!booking || !customer) return;
 
     // Format service type properly
     const formatServiceType = (serviceType: string) => {
       switch (serviceType) {
         case 'Domestic': return 'Domestic Cleaning';
-        case 'Air BnB': return 'Airbnb Cleaning';
+        case 'Air BnB': return 'Airbnb Cleaning'; 
         case 'Standard Cleaning': return 'Standard Cleaning';
         default: return serviceType || 'Cleaning Service';
       }
     };
 
-    const sampleVariables = {
+    // Find cleaner using cleaner ID from booking
+    const cleaner = booking.cleaner ? cleaners.find(c => c.id === booking.cleaner) : null;
+    console.log('Booking cleaner ID:', booking.cleaner);
+    console.log('Found cleaner:', cleaner);
+    console.log('Available cleaners:', cleaners);
+
+    const actualVariables = {
       customer_name: `${customer.first_name} ${customer.last_name}`,
       customer_first_name: customer.first_name,
       customer_last_name: customer.last_name,
@@ -208,18 +213,18 @@ export const NotificationTestInterface = () => {
       booking_date: new Date(booking.date_time).toLocaleDateString(),
       booking_time: new Date(booking.date_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       service_type: formatServiceType(booking.service_type),
-      address: booking.address || 'Sample Address',
+      address: booking.address || 'Address not specified',
       total_cost: booking.total_cost?.toString() || '0',
       booking_id: booking.id.toString(),
       cleaner_name: cleaner ? `${cleaner.first_name} ${cleaner.last_name}` : 'To be assigned',
       photos_link: `${window.location.origin}/customer-photos?booking=${booking.id}`,
     };
 
-    // Replace all variables, not merge them
-    setVariables(sampleVariables);
+    // Replace all variables with actual booking data
+    setVariables(actualVariables);
     setTestEmail(customer.email);
     
-    console.log('Sample data loaded - new variables:', sampleVariables);
+    console.log('Actual booking variables loaded:', actualVariables);
   };
 
   const sendTestEmail = async () => {
