@@ -109,10 +109,10 @@ const CustomerDashboard = () => {
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
                       <div>
                         <p className="text-orange-700 mb-2">
-                          To make payments easier, please add a payment method to your account.
+                          We now use an automatic payment system. Please add a payment method for secure payments.
                         </p>
                         <p className="text-sm text-orange-600">
-                          This will help you pay for completed bookings and linen orders quickly and securely.
+                          This ensures seamless and secure transactions for all your bookings and services.
                         </p>
                       </div>
                       <Link to="/customer-settings?tab=payments">
