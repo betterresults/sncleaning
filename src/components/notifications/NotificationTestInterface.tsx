@@ -134,12 +134,52 @@ export const NotificationTestInterface = () => {
     setSelectedTemplate(templateId);
     
     if (template) {
-      // Initialize variables with empty values
+      // Initialize variables with default values
       const initialVariables: Record<string, string> = {};
       template.variables.forEach(variable => {
-        initialVariables[variable] = '';
+        switch (variable) {
+          case 'customer_name':
+            initialVariables[variable] = 'Sample Customer';
+            break;
+          case 'customer_first_name':
+            initialVariables[variable] = 'Sample';
+            break;
+          case 'customer_last_name':
+            initialVariables[variable] = 'Customer';
+            break;
+          case 'customer_email':
+            initialVariables[variable] = 'sample@example.com';
+            break;
+          case 'booking_date':
+            initialVariables[variable] = new Date().toLocaleDateString();
+            break;
+          case 'booking_time':
+            initialVariables[variable] = '10:00 AM';
+            break;
+          case 'service_type':
+            initialVariables[variable] = 'Domestic Cleaning';
+            break;
+          case 'address':
+            initialVariables[variable] = 'Sample Address';
+            break;
+          case 'cleaner_name':
+            initialVariables[variable] = 'To be assigned';
+            break;
+          case 'total_cost':
+            initialVariables[variable] = '50';
+            break;
+          case 'booking_id':
+            initialVariables[variable] = '12345';
+            break;
+          case 'photos_link':
+            initialVariables[variable] = `${window.location.origin}/customer-photos`;
+            break;
+          default:
+            initialVariables[variable] = `Sample ${variable}`;
+        }
       });
       setVariables(initialVariables);
+      console.log('Template variables initialized:', initialVariables);
     }
   };
 
