@@ -11,7 +11,7 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 
 // Initialize Stripe with your publishable key
-const stripePromise = loadStripe('pk_test_51PZ9ZqA2n6DFfbTrGY4CadMZLV2CQyTjgc6k6X2tiZFhW8aHwGaxuIDTOEZnXIY3Q48TNZS3yLVuoyQP4gcxhUUA00jD9Mjymb');
+const stripePromise = loadStripe('pk_live_51PZ9ZqA2n6DFfbTrTLLl88IeUPjKnwzJwsMI8Hsa4sjp7GrdNT8Ln0bWWrQNhqLAORlf3Xk1WhrHroZLPDHmdCK100vhGQzXID');
 
 interface PaymentMethod {
   id: string;
