@@ -109,10 +109,10 @@ const CustomerDashboard = () => {
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
                       <div>
                         <p className="text-orange-700 mb-2">
-                          We now use an automatic payment system. Please add a payment method for secure payments.
+                          We now use an automatic payment system. Please add a payment method to secure your bookings.
                         </p>
                         <p className="text-sm text-orange-600">
-                          This ensures seamless and secure transactions for all your bookings and services.
+                          This ensures seamless and secure transactions for all your services.
                         </p>
                       </div>
                       <Link to="/customer-settings?tab=payments">
