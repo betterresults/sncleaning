@@ -209,11 +209,16 @@ export const NotificationTestInterface = () => {
       }
     };
 
-    // Find cleaner using cleaner ID from booking
-    const cleaner = booking.cleaner ? cleaners.find(c => c.id === booking.cleaner) : null;
-    console.log('Booking cleaner ID:', booking.cleaner);
-    console.log('Found cleaner:', cleaner);
-    console.log('All available cleaners:', cleaners.map(c => ({ id: c.id, name: `${c.first_name} ${c.last_name}` })));
+    // Find cleaner - convert both to numbers to ensure proper matching
+    const cleanerId = Number(booking.cleaner);
+    const cleaner = cleanerId ? cleaners.find(c => Number(c.id) === cleanerId) : null;
+    
+    console.log('=== CLEANER DEBUGGING ===');
+    console.log('booking.cleaner (raw):', booking.cleaner);
+    console.log('cleanerId (converted):', cleanerId);
+    console.log('cleaners array:', cleaners);
+    console.log('found cleaner:', cleaner);
+    console.log('=========================');
 
     const actualVariables = {
       customer_name: `${customer.first_name} ${customer.last_name}`,
