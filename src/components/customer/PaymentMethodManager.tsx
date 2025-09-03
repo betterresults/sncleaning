@@ -201,19 +201,32 @@ const PaymentSetupForm = ({ onSuccess, onCancel, customerId }: {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="p-4 border border-gray-100 rounded-lg bg-gray-50">
-        <PaymentElement />
-      </div>
-      <div className="flex gap-2 justify-end">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={!stripe || isProcessing} className="bg-[#18A5A5] hover:bg-[#185166] text-white">
-          {isProcessing ? 'Processing...' : 'Add Payment Method'}
-        </Button>
-      </div>
-    </form>
+    <Elements 
+      stripe={stripePromise} 
+      options={{ 
+        clientSecret: clientSecret,
+        appearance: { 
+          theme: 'stripe',
+          variables: {
+            colorPrimary: '#18A5A5',
+          }
+        }
+      }}
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="p-4 border border-gray-100 rounded-lg bg-gray-50">
+          <PaymentElement />
+        </div>
+        <div className="flex gap-2 justify-end">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={!stripe || isProcessing} className="bg-[#18A5A5] hover:bg-[#185166] text-white">
+            {isProcessing ? 'Processing...' : 'Add Payment Method'}
+          </Button>
+        </div>
+      </form>
+    </Elements>
   );
 };
 
@@ -469,24 +482,11 @@ const PaymentMethodManager = () => {
                 Add Payment Method
               </DialogTitle>
             </DialogHeader>
-            <Elements 
-              stripe={stripePromise} 
-              options={{ 
-                clientSecret: '', // Will be set when ready
-                appearance: { 
-                  theme: 'stripe',
-                  variables: {
-                    colorPrimary: '#18A5A5',
-                  }
-                }
-              }}
-            >
-              <PaymentSetupForm
-                onSuccess={handleSetupSuccess}
-                onCancel={() => setShowSetupDialog(false)}
-                customerId={activeCustomerId}
-              />
-            </Elements>
+            <PaymentSetupForm
+              onSuccess={handleSetupSuccess}
+              onCancel={() => setShowSetupDialog(false)}
+              customerId={activeCustomerId}
+            />
           </DialogContent>
         </Dialog>
       </CardContent>
