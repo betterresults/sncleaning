@@ -191,6 +191,9 @@ export const NotificationTestInterface = () => {
 
     setSending(true);
     try {
+      // Debug: Log the variables being sent
+      console.log('Sending variables:', variables);
+      
       const { data, error } = await supabase.functions.invoke('send-notification-email', {
         body: {
           template_id: selectedTemplate,
