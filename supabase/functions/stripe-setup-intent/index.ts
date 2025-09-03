@@ -74,7 +74,7 @@ serve(async (req) => {
     }
 
     if (!stripeCustomerId) {
-      // Create new Stripe customer - try to get customer details, fallback to user auth info
+      // Get customer details first
       let customerEmail = user.email;
       let customerName = '';
       let customerDbId = targetCustomerId;
@@ -100,26 +100,47 @@ serve(async (req) => {
         customerName = customerName.trim();
       }
 
-      const stripeCustomerResponse = await fetch('https://api.stripe.com/v1/customers', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${stripeKey}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          email: customerEmail || '',
-          name: customerName || 'Customer',
-          'metadata[customer_id]': customerDbId ? customerDbId.toString() : '',
-          'metadata[user_id]': user.id,
-        }),
-      })
+      // FIRST: Check if a Stripe customer already exists for this email
+      const existingCustomerResponse = await fetch(
+        `https://api.stripe.com/v1/customers/search?query=email:"${encodeURIComponent(customerEmail || '')}"`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${stripeKey}`,
+          },
+        }
+      );
 
-      const stripeCustomer = await stripeCustomerResponse.json()
-      if (!stripeCustomerResponse.ok) {
-        throw new Error(`Stripe error: ${stripeCustomer.error?.message}`)
+      const existingCustomerData = await existingCustomerResponse.json();
+      
+      if (existingCustomerResponse.ok && existingCustomerData.data && existingCustomerData.data.length > 0) {
+        // Use existing Stripe customer
+        stripeCustomerId = existingCustomerData.data[0].id;
+        console.log('Found existing Stripe customer:', stripeCustomerId);
+      } else {
+        // Create new Stripe customer only if none exists
+        console.log('Creating new Stripe customer for email:', customerEmail);
+        const stripeCustomerResponse = await fetch('https://api.stripe.com/v1/customers', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${stripeKey}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            email: customerEmail || '',
+            name: customerName || 'Customer',
+            'metadata[customer_id]': customerDbId ? customerDbId.toString() : '',
+            'metadata[user_id]': user.id,
+          }),
+        })
+
+        const stripeCustomer = await stripeCustomerResponse.json()
+        if (!stripeCustomerResponse.ok) {
+          throw new Error(`Stripe error: ${stripeCustomer.error?.message}`)
+        }
+
+        stripeCustomerId = stripeCustomer.id
       }
-
-      stripeCustomerId = stripeCustomer.id
     }
 
     // Create Setup Intent

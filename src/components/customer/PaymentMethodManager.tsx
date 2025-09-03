@@ -268,7 +268,10 @@ const PaymentMethodManager = () => {
   const handleSetupSuccess = async () => {
     setShowSetupDialog(false);
     setSetupClientSecret('');
-    await fetchPaymentMethods();
+    // Small delay to prevent immediate re-render issues
+    setTimeout(() => {
+      fetchPaymentMethods();
+    }, 100);
   };
 
   const deletePaymentMethod = async (id: string) => {
@@ -422,7 +425,12 @@ const PaymentMethodManager = () => {
         </Button>
 
         {/* Payment Setup Dialog */}
-        <Dialog open={showSetupDialog} onOpenChange={setShowSetupDialog}>
+        <Dialog open={showSetupDialog} onOpenChange={(open) => {
+          if (!open) {
+            setSetupClientSecret('');
+          }
+          setShowSetupDialog(open);
+        }}>
           <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-xl font-semibold text-[#185166] flex items-center gap-2">
@@ -438,7 +446,10 @@ const PaymentMethodManager = () => {
                   <p className="text-sm text-muted-foreground">This will just take a moment</p>
                 </div>
                 <div className="flex justify-end">
-                  <Button type="button" variant="outline" onClick={() => setShowSetupDialog(false)}>
+                  <Button type="button" variant="outline" onClick={() => {
+                    setSetupClientSecret('');
+                    setShowSetupDialog(false);
+                  }}>
                     Cancel
                   </Button>
                 </div>
@@ -446,6 +457,7 @@ const PaymentMethodManager = () => {
             ) : (
               <Elements 
                 stripe={stripePromise} 
+                key={setupClientSecret} // Force re-mount when clientSecret changes
                 options={{ 
                   clientSecret: setupClientSecret,
                   appearance: { 
@@ -459,7 +471,10 @@ const PaymentMethodManager = () => {
                 <PaymentSetupForm
                   clientSecret={setupClientSecret}
                   onSuccess={handleSetupSuccess}
-                  onCancel={() => setShowSetupDialog(false)}
+                  onCancel={() => {
+                    setSetupClientSecret('');
+                    setShowSetupDialog(false);
+                  }}
                   customerId={activeCustomerId}
                 />
               </Elements>
