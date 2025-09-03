@@ -236,11 +236,43 @@ const PaymentMethodManager = () => {
     );
   }
 
+  // Show message if customer doesn't have a customer ID
+  if (userRole !== 'admin' && !customerId) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Payment Methods
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>Customer account setup incomplete</p>
+            <p className="text-sm">Please contact support to complete your account setup before adding payment methods.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const addPaymentMethod = async () => {
     if (!user) return;
     
+    // Check if we have a valid customer ID
+    if (!activeCustomerId) {
+      console.error('No customer ID available');
+      toast({
+        title: "Error",
+        description: "Customer ID not found. Please contact support.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
-      console.log('Starting payment method setup...');
+      console.log('Starting payment method setup for customer:', activeCustomerId);
       // Get Setup Intent from backend
       const { data, error } = await supabase.functions.invoke('stripe-setup-intent', {
         headers: {
