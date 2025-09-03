@@ -13,11 +13,15 @@ import AdminCustomerSelector from '@/components/admin/AdminCustomerSelector';
 import CustomerUpcomingBookings from '@/components/customer/CustomerUpcomingBookings';
 import { BulkPaymentDialog } from '@/components/customer/BulkPaymentDialog';
 import { useCustomerUnpaidBookings } from '@/hooks/useCustomerUnpaidBookings';
+import { usePaymentMethods } from '@/hooks/usePaymentMethods';
+import { AlertTriangle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const CustomerDashboard = () => {
   const { user, userRole, customerId, cleanerId, signOut } = useAuth();
   const { hasLinenAccess, loading: linenLoading } = useCustomerLinenAccess();
   const { unpaidBookings, loading: paymentsLoading, refetch: refetchPayments } = useCustomerUnpaidBookings();
+  const { paymentMethods, loading: paymentMethodsLoading } = usePaymentMethods();
   const [showBulkPayment, setShowBulkPayment] = useState(false);
   const isAdminViewing = userRole === 'admin';
 
@@ -56,6 +60,36 @@ const CustomerDashboard = () => {
           <main className="flex-1 p-2 sm:p-4 lg:p-6 w-full overflow-x-hidden">
             <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-6">
               {isAdminViewing && <AdminCustomerSelector />}
+              
+              {/* Payment Method Setup Notification - Only show for customers without payment methods */}
+              {userRole !== 'admin' && !paymentMethodsLoading && paymentMethods.length === 0 && (
+                <Card className="border-2 border-orange-200 bg-orange-50/30 shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-orange-800">
+                      <AlertTriangle className="h-6 w-6" />
+                      Payment Method Required
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
+                      <div>
+                        <p className="text-orange-700 mb-2">
+                          To make payments easier, please add a payment method to your account.
+                        </p>
+                        <p className="text-sm text-orange-600">
+                          This will help you pay for completed bookings and linen orders quickly and securely.
+                        </p>
+                      </div>
+                      <Link to="/customer-settings?tab=payments">
+                        <Button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors whitespace-nowrap">
+                          <CreditCard className="h-5 w-5 mr-2" />
+                          Add Payment Method
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
               
               {/* Outstanding Payments Card - Only show for customers with actual outstanding payments */}
               {userRole !== 'admin' && !paymentsLoading && unpaidBookings.length > 0 && (

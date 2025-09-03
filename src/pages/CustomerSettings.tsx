@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
@@ -22,7 +22,8 @@ const CustomerSettings = () => {
   const { user, userRole, customerId, cleanerId, signOut } = useAuth();
   const { hasLinenAccess } = useCustomerLinenAccess();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('personal');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState('account');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
@@ -93,6 +94,14 @@ const CustomerSettings = () => {
     }
   };
 
+  // Set active tab based on URL parameter
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['account', 'addresses', 'payments'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
@@ -128,7 +137,7 @@ const CustomerSettings = () => {
                   <p className="text-muted-foreground mt-2">Manage your account preferences and security</p>
                 </div>
 
-                <Tabs defaultValue="account" className="w-full">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-3 mb-8 bg-white border-gray-100 shadow-sm rounded-2xl p-2">
                     <TabsTrigger 
                       value="account" 
