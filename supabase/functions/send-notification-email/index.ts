@@ -48,16 +48,32 @@ const handler = async (req: Request): Promise<Response> => {
       htmlContent = htmlContent.replace(regex, value);
     });
 
+    // Check if RESEND_API_KEY is available
+    const apiKey = Deno.env.get("RESEND_API_KEY");
+    if (!apiKey) {
+      throw new Error("RESEND_API_KEY is not configured");
+    }
+
+    console.log("Sending email to:", recipient_email);
+    console.log("Subject:", subject);
+
     // Send email using Resend
     const emailResult = await resend.emails.send({
-      from: 'SN Cleaning Services <notifications@sncleaningservices.co.uk>',
+      from: 'SN Cleaning Services <no-reply@sncleaningservices.co.uk>',
       to: [recipient_email],
       subject: subject,
       html: htmlContent,
     });
 
+    console.log("Email result:", emailResult);
+
     if (emailResult.error) {
+      console.error("Resend error:", emailResult.error);
       throw new Error(`Failed to send email: ${emailResult.error.message}`);
+    }
+
+    if (!emailResult.data) {
+      throw new Error("No data returned from Resend API");
     }
 
     // Log the email if not a test
