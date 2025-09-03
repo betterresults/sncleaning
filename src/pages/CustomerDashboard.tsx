@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
@@ -13,17 +13,52 @@ import AdminCustomerSelector from '@/components/admin/AdminCustomerSelector';
 import CustomerUpcomingBookings from '@/components/customer/CustomerUpcomingBookings';
 import { BulkPaymentDialog } from '@/components/customer/BulkPaymentDialog';
 import { useCustomerUnpaidBookings } from '@/hooks/useCustomerUnpaidBookings';
-import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const CustomerDashboard = () => {
   const { user, userRole, customerId, cleanerId, signOut } = useAuth();
+  const { selectedCustomerId } = useAdminCustomer();
   const { hasLinenAccess, loading: linenLoading } = useCustomerLinenAccess();
   const { unpaidBookings, loading: paymentsLoading, refetch: refetchPayments } = useCustomerUnpaidBookings();
-  const { paymentMethods, loading: paymentMethodsLoading } = usePaymentMethods();
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [paymentMethodsLoading, setPaymentMethodsLoading] = useState(true);
   const [showBulkPayment, setShowBulkPayment] = useState(false);
   const isAdminViewing = userRole === 'admin';
+  
+  // Use selected customer ID if admin is viewing, otherwise use the logged-in user's customer ID  
+  const activeCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
+
+  // Fetch payment methods for the active customer
+  const fetchPaymentMethods = async () => {
+    if (!activeCustomerId) {
+      setPaymentMethodsLoading(false);
+      return;
+    }
+    
+    try {
+      setPaymentMethodsLoading(true);
+      const { data, error } = await supabase
+        .from('customer_payment_methods')
+        .select('*')
+        .eq('customer_id', activeCustomerId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setPaymentMethods(data || []);
+    } catch (error) {
+      console.error('Error fetching payment methods:', error);
+      setPaymentMethods([]);
+    } finally {
+      setPaymentMethodsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPaymentMethods();
+  }, [activeCustomerId]);
 
   console.log('CustomerDashboard render - hasLinenAccess:', hasLinenAccess, 'loading:', linenLoading);
 
@@ -61,8 +96,8 @@ const CustomerDashboard = () => {
             <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-6">
               {isAdminViewing && <AdminCustomerSelector />}
               
-              {/* Payment Method Setup Notification - Only show for customers without payment methods */}
-              {userRole !== 'admin' && !paymentMethodsLoading && paymentMethods.length === 0 && (
+              {/* Payment Method Setup Notification - Show for customers without payment methods (including admin viewing) */}
+              {!paymentMethodsLoading && paymentMethods.length === 0 && activeCustomerId && (
                 <Card className="border-2 border-orange-200 bg-orange-50/30 shadow-lg">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-orange-800">
