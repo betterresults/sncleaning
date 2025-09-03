@@ -231,6 +231,10 @@ const PaymentMethodManager = () => {
   const addPaymentMethod = async () => {
     if (!user) return;
     
+    // Show dialog immediately with loading state
+    setShowSetupDialog(true);
+    setSetupClientSecret(''); // Reset to trigger loading state
+    
     try {
       console.log('Starting payment method setup for customer:', activeCustomerId);
       // Get Setup Intent from backend - let stripe-setup-intent handle customer creation
@@ -250,7 +254,6 @@ const PaymentMethodManager = () => {
 
       console.log('Setup intent created:', data);
       setSetupClientSecret(data.clientSecret);
-      setShowSetupDialog(true);
     } catch (error) {
       console.error('Error adding payment method:', error);
       toast({
@@ -258,6 +261,7 @@ const PaymentMethodManager = () => {
         description: "Failed to add payment method",
         variant: "destructive",
       });
+      setShowSetupDialog(false); // Close dialog on error
     }
   };
 
@@ -426,7 +430,20 @@ const PaymentMethodManager = () => {
                 Add Payment Method
               </DialogTitle>
             </DialogHeader>
-            {setupClientSecret && (
+            {!setupClientSecret ? (
+              <div className="space-y-4">
+                <div className="p-8 text-center">
+                  <div className="animate-spin h-8 w-8 border-4 border-[#18A5A5] border-t-transparent rounded-full mx-auto mb-4"></div>
+                  <p className="text-[#185166] font-medium">Setting up payment form...</p>
+                  <p className="text-sm text-muted-foreground">This will just take a moment</p>
+                </div>
+                <div className="flex justify-end">
+                  <Button type="button" variant="outline" onClick={() => setShowSetupDialog(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
               <Elements 
                 stripe={stripePromise} 
                 options={{ 
