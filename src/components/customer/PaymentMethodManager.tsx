@@ -133,8 +133,11 @@ const PaymentMethodManager = () => {
 
       console.log('Payment method collection initiated, redirecting to:', data.checkout_url);
       
-      // Redirect to Stripe Checkout
-      window.location.href = data.checkout_url;
+      // Open Stripe Checkout in a new tab
+      window.open(data.checkout_url, '_blank');
+      
+      // Reset loading state since user stays on current page
+      setIsAddingPaymentMethod(false);
       
     } catch (error) {
       console.error('Error adding payment method:', error);
