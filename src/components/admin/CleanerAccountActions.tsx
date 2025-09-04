@@ -77,10 +77,25 @@ export const CleanerAccountActions = ({ cleaner, onAccountCreated }: CleanerAcco
 
       if (data.success) {
         setHasAccount(true);
-        toast({
-          title: "🎉 Cleaner Account Created!",
-          description: `Welcome email sent to ${cleaner.email}`,
-        });
+        
+        // Check if account was created or linked
+        if (data.action === 'created' && data.temp_password) {
+          toast({
+            title: "🎉 Cleaner Account Created!",
+            description: `Welcome email sent to ${cleaner.email}`,
+          });
+        } else if (data.action === 'linked') {
+          toast({
+            title: "✅ Account Linked!",
+            description: `Existing account linked to ${cleaner.first_name} ${cleaner.last_name}`,
+          });
+        } else {
+          toast({
+            title: "✅ Account Ready!",
+            description: `Account setup completed for ${cleaner.email}`,
+          });
+        }
+        
         onAccountCreated?.();
       } else {
         throw new Error(data.error || 'Failed to create account');
