@@ -83,7 +83,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
       const date = new Date(dateTimeString);
       if (isNaN(date.getTime())) return '';
       
-      // Format as YYYY-MM-DDTHH:MM for datetime-local input
+      // Use local time instead of UTC to prevent timezone issues
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
@@ -93,6 +93,22 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
       return `${year}-${month}-${day}T${hours}:${minutes}`;
     } catch (error) {
       console.error('Error formatting date:', error);
+      return '';
+    }
+  };
+
+  // Convert datetime-local input to proper ISO string for database
+  const convertToISOString = (dateTimeLocal: string) => {
+    if (!dateTimeLocal) return '';
+    try {
+      // Create date object from local datetime input
+      const date = new Date(dateTimeLocal);
+      if (isNaN(date.getTime())) return '';
+      
+      // Return as ISO string which will be stored correctly in the database
+      return date.toISOString();
+    } catch (error) {
+      console.error('Error converting datetime:', error);
       return '';
     }
   };
@@ -208,7 +224,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
           phone_number: formData.phoneNumber,
           address: formData.address,
           postcode: formData.postcode,
-          date_time: formData.dateTime,
+          date_time: convertToISOString(formData.dateTime),
           total_hours: formData.totalHours,
           total_cost: formData.totalCost,
           cleaner_pay: formData.cleanerPay,
