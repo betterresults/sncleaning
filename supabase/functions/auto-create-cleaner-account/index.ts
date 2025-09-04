@@ -20,14 +20,34 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    console.log('Starting cleaner account creation process');
+    
+    // Check for required environment variables
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const resendKey = Deno.env.get('RESEND_API_KEY');
+    
+    console.log('Environment check:', {
+      hasSupabaseUrl: !!supabaseUrl,
+      hasSupabaseKey: !!supabaseKey,
+      hasResendKey: !!resendKey
+    });
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Missing Supabase environment variables');
+      return new Response(JSON.stringify({ error: 'Server configuration error' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
 
     const { cleaner_id, send_email = true }: CreateCleanerAccountRequest = await req.json();
+    console.log('Request data:', { cleaner_id, send_email });
 
     // Get cleaner details
+    console.log('Fetching cleaner details for ID:', cleaner_id);
     const { data: cleaner, error: cleanerError } = await supabaseAdmin
       .from('cleaners')
       .select('*')
@@ -35,13 +55,17 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     if (cleanerError || !cleaner) {
+      console.error('Cleaner not found:', cleanerError);
       return new Response(JSON.stringify({ error: 'Cleaner not found' }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+    
+    console.log('Found cleaner:', { id: cleaner.id, email: cleaner.email });
 
     // Check if account already exists
+    console.log('Checking for existing profile');
     const { data: existingProfile } = await supabaseAdmin
       .from('profiles')
       .select('user_id')
@@ -49,6 +73,7 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     if (existingProfile) {
+      console.log('Account already exists for cleaner');
       return new Response(JSON.stringify({ 
         error: 'Account already exists for this cleaner',
         user_id: existingProfile.user_id 
@@ -59,9 +84,11 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Generate a temporary password
+    console.log('Generating temporary password');
     const tempPassword = Math.random().toString(36).slice(-12) + 'A1!';
 
     // Create user account
+    console.log('Creating user account in Supabase Auth');
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: cleaner.email,
       password: tempPassword,
@@ -80,8 +107,11 @@ const handler = async (req: Request): Promise<Response> => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+    
+    console.log('User created successfully:', authUser.user.id);
 
     // Update profile with cleaner_id
+    console.log('Updating profile with cleaner_id');
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .update({ cleaner_id: cleaner_id })
@@ -93,7 +123,11 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send welcome email if requested
     if (send_email) {
-      try {
+      console.log('Attempting to send welcome email');
+      if (!resendKey) {
+        console.warn('RESEND_API_KEY not configured, skipping email');
+      } else {
+        try {
         await resend.emails.send({
           from: "SN Cleaning Services <admin@sncleaningservices.co.uk>",
           to: [cleaner.email],
@@ -174,11 +208,14 @@ const handler = async (req: Request): Promise<Response> => {
             </div>
           `,
         });
-      } catch (emailError) {
-        console.error('Error sending email to cleaner:', emailError);
+        } catch (emailError) {
+          console.error('Error sending email to cleaner:', emailError);
+          // Don't fail the entire operation if email fails
+        }
       }
     }
-
+    
+    console.log('Cleaner account creation completed successfully');
     return new Response(JSON.stringify({
       success: true,
       cleaner_id,
@@ -192,7 +229,10 @@ const handler = async (req: Request): Promise<Response> => {
 
   } catch (error) {
     console.error('Error in auto-create-cleaner-account function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message || 'An unexpected error occurred',
+      details: error.toString()
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
