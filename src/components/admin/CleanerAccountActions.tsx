@@ -47,10 +47,16 @@ export const CleanerAccountActions = ({ cleaner, onAccountCreated }: CleanerAcco
         .from('profiles')
         .select('user_id')
         .eq('cleaner_id', cleaner.id)
-        .single();
+        .maybeSingle(); // Use maybeSingle() instead of single() to avoid error when no record exists
 
-      setHasAccount(!!data);
+      // If no error and data exists, account exists
+      if (!error && data) {
+        setHasAccount(true);
+      } else {
+        setHasAccount(false);
+      }
     } catch (error) {
+      console.error('Error checking cleaner account:', error);
       setHasAccount(false);
     } finally {
       setCheckingAccount(false);
