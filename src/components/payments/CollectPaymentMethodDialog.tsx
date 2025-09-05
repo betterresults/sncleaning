@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { CreditCard, Link, Mail, Search, Check, X } from 'lucide-react';
+import { EmailSentLogsDialog } from './EmailSentLogsDialog';
 
 interface CollectPaymentMethodDialogProps {
   open: boolean;
@@ -36,7 +37,7 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
 }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<'search' | 'collect_only' | 'payment_link'>('search');
+  const [mode, setMode] = useState<'search' | 'collect_only' | 'payment_link' | 'preview'>('search');
   const [amount, setAmount] = useState(booking?.total_cost?.toString() || '');
   const [description, setDescription] = useState(
     booking ? `${booking.cleaning_type} - ${booking.address}` : 'Cleaning Service Payment'
@@ -45,6 +46,8 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
   const [searching, setSearching] = useState(false);
   const [stripeCustomers, setStripeCustomers] = useState<any[]>([]);
   const [searchCompleted, setSearchCompleted] = useState(false);
+  const [emailPreview, setEmailPreview] = useState<{subject: string, content: string} | null>(null);
+  const [showEmailLogs, setShowEmailLogs] = useState(false);
 
   const handleSearchStripe = async () => {
     setSearching(true);
@@ -138,6 +141,71 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
   };
 
   const handleCollectPaymentMethod = async () => {
+    // First show email preview
+    await showEmailPreview();
+  };
+
+  const showEmailPreview = async () => {
+    try {
+      setLoading(true);
+      
+      // Get the email template
+      const { data: template, error } = await supabase
+        .from('email_notification_templates')
+        .select('*')
+        .eq('name', 'payment_method_collection')
+        .eq('is_active', true)
+        .single();
+
+      if (error) throw error;
+
+      if (!template) {
+        toast({
+          title: 'Error',
+          description: 'Payment method collection email template not found',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Prepare email variables
+      const variables = {
+        customer_name: `${customer.first_name} ${customer.last_name}`.trim(),
+        booking_date: booking?.address ? 'Service requested' : '',
+        address: booking?.address || '',
+        total_cost: booking?.total_cost?.toString() || '',
+        payment_link: '[Secure Payment Link - will be generated when sent]'
+      };
+
+      // Replace variables in subject and content
+      let previewSubject = template.subject;
+      let previewContent = template.html_content;
+      
+      Object.entries(variables).forEach(([key, value]) => {
+        const regex = new RegExp(`{{${key}}}`, 'g');
+        previewSubject = previewSubject.replace(regex, value);
+        previewContent = previewContent.replace(regex, value);
+      });
+
+      setEmailPreview({
+        subject: previewSubject,
+        content: previewContent
+      });
+      
+      setMode('preview');
+    } catch (error: any) {
+      console.error('Error preparing email preview:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to prepare email preview',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const confirmAndSendEmail = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('stripe-collect-payment-method', {
@@ -145,16 +213,22 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
           customer_id: customer.id,
           email: customer.email,
           name: `${customer.first_name} ${customer.last_name}`.trim(),
-          return_url: `https://account.sncleaningservices.co.uk/auth?payment_setup=success&redirect=customer`
+          return_url: `https://account.sncleaningservices.co.uk/auth?payment_setup=success&redirect=customer`,
+          booking_details: booking ? {
+            address: booking.address,
+            total_cost: booking.total_cost,
+            cleaning_type: booking.cleaning_type
+          } : null,
+          send_email: true
         }
       });
 
       if (error) throw error;
 
-      if (data.checkout_url) {
+      if (data.success) {
         toast({
           title: 'Email Sent Successfully',
-          description: `Payment method collection link sent to ${customer.email}. Customer can securely add their card details.`,
+          description: `Payment method collection email sent to ${customer.email}. Customer can securely add their card details.`,
         });
         
         onOpenChange(false);
@@ -163,7 +237,7 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
       console.error('Error collecting payment method:', error);
       toast({
         title: 'Error',
-        description: error.message || 'Failed to create payment method collection',
+        description: error.message || 'Failed to send payment method collection email',
         variant: 'destructive',
       });
     } finally {
@@ -236,7 +310,7 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
             <p className="text-sm text-muted-foreground">{customer.email}</p>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             <Button
               variant={mode === 'search' ? 'default' : 'outline'}
               size="sm"
@@ -261,6 +335,15 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
               <Link className="h-4 w-4 mr-1" />
               Payment Link
             </Button>
+            {mode === 'preview' && (
+              <Button
+                variant="default"
+                size="sm"
+                disabled
+              >
+                📧 Email Preview
+              </Button>
+            )}
           </div>
 
           {mode === 'search' && (
@@ -425,9 +508,24 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
             <p>• Payment method collection opens in a new tab</p>
             <p>• Customer enters card details securely via Stripe</p>
             <p>• Card is saved for future authorized payments</p>
+            <p>• 
+              <button 
+                onClick={() => setShowEmailLogs(true)}
+                className="text-blue-600 hover:underline"
+              >
+                View email history for this customer
+              </button>
+            </p>
           </div>
         </div>
       </DialogContent>
+
+      {/* Email Logs Dialog */}
+      <EmailSentLogsDialog
+        open={showEmailLogs}
+        onOpenChange={setShowEmailLogs}
+        customerEmail={customer.email}
+      />
     </Dialog>
   );
 };

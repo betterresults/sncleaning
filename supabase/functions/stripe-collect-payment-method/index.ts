@@ -13,6 +13,12 @@ interface CollectPaymentMethodRequest {
   email: string;
   name: string;
   return_url?: string;
+  booking_details?: {
+    address?: string;
+    total_cost?: number;
+    cleaning_type?: string;
+  };
+  send_email?: boolean;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -30,9 +36,9 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { customer_id, email, name, return_url }: CollectPaymentMethodRequest = await req.json();
+    const { customer_id, email, name, return_url, booking_details, send_email }: CollectPaymentMethodRequest = await req.json();
 
-    console.log('Collecting payment method for customer:', { customer_id, email, name });
+    console.log('Collecting payment method for customer:', { customer_id, email, name, send_email });
 
     // Check if Stripe customer exists
     let stripeCustomer;
@@ -84,12 +90,62 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Created Checkout Session:', checkoutSession.id);
 
+    // Send email if requested
+    if (send_email && checkoutSession.url) {
+      try {
+        // Get the email template
+        const { data: template, error: templateError } = await supabaseAdmin
+          .from('email_notification_templates')
+          .select('*')
+          .eq('name', 'payment_method_collection')
+          .eq('is_active', true)
+          .single();
+
+        if (!templateError && template) {
+          // Prepare email variables
+          const variables = {
+            customer_name: name,
+            booking_date: booking_details?.address ? 'Service requested' : '',
+            address: booking_details?.address || '',
+            total_cost: booking_details?.total_cost?.toString() || '',
+            payment_link: checkoutSession.url
+          };
+
+          // Send the email using the send-notification-email function
+          const emailResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-notification-email`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`
+            },
+            body: JSON.stringify({
+              template_id: template.id,
+              recipient_email: email,
+              variables: variables
+            })
+          });
+
+          if (emailResponse.ok) {
+            console.log('Payment method collection email sent successfully');
+          } else {
+            console.error('Failed to send payment method collection email');
+          }
+        } else {
+          console.error('Payment method collection template not found:', templateError);
+        }
+      } catch (emailError) {
+        console.error('Error sending payment method collection email:', emailError);
+        // Don't fail the entire request if email fails
+      }
+    }
+
     return new Response(JSON.stringify({
       success: true,
       checkout_url: checkoutSession.url,
       setup_intent_id: setupIntent.id,
       stripe_customer_id: stripeCustomer.id,
-      session_id: checkoutSession.id
+      session_id: checkoutSession.id,
+      email_sent: send_email || false
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
