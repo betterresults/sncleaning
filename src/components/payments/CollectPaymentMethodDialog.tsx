@@ -466,57 +466,104 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
             </>
           )}
 
-          <div className="flex space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={
-                mode === 'collect_only' ? handleCollectPaymentMethod : 
-                mode === 'payment_link' ? handleSendPaymentLink : 
-                handleSearchStripe
-              }
-              disabled={loading || searching || (mode === 'search' && !searchCompleted && stripeCustomers.length === 0)}
-              className="flex-1"
-            >
-              {loading || searching ? (
-                'Processing...'
-              ) : mode === 'collect_only' ? (
-                <>
-                  <CreditCard className="h-4 w-4 mr-1" />
-                  Collect Card
-                </>
-              ) : mode === 'payment_link' ? (
-                <>
-                  <Mail className="h-4 w-4 mr-1" />
-                  Send Payment Link
-                </>
-              ) : (
-                <>
-                  <Search className="h-4 w-4 mr-1" />
-                  Search Stripe
-                </>
-              )}
-            </Button>
-          </div>
+          {mode === 'preview' && emailPreview && (
+            <div className="space-y-4">
+              <div className="bg-green-50 dark:bg-green-950 p-3 rounded-lg">
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  📧 Email Preview - Review the email before sending
+                </p>
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-sm font-medium">Subject:</Label>
+                  <div className="bg-muted p-2 rounded text-sm mt-1">
+                    {emailPreview.subject}
+                  </div>
+                </div>
+                
+                <div>
+                  <Label className="text-sm font-medium">Email Content:</Label>
+                  <div className="bg-muted p-3 rounded text-sm mt-1 max-h-64 overflow-y-auto">
+                    <div dangerouslySetInnerHTML={{ __html: emailPreview.content }} />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex space-x-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setMode('collect_only')}
+                  className="flex-1"
+                >
+                  ← Back to Edit
+                </Button>
+                <Button
+                  onClick={confirmAndSendEmail}
+                  disabled={loading}
+                  className="flex-1"
+                >
+                  {loading ? 'Sending...' : '✓ Send Email'}
+                </Button>
+              </div>
+            </div>
+          )}
 
-          <div className="text-xs text-muted-foreground space-y-1">
-            <p>• Payment method collection opens in a new tab</p>
-            <p>• Customer enters card details securely via Stripe</p>
-            <p>• Card is saved for future authorized payments</p>
-            <p>• 
-              <button 
-                onClick={() => setShowEmailLogs(true)}
-                className="text-blue-600 hover:underline"
+          {mode !== 'preview' && (
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="flex-1"
               >
-                View email history for this customer
-              </button>
-            </p>
-          </div>
+                Cancel
+              </Button>
+              <Button
+                onClick={
+                  mode === 'collect_only' ? handleCollectPaymentMethod : 
+                  mode === 'payment_link' ? handleSendPaymentLink : 
+                  handleSearchStripe
+                }
+                disabled={loading || searching || (mode === 'search' && !searchCompleted && stripeCustomers.length === 0)}
+                className="flex-1"
+              >
+                {loading || searching ? (
+                  'Processing...'
+                ) : mode === 'collect_only' ? (
+                  <>
+                    <CreditCard className="h-4 w-4 mr-1" />
+                    Collect Card
+                  </>
+                ) : mode === 'payment_link' ? (
+                  <>
+                    <Mail className="h-4 w-4 mr-1" />
+                    Send Payment Link
+                  </>
+                ) : (
+                  <>
+                    <Search className="h-4 w-4 mr-1" />
+                    Search Stripe
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+
+          {mode !== 'preview' && (
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p>• Payment method collection opens in a new tab</p>
+              <p>• Customer enters card details securely via Stripe</p>
+              <p>• Card is saved for future authorized payments</p>
+              <p>• 
+                <button 
+                  onClick={() => setShowEmailLogs(true)}
+                  className="text-blue-600 hover:underline"
+                >
+                  View email history for this customer
+                </button>
+              </p>
+            </div>
+          )}
         </div>
       </DialogContent>
 
