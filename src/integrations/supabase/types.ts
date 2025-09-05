@@ -1814,7 +1814,9 @@ export type Database = {
         Returns: undefined
       }
       send_booking_notification: {
-        Args: { booking_id: number; event_type: string }
+        Args:
+          | { booking_id: number; event_type: string }
+          | { booking_id: number; event_type: string }
         Returns: undefined
       }
       send_email_notification: {
