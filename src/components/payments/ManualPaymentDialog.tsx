@@ -114,10 +114,9 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
       if (error) throw error;
 
       if (data.checkout_url) {
-        window.open(data.checkout_url, '_blank');
         toast({
-          title: 'Payment Method Collection Started',
-          description: 'Customer will be redirected to securely add their payment method.',
+          title: 'Email Sent Successfully',
+          description: `Payment method collection link sent to ${booking.email}. Customer can securely add their card details.`,
         });
         onClose();
       }
