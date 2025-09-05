@@ -18,6 +18,7 @@ interface CollectPaymentMethodRequest {
     total_cost?: number;
     cleaning_type?: string;
   };
+  collect_only?: boolean; // Flag to indicate collect-only mode (no booking)
   send_email?: boolean;
 }
 
@@ -36,9 +37,9 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { customer_id, email, name, return_url, booking_details, send_email }: CollectPaymentMethodRequest = await req.json();
+    const { customer_id, email, name, return_url, booking_details, collect_only, send_email }: CollectPaymentMethodRequest = await req.json();
 
-    console.log('Collecting payment method for customer:', { customer_id, email, name, send_email });
+    console.log('Collecting payment method for customer:', { customer_id, email, name, collect_only, send_email });
 
     // Check if Stripe customer exists
     let stripeCustomer;
@@ -102,12 +103,19 @@ const handler = async (req: Request): Promise<Response> => {
           .single();
 
         if (!templateError && template) {
-          // Prepare email variables
+          // Prepare email variables based on collect_only flag
+          const isCollectOnly = collect_only === true;
           const variables = {
             customer_name: name,
-            booking_date: booking_details?.address ? 'Service requested' : '',
-            address: booking_details?.address || '',
-            total_cost: booking_details?.total_cost?.toString() || '',
+            has_booking_data: (!isCollectOnly && booking_details) ? 'true' : '',
+            booking_date: (!isCollectOnly && booking_details?.address) ? new Date().toLocaleDateString('en-GB', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            }) : '',
+            address: (!isCollectOnly && booking_details?.address) ? booking_details.address : '',
+            total_cost: (!isCollectOnly && booking_details?.total_cost) ? booking_details.total_cost.toString() : '',
             payment_link: checkoutSession.url
           };
 

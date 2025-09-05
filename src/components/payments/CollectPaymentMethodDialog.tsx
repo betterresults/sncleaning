@@ -168,12 +168,19 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
         return;
       }
 
-      // Prepare email variables
+      // Prepare email variables based on mode
+      const isCollectOnly = mode === 'collect_only';
       const variables = {
         customer_name: `${customer.first_name} ${customer.last_name}`.trim(),
-        booking_date: booking?.address ? 'Service requested' : '',
-        address: booking?.address || '',
-        total_cost: booking?.total_cost?.toString() || '',
+        has_booking_data: !isCollectOnly && booking ? 'true' : '',
+        booking_date: !isCollectOnly && booking ? new Date().toLocaleDateString('en-GB', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        }) : '',
+        address: !isCollectOnly && booking?.address ? booking.address : '',
+        total_cost: !isCollectOnly && booking?.total_cost ? booking.total_cost.toString() : '',
         payment_link: '[Secure Payment Link - will be generated when sent]'
       };
 
@@ -186,6 +193,19 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
         previewSubject = previewSubject.replace(regex, value);
         previewContent = previewContent.replace(regex, value);
       });
+
+      // Handle handlebars conditionals for preview
+      if (!variables.has_booking_data) {
+        // Remove the booking details section for collect-only mode
+        previewContent = previewContent.replace(/{{#if has_booking_data}}[\s\S]*?{{\/if}}/g, '');
+        previewContent = previewContent.replace(/{{#unless has_booking_data}}/g, '');
+        previewContent = previewContent.replace(/{{\/unless}}/g, '');
+      } else {
+        // Remove the unless section for booking mode
+        previewContent = previewContent.replace(/{{#unless has_booking_data}}[\s\S]*?{{\/unless}}/g, '');
+        previewContent = previewContent.replace(/{{#if has_booking_data}}/g, '');
+        previewContent = previewContent.replace(/{{\/if}}/g, '');
+      }
 
       setEmailPreview({
         subject: previewSubject,
@@ -208,20 +228,21 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
   const confirmAndSendEmail = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('stripe-collect-payment-method', {
-        body: {
-          customer_id: customer.id,
-          email: customer.email,
-          name: `${customer.first_name} ${customer.last_name}`.trim(),
-          return_url: `https://account.sncleaningservices.co.uk/auth?payment_setup=success&redirect=customer`,
-          booking_details: booking ? {
-            address: booking.address,
-            total_cost: booking.total_cost,
-            cleaning_type: booking.cleaning_type
-          } : null,
-          send_email: true
-        }
-      });
+    const { data, error } = await supabase.functions.invoke('stripe-collect-payment-method', {
+      body: {
+        customer_id: customer.id,
+        email: customer.email,
+        name: `${customer.first_name} ${customer.last_name}`.trim(),
+        return_url: `https://account.sncleaningservices.co.uk/auth?payment_setup=success&redirect=customer`,
+        booking_details: booking ? {
+          address: booking.address,
+          total_cost: booking.total_cost,
+          cleaning_type: booking.cleaning_type
+        } : null,
+        collect_only: mode === 'collect_only', // Add flag to distinguish collect-only vs payment with booking
+        send_email: true
+      }
+    });
 
       if (error) throw error;
 
