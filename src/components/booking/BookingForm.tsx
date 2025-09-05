@@ -221,20 +221,48 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
         linen_used: formData.linenManagement && formData.linenUsed.length > 0 ? JSON.parse(JSON.stringify(formData.linenUsed)) : null
       };
 
+      console.log('BookingForm: Attempting to create booking with data:', bookingData);
+      
       const { data, error } = await supabase
         .from('bookings')
         .insert([bookingData])
         .select('id');
 
       if (error || !data?.[0]?.id) {
-        console.error('Error creating booking:', error);
+        console.error('Error creating booking:', {
+          error,
+          errorMessage: error?.message,
+          errorDetails: error?.details,
+          errorHint: error?.hint,
+          errorCode: error?.code,
+          bookingData,
+          returnedData: data
+        });
+        
+        let errorMessage = "Failed to create booking. Please try again.";
+        
+        // Provide more specific error messages based on the error
+        if (error?.message?.includes('violates foreign key constraint')) {
+          errorMessage = "Invalid customer or cleaner selected. Please check your selections.";
+        } else if (error?.message?.includes('violates not-null constraint')) {
+          errorMessage = "Missing required information. Please fill in all required fields.";
+        } else if (error?.message?.includes('violates check constraint')) {
+          errorMessage = "Invalid data format. Please check your entries.";
+        } else if (error?.message) {
+          errorMessage = `Database error: ${error.message}`;
+        } else if (!data?.[0]?.id) {
+          errorMessage = "Booking was not created - no ID returned from database.";
+        }
+        
         toast({
           title: "Error",
-          description: "Failed to create booking. Please try again.",
+          description: errorMessage,
           variant: "destructive",
         });
         return;
       }
+
+      console.log('BookingForm: Booking created successfully with ID:', data[0].id);
 
       // Save custom cleaner rate if different from default and this is a recurring booking
       if (formData.cleanerId && formData.cleanerHourlyRate && formData.recurringGroupId) {
