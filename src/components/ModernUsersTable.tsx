@@ -991,17 +991,21 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                               </CreateBookingDialogWithCustomer>
                             )}
                             {isCustomerView && (user.type === 'business_customer' || !user.type) && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  console.log('Collect payment clicked for:', user.first_name, user.last_name, 'user object:', user);
-                                  setCollectPaymentDialogUser(user);
-                                }}
-                                className="bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200"
-                              >
-                                <CreditCard className="h-4 w-4" />
-                              </Button>
+                              // Only show collect payment button if customer has no payment methods
+                              !paymentData[user.business_id || user.id]?.payment_method_count && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    console.log('Collect payment clicked for:', user.first_name, user.last_name, 'user object:', user);
+                                    setCollectPaymentDialogUser(user);
+                                  }}
+                                  className="bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200"
+                                  title="Collect Payment Method"
+                                >
+                                  <CreditCard className="h-4 w-4" />
+                                </Button>
+                              )
                             )}
                             {!isCustomerView && (
                               <>
