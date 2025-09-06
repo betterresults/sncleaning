@@ -54,6 +54,7 @@ import { useCustomerPaymentMethods } from '@/hooks/useCustomerPaymentMethods';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { CollectPaymentMethodDialog } from '@/components/payments/CollectPaymentMethodDialog';
+import CustomerDirectPaymentDialog from '@/components/payments/CustomerDirectPaymentDialog';
 
 interface UserData {
   id: string;
@@ -112,6 +113,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   // Payment management state
   const [selectedCustomerForPayment, setSelectedCustomerForPayment] = useState<UserData | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [showDirectPaymentDialog, setShowDirectPaymentDialog] = useState(false);
   
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -890,20 +892,26 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                                getCustomerTypeBadge(user)
                              )}
                            </TableCell>
-                            <TableCell>
-                              {user.type === 'business_customer' && user.business_id ? (
-                                <PaymentMethodStatusIcon
-                                  paymentMethodCount={paymentData[user.business_id]?.payment_method_count || 0}
-                                  hasStripeAccount={paymentData[user.business_id]?.has_stripe_account || false}
-                                  onClick={() => {
-                                    setSelectedCustomerForPayment(user);
-                                    setShowPaymentDialog(true);
-                                  }}
-                                />
-                              ) : (
-                                <span className="text-sm text-muted-foreground">–</span>
-                              )}
-                            </TableCell>
+                             <TableCell>
+                               {user.type === 'business_customer' && user.business_id ? (
+                                 <PaymentMethodStatusIcon
+                                   paymentMethodCount={paymentData[user.business_id]?.payment_method_count || 0}
+                                   hasStripeAccount={paymentData[user.business_id]?.has_stripe_account || false}
+                                   onClick={() => {
+                                     setSelectedCustomerForPayment(user);
+                                     // If customer has payment methods, open direct payment dialog
+                                     if (paymentData[user.business_id]?.payment_method_count > 0) {
+                                       setShowDirectPaymentDialog(true);
+                                     } else {
+                                       // If no payment methods, open payment methods management
+                                       setShowPaymentDialog(true);
+                                     }
+                                   }}
+                                 />
+                               ) : (
+                                 <span className="text-sm text-muted-foreground">–</span>
+                               )}
+                             </TableCell>
                            <TableCell>
                              {user.type === 'business_customer' ? (
                                <CustomerAddressDialog
@@ -1176,6 +1184,21 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
             first_name: collectPaymentDialogUser.first_name || '',
             last_name: collectPaymentDialogUser.last_name || '',
             email: collectPaymentDialogUser.email
+          }}
+        />
+      )}
+
+      {/* Direct Payment Dialog */}
+      {selectedCustomerForPayment && (
+        <CustomerDirectPaymentDialog
+          open={showDirectPaymentDialog}
+          onOpenChange={setShowDirectPaymentDialog}
+          customerId={Number(selectedCustomerForPayment.business_id || selectedCustomerForPayment.id)}
+          customerName={`${selectedCustomerForPayment.first_name} ${selectedCustomerForPayment.last_name}`}
+          customerEmail={selectedCustomerForPayment.email}
+          onPaymentSuccess={() => {
+            refetchPaymentData();
+            fetchUsers();
           }}
         />
       )}
