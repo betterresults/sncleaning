@@ -35,7 +35,8 @@ import {
   Plus,
   Trash2,
   UserPlus,
-  CreditCard
+  CreditCard,
+  FileText
 } from 'lucide-react';
 import {
   Select,
@@ -48,6 +49,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useNavigate } from 'react-router-dom';
 import CreateBookingDialogWithCustomer from '@/components/booking/CreateBookingDialogWithCustomer';
 import CustomerAddressDialog from '@/components/customer/CustomerAddressDialog';
+import CustomerDetailView from '@/components/customer/CustomerDetailView';
 import CustomerPaymentDialog from '@/components/customer/CustomerPaymentDialog';
 import PaymentMethodStatusIcon from '@/components/customer/PaymentMethodStatusBadge';
 import { useCustomerPaymentMethods } from '@/hooks/useCustomerPaymentMethods';
@@ -114,6 +116,9 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   const [selectedCustomerForPayment, setSelectedCustomerForPayment] = useState<UserData | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [showDirectPaymentDialog, setShowDirectPaymentDialog] = useState(false);
+  
+  // Customer detail view state
+  const [customerDetailView, setCustomerDetailView] = useState<UserData | null>(null);
   
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -975,6 +980,17 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                           </div>
                         ) : (
                           <div className="flex gap-2 justify-end">
+                            {isCustomerView && (user.type === 'business_customer' || !user.type) && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setCustomerDetailView(user)}
+                                className="bg-green-50 hover:bg-green-100 text-green-600 border-green-200"
+                                title="View Customer Details"
+                              >
+                                <FileText className="h-4 w-4" />
+                              </Button>
+                            )}
                             <Button
                               size="sm"
                               variant="outline"
@@ -1200,6 +1216,17 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
             refetchPaymentData();
             fetchUsers();
           }}
+        />
+      )}
+
+      {/* Customer Detail View */}
+      {customerDetailView && (
+        <CustomerDetailView
+          open={!!customerDetailView}
+          onOpenChange={(open) => !open && setCustomerDetailView(null)}
+          customerId={customerDetailView.business_id || parseInt(customerDetailView.id)}
+          customerName={`${customerDetailView.first_name || ''} ${customerDetailView.last_name || ''}`.trim()}
+          customerEmail={customerDetailView.email}
         />
       )}
       </Card>
