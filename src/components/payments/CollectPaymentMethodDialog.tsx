@@ -141,11 +141,13 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
   };
 
   const handleCollectPaymentMethod = async () => {
+    console.log('handleCollectPaymentMethod called', { customer, mode });
     // First show email preview
     await showEmailPreview();
   };
 
   const showEmailPreview = async () => {
+    console.log('showEmailPreview called', { customer, mode, booking });
     try {
       setLoading(true);
       
