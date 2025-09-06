@@ -128,15 +128,15 @@ serve(async (req) => {
 
       console.log('Found payment method:', paymentMethod)
 
-      // Create and confirm payment intent
+      // Create and confirm payment intent with automatic confirmation
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
         currency: 'gbp',
         customer: paymentMethod.stripe_customer_id,
         payment_method: payment_method_id,
-        confirmation_method: 'manual',
         confirm: true,
-        off_session: true,
+        off_session: true, // This ensures no 3D Secure or SMS verification
+        return_url: undefined, // No redirect needed
         description: description,
         metadata: {
           customer_id: customer_id.toString(),
