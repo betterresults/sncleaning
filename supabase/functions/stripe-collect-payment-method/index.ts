@@ -105,17 +105,55 @@ const handler = async (req: Request): Promise<Response> => {
         if (!templateError && template) {
           // Prepare email variables based on collect_only flag
           const isCollectOnly = collect_only === true;
+          const hasBookingData = !isCollectOnly && booking_details;
+          
+          // Process the HTML template to handle Handlebars conditionals
+          let processedHtml = template.html_content;
+          
+          // Handle {{#if has_booking_data}} block
+          if (hasBookingData) {
+            // Keep the booking data section
+            processedHtml = processedHtml.replace(/\{\{#if has_booking_data\}\}([\s\S]*?)\{\{\/if\}\}/, '$1');
+            // Remove the unless block
+            processedHtml = processedHtml.replace(/\{\{#unless has_booking_data\}\}[\s\S]*?\{\{\/unless\}\}/, '');
+          } else {
+            // Remove the booking data section
+            processedHtml = processedHtml.replace(/\{\{#if has_booking_data\}\}[\s\S]*?\{\{\/if\}\}/, '');
+            // Keep the unless block content
+            processedHtml = processedHtml.replace(/\{\{#unless has_booking_data\}\}([\s\S]*?)\{\{\/unless\}\}/, '$1');
+          }
+          
+          // Handle nested conditionals within the booking data block
+          const bookingDate = hasBookingData ? new Date().toLocaleDateString('en-GB', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          }) : '';
+          
+          if (hasBookingData && bookingDate) {
+            processedHtml = processedHtml.replace(/\{\{#if booking_date\}\}([\s\S]*?)\{\{\/if\}\}/, '$1');
+          } else {
+            processedHtml = processedHtml.replace(/\{\{#if booking_date\}\}[\s\S]*?\{\{\/if\}\}/, '');
+          }
+          
+          if (hasBookingData && booking_details?.address) {
+            processedHtml = processedHtml.replace(/\{\{#if address\}\}([\s\S]*?)\{\{\/if\}\}/, '$1');
+          } else {
+            processedHtml = processedHtml.replace(/\{\{#if address\}\}[\s\S]*?\{\{\/if\}\}/, '');
+          }
+          
+          if (hasBookingData && booking_details?.total_cost) {
+            processedHtml = processedHtml.replace(/\{\{#if total_cost\}\}([\s\S]*?)\{\{\/if\}\}/, '$1');
+          } else {
+            processedHtml = processedHtml.replace(/\{\{#if total_cost\}\}[\s\S]*?\{\{\/if\}\}/, '');
+          }
+
           const variables = {
             customer_name: name,
-            has_booking_data: (!isCollectOnly && booking_details) ? 'true' : '',
-            booking_date: (!isCollectOnly && booking_details?.address) ? new Date().toLocaleDateString('en-GB', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            }) : '',
-            address: (!isCollectOnly && booking_details?.address) ? booking_details.address : '',
-            total_cost: (!isCollectOnly && booking_details?.total_cost) ? booking_details.total_cost.toString() : '',
+            booking_date: bookingDate,
+            address: booking_details?.address || '',
+            total_cost: booking_details?.total_cost?.toString() || '',
             payment_link: checkoutSession.url
           };
 
@@ -129,7 +167,8 @@ const handler = async (req: Request): Promise<Response> => {
             body: JSON.stringify({
               template_id: template.id,
               recipient_email: email,
-              variables: variables
+              variables: variables,
+              custom_content: processedHtml
             })
           });
 
