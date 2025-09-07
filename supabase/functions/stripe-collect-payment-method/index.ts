@@ -113,18 +113,18 @@ const handler = async (req: Request): Promise<Response> => {
           // Handle {{#if has_booking_data}} block
           if (hasBookingData) {
             // Keep the booking data section
-            processedHtml = processedHtml.replace(/\{\{#if has_booking_data\}\}([\s\S]*?)\{\{\/if\}\}/, '$1');
+            processedHtml = processedHtml.replace(/\{\{#if has_booking_data\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
             // Remove the unless block
-            processedHtml = processedHtml.replace(/\{\{#unless has_booking_data\}\}[\s\S]*?\{\{\/unless\}\}/, '');
+            processedHtml = processedHtml.replace(/\{\{#unless has_booking_data\}\}[\s\S]*?\{\{\/unless\}\}/g, '');
           } else {
             // Remove the booking data section
-            processedHtml = processedHtml.replace(/\{\{#if has_booking_data\}\}[\s\S]*?\{\{\/if\}\}/, '');
+            processedHtml = processedHtml.replace(/\{\{#if has_booking_data\}\}[\s\S]*?\{\{\/if\}\}/g, '');
             // Keep the unless block content
-            processedHtml = processedHtml.replace(/\{\{#unless has_booking_data\}\}([\s\S]*?)\{\{\/unless\}\}/, '$1');
+            processedHtml = processedHtml.replace(/\{\{#unless has_booking_data\}\}([\s\S]*?)\{\{\/unless\}\}/g, '$1');
           }
           
           // Handle nested conditionals within the booking data block
-          const bookingDate = hasBookingData ? new Date().toLocaleDateString('en-GB', { 
+          const bookingDate = hasBookingData && booking_details?.date_time ? new Date(booking_details.date_time).toLocaleDateString('en-GB', { 
             weekday: 'long', 
             year: 'numeric', 
             month: 'long', 
@@ -132,22 +132,29 @@ const handler = async (req: Request): Promise<Response> => {
           }) : '';
           
           if (hasBookingData && bookingDate) {
-            processedHtml = processedHtml.replace(/\{\{#if booking_date\}\}([\s\S]*?)\{\{\/if\}\}/, '$1');
+            processedHtml = processedHtml.replace(/\{\{#if booking_date\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
           } else {
-            processedHtml = processedHtml.replace(/\{\{#if booking_date\}\}[\s\S]*?\{\{\/if\}\}/, '');
+            processedHtml = processedHtml.replace(/\{\{#if booking_date\}\}[\s\S]*?\{\{\/if\}\}/g, '');
           }
           
           if (hasBookingData && booking_details?.address) {
-            processedHtml = processedHtml.replace(/\{\{#if address\}\}([\s\S]*?)\{\{\/if\}\}/, '$1');
+            processedHtml = processedHtml.replace(/\{\{#if address\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
           } else {
-            processedHtml = processedHtml.replace(/\{\{#if address\}\}[\s\S]*?\{\{\/if\}\}/, '');
+            processedHtml = processedHtml.replace(/\{\{#if address\}\}[\s\S]*?\{\{\/if\}\}/g, '');
           }
           
           if (hasBookingData && booking_details?.total_cost) {
-            processedHtml = processedHtml.replace(/\{\{#if total_cost\}\}([\s\S]*?)\{\{\/if\}\}/, '$1');
+            processedHtml = processedHtml.replace(/\{\{#if total_cost\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
           } else {
-            processedHtml = processedHtml.replace(/\{\{#if total_cost\}\}[\s\S]*?\{\{\/if\}\}/, '');
+            processedHtml = processedHtml.replace(/\{\{#if total_cost\}\}[\s\S]*?\{\{\/if\}\}/g, '');
           }
+
+          // Replace all variable placeholders with actual values
+          processedHtml = processedHtml.replace(/\{\{customer_name\}\}/g, name);
+          processedHtml = processedHtml.replace(/\{\{booking_date\}\}/g, bookingDate);
+          processedHtml = processedHtml.replace(/\{\{address\}\}/g, booking_details?.address || '');
+          processedHtml = processedHtml.replace(/\{\{total_cost\}\}/g, booking_details?.total_cost?.toString() || '');
+          processedHtml = processedHtml.replace(/\{\{payment_link\}\}/g, checkoutSession.url);
 
           const variables = {
             customer_name: name,
