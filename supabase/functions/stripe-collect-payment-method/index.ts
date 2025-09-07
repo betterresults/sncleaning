@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import Handlebars from "https://cdn.skypack.dev/handlebars@4.7.8";
 
 
 const corsHeaders = {
@@ -17,6 +18,7 @@ interface CollectPaymentMethodRequest {
     address?: string;
     total_cost?: number;
     cleaning_type?: string;
+    date_time?: string;
   };
   collect_only?: boolean; // Flag to indicate collect-only mode (no booking)
   send_email?: boolean;
@@ -103,58 +105,30 @@ const handler = async (req: Request): Promise<Response> => {
           .single();
 
         if (!templateError && template) {
-          // Prepare email variables based on collect_only flag
+          // Prepare template variables
           const isCollectOnly = collect_only === true;
           const hasBookingData = !isCollectOnly && booking_details;
           
-          // Process the HTML template to handle Handlebars conditionals
-          let processedHtml = template.html_content;
-          
-          // Handle {{#if has_booking_data}} block
-          if (hasBookingData) {
-            // Keep the booking data section
-            processedHtml = processedHtml.replace(/\{\{#if has_booking_data\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
-            // Remove the unless block
-            processedHtml = processedHtml.replace(/\{\{#unless has_booking_data\}\}[\s\S]*?\{\{\/unless\}\}/g, '');
-          } else {
-            // Remove the booking data section
-            processedHtml = processedHtml.replace(/\{\{#if has_booking_data\}\}[\s\S]*?\{\{\/if\}\}/g, '');
-            // Keep the unless block content
-            processedHtml = processedHtml.replace(/\{\{#unless has_booking_data\}\}([\s\S]*?)\{\{\/unless\}\}/g, '$1');
-          }
-          
-          // Handle nested conditionals within the booking data block
-          const bookingDate = hasBookingData && booking_details?.date_time ? new Date(booking_details.date_time).toLocaleDateString('en-GB', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-          }) : '';
-          
-          if (hasBookingData && bookingDate) {
-            processedHtml = processedHtml.replace(/\{\{#if booking_date\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
-          } else {
-            processedHtml = processedHtml.replace(/\{\{#if booking_date\}\}[\s\S]*?\{\{\/if\}\}/g, '');
-          }
-          
-          if (hasBookingData && booking_details?.address) {
-            processedHtml = processedHtml.replace(/\{\{#if address\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
-          } else {
-            processedHtml = processedHtml.replace(/\{\{#if address\}\}[\s\S]*?\{\{\/if\}\}/g, '');
-          }
-          
-          if (hasBookingData && booking_details?.total_cost) {
-            processedHtml = processedHtml.replace(/\{\{#if total_cost\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
-          } else {
-            processedHtml = processedHtml.replace(/\{\{#if total_cost\}\}[\s\S]*?\{\{\/if\}\}/g, '');
-          }
+          const bookingDate = hasBookingData && booking_details?.date_time ? 
+            new Date(booking_details.date_time).toLocaleDateString('en-GB', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            }) : '';
 
-          // Replace all variable placeholders with actual values
-          processedHtml = processedHtml.replace(/\{\{customer_name\}\}/g, name);
-          processedHtml = processedHtml.replace(/\{\{booking_date\}\}/g, bookingDate);
-          processedHtml = processedHtml.replace(/\{\{address\}\}/g, booking_details?.address || '');
-          processedHtml = processedHtml.replace(/\{\{total_cost\}\}/g, booking_details?.total_cost?.toString() || '');
-          processedHtml = processedHtml.replace(/\{\{payment_link\}\}/g, checkoutSession.url);
+          // Compile template with Handlebars
+          const compiledTemplate = Handlebars.compile(template.html_content);
+          
+          // Render template with data
+          const processedHtml = compiledTemplate({
+            customer_name: name,
+            has_booking_data: hasBookingData,
+            booking_date: bookingDate || null,
+            address: booking_details?.address || null,
+            total_cost: booking_details?.total_cost || null,
+            payment_link: checkoutSession.url
+          });
 
           // Send the email using the send-notification-email function
           // Don't send variables when using custom_content to avoid double processing
