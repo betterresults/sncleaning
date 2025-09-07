@@ -164,6 +164,7 @@ export type Database = {
           remaining_days: string | null
           result_page: string | null
           same_day: boolean | null
+          send_notification_email: boolean | null
           service_type: string | null
           steam_cleaning_cost: string | null
           time_only: string | null
@@ -235,6 +236,7 @@ export type Database = {
           remaining_days?: string | null
           result_page?: string | null
           same_day?: boolean | null
+          send_notification_email?: boolean | null
           service_type?: string | null
           steam_cleaning_cost?: string | null
           time_only?: string | null
@@ -306,6 +308,7 @@ export type Database = {
           remaining_days?: string | null
           result_page?: string | null
           same_day?: boolean | null
+          send_notification_email?: boolean | null
           service_type?: string | null
           steam_cleaning_cost?: string | null
           time_only?: string | null
