@@ -140,10 +140,34 @@ const ManualEmailDialog = ({ open, onOpenChange, booking }: ManualEmailDialogPro
 
   const replaceVariables = (text: string, vars: Record<string, string>) => {
     let result = text;
+    
+    // Handle Handlebars conditionals first
+    const hasBookingData = vars.booking_date || vars.address || vars.total_cost;
+    
+    // Handle {{#if has_booking_data}} block
+    if (hasBookingData) {
+      result = result.replace(/\{\{#if has_booking_data\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
+      result = result.replace(/\{\{#unless has_booking_data\}\}[\s\S]*?\{\{\/unless\}\}/g, '');
+    } else {
+      result = result.replace(/\{\{#if has_booking_data\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+      result = result.replace(/\{\{#unless has_booking_data\}\}([\s\S]*?)\{\{\/unless\}\}/g, '$1');
+    }
+    
+    // Handle individual field conditionals
+    ['booking_date', 'address', 'total_cost', 'customer_name', 'payment_link'].forEach(field => {
+      if (vars[field]) {
+        result = result.replace(new RegExp(`\\{\\{#if ${field}\\}\\}([\\s\\S]*?)\\{\\{\\/if\\}\\}`, 'g'), '$1');
+      } else {
+        result = result.replace(new RegExp(`\\{\\{#if ${field}\\}\\}[\\s\\S]*?\\{\\{\\/if\\}\\}`, 'g'), '');
+      }
+    });
+    
+    // Replace simple variables
     Object.entries(vars).forEach(([key, value]) => {
       const regex = new RegExp(`{{${key}}}`, 'g');
       result = result.replace(regex, value || '');
     });
+    
     return result;
   };
 

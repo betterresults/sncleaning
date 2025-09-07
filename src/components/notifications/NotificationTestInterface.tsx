@@ -129,41 +129,27 @@ export const NotificationTestInterface = () => {
     
     // Handle {{#if has_booking_data}} block
     if (hasBookingData) {
-      // Keep the booking data section
       content = content.replace(/\{\{#if has_booking_data\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
-      // Remove the unless block
       content = content.replace(/\{\{#unless has_booking_data\}\}[\s\S]*?\{\{\/unless\}\}/g, '');
     } else {
-      // Remove the booking data section
       content = content.replace(/\{\{#if has_booking_data\}\}[\s\S]*?\{\{\/if\}\}/g, '');
-      // Keep the unless block content
       content = content.replace(/\{\{#unless has_booking_data\}\}([\s\S]*?)\{\{\/unless\}\}/g, '$1');
     }
     
-    // Handle other conditionals
-    if (variables.booking_date) {
-      content = content.replace(/\{\{#if booking_date\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
-    } else {
-      content = content.replace(/\{\{#if booking_date\}\}[\s\S]*?\{\{\/if\}\}/g, '');
-    }
-    
-    if (variables.address) {
-      content = content.replace(/\{\{#if address\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
-    } else {
-      content = content.replace(/\{\{#if address\}\}[\s\S]*?\{\{\/if\}\}/g, '');
-    }
-    
-    if (variables.total_cost) {
-      content = content.replace(/\{\{#if total_cost\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
-    } else {
-      content = content.replace(/\{\{#if total_cost\}\}[\s\S]*?\{\{\/if\}\}/g, '');
-    }
+    // Handle individual field conditionals properly
+    ['booking_date', 'address', 'total_cost', 'customer_name', 'payment_link'].forEach(field => {
+      if (variables[field]) {
+        content = content.replace(new RegExp(`\\{\\{#if ${field}\\}\\}([\\s\\S]*?)\\{\\{\\/if\\}\\}`, 'g'), '$1');
+      } else {
+        content = content.replace(new RegExp(`\\{\\{#if ${field}\\}\\}[\\s\\S]*?\\{\\{\\/if\\}\\}`, 'g'), '');
+      }
+    });
 
     // Replace variables in content and subject
     Object.entries(variables).forEach(([key, value]) => {
-      const regex = new RegExp(`{{${key}}}`, 'g');
-      content = content.replace(regex, value || `{{${key}}}`);
-      subject = subject.replace(regex, value || `{{${key}}}`);
+      const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+      content = content.replace(regex, value || '');
+      subject = subject.replace(regex, value || '');
     });
 
     setPreviewContent(content);
