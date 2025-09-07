@@ -156,15 +156,8 @@ const handler = async (req: Request): Promise<Response> => {
           processedHtml = processedHtml.replace(/\{\{total_cost\}\}/g, booking_details?.total_cost?.toString() || '');
           processedHtml = processedHtml.replace(/\{\{payment_link\}\}/g, checkoutSession.url);
 
-          const variables = {
-            customer_name: name,
-            booking_date: bookingDate,
-            address: booking_details?.address || '',
-            total_cost: booking_details?.total_cost?.toString() || '',
-            payment_link: checkoutSession.url
-          };
-
           // Send the email using the send-notification-email function
+          // Don't send variables when using custom_content to avoid double processing
           const emailResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-notification-email`, {
             method: 'POST',
             headers: {
@@ -174,7 +167,7 @@ const handler = async (req: Request): Promise<Response> => {
             body: JSON.stringify({
               template_id: template.id,
               recipient_email: email,
-              variables: variables,
+              variables: {}, // Empty variables to avoid double processing
               custom_content: processedHtml
             })
           });
