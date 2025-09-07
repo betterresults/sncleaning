@@ -65,17 +65,55 @@ const PersonalInfoEditor = () => {
     
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('customers')
-        .update({
-          first_name: customerData.first_name,
-          last_name: customerData.last_name,
-          email: customerData.email,
-          phone: customerData.phone
-        })
-        .eq('id', activeCustomerId);
+      // Check if this customer has a linked user account
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('customer_id', activeCustomerId)
+        .maybeSingle();
 
-      if (error) throw error;
+      if (profile?.user_id) {
+        // Customer has a linked user account, use the admin update function
+        const response = await supabase.functions.invoke('update-user-admin', {
+          body: {
+            userId: profile.user_id,
+            updates: {
+              first_name: customerData.first_name,
+              last_name: customerData.last_name,
+              email: customerData.email
+            }
+          }
+        });
+
+        if (response.error) {
+          throw new Error(response.error.message || 'Failed to update user account');
+        }
+
+        // Also update phone in customers table (not stored in auth)
+        if (customerData.phone !== '') {
+          const { error: phoneError } = await supabase
+            .from('customers')
+            .update({ phone: customerData.phone })
+            .eq('id', activeCustomerId);
+          
+          if (phoneError) {
+            console.warn('Failed to update phone:', phoneError);
+          }
+        }
+      } else {
+        // No linked user account, update customer table directly
+        const { error } = await supabase
+          .from('customers')
+          .update({
+            first_name: customerData.first_name,
+            last_name: customerData.last_name,
+            email: customerData.email,
+            phone: customerData.phone
+          })
+          .eq('id', activeCustomerId);
+
+        if (error) throw error;
+      }
 
       toast({
         title: 'Success',
