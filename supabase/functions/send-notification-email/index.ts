@@ -102,10 +102,39 @@ const handler = async (req: Request): Promise<Response> => {
     let htmlContent = custom_content || template.html_content;
 
     console.log("Processing variables:", Object.keys(variables));
+    
+    // Process Handlebars conditionals first
+    const hasBookingData = variables.booking_date || variables.address || variables.total_cost;
+    
+    // Handle {{#if has_booking_data}} block
+    if (hasBookingData) {
+      subject = subject.replace(/\{\{#if has_booking_data\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
+      subject = subject.replace(/\{\{#unless has_booking_data\}\}[\s\S]*?\{\{\/unless\}\}/g, '');
+      htmlContent = htmlContent.replace(/\{\{#if has_booking_data\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
+      htmlContent = htmlContent.replace(/\{\{#unless has_booking_data\}\}[\s\S]*?\{\{\/unless\}\}/g, '');
+    } else {
+      subject = subject.replace(/\{\{#if has_booking_data\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+      subject = subject.replace(/\{\{#unless has_booking_data\}\}([\s\S]*?)\{\{\/unless\}\}/g, '$1');
+      htmlContent = htmlContent.replace(/\{\{#if has_booking_data\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+      htmlContent = htmlContent.replace(/\{\{#unless has_booking_data\}\}([\s\S]*?)\{\{\/unless\}\}/g, '$1');
+    }
+    
+    // Handle individual field conditionals
+    ['booking_date', 'address', 'total_cost', 'customer_name', 'payment_link'].forEach(field => {
+      if (variables[field]) {
+        subject = subject.replace(new RegExp(`\\{\\{#if ${field}\\}\\}([\\s\\S]*?)\\{\\{\\/if\\}\\}`, 'g'), '$1');
+        htmlContent = htmlContent.replace(new RegExp(`\\{\\{#if ${field}\\}\\}([\\s\\S]*?)\\{\\{\\/if\\}\\}`, 'g'), '$1');
+      } else {
+        subject = subject.replace(new RegExp(`\\{\\{#if ${field}\\}\\}[\\s\\S]*?\\{\\{\\/if\\}\\}`, 'g'), '');
+        htmlContent = htmlContent.replace(new RegExp(`\\{\\{#if ${field}\\}\\}[\\s\\S]*?\\{\\{\\/if\\}\\}`, 'g'), '');
+      }
+    });
+    
+    // Replace simple variables
     Object.entries(variables).forEach(([key, value]) => {
-      const regex = new RegExp(`{{${key}}}`, 'g');
-      subject = subject.replace(regex, value);
-      htmlContent = htmlContent.replace(regex, value);
+      const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+      subject = subject.replace(regex, value || '');
+      htmlContent = htmlContent.replace(regex, value || '');
     });
 
     console.log("Final subject:", subject);
