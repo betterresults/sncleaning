@@ -149,11 +149,17 @@ export const NotificationTestInterface = () => {
     });
 
     // Replace variables in content and subject - ensure temp_password is always "123!"
-    const processedVariables = {
+    const processedVariables: Record<string, string> = {
       ...variables,
       temp_password: '123!', // Always use this password
-      email: variables.customer_email || variables.email || '' // Use customer_email if available
     };
+    
+    // Ensure email is properly mapped from customer_email
+    if (variables.customer_email) {
+      processedVariables.email = variables.customer_email;
+    }
+
+    console.log('Final processed variables before replacement:', processedVariables);
 
     Object.entries(processedVariables).forEach(([key, value]) => {
       const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
