@@ -7,8 +7,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, X, Camera, AlertTriangle, Trash2, Eye, Download } from 'lucide-react';
+import { Upload, X, Camera, AlertTriangle, Trash2, Eye, Download, Link2 } from 'lucide-react';
 
 interface PhotoManagementDialogProps {
   open: boolean;
@@ -162,6 +163,7 @@ const PhotoItem = ({ photo }: { photo: CleaningPhoto }) => {
 
 const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementDialogProps) => {
   const { toast } = useToast();
+  const { userRole } = useAuth();
   const [photos, setPhotos] = useState<CleaningPhoto[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -513,6 +515,31 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
           <p className="text-sm text-muted-foreground">
             {booking.first_name} {booking.last_name} - {booking.postcode} ({bookingDate})
           </p>
+          {userRole === 'admin' && photos.length > 0 && (
+            <Button
+              onClick={() => {
+                const photoLink = `https://ffa08752-d853-4e87-8f4f-92b4f1e65779.sandbox.lovable.dev/photos/${folderPath}`;
+                navigator.clipboard.writeText(photoLink).then(() => {
+                  toast({
+                    title: 'Link Copied',
+                    description: 'Photo viewing link has been copied to clipboard',
+                  });
+                }).catch(() => {
+                  toast({
+                    title: 'Copy Failed',
+                    description: 'Failed to copy link to clipboard',
+                    variant: 'destructive'
+                  });
+                });
+              }}
+              variant="outline"
+              size="sm"
+              className="mt-2"
+            >
+              <Link2 className="h-4 w-4 mr-2" />
+              Copy Link for Client
+            </Button>
+          )}
         </DialogHeader>
 
         <Tabs defaultValue="existing" className="w-full">

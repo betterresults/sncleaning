@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Camera, Download, AlertTriangle, Calendar, MapPin, X } from 'lucide-react';
+import { Camera, Download, AlertTriangle, Calendar, MapPin, X, Link2 } from 'lucide-react';
 
 interface CleaningPhoto {
   id: string;
@@ -31,6 +32,7 @@ interface CleaningPhotosViewDialogProps {
 
 const CleaningPhotosViewDialog = ({ open, onOpenChange, booking }: CleaningPhotosViewDialogProps) => {
   const { toast } = useToast();
+  const { userRole } = useAuth();
   const [photos, setPhotos] = useState<CleaningPhoto[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
@@ -104,6 +106,25 @@ const CleaningPhotosViewDialog = ({ open, onOpenChange, booking }: CleaningPhoto
         variant: 'destructive'
       });
     }
+  };
+
+  const copyPhotoLink = () => {
+    const bookingDate = new Date(booking.date_time).toISOString().split('T')[0];
+    const folderPath = `${booking.id}_${booking.postcode}_${bookingDate}`;
+    const photoLink = `https://ffa08752-d853-4e87-8f4f-92b4f1e65779.sandbox.lovable.dev/photos/${folderPath}`;
+    
+    navigator.clipboard.writeText(photoLink).then(() => {
+      toast({
+        title: 'Link Copied',
+        description: 'Photo viewing link has been copied to clipboard',
+      });
+    }).catch(() => {
+      toast({
+        title: 'Copy Failed',
+        description: 'Failed to copy link to clipboard',
+        variant: 'destructive'
+      });
+    });
   };
 
   const PhotoGrid = ({ photos, type }: { photos: CleaningPhoto[], type: 'before' | 'after' | 'damage' }) => {
@@ -243,6 +264,17 @@ const CleaningPhotosViewDialog = ({ open, onOpenChange, booking }: CleaningPhoto
               </div>
               <Badge variant="outline" className="text-xs">{booking.service_type}</Badge>
             </div>
+            {userRole === 'admin' && photos.length > 0 && (
+              <Button
+                onClick={copyPhotoLink}
+                variant="outline"
+                size="sm"
+                className="mt-2"
+              >
+                <Link2 className="h-4 w-4 mr-2" />
+                Copy Link for Client
+              </Button>
+            )}
           </DialogHeader>
 
           {loading ? (
