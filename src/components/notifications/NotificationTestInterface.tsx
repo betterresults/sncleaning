@@ -124,6 +124,9 @@ export const NotificationTestInterface = () => {
     let content = template.html_content;
     let subject = template.subject;
 
+    console.log('Generating preview with variables:', variables);
+    console.log('Template content before processing:', content);
+
     // Process Handlebars conditionals first
     const hasBookingData = variables.booking_date || variables.address || variables.total_cost;
     
@@ -145,12 +148,21 @@ export const NotificationTestInterface = () => {
       }
     });
 
-    // Replace variables in content and subject
-    Object.entries(variables).forEach(([key, value]) => {
+    // Replace variables in content and subject - ensure temp_password is always "123!"
+    const processedVariables = {
+      ...variables,
+      temp_password: '123!', // Always use this password
+      email: variables.customer_email || variables.email || '' // Use customer_email if available
+    };
+
+    Object.entries(processedVariables).forEach(([key, value]) => {
       const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
       content = content.replace(regex, value || '');
       subject = subject.replace(regex, value || '');
     });
+
+    console.log('Template content after processing:', content);
+    console.log('Variables used:', processedVariables);
 
     setPreviewContent(content);
   };
