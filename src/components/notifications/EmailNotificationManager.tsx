@@ -235,6 +235,9 @@ const EmailNotificationManager = () => {
       ? recipients.find(r => r.id === selectedClient)
       : null);
     
+    // Check if this is a payment setup email (no booking data)
+    const isPaymentSetup = !selectedClientData?.bookingId;
+    
     if (selectedClientData) {
       // Replace customer_name
       processedContent = processedContent.replace(
@@ -265,6 +268,21 @@ const EmailNotificationManager = () => {
         /\{\{temp_password\}\}/g, 
         tempPassword
       );
+    }
+    
+    // For payment setup emails, remove booking-related sections
+    if (isPaymentSetup) {
+      // Remove booking-related conditionals
+      processedContent = processedContent.replace(/\{\{#if has_booking_data\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+      processedContent = processedContent.replace(/\{\{#unless has_booking_data\}\}([\s\S]*?)\{\{\/unless\}\}/g, '$1');
+      
+      // Remove individual field conditionals for booking data
+      ['booking_date', 'address', 'total_cost', 'booking_time', 'service_type', 'cleaner_name'].forEach(field => {
+        processedContent = processedContent.replace(new RegExp(`\\{\\{#if ${field}\\}\\}[\\s\\S]*?\\{\\{\\/if\\}\\}`, 'g'), '');
+      });
+      
+      // Clean up any remaining handlebars variables
+      processedContent = processedContent.replace(/\{\{[^}]+\}\}/g, '');
     }
     
     return processedContent;

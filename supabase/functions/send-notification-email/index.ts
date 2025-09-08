@@ -79,12 +79,36 @@ const handler = async (req: Request): Promise<Response> => {
       // Convert recipient_email to array if it's not already
       const recipientArray = Array.isArray(recipient_email) ? recipient_email : [recipient_email];
       
+      // Process handlebars conditionals and variables even for custom emails
+      let processedSubject = custom_subject;
+      let processedContent = custom_content;
+      
+      // Process Handlebars conditionals - assume no booking data for custom emails
+      const hasBookingData = false;
+      
+      // Remove booking-related sections for custom emails
+      processedContent = processedContent.replace(/\{\{#if has_booking_data\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+      processedContent = processedContent.replace(/\{\{#unless has_booking_data\}\}([\s\S]*?)\{\{\/unless\}\}/g, '$1');
+      processedSubject = processedSubject.replace(/\{\{#if has_booking_data\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+      processedSubject = processedSubject.replace(/\{\{#unless has_booking_data\}\}([\s\S]*?)\{\{\/unless\}\}/g, '$1');
+      
+      // Remove individual field conditionals
+      ['booking_date', 'address', 'total_cost', 'customer_name', 'payment_link'].forEach(field => {
+        processedSubject = processedSubject.replace(new RegExp(`\\{\\{#if ${field}\\}\\}[\\s\\S]*?\\{\\{\\/if\\}\\}`, 'g'), '');
+        processedContent = processedContent.replace(new RegExp(`\\{\\{#if ${field}\\}\\}[\\s\\S]*?\\{\\{\\/if\\}\\}`, 'g'), '');
+      });
+      
+      // Replace any remaining handlebars variables with empty strings
+      const handlebarsPattern = /\{\{[^}]+\}\}/g;
+      processedSubject = processedSubject.replace(handlebarsPattern, '');
+      processedContent = processedContent.replace(handlebarsPattern, '');
+      
       // Send email using Resend directly
       const emailResult = await resend.emails.send({
         from: 'SN Cleaning <noreply@notifications.sncleaningservices.co.uk>',
         to: recipientArray,
-        subject: custom_subject,
-        html: custom_content,
+        subject: processedSubject,
+        html: processedContent,
       });
 
       console.log("Full Resend API response:", JSON.stringify(emailResult, null, 2));
@@ -107,8 +131,8 @@ const handler = async (req: Request): Promise<Response> => {
             template_id: null,
             recipient_email: recipientArray[0],
             recipient_type: 'custom',
-            subject: custom_subject,
-            content: custom_content,
+            subject: processedSubject,
+            content: processedContent,
             status: 'sent',
             delivery_id: emailResult.data?.id,
             sent_at: new Date().toISOString(),
