@@ -230,9 +230,9 @@ const SMSNotificationManager = () => {
         selectedClientData.name
       );
       
-      // Generate payment link using redirect endpoint
+      // Generate payment link using Supabase edge function
       const customerId = selectedClientData.id.replace('customer_', '').replace('cleaner_', '');
-      const paymentLink = `https://account.sncleaningservices.co.uk/functions/v1/redirect-to-payment-collection?customer_id=${customerId}`;
+      const paymentLink = `https://dkomihipebixlegygnoy.supabase.co/functions/v1/redirect-to-payment-collection?customer_id=${customerId}`;
       
       // Replace payment_link
       processedContent = processedContent.replace(
