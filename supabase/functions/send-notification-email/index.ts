@@ -14,12 +14,13 @@ const corsHeaders = {
 interface NotificationRequest {
   template_id?: string;
   recipient_email?: string;
-  variables: Record<string, string>;
+  variables?: Record<string, string>;
   is_test?: boolean;
   // Legacy format support
-  to?: string;
+  to?: string | string[];
   subject?: string;
   template?: string;
+  html?: string;
   // Custom overrides
   custom_subject?: string;
   custom_content?: string;
@@ -50,10 +51,10 @@ const handler = async (req: Request): Promise<Response> => {
     let variables = requestData.variables || {};
     let is_test = requestData.is_test || false;
     let custom_subject = requestData.custom_subject || requestData.subject;
-    let custom_content = requestData.custom_content;
+    let custom_content = requestData.custom_content || requestData.html;
 
     // Legacy format handling - if template is a string, try to find by name
-    if (!template_id && requestData.template) {
+    if (!template_id && requestData.template && requestData.template !== 'custom') {
       console.log("Looking up template by name:", requestData.template);
       const { data: templateByName, error: nameError } = await supabase
         .from('email_notification_templates')
@@ -65,6 +66,62 @@ const handler = async (req: Request): Promise<Response> => {
         template_id = templateByName.id;
         console.log("Found template by name, ID:", template_id);
       }
+    }
+
+    // For custom emails (when html and subject are provided directly)
+    if (!template_id && custom_subject && custom_content) {
+      console.log("Sending custom email without template");
+      
+      if (!recipient_email) {
+        throw new Error('No recipient email specified');
+      }
+
+      // Convert recipient_email to array if it's not already
+      const recipientArray = Array.isArray(recipient_email) ? recipient_email : [recipient_email];
+      
+      // Send email using Resend directly
+      const emailResult = await resend.emails.send({
+        from: 'SN Cleaning <noreply@notifications.sncleaningservices.co.uk>',
+        to: recipientArray,
+        subject: custom_subject,
+        html: custom_content,
+      });
+
+      console.log("Full Resend API response:", JSON.stringify(emailResult, null, 2));
+
+      if (emailResult.error) {
+        console.error("Resend API error:", emailResult.error);
+        throw new Error(`Resend API error: ${emailResult.error.message}`);
+      }
+
+      if (!emailResult.data) {
+        console.error("No data returned from Resend API");
+        throw new Error("No data returned from Resend API");
+      }
+
+      // Log the custom email if not a test
+      if (!is_test) {
+        await supabase
+          .from('notification_logs')
+          .insert({
+            template_id: null,
+            recipient_email: recipientArray[0],
+            recipient_type: 'custom',
+            subject: custom_subject,
+            content: custom_content,
+            status: 'sent',
+            delivery_id: emailResult.data?.id,
+            sent_at: new Date().toISOString(),
+          });
+      }
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message_id: emailResult.data?.id 
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     if (!template_id) {
@@ -140,10 +197,13 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Final subject:", subject);
     console.log("Sending email to:", recipient_email);
 
+    // Convert recipient_email to array if it's not already
+    const recipientArray = Array.isArray(recipient_email) ? recipient_email : [recipient_email];
+
     // Send email using Resend
     const emailResult = await resend.emails.send({
       from: 'SN Cleaning <noreply@notifications.sncleaningservices.co.uk>',
-      to: [recipient_email],
+      to: recipientArray,
       subject: subject,
       html: htmlContent,
     });
@@ -166,7 +226,7 @@ const handler = async (req: Request): Promise<Response> => {
         .from('notification_logs')
         .insert({
           template_id: template_id,
-          recipient_email: recipient_email,
+          recipient_email: recipientArray[0],
           recipient_type: 'customer', // Default, should be passed in real implementation
           subject: subject,
           content: htmlContent,

@@ -159,8 +159,7 @@ const EmailNotificationManager = () => {
           body: {
             to: [emailAddress],
             subject,
-            html: message,
-            template: 'custom'
+            html: message
           }
         });
 
@@ -190,8 +189,7 @@ const EmailNotificationManager = () => {
                 body: {
                   to: [recipient.email],
                   subject,
-                  html: message,
-                  template: 'custom'
+                  html: message
                 }
               });
               successCount++;
