@@ -274,7 +274,7 @@ const EmailNotificationManager = () => {
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplate(templateId);
     const template = templates.find(t => t.id === templateId);
-    if (template) {
+    if (template && templateId !== 'none') {
       const processedSubject = processTemplateVariables(template.subject);
       const processedContent = processTemplateVariables(template.html_content);
       
@@ -292,7 +292,7 @@ const EmailNotificationManager = () => {
         setEmailAddress(client.email);
         
         // Re-process template with client data if template is selected
-        if (selectedTemplate) {
+        if (selectedTemplate && selectedTemplate !== 'none') {
           const template = templates.find(t => t.id === selectedTemplate);
           if (template) {
             const processedSubject = processTemplateVariables(template.subject, client);
@@ -359,7 +359,7 @@ const EmailNotificationManager = () => {
                 <SelectValue placeholder="Choose a template..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No template (manual)</SelectItem>
+                <SelectItem value="none">No template (manual)</SelectItem>
                 {templates.map(template => (
                   <SelectItem key={template.id} value={template.id}>
                     {template.name}
@@ -369,7 +369,7 @@ const EmailNotificationManager = () => {
             </Select>
           </div>
 
-          {selectedTemplate && (
+          {selectedTemplate && selectedTemplate !== 'none' && (
             <div className="p-3 bg-muted rounded-lg">
               <p className="text-sm text-muted-foreground">
                 Template variables: {templates.find(t => t.id === selectedTemplate)?.variables.join(', ') || 'None'}
@@ -530,7 +530,7 @@ const EmailNotificationManager = () => {
             />
           </div>
 
-          {selectedTemplate && (
+          {selectedTemplate && selectedTemplate !== 'none' && (
             <div className="p-3 bg-blue-50 rounded-lg">
               <div className="flex items-center gap-2 text-blue-700">
                 <Wand2 className="h-4 w-4" />
