@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { User, LogOut, ChevronDown, ChevronRight } from 'lucide-react';
 import {
   Sidebar,
@@ -49,6 +49,7 @@ interface UnifiedSidebarProps {
 
 export function UnifiedSidebar({ navigationItems, user, userRole, customerId, cleanerId, onSignOut }: UnifiedSidebarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { open, setOpen } = useSidebar();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const { data: availableCount } = useAvailableBookingsCount();
@@ -201,20 +202,18 @@ export function UnifiedSidebar({ navigationItems, user, userRole, customerId, cl
             onClick={() => {
               console.log('Profile clicked, userRole:', userRole, 'customerId:', customerId);
               // Navigate to appropriate settings page based on user role and IDs
-              if (typeof window !== 'undefined') {
-                let settingsUrl = '/admin-settings'; // default
-                
-                if (customerId || userRole === 'guest') {
-                  settingsUrl = '/customer-settings';
-                } else if (userRole === 'user' || cleanerId) {
-                  settingsUrl = '/cleaner-settings';
-                } else if (userRole === 'admin') {
-                  settingsUrl = '/admin-settings';
-                }
-                
-                console.log('Redirecting to:', settingsUrl);
-                window.location.href = settingsUrl;
+              let settingsUrl = '/admin-settings'; // default
+              
+              if (customerId || userRole === 'guest') {
+                settingsUrl = '/customer-settings';
+              } else if (userRole === 'user' || cleanerId) {
+                settingsUrl = '/cleaner-settings';
+              } else if (userRole === 'admin') {
+                settingsUrl = '/admin-settings';
               }
+              
+              console.log('Redirecting to:', settingsUrl);
+              navigate(settingsUrl);
             }}
           >
             <div className="w-8 h-8 bg-gradient-to-br from-[#18A5A5] to-[#18A5A5]/80 rounded-full flex items-center justify-center flex-shrink-0">
