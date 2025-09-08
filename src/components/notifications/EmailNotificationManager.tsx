@@ -345,7 +345,7 @@ const EmailNotificationManager = () => {
       );
       
       // Set default temporary password as requested
-      const tempPassword = "123!";
+      const tempPassword = "TempPass123!";
       console.log('Setting temp_password to:', tempPassword);
       console.log('Before temp_password replacement - content contains {{temp_password}}:', processedContent.includes('{{temp_password}}'));
       

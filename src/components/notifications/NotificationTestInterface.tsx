@@ -148,10 +148,10 @@ export const NotificationTestInterface = () => {
       }
     });
 
-    // Replace variables in content and subject - ensure temp_password is always "123!"
+    // Replace variables in content and subject - ensure temp_password is always "TempPass123!"
     const processedVariables: Record<string, string> = {
       ...variables,
-      temp_password: '123!', // Always use this password
+      temp_password: 'TempPass123!', // Always use this password
     };
     
     // Ensure email is properly mapped from customer_email
