@@ -30,7 +30,7 @@ const SMSNotificationManager = () => {
   const [templates, setTemplates] = useState<SMSTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
-  const [selectedClient, setSelectedClient] = useState<string>('');
+  const [selectedClient, setSelectedClient] = useState<string>('manual');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [message, setMessage] = useState('');
   const [sendMode, setSendMode] = useState<'individual' | 'bulk'>('individual');
@@ -203,7 +203,7 @@ const SMSNotificationManager = () => {
       // Clear form after successful send
       setMessage('');
       setPhoneNumber('');
-      setSelectedClient('');
+      setSelectedClient('manual');
       setSelectedRecipients([]);
       setSelectedTemplate('');
     } finally {
@@ -220,6 +220,12 @@ const SMSNotificationManager = () => {
   };
 
   const handleClientSelect = (clientId: string) => {
+    if (clientId === 'manual') {
+      setSelectedClient('');
+      // Don't clear phone number to allow manual entry
+      return;
+    }
+    
     const client = recipients.find(r => r.id === clientId);
     if (client) {
       setPhoneNumber(client.phone);
@@ -294,7 +300,7 @@ const SMSNotificationManager = () => {
                     <SelectValue placeholder="Choose a client to auto-fill phone number..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">
+                    <SelectItem value="manual">
                       <div className="flex items-center gap-2">
                         <Phone className="h-4 w-4" />
                         Enter phone number manually
