@@ -247,7 +247,7 @@ async function sendConsolidatedNotification(supabase: any, booking_id: number, p
               <div style="background-color: #18A5A5; color: white; padding: 20px; border-radius: 8px; margin: 30px 0; text-align: center;">
                 <h3 style="margin: 0 0 15px 0;">View Your Photos</h3>
                 <p style="margin: 0 0 20px 0;">Click the button below to view all photos of your completed cleaning:</p>
-                <a href="https://ffa08752-d853-4e87-8f4f-92b4f1e65779.sandbox.lovable.dev/photos/${folderPath}" 
+                <a href="https://account.sncleaningservices.co.uk/photos/${folderPath}" 
                    style="display: inline-block; background-color: white; color: #18A5A5; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 10px;">
                   📸 View Photos
                 </a>

@@ -111,7 +111,7 @@ const CleaningPhotosViewDialog = ({ open, onOpenChange, booking }: CleaningPhoto
   const copyPhotoLink = () => {
     const bookingDate = new Date(booking.date_time).toISOString().split('T')[0];
     const folderPath = `${booking.id}_${booking.postcode}_${bookingDate}`;
-    const photoLink = `https://ffa08752-d853-4e87-8f4f-92b4f1e65779.sandbox.lovable.dev/photos/${folderPath}`;
+    const photoLink = `https://account.sncleaningservices.co.uk/photos/${folderPath}`;
     
     navigator.clipboard.writeText(photoLink).then(() => {
       toast({

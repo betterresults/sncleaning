@@ -518,7 +518,7 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
           {userRole === 'admin' && photos.length > 0 && (
             <Button
               onClick={() => {
-                const photoLink = `https://ffa08752-d853-4e87-8f4f-92b4f1e65779.sandbox.lovable.dev/photos/${folderPath}`;
+                const photoLink = `https://account.sncleaningservices.co.uk/photos/${folderPath}`;
                 navigator.clipboard.writeText(photoLink).then(() => {
                   toast({
                     title: 'Link Copied',
