@@ -286,6 +286,12 @@ const EmailNotificationManager = () => {
   };
 
   const processTemplateVariables = (content: string, clientData?: any) => {
+    console.log('=== PROCESSING TEMPLATE VARIABLES ===');
+    console.log('Content length:', content.length);
+    console.log('ClientData provided:', clientData);
+    console.log('Selected client from state:', selectedClient);
+    console.log('Recipients available:', recipients.length);
+    
     let processedContent = content;
     
     // Get selected client data - use provided clientData or find from selectedClient
@@ -293,25 +299,33 @@ const EmailNotificationManager = () => {
       ? recipients.find(r => r.id === selectedClient)
       : null);
     
-    console.log('Processing template for client:', selectedClientData); // Debug log
+    console.log('Processing template for client:', selectedClientData);
     
     // Check if this is a payment setup email (no booking data)
     const isPaymentSetup = !selectedClientData?.bookingId;
     
     if (selectedClientData) {
+      console.log('FOUND CLIENT DATA - processing variables');
+      
       // Replace customer_name
       processedContent = processedContent.replace(
         /\{\{customer_name\}\}/g, 
         selectedClientData.name
       );
+      console.log('After customer_name replacement');
       
       // Replace customer email - ensure we have the actual email
       const customerEmail = selectedClientData.email || '';
-      console.log('Customer email found:', customerEmail, 'from data:', selectedClientData); // Debug log
+      console.log('Customer email found:', customerEmail, 'from data:', selectedClientData);
+      console.log('Before email replacement - content contains {{email}}:', processedContent.includes('{{email}}'));
+      
       processedContent = processedContent.replace(
         /\{\{email\}\}/g, 
         customerEmail
       );
+      
+      console.log('After email replacement - content contains {{email}}:', processedContent.includes('{{email}}'));
+      console.log('Email should now be:', customerEmail);
       
       // Generate payment link using Supabase edge function
       const customerId = selectedClientData.id.replace('customer_', '').replace('cleaner_', '');
@@ -332,13 +346,21 @@ const EmailNotificationManager = () => {
       
       // Set default temporary password as requested
       const tempPassword = "123!";
+      console.log('Setting temp_password to:', tempPassword);
+      console.log('Before temp_password replacement - content contains {{temp_password}}:', processedContent.includes('{{temp_password}}'));
+      
       processedContent = processedContent.replace(
         /\{\{temp_password\}\}/g, 
         tempPassword
       );
+      
+      console.log('After temp_password replacement - content contains {{temp_password}}:', processedContent.includes('{{temp_password}}'));
+    } else {
+      console.log('NO CLIENT DATA FOUND - cannot process variables');
     }
     
-    console.log('Final processed content contains email placeholder?', processedContent.includes('{{email}}')); // Debug log
+    console.log('Final processed content contains email placeholder?', processedContent.includes('{{email}}'));
+    console.log('Final processed content contains temp_password placeholder?', processedContent.includes('{{temp_password}}'));
     
     // For payment setup emails, remove booking-related sections
     if (isPaymentSetup) {

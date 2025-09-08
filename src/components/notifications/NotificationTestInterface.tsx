@@ -446,47 +446,16 @@ export const NotificationTestInterface = () => {
                     <div className="p-4 bg-muted text-xs font-medium border-b">
                       Email Preview (as recipient will see it)
                     </div>
-                    <div className="max-h-96 overflow-y-auto">
-                      <iframe
-                        srcDoc={`
-                          <!DOCTYPE html>
-                          <html>
-                            <head>
-                              <meta charset="utf-8">
-                              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                              <style>
-                                body { 
-                                  margin: 0; 
-                                  padding: 20px; 
-                                  font-family: Arial, sans-serif; 
-                                  line-height: 1.6; 
-                                  color: #333;
-                                  background-color: #f9f9f9;
-                                }
-                                .email-container {
-                                  max-width: 600px;
-                                  margin: 0 auto;
-                                  background: white;
-                                  border-radius: 8px;
-                                  overflow: hidden;
-                                  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                                }
-                                .email-content {
-                                  padding: 20px;
-                                }
-                              </style>
-                            </head>
-                            <body>
-                              <div class="email-container">
-                                <div class="email-content">
-                                  ${previewContent}
-                                </div>
-                              </div>
-                            </body>
-                          </html>
-                        `}
-                        className="w-full h-80 border-0"
-                        title="Email Preview"
+                    <div className="max-h-96 overflow-y-auto p-4">
+                      <div 
+                        className="email-preview-content"
+                        dangerouslySetInnerHTML={{ __html: previewContent }}
+                        style={{
+                          fontFamily: 'Arial, sans-serif',
+                          lineHeight: '1.6',
+                          color: '#333',
+                          maxWidth: '600px'
+                        }}
                       />
                     </div>
                   </div>
