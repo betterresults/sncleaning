@@ -6,8 +6,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { MessageSquare, Send, Phone, Users, Clock, FileText, Wand2 } from 'lucide-react';
+import { MessageSquare, Send, Phone, Users, Clock, FileText, Wand2, Check, ChevronsUpDown } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 interface SMSRecipient {
   id: string;
@@ -31,6 +34,7 @@ const SMSNotificationManager = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
   const [selectedClient, setSelectedClient] = useState<string>('manual');
+  const [clientComboOpen, setClientComboOpen] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [message, setMessage] = useState('');
   const [sendMode, setSendMode] = useState<'individual' | 'bulk'>('individual');
@@ -221,7 +225,7 @@ const SMSNotificationManager = () => {
 
   const handleClientSelect = (clientId: string) => {
     if (clientId === 'manual') {
-      setSelectedClient('');
+      setSelectedClient('manual');
       // Don't clear phone number to allow manual entry
       return;
     }
@@ -231,8 +235,9 @@ const SMSNotificationManager = () => {
       setPhoneNumber(client.phone);
       setSelectedClient(clientId);
     } else {
-      setSelectedClient('');
+      setSelectedClient('manual');
     }
+    setClientComboOpen(false);
   };
 
   const clearTemplate = () => {
@@ -295,29 +300,66 @@ const SMSNotificationManager = () => {
               {/* Client Selector */}
               <div className="space-y-2">
                 <Label htmlFor="client-select">Select Client (Optional)</Label>
-                <Select value={selectedClient} onValueChange={handleClientSelect}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a client to auto-fill phone number..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="manual">
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4" />
-                        Enter phone number manually
-                      </div>
-                    </SelectItem>
-                    {recipients.map((recipient) => (
-                      <SelectItem key={recipient.id} value={recipient.id}>
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${
-                            recipient.type === 'customer' ? 'bg-blue-500' : 'bg-green-500'
-                          }`} />
-                          {recipient.name} - {recipient.phone}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={clientComboOpen} onOpenChange={setClientComboOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={clientComboOpen}
+                      className="w-full justify-between"
+                    >
+                      {selectedClient === 'manual' 
+                        ? "Enter phone number manually"
+                        : recipients.find(r => r.id === selectedClient)?.name || "Select client..."
+                      }
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0">
+                    <Command>
+                      <CommandInput placeholder="Search by name or phone number..." />
+                      <CommandEmpty>No client found.</CommandEmpty>
+                      <CommandList>
+                        <CommandGroup>
+                          <CommandItem
+                            value="manual"
+                            onSelect={() => handleClientSelect('manual')}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedClient === 'manual' ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            <Phone className="mr-2 h-4 w-4" />
+                            Enter phone number manually
+                          </CommandItem>
+                          {recipients.map((recipient) => (
+                            <CommandItem
+                              key={recipient.id}
+                              value={`${recipient.name} ${recipient.phone}`.toLowerCase()}
+                              onSelect={() => handleClientSelect(recipient.id)}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedClient === recipient.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <div className={`mr-2 w-2 h-2 rounded-full ${
+                                recipient.type === 'customer' ? 'bg-blue-500' : 'bg-green-500'
+                              }`} />
+                              <div className="flex flex-col">
+                                <span>{recipient.name}</span>
+                                <span className="text-sm text-muted-foreground">{recipient.phone}</span>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {/* Phone Number Input */}
