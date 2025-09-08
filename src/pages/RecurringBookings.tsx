@@ -4,13 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Navigate } from "react-router-dom";
-import { Plus, Edit, Trash2, Calendar, User, MapPin } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar, User, MapPin, Pause, Play } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { adminNavigation } from '@/lib/navigationItems';
+import { PostponeDialog } from '@/components/recurringBookings/PostponeDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +41,7 @@ interface RecurringService {
   payment_method: string;
   days_of_the_week?: string;
   postponed: boolean;
+  resume_date?: string;
 }
 
 export default function RecurringBookings() {
@@ -267,13 +269,26 @@ export default function RecurringBookings() {
       ) : (
         <div className="grid gap-6">
           {recurringServices.map((service) => (
-            <Card key={service.id} className="hover:shadow-md transition-shadow">
+            <Card 
+              key={service.id} 
+              className={`hover:shadow-md transition-shadow ${
+                service.postponed 
+                  ? 'border-orange-200 bg-orange-50/50 shadow-sm' 
+                  : 'hover:shadow-md'
+              }`}
+            >
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div className="space-y-2">
                     <CardTitle className="flex items-center gap-2">
                       <User className="h-5 w-5" />
                       {service.customer_name}
+                      {service.postponed && (
+                        <Badge variant="outline" className="ml-2 border-orange-300 text-orange-700 bg-orange-100">
+                          <Pause className="h-3 w-3 mr-1" />
+                          Postponed
+                        </Badge>
+                      )}
                     </CardTitle>
                     <CardDescription className="flex items-center gap-2">
                       <MapPin className="h-4 w-4" />
@@ -281,6 +296,19 @@ export default function RecurringBookings() {
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
+                    <PostponeDialog
+                      serviceId={service.id}
+                      isPostponed={service.postponed}
+                      onUpdate={fetchRecurringServices}
+                    >
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={service.postponed ? "text-green-600 hover:text-green-700" : "text-orange-600 hover:text-orange-700"}
+                      >
+                        {service.postponed ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+                      </Button>
+                    </PostponeDialog>
                     <Button
                       variant="outline"
                       size="sm"
@@ -354,9 +382,10 @@ export default function RecurringBookings() {
                       <p className="font-medium">{service.days_of_the_week.split(', ').map(day => day.charAt(0).toUpperCase() + day.slice(1)).join(', ')}</p>
                     </div>
                   )}
-                  {service.postponed && (
+                  {service.postponed && service.resume_date && (
                     <div>
-                      <Badge variant="destructive">Postponed</Badge>
+                      <p className="text-sm font-medium text-muted-foreground">Resume Date</p>
+                      <p className="font-medium text-orange-700">{new Date(service.resume_date).toLocaleDateString()}</p>
                     </div>
                   )}
                 </div>

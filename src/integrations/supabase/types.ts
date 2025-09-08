@@ -1530,6 +1530,7 @@ export type Database = {
           payment_method: string | null
           postponed: boolean | null
           recurring_group_id: string | null
+          resume_date: string | null
           start_date: string | null
           start_time: string | null
           total_cost: number | null
@@ -1552,6 +1553,7 @@ export type Database = {
           payment_method?: string | null
           postponed?: boolean | null
           recurring_group_id?: string | null
+          resume_date?: string | null
           start_date?: string | null
           start_time?: string | null
           total_cost?: number | null
@@ -1574,6 +1576,7 @@ export type Database = {
           payment_method?: string | null
           postponed?: boolean | null
           recurring_group_id?: string | null
+          resume_date?: string | null
           start_date?: string | null
           start_time?: string | null
           total_cost?: number | null
