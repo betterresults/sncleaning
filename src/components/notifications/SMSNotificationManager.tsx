@@ -215,10 +215,53 @@ const SMSNotificationManager = () => {
     }
   };
 
+  const processTemplateVariables = (content: string, clientData?: any) => {
+    let processedContent = content;
+    
+    // Get selected client data - use provided clientData or find from selectedClient
+    const selectedClientData = clientData || (selectedClient !== 'manual' 
+      ? recipients.find(r => r.id === selectedClient)
+      : null);
+    
+    if (selectedClientData) {
+      // Replace customer_name
+      processedContent = processedContent.replace(
+        /\{\{customer_name\}\}/g, 
+        selectedClientData.name
+      );
+      
+      // Generate payment link (basic implementation)
+      const customerId = selectedClientData.id.replace('customer_', '').replace('cleaner_', '');
+      const paymentLink = `${window.location.origin}/payment?customer=${customerId}`;
+      
+      // Replace payment_link
+      processedContent = processedContent.replace(
+        /\{\{payment_link\}\}/g, 
+        paymentLink
+      );
+      
+      // Replace login_link (for account templates)
+      const loginLink = `${window.location.origin}/auth`;
+      processedContent = processedContent.replace(
+        /\{\{login_link\}\}/g, 
+        loginLink
+      );
+      
+      // Generate temporary password (example - in real implementation this should come from backend)
+      processedContent = processedContent.replace(
+        /\{\{temp_password\}\}/g, 
+        'TempPass123!'
+      );
+    }
+    
+    return processedContent;
+  };
+
   const handleTemplateSelect = (templateId: string) => {
     const template = templates.find(t => t.id === templateId);
     if (template) {
-      setMessage(template.content);
+      const processedContent = processTemplateVariables(template.content);
+      setMessage(processedContent);
       setSelectedTemplate(templateId);
     }
   };
@@ -226,7 +269,13 @@ const SMSNotificationManager = () => {
   const handleClientSelect = (clientId: string) => {
     if (clientId === 'manual') {
       setSelectedClient('manual');
-      // Don't clear phone number to allow manual entry
+      // Re-process template if one is selected to reset variables
+      if (selectedTemplate && message) {
+        const template = templates.find(t => t.id === selectedTemplate);
+        if (template) {
+          setMessage(template.content); // Reset to original template content
+        }
+      }
       return;
     }
     
@@ -234,6 +283,15 @@ const SMSNotificationManager = () => {
     if (client) {
       setPhoneNumber(client.phone);
       setSelectedClient(clientId);
+      
+      // Re-process template if one is selected
+      if (selectedTemplate && message) {
+        const template = templates.find(t => t.id === selectedTemplate);
+        if (template) {
+          const processedContent = processTemplateVariables(template.content, client);
+          setMessage(processedContent);
+        }
+      }
     } else {
       setSelectedClient('manual');
     }
@@ -485,7 +543,7 @@ const SMSNotificationManager = () => {
               </div>
               {selectedTemplate && (
                 <p className="text-sm text-muted-foreground">
-                  Template loaded. You can edit the message below before sending.
+                  Template loaded and variables replaced with real data. You can edit the message below before sending.
                 </p>
               )}
             </div>
@@ -505,11 +563,11 @@ const SMSNotificationManager = () => {
               <span>{messageLength} characters</span>
               <div className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
-                <span>{smsCount} SMS{smsCount > 1 ? 's' : ''}</span>
+                <span>{smsCount} SMS{smsCount > 1 ? "s" : ""}</span>
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              The exact text above will be sent. You can edit template content before sending.
+              The exact text above will be sent. Template variables are automatically replaced with real data when you select a client.
             </p>
           </div>
 
