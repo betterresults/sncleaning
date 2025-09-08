@@ -7,7 +7,8 @@ import { NotificationLogsViewer } from "./NotificationLogsViewer";
 import { NotificationTestInterface } from "./NotificationTestInterface";
 import SMSNotificationManager from "./SMSNotificationManager";
 import SMSTemplateManager from "./SMSTemplateManager";
-import { Mail, Settings, Activity, TestTube, MessageSquare, FileText } from "lucide-react";
+import EmailNotificationManager from "./EmailNotificationManager";
+import { Mail, Settings, Activity, TestTube, MessageSquare, FileText, Send } from "lucide-react";
 
 export const NotificationManagementDashboard = () => {
   const [activeTab, setActiveTab] = useState("templates");
@@ -15,7 +16,7 @@ export const NotificationManagementDashboard = () => {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="templates" className="flex items-center gap-2">
             <Mail className="h-4 w-4" />
             Email Templates
@@ -27,6 +28,10 @@ export const NotificationManagementDashboard = () => {
           <TabsTrigger value="triggers" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             Triggers
+          </TabsTrigger>
+          <TabsTrigger value="email" className="flex items-center gap-2">
+            <Send className="h-4 w-4" />
+            Send Email
           </TabsTrigger>
           <TabsTrigger value="sms" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
@@ -80,6 +85,20 @@ export const NotificationManagementDashboard = () => {
             </CardHeader>
             <CardContent>
               <NotificationTriggersManager />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="email" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Email Notifications</CardTitle>
+              <CardDescription>
+                Send email messages to customers and cleaners
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EmailNotificationManager />
             </CardContent>
           </Card>
         </TabsContent>
