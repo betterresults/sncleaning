@@ -13,6 +13,64 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { useManualEmailNotification } from '@/hooks/useManualEmailNotification';
 
+// Customer Portal Email Template
+const CUSTOMER_PORTAL_EMAIL_TEMPLATE = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
+  <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+    <div style="text-align: center; margin-bottom: 30px;">
+      <h1 style="color: #185166; margin: 0; font-size: 28px;">Welcome to Your Customer Portal! 🎉</h1>
+      <p style="color: #666; margin: 10px 0 0 0; font-size: 16px;">Manage your bookings and account easily online</p>
+    </div>
+    
+    <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #18A5A5;">
+      <h2 style="color: #185166; margin: 0 0 15px 0; font-size: 20px;">Hello {{customer_name}}!</h2>
+      <p style="color: #333; margin: 0; line-height: 1.6;">
+        Great news! We've set up your customer account so you can manage your cleaning services online. You can now view your bookings, schedule new services, and much more!
+      </p>
+    </div>
+
+    <div style="background-color: #fff; border: 2px solid #18A5A5; border-radius: 8px; padding: 25px; margin-bottom: 25px;">
+      <h3 style="color: #185166; margin: 0 0 20px 0; font-size: 18px; text-align: center;">🔑 Your Login Details</h3>
+      
+      <div style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+        <strong style="color: #185166; font-size: 16px;">🌐 Website:</strong><br>
+        <a href="https://account.sncleaningservices.co.uk" style="color: #18A5A5; text-decoration: none; font-size: 18px; font-weight: bold;">account.sncleaningservices.co.uk</a>
+      </div>
+      
+      <div style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+        <strong style="color: #185166; font-size: 16px;">📧 Email:</strong><br>
+        <span style="color: #333; font-size: 16px; font-weight: bold;">{{email}}</span>
+      </div>
+      
+      <div style="background-color: #fff3cd; padding: 15px; border-radius: 6px; border: 2px solid #ffc107;">
+        <strong style="color: #856404; font-size: 16px;">🔐 Temporary Password:</strong><br>
+        <span style="color: #856404; font-size: 24px; font-weight: bold; font-family: monospace; background-color: white; padding: 5px 10px; border-radius: 4px; display: inline-block; margin-top: 5px;">{{temp_password}}</span>
+      </div>
+    </div>
+
+    <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #ffc107;">
+      <h3 style="color: #856404; margin: 0 0 10px 0; font-size: 16px;">🛡️ Important Security Note</h3>
+      <p style="color: #856404; margin: 0; line-height: 1.6; font-size: 14px;">
+        Please change your password after your first login for security purposes. You can do this in your account settings.
+      </p>
+    </div>
+
+    <div style="text-align: center; margin-bottom: 25px;">
+      <a href="https://account.sncleaningservices.co.uk" style="display: inline-block; background-color: #18A5A5; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px; box-shadow: 0 2px 10px rgba(24,165,165,0.3);">
+        Access Your Account Now →
+      </a>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px;">
+      <p style="color: #666; margin: 0; font-size: 14px;">
+        Thank you for choosing SN Cleaning Services! ✨
+      </p>
+      <p style="color: #999; margin: 5px 0 0 0; font-size: 12px;">
+        We look forward to providing you with exceptional cleaning service.
+      </p>
+    </div>
+  </div>
+</div>`;
+
 interface EmailRecipient {
   id: string;
   name: string;
@@ -235,6 +293,8 @@ const EmailNotificationManager = () => {
       ? recipients.find(r => r.id === selectedClient)
       : null);
     
+    console.log('Processing template for client:', selectedClientData); // Debug log
+    
     // Check if this is a payment setup email (no booking data)
     const isPaymentSetup = !selectedClientData?.bookingId;
     
@@ -245,10 +305,12 @@ const EmailNotificationManager = () => {
         selectedClientData.name
       );
       
-      // Replace customer email
+      // Replace customer email - ensure we have the actual email
+      const customerEmail = selectedClientData.email || '';
+      console.log('Customer email found:', customerEmail, 'from data:', selectedClientData); // Debug log
       processedContent = processedContent.replace(
         /\{\{email\}\}/g, 
-        selectedClientData.email || selectedClientData.name
+        customerEmail
       );
       
       // Generate payment link using Supabase edge function
@@ -275,6 +337,8 @@ const EmailNotificationManager = () => {
         tempPassword
       );
     }
+    
+    console.log('Final processed content contains email placeholder?', processedContent.includes('{{email}}')); // Debug log
     
     // For payment setup emails, remove booking-related sections
     if (isPaymentSetup) {
