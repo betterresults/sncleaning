@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { useManualEmailNotification } from '@/hooks/useManualEmailNotification';
 
 interface EmailRecipient {
   id: string;
@@ -40,6 +41,7 @@ const EmailNotificationManager = () => {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [sendMode, setSendMode] = useState<'individual' | 'bulk'>('individual');
+  const { sendManualEmail, isLoading: isSending } = useManualEmailNotification();
 
   // Load recipients (customers and cleaners with email addresses)
   const loadRecipients = async () => {
@@ -120,36 +122,6 @@ const EmailNotificationManager = () => {
     loadTemplates();
   }, []);
 
-  const sendEmail = async (to: string, recipientName?: string) => {
-    try {
-      const { error } = await supabase.functions.invoke('send-notification-email', {
-        body: {
-          to: [to],
-          subject,
-          html: message,
-          template: 'custom'
-        }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: 'Email Sent',
-        description: `Email sent successfully${recipientName ? ` to ${recipientName}` : ''}`,
-      });
-
-      return true;
-    } catch (error) {
-      console.error('Error sending email:', error);
-      toast({
-        title: 'Email Failed',
-        description: `Failed to send email${recipientName ? ` to ${recipientName}` : ''}: ${error.message}`,
-        variant: 'destructive'
-      });
-      return false;
-    }
-  };
-
   const handleSendEmail = async () => {
     if (!message.trim()) {
       toast({
@@ -182,7 +154,20 @@ const EmailNotificationManager = () => {
           return;
         }
         
-        await sendEmail(emailAddress);
+        // Send individual email using existing notification system
+        await supabase.functions.invoke('send-notification-email', {
+          body: {
+            to: [emailAddress],
+            subject,
+            html: message,
+            template: 'custom'
+          }
+        });
+
+        toast({
+          title: 'Email Sent',
+          description: `Email sent successfully`,
+        });
       } else {
         // Bulk send
         if (selectedRecipients.length === 0) {
@@ -200,10 +185,18 @@ const EmailNotificationManager = () => {
         for (const recipientId of selectedRecipients) {
           const recipient = recipients.find(r => r.id === recipientId);
           if (recipient) {
-            const success = await sendEmail(recipient.email, recipient.name);
-            if (success) {
+            try {
+              await supabase.functions.invoke('send-notification-email', {
+                body: {
+                  to: [recipient.email],
+                  subject,
+                  html: message,
+                  template: 'custom'
+                }
+              });
               successCount++;
-            } else {
+            } catch (error) {
+              console.error(`Failed to send email to ${recipient.name}:`, error);
               failCount++;
             }
             // Add small delay between messages
@@ -224,6 +217,13 @@ const EmailNotificationManager = () => {
       setSelectedClient('manual');
       setSelectedRecipients([]);
       setSelectedTemplate('');
+    } catch (error: any) {
+      console.error('Error sending email:', error);
+      toast({
+        title: 'Email Failed',
+        description: `Failed to send email: ${error.message}`,
+        variant: 'destructive'
+      });
     } finally {
       setIsLoading(false);
     }
