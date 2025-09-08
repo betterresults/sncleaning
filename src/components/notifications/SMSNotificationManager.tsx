@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { MessageSquare, Send, Phone, Users, Clock } from 'lucide-react';
+import { MessageSquare, Send, Phone, Users, Clock, FileText, Wand2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface SMSRecipient {
@@ -16,10 +16,19 @@ interface SMSRecipient {
   type: 'customer' | 'cleaner';
 }
 
+interface SMSTemplate {
+  id: string;
+  name: string;
+  content: string;
+  variables: string[];
+}
+
 const SMSNotificationManager = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [recipients, setRecipients] = useState<SMSRecipient[]>([]);
+  const [templates, setTemplates] = useState<SMSTemplate[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [message, setMessage] = useState('');
@@ -71,8 +80,37 @@ const SMSNotificationManager = () => {
     }
   };
 
+  // Load SMS templates
+  const loadTemplates = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('sms_templates')
+        .select('id, name, content, variables')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+
+      // Cast variables from Json to string[]
+      const templatesWithTypedVariables = (data || []).map(template => ({
+        ...template,
+        variables: Array.isArray(template.variables) ? template.variables as string[] : []
+      }));
+
+      setTemplates(templatesWithTypedVariables);
+    } catch (error) {
+      console.error('Error loading SMS templates:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load SMS templates',
+        variant: 'destructive'
+      });
+    }
+  };
+
   React.useEffect(() => {
     loadRecipients();
+    loadTemplates();
   }, []);
 
   const sendSMS = async (to: string, recipientName?: string) => {
@@ -165,8 +203,17 @@ const SMSNotificationManager = () => {
       setMessage('');
       setPhoneNumber('');
       setSelectedRecipients([]);
+      setSelectedTemplate('');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleTemplateSelect = (templateId: string) => {
+    const template = templates.find(t => t.id === templateId);
+    if (template) {
+      setMessage(template.content);
+      setSelectedTemplate(templateId);
     }
   };
 
