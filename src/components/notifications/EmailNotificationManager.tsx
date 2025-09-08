@@ -245,6 +245,12 @@ const EmailNotificationManager = () => {
         selectedClientData.name
       );
       
+      // Replace customer email
+      processedContent = processedContent.replace(
+        /\{\{email\}\}/g, 
+        selectedClientData.email || selectedClientData.name
+      );
+      
       // Generate payment link using Supabase edge function
       const customerId = selectedClientData.id.replace('customer_', '').replace('cleaner_', '');
       const paymentLink = `https://dkomihipebixlegygnoy.supabase.co/functions/v1/redirect-to-payment-collection?customer_id=${customerId}`;
@@ -262,8 +268,8 @@ const EmailNotificationManager = () => {
         loginLink
       );
       
-      // Generate temporary password (example - in real implementation this should come from backend)
-      const tempPassword = Math.random().toString(36).slice(-8);
+      // Set default temporary password as requested
+      const tempPassword = "123!";
       processedContent = processedContent.replace(
         /\{\{temp_password\}\}/g, 
         tempPassword
