@@ -775,13 +775,12 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
               <TableHeader>
                 <TableRow>
                    {isCustomerView && (
-                     <TableHead className="w-12">
-                       <Checkbox
-                         checked={filteredUsers.filter(u => u.type === 'business_customer').length > 0 && 
-                                  filteredUsers.filter(u => u.type === 'business_customer').every(u => isSelected(u.id))}
-                         onCheckedChange={toggleSelectAll}
-                       />
-                     </TableHead>
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={filteredUsers.length > 0 && filteredUsers.every(u => isSelected(u.id))}
+                          onCheckedChange={toggleSelectAll}
+                        />
+                      </TableHead>
                    )}
                    <TableHead>Customer</TableHead>
                    <TableHead>Email</TableHead>
@@ -807,16 +806,14 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                 ) : (
                   filteredUsers.map((user) => (
                     <TableRow key={user.id}>
-                      {isCustomerView && (
-                        <TableCell>
-                          {user.type === 'business_customer' ? (
-                            <Checkbox
-                              checked={isSelected(user.id)}
-                              onCheckedChange={() => toggleSelect(user)}
-                            />
-                          ) : null}
-                        </TableCell>
-                      )}
+                       {isCustomerView && (
+                         <TableCell>
+                           <Checkbox
+                             checked={isSelected(user.id)}
+                             onCheckedChange={() => toggleSelect(user)}
+                           />
+                         </TableCell>
+                       )}
                       
                       <TableCell>
                         {editingUser === user.id ? (
@@ -897,26 +894,26 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                                getCustomerTypeBadge(user)
                              )}
                            </TableCell>
-                             <TableCell>
-                               {user.type === 'business_customer' && user.business_id ? (
-                                 <PaymentMethodStatusIcon
-                                   paymentMethodCount={paymentData[user.business_id]?.payment_method_count || 0}
-                                   hasStripeAccount={paymentData[user.business_id]?.has_stripe_account || false}
-                                   onClick={() => {
-                                     setSelectedCustomerForPayment(user);
-                                     // If customer has payment methods, open direct payment dialog
-                                     if (paymentData[user.business_id]?.payment_method_count > 0) {
-                                       setShowDirectPaymentDialog(true);
-                                     } else {
-                                       // If no payment methods, open payment methods management
-                                       setShowPaymentDialog(true);
-                                     }
-                                   }}
-                                 />
-                               ) : (
-                                 <span className="text-sm text-muted-foreground">–</span>
-                               )}
-                             </TableCell>
+                              <TableCell>
+                                {isCustomerView && (user.business_id || user.id) ? (
+                                  <PaymentMethodStatusIcon
+                                    paymentMethodCount={paymentData[user.business_id || user.id]?.payment_method_count || 0}
+                                    hasStripeAccount={paymentData[user.business_id || user.id]?.has_stripe_account || false}
+                                    onClick={() => {
+                                      setSelectedCustomerForPayment(user);
+                                      // If customer has payment methods, open direct payment dialog
+                                      if (paymentData[user.business_id || user.id]?.payment_method_count > 0) {
+                                        setShowDirectPaymentDialog(true);
+                                      } else {
+                                        // If no payment methods, open payment methods management
+                                        setShowPaymentDialog(true);
+                                      }
+                                    }}
+                                  />
+                                ) : (
+                                  <span className="text-sm text-muted-foreground">–</span>
+                                )}
+                              </TableCell>
                            <TableCell>
                              {user.type === 'business_customer' ? (
                                <CustomerAddressDialog
@@ -980,7 +977,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                           </div>
                         ) : (
                           <div className="flex gap-2 justify-end">
-                            {isCustomerView && (user.type === 'business_customer' || !user.type) && (
+                            {isCustomerView && (
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -1001,36 +998,36 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                             >
                               <Edit2 className="h-4 w-4" />
                             </Button>
-                            {isCustomerView && (user.type === 'business_customer' || !user.type) && (
-                              <CreateBookingDialogWithCustomer customer={{
-                                id: Number(user.business_id || user.id),
-                                first_name: user.first_name || '',
-                                last_name: user.last_name || '',
-                                email: user.email || '',
-                                phone: user.phone || ''
-                              }}>
-                                <Button size="sm" variant="outline" onClick={() => console.log('Add booking clicked for:', user.first_name, user.last_name)}>
-                                  <Plus className="h-4 w-4" />
-                                </Button>
-                              </CreateBookingDialogWithCustomer>
-                            )}
-                            {isCustomerView && (user.type === 'business_customer' || !user.type) && (
-                              // Only show collect payment button if customer has no payment methods
-                              !paymentData[user.business_id || user.id]?.payment_method_count && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    console.log('Collect payment clicked for:', user.first_name, user.last_name, 'user object:', user);
-                                    setCollectPaymentDialogUser(user);
-                                  }}
-                                  className="bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200"
-                                  title="Collect Payment Method"
-                                >
-                                  <CreditCard className="h-4 w-4" />
-                                </Button>
-                              )
-                            )}
+                             {isCustomerView && (
+                               <CreateBookingDialogWithCustomer customer={{
+                                 id: Number(user.business_id || user.id),
+                                 first_name: user.first_name || '',
+                                 last_name: user.last_name || '',
+                                 email: user.email || '',
+                                 phone: user.phone || ''
+                               }}>
+                                 <Button size="sm" variant="outline" onClick={() => console.log('Add booking clicked for:', user.first_name, user.last_name)}>
+                                   <Plus className="h-4 w-4" />
+                                 </Button>
+                               </CreateBookingDialogWithCustomer>
+                             )}
+                             {isCustomerView && (
+                               // Only show collect payment button if customer has no payment methods
+                               !paymentData[user.business_id || user.id]?.payment_method_count && (
+                                 <Button
+                                   size="sm"
+                                   variant="outline"
+                                   onClick={() => {
+                                     console.log('Collect payment clicked for:', user.first_name, user.last_name, 'user object:', user);
+                                     setCollectPaymentDialogUser(user);
+                                   }}
+                                   className="bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200"
+                                   title="Collect Payment Method"
+                                 >
+                                   <CreditCard className="h-4 w-4" />
+                                 </Button>
+                               )
+                             )}
                             {!isCustomerView && (
                               <>
                                 <Button
@@ -1055,19 +1052,19 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                                 </Button>
                               </>
                             )}
-                            {isCustomerView && (user.type === 'business_customer' || !user.type) && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  console.log('Delete button clicked for:', user.first_name, user.last_name, 'type:', user.type);
-                                  setUserToDelete(user);
-                                }}
-                                className="hover:border-destructive hover:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
+                             {isCustomerView && (
+                               <Button
+                                 size="sm"
+                                 variant="outline"
+                                 onClick={() => {
+                                   console.log('Delete button clicked for:', user.first_name, user.last_name, 'type:', user.type);
+                                   setUserToDelete(user);
+                                 }}
+                                 className="hover:border-destructive hover:text-destructive"
+                               >
+                                 <Trash2 className="h-4 w-4" />
+                               </Button>
+                             )}
                           </div>
                         )}
                       </TableCell>
