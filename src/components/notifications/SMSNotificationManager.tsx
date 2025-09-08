@@ -230,9 +230,9 @@ const SMSNotificationManager = () => {
         selectedClientData.name
       );
       
-      // Generate short payment link
+      // Generate short payment link using React route
       const customerId = selectedClientData.id.replace('customer_', '').replace('cleaner_', '');
-      const paymentLink = `https://account.sncleaningservices.co.uk/pay.html?c=${customerId}`;
+      const paymentLink = `https://account.sncleaningservices.co.uk/pay?c=${customerId}`;
       
       // Replace payment_link
       processedContent = processedContent.replace(
