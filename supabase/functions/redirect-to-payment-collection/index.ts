@@ -1,0 +1,66 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
+const handler = async (req: Request): Promise<Response> => {
+  try {
+    const url = new URL(req.url);
+    const customerId = url.searchParams.get('customer_id');
+    
+    if (!customerId) {
+      return new Response('Missing customer_id parameter', { status: 400 });
+    }
+
+    console.log('Redirecting payment collection for customer:', customerId);
+
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Get customer details
+    const { data: customer, error: customerError } = await supabaseAdmin
+      .from('customers')
+      .select('id, email, first_name, last_name')
+      .eq('id', customerId)
+      .single();
+
+    if (customerError || !customer) {
+      console.error('Customer not found:', customerId);
+      return new Response('Customer not found', { status: 404 });
+    }
+
+    // Call the collect payment method function
+    const { data, error } = await supabaseAdmin.functions.invoke('stripe-collect-payment-method', {
+      body: {
+        customer_id: parseInt(customerId),
+        email: customer.email,
+        name: `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 'Customer',
+        return_url: `https://account.sncleaningservices.co.uk/customer-dashboard?payment_setup=success`,
+        collect_only: true
+      }
+    });
+
+    if (error) {
+      console.error('Error creating payment collection:', error);
+      return new Response('Error creating payment collection', { status: 500 });
+    }
+
+    if (data?.checkout_url) {
+      // Redirect to Stripe checkout
+      return new Response(null, {
+        status: 302,
+        headers: {
+          'Location': data.checkout_url
+        }
+      });
+    } else {
+      return new Response('Failed to create checkout URL', { status: 500 });
+    }
+
+  } catch (error) {
+    console.error('Error in redirect-to-payment-collection:', error);
+    return new Response('Internal server error', { status: 500 });
+  }
+};
+
+serve(handler);

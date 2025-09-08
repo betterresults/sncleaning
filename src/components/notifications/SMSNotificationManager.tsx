@@ -230,9 +230,9 @@ const SMSNotificationManager = () => {
         selectedClientData.name
       );
       
-      // Generate payment link using your domain
+      // Generate payment link using redirect endpoint
       const customerId = selectedClientData.id.replace('customer_', '').replace('cleaner_', '');
-      const paymentLink = `https://account.sncleaningservices.co.uk/customer-dashboard?collect-payment=${customerId}`;
+      const paymentLink = `https://account.sncleaningservices.co.uk/functions/v1/redirect-to-payment-collection?customer_id=${customerId}`;
       
       // Replace payment_link
       processedContent = processedContent.replace(
