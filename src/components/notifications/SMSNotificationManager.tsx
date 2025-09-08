@@ -230,9 +230,9 @@ const SMSNotificationManager = () => {
         selectedClientData.name
       );
       
-      // Generate payment link (basic implementation)
+      // Generate payment link using your domain
       const customerId = selectedClientData.id.replace('customer_', '').replace('cleaner_', '');
-      const paymentLink = `${window.location.origin}/payment?customer=${customerId}`;
+      const paymentLink = `https://sncleaning.co.uk/customer-dashboard?collect-payment=${customerId}`;
       
       // Replace payment_link
       processedContent = processedContent.replace(
@@ -240,8 +240,8 @@ const SMSNotificationManager = () => {
         paymentLink
       );
       
-      // Replace login_link (for account templates)
-      const loginLink = `${window.location.origin}/auth`;
+      // Replace login_link using your domain
+      const loginLink = `https://sncleaning.co.uk/auth`;
       processedContent = processedContent.replace(
         /\{\{login_link\}\}/g, 
         loginLink
