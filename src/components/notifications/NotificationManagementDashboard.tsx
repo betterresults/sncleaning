@@ -5,7 +5,8 @@ import { EmailTemplateManager } from "./EmailTemplateManager";
 import { NotificationTriggersManager } from "./NotificationTriggersManager";
 import { NotificationLogsViewer } from "./NotificationLogsViewer";
 import { NotificationTestInterface } from "./NotificationTestInterface";
-import { Mail, Settings, Activity, TestTube } from "lucide-react";
+import SMSNotificationManager from "./SMSNotificationManager";
+import { Mail, Settings, Activity, TestTube, MessageSquare } from "lucide-react";
 
 export const NotificationManagementDashboard = () => {
   const [activeTab, setActiveTab] = useState("templates");
@@ -13,7 +14,7 @@ export const NotificationManagementDashboard = () => {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="templates" className="flex items-center gap-2">
             <Mail className="h-4 w-4" />
             Templates
@@ -21,6 +22,10 @@ export const NotificationManagementDashboard = () => {
           <TabsTrigger value="triggers" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             Triggers
+          </TabsTrigger>
+          <TabsTrigger value="sms" className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            SMS
           </TabsTrigger>
           <TabsTrigger value="logs" className="flex items-center gap-2">
             <Activity className="h-4 w-4" />
@@ -56,6 +61,20 @@ export const NotificationManagementDashboard = () => {
             </CardHeader>
             <CardContent>
               <NotificationTriggersManager />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="sms" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>SMS Notifications</CardTitle>
+              <CardDescription>
+                Send SMS messages to customers and cleaners via Twilio
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SMSNotificationManager />
             </CardContent>
           </Card>
         </TabsContent>

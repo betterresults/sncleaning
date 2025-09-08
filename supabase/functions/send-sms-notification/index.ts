@@ -1,0 +1,118 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface SMSRequest {
+  to: string;
+  message: string;
+  from?: string;
+}
+
+const handler = async (req: Request): Promise<Response> => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  if (req.method !== 'POST') {
+    return new Response('Method not allowed', { 
+      status: 405, 
+      headers: corsHeaders 
+    });
+  }
+
+  try {
+    const { to, message, from }: SMSRequest = await req.json();
+
+    // Get Twilio credentials from environment
+    const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+    const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+    const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
+
+    if (!accountSid || !authToken || !twilioPhoneNumber) {
+      console.error('Missing Twilio credentials');
+      return new Response(
+        JSON.stringify({ error: 'Twilio credentials not configured' }),
+        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
+
+    if (!to || !message) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required fields: to, message' }),
+        { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
+
+    // Format phone number (ensure it starts with + for international format)
+    const formattedTo = to.startsWith('+') ? to : `+${to}`;
+    const fromNumber = from || twilioPhoneNumber;
+
+    console.log(`Sending SMS to ${formattedTo} from ${fromNumber}`);
+    console.log(`Message: ${message}`);
+
+    // Prepare Twilio API request
+    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+    
+    const credentials = btoa(`${accountSid}:${authToken}`);
+    
+    const body = new URLSearchParams({
+      To: formattedTo,
+      From: fromNumber,
+      Body: message
+    });
+
+    const response = await fetch(twilioUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${credentials}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: body.toString()
+    });
+
+    const twilioResponse = await response.json();
+
+    if (!response.ok) {
+      console.error('Twilio API error:', twilioResponse);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to send SMS',
+          details: twilioResponse 
+        }),
+        { status: response.status, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
+
+    console.log('SMS sent successfully:', twilioResponse.sid);
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        messageId: twilioResponse.sid,
+        status: twilioResponse.status,
+        to: twilioResponse.to,
+        from: twilioResponse.from
+      }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      }
+    );
+
+  } catch (error) {
+    console.error('Error sending SMS:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: 'Internal server error',
+        details: error.message 
+      }),
+      { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+    );
+  }
+};
+
+serve(handler);
