@@ -30,6 +30,7 @@ const SMSNotificationManager = () => {
   const [templates, setTemplates] = useState<SMSTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
+  const [selectedClient, setSelectedClient] = useState<string>('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [message, setMessage] = useState('');
   const [sendMode, setSendMode] = useState<'individual' | 'bulk'>('individual');
@@ -202,6 +203,7 @@ const SMSNotificationManager = () => {
       // Clear form after successful send
       setMessage('');
       setPhoneNumber('');
+      setSelectedClient('');
       setSelectedRecipients([]);
       setSelectedTemplate('');
     } finally {
@@ -214,6 +216,16 @@ const SMSNotificationManager = () => {
     if (template) {
       setMessage(template.content);
       setSelectedTemplate(templateId);
+    }
+  };
+
+  const handleClientSelect = (clientId: string) => {
+    const client = recipients.find(r => r.id === clientId);
+    if (client) {
+      setPhoneNumber(client.phone);
+      setSelectedClient(clientId);
+    } else {
+      setSelectedClient('');
     }
   };
 
@@ -273,18 +285,49 @@ const SMSNotificationManager = () => {
           </div>
 
           {sendMode === 'individual' ? (
-            <div className="space-y-2">
-              <Label htmlFor="phone-number">Phone Number</Label>
-              <Input
-                id="phone-number"
-                type="tel"
-                placeholder="+44 7123 456789"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-              />
-              <p className="text-sm text-muted-foreground">
-                Enter phone number with country code (e.g., +44 for UK)
-              </p>
+            <div className="space-y-4">
+              {/* Client Selector */}
+              <div className="space-y-2">
+                <Label htmlFor="client-select">Select Client (Optional)</Label>
+                <Select value={selectedClient} onValueChange={handleClientSelect}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a client to auto-fill phone number..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4" />
+                        Enter phone number manually
+                      </div>
+                    </SelectItem>
+                    {recipients.map((recipient) => (
+                      <SelectItem key={recipient.id} value={recipient.id}>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${
+                            recipient.type === 'customer' ? 'bg-blue-500' : 'bg-green-500'
+                          }`} />
+                          {recipient.name} - {recipient.phone}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Phone Number Input */}
+              <div className="space-y-2">
+                <Label htmlFor="phone-number">Phone Number</Label>
+                <Input
+                  id="phone-number"
+                  type="tel"
+                  placeholder="+44 7123 456789"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Enter phone number with country code (e.g., +44 for UK) or select a client above
+                </p>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
