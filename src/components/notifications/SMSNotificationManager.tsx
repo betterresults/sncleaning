@@ -217,6 +217,11 @@ const SMSNotificationManager = () => {
     }
   };
 
+  const clearTemplate = () => {
+    setSelectedTemplate('');
+    setMessage('');
+  };
+
   const toggleRecipient = (recipientId: string) => {
     setSelectedRecipients(prev => 
       prev.includes(recipientId) 
@@ -356,12 +361,51 @@ const SMSNotificationManager = () => {
             </div>
           )}
 
+          {/* Template Selection */}
+          {templates.length > 0 && (
+            <div className="space-y-2">
+              <Label>SMS Template (Optional)</Label>
+              <div className="flex gap-2">
+                <Select value={selectedTemplate} onValueChange={handleTemplateSelect}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Choose a template..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {templates.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4" />
+                          {template.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedTemplate && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={clearTemplate}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+              {selectedTemplate && (
+                <p className="text-sm text-muted-foreground">
+                  Template loaded. You can edit the message below before sending.
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Message Input */}
           <div className="space-y-2">
             <Label htmlFor="message">Message</Label>
             <Textarea
               id="message"
-              placeholder="Enter your SMS message..."
+              placeholder="Enter your SMS message or select a template above..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={4}
@@ -373,6 +417,9 @@ const SMSNotificationManager = () => {
                 <span>{smsCount} SMS{smsCount > 1 ? 's' : ''}</span>
               </div>
             </div>
+            <p className="text-xs text-muted-foreground">
+              The exact text above will be sent. You can edit template content before sending.
+            </p>
           </div>
 
           {/* Send Button */}

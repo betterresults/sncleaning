@@ -209,7 +209,7 @@ export const adminNavigation = [
         icon: Calculator,
       },
       {
-        title: "Email Notifications",
+        title: "Notification Management",
         url: "/admin-notification-management",
         icon: Bell,
       },
