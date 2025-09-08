@@ -12,6 +12,8 @@ import {
   DialogDescription
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { 
   X, 
   CreditCard, 
@@ -25,7 +27,10 @@ import {
   Banknote,
   CheckCircle,
   AlertTriangle,
-  Loader2
+  Loader2,
+  Edit2,
+  Save,
+  X as Cancel
 } from 'lucide-react';
 import CustomerDirectPaymentDialog from '@/components/payments/CustomerDirectPaymentDialog';
 
@@ -90,6 +95,9 @@ const CustomerDetailView = ({
   customerEmail 
 }: CustomerDetailViewProps) => {
   const [customer, setCustomer] = useState<Customer | null>(null);
+  const [editingCustomer, setEditingCustomer] = useState(false);
+  const [editCustomerData, setEditCustomerData] = useState<Partial<Customer>>({});
+  const [updatingCustomer, setUpdatingCustomer] = useState(false);
   const [unpaidBookings, setUnpaidBookings] = useState<UnpaidBooking[]>([]);
   const [upcomingBookings, setUpcomingBookings] = useState<Booking[]>([]);
   const [pastBookings, setPastBookings] = useState<Booking[]>([]);
@@ -243,6 +251,58 @@ const CustomerDetailView = ({
     }
   };
 
+  const startEditingCustomer = () => {
+    if (customer) {
+      setEditCustomerData({
+        first_name: customer.first_name || '',
+        last_name: customer.last_name || '',
+        email: customer.email || '',
+        phone: customer.phone || '',
+        company: customer.company || '',
+        client_status: customer.client_status || 'New'
+      });
+      setEditingCustomer(true);
+    }
+  };
+
+  const cancelEditingCustomer = () => {
+    setEditingCustomer(false);
+    setEditCustomerData({});
+  };
+
+  const saveCustomerData = async () => {
+    if (!customerId || !editCustomerData) return;
+
+    setUpdatingCustomer(true);
+    try {
+      const { error } = await supabase
+        .from('customers')
+        .update(editCustomerData)
+        .eq('id', customerId);
+
+      if (error) throw error;
+
+      // Update local state
+      setCustomer(prev => prev ? { ...prev, ...editCustomerData } : null);
+      setEditingCustomer(false);
+      setEditCustomerData({});
+
+      toast({
+        title: 'Success',
+        description: 'Customer information updated successfully',
+      });
+    } catch (error) {
+      console.error('Error updating customer:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update customer information',
+        variant: 'destructive',
+      });
+    } finally {
+      setUpdatingCustomer(false);
+    }
+  };
+
   const totalUnpaid = unpaidBookings.reduce((sum, booking) => sum + booking.total_cost, 0);
 
   return (
@@ -283,37 +343,156 @@ const CustomerDetailView = ({
                   {/* Customer Info */}
                   <Card>
                     <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <User className="h-5 w-5" />
-                        Customer Information
+                      <CardTitle className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <User className="h-5 w-5" />
+                          Customer Information
+                        </div>
+                        {!editingCustomer ? (
+                          <Button
+                            size="sm" 
+                            variant="outline"
+                            onClick={startEditingCustomer}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={saveCustomerData}
+                              disabled={updatingCustomer}
+                            >
+                              {updatingCustomer ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Save className="h-4 w-4" />
+                              )}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={cancelEditingCustomer}
+                            >
+                              <Cancel className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-mono text-sm">{customer.email}</span>
-                      </div>
-                      {customer.phone && (
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          <span>{customer.phone}</span>
+                    <CardContent className="space-y-4">
+                      {editingCustomer ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="first_name">First Name</Label>
+                            <Input
+                              id="first_name"
+                              value={editCustomerData.first_name || ''}
+                              onChange={(e) => setEditCustomerData(prev => ({
+                                ...prev,
+                                first_name: e.target.value
+                              }))}
+                              placeholder="Enter first name"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="last_name">Last Name</Label>
+                            <Input
+                              id="last_name"
+                              value={editCustomerData.last_name || ''}
+                              onChange={(e) => setEditCustomerData(prev => ({
+                                ...prev,
+                                last_name: e.target.value
+                              }))}
+                              placeholder="Enter last name"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="email">Email</Label>
+                            <Input
+                              id="email"
+                              type="email"
+                              value={editCustomerData.email || ''}
+                              onChange={(e) => setEditCustomerData(prev => ({
+                                ...prev,
+                                email: e.target.value
+                              }))}
+                              placeholder="Enter email"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="phone">Phone</Label>
+                            <Input
+                              id="phone"
+                              value={editCustomerData.phone || ''}
+                              onChange={(e) => setEditCustomerData(prev => ({
+                                ...prev,
+                                phone: e.target.value
+                              }))}
+                              placeholder="Enter phone number"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="company">Company</Label>
+                            <Input
+                              id="company"
+                              value={editCustomerData.company || ''}
+                              onChange={(e) => setEditCustomerData(prev => ({
+                                ...prev,
+                                company: e.target.value
+                              }))}
+                              placeholder="Enter company name"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="client_status">Status</Label>
+                            <Input
+                              id="client_status"
+                              value={editCustomerData.client_status || ''}
+                              onChange={(e) => setEditCustomerData(prev => ({
+                                ...prev,
+                                client_status: e.target.value
+                              }))}
+                              placeholder="Client status"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {(customer.first_name || customer.last_name) && (
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                              <span>{customer.first_name} {customer.last_name}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-mono text-sm">{customer.email}</span>
+                          </div>
+                          {customer.phone && (
+                            <div className="flex items-center gap-2">
+                              <Phone className="h-4 w-4 text-muted-foreground" />
+                              <span>{customer.phone}</span>
+                            </div>
+                          )}
+                          {customer.company && (
+                            <div className="flex items-center gap-2">
+                              <Building className="h-4 w-4 text-muted-foreground" />
+                              <span>{customer.company}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline">{customer.client_status}</Badge>
+                            {customer.clent_type && (
+                              <Badge variant="secondary">{customer.clent_type}</Badge>
+                            )}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Customer since: {new Date(customer.created_at).toLocaleDateString()}
+                          </div>
                         </div>
                       )}
-                      {customer.company && (
-                        <div className="flex items-center gap-2">
-                          <Building className="h-4 w-4 text-muted-foreground" />
-                          <span>{customer.company}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">{customer.client_status}</Badge>
-                        {customer.clent_type && (
-                          <Badge variant="secondary">{customer.clent_type}</Badge>
-                        )}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Customer since: {new Date(customer.created_at).toLocaleDateString()}
-                      </div>
                     </CardContent>
                   </Card>
 
