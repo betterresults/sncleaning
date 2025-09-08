@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Redirect</title>
+</head>
+<body>
+    <script>
+        // Get customer_id from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const customerId = urlParams.get('c');
+        
+        if (customerId) {
+            // Redirect to the Supabase edge function
+            window.location.href = `https://dkomihipebixlegygnoy.supabase.co/functions/v1/redirect-to-payment-collection?customer_id=${customerId}`;
+        } else {
+            // Redirect to main site if no customer ID
+            window.location.href = '/';
+        }
+    </script>
+    <p>Redirecting to payment setup...</p>
+</body>
+</html>
