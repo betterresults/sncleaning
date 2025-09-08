@@ -124,9 +124,10 @@ const EmailNotificationManager = () => {
     try {
       const { error } = await supabase.functions.invoke('send-notification-email', {
         body: {
-          to,
+          to: [to],
           subject,
-          html: message
+          html: message,
+          template: 'custom'
         }
       });
 
