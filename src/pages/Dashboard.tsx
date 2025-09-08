@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
@@ -8,12 +9,14 @@ import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { adminNavigation } from '@/lib/navigationItems';
 import UpcomingBookings from '@/components/dashboard/UpcomingBookings';
 import DashboardStats from '@/components/admin/DashboardStats';
-import { Calendar } from 'lucide-react';
+import StorageTestDialog from '@/components/debug/StorageTestDialog';
+import { Calendar, TestTube } from 'lucide-react';
 import AdminGuard from '@/components/AdminGuard';
 
 const Dashboard = () => {
   const { user, userRole, cleanerId, loading, signOut } = useAuth();
   const [selectedTimeRange, setSelectedTimeRange] = useState<'today' | '3days' | '7days' | '30days'>('30days');
+  const [showStorageTest, setShowStorageTest] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -82,20 +85,30 @@ const Dashboard = () => {
             
             <main className="flex-1 p-4 space-y-6 max-w-full overflow-x-hidden">
               <div className="max-w-7xl mx-auto space-y-6">
-                {/* Time Filter Dropdown */}
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-gray-600" />
-                  <Select value={selectedTimeRange} onValueChange={(value: 'today' | '3days' | '7days' | '30days') => setSelectedTimeRange(value)}>
-                    <SelectTrigger className="w-48 bg-white border-gray-300 shadow-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border shadow-lg z-50">
-                      <SelectItem value="today">Today</SelectItem>
-                      <SelectItem value="3days">Next 3 Days</SelectItem>
-                      <SelectItem value="7days">Next 7 Days</SelectItem>
-                      <SelectItem value="30days">Next 30 Days</SelectItem>
-                    </SelectContent>
-                  </Select>
+                {/* Time Filter Dropdown and Test Button */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Calendar className="h-5 w-5 text-gray-600" />
+                    <Select value={selectedTimeRange} onValueChange={(value: 'today' | '3days' | '7days' | '30days') => setSelectedTimeRange(value)}>
+                      <SelectTrigger className="w-48 bg-white border-gray-300 shadow-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border shadow-lg z-50">
+                        <SelectItem value="today">Today</SelectItem>
+                        <SelectItem value="3days">Next 3 Days</SelectItem>
+                        <SelectItem value="7days">Next 7 Days</SelectItem>
+                        <SelectItem value="30days">Next 30 Days</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button 
+                    onClick={() => setShowStorageTest(true)}
+                    variant="outline"
+                    className="flex items-center gap-2"
+                  >
+                    <TestTube className="h-4 w-4" />
+                    Test Photo Storage
+                  </Button>
                 </div>
 
                 {/* Statistics */}
@@ -113,6 +126,12 @@ const Dashboard = () => {
             </main>
           </SidebarInset>
         </div>
+        
+        {/* Storage Test Dialog */}
+        <StorageTestDialog 
+          open={showStorageTest} 
+          onOpenChange={setShowStorageTest} 
+        />
       </SidebarProvider>
     </AdminGuard>
   );
