@@ -426,22 +426,25 @@ const EmailNotificationManager = () => {
                           Manual entry
                         </CommandItem>
                         {recipients.map((recipient) => (
-                          <CommandItem
-                            key={recipient.id}
-                            value={recipient.id}
-                            onSelect={() => {
-                              handleClientSelect(recipient.id);
-                              setClientComboOpen(false);
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                selectedClient === recipient.id ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            {recipient.name} ({recipient.type})
-                          </CommandItem>
+                        <CommandItem
+                          key={recipient.id}
+                          value={`${recipient.name} ${recipient.email} ${recipient.type}`}
+                          onSelect={() => {
+                            handleClientSelect(recipient.id);
+                            setClientComboOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedClient === recipient.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <div className="flex flex-col">
+                            <span>{recipient.name}</span>
+                            <span className="text-sm text-muted-foreground">{recipient.email} • {recipient.type}</span>
+                          </div>
+                        </CommandItem>
                         ))}
                       </CommandGroup>
                     </CommandList>
