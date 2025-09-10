@@ -38,3 +38,12 @@ verify_jwt = false
 
 [functions.redirect-to-payment-collection]
 verify_jwt = false
+
+[functions.stripe-process-payments]
+verify_jwt = false
+
+[functions.stripe-authorize-payment]
+verify_jwt = false
+
+[functions.stripe-capture-payment]
+verify_jwt = false
