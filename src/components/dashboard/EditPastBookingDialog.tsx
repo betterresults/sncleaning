@@ -27,6 +27,7 @@ interface PastBooking {
   customer: number;
   cleaner_pay: number;
   payment_status: string;
+  payment_method: string;
   booking_status: string;
   total_hours: number;
   property_details: string;
@@ -64,6 +65,7 @@ const EditPastBookingDialog: React.FC<EditPastBookingDialogProps> = ({
     property_details: '',
     additional_details: '',
     payment_status: '',
+    payment_method: '',
     booking_status: ''
   });
 
@@ -86,6 +88,7 @@ const EditPastBookingDialog: React.FC<EditPastBookingDialogProps> = ({
         property_details: booking.property_details || '',
         additional_details: booking.additional_details || '',
         payment_status: booking.payment_status || '',
+        payment_method: booking.payment_method || '',
         booking_status: booking.booking_status || ''
       });
     }
@@ -272,7 +275,7 @@ const EditPastBookingDialog: React.FC<EditPastBookingDialogProps> = ({
               </div>
             </div>
 
-            {/* Status */}
+            {/* Payment Information */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Payment Status</Label>
@@ -288,18 +291,37 @@ const EditPastBookingDialog: React.FC<EditPastBookingDialogProps> = ({
                 </select>
               </div>
               <div>
-                <Label>Booking Status</Label>
+                <Label>Payment Method</Label>
                 <select
-                  value={formData.booking_status}
-                  onChange={(e) => setFormData(prev => ({ ...prev, booking_status: e.target.value }))}
+                  value={formData.payment_method}
+                  onChange={(e) => setFormData(prev => ({ ...prev, payment_method: e.target.value }))}
                   className="w-full p-2 border border-input rounded-md bg-background"
                 >
-                  <option value="Confirmed">Confirmed</option>
-                  <option value="Completed">Completed</option>
-                  <option value="Cancelled">Cancelled</option>
-                  <option value="No Show">No Show</option>
+                  <option value="">Select Payment Method</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Card">Card</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Stripe">Stripe</option>
+                  <option value="PayPal">PayPal</option>
+                  <option value="BACS">BACS</option>
+                  <option value="Cheque">Cheque</option>
                 </select>
               </div>
+            </div>
+
+            {/* Status */}
+            <div>
+              <Label>Booking Status</Label>
+              <select
+                value={formData.booking_status}
+                onChange={(e) => setFormData(prev => ({ ...prev, booking_status: e.target.value }))}
+                className="w-full p-2 border border-input rounded-md bg-background"
+              >
+                <option value="Confirmed">Confirmed</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+                <option value="No Show">No Show</option>
+              </select>
             </div>
 
             {/* Details */}

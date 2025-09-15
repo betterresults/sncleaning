@@ -36,6 +36,7 @@ interface PastBooking {
   customer: number;
   cleaner_pay: number;
   payment_status: string;
+  payment_method: string;
   booking_status: string;
   total_hours: number;
   property_details: string;
