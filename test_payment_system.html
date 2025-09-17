@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Payment System</title>
+</head>
+<body>
+    <h1>Test System Payment Action</h1>
+    <button onclick="testSystemPayment()">Test System Payment</button>
+    <div id="result"></div>
+
+    <script>
+        async function testSystemPayment() {
+            const result = document.getElementById('result');
+            result.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch('/functions/v1/system-payment-action', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        bookingId: 'test-booking-id',
+                        action: 'authorize'
+                    })
+                });
+                
+                const data = await response.json();
+                result.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                result.innerHTML = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
