@@ -69,15 +69,22 @@ serve(async (req) => {
       
       for (const booking of bookingsWithPaymentMethods) {
         try {
-          // Call authorize payment function
-          const { error: authError } = await supabaseClient.functions.invoke('stripe-authorize-payment', {
-            body: { bookingId: booking.id }
+          console.log(`Attempting to authorize payment for booking ${booking.id} (£${booking.total_cost})`)
+          
+          // Call robust system payment action function
+          const { data: authResult, error: authError } = await supabaseClient.functions.invoke('system-payment-action', {
+            body: { 
+              bookingId: booking.id,
+              action: 'authorize'
+            }
           })
           
           if (authError) {
             console.error(`Failed to authorize payment for booking ${booking.id}:`, authError)
+          } else if (authResult?.success) {
+            console.log(`Successfully authorized payment for booking ${booking.id}: ${authResult.paymentIntentId}`)
           } else {
-            console.log(`Successfully authorized payment for booking ${booking.id}`)
+            console.log(`Authorization incomplete for booking ${booking.id}: ${authResult?.error || 'Unknown error'}`)
           }
         } catch (error) {
           console.error(`Error authorizing booking ${booking.id}:`, error)
@@ -109,15 +116,22 @@ serve(async (req) => {
       
       for (const booking of readyToCapture) {
         try {
-          // Call capture payment function
-          const { error: captureErr } = await supabaseClient.functions.invoke('stripe-capture-payment', {
-            body: { bookingId: booking.id }
+          console.log(`Attempting to capture payment for booking ${booking.id} (${booking.invoice_id})`)
+          
+          // Call robust system payment action function
+          const { data: captureResult, error: captureErr } = await supabaseClient.functions.invoke('system-payment-action', {
+            body: { 
+              bookingId: booking.id,
+              action: 'charge'
+            }
           })
           
           if (captureErr) {
             console.error(`Failed to capture payment for booking ${booking.id}:`, captureErr)
+          } else if (captureResult?.success) {
+            console.log(`Successfully captured payment for booking ${booking.id}: ${captureResult.paymentIntentId}`)
           } else {
-            console.log(`Successfully captured payment for booking ${booking.id}`)
+            console.log(`Capture incomplete for booking ${booking.id}: ${captureResult?.error || 'Unknown error'}`)
           }
         } catch (error) {
           console.error(`Error capturing booking ${booking.id}:`, error)
