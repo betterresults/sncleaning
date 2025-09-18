@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
-import { CalendarDays, MapPin, User, Banknote, Search, Filter, X, Upload, CreditCard, Send, Plus } from 'lucide-react';
+import { CalendarDays, MapPin, User, Banknote, Search, Filter, X, Upload, CreditCard, Send, Plus, Camera } from 'lucide-react';
 import CleaningPhotosUploadDialog from './CleaningPhotosUploadDialog';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import { AdjustPaymentAmountDialog } from '@/components/payments/AdjustPaymentAmountDialog';
@@ -29,6 +29,7 @@ interface PastBooking {
   cleaner_pay: number;
   payment_status: string;
   booking_status: string;
+  has_photos: boolean;
   customer?: number;
   cleaner?: number;
 }
@@ -254,6 +255,9 @@ const CleanerPastBookings = () => {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <h3 className="text-lg sm:text-xl font-bold text-foreground tracking-tight">{booking.cleaning_type || 'Standard Cleaning'}</h3>
+            <div className="flex items-center">
+              <Camera className={`h-4 w-4 ${booking.has_photos ? 'text-green-600' : 'text-gray-400'}`} />
+            </div>
           </div>
           <div className="text-xs text-muted-foreground font-medium">
             Booking #{booking.id}
