@@ -34,7 +34,8 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   const [showAdditionalTab, setShowAdditionalTab] = useState(false);
 
   const bookingDate = new Date(booking.date_time).toISOString().split('T')[0];
-  const folderPath = `${booking.id}_${booking.postcode}_${bookingDate}_${booking.customer}`;
+  const safePostcode = booking.postcode?.toString().replace(/\s+/g, '').toUpperCase() || 'NA';
+  const folderPath = `${booking.id}_${safePostcode}_${bookingDate}_${booking.customer}`;
 
   const handleFileSelect = (files: FileList | null, type: 'before' | 'after' | 'additional') => {
     if (!files) return;
@@ -113,7 +114,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       do {
         const response = await supabase.storage
           .from('cleaning.photos')
-          .upload(filePath, file);
+          .upload(filePath, file, { cacheControl: '3600', upsert: true, contentType: file.type });
         
         uploadData = response.data;
         uploadError = response.error;
@@ -192,6 +193,17 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       toast({
         title: 'No Files Selected',
         description: 'Please select at least one photo to upload.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Verify authenticated session before uploading
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError || !authData?.user) {
+      toast({
+        title: 'Not signed in',
+        description: 'Please sign in again and retry the upload.',
         variant: 'destructive'
       });
       return;
