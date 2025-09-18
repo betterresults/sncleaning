@@ -86,11 +86,20 @@ const PhotoItem = ({ photo }: { photo: CleaningPhoto }) => {
         {loadingImage ? (
           <Camera className="h-8 w-8 text-gray-400 animate-pulse" />
         ) : imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={`${photo.photo_type} photo`}
-            className="w-full h-full object-cover"
-          />
+          photo.file_path.toLowerCase().endsWith('.pdf') ? (
+            <div className="w-full h-full bg-red-50 border-2 border-red-200 flex flex-col items-center justify-center">
+              <svg className="h-8 w-8 text-red-600 mb-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+              </svg>
+              <p className="text-xs text-red-600 text-center px-1">PDF</p>
+            </div>
+          ) : (
+            <img
+              src={imageUrl}
+              alt={`${photo.photo_type} photo`}
+              className="w-full h-full object-cover"
+            />
+          )
         ) : (
           <Camera className="h-8 w-8 text-gray-400" />
         )}
@@ -112,7 +121,14 @@ const PhotoItem = ({ photo }: { photo: CleaningPhoto }) => {
         <Button
           size="sm"
           variant="secondary"
-          onClick={() => handleViewPhoto(photo.file_path)}
+          onClick={() => {
+            const isPDF = photo.file_path.toLowerCase().endsWith('.pdf');
+            if (isPDF) {
+              handleViewPhoto(photo.file_path);
+            } else {
+              handleViewPhoto(photo.file_path);
+            }
+          }}
         >
           <Eye className="h-4 w-4" />
         </Button>

@@ -39,14 +39,28 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   const handleFileSelect = (files: FileList | null, type: 'before' | 'after' | 'additional') => {
     if (!files) return;
     
-    const fileArray = Array.from(files).filter(file => 
-      file.type.startsWith('image/') && file.size <= 5 * 1024 * 1024 // 5MB limit
-    );
+    let fileArray: File[];
+    
+    if (type === 'additional') {
+      // Allow both images and PDFs for additional information
+      fileArray = Array.from(files).filter(file => {
+        const isImage = file.type.startsWith('image/');
+        const isPDF = file.type === 'application/pdf';
+        const isValidSize = file.size <= 10 * 1024 * 1024; // 10MB limit for additional files
+        return (isImage || isPDF) && isValidSize;
+      });
+    } else {
+      // Only images for before/after photos
+      fileArray = Array.from(files).filter(file => 
+        file.type.startsWith('image/') && file.size <= 5 * 1024 * 1024 // 5MB limit
+      );
+    }
 
     if (fileArray.length !== files.length) {
+      const allowedTypes = type === 'additional' ? 'images and PDFs under 10MB' : 'images under 5MB';
       toast({
         title: 'Invalid Files',
-        description: 'Some files were skipped. Only images under 5MB are allowed.',
+        description: `Some files were skipped. Only ${allowedTypes} are allowed.`,
         variant: 'destructive'
       });
     }
@@ -80,7 +94,8 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
 
   const uploadFiles = async (files: File[], photoType: 'before' | 'after' | 'additional') => {
     const totalFiles = files.length;
-    setUploadStep(`Uploading ${photoType} photos...`);
+    const fileType = photoType === 'additional' ? 'files' : 'photos';
+    setUploadStep(`Uploading ${photoType} ${fileType}...`);
     
     const uploadPromises = files.map(async (file, index) => {
       const timestamp = Date.now();
@@ -90,19 +105,45 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       setUploadProgress(`Uploading ${file.name} (${index + 1}/${totalFiles})`);
       console.log('Attempting to upload file:', { filePath, fileSize: file.size, fileType: file.type });
 
-      // Upload to storage with detailed error logging
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('cleaning.photos')
-        .upload(filePath, file);
+      // Upload to storage with retry logic and detailed error logging
+      let uploadData, uploadError;
+      let retryCount = 0;
+      const maxRetries = 3;
+      
+      do {
+        const response = await supabase.storage
+          .from('cleaning.photos')
+          .upload(filePath, file);
+        
+        uploadData = response.data;
+        uploadError = response.error;
+        
+        if (uploadError && retryCount < maxRetries - 1) {
+          console.warn(`Upload attempt ${retryCount + 1} failed, retrying...`, uploadError);
+          await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponential backoff
+          retryCount++;
+        }
+      } while (uploadError && retryCount < maxRetries);
 
       if (uploadError) {
-        console.error('Storage upload error:', {
+        console.error('Storage upload error after all retries:', {
           error: uploadError,
           filePath,
           fileSize: file.size,
-          fileType: file.type
+          fileType: file.type,
+          retryCount
         });
-        throw new Error(`Upload failed for ${file.name}: ${uploadError.message}`);
+        
+        // More specific error messages
+        if (uploadError.message.includes('JWT')) {
+          throw new Error(`Authentication failed while uploading ${file.name}. Please try logging out and back in.`);
+        } else if (uploadError.message.includes('Policy')) {
+          throw new Error(`Permission denied for ${file.name}. Please contact support if this persists.`);
+        } else if (uploadError.message.includes('size')) {
+          throw new Error(`File ${file.name} is too large. Maximum size is ${photoType === 'additional' ? '10MB' : '5MB'}.`);
+        } else {
+          throw new Error(`Upload failed for ${file.name}: ${uploadError.message}`);
+        }
       }
 
       console.log('File uploaded successfully:', { filePath, uploadData });
@@ -265,7 +306,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 sm:p-6 text-center hover:border-gray-300 transition-colors touch-manipulation">
         <input
           type="file"
-          accept="image/*"
+          accept={type === 'additional' ? "image/*,application/pdf" : "image/*"}
           multiple
           onChange={(e) => onFileSelect(e.target.files)}
           className="hidden"
@@ -274,13 +315,16 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
         <label htmlFor={`file-${type}`} className="cursor-pointer block">
           <Camera className="h-10 w-10 sm:h-8 sm:w-8 mx-auto mb-2 text-gray-400" />
           <p className="text-sm sm:text-base text-gray-600 font-medium">
-            Select {type} photos
+            Select {type} {type === 'additional' ? 'files' : 'photos'}
           </p>
           <p className="text-xs text-gray-400 mt-1 hidden sm:block">
             Click to select or drag and drop
           </p>
           <p className="text-xs text-gray-400 mt-1">
-            JPG, PNG, WebP up to 5MB each
+            {type === 'additional' 
+              ? 'Images and PDFs up to 10MB each' 
+              : 'JPG, PNG, WebP up to 5MB each'
+            }
           </p>
         </label>
       </div>
@@ -289,15 +333,24 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {files.map((file, index) => (
             <div key={index} className="relative group">
-              <img
-                src={URL.createObjectURL(file)}
-                alt={`${type} photo ${index + 1}`}
-                className="w-full h-32 sm:h-24 object-cover rounded border shadow-sm"
-              />
+              {file.type === 'application/pdf' ? (
+                <div className="w-full h-32 sm:h-24 bg-red-50 border-2 border-red-200 rounded flex flex-col items-center justify-center">
+                  <svg className="h-8 w-8 text-red-600 mb-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                  </svg>
+                  <p className="text-xs text-red-600 text-center px-1">{file.name}</p>
+                </div>
+              ) : (
+                <img
+                  src={URL.createObjectURL(file)}
+                  alt={`${type} ${file.type === 'application/pdf' ? 'document' : 'photo'} ${index + 1}`}
+                  className="w-full h-32 sm:h-24 object-cover rounded border shadow-sm"
+                />
+              )}
               <button
                 onClick={() => onRemove(index)}
                 className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-2 sm:p-1 hover:bg-red-600 touch-manipulation shadow-lg"
-                aria-label={`Remove ${type} photo ${index + 1}`}
+                aria-label={`Remove ${type} ${file.type === 'application/pdf' ? 'document' : 'photo'} ${index + 1}`}
               >
                 <X className="h-4 w-4 sm:h-3 sm:w-3" />
               </button>
@@ -371,7 +424,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
                       <h4 className="font-medium text-orange-800 text-sm">Additional Information</h4>
                     </div>
                     <p className="text-xs text-orange-700">
-                      Use this section to report damage, missing items, or any other additional information.
+                      Use this section to report damage, missing items, or any other additional information. You can upload both photos and PDF documents.
                     </p>
                   </div>
 

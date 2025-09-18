@@ -160,22 +160,40 @@ const CleaningPhotosViewDialog = ({ open, onOpenChange, booking }: CleaningPhoto
 
     return (
       <div className="relative group">
-        <div 
-          className="aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-          onClick={() => onSelect(photo.file_path)}
-        >
-          {imageUrl ? (
+      <div 
+        className="aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+        onClick={() => {
+          const isPDF = photo.file_path.toLowerCase().endsWith('.pdf');
+          if (isPDF) {
+            getPhotoUrl(photo.file_path).then(url => {
+              if (url) window.open(url, '_blank');
+            });
+          } else {
+            onSelect(photo.file_path);
+          }
+        }}
+      >
+        {imageUrl ? (
+          photo.file_path.toLowerCase().endsWith('.pdf') ? (
+            <div className="w-full h-full bg-red-50 border-2 border-red-200 flex flex-col items-center justify-center">
+              <svg className="h-8 w-8 text-red-600 mb-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+              </svg>
+              <p className="text-xs text-red-600 text-center px-1">PDF Document</p>
+            </div>
+          ) : (
             <img
               src={imageUrl}
               alt={`${photo.photo_type} photo`}
               className="w-full h-full object-cover"
             />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Camera className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400" />
-            </div>
-          )}
-        </div>
+          )
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Camera className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400" />
+          </div>
+        )}
+      </div>
         
         <div className="absolute top-1 right-1 sm:top-2 sm:right-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
           <Button
