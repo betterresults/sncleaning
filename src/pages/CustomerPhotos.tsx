@@ -48,22 +48,53 @@ const CustomerPhotos = () => {
       setLoading(true);
       
       console.log('Fetching photos for folder:', folderName);
-      
-      // First, try to list the main folder
-      const { data: mainFiles, error: mainError } = await supabase.storage
-        .from('cleaning.photos')
-        .list(folderName, {
-          limit: 100,
-          sortBy: { column: 'name', order: 'asc' }
-        });
 
-      let allFiles: PhotoFile[] = [];
+      // Try multiple variants of the folder to handle special/nbsp spaces in postcodes
+      const candidates = Array.from(new Set([
+        folderName || '',
+        (folderName || '').replace(/\u00A0/g, ' '), // NBSP to normal space
+        (folderName || '').replace(/[\u00A0 ]+/g, ''), // remove all spaces
+      ].filter(Boolean)));
 
-      if (mainError) {
-        console.error('Error listing main folder:', mainError);
+      let usedFolder = candidates[0];
+      let mainFiles: any[] | null = null;
+      let mainError: any = null;
+
+      for (const cand of candidates) {
+        const { data, error } = await supabase.storage
+          .from('cleaning.photos')
+          .list(cand, {
+            limit: 100,
+            sortBy: { column: 'name', order: 'asc' }
+          });
+
+        if (error) {
+          mainError = error;
+          continue;
+        }
+
+        // Prefer the first candidate that returns files
+        if (data && data.length > 0) {
+          mainFiles = data;
+          usedFolder = cand;
+          break;
+        }
+
+        // If no files, keep the last empty result in case all are empty
+        if (data) {
+          mainFiles = data;
+          usedFolder = cand;
+        }
+      }
+
+      if (mainError && !mainFiles) {
+        console.error('Error listing folder variants:', mainError);
         throw mainError;
       }
 
+      let allFiles: PhotoFile[] = [];
+
+      console.log('Resolved folder:', usedFolder);
       console.log('Main folder contents:', mainFiles);
 
       if (mainFiles && mainFiles.length > 0) {
@@ -74,8 +105,8 @@ const CustomerPhotos = () => {
         // Add direct images
         allFiles.push(...directImages.map(file => ({
           name: file.name,
-          fullPath: `${folderName}/${file.name}`,
-          url: supabase.storage.from('cleaning.photos').getPublicUrl(`${folderName}/${file.name}`).data.publicUrl,
+          fullPath: `${usedFolder}/${file.name}`,
+          url: supabase.storage.from('cleaning.photos').getPublicUrl(`${usedFolder}/${file.name}`).data.publicUrl,
           type: 'general'
         })));
 
@@ -83,7 +114,7 @@ const CustomerPhotos = () => {
         for (const subfolder of subfolders) {
           const { data: subFiles } = await supabase.storage
             .from('cleaning.photos')
-            .list(`${folderName}/${subfolder.name}`, {
+            .list(`${usedFolder}/${subfolder.name}`, {
               limit: 100,
               sortBy: { column: 'name', order: 'asc' }
             });
@@ -92,8 +123,8 @@ const CustomerPhotos = () => {
             const subImages = subFiles.filter(file => file.name && file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i));
             allFiles.push(...subImages.map(file => ({
               name: file.name,
-              fullPath: `${folderName}/${subfolder.name}/${file.name}`,
-              url: supabase.storage.from('cleaning.photos').getPublicUrl(`${folderName}/${subfolder.name}/${file.name}`).data.publicUrl,
+              fullPath: `${usedFolder}/${subfolder.name}/${file.name}`,
+              url: supabase.storage.from('cleaning.photos').getPublicUrl(`${usedFolder}/${subfolder.name}/${file.name}`).data.publicUrl,
               type: subfolder.name
             })));
           }

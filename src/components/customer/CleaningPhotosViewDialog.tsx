@@ -109,9 +109,18 @@ const CleaningPhotosViewDialog = ({ open, onOpenChange, booking }: CleaningPhoto
   };
 
   const copyPhotoLink = () => {
-    const bookingDate = new Date(booking.date_time).toISOString().split('T')[0];
-    const folderPath = `${booking.id}_${booking.postcode}_${bookingDate}`;
-    const encodedFolderPath = encodeURIComponent(folderPath);
+    // Derive folder from existing photo paths to ensure accuracy
+    const firstPath = photos[0]?.file_path;
+    if (!firstPath) {
+      toast({
+        title: 'No Photos Yet',
+        description: 'Upload photos before sharing a link.',
+        variant: 'destructive'
+      });
+      return;
+    }
+    const folder = firstPath.split('/')[0];
+    const encodedFolderPath = encodeURIComponent(folder);
     const photoLink = `https://account.sncleaningservices.co.uk/photos/${encodedFolderPath}`;
     
     navigator.clipboard.writeText(photoLink).then(() => {

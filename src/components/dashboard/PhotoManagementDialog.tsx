@@ -190,7 +190,8 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
   const [showAdditionalTab, setShowAdditionalTab] = useState(false);
 
   const bookingDate = new Date(booking.date_time).toISOString().split('T')[0];
-  const folderPath = `${booking.id}_${booking.postcode}_${bookingDate}_${booking.customer}`;
+  const safePostcode = booking.postcode?.toString().replace(/[\s\u00A0]+/g, '').toUpperCase() || 'NA';
+  const folderPath = `${booking.id}_${safePostcode}_${bookingDate}_${booking.customer}`;
 
   const fetchPhotos = async () => {
     if (!open) return;
@@ -277,7 +278,8 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
     const uploadPromises = files.map(async (file, index) => {
       const timestamp = Date.now();
       const fileName = `${timestamp}_${index}_${file.name}`;
-      const filePath = `${folderPath}/${photoType}/${fileName}`;
+      const baseFolder = photos[0]?.file_path?.split('/')[0] || folderPath;
+      const filePath = `${baseFolder}/${photoType}/${fileName}`;
 
       // Upload to storage
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -534,7 +536,8 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
           {userRole === 'admin' && photos.length > 0 && (
             <Button
               onClick={() => {
-                const encodedFolderPath = encodeURIComponent(folderPath);
+                const existingFolder = photos[0]?.file_path?.split('/')[0] || folderPath;
+                const encodedFolderPath = encodeURIComponent(existingFolder);
                 const photoLink = `https://account.sncleaningservices.co.uk/photos/${encodedFolderPath}`;
                 navigator.clipboard.writeText(photoLink).then(() => {
                   toast({
