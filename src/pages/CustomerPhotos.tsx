@@ -23,6 +23,12 @@ interface PhotoFolder {
   count: number;
 }
 
+interface BookingInfo {
+  address: string;
+  postcode: string;
+  date_only: string;
+}
+
 const CustomerPhotos = () => {
   const { folderName } = useParams<{ folderName: string }>();
   const navigate = useNavigate();
@@ -35,13 +41,43 @@ const CustomerPhotos = () => {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'folders' | 'grid'>('folders');
+  const [bookingInfo, setBookingInfo] = useState<BookingInfo | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     if (folderName) {
       fetchPhotos();
+      fetchBookingInfo();
     }
   }, [folderName]);
+
+  const fetchBookingInfo = async () => {
+    try {
+      // Extract booking ID from folder name (format: bookingId_postcode_date_time)
+      const bookingIdStr = folderName?.split('_')[0];
+      if (!bookingIdStr) return;
+      
+      const bookingId = parseInt(bookingIdStr, 10);
+      if (isNaN(bookingId)) return;
+
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('address, postcode, date_only')
+        .eq('id', bookingId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching booking info:', error);
+        return;
+      }
+
+      if (data) {
+        setBookingInfo(data);
+      }
+    } catch (err) {
+      console.error('Error fetching booking info:', err);
+    }
+  };
 
   const fetchPhotos = async () => {
     try {
@@ -360,8 +396,13 @@ const CustomerPhotos = () => {
               {selectedFolder || 'Your Cleaning Photos'}
             </h1>
             <p className="text-muted-foreground mb-1">
-              Service completed on {folderName?.includes('_') ? folderName.split('_')[2] : 'your selected date'}
+              Service completed on {bookingInfo?.date_only || (folderName?.includes('_') ? folderName.split('_')[2] : 'your selected date')}
             </p>
+            {bookingInfo && (
+              <p className="text-muted-foreground mb-1">
+                <strong>Address:</strong> {bookingInfo.address}, {bookingInfo.postcode}
+              </p>
+            )}
             <p className="text-sm text-muted-foreground">
               {selectedFolder 
                 ? `${currentPhotos.length} photo${currentPhotos.length !== 1 ? 's' : ''} in ${selectedFolder}`
