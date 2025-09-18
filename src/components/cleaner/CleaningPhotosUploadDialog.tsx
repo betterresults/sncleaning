@@ -259,6 +259,22 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
         if (updateError) {
           console.error('Failed to update booking status:', updateError);
         }
+
+        // Also update past_bookings table if the booking exists there
+        try {
+          const { error: pastUpdateError } = await supabase
+            .from('past_bookings')
+            .update({ has_photos: true })
+            .eq('id', booking.id);
+
+          if (pastUpdateError) {
+            console.error('Failed to update past booking status:', pastUpdateError);
+            // This is non-critical - don't fail the main upload
+          }
+        } catch (pastError) {
+          console.error('Past booking update error:', pastError);
+          // This is non-critical - don't fail the main upload
+        }
       } catch (updateError) {
         console.error('Booking update error:', updateError);
         // Don't fail the upload if status update fails
