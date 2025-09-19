@@ -26,6 +26,7 @@ const CustomerDashboard = () => {
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [paymentMethodsLoading, setPaymentMethodsLoading] = useState(true);
   const [showBulkPayment, setShowBulkPayment] = useState(false);
+  const [isBusinessClient, setIsBusinessClient] = useState(false);
   const isAdminViewing = userRole === 'admin';
   
   // Use selected customer ID if admin is viewing, otherwise use the logged-in user's customer ID  
@@ -56,8 +57,31 @@ const CustomerDashboard = () => {
     }
   };
 
+  // Check if customer is business client
+  const checkIfBusinessClient = async () => {
+    if (!activeCustomerId) {
+      setIsBusinessClient(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('clent_type')
+        .eq('id', activeCustomerId)
+        .single();
+
+      if (error) throw error;
+      setIsBusinessClient(data?.clent_type === 'business');
+    } catch (error) {
+      console.error('Error checking customer type:', error);
+      setIsBusinessClient(false);
+    }
+  };
+
   useEffect(() => {
     fetchPaymentMethods();
+    checkIfBusinessClient();
   }, [activeCustomerId]);
 
   console.log('CustomerDashboard render - hasLinenAccess:', hasLinenAccess, 'loading:', linenLoading);
@@ -96,8 +120,8 @@ const CustomerDashboard = () => {
             <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-6">
               {isAdminViewing && <AdminCustomerSelector />}
               
-              {/* Payment Method Setup Notification - Show for customers without payment methods (including admin viewing) */}
-              {!paymentMethodsLoading && paymentMethods.length === 0 && activeCustomerId && (
+              {/* Payment Method Setup Notification - Show for customers without payment methods (excluding business clients) */}
+              {!paymentMethodsLoading && paymentMethods.length === 0 && activeCustomerId && !isBusinessClient && (
                 <Card className="border-2 border-orange-200 bg-orange-50/30 shadow-lg">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-orange-800">
