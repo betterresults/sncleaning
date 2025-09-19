@@ -365,17 +365,25 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
                   </svg>
                   <p className="text-xs text-red-600 text-center px-1">{file.name}</p>
                 </div>
-              ) : (
+              ) : file.type.startsWith('image/') ? (
                 <img
                   src={URL.createObjectURL(file)}
-                  alt={`${type} ${file.type === 'application/pdf' ? 'document' : 'photo'} ${index + 1}`}
+                  alt={`${type} photo ${index + 1}`}
                   className="w-full h-32 sm:h-24 object-cover rounded border shadow-sm"
                 />
+              ) : (
+                <div className="w-full h-32 sm:h-24 bg-gray-50 border-2 border-gray-200 rounded flex flex-col items-center justify-center">
+                  <svg className="h-8 w-8 text-gray-600 mb-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                  </svg>
+                  <p className="text-xs text-gray-600 text-center px-1 break-all">{file.name}</p>
+                  <p className="text-xs text-gray-400">{(file.size / 1024 / 1024).toFixed(1)}MB</p>
+                </div>
               )}
               <button
                 onClick={() => onRemove(index)}
                 className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-2 sm:p-1 hover:bg-red-600 touch-manipulation shadow-lg"
-                aria-label={`Remove ${type} ${file.type === 'application/pdf' ? 'document' : 'photo'} ${index + 1}`}
+                aria-label={`Remove ${type} file ${index + 1}`}
               >
                 <X className="h-4 w-4 sm:h-3 sm:w-3" />
               </button>

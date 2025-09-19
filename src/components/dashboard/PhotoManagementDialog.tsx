@@ -235,16 +235,28 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
   const handleFileSelect = (files: FileList | null, type: 'before' | 'after' | 'additional') => {
     if (!files) return;
     
-    const fileArray = Array.from(files).filter(file => 
-      file.type.startsWith('image/') && file.size <= 5 * 1024 * 1024 // 5MB limit
-    );
+    let fileArray: File[];
 
-    if (fileArray.length !== files.length) {
-      toast({
-        title: 'Invalid Files',
-        description: 'Some files were skipped. Only images under 5MB are allowed.',
-        variant: 'destructive'
-      });
+    if (type === 'additional') {
+      // Allow any file type up to 10MB for additional uploads
+      fileArray = Array.from(files).filter(file => file.size <= 10 * 1024 * 1024);
+      if (fileArray.length !== files.length) {
+        toast({
+          title: 'Invalid Files',
+          description: 'Some files were skipped. Only files under 10MB are allowed.',
+          variant: 'destructive'
+        });
+      }
+    } else {
+      // Only images up to 5MB for before/after
+      fileArray = Array.from(files).filter(file => file.type.startsWith('image/') && file.size <= 5 * 1024 * 1024);
+      if (fileArray.length !== files.length) {
+        toast({
+          title: 'Invalid Files',
+          description: 'Some files were skipped. Only images under 5MB are allowed.',
+          variant: 'destructive'
+        });
+      }
     }
 
     switch (type) {
@@ -353,8 +365,8 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
       await Promise.all(uploadPromises);
 
       toast({
-        title: 'Photos Uploaded Successfully',
-        description: `Uploaded ${beforeFiles.length + afterFiles.length + additionalFiles.length} photos.`
+        title: 'Files Uploaded Successfully',
+        description: `Uploaded ${beforeFiles.length + afterFiles.length + additionalFiles.length} file${beforeFiles.length + afterFiles.length + additionalFiles.length === 1 ? '' : 's'}.`
       });
 
       // Reset form
@@ -475,7 +487,7 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
       <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center hover:border-gray-300 transition-colors">
         <input
           type="file"
-          accept="image/*"
+          accept={type === 'additional' ? '*/*' : 'image/*'}
           multiple
           onChange={(e) => onFileSelect(e.target.files)}
           className="hidden"
@@ -484,33 +496,50 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
         <label htmlFor={`file-${type}`} className="cursor-pointer">
           <Camera className="h-8 w-8 mx-auto mb-2 text-gray-400" />
           <p className="text-sm text-gray-600">
-            Click to select {type} photos or drag and drop
+            Click to select {type} {type === 'additional' ? 'files' : 'photos'} or drag and drop
           </p>
           <p className="text-xs text-gray-400 mt-1">
-            JPG, PNG, WebP up to 5MB each
+            {type === 'additional' ? 'Any file type up to 10MB each' : 'JPG, PNG, WebP up to 5MB each'}
           </p>
         </label>
       </div>
 
-      {files.length > 0 && (
-        <div className="grid grid-cols-2 gap-2">
-          {files.map((file, index) => (
-            <div key={index} className="relative">
-              <img
-                src={URL.createObjectURL(file)}
-                alt={`${type} photo ${index + 1}`}
-                className="w-full h-24 object-cover rounded border"
-              />
-              <button
-                onClick={() => onRemove(index)}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+        {files.length > 0 && (
+          <div className="grid grid-cols-2 gap-2">
+            {files.map((file, index) => (
+              <div key={index} className="relative">
+                {file.type === 'application/pdf' ? (
+                  <div className="w-full h-24 bg-red-50 border-2 border-red-200 rounded flex flex-col items-center justify-center">
+                    <svg className="h-6 w-6 text-red-600 mb-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                    </svg>
+                    <p className="text-[10px] text-red-600 text-center px-1 break-all">{file.name}</p>
+                  </div>
+                ) : file.type.startsWith('image/') ? (
+                  <img
+                    src={URL.createObjectURL(file)}
+                    alt={`${type} photo ${index + 1}`}
+                    className="w-full h-24 object-cover rounded border"
+                  />
+                ) : (
+                  <div className="w-full h-24 bg-gray-50 border-2 border-gray-200 rounded flex flex-col items-center justify-center">
+                    <svg className="h-6 w-6 text-gray-600 mb-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                    </svg>
+                    <p className="text-[10px] text-gray-600 text-center px-1 break-all">{file.name}</p>
+                    <p className="text-[10px] text-gray-400">{(file.size / 1024 / 1024).toFixed(1)}MB</p>
+                  </div>
+                )}
+                <button
+                  onClick={() => onRemove(index)}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
     </div>
   );
 
@@ -682,7 +711,7 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
 
             <div className="flex justify-end gap-2 pt-4 border-t">
               <Button onClick={handleUpload} disabled={uploading}>
-                {uploading ? 'Uploading...' : 'Upload Photos'}
+                {uploading ? 'Uploading...' : 'Upload Files'}
               </Button>
             </div>
           </TabsContent>
