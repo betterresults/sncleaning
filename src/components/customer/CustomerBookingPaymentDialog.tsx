@@ -39,11 +39,13 @@ interface CustomerPaymentDialogProps {
 const CustomerPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: CustomerPaymentDialogProps) => {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isBusinessClient, setIsBusinessClient] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     if (booking && isOpen) {
       fetchPaymentMethods();
+      checkIfBusinessClient();
     }
   }, [booking, isOpen]);
 
@@ -60,6 +62,24 @@ const CustomerPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: Customer
       setPaymentMethods(data || []);
     } catch (error) {
       console.error('Error fetching payment methods:', error);
+    }
+  };
+
+  const checkIfBusinessClient = async () => {
+    if (!booking) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('company')
+        .eq('id', booking.customer)
+        .single();
+
+      if (error) throw error;
+      // If customer has a company field with value, they are a business client
+      setIsBusinessClient(!!(data?.company && data.company.trim() !== ''));
+    } catch (error) {
+      console.error('Error checking customer type:', error);
     }
   };
 
@@ -204,7 +224,7 @@ const CustomerPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: Customer
           </Card>
 
           {/* Payment Methods */}
-          {!isPaid && (
+          {!isPaid && !isBusinessClient && (
             <div className="space-y-3">
               {!hasPaymentMethods ? (
                 <div className="text-center py-6 space-y-4 bg-yellow-50 border border-yellow-200 rounded-lg">

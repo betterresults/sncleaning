@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Calendar, DollarSign, Star, CalendarDays, Filter, X, Grid, ChevronLeft, ChevronRight, User, CreditCard } from 'lucide-react';
+import { CheckCircle, Calendar, DollarSign, Star, CalendarDays, Filter, X, Grid, ChevronLeft, ChevronRight, User, CreditCard, ExternalLink } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,6 +34,8 @@ interface PastBooking {
   booking_status: string;
   payment_status: string;
   same_day?: string;
+  invoice_id?: string;
+  invoice_link?: string;
   cleaner?: {
     id: number;
     first_name: string;
@@ -933,7 +935,9 @@ const CustomerPastBookings = () => {
                         booking_status: booking.booking_status,
                         payment_status: booking.payment_status,
                         same_day: booking.same_day === 'true',
-                        cleaner: booking.cleaner
+                        cleaner: booking.cleaner,
+                        invoice_id: booking.invoice_id,
+                        invoice_link: booking.invoice_link
                       }}
                       type="completed"
                       onReview={(b) => handleReview(booking)}

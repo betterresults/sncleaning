@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Calendar, Clock, MapPin, User, Edit, Star, CreditCard, Camera } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Edit, Star, CreditCard, Camera, ExternalLink } from 'lucide-react';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 
 interface BaseBooking {
@@ -17,6 +17,8 @@ interface BaseBooking {
   booking_status: string;
   payment_status?: string;
   same_day?: boolean;
+  invoice_id?: string;
+  invoice_link?: string;
   cleaner?: {
     first_name: string;
     last_name: string;
@@ -78,7 +80,21 @@ const BookingCard = <T extends BaseBooking>({
           <div className="w-full h-px bg-border/40 mt-2"></div>
         </div>
         <div className="text-right flex items-center gap-3">
-          <div className="text-2xl font-bold text-[#18A5A5]">£{booking.total_cost}</div>
+          <div className="flex flex-col items-end gap-1">
+            <div className="text-2xl font-bold text-[#18A5A5]">£{booking.total_cost}</div>
+            {/* Invoice link - show for completed bookings if available */}
+            {type === 'completed' && booking.invoice_link && (
+              <a
+                href={booking.invoice_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-sm text-[#18A5A5] hover:text-[#185166] transition-colors"
+              >
+                <ExternalLink className="h-3 w-3" />
+                View Invoice
+              </a>
+            )}
+          </div>
           {booking.payment_status && (type === 'upcoming' ? isWithin24Hours() : true) && (
             <PaymentStatusIndicator 
               status={booking.payment_status} 
