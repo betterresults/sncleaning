@@ -35,6 +35,7 @@ interface BookingCardProps<T extends BaseBooking> {
   onSeePhotos?: (booking: T) => void;
   onPaymentAction?: (booking: T) => void;
   hasReview?: boolean;
+  isOverdue?: boolean;
 }
 
 const BookingCard = <T extends BaseBooking>({
@@ -46,7 +47,8 @@ const BookingCard = <T extends BaseBooking>({
   onReview,
   onSeePhotos,
   onPaymentAction,
-  hasReview
+  hasReview,
+  isOverdue = false
 }: BookingCardProps<T>) => {
   // Check if booking is within 24 hours
   const isWithin24Hours = () => {
@@ -57,9 +59,11 @@ const BookingCard = <T extends BaseBooking>({
   };
   return (
     <div className={`group relative overflow-hidden rounded-2xl border p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/30 ${
-      booking.same_day 
-        ? 'bg-gradient-to-br from-orange-50 to-red-50 border-orange-200 hover:shadow-orange-100 dark:from-orange-950/20 dark:to-red-950/20 dark:border-orange-800/30' 
-        : 'border-border/60 bg-white hover:shadow-primary/5'
+      isOverdue
+        ? 'bg-gradient-to-br from-red-50 to-red-100 border-red-300 hover:shadow-red-100 dark:from-red-950/30 dark:to-red-950/40 dark:border-red-800/50'
+        : booking.same_day 
+          ? 'bg-gradient-to-br from-orange-50 to-red-50 border-orange-200 hover:shadow-orange-100 dark:from-orange-950/20 dark:to-red-950/20 dark:border-orange-800/30' 
+          : 'border-border/60 bg-white hover:shadow-primary/5'
     }`}>
       
       {/* Header with Cleaning Type and Cost */}

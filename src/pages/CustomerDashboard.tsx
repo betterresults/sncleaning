@@ -27,6 +27,7 @@ const CustomerDashboard = () => {
   const [paymentMethodsLoading, setPaymentMethodsLoading] = useState(true);
   const [showBulkPayment, setShowBulkPayment] = useState(false);
   const [isBusinessClient, setIsBusinessClient] = useState(false);
+  const [overdueInvoices, setOverdueInvoices] = useState([]);
   const isAdminViewing = userRole === 'admin';
   
   // Use selected customer ID if admin is viewing, otherwise use the logged-in user's customer ID  
@@ -79,10 +80,48 @@ const CustomerDashboard = () => {
     }
   };
 
+  // Check for overdue invoices
+  const checkOverdueInvoices = async () => {
+    if (!activeCustomerId || !isBusinessClient) {
+      setOverdueInvoices([]);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('past_bookings')
+        .select('*')
+        .eq('customer', activeCustomerId)
+        .not('invoice_link', 'is', null)
+        .not('payment_status', 'ilike', '%paid%');
+
+      if (error) throw error;
+
+      const now = new Date();
+      const overdue = (data || []).filter(booking => {
+        const bookingDate = new Date(booking.date_time);
+        const dueDate = new Date(bookingDate);
+        dueDate.setDate(dueDate.getDate() + 8);
+        return now > dueDate;
+      });
+
+      setOverdueInvoices(overdue);
+    } catch (error) {
+      console.error('Error checking overdue invoices:', error);
+      setOverdueInvoices([]);
+    }
+  };
+
   useEffect(() => {
     fetchPaymentMethods();
     checkIfBusinessClient();
   }, [activeCustomerId]);
+
+  useEffect(() => {
+    if (isBusinessClient) {
+      checkOverdueInvoices();
+    }
+  }, [activeCustomerId, isBusinessClient]);
 
   console.log('CustomerDashboard render - hasLinenAccess:', hasLinenAccess, 'loading:', linenLoading);
 
@@ -119,6 +158,55 @@ const CustomerDashboard = () => {
           <main className="flex-1 p-2 sm:p-4 lg:p-6 w-full overflow-x-hidden">
             <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-6">
               {isAdminViewing && <AdminCustomerSelector />}
+              
+              {/* Overdue Invoice Alert for Business Clients */}
+              {isBusinessClient && overdueInvoices.length > 0 && (
+                <Card className="border-2 border-red-200 bg-red-50/30 shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-red-800">
+                      <AlertTriangle className="h-5 w-5" />
+                      Overdue Invoices - Immediate Action Required
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-red-700 mb-4">
+                      You have {overdueInvoices.length} overdue invoice{overdueInvoices.length > 1 ? 's' : ''} that require immediate payment:
+                    </p>
+                    <div className="space-y-3">
+                      {overdueInvoices.map((booking) => {
+                        const bookingDate = new Date(booking.date_time);
+                        const dueDate = new Date(bookingDate);
+                        dueDate.setDate(dueDate.getDate() + 8);
+                        const daysOverdue = Math.floor((new Date().getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+                        
+                        return (
+                          <div key={booking.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-white rounded border border-red-200">
+                            <div className="space-y-1">
+                              <p className="font-medium text-gray-900">
+                                {new Date(booking.date_time).toLocaleDateString('en-GB')} - {booking.address}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                Amount: £{parseFloat(booking.total_cost || '0').toFixed(2)} • {daysOverdue} days overdue
+                              </p>
+                            </div>
+                            {booking.invoice_link && (
+                              <Button 
+                                asChild
+                                className="bg-red-600 hover:bg-red-700 text-white font-semibold whitespace-nowrap"
+                                size="sm"
+                              >
+                                <a href={booking.invoice_link} target="_blank" rel="noopener noreferrer">
+                                  Pay Invoice
+                                </a>
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
               
               {/* Payment Method Setup Notification - Show for customers without payment methods (excluding business clients) */}
               {!paymentMethodsLoading && paymentMethods.length === 0 && activeCustomerId && !isBusinessClient && (

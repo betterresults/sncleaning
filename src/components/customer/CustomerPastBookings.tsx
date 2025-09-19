@@ -1023,31 +1023,32 @@ const CustomerPastBookings = () => {
               <>
                 <div className="space-y-3 sm:space-y-4">
                   {filteredBookings.slice((currentPage - 1) * bookingsPerPage, currentPage * bookingsPerPage).map((booking) => (
-                    <BookingCard
-                      key={booking.id}
-                      booking={{
-                        id: booking.id,
-                        date_time: booking.date_time,
-                        address: booking.address,
-                        postcode: booking.postcode,
-                        service_type: booking.service_type,
-                        cleaning_type: booking.cleaning_type,
-                        total_hours: booking.total_hours,
-                        total_cost: parseFloat(booking.total_cost) || 0,
-                        booking_status: booking.booking_status,
-                        payment_status: booking.payment_status,
-                        same_day: booking.same_day === 'true',
-                        cleaner: booking.cleaner,
-                        invoice_id: booking.invoice_id,
-                        invoice_link: booking.invoice_link
-                      }}
-                      type="completed"
-                      onReview={(b) => handleReview(booking)}
-              onSeePhotos={booking.has_photos ? (b) => handleSeePhotos(booking) : undefined}
-              onPaymentAction={booking.payment_status?.toLowerCase().includes('paid') ? undefined : (b) => handlePaymentAction(booking)}
-              onEdit={(b) => handleEdit(booking)}
-                      hasReview={reviews[booking.id] || false}
-                    />
+                     <BookingCard
+                       key={booking.id}
+                       booking={{
+                         id: booking.id,
+                         date_time: booking.date_time,
+                         address: booking.address,
+                         postcode: booking.postcode,
+                         service_type: booking.service_type,
+                         cleaning_type: booking.cleaning_type,
+                         total_hours: booking.total_hours,
+                         total_cost: parseFloat(booking.total_cost) || 0,
+                         booking_status: booking.booking_status,
+                         payment_status: booking.payment_status,
+                         same_day: booking.same_day === 'true',
+                         cleaner: booking.cleaner,
+                         invoice_id: booking.invoice_id,
+                         invoice_link: booking.invoice_link
+                       }}
+                       type="completed"
+                       onReview={(b) => handleReview(booking)}
+               onSeePhotos={booking.has_photos ? (b) => handleSeePhotos(booking) : undefined}
+               onPaymentAction={booking.payment_status?.toLowerCase().includes('paid') ? undefined : (b) => handlePaymentAction(booking)}
+               onEdit={(b) => handleEdit(booking)}
+                       hasReview={reviews[booking.id] || false}
+                       isOverdue={overdueInvoices.includes(booking)}
+                     />
                   ))}
                 </div>
                 {filteredBookings.length > bookingsPerPage && (
