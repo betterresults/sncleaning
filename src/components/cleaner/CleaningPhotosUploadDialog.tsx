@@ -8,7 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, X, Camera, AlertTriangle } from 'lucide-react';
+import { Upload, X, Camera, AlertTriangle, Bug } from 'lucide-react';
+import StorageTestDialog from '@/components/debug/StorageTestDialog';
 
 interface CleaningPhotosUploadDialogProps {
   open: boolean;
@@ -32,6 +33,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   const [additionalFiles, setAdditionalFiles] = useState<File[]>([]);
   const [additionalDetails, setAdditionalDetails] = useState('');
   const [showAdditionalTab, setShowAdditionalTab] = useState(false);
+  const [showStorageTest, setShowStorageTest] = useState(false);
 
   const bookingDate = new Date(booking.date_time).toISOString().split('T')[0];
   const safePostcode = booking.postcode?.toString().replace(/\s+/g, '').toUpperCase() || 'NA';
@@ -537,16 +539,32 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
                 'Upload Photos'
               )}
             </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => onOpenChange(false)}
-              disabled={uploading}
-              className="w-full py-3 text-sm"
-            >
-              Cancel
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowStorageTest(true)}
+                className="flex items-center gap-1"
+              >
+                <Bug className="h-3 w-3" />
+                Test Storage
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => onOpenChange(false)}
+                disabled={uploading}
+                className="flex-1 py-3 text-sm"
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
         </div>
+
+        <StorageTestDialog 
+          open={showStorageTest}
+          onOpenChange={setShowStorageTest}
+        />
       </DialogContent>
     </Dialog>
   );

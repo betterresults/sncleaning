@@ -16,53 +16,62 @@ const StorageTestDialog = ({ open, onOpenChange }: StorageTestDialogProps) => {
 
   const testStorageUpload = async () => {
     setTesting(true);
-    console.log('Starting storage test...');
-
+    
     try {
-      // Create a simple test file
-      const testContent = 'This is a test file for storage';
-      const testFile = new Blob([testContent], { type: 'text/plain' });
-      const fileName = `test_${Date.now()}.txt`;
-      const filePath = `test_folder/${fileName}`;
-
-      console.log('Attempting to upload test file:', { filePath, size: testFile.size });
-
-      // Try to upload to the cleaning.photos bucket
-      const { data, error } = await supabase.storage
-        .from('cleaning.photos')
-        .upload(filePath, testFile);
-
-      if (error) {
-        console.error('Storage upload failed:', error);
-        toast({
-          title: 'Storage Test Failed',
-          description: `Error: ${error.message}`,
-          variant: 'destructive'
-        });
-      } else {
-        console.log('Storage upload successful:', data);
-        toast({
-          title: 'Storage Test Successful',
-          description: `File uploaded successfully: ${data.path}`
-        });
-
-        // Try to get the URL
-        const { data: urlData } = await supabase.storage
-          .from('cleaning.photos')
-          .getPublicUrl(filePath);
-
-        console.log('Public URL:', urlData.publicUrl);
-
-        // Clean up - delete the test file
-        await supabase.storage
-          .from('cleaning.photos')
-          .remove([filePath]);
+      // Check auth
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      console.log('Auth check:', { authData: !!authData?.user, authError });
+      
+      if (authError || !authData?.user) {
+        throw new Error('Not authenticated');
       }
-    } catch (error) {
-      console.error('Storage test error:', error);
+
+      // Create a simple test file
+      const testContent = 'Test upload content - ' + new Date().toISOString();
+      const testFile = new File([testContent], 'test.txt', { type: 'text/plain' });
+      const testPath = `test_uploads/test_${Date.now()}.txt`;
+
+      console.log('Uploading test file:', { testPath, fileSize: testFile.size });
+
+      // Test upload
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('cleaning.photos')
+        .upload(testPath, testFile, { cacheControl: '3600', upsert: true });
+
+      console.log('Upload result:', { uploadData, uploadError });
+
+      if (uploadError) {
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
+
+      // Test getting public URL
+      const { data: urlData } = supabase.storage
+        .from('cleaning.photos')
+        .getPublicUrl(testPath);
+
+      console.log('Public URL:', urlData.publicUrl);
+
+      // Test deleting the file
+      const { error: deleteError } = await supabase.storage
+        .from('cleaning.photos')
+        .remove([testPath]);
+
+      console.log('Delete result:', { deleteError });
+
+      if (deleteError) {
+        console.warn('Failed to delete test file:', deleteError);
+      }
+
       toast({
-        title: 'Storage Test Error',
-        description: error instanceof Error ? error.message : 'Unknown error',
+        title: 'Storage Test Passed',
+        description: 'Storage upload, URL generation, and deletion all work correctly.'
+      });
+
+    } catch (error) {
+      console.error('Storage test failed:', error);
+      toast({
+        title: 'Storage Test Failed',
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
         variant: 'destructive'
       });
     } finally {
@@ -79,35 +88,24 @@ const StorageTestDialog = ({ open, onOpenChange }: StorageTestDialogProps) => {
             Storage Test
           </DialogTitle>
         </DialogHeader>
-
+        
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            This will test if the storage bucket is working properly.
+            This will test uploading a small file to the cleaning.photos bucket and then delete it.
           </p>
-
-          <Button 
-            onClick={testStorageUpload} 
-            disabled={testing}
-            className="w-full"
-          >
-            {testing ? (
-              <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Testing...
-              </div>
-            ) : (
-              'Test Storage Upload'
-            )}
-          </Button>
-
-          <Button 
-            variant="outline" 
-            onClick={() => onOpenChange(false)}
-            disabled={testing}
-            className="w-full"
-          >
-            Close
-          </Button>
+          
+          <div className="flex gap-2">
+            <Button 
+              onClick={testStorageUpload} 
+              disabled={testing}
+              className="flex-1"
+            >
+              {testing ? 'Testing...' : 'Test Storage Upload'}
+            </Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Close
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
