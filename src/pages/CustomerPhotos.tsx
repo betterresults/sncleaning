@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { 
   Download, ArrowLeft, Home, X, ChevronLeft, ChevronRight, 
-  FolderOpen, Share, Archive, Eye, Grid3x3, Image as ImageIcon 
+  FolderOpen, Share, Archive, Eye, Grid3x3, Image as ImageIcon, FileText 
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -15,6 +15,7 @@ interface PhotoFile {
   url: string;
   type?: string;
   fullPath: string;
+  isPdf?: boolean;
 }
 
 interface PhotoFolder {
@@ -146,7 +147,7 @@ const CustomerPhotos = () => {
           type: 'general'
         })));
 
-        // Check subfolders for images
+        // Check subfolders for images and PDFs
         for (const subfolder of subfolders) {
           const { data: subFiles } = await supabase.storage
             .from('cleaning.photos')
@@ -156,12 +157,13 @@ const CustomerPhotos = () => {
             });
 
           if (subFiles) {
-            const subImages = subFiles.filter(file => file.name && file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i));
-            allFiles.push(...subImages.map(file => ({
+            const wanted = subFiles.filter(file => file.name && (/(jpg|jpeg|png|gif|webp)$/i.test(file.name) || /\.pdf$/i.test(file.name)));
+            allFiles.push(...wanted.map(file => ({
               name: file.name,
               fullPath: `${usedFolder}/${subfolder.name}/${file.name}`,
               url: supabase.storage.from('cleaning.photos').getPublicUrl(`${usedFolder}/${subfolder.name}/${file.name}`).data.publicUrl,
-              type: subfolder.name
+              type: subfolder.name,
+              isPdf: /\.pdf$/i.test(file.name)
             })));
           }
         }
@@ -302,7 +304,8 @@ const CustomerPhotos = () => {
   };
 
   const goToNext = () => {
-    if (selectedPhotoIndex !== null && selectedPhotoIndex < currentPhotos.length - 1) {
+    const images = currentPhotos.filter(p => !p.isPdf);
+    if (selectedPhotoIndex !== null && selectedPhotoIndex < images.length - 1) {
       setSelectedPhotoIndex(selectedPhotoIndex + 1);
     }
   };
@@ -440,12 +443,19 @@ const CustomerPhotos = () => {
                   {/* Preview thumbnails */}
                   <div className="grid grid-cols-3 gap-2">
                     {folder.photos.slice(0, 3).map((photo, index) => (
-                      <div key={index} className="aspect-square rounded-md overflow-hidden bg-gray-100">
-                        <img
-                          src={photo.url}
-                          alt={`Preview ${index + 1}`}
-                          className="w-full h-full object-cover hover-scale"
-                        />
+                      <div key={index} className="aspect-square rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
+                        {photo.isPdf ? (
+                          <div className="w-full h-full bg-red-50 border-2 border-red-200 flex flex-col items-center justify-center text-red-700">
+                            <FileText className="h-6 w-6 mb-1" />
+                            <span className="text-xs">PDF</span>
+                          </div>
+                        ) : (
+                          <img
+                            src={photo.url}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-full object-cover hover-scale"
+                          />
+                        )}
                       </div>
                     ))}
                     {folder.photos.length > 3 && (
@@ -468,25 +478,46 @@ const CustomerPhotos = () => {
             {currentPhotos.map((photo, index) => (
               <Card key={photo.name} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group animate-fade-in">
                 <CardContent className="p-0">
-                  <div className="aspect-square relative" onClick={() => openGallery(index)}>
-                    <img
-                      src={photo.url}
-                      alt={`Photo ${index + 1}`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
-                    />
+                  <div className="aspect-square relative" onClick={() => {
+                    if (photo.isPdf) {
+                      window.open(photo.url, '_blank');
+                    } else {
+                      const images = currentPhotos.filter(p => !p.isPdf);
+                      const imageIndex = images.findIndex(p => p.fullPath === photo.fullPath);
+                      openGallery(imageIndex);
+                    }
+                  }}>
+                    {photo.isPdf ? (
+                      <div className="w-full h-full bg-red-50 border-2 border-red-200 flex flex-col items-center justify-center text-red-700">
+                        <FileText className="h-10 w-10 mb-2" />
+                        <span className="text-sm font-medium">PDF Document</span>
+                      </div>
+                    ) : (
+                      <img
+                        src={photo.url}
+                        alt={`Photo ${index + 1}`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                    )}
                     <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
                       <div className="flex gap-2">
                         <Button
                           onClick={(e) => {
                             e.stopPropagation();
-                            openGallery(index);
+                            if (photo.isPdf) {
+                              window.open(photo.url, '_blank');
+                            } else {
+                              const images = currentPhotos.filter(p => !p.isPdf);
+                              const imageIndex = images.findIndex(p => p.fullPath === photo.fullPath);
+                              openGallery(imageIndex);
+                            }
                           }}
                           size="sm"
                           className="bg-white/90 text-black hover:bg-white backdrop-blur-sm"
                         >
                           <Eye className="h-4 w-4 mr-1" />
-                          View
+                          {photo.isPdf ? 'Open' : 'View'}
                         </Button>
                         <Button
                           onClick={(e) => {
@@ -538,16 +569,16 @@ const CustomerPhotos = () => {
                 <div className="absolute top-0 left-0 right-0 z-50 flex justify-between items-center p-6 bg-gradient-to-b from-black/80 via-black/40 to-transparent">
                   <div className="text-white">
                     <p className="text-xl font-semibold">
-                      Photo {selectedPhotoIndex + 1} of {currentPhotos.length}
+                      Photo {selectedPhotoIndex + 1} of {currentPhotos.filter(p => !p.isPdf).length}
                     </p>
                     <p className="text-sm opacity-80 mt-1">
-                      {currentPhotos[selectedPhotoIndex].name}
+                      {currentPhotos.filter(p => !p.isPdf)[selectedPhotoIndex].name}
                     </p>
                   </div>
                   
                   <div className="flex gap-3">
                     <Button
-                      onClick={() => downloadPhoto(currentPhotos[selectedPhotoIndex].url, currentPhotos[selectedPhotoIndex].name)}
+                      onClick={() => downloadPhoto(currentPhotos.filter(p => !p.isPdf)[selectedPhotoIndex].url, currentPhotos.filter(p => !p.isPdf)[selectedPhotoIndex].name)}
                       size="sm"
                       className="bg-white/10 border border-white/20 text-white hover:bg-white/20 backdrop-blur-sm"
                     >
