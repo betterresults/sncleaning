@@ -45,12 +45,10 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     let fileArray: File[];
     
     if (type === 'additional') {
-      // Allow both images and PDFs for additional information
+      // Allow any file type for additional information
       fileArray = Array.from(files).filter(file => {
-        const isImage = file.type.startsWith('image/');
-        const isPDF = file.type === 'application/pdf';
         const isValidSize = file.size <= 10 * 1024 * 1024; // 10MB limit for additional files
-        return (isImage || isPDF) && isValidSize;
+        return isValidSize;
       });
     } else {
       // Only images for before/after photos
@@ -60,7 +58,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     }
 
     if (fileArray.length !== files.length) {
-      const allowedTypes = type === 'additional' ? 'images and PDFs under 10MB' : 'images under 5MB';
+      const allowedTypes = type === 'additional' ? 'files under 10MB' : 'images under 5MB';
       toast({
         title: 'Invalid Files',
         description: `Some files were skipped. Only ${allowedTypes} are allowed.`,
@@ -286,8 +284,8 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       setUploadProgress(`✓ All ${totalFiles} photos uploaded`);
 
       toast({
-        title: 'Photos Uploaded Successfully',
-        description: `Uploaded ${totalFiles} photos. Customer will be notified in 15 minutes.`
+        title: 'Files Uploaded Successfully',
+        description: `Uploaded ${totalFiles} file${totalFiles === 1 ? '' : 's'} successfully. Customer will be notified in 15 minutes.`
       });
 
       // Reset form after a short delay
@@ -333,7 +331,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 sm:p-6 text-center hover:border-gray-300 transition-colors touch-manipulation">
         <input
           type="file"
-          accept={type === 'additional' ? "image/*,application/pdf" : "image/*"}
+          accept={type === 'additional' ? "*/*" : "image/*"}
           multiple
           onChange={(e) => onFileSelect(e.target.files)}
           className="hidden"
@@ -349,7 +347,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
           </p>
           <p className="text-xs text-gray-400 mt-1">
             {type === 'additional' 
-              ? 'Images and PDFs up to 10MB each' 
+              ? 'Any file type up to 10MB each' 
               : 'JPG, PNG, WebP up to 5MB each'
             }
           </p>
