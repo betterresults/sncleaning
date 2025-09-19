@@ -28,6 +28,7 @@ interface BookingInfo {
   address: string;
   postcode: string;
   date_only: string;
+  additional_details?: string | null;
 }
 
 const CustomerPhotos = () => {
@@ -63,7 +64,7 @@ const CustomerPhotos = () => {
 
       const { data, error } = await supabase
         .from('bookings')
-        .select('address, postcode, date_only')
+        .select('address, postcode, date_only, additional_details')
         .eq('id', bookingId)
         .maybeSingle();
 
@@ -412,9 +413,18 @@ const CustomerPhotos = () => {
               Service completed on {bookingInfo?.date_only || (folderName?.includes('_') ? folderName.split('_')[2] : 'your selected date')}
             </p>
             {bookingInfo && (
-              <p className="text-muted-foreground mb-1">
-                <strong>Address:</strong> {bookingInfo.address}, {bookingInfo.postcode}
-              </p>
+              <>
+                <p className="text-muted-foreground mb-1">
+                  <strong>Address:</strong> {bookingInfo.address}, {bookingInfo.postcode}
+                </p>
+                {bookingInfo.additional_details && (
+                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                      <strong>Additional Information:</strong> {bookingInfo.additional_details}
+                    </p>
+                  </div>
+                )}
+              </>
             )}
             <p className="text-sm text-muted-foreground">
               {selectedFolder 
