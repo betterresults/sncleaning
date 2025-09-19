@@ -12,7 +12,7 @@ import { Camera, Download, AlertTriangle, Calendar, MapPin, X, Link2 } from 'luc
 interface CleaningPhoto {
   id: string;
   file_path: string;
-  photo_type: 'before' | 'after' | 'damage';
+  photo_type: 'before' | 'after' | 'damage' | 'additional';
   caption?: string;
   damage_details?: string;
   created_at: string;
@@ -137,7 +137,7 @@ const CleaningPhotosViewDialog = ({ open, onOpenChange, booking }: CleaningPhoto
     });
   };
 
-  const PhotoGrid = ({ photos, type }: { photos: CleaningPhoto[], type: 'before' | 'after' | 'damage' }) => {
+  const PhotoGrid = ({ photos, type }: { photos: CleaningPhoto[], type: 'before' | 'after' | 'damage' | 'additional' }) => {
     const typePhotos = photos.filter(p => p.photo_type === type);
 
     if (typePhotos.length === 0) {
@@ -271,6 +271,7 @@ const CleaningPhotosViewDialog = ({ open, onOpenChange, booking }: CleaningPhoto
   const beforePhotos = photos.filter(p => p.photo_type === 'before');
   const afterPhotos = photos.filter(p => p.photo_type === 'after');
   const damagePhotos = photos.filter(p => p.photo_type === 'damage');
+  const additionalPhotos = photos.filter(p => p.photo_type === 'additional');
 
   return (
     <>
@@ -319,7 +320,7 @@ const CleaningPhotosViewDialog = ({ open, onOpenChange, booking }: CleaningPhoto
             </div>
           ) : (
             <Tabs defaultValue="before" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 text-xs sm:text-sm">
+              <TabsList className="grid w-full grid-cols-4 text-xs sm:text-sm">
                 <TabsTrigger value="before" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
                   <span className="hidden sm:inline">Before Photos</span>
                   <span className="sm:hidden">Before</span>
@@ -348,6 +349,15 @@ const CleaningPhotosViewDialog = ({ open, onOpenChange, booking }: CleaningPhoto
                     </Badge>
                   )}
                 </TabsTrigger>
+                <TabsTrigger value="additional" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                  <span className="hidden sm:inline">Additional Files</span>
+                  <span className="sm:hidden">Files</span>
+                  {additionalPhotos.length > 0 && (
+                    <Badge variant="secondary" className="ml-1 text-[10px] sm:text-xs px-1">
+                      {additionalPhotos.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="before" className="mt-4 sm:mt-6">
@@ -371,6 +381,10 @@ const CleaningPhotosViewDialog = ({ open, onOpenChange, booking }: CleaningPhoto
                   </div>
                 )}
                 <PhotoGrid photos={photos} type="damage" />
+              </TabsContent>
+
+              <TabsContent value="additional" className="mt-4 sm:mt-6">
+                <PhotoGrid photos={photos} type="additional" />
               </TabsContent>
             </Tabs>
           )}
