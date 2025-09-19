@@ -135,9 +135,10 @@ const CustomerPhotos = () => {
       console.log('Main folder contents:', mainFiles);
 
       if (mainFiles && mainFiles.length > 0) {
-        // Check for subfolders (before, after, damage, etc.)
-        const subfolders = mainFiles.filter(file => file.name && !file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i));
+        // Check for subfolders (before, after, damage, etc.) - exclude both images AND PDFs from subfolder detection
+        const subfolders = mainFiles.filter(file => file.name && !file.name.match(/\.(jpg|jpeg|png|gif|webp|pdf)$/i));
         const directImages = mainFiles.filter(file => file.name && file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i));
+        const directPDFs = mainFiles.filter(file => file.name && file.name.match(/\.pdf$/i));
         
         // Add direct images
         allFiles.push(...directImages.map(file => ({
@@ -145,6 +146,15 @@ const CustomerPhotos = () => {
           fullPath: `${usedFolder}/${file.name}`,
           url: supabase.storage.from('cleaning.photos').getPublicUrl(`${usedFolder}/${file.name}`).data.publicUrl,
           type: 'general'
+        })));
+
+        // Add direct PDFs
+        allFiles.push(...directPDFs.map(file => ({
+          name: file.name,
+          fullPath: `${usedFolder}/${file.name}`,
+          url: supabase.storage.from('cleaning.photos').getPublicUrl(`${usedFolder}/${file.name}`).data.publicUrl,
+          type: 'general',
+          isPdf: true
         })));
 
         // Check subfolders for images and PDFs
