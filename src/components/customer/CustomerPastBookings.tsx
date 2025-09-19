@@ -74,7 +74,7 @@ const CustomerPastBookings = () => {
   const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<PastBooking | null>(null);
   
   // Filter states
-  const [timePeriod, setTimePeriod] = useState('current-month');
+  const [timePeriod, setTimePeriod] = useState('all');
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [serviceTypes, setServiceTypes] = useState<string[]>([]);
@@ -93,9 +93,59 @@ const CustomerPastBookings = () => {
     paidBookings: 0,
     reviewedBookings: 0
   });
+  
+  const [overdueInvoices, setOverdueInvoices] = useState<PastBooking[]>([]);
+  const [isBusinessClient, setIsBusinessClient] = useState(false);
 
   // Use selected customer ID if admin is viewing, otherwise use the logged-in user's customer ID
   const activeCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
+
+  // Check if customer is business client
+  const checkIfBusinessClient = async () => {
+    if (!activeCustomerId) {
+      setIsBusinessClient(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('clent_type')
+        .eq('id', activeCustomerId)
+        .single();
+
+      if (error) throw error;
+      setIsBusinessClient(data?.clent_type === 'business');
+    } catch (error) {
+      console.error('Error checking customer type:', error);
+      setIsBusinessClient(false);
+    }
+  };
+
+  const checkOverdueInvoices = () => {
+    if (!isBusinessClient) {
+      setOverdueInvoices([]);
+      return;
+    }
+
+    const now = new Date();
+    const overdue = filteredBookings.filter(booking => {
+      // Only check unpaid bookings with invoice links
+      if (!booking.invoice_link || 
+          (booking.payment_status && booking.payment_status.toLowerCase().includes('paid'))) {
+        return false;
+      }
+
+      // Calculate 8 days from booking date
+      const bookingDate = new Date(booking.date_time);
+      const dueDate = new Date(bookingDate);
+      dueDate.setDate(dueDate.getDate() + 8);
+
+      return now > dueDate;
+    });
+
+    setOverdueInvoices(overdue);
+  };
 
   console.log('CustomerPastBookings - Debug info:', {
     userRole,
@@ -107,6 +157,7 @@ const CustomerPastBookings = () => {
   useEffect(() => {
     if (activeCustomerId) {
       fetchPastBookings();
+      checkIfBusinessClient();
     } else {
       console.log('CustomerPastBookings - No activeCustomerId, setting empty state');
       setBookings([]);
@@ -115,22 +166,15 @@ const CustomerPastBookings = () => {
     }
   }, [activeCustomerId]);
 
-  // Check if current month has bookings, fallback to last 3 months if empty
+  // Check for overdue invoices when filtered bookings or business client status changes
   useEffect(() => {
-    if (bookings.length > 0) {
-      const currentMonthDates = getTimePeriodDates('current-month');
-      if (currentMonthDates) {
-        const currentMonthBookings = bookings.filter(booking => {
-          const bookingDate = new Date(booking.date_time);
-          return bookingDate >= currentMonthDates.from && bookingDate <= currentMonthDates.to;
-        });
-        
-        if (currentMonthBookings.length === 0) {
-          setTimePeriod('last-3-months');
-        }
-      }
-    }
-  }, [bookings]);
+    checkOverdueInvoices();
+  }, [filteredBookings, isBusinessClient]);
+
+  // Set default time period to 'all' to show all bookings
+  useEffect(() => {
+    setTimePeriod('all');
+  }, []);
 
   const getTimePeriodDates = (period: string) => {
     const now = new Date();
@@ -796,6 +840,52 @@ const CustomerPastBookings = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Overdue Invoice Alert for Business Clients */}
+      {isBusinessClient && overdueInvoices.length > 0 && (
+        <Card className="border-2 border-red-200 bg-red-50/30 shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-800">
+              <ExternalLink className="h-5 w-5" />
+              Overdue Invoices - Immediate Action Required
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-red-700 mb-4">
+              You have {overdueInvoices.length} overdue invoice{overdueInvoices.length > 1 ? 's' : ''} that require immediate payment:
+            </p>
+            <div className="space-y-3">
+              {overdueInvoices.map((booking) => {
+                const bookingDate = new Date(booking.date_time);
+                const dueDate = new Date(bookingDate);
+                dueDate.setDate(dueDate.getDate() + 8);
+                const daysOverdue = Math.floor((new Date().getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+                
+                return (
+                  <div key={booking.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-white rounded border border-red-200">
+                    <div className="space-y-1">
+                      <p className="font-medium text-gray-900">
+                        {format(bookingDate, 'dd MMM yyyy')} - {booking.address}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Amount: £{booking.total_cost} • {daysOverdue} days overdue
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => window.open(booking.invoice_link, '_blank')}
+                      className="bg-red-600 hover:bg-red-700 text-white"
+                      size="sm"
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Pay Invoice
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex flex-col gap-4">
         <h2 className="text-xl sm:text-2xl font-bold text-[#185166] text-center">Your Completed Bookings</h2>
