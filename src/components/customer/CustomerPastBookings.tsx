@@ -74,7 +74,7 @@ const CustomerPastBookings = () => {
   const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<PastBooking | null>(null);
   
   // Filter states
-  const [timePeriod, setTimePeriod] = useState('all');
+  const [timePeriod, setTimePeriod] = useState('current-month');
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [serviceTypes, setServiceTypes] = useState<string[]>([]);
@@ -115,10 +115,22 @@ const CustomerPastBookings = () => {
     }
   }, [activeCustomerId]);
 
-  // Set default time period to 'all' to show all bookings
+  // Check if current month has bookings, fallback to last 3 months if empty
   useEffect(() => {
-    setTimePeriod('all');
-  }, []);
+    if (bookings.length > 0) {
+      const currentMonthDates = getTimePeriodDates('current-month');
+      if (currentMonthDates) {
+        const currentMonthBookings = bookings.filter(booking => {
+          const bookingDate = new Date(booking.date_time);
+          return bookingDate >= currentMonthDates.from && bookingDate <= currentMonthDates.to;
+        });
+        
+        if (currentMonthBookings.length === 0) {
+          setTimePeriod('last-3-months');
+        }
+      }
+    }
+  }, [bookings]);
 
   const getTimePeriodDates = (period: string) => {
     const now = new Date();
