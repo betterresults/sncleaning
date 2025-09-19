@@ -71,13 +71,13 @@ const CustomerPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: Customer
     try {
       const { data, error } = await supabase
         .from('customers')
-        .select('company')
+        .select('clent_type')
         .eq('id', booking.customer)
         .single();
 
       if (error) throw error;
-      // If customer has a company field with value, they are a business client
-      setIsBusinessClient(!!(data?.company && data.company.trim() !== ''));
+      // If customer type is business, they are a business client
+      setIsBusinessClient(data?.clent_type === 'business');
     } catch (error) {
       console.error('Error checking customer type:', error);
     }
