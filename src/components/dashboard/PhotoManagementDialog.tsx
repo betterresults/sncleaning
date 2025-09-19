@@ -293,10 +293,9 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
       const baseFolder = photos[0]?.file_path?.split('/')[0] || folderPath;
       const filePath = `${baseFolder}/${photoType}/${fileName}`;
 
-      // Upload to storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('cleaning.photos')
-        .upload(filePath, file);
+        .upload(filePath, file, { cacheControl: '3600', upsert: true, contentType: file.type || 'application/octet-stream' });
 
       if (uploadError) {
         throw new Error(`Upload failed for ${file.name}: ${uploadError.message}`);
@@ -350,15 +349,6 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
       }
 
       if (additionalFiles.length > 0) {
-        if (!additionalDetails.trim()) {
-          toast({
-            title: 'Additional Details Required',
-            description: 'Please provide details about the additional information.',
-            variant: 'destructive'
-          });
-          setUploading(false);
-          return;
-        }
         uploadPromises.push(uploadFiles(additionalFiles, 'additional'));
       }
 
@@ -383,7 +373,7 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
       console.error('Upload error:', error);
       toast({
         title: 'Upload Failed',
-        description: 'Failed to upload photos. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to upload files. Please try again.',
         variant: 'destructive'
       });
     } finally {
