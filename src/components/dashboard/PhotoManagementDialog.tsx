@@ -195,7 +195,6 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
 
   const fetchPhotos = async () => {
     if (!open) return;
-    
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -205,7 +204,31 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setPhotos(data || []);
+
+      const dbPhotos = data || [];
+
+      // Also scan storage for 'additional' files that might be missing DB rows
+      const baseFolder = dbPhotos[0]?.file_path?.split('/')[0] || folderPath;
+      const additionalPrefix = `${baseFolder}/additional`;
+
+      const { data: storageAdditional, error: listErr } = await supabase.storage
+        .from('cleaning.photos')
+        .list(additionalPrefix, { limit: 200, sortBy: { column: 'name', order: 'asc' } });
+
+      const dbPaths = new Set(dbPhotos.map(p => p.file_path));
+      const orphans = (storageAdditional || [])
+        .filter(f => f.name && /(jpg|jpeg|png|gif|webp|pdf)$/i.test(f.name))
+        .map(f => ({
+          id: `orphan:${additionalPrefix}/${f.name}`,
+          file_path: `${additionalPrefix}/${f.name}`,
+          photo_type: 'additional',
+          caption: null,
+          damage_details: null,
+          created_at: new Date().toISOString(),
+        }))
+        .filter(p => !dbPaths.has(p.file_path));
+
+      setPhotos([...dbPhotos, ...orphans]);
     } catch (error) {
       console.error('Error fetching photos:', error);
       toast({
@@ -393,13 +416,15 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
         // Continue with database deletion even if storage fails
       }
 
-      // Delete from database
-      const { error: dbError } = await supabase
-        .from('cleaning_photos')
-        .delete()
-        .eq('id', photoId);
-
-      if (dbError) throw dbError;
+      // Delete from database if not an orphaned storage-only file
+      const isOrphan = typeof photoId === 'string' && photoId.startsWith('orphan:');
+      if (!isOrphan) {
+        const { error: dbError } = await supabase
+          .from('cleaning_photos')
+          .delete()
+          .eq('id', photoId);
+        if (dbError) throw dbError;
+      }
 
       toast({
         title: 'Photo Deleted',
