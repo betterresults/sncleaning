@@ -46,6 +46,7 @@ const CleanerChecklist = () => {
             customer,
             date_time,
             service_type,
+            cleaning_type,
             property_details,
             cleaner,
             total_cost

@@ -19,6 +19,7 @@ interface CleaningChecklistInterfaceProps {
     customer: number;
     date_time: string;
     service_type: string;
+    cleaning_type?: string;
     property_details?: string;
   };
 }
@@ -35,7 +36,8 @@ export function CleaningChecklistInterface({
     createChecklist,
     updateTaskCompletion,
     updateLanguagePreference,
-    parsePropertyConfig
+    parsePropertyConfig,
+    fetchChecklists
   } = useCleaningChecklist(bookingId);
 
   const [customerData, setCustomerData] = useState<any>(null);
@@ -76,9 +78,19 @@ export function CleaningChecklistInterface({
 
   // Initialize checklist if it doesn't exist
   useEffect(() => {
+    // Always fetch current checklists for this booking/cleaner first
+    if (cleanerId) {
+      fetchChecklists(cleanerId);
+    } else {
+      fetchChecklists();
+    }
+  }, [bookingId, cleanerId]);
+
+  useEffect(() => {
     if (!loading && !currentChecklist && bookingData && templates.length > 0) {
       // Auto-create checklist for End of Tenancy bookings
-      if (bookingData.service_type === 'End of Tenancy') {
+      const isEoT = bookingData.service_type === 'End of Tenancy' || bookingData.cleaning_type === 'End of Tenancy';
+      if (isEoT) {
         const template = templates.find(t => t.service_type === 'End of Tenancy');
         if (template) {
           const propertyConfig = parsePropertyConfig(bookingData.property_details);
