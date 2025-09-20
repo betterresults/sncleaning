@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface MobileChecklistInterfaceProps {
   bookingId: number;
+  cleanerId: number;
   onClose: () => void;
 }
 
@@ -36,7 +37,7 @@ interface ChecklistSection {
   progress: number;
 }
 
-export function MobileChecklistInterface({ bookingId, onClose }: MobileChecklistInterfaceProps) {
+export function MobileChecklistInterface({ bookingId, cleanerId, onClose }: MobileChecklistInterfaceProps) {
   const {
     currentChecklist,
     templates,
@@ -45,7 +46,17 @@ export function MobileChecklistInterface({ bookingId, onClose }: MobileChecklist
     updateTaskCompletion,
     updatePropertyConfig,
     parsePropertyConfig,
+    fetchChecklists,
   } = useCleaningChecklist(bookingId);
+
+  // Fetch checklists when component mounts
+  useEffect(() => {
+    if (cleanerId) {
+      fetchChecklists(cleanerId);
+    } else {
+      fetchChecklists();
+    }
+  }, [bookingId, cleanerId, fetchChecklists]);
 
   const [currentStep, setCurrentStep] = useState<'overview' | 'rooms'>('overview');
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);

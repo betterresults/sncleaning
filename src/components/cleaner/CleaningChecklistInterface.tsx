@@ -281,7 +281,8 @@ export function CleaningChecklistInterface({
   if (showMobileInterface) {
     return (
       <MobileChecklistInterface 
-        bookingId={bookingId} 
+        bookingId={bookingId}
+        cleanerId={cleanerId}
         onClose={() => setShowMobileInterface(false)}
       />
     );
