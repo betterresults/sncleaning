@@ -56,7 +56,9 @@ export function MobileChecklistInterface({ bookingId, cleanerId, onClose }: Mobi
     } else {
       fetchChecklists();
     }
-  }, [bookingId, cleanerId, fetchChecklists]);
+    // Avoid infinite loop caused by function identity changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookingId, cleanerId]);
 
   const [currentStep, setCurrentStep] = useState<'overview' | 'checklist' | 'room'>('overview');
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
@@ -443,7 +445,7 @@ export function MobileChecklistInterface({ bookingId, cleanerId, onClose }: Mobi
               
               <div className="space-y-3 text-sm">
                 {/* Property Basic Info */}
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <div className="bg-muted/50 rounded p-2">
                     <div className="text-xs text-muted-foreground mb-1">
                       {language === 'english' ? 'Property Type' : 'Тип имот'}
@@ -465,6 +467,18 @@ export function MobileChecklistInterface({ bookingId, cleanerId, onClose }: Mobi
                        (propertyConfig as any)?.property_status === 'unfurnished' ? (language === 'english' ? 'Unfurnished' : 'Необзаведен') :
                        (propertyConfig as any)?.property_status === 'part_furnished' ? (language === 'english' ? 'Part Furnished' : 'Частично обзаведен') :
                        (language === 'english' ? 'Furnished' : 'Обзаведен')}
+                    </div>
+                  </div>
+                  <div className="bg-muted/50 rounded p-2">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      {language === 'english' ? 'Condition' : 'Състояние'}
+                    </div>
+                    <div className="font-medium">
+                      {(propertyConfig as any)?.property_condition === 'well_maintained' ? (language === 'english' ? 'Well-Maintained' : 'Добре поддържан') :
+                       (propertyConfig as any)?.property_condition === 'moderate' ? (language === 'english' ? 'Moderate' : 'Средно състояние') :
+                       (propertyConfig as any)?.property_condition === 'heavily_used' ? (language === 'english' ? 'Heavily Used' : 'Интензивно използван') :
+                       (propertyConfig as any)?.property_condition === 'intensive_required' ? (language === 'english' ? 'Intensive Cleaning Required' : 'Изисква интензивно почистване') :
+                       (language === 'english' ? 'Well-Maintained' : 'Добре поддържан')}
                     </div>
                   </div>
                 </div>
