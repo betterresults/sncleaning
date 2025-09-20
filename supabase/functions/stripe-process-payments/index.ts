@@ -92,51 +92,22 @@ serve(async (req) => {
       }
     }
 
-    // 2. Find bookings that need payment capture (1 hour AFTER completion OR completed bookings)
-    // Check both active bookings (1 hour after end) and past bookings (already completed)
-    const { data: activeBookingsToCapture, error: activeCaptureError } = await supabaseClient
-      .from('bookings')
-      .select('id, date_time, invoice_id, total_hours')
-      .eq('payment_status', 'collecting')
-      .not('invoice_id', 'is', null)
-      .not('total_hours', 'is', null)
-    
+    // 2. Find completed bookings that need payment capture (ONLY in past_bookings with 'authorized' status)
     const { data: pastBookingsToCapture, error: pastCaptureError } = await supabaseClient
       .from('past_bookings')
       .select('id, date_time, invoice_id, total_hours')
-      .eq('payment_status', 'collecting')
+      .eq('payment_status', 'authorized')
       .not('invoice_id', 'is', null)
-      .not('total_hours', 'is', null)
 
-    if (activeCaptureError) {
-      console.error('Error fetching active bookings to capture:', activeCaptureError)
-    }
     if (pastCaptureError) {
       console.error('Error fetching past bookings to capture:', pastCaptureError)
     }
     
-    // Combine and process all bookings for capture
-    const allBookingsToCapture = [
-      ...(activeBookingsToCapture || []),
-      ...(pastBookingsToCapture || [])
-    ]
-    
-    if (allBookingsToCapture.length > 0) {
-      // Filter active bookings where service ended + 1 hour ago, capture ALL past bookings immediately
-      readyToCapture = allBookingsToCapture.filter(booking => {
-        // If it's a past booking, capture immediately
-        if (pastBookingsToCapture?.includes(booking)) {
-          return true
-        }
-        
-        // For active bookings, wait 1 hour after completion
-        const bookingStart = new Date(booking.date_time)
-        const bookingEnd = new Date(bookingStart.getTime() + (booking.total_hours || 0) * 60 * 60 * 1000)
-        const captureTime = new Date(bookingEnd.getTime() + 1 * 60 * 60 * 1000) // 1 hour after service ends
-        return now >= captureTime
-      })
+    if (pastBookingsToCapture && pastBookingsToCapture.length > 0) {
+      // Capture ALL past bookings with 'authorized' status immediately
+      readyToCapture = pastBookingsToCapture
       
-      console.log(`Found ${readyToCapture.length} bookings ready for capture (${allBookingsToCapture.length} total with collecting status)`)
+      console.log(`Found ${readyToCapture.length} completed bookings ready for capture`)
       
       for (const booking of readyToCapture) {
         try {

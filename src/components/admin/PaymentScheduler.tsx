@@ -20,6 +20,18 @@ export const PaymentScheduler = () => {
   const runPaymentProcessing = async () => {
     setProcessing(true);
     try {
+      // First, auto-complete bookings that should be marked as completed
+      console.log('Running auto-complete-bookings...');
+      const { data: autoCompleteData, error: autoCompleteError } = await supabase.functions.invoke('auto-complete-bookings');
+      
+      if (autoCompleteError) {
+        console.error('Auto-complete error:', autoCompleteError);
+      } else {
+        console.log('Auto-complete result:', autoCompleteData);
+      }
+
+      // Then, process payments
+      console.log('Running stripe-process-payments...');
       const { data, error } = await supabase.functions.invoke('stripe-process-payments');
       
       if (error) {
@@ -33,18 +45,15 @@ export const PaymentScheduler = () => {
       }
 
       setLastRun(new Date());
-      setStats({
-        authorized: data?.bookings_authorized || 0,
-        captured: data?.bookings_captured || 0,
-        pending: stats.pending - (data?.bookings_authorized || 0) - (data?.bookings_captured || 0)
+      
+      const completedBookings = autoCompleteData?.bookings_completed || 0;
+      toast({
+        title: "Payment Processing Complete",
+        description: `Completed: ${completedBookings}, Authorized: ${data?.bookings_authorized || 0}, Captured: ${data?.bookings_captured || 0}`
       });
 
-      if ((data?.bookings_authorized || 0) > 0 || (data?.bookings_captured || 0) > 0) {
-        toast({
-          title: "Payment Processing Complete",
-          description: `Authorized: ${data?.bookings_authorized || 0}, Captured: ${data?.bookings_captured || 0}`
-        });
-      }
+      // Refresh stats after processing
+      fetchPendingStats();
 
       return true;
     } catch (error) {
@@ -95,26 +104,49 @@ export const PaymentScheduler = () => {
 
   const fetchPendingStats = async () => {
     try {
-      // Get upcoming bookings that need authorization
-      const { data: unpaidBookings } = await supabase
+      // Get pending bookings (unpaid) from active bookings
+      const { data: pending, error: pendingError } = await supabase
         .from('bookings')
         .select('id')
-        .in('payment_status', ['Unpaid', 'pending', 'failed'])
-        .gte('date_time', new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()) // 2 hours ago
-        .lte('date_time', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()); // 24 hours from now
+        .in('payment_status', ['Unpaid', 'pending', 'failed']);
 
-      // Get authorized bookings that need capture
-      const { data: authorizedBookings } = await supabase
+      // Get authorized bookings from both active and past bookings
+      const { data: authorizedActive, error: authorizedActiveError } = await supabase
         .from('bookings')
         .select('id')
         .eq('payment_status', 'authorized');
 
-      setStats(prev => ({
-        ...prev,
-        pending: (unpaidBookings?.length || 0) + (authorizedBookings?.length || 0)
-      }));
+      const { data: authorizedPast, error: authorizedPastError } = await supabase
+        .from('past_bookings')
+        .select('id')
+        .eq('payment_status', 'authorized');
+
+      // Get captured/paid bookings from both tables
+      const { data: capturedActive, error: capturedActiveError } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('payment_status', 'paid');
+
+      const { data: capturedPast, error: capturedPastError } = await supabase
+        .from('past_bookings')
+        .select('id')
+        .eq('payment_status', 'paid');
+
+      if (pendingError || authorizedActiveError || authorizedPastError || capturedActiveError || capturedPastError) {
+        console.error('Error fetching stats:', { pendingError, authorizedActiveError, authorizedPastError, capturedActiveError, capturedPastError });
+        return;
+      }
+
+      const totalAuthorized = (authorizedActive?.length || 0) + (authorizedPast?.length || 0);
+      const totalCaptured = (capturedActive?.length || 0) + (capturedPast?.length || 0);
+
+      setStats({
+        pending: pending?.length || 0,
+        authorized: totalAuthorized,
+        captured: totalCaptured
+      });
     } catch (error) {
-      console.error('Error fetching pending stats:', error);
+      console.error('Failed to fetch payment stats:', error);
     }
   };
 
@@ -210,7 +242,7 @@ export const PaymentScheduler = () => {
         )}
 
         <div className="text-sm text-muted-foreground bg-yellow-50 p-3 rounded border">
-          <strong>Schedule:</strong> Authorizes payments 24h before booking, captures 1h after completion or immediately when marked as completed.
+          <strong>Schedule:</strong> Authorizes payments 24h before booking, auto-completes bookings 1h after service ends, captures payments immediately for completed bookings.
           Runs every 30 minutes when active.
         </div>
       </CardContent>
