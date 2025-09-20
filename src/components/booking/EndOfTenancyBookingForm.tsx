@@ -7,8 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Minus, Home, Bath, Bed, Utensils, Car, BookOpen, Sun, Trees, Trash2, Building, Building2, Users, Sofa, ChefHat, Blinds, Package, Armchair, BedDouble, Calendar, Mail, Phone, MapPin } from 'lucide-react';
+import { Plus, Minus, Home, Bath, Bed, Utensils, Car, BookOpen, Sun, Trees, Trash2, Building, Building2, Users, Sofa, ChefHat, Blinds, Package, Armchair, BedDouble, Calendar as CalendarIcon, Mail, Phone, MapPin } from 'lucide-react';
 import CustomerSelector from './CustomerSelector';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 interface EndOfTenancyBookingFormProps {
   children: React.ReactNode;
@@ -300,7 +304,7 @@ export function EndOfTenancyBookingForm({ children, onSubmit }: EndOfTenancyBook
         </DialogHeader>
         
         <Tabs defaultValue="customer" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="customer">Customer</TabsTrigger>
             <TabsTrigger value="property">Property</TabsTrigger>
             {formData.property_type === 'apartment' && (
@@ -385,12 +389,15 @@ export function EndOfTenancyBookingForm({ children, onSubmit }: EndOfTenancyBook
                 <CardContent className="p-4 space-y-4">
                   <h3 className="font-semibold text-primary">Room Configuration</h3>
                   
-                  {/* Bedrooms for apartments */}
-                  {formData.property_type === 'apartment' && (
+                  {/* Bedrooms for apartments and houses */}
+                  {(formData.property_type === 'apartment' || formData.property_type === 'house') && (
                     <div className="space-y-3">
                       <h4 className="font-medium">Number of Bedrooms</h4>
                       <div className="grid grid-cols-3 gap-3">
-                        {bedroomOptions.map(option => (
+                        {(formData.property_type === 'house'
+                          ? bedroomOptions.filter(o => o.id !== 'studio')
+                          : bedroomOptions
+                        ).map(option => (
                           <Button
                             key={option.id}
                             variant={formData.bedrooms === option.id ? "default" : "outline"}
@@ -954,14 +961,31 @@ export function EndOfTenancyBookingForm({ children, onSubmit }: EndOfTenancyBook
                 <h3 className="font-semibold text-primary">Booking Details</h3>
                 
                 <div>
-                  <Label htmlFor="preferred_date" className="text-base font-medium">Preferred Cleaning Date</Label>
-                  <Input
-                    id="preferred_date"
-                    type="date"
-                    value={formData.preferred_date}
-                    onChange={(e) => updateBasicField('preferred_date', e.target.value)}
-                    className="w-48 mt-2"
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-[240px] justify-start text-left font-normal",
+                          !formData.preferred_date && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.preferred_date
+                          ? format(new Date(formData.preferred_date), "PPP")
+                          : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={formData.preferred_date ? new Date(formData.preferred_date) : undefined}
+                        onSelect={(date) => updateBasicField('preferred_date', date ? format(date, 'yyyy-MM-dd') : '')}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 
                 <div>

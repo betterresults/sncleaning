@@ -28,6 +28,8 @@ interface Customer {
   email: string;
   phone: string;
   client_type?: string;
+  address?: string;
+  postcode?: string;
 }
 
 interface CustomerSelectorProps {
@@ -86,13 +88,13 @@ const CustomerSelector = ({ onCustomerSelect }: CustomerSelectorProps) => {
       <div>
         <Label htmlFor="customerSelect">Select Customer</Label>
         <div className="flex gap-2">
-          <Popover open={open} onOpenChange={setOpen}>
+          <Popover open={open} onOpenChange={setOpen} modal>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
                 role="combobox"
                 aria-expanded={open}
-                className="flex-1 justify-between"
+                className="flex-1 justify-between overflow-hidden text-ellipsis"
               >
                 {selectedCustomer
                   ? getCustomerDisplayText(selectedCustomer)
@@ -100,10 +102,10 @@ const CustomerSelector = ({ onCustomerSelect }: CustomerSelectorProps) => {
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-full p-0 bg-white" side="bottom" align="start">
+            <PopoverContent className="w-[520px] p-0 bg-white pointer-events-auto" side="bottom" align="start">
               <Command className="bg-white">
                 <CommandInput placeholder="Search customers by name or email..." />
-                <CommandList className="max-h-[200px] overflow-auto">
+                <CommandList className="max-h-72 overflow-y-auto pointer-events-auto">
                   <CommandEmpty>No customers found.</CommandEmpty>
                   <CommandGroup>
                     {customers.map((customer) => (
