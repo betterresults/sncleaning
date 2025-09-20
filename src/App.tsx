@@ -29,7 +29,9 @@ import CustomerAirbnbForm from "./pages/CustomerAirbnbForm";
 import CustomerLinenManagement from './pages/CustomerLinenManagement';
 import CreateCustomerAccounts from "./pages/CreateCustomerAccounts";
 import AdminAddBooking from "./pages/AdminAddBooking";
-import CleanerSettings from "./pages/CleanerSettings";
+import CleanerSettings from './pages/CleanerSettings';
+import CleanerChecklists from './pages/CleanerChecklists';
+import CleanerChecklist from './pages/CleanerChecklist';
 import AdminSettings from "./pages/AdminSettings";
 import RecurringBookings from "./pages/RecurringBookings";
 import AddRecurringBooking from "./pages/AddRecurringBooking";
@@ -78,8 +80,10 @@ const App = () => (
            <Route path="/admin-chat-management" element={<AdminChatManagement />} />
            <Route path="/admin-pricing-formulas" element={<AdminPricingFormulas />} />
               <Route path="/cleaner-available-bookings" element={<CleanerAvailableBookings />} />
-              <Route path="/cleaner-past-bookings" element={<CleanerPastBookings />} />
-              <Route path="/cleaner-earnings" element={<CleanerEarnings />} />
+            <Route path="/cleaner-past-bookings" element={<CleanerPastBookings />} />
+            <Route path="/cleaner-checklists" element={<CleanerChecklists />} />
+            <Route path="/cleaner-checklist/:bookingId" element={<CleanerChecklist />} />
+            <Route path="/cleaner-earnings" element={<CleanerEarnings />} />
               <Route path="/customer-dashboard" element={<CustomerDashboard />} />
               <Route path="/customer-completed-bookings" element={<CustomerCompletedBookings />} />
                 <Route path="/customer-settings" element={<CustomerSettings />} />

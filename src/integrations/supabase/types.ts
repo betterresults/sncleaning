@@ -601,6 +601,124 @@ export type Database = {
         }
         Relationships: []
       }
+      cleaning_checklist_photos: {
+        Row: {
+          caption: string | null
+          checklist_id: string
+          file_path: string
+          id: string
+          room_section: string
+          uploaded_at: string
+        }
+        Insert: {
+          caption?: string | null
+          checklist_id: string
+          file_path: string
+          id?: string
+          room_section: string
+          uploaded_at?: string
+        }
+        Update: {
+          caption?: string | null
+          checklist_id?: string
+          file_path?: string
+          id?: string
+          room_section?: string
+          uploaded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaning_checklist_photos_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "cleaning_checklists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cleaning_checklist_templates: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          service_type: string
+          template_data: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          service_type: string
+          template_data: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          service_type?: string
+          template_data?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cleaning_checklists: {
+        Row: {
+          booking_id: number
+          checklist_data: Json
+          cleaner_id: number
+          completed_at: string | null
+          created_at: string
+          id: string
+          language_preference: string | null
+          photos: Json | null
+          property_config: Json
+          status: string
+          template_id: string
+          updated_at: string
+        }
+        Insert: {
+          booking_id: number
+          checklist_data?: Json
+          cleaner_id: number
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          language_preference?: string | null
+          photos?: Json | null
+          property_config: Json
+          status?: string
+          template_id: string
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: number
+          checklist_data?: Json
+          cleaner_id?: number
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          language_preference?: string | null
+          photos?: Json | null
+          property_config?: Json
+          status?: string
+          template_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaning_checklists_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "cleaning_checklist_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cleaning_photos: {
         Row: {
           booking_date: string

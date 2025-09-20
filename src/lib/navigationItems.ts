@@ -1,4 +1,4 @@
-import { Calendar, History, DollarSign, Briefcase, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Calculator, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package, TrendingUp, Activity, Bell } from 'lucide-react';
+import { Briefcase, Calendar, History, DollarSign, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Calculator, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package, TrendingUp, Activity, Bell, CheckSquare } from 'lucide-react';
 
 export const cleanerNavigation = [
   {
@@ -10,6 +10,11 @@ export const cleanerNavigation = [
     title: "Today's Work",
     url: "/cleaner-today-bookings",
     icon: MapPin,
+  },
+  {
+    title: "Checklists",
+    url: "/cleaner-checklists",
+    icon: CheckSquare,
   },
   {
     title: "Messages",
