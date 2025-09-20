@@ -412,6 +412,40 @@ export function useCleaningChecklist(bookingId?: number) {
     }
   };
 
+  // Update property configuration
+  const updatePropertyConfig = async (
+    checklistId: string,
+    newConfig: PropertyConfig
+  ) => {
+    try {
+      const { error } = await supabase
+        .from('cleaning_checklists')
+        .update({ property_config: newConfig as any })
+        .eq('id', checklistId);
+
+      if (error) throw error;
+
+      if (currentChecklist && currentChecklist.id === checklistId) {
+        setCurrentChecklist({
+          ...currentChecklist,
+          property_config: newConfig,
+        });
+      }
+
+      toast({
+        title: 'Saved',
+        description: 'Property configuration updated',
+      });
+    } catch (error) {
+      console.error('Error updating property configuration:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update property configuration',
+        variant: 'destructive',
+      });
+    }
+  };
+
   // Upload photo for checklist room
   const uploadPhoto = async (
     checklistId: string,
@@ -471,6 +505,7 @@ export function useCleaningChecklist(bookingId?: number) {
     createChecklist,
     updateTaskCompletion,
     updateLanguagePreference,
+    updatePropertyConfig,
     uploadPhoto,
     parsePropertyConfig
   };

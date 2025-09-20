@@ -39,7 +39,8 @@ export function CleaningChecklistInterface({
     updateTaskCompletion,
     updateLanguagePreference,
     parsePropertyConfig,
-    fetchChecklists
+    fetchChecklists,
+    updatePropertyConfig
   } = useCleaningChecklist(bookingId);
 
   const [customerData, setCustomerData] = useState<any>(null);
@@ -123,7 +124,7 @@ export function CleaningChecklistInterface({
       if (!template) return;
 
       const sections: Array<{ id: string; name: string; tasks: any[]; note?: string }> = [];
-      const { property_config } = currentChecklist;
+      const property_config = propertyConfig || currentChecklist.property_config;
       const { rooms } = template.template_data;
 
       // Add kitchen (always single)
@@ -255,7 +256,7 @@ export function CleaningChecklistInterface({
 
       setCompletionProgress(totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0);
     }
-  }, [currentChecklist, templates, language]);
+  }, [currentChecklist, templates, language, propertyConfig]);
 
   const handleLanguageChange = (newLanguage: 'english' | 'bulgarian') => {
     setLanguage(newLanguage);
@@ -398,7 +399,7 @@ export function CleaningChecklistInterface({
                   <ModernPropertyConfigDialog
                     propertyConfig={propertyConfig}
                     language={language}
-                    onSave={(config) => setPropertyConfig(config)}
+                    onSave={(config) => { setPropertyConfig(config); if (currentChecklist) { updatePropertyConfig(currentChecklist.id, config); } }}
                   >
                     <Button variant="outline" size="sm" className="text-xs hover:bg-primary/10 hover:border-primary/50">
                       {propertyConfig?.bedrooms || 1} Bedroom{(propertyConfig?.bedrooms || 1) > 1 ? 's' : ''}
@@ -408,7 +409,7 @@ export function CleaningChecklistInterface({
                   <ModernPropertyConfigDialog
                     propertyConfig={propertyConfig}
                     language={language}
-                    onSave={(config) => setPropertyConfig(config)}
+                    onSave={(config) => { setPropertyConfig(config); if (currentChecklist) { updatePropertyConfig(currentChecklist.id, config); } }}
                   >
                     <Button variant="outline" size="sm" className="text-xs hover:bg-primary/10 hover:border-primary/50">
                       {propertyConfig?.bathrooms || 1} Bathroom{(propertyConfig?.bathrooms || 1) > 1 ? 's' : ''}
@@ -418,7 +419,7 @@ export function CleaningChecklistInterface({
                   <ModernPropertyConfigDialog
                     propertyConfig={propertyConfig}
                     language={language}
-                    onSave={(config) => setPropertyConfig(config)}
+                    onSave={(config) => { setPropertyConfig(config); if (currentChecklist) { updatePropertyConfig(currentChecklist.id, config); } }}
                   >
                     <Button variant="outline" size="sm" className="text-xs hover:bg-primary/10 hover:border-primary/50">
                       {propertyConfig?.living_rooms || 1} Living Room{(propertyConfig?.living_rooms || 1) > 1 ? 's' : ''}
