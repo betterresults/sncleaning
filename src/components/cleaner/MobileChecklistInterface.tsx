@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { MobilePropertyConfig } from './MobilePropertyConfig';
+import { ModernPropertyConfigDialog } from './ModernPropertyConfigDialog';
 import { TaskCommentDialog } from './TaskCommentDialog';
 import { ChevronRight, ChevronDown, Check, Camera, MessageSquare, Save, ArrowLeft, Home, Settings, Edit, Play } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -69,7 +69,6 @@ export function MobileChecklistInterface({ bookingId, cleanerId, onClose }: Mobi
   const [sections, setSections] = useState<ChecklistSection[]>([]);
   const [overallProgress, setOverallProgress] = useState(0);
   const [customerData, setCustomerData] = useState<any>(null);
-  const [showConfigDialog, setShowConfigDialog] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const { toast } = useToast();
 
@@ -426,15 +425,20 @@ export function MobileChecklistInterface({ bookingId, cleanerId, onClose }: Mobi
                     {language === 'english' ? 'Property Configuration' : 'Конфигурация на имота'}
                   </h2>
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setShowConfigDialog(true)}
-                  className="flex items-center gap-1"
+                <ModernPropertyConfigDialog
+                  propertyConfig={propertyConfig}
+                  language={language}
+                  onSave={handlePropertyConfigSave}
                 >
-                  <Edit className="h-3 w-3" />
-                  {language === 'english' ? 'Edit' : 'Промени'}
-                </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="flex items-center gap-1"
+                  >
+                    <Edit className="h-3 w-3" />
+                    {language === 'english' ? 'Edit' : 'Промени'}
+                  </Button>
+                </ModernPropertyConfigDialog>
               </div>
               
               <div className="grid grid-cols-3 gap-2 text-sm">
@@ -626,14 +630,6 @@ export function MobileChecklistInterface({ bookingId, cleanerId, onClose }: Mobi
         </div>
       )}
 
-      {/* Property Configuration Dialog */}
-      <MobilePropertyConfig
-        open={showConfigDialog}
-        onOpenChange={setShowConfigDialog}
-        propertyConfig={propertyConfig}
-        language={language}
-        onSave={handlePropertyConfigSave}
-      />
     </div>
   );
 }
