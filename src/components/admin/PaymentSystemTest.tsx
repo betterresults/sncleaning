@@ -16,12 +16,21 @@ export const PaymentSystemTest = () => {
       });
       
       if (error) {
+        const errorMessage = error.message || 'Unknown error occurred';
+        const stripeCode = data?.stripeErrorCode || '';
+        const stripeType = data?.stripeErrorType || '';
+        
         toast({
-          title: "Test Error",
-          description: error.message,
+          title: "Payment Failed",
+          description: `${errorMessage}${stripeCode ? ` (${stripeCode})` : ''}${stripeType ? ` - ${stripeType}` : ''}`,
           variant: "destructive"
         });
-        setResult({ error: error.message });
+        setResult({ 
+          error: errorMessage,
+          stripeErrorCode: stripeCode,
+          stripeErrorType: stripeType,
+          fullResponse: data
+        });
       } else {
         toast({
           title: "Test Complete",
@@ -43,12 +52,16 @@ export const PaymentSystemTest = () => {
       const { data, error } = await supabase.functions.invoke('stripe-process-payments');
       
       if (error) {
+        const errorMessage = error.message || 'Unknown error occurred';
         toast({
-          title: "Process Test Error",
-          description: error.message,
+          title: "Process Test Error", 
+          description: errorMessage,
           variant: "destructive"
         });
-        setResult({ error: error.message });
+        setResult({ 
+          error: errorMessage,
+          fullResponse: data
+        });
       } else {
         toast({
           title: "Process Test Complete",

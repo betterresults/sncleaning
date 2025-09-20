@@ -156,7 +156,7 @@ serve(async (req) => {
       const paymentIntent = await paymentIntentResponse.json()
 
       if (paymentIntent.error) {
-        console.error(`Authorization failed for booking ${bookingId}:`, paymentIntent.error.message)
+        console.error(`Authorization failed for booking ${bookingId}:`, JSON.stringify(paymentIntent.error))
         
         // Update booking status to failed in correct table
         if (isUpcoming) {
@@ -174,9 +174,13 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             success: false, 
-            error: `Authorization failed: ${paymentIntent.error.message}`,
+            error: `${paymentIntent.error.message}`,
+            stripeErrorCode: paymentIntent.error.code || null,
+            stripeErrorType: paymentIntent.error.type || null,
+            stripeDeclineCode: paymentIntent.error.decline_code || null,
             action: 'authorize',
-            bookingId 
+            bookingId,
+            rawStripeError: paymentIntent.error
           }),
           {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -345,7 +349,7 @@ serve(async (req) => {
         const captureResult = await captureResponse.json()
 
         if (captureResult.error) {
-          console.error(`Capture failed for booking ${bookingId}:`, captureResult.error.message)
+          console.error(`Capture failed for booking ${bookingId}:`, JSON.stringify(captureResult.error))
           
           if (isUpcoming) {
             await supabaseClient
@@ -362,9 +366,13 @@ serve(async (req) => {
           return new Response(
             JSON.stringify({ 
               success: false, 
-              error: `Capture failed: ${captureResult.error.message}`,
+              error: `${captureResult.error.message}`,
+              stripeErrorCode: captureResult.error.code || null,
+              stripeErrorType: captureResult.error.type || null,
+              stripeDeclineCode: captureResult.error.decline_code || null,
               action: 'charge',
-              bookingId 
+              bookingId,
+              rawStripeError: captureResult.error
             }),
             {
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -450,7 +458,7 @@ serve(async (req) => {
         const paymentIntent = await paymentIntentResponse.json()
 
         if (paymentIntent.error) {
-          console.error(`Payment failed for booking ${bookingId}:`, paymentIntent.error.message)
+          console.error(`Payment failed for booking ${bookingId}:`, JSON.stringify(paymentIntent.error))
           
           if (isUpcoming) {
             await supabaseClient
@@ -467,9 +475,13 @@ serve(async (req) => {
           return new Response(
             JSON.stringify({ 
               success: false, 
-              error: `Payment failed: ${paymentIntent.error.message}`,
+              error: `${paymentIntent.error.message}`,
+              stripeErrorCode: paymentIntent.error.code || null,
+              stripeErrorType: paymentIntent.error.type || null,
+              stripeDeclineCode: paymentIntent.error.decline_code || null,
               action: 'charge',
-              bookingId 
+              bookingId,
+              rawStripeError: paymentIntent.error
             }),
             {
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
