@@ -122,11 +122,12 @@ export function CleaningChecklistInterface({
         sections.push({
           id: 'kitchen',
           name: rooms.kitchen.name[language],
-          tasks: rooms.kitchen.tasks
+          tasks: rooms.kitchen.tasks,
+          note: rooms.kitchen.note?.[language]
         });
       }
 
-      // Add living room(s)
+      // Add living room(s) - now properly supported in template
       if (rooms.living_room && property_config.living_rooms) {
         for (let i = 1; i <= property_config.living_rooms; i++) {
           const roomId = property_config.living_rooms === 1 ? 'living_room' : `living_room_${i}`;
@@ -137,7 +138,8 @@ export function CleaningChecklistInterface({
           sections.push({
             id: roomId,
             name: roomName,
-            tasks: rooms.living_room.tasks
+            tasks: rooms.living_room.tasks,
+            note: rooms.living_room.note?.[language]
           });
         }
       }
@@ -170,9 +172,34 @@ export function CleaningChecklistInterface({
           sections.push({
             id: roomId,
             name: roomName,
-            tasks: rooms.bathroom.tasks
+            tasks: rooms.bathroom.tasks,
+            note: rooms.bathroom.note?.[language]
           });
         }
+      }
+
+      // Add additional rooms from property config
+      if (property_config.additional_rooms?.length) {
+        property_config.additional_rooms.forEach((additionalRoom) => {
+          const roomType = additionalRoom.type;
+          const roomTemplate = rooms[roomType];
+          
+          if (roomTemplate) {
+            for (let i = 1; i <= additionalRoom.count; i++) {
+              const roomId = additionalRoom.count === 1 ? roomType : `${roomType}_${i}`;
+              const roomName = additionalRoom.count === 1 
+                ? roomTemplate.name[language]
+                : `${roomTemplate.name[language]} ${i}`;
+              
+              sections.push({
+                id: roomId,
+                name: roomName,
+                tasks: roomTemplate.tasks,
+                note: roomTemplate.note?.[language]
+              });
+            }
+          }
+        });
       }
 
       setRoomSections(sections);
@@ -204,11 +231,11 @@ export function CleaningChecklistInterface({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge variant="default" className="bg-green-500"><Check className="w-3 h-3 mr-1" />Completed</Badge>;
+        return <Badge className="bg-primary text-primary-foreground"><Check className="w-3 h-3 mr-1" />Completed</Badge>;
       case 'in_progress':
-        return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />In Progress</Badge>;
+        return <Badge variant="secondary" className="bg-primary/20 text-primary"><Clock className="w-3 h-3 mr-1" />In Progress</Badge>;
       default:
-        return <Badge variant="outline">Not Started</Badge>;
+        return <Badge variant="outline" className="border-primary/30 text-primary">Not Started</Badge>;
     }
   };
 
@@ -243,16 +270,19 @@ export function CleaningChecklistInterface({
   const cleanerName = cleanerData?.full_name || cleanerData?.first_name || 'SN Cleaning Crew';
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <Card>
-        <CardHeader>
+    <div className="space-y-6 bg-background">
+      {/* Header with SN Cleaning Brand Styling */}
+      <Card className="border-primary/20 shadow-lg">
+        <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 border-b border-primary/20">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-2xl">Cleaning Services Checklist</CardTitle>
+            <div>
+              <CardTitle className="text-2xl text-primary font-bold">SN Cleaning Services</CardTitle>
+              <p className="text-primary/70 text-sm mt-1">Cleaning Services Checklist</p>
+            </div>
             <div className="flex items-center space-x-4">
               <Select value={language} onValueChange={handleLanguageChange}>
-                <SelectTrigger className="w-32">
-                  <Languages className="w-4 h-4 mr-2" />
+                <SelectTrigger className="w-32 border-primary/30">
+                  <Languages className="w-4 h-4 mr-2 text-primary" />
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -264,31 +294,39 @@ export function CleaningChecklistInterface({
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="text-sm font-medium">Property address</label>
-              <div className="mt-1 p-2 bg-muted rounded">{bookingData?.address}, {bookingData?.postcode}</div>
-            </div>
-            <div>
-              <label className="text-sm font-medium">Date</label>
-              <div className="mt-1 p-2 bg-muted rounded">{currentDate}</div>
-            </div>
-            <div>
-              <label className="text-sm font-medium">Client</label>
-              <div className="mt-1 p-2 bg-muted rounded">{customerName}</div>
-            </div>
-            <div>
-              <label className="text-sm font-medium">Team</label>
-              <div className="mt-1 p-2 bg-muted rounded">{cleanerName}</div>
+        <CardContent className="p-6">
+          <div className="text-sm text-muted-foreground mb-4">
+            All items have been inspected and completed unless noted below.
+          </div>
+          
+          {/* Summary Section */}
+          <div className="bg-muted/30 rounded-lg p-4 mb-6">
+            <h3 className="font-semibold text-primary mb-3">Summary</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Property address</label>
+                <div className="mt-1 font-medium">{bookingData?.address}, {bookingData?.postcode}</div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Date</label>
+                <div className="mt-1 font-medium">{currentDate}</div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Client</label>
+                <div className="mt-1 font-medium">{customerName}</div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Team</label>
+                <div className="mt-1 font-medium">{cleanerName}</div>
+              </div>
             </div>
           </div>
           
           <div className="space-y-2">
-            <label className="text-sm font-medium">
+            <label className="text-sm font-medium text-primary">
               {language === 'english' ? 'Completion Progress' : 'Прогрес на изпълнение'}
             </label>
-            <Progress value={completionProgress} className="w-full" />
+            <Progress value={completionProgress} className="w-full h-3" />
             <p className="text-sm text-muted-foreground">
               {Math.round(completionProgress)}% {language === 'english' ? 'complete' : 'завършено'}
             </p>
@@ -298,20 +336,20 @@ export function CleaningChecklistInterface({
 
       {/* Booked Services */}
       {templates.find(t => t.id === currentChecklist.template_id)?.template_data.booked_services && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
+        <Card className="border-primary/20">
+          <CardHeader className="bg-primary/5 border-b border-primary/20">
+            <CardTitle className="text-primary">
               {language === 'english' ? 'Booked services (included)' : 'Резервирани услуги (включени)'}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3">
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 gap-3">
               {templates.find(t => t.id === currentChecklist.template_id)?.template_data.booked_services.map((service) => (
                 <div key={service.id} className="flex items-start gap-3">
                   <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold">
                     ✓
                   </div>
-                  <div>{service[language]}</div>
+                  <div className="font-medium">{service[language]}</div>
                 </div>
               ))}
             </div>
@@ -319,40 +357,51 @@ export function CleaningChecklistInterface({
         </Card>
       )}
 
-      {/* Room Sections */}
+      {/* Room Sections with Professional Layout */}
       {roomSections.map((section) => (
-        <Card key={section.id}>
-          <CardHeader>
-            <CardTitle>{section.name}</CardTitle>
+        <Card key={section.id} className="border-primary/20 shadow-md">
+          <CardHeader className="bg-primary/5 border-b border-primary/20">
+            <CardTitle className="text-primary text-xl font-bold">{section.name}</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3 mb-4">
+          <CardContent className="p-6">
+            <div className="space-y-4">
               {section.tasks.map((task) => {
                 const isCompleted = currentChecklist.checklist_data[section.id]?.[task.id] || false;
                 return (
-                  <div key={task.id} className="flex items-start gap-3">
-                    <Checkbox
-                      checked={isCompleted}
-                      onCheckedChange={(checked) => handleTaskToggle(section.id, task.id, !!checked)}
-                      className="mt-1"
-                    />
-                    <div className={isCompleted ? 'line-through text-muted-foreground' : ''}>
-                      {task[language]}
+                  <div key={task.id} className="flex items-start gap-4 p-3 rounded-lg hover:bg-muted/30 transition-colors">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <Checkbox
+                        checked={isCompleted}
+                        onCheckedChange={(checked) => handleTaskToggle(section.id, task.id, !!checked)}
+                        className="w-5 h-5 border-2 border-primary data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                      />
                     </div>
+                    <div className={`flex-1 ${isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                      <div className="font-medium leading-relaxed">
+                        {task[language]}
+                      </div>
+                    </div>
+                    {isCompleted && (
+                      <div className="flex-shrink-0 text-primary">
+                        <Check className="w-5 h-5" />
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
 
             {section.note && (
-              <div className="pt-3 border-t border-dashed text-sm text-muted-foreground">
-                {section.note}
+              <div className="mt-6 pt-4 border-t border-dashed border-primary/30">
+                <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg">
+                  {section.note}
+                </div>
               </div>
             )}
 
-            <div className="pt-3 border-t">
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
-                <Camera className="w-4 h-4" />
+            <div className="mt-6 pt-4 border-t border-primary/30">
+              <Button variant="outline" size="sm" className="border-primary/30 text-primary hover:bg-primary/10 hover:border-primary">
+                <Camera className="w-4 h-4 mr-2" />
                 {language === 'english' ? 'Add Photos (1-3)' : 'Добави снимки (1-3)'}
               </Button>
             </div>
@@ -360,24 +409,32 @@ export function CleaningChecklistInterface({
         </Card>
       ))}
 
-      {/* Actions */}
+      {/* Completion Status */}
       {currentChecklist.status === 'completed' && (
-        <Card>
-          <CardContent className="p-6 text-center">
-            <div className="text-green-600 mb-4">
-              <Check className="w-12 h-12 mx-auto mb-2" />
-              <h3 className="text-lg font-semibold">
+        <Card className="border-primary/20 shadow-lg">
+          <CardContent className="p-8 text-center">
+            <div className="text-primary mb-6">
+              <Check className="w-16 h-16 mx-auto mb-4" />
+              <h3 className="text-2xl font-bold">
                 {language === 'english' ? 'Checklist Completed!' : 'Чеклистът е завършен!'}
               </h3>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground mt-2">
                 {language === 'english' 
                   ? 'All tasks have been completed successfully.' 
                   : 'Всички задачи са успешно изпълнени.'}
               </p>
             </div>
-            <Button>
+            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 text-lg">
               {language === 'english' ? 'Generate Report' : 'Генериране на отчет'}
             </Button>
+            
+            <div className="mt-6 pt-6 border-t border-primary/20 text-sm text-muted-foreground">
+              Photos are provided as separate attachments upon request.
+            </div>
+            
+            <div className="mt-4 text-sm text-primary font-medium">
+              SN Cleaning Services • info@sncleaningservices.co.uk • 020 3835 5033
+            </div>
           </CardContent>
         </Card>
       )}

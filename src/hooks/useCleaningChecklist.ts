@@ -128,6 +128,8 @@ export function useCleaningChecklist(bookingId?: number) {
 
   // Parse property details from booking (supports both JSON and text formats)
   const parsePropertyConfig = (propertyDetails?: string): PropertyConfig => {
+    console.log('Parsing property details:', propertyDetails);
+    
     const defaultConfig = {
       bedrooms: 1,
       bathrooms: 1,
@@ -135,7 +137,10 @@ export function useCleaningChecklist(bookingId?: number) {
       additional_rooms: []
     };
 
-    if (!propertyDetails) return defaultConfig;
+    if (!propertyDetails) {
+      console.log('No property details provided, using default config:', defaultConfig);
+      return defaultConfig;
+    }
 
     try {
       const config = { ...defaultConfig };
@@ -143,6 +148,7 @@ export function useCleaningChecklist(bookingId?: number) {
       // Try to parse as JSON first (from booking form webhook)
       try {
         const jsonData = JSON.parse(propertyDetails);
+        console.log('Parsed as JSON:', jsonData);
         
         // Extract bedroom count from JSON
         if (jsonData["Size Of The Property"]) {
@@ -188,13 +194,16 @@ export function useCleaningChecklist(bookingId?: number) {
           config.additional_rooms = additionalRooms;
         }
         
+        console.log('Final config from JSON:', config);
         return config;
       } catch (jsonError) {
         // Not JSON, continue with text parsing
+        console.log('Not JSON, trying text parsing...');
       }
       
       // Text parsing (existing property_details format)
       const details = propertyDetails.toLowerCase();
+      console.log('Parsing text details:', details);
 
       // Extract bedroom count - support various formats
       const bedroomPatterns = [
@@ -207,6 +216,7 @@ export function useCleaningChecklist(bookingId?: number) {
         const match = details.match(pattern);
         if (match) {
           config.bedrooms = parseInt(match[1]);
+          console.log('Found bedrooms:', config.bedrooms, 'using pattern:', pattern);
           break;
         }
       }
@@ -222,6 +232,7 @@ export function useCleaningChecklist(bookingId?: number) {
         const match = details.match(pattern);
         if (match) {
           config.bathrooms = parseInt(match[1]);
+          console.log('Found bathrooms:', config.bathrooms, 'using pattern:', pattern);
           break;
         }
       }
@@ -229,25 +240,31 @@ export function useCleaningChecklist(bookingId?: number) {
       // Check for separate living room indicators
       if (details.includes('separate kitchen') && details.includes('living room')) {
         config.living_rooms = 1;
+        console.log('Found separate living room');
       }
       
       // Check for additional rooms
       const additionalRooms = [];
       if (details.includes('dining room')) {
         additionalRooms.push({ type: "dining_room", count: 1 });
+        console.log('Added dining room');
       }
       if (details.includes('utility room')) {
         additionalRooms.push({ type: "utility_room", count: 1 });
+        console.log('Added utility room');
       }
       if (details.includes('study')) {
         additionalRooms.push({ type: "study_room", count: 1 });
+        console.log('Added study room');
       }
       if (details.includes('conservatory')) {
         additionalRooms.push({ type: "conservatory", count: 1 });
+        console.log('Added conservatory');
       }
       
       config.additional_rooms = additionalRooms;
 
+      console.log('Final parsed config:', config);
       return config;
     } catch (error) {
       console.error('Error parsing property config:', error);
