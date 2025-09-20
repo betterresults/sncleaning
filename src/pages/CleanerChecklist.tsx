@@ -30,6 +30,12 @@ const CleanerChecklist = () => {
         return;
       }
 
+      // For admins, don't fetch booking data if no cleaner is selected
+      if (userRole === 'admin' && !selectedCleanerId) {
+        setBookingLoading(false);
+        return;
+      }
+
       try {
         const { data, error } = await supabase
           .from('bookings')
@@ -57,7 +63,7 @@ const CleanerChecklist = () => {
     };
 
     fetchBookingData();
-  }, [bookingId]);
+  }, [bookingId, userRole, selectedCleanerId]);
 
   const handleSignOut = async () => {
     try {
