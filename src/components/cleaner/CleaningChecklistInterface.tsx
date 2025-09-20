@@ -43,6 +43,7 @@ export function CleaningChecklistInterface({
   const [customerData, setCustomerData] = useState<any>(null);
   const [cleanerData, setCleanerData] = useState<any>(null);
   const [language, setLanguage] = useState<'english' | 'bulgarian'>('english');
+  const langKey = language === 'english' ? 'en' : 'bg';
   const [roomSections, setRoomSections] = useState<Array<{ id: string; name: string; tasks: any[]; note?: string }>>([]);
   const [completionProgress, setCompletionProgress] = useState(0);
   const { toast } = useToast();
@@ -121,9 +122,9 @@ export function CleaningChecklistInterface({
       if (rooms.kitchen) {
         sections.push({
           id: 'kitchen',
-          name: rooms.kitchen.name[language],
+          name: rooms.kitchen.name[langKey],
           tasks: rooms.kitchen.tasks,
-          note: rooms.kitchen.note?.[language]
+          note: rooms.kitchen.note?.[langKey]
         });
       }
 
@@ -132,14 +133,14 @@ export function CleaningChecklistInterface({
         for (let i = 1; i <= property_config.living_rooms; i++) {
           const roomId = property_config.living_rooms === 1 ? 'living_room' : `living_room_${i}`;
           const roomName = property_config.living_rooms === 1 
-            ? rooms.living_room.name[language]
-            : `${rooms.living_room.name[language]} ${i}`;
+            ? rooms.living_room.name[langKey]
+            : `${rooms.living_room.name[langKey]} ${i}`;
           
           sections.push({
             id: roomId,
             name: roomName,
             tasks: rooms.living_room.tasks,
-            note: rooms.living_room.note?.[language]
+            note: rooms.living_room.note?.[langKey]
           });
         }
       }
@@ -149,14 +150,14 @@ export function CleaningChecklistInterface({
         for (let i = 1; i <= property_config.bedrooms; i++) {
           const roomId = property_config.bedrooms === 1 ? 'bedroom' : `bedroom_${i}`;
           const roomName = property_config.bedrooms === 1 
-            ? rooms.bedroom.name[language]
-            : `${rooms.bedroom.name[language]} ${i}`;
+            ? rooms.bedroom.name[langKey]
+            : `${rooms.bedroom.name[langKey]} ${i}`;
           
           sections.push({
             id: roomId,
             name: roomName,
             tasks: rooms.bedroom.tasks,
-            note: rooms.bedroom.note?.[language]
+            note: rooms.bedroom.note?.[langKey]
           });
         }
       }
@@ -166,14 +167,14 @@ export function CleaningChecklistInterface({
         for (let i = 1; i <= property_config.bathrooms; i++) {
           const roomId = property_config.bathrooms === 1 ? 'bathroom' : `bathroom_${i}`;
           const roomName = property_config.bathrooms === 1 
-            ? rooms.bathroom.name[language]
-            : `${rooms.bathroom.name[language]} ${i}`;
+            ? rooms.bathroom.name[langKey]
+            : `${rooms.bathroom.name[langKey]} ${i}`;
           
           sections.push({
             id: roomId,
             name: roomName,
             tasks: rooms.bathroom.tasks,
-            note: rooms.bathroom.note?.[language]
+            note: rooms.bathroom.note?.[langKey]
           });
         }
       }
@@ -349,7 +350,7 @@ export function CleaningChecklistInterface({
                   <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold">
                     ✓
                   </div>
-                  <div className="font-medium">{service[language]}</div>
+                  <div className="font-medium">{service[langKey]}</div>
                 </div>
               ))}
             </div>
@@ -378,7 +379,7 @@ export function CleaningChecklistInterface({
                     </div>
                     <div className={`flex-1 ${isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
                       <div className="font-medium leading-relaxed">
-                        {task[language]}
+                        {task[langKey]}
                       </div>
                     </div>
                     {isCompleted && (
