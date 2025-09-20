@@ -441,31 +441,147 @@ export function MobileChecklistInterface({ bookingId, cleanerId, onClose }: Mobi
                 </ModernPropertyConfigDialog>
               </div>
               
-              <div className="grid grid-cols-3 gap-2 text-sm">
-                <div className="bg-muted/50 rounded p-2 text-center">
-                  <div className="font-medium">{propertyConfig?.bedrooms || 1}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {language === 'english' 
-                      ? `Bedroom${(propertyConfig?.bedrooms || 1) > 1 ? 's' : ''}` 
-                      : `Спалн${(propertyConfig?.bedrooms || 1) > 1 ? 'и' : 'я'}`}
+              <div className="space-y-3 text-sm">
+                {/* Property Basic Info */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-muted/50 rounded p-2">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      {language === 'english' ? 'Property Type' : 'Тип имот'}
+                    </div>
+                    <div className="font-medium">
+                      {(propertyConfig as any)?.property_type === 'flat' ? (language === 'english' ? 'Flat' : 'Апартамент') :
+                       (propertyConfig as any)?.property_type === 'house' ? (language === 'english' ? 'House' : 'Къща') :
+                       (propertyConfig as any)?.property_type === 'studio' ? (language === 'english' ? 'Studio' : 'Студио') :
+                       (propertyConfig as any)?.property_type === 'house_share' ? (language === 'english' ? 'House Share' : 'Споделена къща') :
+                       (language === 'english' ? 'Flat' : 'Апартамент')}
+                    </div>
+                  </div>
+                  <div className="bg-muted/50 rounded p-2">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      {language === 'english' ? 'Status' : 'Статус'}
+                    </div>
+                    <div className="font-medium">
+                      {(propertyConfig as any)?.property_status === 'furnished' ? (language === 'english' ? 'Furnished' : 'Обзаведен') :
+                       (propertyConfig as any)?.property_status === 'unfurnished' ? (language === 'english' ? 'Unfurnished' : 'Необзаведен') :
+                       (propertyConfig as any)?.property_status === 'part_furnished' ? (language === 'english' ? 'Part Furnished' : 'Частично обзаведен') :
+                       (language === 'english' ? 'Furnished' : 'Обзаведен')}
+                    </div>
                   </div>
                 </div>
-                <div className="bg-muted/50 rounded p-2 text-center">
-                  <div className="font-medium">{propertyConfig?.bathrooms || 1}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {language === 'english' 
-                      ? `Bathroom${(propertyConfig?.bathrooms || 1) > 1 ? 's' : ''}` 
-                      : `Бан${(propertyConfig?.bathrooms || 1) > 1 ? 'и' : 'я'}`}
+
+                {/* Room Counts */}
+                <div className="grid grid-cols-4 gap-2">
+                  <div className="bg-muted/50 rounded p-2 text-center">
+                    <div className="font-medium">{propertyConfig?.bedrooms || 1}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {language === 'english' 
+                        ? `Bedroom${(propertyConfig?.bedrooms || 1) > 1 ? 's' : ''}` 
+                        : `Спалн${(propertyConfig?.bedrooms || 1) > 1 ? 'и' : 'я'}`}
+                    </div>
+                  </div>
+                  <div className="bg-muted/50 rounded p-2 text-center">
+                    <div className="font-medium">{propertyConfig?.bathrooms || 1}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {language === 'english' 
+                        ? `Bathroom${(propertyConfig?.bathrooms || 1) > 1 ? 's' : ''}` 
+                        : `Бан${(propertyConfig?.bathrooms || 1) > 1 ? 'и' : 'я'}`}
+                    </div>
+                  </div>
+                  <div className="bg-muted/50 rounded p-2 text-center">
+                    <div className="font-medium">{propertyConfig?.living_rooms || 1}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {language === 'english' 
+                        ? `Living${(propertyConfig?.living_rooms || 1) > 1 ? 's' : ''}` 
+                        : `Дневн${(propertyConfig?.living_rooms || 1) > 1 ? 'и' : 'а'}`}
+                    </div>
+                  </div>
+                  <div className="bg-muted/50 rounded p-2 text-center">
+                    <div className="font-medium">{(propertyConfig as any)?.wc || 0}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {language === 'english' ? 'WC' : 'Тоалетни'}
+                    </div>
                   </div>
                 </div>
-                <div className="bg-muted/50 rounded p-2 text-center">
-                  <div className="font-medium">{propertyConfig?.living_rooms || 1}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {language === 'english' 
-                      ? `Living Room${(propertyConfig?.living_rooms || 1) > 1 ? 's' : ''}` 
-                      : `Дневн${(propertyConfig?.living_rooms || 1) > 1 ? 'и' : 'а'}`}
+
+                {/* Oven Type */}
+                {(propertyConfig as any)?.oven_type && (propertyConfig as any).oven_type !== 'no_oven' && (
+                  <div className="bg-muted/50 rounded p-2">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      {language === 'english' ? 'Oven Type' : 'Тип фурна'}
+                    </div>
+                    <div className="font-medium">
+                      {(propertyConfig as any).oven_type === 'single' ? (language === 'english' ? 'Single Oven' : 'Единична фурна') :
+                       (propertyConfig as any).oven_type === 'single_convection' ? (language === 'english' ? 'Single & Convection' : 'Единична и конвекционна') :
+                       (propertyConfig as any).oven_type === 'double' ? (language === 'english' ? 'Double Oven' : 'Двойна фурна') :
+                       (propertyConfig as any).oven_type === 'range' ? (language === 'english' ? 'Range Oven' : 'Голяма фурна') :
+                       (propertyConfig as any).oven_type === 'aga' ? (language === 'english' ? 'AGA Oven' : 'AGA фурна') :
+                       (language === 'english' ? 'Single Oven' : 'Единична фурна')}
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {/* Additional Features */}
+                {(propertyConfig as any)?.additional_features && (propertyConfig as any).additional_features.length > 0 && (
+                  <div className="bg-muted/50 rounded p-2">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      {language === 'english' ? 'Additional Features' : 'Допълнителни характеристики'}
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {(propertyConfig as any).additional_features.map((feature: string) => (
+                        <Badge key={feature} variant="secondary" className="text-xs">
+                          {feature === 'utility_room' ? (language === 'english' ? 'Utility Room' : 'Перално помещение') :
+                           feature === 'dining_room' ? (language === 'english' ? 'Dining Room' : 'Трапезария') :
+                           feature === 'conservatory' ? (language === 'english' ? 'Conservatory' : 'Зимна градина') :
+                           feature === 'study_room' ? (language === 'english' ? 'Study Room' : 'Кабинет') :
+                           feature === 'separate_kitchen_living' ? (language === 'english' ? 'Separate Kitchen/Living' : 'Отделна кухня/дневна') :
+                           feature === 'other_room' ? (language === 'english' ? 'Other Room' : 'Друго помещение') : feature}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Services Summary */}
+                {(
+                  ((propertyConfig as any)?.blinds_cleaning && (propertyConfig as any).blinds_cleaning.length > 0) ||
+                  ((propertyConfig as any)?.extra_services && (propertyConfig as any).extra_services.length > 0) ||
+                  ((propertyConfig as any)?.carpet_cleaning && (propertyConfig as any).carpet_cleaning.length > 0) ||
+                  ((propertyConfig as any)?.upholstery_cleaning && (propertyConfig as any).upholstery_cleaning.length > 0) ||
+                  ((propertyConfig as any)?.mattress_cleaning && (propertyConfig as any).mattress_cleaning.length > 0)
+                ) && (
+                  <div className="bg-primary/10 rounded p-2">
+                    <div className="text-xs text-primary mb-1 font-medium">
+                      {language === 'english' ? 'Additional Services' : 'Допълнителни услуги'}
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {(propertyConfig as any).blinds_cleaning?.length > 0 && (
+                        <Badge variant="outline" className="text-xs">
+                          {language === 'english' ? 'Blinds Cleaning' : 'Почистване на щори'} ({(propertyConfig as any).blinds_cleaning.reduce((total: number, item: any) => total + (item.quantity || 1), 0)})
+                        </Badge>
+                      )}
+                      {(propertyConfig as any).extra_services?.length > 0 && (
+                        <Badge variant="outline" className="text-xs">
+                          {language === 'english' ? 'Extra Services' : 'Допълнителни услуги'} ({(propertyConfig as any).extra_services.reduce((total: number, item: any) => total + (item.quantity || 1), 0)})
+                        </Badge>
+                      )}
+                      {(propertyConfig as any).carpet_cleaning?.length > 0 && (
+                        <Badge variant="outline" className="text-xs">
+                          {language === 'english' ? 'Carpet Cleaning' : 'Почистване на килими'} ({(propertyConfig as any).carpet_cleaning.reduce((total: number, item: any) => total + (item.quantity || 1), 0)})
+                        </Badge>
+                      )}
+                      {(propertyConfig as any).upholstery_cleaning?.length > 0 && (
+                        <Badge variant="outline" className="text-xs">
+                          {language === 'english' ? 'Upholstery Cleaning' : 'Почистване на тапицерия'} ({(propertyConfig as any).upholstery_cleaning.reduce((total: number, item: any) => total + (item.quantity || 1), 0)})
+                        </Badge>
+                      )}
+                      {(propertyConfig as any).mattress_cleaning?.length > 0 && (
+                        <Badge variant="outline" className="text-xs">
+                          {language === 'english' ? 'Mattress Cleaning' : 'Почистване на матраци'} ({(propertyConfig as any).mattress_cleaning.reduce((total: number, item: any) => total + (item.quantity || 1), 0)})
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
