@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Minus, Home, Bath, Bed, Utensils, Car, BookOpen, Sun, Trees, Trash2, Building, Building2, Users, Sofa, ChefHat, Blinds, Package, Armchair, BedDouble, Calendar, Mail, Phone, MapPin } from 'lucide-react';
+import CustomerSelector from './CustomerSelector';
 
 interface EndOfTenancyBookingFormProps {
   children: React.ReactNode;
@@ -100,13 +101,8 @@ const mattressOptions = [
 export function EndOfTenancyBookingForm({ children, onSubmit }: EndOfTenancyBookingFormProps) {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
-    // Customer info
-    first_name: '',
-    last_name: '',
-    email: '',
-    phone: '',
-    address: '',
-    postcode: '',
+    // Customer info - will be set by CustomerSelector
+    customer: null,
     
     // Property details
     property_type: 'apartment',
@@ -129,6 +125,8 @@ export function EndOfTenancyBookingForm({ children, onSubmit }: EndOfTenancyBook
     
     // Booking details
     preferred_date: '',
+    address: '',
+    postcode: '',
     additional_notes: ''
   });
 
@@ -200,12 +198,23 @@ export function EndOfTenancyBookingForm({ children, onSubmit }: EndOfTenancyBook
     return item ? item.quantity || 0 : 0;
   };
 
+  const handleCustomerSelect = (customer: any) => {
+    setFormData(prev => ({ ...prev, customer }));
+  };
+
   const handleSubmit = () => {
     if (onSubmit) {
-      onSubmit({
+      const bookingData = {
         ...formData,
-        service_type: 'End of Tenancy'
-      });
+        service_type: 'End of Tenancy',
+        // Extract customer info for booking
+        first_name: formData.customer?.first_name || '',
+        last_name: formData.customer?.last_name || '',
+        email: formData.customer?.email || '',
+        phone: formData.customer?.phone || '',
+        customer_id: formData.customer?.id
+      };
+      onSubmit(bookingData);
     }
     setOpen(false);
   };
@@ -237,7 +246,7 @@ export function EndOfTenancyBookingForm({ children, onSubmit }: EndOfTenancyBook
             <TabsTrigger value="property">Property</TabsTrigger>
             <TabsTrigger value="rooms">Rooms</TabsTrigger>
             <TabsTrigger value="features">Features</TabsTrigger>
-            <TabsTrigger value="services">Services</TabsTrigger>
+            <TabsTrigger value="services">Services & Date</TabsTrigger>
           </TabsList>
           
           {/* Customer Information */}
@@ -246,82 +255,44 @@ export function EndOfTenancyBookingForm({ children, onSubmit }: EndOfTenancyBook
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Mail className="w-4 h-4" />
-                  Customer Information
+                  Customer Selection
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <CustomerSelector onCustomerSelect={handleCustomerSelect} />
+                
+                {formData.customer && (
+                  <div className="p-4 bg-muted rounded-lg">
+                    <h4 className="font-medium mb-2">Selected Customer:</h4>
+                    <div className="text-sm space-y-1">
+                      <p><strong>Name:</strong> {formData.customer.first_name} {formData.customer.last_name}</p>
+                      <p><strong>Email:</strong> {formData.customer.email}</p>
+                      <p><strong>Phone:</strong> {formData.customer.phone}</p>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="space-y-4">
                   <div>
-                    <Label htmlFor="first_name">First Name</Label>
+                    <Label htmlFor="address">Property Address</Label>
                     <Input
-                      id="first_name"
-                      value={formData.first_name}
-                      onChange={(e) => updateBasicField('first_name', e.target.value)}
-                      placeholder="Enter first name"
+                      id="address"
+                      value={formData.address}
+                      onChange={(e) => updateBasicField('address', e.target.value)}
+                      placeholder="Enter full property address"
                     />
                   </div>
+                  
                   <div>
-                    <Label htmlFor="last_name">Last Name</Label>
+                    <Label htmlFor="postcode">Postcode</Label>
                     <Input
-                      id="last_name"
-                      value={formData.last_name}
-                      onChange={(e) => updateBasicField('last_name', e.target.value)}
-                      placeholder="Enter last name"
+                      id="postcode"
+                      value={formData.postcode}
+                      onChange={(e) => updateBasicField('postcode', e.target.value)}
+                      placeholder="Enter postcode"
+                      className="w-32"
                     />
                   </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => updateBasicField('email', e.target.value)}
-                      placeholder="Enter email address"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <Input
-                      id="phone"
-                      value={formData.phone}
-                      onChange={(e) => updateBasicField('phone', e.target.value)}
-                      placeholder="Enter phone number"
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="address">Property Address</Label>
-                  <Input
-                    id="address"
-                    value={formData.address}
-                    onChange={(e) => updateBasicField('address', e.target.value)}
-                    placeholder="Enter full property address"
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="postcode">Postcode</Label>
-                  <Input
-                    id="postcode"
-                    value={formData.postcode}
-                    onChange={(e) => updateBasicField('postcode', e.target.value)}
-                    placeholder="Enter postcode"
-                    className="w-32"
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="preferred_date">Preferred Date</Label>
-                  <Input
-                    id="preferred_date"
-                    type="date"
-                    value={formData.preferred_date}
-                    onChange={(e) => updateBasicField('preferred_date', e.target.value)}
-                  />
                 </div>
               </CardContent>
             </Card>
@@ -809,16 +780,32 @@ export function EndOfTenancyBookingForm({ children, onSubmit }: EndOfTenancyBook
               </CardContent>
             </Card>
 
-            {/* Additional Notes */}
+            {/* Booking Date and Notes */}
             <Card>
-              <CardContent className="p-4 space-y-3">
-                <h3 className="font-semibold text-primary">Additional Notes</h3>
-                <Textarea
-                  value={formData.additional_notes}
-                  onChange={(e) => updateBasicField('additional_notes', e.target.value)}
-                  placeholder="Any additional requirements or information..."
-                  rows={4}
-                />
+              <CardContent className="p-4 space-y-4">
+                <h3 className="font-semibold text-primary">Booking Details</h3>
+                
+                <div>
+                  <Label htmlFor="preferred_date">Preferred Cleaning Date</Label>
+                  <Input
+                    id="preferred_date"
+                    type="date"
+                    value={formData.preferred_date}
+                    onChange={(e) => updateBasicField('preferred_date', e.target.value)}
+                    className="w-48"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="additional_notes">Additional Notes</Label>
+                  <Textarea
+                    id="additional_notes"
+                    value={formData.additional_notes}
+                    onChange={(e) => updateBasicField('additional_notes', e.target.value)}
+                    placeholder="Any additional requirements or information..."
+                    rows={4}
+                  />
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
