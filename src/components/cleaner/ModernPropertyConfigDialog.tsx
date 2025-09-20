@@ -52,40 +52,40 @@ const additionalFeatures = [
 ];
 
 const blindsOptions = [
-  { id: 'small', label: { en: 'Small Blinds/Shutters', bg: 'Малки щори/капаци' }, size: '60cm x 120cm', price: 6 },
-  { id: 'medium', label: { en: 'Medium Blinds/Shutters', bg: 'Средни щори/капаци' }, size: '100cm x 160cm', price: 9 },
-  { id: 'large', label: { en: 'Large Blinds/Shutters', bg: 'Големи щори/капаци' }, size: '140cm x 220cm', price: 12 }
+  { id: 'small', label: { en: 'Small Blinds/Shutters', bg: 'Малки щори/капаци' }, size: '60cm x 120cm' },
+  { id: 'medium', label: { en: 'Medium Blinds/Shutters', bg: 'Средни щори/капаци' }, size: '100cm x 160cm' },
+  { id: 'large', label: { en: 'Large Blinds/Shutters', bg: 'Големи щори/капаци' }, size: '140cm x 220cm' }
 ];
 
 const extraServices = [
-  { id: 'balcony', icon: Trees, label: { en: 'Balcony Cleaning', bg: 'Почистване на балкон' }, price: 30 },
-  { id: 'waste_removal', icon: Trash2, label: { en: 'Household Waste Removal', bg: 'Извозване на битови отпадъци' }, price: 40 },
-  { id: 'garage', icon: Car, label: { en: 'Garage Cleaning', bg: 'Почистване на гараж' }, price: 50 }
+  { id: 'balcony', icon: Trees, label: { en: 'Balcony Cleaning', bg: 'Почистване на балкон' } },
+  { id: 'waste_removal', icon: Trash2, label: { en: 'Household Waste Removal', bg: 'Извозване на битови отпадъци' } },
+  { id: 'garage', icon: Car, label: { en: 'Garage Cleaning', bg: 'Почистване на гараж' } }
 ];
 
 const carpetRooms = [
-  { id: 'bedroom', icon: Bed, label: { en: 'Bedroom', bg: 'Спалня' }, price: 30 },
-  { id: 'living_room', icon: Sofa, label: { en: 'Living Room', bg: 'Дневна' }, price: 40 },
-  { id: 'dining_room', icon: Utensils, label: { en: 'Dining Room', bg: 'Трапезария' }, price: 40 },
-  { id: 'hallway', icon: Home, label: { en: 'Hallway', bg: 'Коридор' }, price: 15 },
-  { id: 'staircase', icon: Building, label: { en: 'Staircase', bg: 'Стълбище' }, price: 30 },
-  { id: 'landing', icon: Home, label: { en: 'Landing', bg: 'Площадка' }, price: 10 }
+  { id: 'bedroom', icon: Bed, label: { en: 'Bedroom', bg: 'Спалня' } },
+  { id: 'living_room', icon: Sofa, label: { en: 'Living Room', bg: 'Дневна' } },
+  { id: 'dining_room', icon: Utensils, label: { en: 'Dining Room', bg: 'Трапезария' } },
+  { id: 'hallway', icon: Home, label: { en: 'Hallway', bg: 'Коридор' } },
+  { id: 'staircase', icon: Building, label: { en: 'Staircase', bg: 'Стълбище' } },
+  { id: 'landing', icon: Home, label: { en: 'Landing', bg: 'Площадка' } }
 ];
 
 const upholsteryOptions = [
-  { id: 'two_seater', icon: Sofa, label: { en: 'Two Seater Sofa', bg: 'Двуместен диван' }, price: 30 },
-  { id: 'three_seater', icon: Sofa, label: { en: 'Three Seater Sofa', bg: 'Триместен диван' }, price: 45 },
-  { id: 'four_seater', icon: Sofa, label: { en: 'Four Seater or Corner Sofa', bg: 'Четириместен или ъглов диван' }, price: 70 },
-  { id: 'armchair', icon: Armchair, label: { en: 'Armchair', bg: 'Фотьойл' }, price: 20 },
-  { id: 'dining_chair', icon: Utensils, label: { en: 'Dining Chair', bg: 'Стол за хранене' }, price: 8 },
-  { id: 'cushions', icon: Package, label: { en: 'Cushions', bg: 'Възглавници' }, price: 5 },
-  { id: 'curtains', icon: Blinds, label: { en: 'Curtains Pair', bg: 'Чифт завеси' }, price: 20 }
+  { id: 'two_seater', icon: Sofa, label: { en: 'Two Seater Sofa', bg: 'Двуместен диван' } },
+  { id: 'three_seater', icon: Sofa, label: { en: 'Three Seater Sofa', bg: 'Триместен диван' } },
+  { id: 'four_seater', icon: Sofa, label: { en: 'Four Seater or Corner Sofa', bg: 'Четириместен или ъглов диван' } },
+  { id: 'armchair', icon: Armchair, label: { en: 'Armchair', bg: 'Фотьойл' } },
+  { id: 'dining_chair', icon: Utensils, label: { en: 'Dining Chair', bg: 'Стол за хранене' } },
+  { id: 'cushions', icon: Package, label: { en: 'Cushions', bg: 'Възглавници' } },
+  { id: 'curtains', icon: Blinds, label: { en: 'Curtains Pair', bg: 'Чифт завеси' } }
 ];
 
 const mattressOptions = [
-  { id: 'single', icon: Bed, label: { en: 'Single Mattress', bg: 'Единичен матрак' }, price: 25 },
-  { id: 'double', icon: BedDouble, label: { en: 'Double Mattress', bg: 'Двоен матрак' }, price: 35 },
-  { id: 'king', icon: BedDouble, label: { en: 'King Size Mattress', bg: 'Голям матрак' }, price: 40 }
+  { id: 'single', icon: Bed, label: { en: 'Single Mattress', bg: 'Единичен матрак' } },
+  { id: 'double', icon: BedDouble, label: { en: 'Double Mattress', bg: 'Двоен матрак' } },
+  { id: 'king', icon: BedDouble, label: { en: 'King Size Mattress', bg: 'Голям матрак' } }
 ];
 
 export function ModernPropertyConfigDialog({ 
@@ -106,7 +106,6 @@ export function ModernPropertyConfigDialog({
     bathrooms: propertyConfig?.bathrooms || 1,
     living_rooms: propertyConfig?.living_rooms || 1,
     wc: propertyConfig?.wc || 0,
-    ensuite: propertyConfig?.ensuite || 0,
     
     // Additional features
     additional_features: propertyConfig?.additional_features || [],
@@ -455,38 +454,6 @@ export function ModernPropertyConfigDialog({
                     </div>
                   </div>
 
-                  {/* En-suites */}
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Bath className="w-4 h-4 text-primary" />
-                      <span className="font-medium text-sm">
-                        {language === 'english' ? 'En-suite Bathrooms' : 'Самостоятелни бани'}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateCount('ensuite', false)}
-                        disabled={config.ensuite <= 0}
-                        className="h-7 w-7 p-0"
-                      >
-                        <Minus className="w-3 h-3" />
-                      </Button>
-                      <Badge variant="secondary" className="min-w-[2rem] justify-center">
-                        {config.ensuite}
-                      </Badge>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateCount('ensuite', true)}
-                        className="h-7 w-7 p-0"
-                      >
-                        <Plus className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </div>
-
                   {/* Kitchen - Always 1 */}
                   <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30 col-span-2">
                     <div className="flex items-center gap-2">
@@ -555,7 +522,6 @@ export function ModernPropertyConfigDialog({
                           <Blinds className="w-8 h-8 mx-auto mb-2 text-primary" />
                           <h4 className="font-medium text-sm">{blind.label[langKey]}</h4>
                           <p className="text-xs text-muted-foreground">{blind.size}</p>
-                          <Badge variant="secondary" className="mt-1">£{blind.price}</Badge>
                         </div>
                         
                         <div className="flex items-center justify-center gap-2">
@@ -605,7 +571,6 @@ export function ModernPropertyConfigDialog({
                         <div className="text-center">
                           <Icon className="w-8 h-8 mx-auto mb-2 text-primary" />
                           <h4 className="font-medium text-sm">{service.label[langKey]}</h4>
-                          <Badge variant="secondary" className="mt-1">£{service.price}</Badge>
                         </div>
                         
                         <div className="flex items-center justify-center gap-2">
@@ -655,7 +620,6 @@ export function ModernPropertyConfigDialog({
                         <div className="text-center">
                           <Icon className="w-8 h-8 mx-auto mb-2 text-primary" />
                           <h4 className="font-medium text-sm">{room.label[langKey]}</h4>
-                          <Badge variant="secondary" className="mt-1">£{room.price}</Badge>
                         </div>
                         
                         <div className="flex items-center justify-center gap-2">
@@ -705,7 +669,6 @@ export function ModernPropertyConfigDialog({
                         <div className="text-center">
                           <Icon className="w-8 h-8 mx-auto mb-2 text-primary" />
                           <h4 className="font-medium text-xs">{item.label[langKey]}</h4>
-                          <Badge variant="secondary" className="mt-1">£{item.price}</Badge>
                         </div>
                         
                         <div className="flex items-center justify-center gap-2">
@@ -755,7 +718,6 @@ export function ModernPropertyConfigDialog({
                         <div className="text-center">
                           <Icon className="w-8 h-8 mx-auto mb-2 text-primary" />
                           <h4 className="font-medium text-sm">{mattress.label[langKey]}</h4>
-                          <Badge variant="secondary" className="mt-1">£{mattress.price}</Badge>
                         </div>
                         
                         <div className="flex items-center justify-center gap-2">
