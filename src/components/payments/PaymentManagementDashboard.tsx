@@ -23,6 +23,8 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import PaymentStatusIndicator from './PaymentStatusIndicator';
 import ManualPaymentDialog from './ManualPaymentDialog';
+import { PaymentSystemTest } from '@/components/admin/PaymentSystemTest';
+import { PaymentScheduler } from '@/components/admin/PaymentScheduler';
 
 interface Booking {
   id: number;
@@ -808,6 +810,12 @@ const PaymentManagementDashboard = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Payment System Controls */}
+      <div className="space-y-6">
+        <PaymentScheduler />
+        <PaymentSystemTest />
+      </div>
 
       {/* Manual Payment Dialog */}
       <ManualPaymentDialog

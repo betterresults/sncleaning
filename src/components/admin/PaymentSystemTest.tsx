@@ -91,6 +91,18 @@ export const PaymentSystemTest = () => {
             Test Authorize Booking 110661
           </Button>
           <Button 
+            onClick={() => testSystemPayment(110655, 'charge')} 
+            disabled={testing}
+          >
+            Capture Booking 110655 (£117)
+          </Button>
+          <Button 
+            onClick={() => testSystemPayment(110664, 'charge')} 
+            disabled={testing}
+          >
+            Capture Booking 110664 (£62.50)
+          </Button>
+          <Button 
             onClick={() => testProcessPayments()} 
             disabled={testing}
           >
