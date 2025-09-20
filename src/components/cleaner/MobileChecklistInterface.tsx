@@ -72,6 +72,7 @@ export function MobileChecklistInterface({ bookingId, cleanerId, onClose }: Mobi
   const [overallProgress, setOverallProgress] = useState(0);
   const [customerData, setCustomerData] = useState<any>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [taskComments, setTaskComments] = useState<Record<string, Record<string, string>>>({});
   const { toast } = useToast();
 
   // Parse property configuration when checklist loads
@@ -83,7 +84,8 @@ export function MobileChecklistInterface({ bookingId, cleanerId, onClose }: Mobi
       setPropertyConfig(parsed);
       setLanguage(currentChecklist.language_preference || 'english');
     }
-  }, [currentChecklist, parsePropertyConfig]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentChecklist]);
 
   // Generate sections based on template and property config
   useEffect(() => {
@@ -181,7 +183,34 @@ export function MobileChecklistInterface({ bookingId, cleanerId, onClose }: Mobi
       );
       setOverallProgress(totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0);
     }
-  }, [currentChecklist, templates, language, propertyConfig, parsePropertyConfig]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentChecklist, templates, language, propertyConfig]);
+
+  // Load existing comments when checklist loads
+  useEffect(() => {
+    if (currentChecklist) {
+      const comments: Record<string, Record<string, string>> = {};
+      
+      // Extract comments from checklist_data
+      Object.keys(currentChecklist.checklist_data).forEach(key => {
+        if (key.endsWith('_comments')) {
+          const roomId = key.replace('_comments', '');
+          const roomComments = currentChecklist.checklist_data[key];
+          // Only process if it's actually a comments object (not task completion booleans)
+          if (roomComments && typeof roomComments === 'object' && !Array.isArray(roomComments)) {
+            comments[roomId] = {} as Record<string, string>;
+            Object.entries(roomComments).forEach(([taskId, value]) => {
+              if (typeof value === 'string') {
+                comments[roomId][taskId] = value;
+              }
+            });
+          }
+        }
+      });
+      
+      setTaskComments(comments);
+    }
+  }, [currentChecklist]);
 
   // Fetch customer data
   useEffect(() => {
@@ -231,6 +260,49 @@ export function MobileChecklistInterface({ bookingId, cleanerId, onClose }: Mobi
         return section;
       })
     );
+  };
+
+  const handleTaskComment = async (roomId: string, taskId: string, comment: string) => {
+    if (!currentChecklist) return;
+    
+    // Update local state first
+    setTaskComments(prev => ({
+      ...prev,
+      [roomId]: {
+        ...prev[roomId],
+        [taskId]: comment
+      }
+    }));
+
+    // Save to database - we'll store comments in the checklist_data alongside task completion
+    try {
+      const updatedChecklistData = {
+        ...currentChecklist.checklist_data,
+        [`${roomId}_comments`]: {
+          ...currentChecklist.checklist_data[`${roomId}_comments`] || {},
+          [taskId]: comment
+        }
+      };
+
+      const { error } = await supabase
+        .from('cleaning_checklists')
+        .update({ checklist_data: updatedChecklistData })
+        .eq('id', currentChecklist.id);
+
+      if (error) throw error;
+
+      toast({
+        title: language === 'english' ? 'Comment saved' : 'Коментарът е запазен',
+        description: language === 'english' ? 'Task comment has been recorded' : 'Коментарът към задачата е записан',
+      });
+    } catch (error) {
+      console.error('Error saving comment:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save comment',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handlePropertyConfigSave = (config: PropertyConfig) => {
@@ -659,7 +731,7 @@ export function MobileChecklistInterface({ bookingId, cleanerId, onClose }: Mobi
 
       {/* Room Details Step */}
       {currentStep === 'room' && selectedRoom && (
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto max-h-[calc(100vh-140px)]">
           {(() => {
             const section = sections.find(s => s.id === selectedRoom);
             if (!section) return null;
@@ -680,42 +752,93 @@ export function MobileChecklistInterface({ bookingId, cleanerId, onClose }: Mobi
                   </p>
                 </div>
 
-                {/* Tasks */}
-                <div className="space-y-3">
-                  {section.tasks.map((task) => (
-                    <Card key={task.id} className={`${task.completed ? 'bg-green-50 border-green-200' : ''}`}>
+                {/* Tasks - Incomplete first, then completed */}
+                <div className="space-y-3 pb-6">
+                  {/* Incomplete tasks first */}
+                  {section.tasks.filter(task => !task.completed).map((task) => (
+                    <Card key={task.id} className="shadow-sm">
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between">
                           <div className="flex items-start gap-3 flex-1">
                             <button
                               onClick={() => handleTaskToggle(section.id, task.id, !task.completed)}
-                              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center mt-0.5 ${
-                                task.completed 
-                                  ? 'bg-green-500 border-green-500 text-white' 
-                                  : 'border-muted-foreground hover:border-primary'
-                              }`}
+                              className="w-6 h-6 rounded-full border-2 border-muted-foreground hover:border-primary flex items-center justify-center mt-0.5"
                             >
-                              {task.completed && <Check className="h-3 w-3" />}
                             </button>
-                            <p className={`flex-1 ${task.completed ? 'line-through text-muted-foreground' : ''}`}>
-                              {task.text}
-                            </p>
+                            <p className="flex-1 font-medium">{task.text}</p>
                           </div>
                           <div className="flex items-center gap-2 ml-2">
                             <TaskCommentDialog
                               taskName={task.text}
-                              currentComment=""
+                              currentComment={taskComments[section.id]?.[task.id] || ''}
                               language={language}
-                              onSave={(comment) => {
-                                console.log('Task comment:', comment);
-                                toast({
-                                  title: 'Comment saved',
-                                  description: 'Task comment has been recorded',
-                                });
-                              }}
+                              onSave={(comment) => handleTaskComment(section.id, task.id, comment)}
                             />
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => {
+                                const input = document.createElement('input');
+                                input.type = 'file';
+                                input.accept = 'image/*';
+                                input.onchange = (e) => {
+                                  const file = (e.target as HTMLInputElement).files?.[0];
+                                  if (file) {
+                                    handlePhotoUpload(file, section.id);
+                                  }
+                                };
+                                input.click();
+                              }}
+                              disabled={uploadingPhoto}
+                            >
                               <Camera className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  
+                  {/* Completed tasks at bottom, smaller */}
+                  {section.tasks.filter(task => task.completed).map((task) => (
+                    <Card key={task.id} className="bg-green-50 border-green-200 opacity-75">
+                      <CardContent className="p-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-3 flex-1">
+                            <button
+                              onClick={() => handleTaskToggle(section.id, task.id, !task.completed)}
+                              className="w-5 h-5 rounded-full border-2 bg-green-500 border-green-500 text-white flex items-center justify-center mt-0.5"
+                            >
+                              <Check className="h-3 w-3" />
+                            </button>
+                            <p className="flex-1 text-sm line-through text-muted-foreground">{task.text}</p>
+                          </div>
+                          <div className="flex items-center gap-1 ml-2">
+                            <TaskCommentDialog
+                              taskName={task.text}
+                              currentComment={taskComments[section.id]?.[task.id] || ''}
+                              language={language}
+                              onSave={(comment) => handleTaskComment(section.id, task.id, comment)}
+                            />
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => {
+                                const input = document.createElement('input');
+                                input.type = 'file';
+                                input.accept = 'image/*';
+                                input.onchange = (e) => {
+                                  const file = (e.target as HTMLInputElement).files?.[0];
+                                  if (file) {
+                                    handlePhotoUpload(file, section.id);
+                                  }
+                                };
+                                input.click();
+                              }}
+                              disabled={uploadingPhoto}
+                              className="h-7 w-7 p-0"
+                            >
+                              <Camera className="h-3 w-3" />
                             </Button>
                           </div>
                         </div>
