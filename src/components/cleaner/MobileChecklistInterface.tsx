@@ -4,10 +4,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
-import { ModernPropertyConfigDialog } from './ModernPropertyConfigDialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { MobilePropertyConfig } from './MobilePropertyConfig';
 import { TaskCommentDialog } from './TaskCommentDialog';
-import { ChevronRight, ChevronDown, Check, Camera, MessageSquare, Save, ArrowLeft, Home, Settings } from 'lucide-react';
+import { ChevronRight, ChevronDown, Check, Camera, MessageSquare, Save, ArrowLeft, Home, Settings, Edit, Play } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -58,7 +58,7 @@ export function MobileChecklistInterface({ bookingId, cleanerId, onClose }: Mobi
     }
   }, [bookingId, cleanerId, fetchChecklists]);
 
-  const [currentStep, setCurrentStep] = useState<'overview' | 'rooms'>('overview');
+  const [currentStep, setCurrentStep] = useState<'overview' | 'checklist' | 'room'>('overview');
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
   const [language, setLanguage] = useState<'english' | 'bulgarian'>('english');
   const [propertyConfig, setPropertyConfig] = useState<PropertyConfig>({
@@ -69,6 +69,8 @@ export function MobileChecklistInterface({ bookingId, cleanerId, onClose }: Mobi
   const [sections, setSections] = useState<ChecklistSection[]>([]);
   const [overallProgress, setOverallProgress] = useState(0);
   const [customerData, setCustomerData] = useState<any>(null);
+  const [showConfigDialog, setShowConfigDialog] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const { toast } = useToast();
 
   // Parse property configuration when checklist loads
@@ -237,6 +239,57 @@ export function MobileChecklistInterface({ bookingId, cleanerId, onClose }: Mobi
     }
   };
 
+  const handlePhotoUpload = async (file: File, roomId: string) => {
+    if (!currentChecklist || !customerData) return;
+    
+    setUploadingPhoto(true);
+    try {
+      const timestamp = Date.now();
+      const fileName = `${timestamp}_${file.name}`;
+      const bookingDate = new Date(customerData.date_time).toISOString().split('T')[0];
+      const safePostcode = customerData.postcode?.toString().replace(/\s+/g, '').toUpperCase() || 'NA';
+      const folderPath = `${customerData.id}_${safePostcode}_${bookingDate}_${customerData.customer}`;
+      const filePath = `${folderPath}/checklist/${roomId}/${fileName}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from('cleaning.photos')
+        .upload(filePath, file, { cacheControl: '3600', upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Save to database
+      const { error: dbError } = await supabase
+        .from('cleaning_photos')
+        .insert({
+          booking_id: customerData.id,
+          customer_id: customerData.customer,
+          cleaner_id: customerData.cleaner,
+          file_path: filePath,
+          photo_type: 'after',
+          postcode: customerData.postcode,
+          booking_date: bookingDate,
+          caption: `Checklist photo - ${sections.find(s => s.id === roomId)?.name}`
+        });
+
+      if (dbError) throw dbError;
+
+      toast({
+        title: language === 'english' ? 'Photo uploaded!' : 'Снимката е качена!',
+        description: language === 'english' ? 'Photo saved successfully.' : 'Снимката е запазена успешно.',
+      });
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to upload photo',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   const handleSaveAndComplete = async () => {
     if (!currentChecklist) return;
     
@@ -297,11 +350,15 @@ export function MobileChecklistInterface({ bookingId, cleanerId, onClose }: Mobi
           <Button
             variant="ghost"
             size="sm"
-            onClick={currentStep === 'rooms' ? () => setCurrentStep('overview') : onClose}
+            onClick={() => {
+              if (currentStep === 'room') setCurrentStep('checklist');
+              else if (currentStep === 'checklist') setCurrentStep('overview');
+              else onClose();
+            }}
             className="text-primary-foreground hover:bg-primary-foreground/20"
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
-            {currentStep === 'rooms' ? 'Back' : 'Close'}
+            {currentStep === 'room' ? 'Back to Checklist' : currentStep === 'checklist' ? 'Back' : 'Close'}
           </Button>
           
           <div className="flex items-center gap-2">
@@ -335,7 +392,7 @@ export function MobileChecklistInterface({ bookingId, cleanerId, onClose }: Mobi
         <Progress value={overallProgress} className="mt-3 bg-primary-foreground/20" />
       </div>
 
-      {/* Overview Step */}
+      {/* Overview Step - Property Details + Start Button */}
       {currentStep === 'overview' && (
         <div className="flex-1 overflow-y-auto p-4 pb-20">
           {/* Property Details */}
@@ -360,59 +417,72 @@ export function MobileChecklistInterface({ bookingId, cleanerId, onClose }: Mobi
           </Card>
 
           {/* Property Configuration */}
-          <Card className="mb-4">
+          <Card className="mb-6">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Settings className="h-5 w-5 text-primary" />
-                <h2 className="font-semibold">
-                  {language === 'english' ? 'Property Configuration' : 'Конфигурация на имота'}
-                </h2>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Settings className="h-5 w-5 text-primary" />
+                  <h2 className="font-semibold">
+                    {language === 'english' ? 'Property Configuration' : 'Конфигурация на имота'}
+                  </h2>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowConfigDialog(true)}
+                  className="flex items-center gap-1"
+                >
+                  <Edit className="h-3 w-3" />
+                  {language === 'english' ? 'Edit' : 'Промени'}
+                </Button>
               </div>
               
-              <div className="grid grid-cols-3 gap-2">
-                <ModernPropertyConfigDialog
-                  propertyConfig={propertyConfig}
-                  language={language}
-                  onSave={handlePropertyConfigSave}
-                >
-                  <Button variant="outline" className="h-auto py-3 px-2 text-xs">
-                    <div className="text-center">
-                      <div className="font-medium">{propertyConfig?.bedrooms || 1}</div>
-                      <div>Bedroom{(propertyConfig?.bedrooms || 1) > 1 ? 's' : ''}</div>
-                    </div>
-                  </Button>
-                </ModernPropertyConfigDialog>
-                
-                <ModernPropertyConfigDialog
-                  propertyConfig={propertyConfig}
-                  language={language}
-                  onSave={handlePropertyConfigSave}
-                >
-                  <Button variant="outline" className="h-auto py-3 px-2 text-xs">
-                    <div className="text-center">
-                      <div className="font-medium">{propertyConfig?.bathrooms || 1}</div>
-                      <div>Bathroom{(propertyConfig?.bathrooms || 1) > 1 ? 's' : ''}</div>
-                    </div>
-                  </Button>
-                </ModernPropertyConfigDialog>
-                
-                <ModernPropertyConfigDialog
-                  propertyConfig={propertyConfig}
-                  language={language}
-                  onSave={handlePropertyConfigSave}
-                >
-                  <Button variant="outline" className="h-auto py-3 px-2 text-xs">
-                    <div className="text-center">
-                      <div className="font-medium">{propertyConfig?.living_rooms || 1}</div>
-                      <div>Living Room{(propertyConfig?.living_rooms || 1) > 1 ? 's' : ''}</div>
-                    </div>
-                  </Button>
-                </ModernPropertyConfigDialog>
+              <div className="grid grid-cols-3 gap-2 text-sm">
+                <div className="bg-muted/50 rounded p-2 text-center">
+                  <div className="font-medium">{propertyConfig?.bedrooms || 1}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {language === 'english' 
+                      ? `Bedroom${(propertyConfig?.bedrooms || 1) > 1 ? 's' : ''}` 
+                      : `Спалн${(propertyConfig?.bedrooms || 1) > 1 ? 'и' : 'я'}`}
+                  </div>
+                </div>
+                <div className="bg-muted/50 rounded p-2 text-center">
+                  <div className="font-medium">{propertyConfig?.bathrooms || 1}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {language === 'english' 
+                      ? `Bathroom${(propertyConfig?.bathrooms || 1) > 1 ? 's' : ''}` 
+                      : `Бан${(propertyConfig?.bathrooms || 1) > 1 ? 'и' : 'я'}`}
+                  </div>
+                </div>
+                <div className="bg-muted/50 rounded p-2 text-center">
+                  <div className="font-medium">{propertyConfig?.living_rooms || 1}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {language === 'english' 
+                      ? `Living Room${(propertyConfig?.living_rooms || 1) > 1 ? 's' : ''}` 
+                      : `Дневн${(propertyConfig?.living_rooms || 1) > 1 ? 'и' : 'а'}`}
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Room Sections Overview */}
+          {/* Start Checklist Button */}
+          <div className="text-center">
+            <Button 
+              onClick={() => setCurrentStep('checklist')}
+              className="w-full py-4 text-lg font-semibold"
+              size="lg"
+            >
+              <Play className="h-5 w-5 mr-2" />
+              {language === 'english' ? 'Start Cleaning Checklist' : 'Започни чеклиста за почистване'}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Checklist Step - Room Selection */}
+      {currentStep === 'checklist' && (
+        <div className="flex-1 overflow-y-auto p-4 pb-20">
           <div className="space-y-3">
             {sections.map((section) => (
               <Card 
@@ -420,7 +490,7 @@ export function MobileChecklistInterface({ bookingId, cleanerId, onClose }: Mobi
                 className={`cursor-pointer transition-all ${section.completed ? 'border-green-500 bg-green-50' : 'hover:shadow-md'}`}
                 onClick={() => {
                   setSelectedRoom(section.id);
-                  setCurrentStep('rooms');
+                  setCurrentStep('room');
                 }}
               >
                 <CardContent className="p-4">
@@ -454,7 +524,7 @@ export function MobileChecklistInterface({ bookingId, cleanerId, onClose }: Mobi
       )}
 
       {/* Room Details Step */}
-      {currentStep === 'rooms' && selectedRoom && (
+      {currentStep === 'room' && selectedRoom && (
         <div className="flex-1 overflow-y-auto">
           {(() => {
             const section = sections.find(s => s.id === selectedRoom);
@@ -533,68 +603,37 @@ export function MobileChecklistInterface({ bookingId, cleanerId, onClose }: Mobi
         </div>
       )}
 
-      {/* Bottom Actions */}
-      <div className="absolute bottom-0 left-0 right-0 bg-background border-t p-4">
-        {currentStep === 'overview' ? (
-          <div className="space-y-2">
+      {/* Fixed Bottom Actions */}
+      {currentStep === 'checklist' && (
+        <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 shadow-lg">
+          {overallProgress === 100 ? (
             <Button 
-              onClick={() => setCurrentStep('rooms')}
-              className="w-full"
-              size="lg"
+              onClick={handleSaveAndComplete}
+              className="w-full bg-green-600 hover:bg-green-700 text-white py-3"
+              disabled={saving}
             >
-              {language === 'english' ? 'Start Cleaning Checklist' : 'Започни чеклиста за почистване'}
+              <Save className="h-4 w-4 mr-2" />
+              {saving 
+                ? (language === 'english' ? 'Saving...' : 'Запазване...') 
+                : (language === 'english' ? 'Complete & Save Checklist' : 'Завърши и запази чеклиста')
+              }
             </Button>
-            {overallProgress === 100 && (
-              <Button 
-                onClick={handleSaveAndComplete}
-                variant="outline"
-                className="w-full"
-                size="lg"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                {language === 'english' ? 'Complete & Save' : 'Завърши и запази'}
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="flex gap-2">
-            {selectedRoom && (() => {
-              const currentIndex = sections.findIndex(s => s.id === selectedRoom);
-              const nextSection = sections[currentIndex + 1];
-              const prevSection = sections[currentIndex - 1];
-              
-              return (
-                <>
-                  {prevSection && (
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setSelectedRoom(prevSection.id)}
-                      className="flex-1"
-                    >
-                      Previous
-                    </Button>
-                  )}
-                  {nextSection ? (
-                    <Button 
-                      onClick={() => setSelectedRoom(nextSection.id)}
-                      className="flex-1"
-                    >
-                      Next Room
-                    </Button>
-                  ) : (
-                    <Button 
-                      onClick={() => setCurrentStep('overview')}
-                      className="flex-1"
-                    >
-                      Overview
-                    </Button>
-                  )}
-                </>
-              );
-            })()}
-          </div>
-        )}
-      </div>
+          ) : (
+            <div className="text-center text-sm text-muted-foreground">
+              {language === 'english' ? 'Complete all tasks to finish' : 'Завършете всички задачи за да приключите'}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Property Configuration Dialog */}
+      <MobilePropertyConfig
+        open={showConfigDialog}
+        onOpenChange={setShowConfigDialog}
+        propertyConfig={propertyConfig}
+        language={language}
+        onSave={handlePropertyConfigSave}
+      />
     </div>
   );
 }
