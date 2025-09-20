@@ -10,7 +10,7 @@ import { useCleaningChecklist } from '@/hooks/useCleaningChecklist';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { TaskCommentDialog } from './TaskCommentDialog';
-import { PropertyConfigDialog } from './PropertyConfigDialog';
+import { ModernPropertyConfigDialog } from './ModernPropertyConfigDialog';
 
 interface CleaningChecklistInterfaceProps {
   bookingId: number;
@@ -100,6 +100,8 @@ export function CleaningChecklistInterface({
         const template = templates.find(t => t.service_type === 'End of Tenancy');
         if (template) {
           const propertyConfig = parsePropertyConfig(bookingData.property_details);
+          console.log('Creating checklist with property config:', propertyConfig);
+          console.log('Booking property details:', bookingData.property_details);
           createChecklist(bookingId, cleanerId, template.id, propertyConfig);
         }
       }
@@ -189,7 +191,40 @@ export function CleaningChecklistInterface({
       if (property_config.additional_rooms?.length) {
         property_config.additional_rooms.forEach((additionalRoom) => {
           const roomType = additionalRoom.type;
-          const roomTemplate = rooms[roomType];
+          let roomTemplate = rooms[roomType];
+          
+          // Handle room types that might not have direct templates
+          if (!roomTemplate) {
+            // Map additional room types to available templates or create basic structure
+            switch (roomType) {
+              case 'guest_bedroom':
+                roomTemplate = rooms.bedroom; // Use bedroom template
+                break;
+              case 'wc':
+              case 'ensuite':
+                roomTemplate = rooms.bathroom; // Use bathroom template
+                break;
+              case 'dining_room':
+              case 'utility_room':
+              case 'study_room':
+              case 'conservatory':
+              case 'balcony':
+                roomTemplate = rooms[roomType] || {
+                  name: { 
+                    en: roomType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                    bg: roomType.replace('_', ' ')
+                  },
+                  tasks: [
+                    {
+                      id: `${roomType}_basic_clean`,
+                      en: 'Clean and tidy',
+                      bg: 'Почистване и подреждане'
+                    }
+                  ]
+                };
+                break;
+            }
+          }
           
           if (roomTemplate) {
             for (let i = 1; i <= additionalRoom.count; i++) {
@@ -360,39 +395,46 @@ export function CleaningChecklistInterface({
                   {language === 'english' ? 'Configuration' : 'Конфигурация'}
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  <PropertyConfigDialog
+                  <ModernPropertyConfigDialog
                     propertyConfig={propertyConfig}
                     language={language}
                     onSave={(config) => setPropertyConfig(config)}
                   >
-                    <Button variant="outline" size="sm" className="text-xs">
+                    <Button variant="outline" size="sm" className="text-xs hover:bg-primary/10 hover:border-primary/50">
                       {propertyConfig?.bedrooms || 1} Bedroom{(propertyConfig?.bedrooms || 1) > 1 ? 's' : ''}
                     </Button>
-                  </PropertyConfigDialog>
+                  </ModernPropertyConfigDialog>
                   
-                  <PropertyConfigDialog
+                  <ModernPropertyConfigDialog
                     propertyConfig={propertyConfig}
                     language={language}
                     onSave={(config) => setPropertyConfig(config)}
                   >
-                    <Button variant="outline" size="sm" className="text-xs">
+                    <Button variant="outline" size="sm" className="text-xs hover:bg-primary/10 hover:border-primary/50">
                       {propertyConfig?.bathrooms || 1} Bathroom{(propertyConfig?.bathrooms || 1) > 1 ? 's' : ''}
                     </Button>
-                  </PropertyConfigDialog>
+                  </ModernPropertyConfigDialog>
                   
-                  <PropertyConfigDialog
+                  <ModernPropertyConfigDialog
                     propertyConfig={propertyConfig}
                     language={language}
                     onSave={(config) => setPropertyConfig(config)}
                   >
-                    <Button variant="outline" size="sm" className="text-xs">
+                    <Button variant="outline" size="sm" className="text-xs hover:bg-primary/10 hover:border-primary/50">
                       {propertyConfig?.living_rooms || 1} Living Room{(propertyConfig?.living_rooms || 1) > 1 ? 's' : ''}
                     </Button>
-                  </PropertyConfigDialog>
+                  </ModernPropertyConfigDialog>
                   
-                  <Button variant="outline" size="sm" className="text-xs" disabled>
+                  {/* Show additional rooms if any */}
+                  {propertyConfig?.additional_rooms?.map((room, index) => (
+                    <Badge key={`${room.type}-${index}`} variant="secondary" className="text-xs">
+                      {room.count} {room.type.replace('_', ' ')}
+                    </Badge>
+                  ))}
+                  
+                  <Badge variant="outline" className="text-xs">
                     1 Kitchen
-                  </Button>
+                  </Badge>
                 </div>
               </div>
             </div>
