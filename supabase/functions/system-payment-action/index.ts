@@ -134,6 +134,25 @@ serve(async (req) => {
     let result: any = {}
 
     if (action === 'authorize') {
+      // CRITICAL: Check if payment is already completed or authorized to prevent double charging
+      if (booking.payment_status === 'paid' || booking.payment_status === 'Paid' || 
+          booking.payment_status === 'authorized' || booking.payment_status === 'Authorized') {
+        console.log(`Booking ${bookingId} already has payment status '${booking.payment_status}' - skipping authorization`)
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            action: 'already_processed',
+            message: `Booking already has payment status: ${booking.payment_status}`,
+            bookingId,
+            paymentStatus: booking.payment_status
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          }
+        )
+      }
+      
       // Create payment intent for authorization only
       const paymentIntentResponse = await fetch('https://api.stripe.com/v1/payment_intents', {
         method: 'POST',
@@ -332,6 +351,24 @@ serve(async (req) => {
       }
 
     } else if (action === 'charge') {
+      // CRITICAL: Check if payment is already completed to prevent double charging
+      if (booking.payment_status === 'paid' || booking.payment_status === 'Paid') {
+        console.log(`Booking ${bookingId} is already paid - skipping charge to prevent double payment`)
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            action: 'already_paid',
+            message: 'Booking is already paid',
+            bookingId,
+            paymentStatus: booking.payment_status
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          }
+        )
+      }
+      
       // Either capture existing authorized payment or create new immediate charge
       if (booking.invoice_id && booking.payment_status === 'authorized') {
         // Capture existing authorized payment
