@@ -5,7 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Clock, CheckCircle2, XCircle, Camera } from 'lucide-react';
+import { MapPin, Clock, CheckCircle2, XCircle, Camera, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import LocationTracker from './LocationTracker';
 import CleaningPhotosUploadDialog from './CleaningPhotosUploadDialog';
@@ -21,6 +22,7 @@ interface Booking {
   date_time?: string;
   total_hours?: number;
   cleaning_type?: string;
+  service_type?: string;
   total_cost?: number;
   cleaner_pay?: number;
   cleaner_percentage?: number;
@@ -43,6 +45,7 @@ const CleanerTodayBookingsList = () => {
   const { cleanerId, userRole, loading: authLoading } = useAuth();
   const { selectedCleanerId } = useAdminCleaner();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   // Use selected cleaner ID if admin is viewing, otherwise use authenticated cleaner's ID
   const effectiveCleanerId = userRole === 'admin' ? selectedCleanerId : cleanerId;
@@ -350,6 +353,7 @@ const CleanerTodayBookingsList = () => {
           const tracking = getTrackingRecord(booking.id);
           const isCheckedIn = !!tracking?.check_in_time;
           const isCheckedOut = !!tracking?.check_out_time;
+          const isEndOfTenancy = booking.service_type === 'End of Tenancy' || booking.cleaning_type === 'End of Tenancy';
 
           return (
             <Card key={booking.id} className="border-l-4 border-l-primary">
@@ -437,6 +441,19 @@ const CleanerTodayBookingsList = () => {
                 )}
 
                 <div className="flex gap-2 flex-wrap">
+                  {/* Checklist button for End of Tenancy bookings */}
+                  {isEndOfTenancy && (
+                    <Button
+                      onClick={() => navigate(`/cleaner-checklist/${booking.id}`)}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2 bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 border-green-200"
+                    >
+                      <FileText className="h-4 w-4" />
+                      Checklist
+                    </Button>
+                  )}
+
                   {!isCheckedIn ? (
                     <Button 
                       onClick={() => handleManualCheckIn(booking)}

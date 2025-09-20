@@ -81,8 +81,7 @@ const App = () => (
            <Route path="/admin-pricing-formulas" element={<AdminPricingFormulas />} />
               <Route path="/cleaner-available-bookings" element={<CleanerAvailableBookings />} />
             <Route path="/cleaner-past-bookings" element={<CleanerPastBookings />} />
-            <Route path="/cleaner-checklists" element={<CleanerChecklists />} />
-            <Route path="/cleaner-checklist/:bookingId" element={<CleanerChecklist />} />
+          <Route path="/cleaner-checklist/:bookingId" element={<CleanerChecklist />} />
             <Route path="/cleaner-earnings" element={<CleanerEarnings />} />
               <Route path="/customer-dashboard" element={<CustomerDashboard />} />
               <Route path="/customer-completed-bookings" element={<CustomerCompletedBookings />} />

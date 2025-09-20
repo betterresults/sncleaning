@@ -12,11 +12,6 @@ export const cleanerNavigation = [
     icon: MapPin,
   },
   {
-    title: "Checklists",
-    url: "/cleaner-checklists",
-    icon: CheckSquare,
-  },
-  {
     title: "Messages",
     url: "#",
     icon: MessageCircle,

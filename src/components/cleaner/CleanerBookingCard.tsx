@@ -1,7 +1,8 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Calendar, Clock, MapPin, User, Upload, Eye, CheckCircle, X } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Upload, Eye, CheckCircle, X, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Booking } from './types';
 
 interface CleanerBookingCardProps {
@@ -21,6 +22,7 @@ const CleanerBookingCard = ({
   onDropService,
   onAcceptBooking
 }: CleanerBookingCardProps) => {
+  const navigate = useNavigate();
   // Check if booking is for today
   const isToday = () => {
     const bookingDate = new Date(booking.date_time).toDateString();
@@ -30,6 +32,9 @@ const CleanerBookingCard = ({
 
   // Check if booking is same day
   const isSameDay = booking.same_day;
+
+  // Check if this is an End of Tenancy booking
+  const isEndOfTenancy = booking.service_type === 'End of Tenancy' || booking.cleaning_type === 'End of Tenancy';
 
   return (
     <div className={`group relative overflow-hidden rounded-2xl border p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/30 ${
@@ -104,6 +109,19 @@ const CleanerBookingCard = ({
         </div>
         
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          {/* Checklist button for End of Tenancy bookings */}
+          {isEndOfTenancy && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/cleaner-checklist/${booking.id}`)}
+              className="bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 border-green-200 hover:border-green-300 dark:bg-green-950/20 dark:hover:bg-green-950/40 dark:text-green-400 dark:border-green-800/30"
+            >
+              <FileText className="h-4 w-4" />
+              <span className="ml-1 hidden sm:inline">Checklist</span>
+            </Button>
+          )}
+          
           {/* View Details - Always available */}
           <Button
             variant="outline"
