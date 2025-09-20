@@ -46,6 +46,7 @@ export function CleaningChecklistInterface({
   const langKey = language === 'english' ? 'en' : 'bg';
   const [roomSections, setRoomSections] = useState<Array<{ id: string; name: string; tasks: any[]; note?: string }>>([]);
   const [completionProgress, setCompletionProgress] = useState(0);
+  const [taskComments, setTaskComments] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
   // Fetch customer and cleaner data
@@ -189,14 +190,14 @@ export function CleaningChecklistInterface({
             for (let i = 1; i <= additionalRoom.count; i++) {
               const roomId = additionalRoom.count === 1 ? roomType : `${roomType}_${i}`;
               const roomName = additionalRoom.count === 1 
-                ? roomTemplate.name[language]
-                : `${roomTemplate.name[language]} ${i}`;
+                ? roomTemplate.name[langKey]
+                : `${roomTemplate.name[langKey]} ${i}`;
               
               sections.push({
                 id: roomId,
                 name: roomName,
                 tasks: roomTemplate.tasks,
-                note: roomTemplate.note?.[language]
+                note: roomTemplate.note?.[langKey]
               });
             }
           }
@@ -264,7 +265,7 @@ export function CleaningChecklistInterface({
     );
   }
 
-  const currentDate = new Date().toLocaleDateString();
+  const currentDate = new Date(bookingData?.date_time || new Date()).toLocaleDateString();
   const customerName = customerData ? 
     `${customerData.first_name || ''} ${customerData.last_name || ''}`.trim() || customerData.email : 
     'Unknown Customer';
@@ -300,13 +301,42 @@ export function CleaningChecklistInterface({
             All items have been inspected and completed unless noted below.
           </div>
           
-          {/* Summary Section */}
+          {/* Property Configuration Section */}
           <div className="bg-muted/30 rounded-lg p-4 mb-6">
-            <h3 className="font-semibold text-primary mb-3">Summary</h3>
+            <h3 className="font-semibold text-primary mb-3">Property Details</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Property address</label>
                 <div className="mt-1 font-medium">{bookingData?.address}, {bookingData?.postcode}</div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Property type</label>
+                <div className="mt-1 font-medium">Flat</div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Configuration</label>
+                <div className="mt-1 flex flex-wrap gap-2">
+                  {currentChecklist?.property_config && (
+                    <>
+                      {currentChecklist.property_config.bedrooms && (
+                        <Badge variant="outline" className="text-xs">
+                          {currentChecklist.property_config.bedrooms} Bedroom{currentChecklist.property_config.bedrooms > 1 ? 's' : ''}
+                        </Badge>
+                      )}
+                      {currentChecklist.property_config.bathrooms && (
+                        <Badge variant="outline" className="text-xs">
+                          {currentChecklist.property_config.bathrooms} Bathroom{currentChecklist.property_config.bathrooms > 1 ? 's' : ''}
+                        </Badge>
+                      )}
+                      {currentChecklist.property_config.living_rooms && (
+                        <Badge variant="outline" className="text-xs">
+                          {currentChecklist.property_config.living_rooms} Living Room{currentChecklist.property_config.living_rooms > 1 ? 's' : ''}
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="text-xs">Kitchen</Badge>
+                    </>
+                  )}
+                </div>
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Date</label>
@@ -365,28 +395,59 @@ export function CleaningChecklistInterface({
             <CardTitle className="text-primary text-xl font-bold">{section.name}</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="space-y-4">
+            <div className="space-y-2">
               {section.tasks.map((task) => {
                 const isCompleted = currentChecklist.checklist_data[section.id]?.[task.id] || false;
+                const taskKey = `${section.id}-${task.id}`;
+                const hasComment = taskComments[taskKey];
+                
                 return (
-                  <div key={task.id} className="flex items-start gap-4 p-3 rounded-lg hover:bg-muted/30 transition-colors">
+                  <div key={task.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/30 transition-colors">
                     <div className="flex-shrink-0 mt-0.5">
                       <Checkbox
                         checked={isCompleted}
                         onCheckedChange={(checked) => handleTaskToggle(section.id, task.id, !!checked)}
-                        className="w-5 h-5 border-2 border-primary data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                        className="w-4 h-4 border-2 border-primary data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                       />
                     </div>
-                    <div className={`flex-1 ${isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                      <div className="font-medium leading-relaxed">
+                    <div className="flex-1 min-w-0">
+                      <div className={`font-medium text-sm leading-relaxed ${isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
                         {task[langKey]}
                       </div>
+                      {hasComment && (
+                        <div className="mt-1 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded border border-amber-200">
+                          {hasComment}
+                        </div>
+                      )}
                     </div>
-                    {isCompleted && (
-                      <div className="flex-shrink-0 text-primary">
-                        <Check className="w-5 h-5" />
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                        onClick={() => {
+                          const comment = prompt(
+                            language === 'english' 
+                              ? 'Add comment for this task:' 
+                              : 'Добави коментар за тази задача:', 
+                            taskComments[taskKey] || ''
+                          );
+                          if (comment !== null) {
+                            setTaskComments(prev => ({
+                              ...prev,
+                              [taskKey]: comment
+                            }));
+                          }
+                        }}
+                      >
+                        💬
+                      </Button>
+                      {isCompleted && (
+                        <div className="flex-shrink-0 text-primary">
+                          <Check className="w-4 h-4" />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}
