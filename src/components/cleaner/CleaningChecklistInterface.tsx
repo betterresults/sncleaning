@@ -47,6 +47,8 @@ export function CleaningChecklistInterface({
   const [roomSections, setRoomSections] = useState<Array<{ id: string; name: string; tasks: any[]; note?: string }>>([]);
   const [completionProgress, setCompletionProgress] = useState(0);
   const [taskComments, setTaskComments] = useState<Record<string, string>>({});
+  const [propertyType, setPropertyType] = useState('Flat');
+  const [propertyConfig, setPropertyConfig] = useState<any>(null);
   const { toast } = useToast();
 
   // Fetch customer and cleaner data
@@ -106,6 +108,7 @@ export function CleaningChecklistInterface({
   useEffect(() => {
     if (currentChecklist) {
       setLanguage(currentChecklist.language_preference);
+      setPropertyConfig(currentChecklist.property_config);
     }
   }, [currentChecklist]);
 
@@ -301,42 +304,13 @@ export function CleaningChecklistInterface({
             All items have been inspected and completed unless noted below.
           </div>
           
-          {/* Property Configuration Section */}
+          {/* Basic Property Information */}
           <div className="bg-muted/30 rounded-lg p-4 mb-6">
             <h3 className="font-semibold text-primary mb-3">Property Details</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Property address</label>
                 <div className="mt-1 font-medium">{bookingData?.address}, {bookingData?.postcode}</div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Property type</label>
-                <div className="mt-1 font-medium">Flat</div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Configuration</label>
-                <div className="mt-1 flex flex-wrap gap-2">
-                  {currentChecklist?.property_config && (
-                    <>
-                      {currentChecklist.property_config.bedrooms && (
-                        <Badge variant="outline" className="text-xs">
-                          {currentChecklist.property_config.bedrooms} Bedroom{currentChecklist.property_config.bedrooms > 1 ? 's' : ''}
-                        </Badge>
-                      )}
-                      {currentChecklist.property_config.bathrooms && (
-                        <Badge variant="outline" className="text-xs">
-                          {currentChecklist.property_config.bathrooms} Bathroom{currentChecklist.property_config.bathrooms > 1 ? 's' : ''}
-                        </Badge>
-                      )}
-                      {currentChecklist.property_config.living_rooms && (
-                        <Badge variant="outline" className="text-xs">
-                          {currentChecklist.property_config.living_rooms} Living Room{currentChecklist.property_config.living_rooms > 1 ? 's' : ''}
-                        </Badge>
-                      )}
-                      <Badge variant="outline" className="text-xs">Kitchen</Badge>
-                    </>
-                  )}
-                </div>
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Date</label>
@@ -370,7 +344,7 @@ export function CleaningChecklistInterface({
         <Card className="border-primary/20">
           <CardHeader className="bg-primary/5 border-b border-primary/20">
             <CardTitle className="text-primary">
-              {language === 'english' ? 'Booked services (included)' : 'Резервирани услуги (включени)'}
+              {language === 'english' ? 'Booked services' : 'Резервирани услуги'}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
@@ -470,6 +444,95 @@ export function CleaningChecklistInterface({
           </CardContent>
         </Card>
       ))}
+
+      {/* Property Configuration Editor */}
+      <Card className="border-primary/20 shadow-md">
+        <CardHeader className="bg-primary/5 border-b border-primary/20">
+          <CardTitle className="text-primary">
+            {language === 'english' ? 'Property Configuration' : 'Конфигурация на имота'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                {language === 'english' ? 'Property Type' : 'Тип имот'}
+              </label>
+              <div className="flex gap-2">
+                {['Flat', 'House', 'Townhouse'].map((type) => (
+                  <Button
+                    key={type}
+                    variant={propertyType === type ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setPropertyType(type)}
+                    className="text-xs"
+                  >
+                    {type}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                {language === 'english' ? 'Configuration' : 'Конфигурация'}
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const newCount = prompt('Bedrooms:', propertyConfig?.bedrooms?.toString() || '1');
+                    if (newCount && !isNaN(parseInt(newCount))) {
+                      setPropertyConfig(prev => ({ ...prev, bedrooms: parseInt(newCount) }));
+                    }
+                  }}
+                  className="text-xs"
+                >
+                  {propertyConfig?.bedrooms || 1} Bedroom{(propertyConfig?.bedrooms || 1) > 1 ? 's' : ''}
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const newCount = prompt('Bathrooms:', propertyConfig?.bathrooms?.toString() || '1');
+                    if (newCount && !isNaN(parseInt(newCount))) {
+                      setPropertyConfig(prev => ({ ...prev, bathrooms: parseInt(newCount) }));
+                    }
+                  }}
+                  className="text-xs"
+                >
+                  {propertyConfig?.bathrooms || 1} Bathroom{(propertyConfig?.bathrooms || 1) > 1 ? 's' : ''}
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const newCount = prompt('Living Rooms:', propertyConfig?.living_rooms?.toString() || '1');
+                    if (newCount && !isNaN(parseInt(newCount))) {
+                      setPropertyConfig(prev => ({ ...prev, living_rooms: parseInt(newCount) }));
+                    }
+                  }}
+                  className="text-xs"
+                >
+                  {propertyConfig?.living_rooms || 1} Living Room{(propertyConfig?.living_rooms || 1) > 1 ? 's' : ''}
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  disabled
+                >
+                  1 Kitchen
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Completion Status */}
       {currentChecklist.status === 'completed' && (
