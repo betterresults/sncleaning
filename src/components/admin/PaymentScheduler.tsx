@@ -210,7 +210,7 @@ export const PaymentScheduler = () => {
         )}
 
         <div className="text-sm text-muted-foreground bg-yellow-50 p-3 rounded border">
-          <strong>Schedule:</strong> Authorizes payments 24h before booking, captures 2h after completion.
+          <strong>Schedule:</strong> Authorizes payments 24h before booking, captures 1h after completion or immediately when marked as completed.
           Runs every 30 minutes when active.
         </div>
       </CardContent>
