@@ -126,31 +126,127 @@ export function useCleaningChecklist(bookingId?: number) {
     }
   };
 
-  // Parse property details from booking
+  // Parse property details from booking (supports both JSON and text formats)
   const parsePropertyConfig = (propertyDetails?: string): PropertyConfig => {
     const defaultConfig = {
       bedrooms: 1,
       bathrooms: 1,
       living_rooms: 1,
+      additional_rooms: []
     };
 
     if (!propertyDetails) return defaultConfig;
 
     try {
       const config = { ...defaultConfig };
+      
+      // Try to parse as JSON first (from booking form webhook)
+      try {
+        const jsonData = JSON.parse(propertyDetails);
+        
+        // Extract bedroom count from JSON
+        if (jsonData["Size Of The Property"]) {
+          const sizeMatch = jsonData["Size Of The Property"].match(/(\d+)\s*bedroom/i);
+          if (sizeMatch) {
+            config.bedrooms = parseInt(sizeMatch[1]);
+          }
+        }
+        
+        // Extract bathroom count from JSON  
+        if (jsonData["Bathroom(s)"]) {
+          const bathMatch = jsonData["Bathroom(s)"].match(/(\d+)\s*bathroom/i);
+          if (bathMatch) {
+            config.bathrooms = parseInt(bathMatch[1]);
+          }
+        }
+        
+        // Handle additional areas from JSON
+        if (jsonData["Does Your Property Include Any Of The Following?"]) {
+          const additionalAreas = jsonData["Does Your Property Include Any Of The Following?"];
+          const additionalRooms = [];
+          
+          if (additionalAreas.includes("Separate Kitchen/Living Room") || additionalAreas.includes("Separate Kitchen\/Living Room")) {
+            config.living_rooms = 1; // Separate living room
+          }
+          
+          if (additionalAreas.includes("Dining Room")) {
+            additionalRooms.push({ type: "dining_room", count: 1 });
+          }
+          
+          if (additionalAreas.includes("Utility Room")) {
+            additionalRooms.push({ type: "utility_room", count: 1 });
+          }
+          
+          if (additionalAreas.includes("Study Room")) {
+            additionalRooms.push({ type: "study_room", count: 1 });
+          }
+          
+          if (additionalAreas.includes("Conservatory")) {
+            additionalRooms.push({ type: "conservatory", count: 1 });
+          }
+          
+          config.additional_rooms = additionalRooms;
+        }
+        
+        return config;
+      } catch (jsonError) {
+        // Not JSON, continue with text parsing
+      }
+      
+      // Text parsing (existing property_details format)
       const details = propertyDetails.toLowerCase();
 
-      // Extract bedroom count
-      const bedroomMatch = details.match(/(\d+)\s*bed/);
-      if (bedroomMatch) {
-        config.bedrooms = parseInt(bedroomMatch[1]);
+      // Extract bedroom count - support various formats
+      const bedroomPatterns = [
+        /(\d+)\s*[-\s]*bed/,
+        /(\d+)\s*bedroom/,
+        /(\d+)[-\s]*bed/
+      ];
+      
+      for (const pattern of bedroomPatterns) {
+        const match = details.match(pattern);
+        if (match) {
+          config.bedrooms = parseInt(match[1]);
+          break;
+        }
       }
 
-      // Extract bathroom count
-      const bathroomMatch = details.match(/(\d+)\s*bath/);
-      if (bathroomMatch) {
-        config.bathrooms = parseInt(bathroomMatch[1]);
+      // Extract bathroom count - support various formats
+      const bathroomPatterns = [
+        /(\d+)\s*[-\s]*bath/,
+        /(\d+)\s*bathroom/,
+        /(\d+)[-\s]*bath/
+      ];
+      
+      for (const pattern of bathroomPatterns) {
+        const match = details.match(pattern);
+        if (match) {
+          config.bathrooms = parseInt(match[1]);
+          break;
+        }
       }
+      
+      // Check for separate living room indicators
+      if (details.includes('separate kitchen') && details.includes('living room')) {
+        config.living_rooms = 1;
+      }
+      
+      // Check for additional rooms
+      const additionalRooms = [];
+      if (details.includes('dining room')) {
+        additionalRooms.push({ type: "dining_room", count: 1 });
+      }
+      if (details.includes('utility room')) {
+        additionalRooms.push({ type: "utility_room", count: 1 });
+      }
+      if (details.includes('study')) {
+        additionalRooms.push({ type: "study_room", count: 1 });
+      }
+      if (details.includes('conservatory')) {
+        additionalRooms.push({ type: "conservatory", count: 1 });
+      }
+      
+      config.additional_rooms = additionalRooms;
 
       return config;
     } catch (error) {
