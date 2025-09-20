@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { MobileChecklistInterface } from './MobileChecklistInterface';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Camera, Languages, Check, Clock } from 'lucide-react';
+import { Camera, Languages, Check, Clock, Smartphone, Globe } from 'lucide-react';
 import { useCleaningChecklist } from '@/hooks/useCleaningChecklist';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -31,6 +32,7 @@ export function CleaningChecklistInterface({
   cleanerId, 
   bookingData 
 }: CleaningChecklistInterfaceProps) {
+  const [showMobileInterface, setShowMobileInterface] = useState(false);
   const {
     currentChecklist,
     templates,
@@ -54,7 +56,7 @@ export function CleaningChecklistInterface({
   const [propertyConfig, setPropertyConfig] = useState<any>(null);
   const { toast } = useToast();
 
-  // Fetch customer and cleaner data
+  // useEffect hooks for data fetching and processing
   useEffect(() => {
     const fetchAdditionalData = async () => {
       try {
@@ -83,9 +85,7 @@ export function CleaningChecklistInterface({
     fetchAdditionalData();
   }, [bookingData?.customer, cleanerId]);
 
-  // Initialize checklist if it doesn't exist
   useEffect(() => {
-    // Always fetch current checklists for this booking/cleaner first
     if (cleanerId) {
       fetchChecklists(cleanerId);
     } else {
@@ -95,21 +95,17 @@ export function CleaningChecklistInterface({
 
   useEffect(() => {
     if (!loading && !currentChecklist && bookingData && templates.length > 0) {
-      // Auto-create checklist for End of Tenancy bookings
       const isEoT = bookingData.service_type === 'End of Tenancy' || bookingData.cleaning_type === 'End of Tenancy';
       if (isEoT) {
         const template = templates.find(t => t.service_type === 'End of Tenancy');
         if (template) {
           const propertyConfig = parsePropertyConfig(bookingData.property_details);
-          console.log('Creating checklist with property config:', propertyConfig);
-          console.log('Booking property details:', bookingData.property_details);
           createChecklist(bookingId, cleanerId, template.id, propertyConfig);
         }
       }
     }
   }, [loading, currentChecklist, bookingData, templates, bookingId, cleanerId]);
 
-  // Update language preference
   useEffect(() => {
     if (currentChecklist) {
       setLanguage(currentChecklist.language_preference);
@@ -117,7 +113,7 @@ export function CleaningChecklistInterface({
     }
   }, [currentChecklist]);
 
-  // Generate room sections based on property config and template
+  // room sections generation logic
   useEffect(() => {
     if (currentChecklist && templates.length > 0) {
       const template = templates.find(t => t.id === currentChecklist.template_id);
@@ -282,6 +278,15 @@ export function CleaningChecklistInterface({
     }
   };
 
+  if (showMobileInterface) {
+    return (
+      <MobileChecklistInterface 
+        bookingId={bookingId} 
+        onClose={() => setShowMobileInterface(false)}
+      />
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -323,6 +328,15 @@ export function CleaningChecklistInterface({
               <p className="text-primary/70 text-sm mt-1">Cleaning Services Checklist</p>
             </div>
             <div className="flex items-center space-x-4">
+              <Button
+                onClick={() => setShowMobileInterface(true)}
+                variant="default"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Smartphone className="h-4 w-4" />
+                Mobile View
+              </Button>
               <Select value={language} onValueChange={handleLanguageChange}>
                 <SelectTrigger className="w-32 border-primary/30">
                   <Languages className="w-4 h-4 mr-2 text-primary" />
@@ -342,6 +356,27 @@ export function CleaningChecklistInterface({
             End of Tenancy Cleaning
           </div>
           
+          {/* Mobile Interface Prompt */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-900">Mobile-Optimized Experience Available</p>
+                <p className="text-xs text-blue-700 mt-1">
+                  Switch to mobile view for a step-by-step interface designed for cleaning on-the-go
+                </p>
+              </div>
+              <Button
+                onClick={() => setShowMobileInterface(true)}
+                variant="outline"
+                size="sm"
+                className="border-blue-300 text-blue-700 hover:bg-blue-100"
+              >
+                <Smartphone className="h-4 w-4 mr-2" />
+                Try Mobile View
+              </Button>
+            </div>
+          </div>
+
           {/* Basic Property Information */}
           <div className="bg-muted/30 rounded-lg p-4 mb-6">
             <h3 className="font-semibold text-primary mb-3">Property Details</h3>
@@ -432,129 +467,62 @@ export function CleaningChecklistInterface({
                       {room.count} {room.type.replace('_', ' ')}
                     </Badge>
                   ))}
-                  
-                  <Badge variant="outline" className="text-xs">
-                    1 Kitchen
-                  </Badge>
                 </div>
               </div>
             </div>
           </div>
-          
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-primary">
-              {language === 'english' ? 'Completion Progress' : 'Прогрес на изпълнение'}
-            </label>
-            <Progress value={completionProgress} className="w-full h-3" />
-            <p className="text-sm text-muted-foreground">
-              {Math.round(completionProgress)}% {language === 'english' ? 'complete' : 'завършено'}
-            </p>
+
+          {/* Progress Bar */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between text-sm mb-2">
+              <span className="font-medium text-primary">
+                {language === 'english' ? 'Overall Progress' : 'Общ напредък'}
+              </span>
+              <span className="text-muted-foreground">{Math.round(completionProgress)}%</span>
+            </div>
+            <Progress value={completionProgress} className="h-3" />
           </div>
         </CardContent>
       </Card>
 
-      {/* Room Sections with Professional Layout */}
-      {roomSections.map((section) => (
-        <Card key={section.id} className="border-primary/20 shadow-md">
-          <CardHeader className="bg-primary/5 border-b border-primary/20">
-            <CardTitle className="text-primary text-xl font-bold">{section.name}</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="space-y-2">
-              {section.tasks.map((task) => {
-                const isCompleted = currentChecklist.checklist_data[section.id]?.[task.id] || false;
-                const taskKey = `${section.id}-${task.id}`;
-                const hasComment = taskComments[taskKey];
-                
-                return (
-                  <div key={task.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/30 transition-colors">
-                    <div className="flex-shrink-0 mt-0.5">
-                      <Checkbox
-                        checked={isCompleted}
-                        onCheckedChange={(checked) => handleTaskToggle(section.id, task.id, !!checked)}
-                        className="w-4 h-4 border-2 border-primary data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className={`font-medium text-sm leading-relaxed ${isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                        {task[langKey]}
-                      </div>
-                      {hasComment && (
-                        <div className="mt-1 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded border border-amber-200">
-                          {hasComment}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <TaskCommentDialog
-                        taskName={task[langKey]}
-                        currentComment={taskComments[taskKey] || ''}
-                        language={language}
-                        onSave={(comment) => {
-                          setTaskComments(prev => ({
-                            ...prev,
-                            [taskKey]: comment
-                          }));
-                        }}
-                      />
-                      {isCompleted && (
-                        <div className="flex-shrink-0 text-primary">
-                          <Check className="w-4 h-4" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {section.note && (
-              <div className="mt-6 pt-4 border-t border-dashed border-primary/30">
-                <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg">
-                  {section.note}
-                </div>
-              </div>
-            )}
-
-            <div className="mt-6 pt-4 border-t border-primary/30">
-              <Button variant="outline" size="sm" className="border-primary/30 text-primary hover:bg-primary/10 hover:border-primary">
-                <Camera className="w-4 h-4 mr-2" />
-                {language === 'english' ? 'Add Photos (1-3)' : 'Добави снимки (1-3)'}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-
-      {/* Completion Status */}
-      {currentChecklist.status === 'completed' && (
-        <Card className="border-primary/20 shadow-lg">
-          <CardContent className="p-8 text-center">
-            <div className="text-primary mb-6">
-              <Check className="w-16 h-16 mx-auto mb-4" />
-              <h3 className="text-2xl font-bold">
-                {language === 'english' ? 'Checklist Completed!' : 'Чеклистът е завършен!'}
+      {/* Desktop Interface Message */}
+      <Card className="border-amber-200 bg-amber-50">
+        <CardContent className="p-6 text-center">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <Smartphone className="h-8 w-8 text-amber-600" />
+            <div>
+              <h3 className="font-semibold text-amber-800">
+                {language === 'english' ? 'Mobile Interface Recommended' : 'Препоръчва се мобилен интерфейс'}
               </h3>
-              <p className="text-muted-foreground mt-2">
+              <p className="text-sm text-amber-700 mt-1">
                 {language === 'english' 
-                  ? 'All tasks have been completed successfully.' 
-                  : 'Всички задачи са успешно изпълнени.'}
+                  ? 'For the best cleaning experience, please use the mobile interface above. It\'s specifically designed for cleaners working on mobile devices with step-by-step guidance, room-by-room navigation, and auto-save functionality.'
+                  : 'За най-добро изживяване при почистване, моля използвайте мобилния интерфейс отгоре. Той е специално проектиран за почистващи, работещи на мобилни устройства със стъпка по стъпка ръководство, навигация стая по стая и функция за автоматично запазване.'
+                }
               </p>
             </div>
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 text-lg">
-              {language === 'english' ? 'Generate Report' : 'Генериране на отчет'}
-            </Button>
-            
-            <div className="mt-6 pt-6 border-t border-primary/20 text-sm text-muted-foreground">
-              Photos are provided as separate attachments upon request.
-            </div>
-            
-            <div className="mt-4 text-sm text-primary font-medium">
-              SN Cleaning Services • info@sncleaningservices.co.uk • 020 3835 5033
-            </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+          
+          <Button
+            onClick={() => setShowMobileInterface(true)}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 text-lg"
+          >
+            <Smartphone className="h-5 w-5 mr-2" />
+            {language === 'english' ? 'Launch Mobile Interface' : 'Стартирай мобилния интерфейс'}
+          </Button>
+          
+          <div className="mt-6 pt-6 border-t border-amber-200 text-sm text-amber-700">
+            {language === 'english' 
+              ? 'The mobile interface includes automatic saving, progress tracking, and is optimized for touch interaction.'
+              : 'Мобилният интерфейс включва автоматично запазване, проследяване на напредъка и е оптимизиран за сензорно взаимодействие.'
+            }
+          </div>
+          
+          <div className="mt-4 text-sm text-primary font-medium">
+            SN Cleaning Services • info@sncleaningservices.co.uk • 020 3835 5033
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
