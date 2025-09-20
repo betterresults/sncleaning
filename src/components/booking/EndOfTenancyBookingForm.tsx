@@ -98,6 +98,26 @@ const mattressOptions = [
   { id: 'king', icon: BedDouble, label: 'King Size Mattress' }
 ];
 
+// Shared house specific options
+const sharedHouseBedroomSizes = [
+  { id: 'single_bedroom', label: 'Single Bedroom' },
+  { id: 'double_bedroom', label: 'Double Bedroom' },
+  { id: 'master_bedroom', label: 'Master Bedroom' }
+];
+
+const sharedHouseServices = [
+  { id: 'bathroom', icon: Bath, label: 'Bathroom' },
+  { id: 'single_oven_cleaning', icon: ChefHat, label: 'Single Oven Cleaning' },
+  { id: 'kitchen_cupboards', icon: Package, label: 'Kitchen Cupboards' }
+];
+
+// Cleaning service types for conditional display
+const cleaningServiceTypes = [
+  { id: 'carpet_cleaning', label: 'Carpet Cleaning' },
+  { id: 'upholstery_cleaning', label: 'Upholstery Cleaning' },
+  { id: 'mattress_cleaning', label: 'Mattress Cleaning' }
+];
+
 export function EndOfTenancyBookingForm({ children, onSubmit }: EndOfTenancyBookingFormProps) {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -113,12 +133,19 @@ export function EndOfTenancyBookingForm({ children, onSubmit }: EndOfTenancyBook
     separate_wc: 0,
     oven_type: 'single',
     
+    // Shared house specific
+    shared_house_bedroom_size: 'single_bedroom',
+    shared_house_services: [],
+    
     // Additional features
     additional_features: [],
     
     // Services
     blinds_cleaning: [],
     extra_services: [],
+    
+    // Cleaning services selection
+    enabled_cleaning_services: [],
     carpet_cleaning: [],
     upholstery_cleaning: [],
     mattress_cleaning: [],
@@ -199,7 +226,39 @@ export function EndOfTenancyBookingForm({ children, onSubmit }: EndOfTenancyBook
   };
 
   const handleCustomerSelect = (customer: any) => {
-    setFormData(prev => ({ ...prev, customer }));
+    setFormData(prev => ({ 
+      ...prev, 
+      customer,
+      // Auto-populate address fields if customer has address info
+      address: customer?.address || prev.address,
+      postcode: customer?.postcode || prev.postcode
+    }));
+  };
+
+  const toggleServiceType = (serviceType: string) => {
+    setFormData(prev => {
+      const currentServices = prev.enabled_cleaning_services || [];
+      const isEnabled = currentServices.includes(serviceType);
+      
+      if (isEnabled) {
+        // Remove the service type and clear its selections
+        return {
+          ...prev,
+          enabled_cleaning_services: currentServices.filter(s => s !== serviceType),
+          [serviceType]: []
+        };
+      } else {
+        // Add the service type
+        return {
+          ...prev,
+          enabled_cleaning_services: [...currentServices, serviceType]
+        };
+      }
+    });
+  };
+
+  const isServiceEnabled = (serviceType: string) => {
+    return (formData.enabled_cleaning_services || []).includes(serviceType);
   };
 
   const handleSubmit = () => {
@@ -244,21 +303,18 @@ export function EndOfTenancyBookingForm({ children, onSubmit }: EndOfTenancyBook
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="customer">Customer</TabsTrigger>
             <TabsTrigger value="property">Property</TabsTrigger>
-            <TabsTrigger value="rooms">Rooms</TabsTrigger>
-            <TabsTrigger value="features">Features</TabsTrigger>
-            <TabsTrigger value="services">Services & Date</TabsTrigger>
+            {formData.property_type === 'apartment' && (
+              <TabsTrigger value="rooms">Rooms</TabsTrigger>
+            )}
+            <TabsTrigger value="features">Additional Rooms</TabsTrigger>
+            <TabsTrigger value="cleaning">Cleaning Services</TabsTrigger>
+            <TabsTrigger value="datetime">Date & Time</TabsTrigger>
           </TabsList>
           
           {/* Customer Information */}
           <TabsContent value="customer" className="space-y-4">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
-                  Customer Selection
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="p-4 space-y-4">
                 <CustomerSelector onCustomerSelect={handleCustomerSelect} />
                 
                 {formData.customer && (
@@ -323,22 +379,163 @@ export function EndOfTenancyBookingForm({ children, onSubmit }: EndOfTenancyBook
               </CardContent>
             </Card>
 
-            {/* Bedrooms - only show for apartments */}
-            {formData.property_type === 'apartment' && (
+            {/* Bedrooms and Bathrooms - show for apartments and houses */}
+            {(formData.property_type === 'apartment' || formData.property_type === 'house') && (
               <Card>
-                <CardContent className="p-4 space-y-3">
-                  <h3 className="font-semibold text-primary">Number of Bedrooms</h3>
-                  <div className="grid grid-cols-3 gap-3">
-                    {bedroomOptions.map(option => (
-                      <Button
-                        key={option.id}
-                        variant={formData.bedrooms === option.id ? "default" : "outline"}
-                        className="h-10"
-                        onClick={() => updateBasicField('bedrooms', option.id)}
-                      >
-                        {option.label}
-                      </Button>
-                    ))}
+                <CardContent className="p-4 space-y-4">
+                  <h3 className="font-semibold text-primary">Room Configuration</h3>
+                  
+                  {/* Bedrooms for apartments */}
+                  {formData.property_type === 'apartment' && (
+                    <div className="space-y-3">
+                      <h4 className="font-medium">Number of Bedrooms</h4>
+                      <div className="grid grid-cols-3 gap-3">
+                        {bedroomOptions.map(option => (
+                          <Button
+                            key={option.id}
+                            variant={formData.bedrooms === option.id ? "default" : "outline"}
+                            className="h-10"
+                            onClick={() => updateBasicField('bedrooms', option.id)}
+                          >
+                            {option.label}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Bathrooms and Separate WC */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Bath className="w-4 h-4 text-primary" />
+                        <span className="font-medium text-sm">Bathrooms</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => updateCount('bathrooms', false)}
+                          disabled={formData.bathrooms <= 1}
+                          className="h-7 w-7 p-0"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </Button>
+                        <Badge variant="secondary" className="min-w-[2rem] justify-center">
+                          {formData.bathrooms}
+                        </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => updateCount('bathrooms', true)}
+                          disabled={formData.bathrooms >= getMaxBathrooms()}
+                          className="h-7 w-7 p-0"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Building className="w-4 h-4 text-primary" />
+                        <span className="font-medium text-sm">Separate WC</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => updateCount('separate_wc', false)}
+                          disabled={formData.separate_wc <= 0}
+                          className="h-7 w-7 p-0"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </Button>
+                        <Badge variant="secondary" className="min-w-[2rem] justify-center">
+                          {formData.separate_wc}
+                        </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => updateCount('separate_wc', true)}
+                          className="h-7 w-7 p-0"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Shared House Configuration */}
+            {formData.property_type === 'shared_house' && (
+              <Card>
+                <CardContent className="p-4 space-y-4">
+                  <h3 className="font-semibold text-primary">Shared House Configuration</h3>
+                  
+                  <div className="space-y-3">
+                    <h4 className="font-medium">Size of the Bedroom</h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      {sharedHouseBedroomSizes.map(size => (
+                        <Button
+                          key={size.id}
+                          variant={formData.shared_house_bedroom_size === size.id ? "default" : "outline"}
+                          className="h-10"
+                          onClick={() => updateBasicField('shared_house_bedroom_size', size.id)}
+                        >
+                          {size.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <h4 className="font-medium">Additional Services</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      {sharedHouseServices.map(service => {
+                        const Icon = service.icon;
+                        const quantity = getItemQuantity('shared_house_services', service.id);
+                        const isSelected = quantity > 0;
+                        
+                        return (
+                          <div key={service.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            <Button
+                              variant={isSelected ? "default" : "outline"}
+                              className="flex-1 justify-start gap-2"
+                              onClick={() => toggleArrayItem('shared_house_services', service)}
+                            >
+                              <Icon className="w-4 h-4" />
+                              {service.label}
+                            </Button>
+                            {isSelected && (
+                              <div className="flex items-center gap-1 ml-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => decrementArrayItem('shared_house_services', service.id)}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  <Minus className="w-3 h-3" />
+                                </Button>
+                                <Badge variant="secondary" className="min-w-[1.5rem] justify-center text-xs">
+                                  {quantity}
+                                </Badge>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => toggleArrayItem('shared_house_services', service)}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -402,84 +599,28 @@ export function EndOfTenancyBookingForm({ children, onSubmit }: EndOfTenancyBook
             </Card>
           </TabsContent>
 
-          {/* Rooms */}
-          <TabsContent value="rooms" className="space-y-4">
-            <Card>
-              <CardContent className="p-4 space-y-4">
-                <h3 className="font-semibold text-primary">Room Configuration</h3>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Bathrooms */}
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Bath className="w-4 h-4 text-primary" />
-                      <span className="font-medium text-sm">Bathrooms</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateCount('bathrooms', false)}
-                        disabled={formData.bathrooms <= 1}
-                        className="h-7 w-7 p-0"
-                      >
-                        <Minus className="w-3 h-3" />
-                      </Button>
-                      <Badge variant="secondary" className="min-w-[2rem] justify-center">
-                        {formData.bathrooms}
-                      </Badge>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateCount('bathrooms', true)}
-                        disabled={formData.bathrooms >= getMaxBathrooms()}
-                        className="h-7 w-7 p-0"
-                      >
-                        <Plus className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </div>
+          {/* Rooms - only for apartments */}
+          {formData.property_type === 'apartment' && (
+            <TabsContent value="rooms" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Room Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    For apartments, please specify any additional room configuration details here if needed.
+                  </p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
-                  {/* Separate WC */}
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Building className="w-4 h-4 text-primary" />
-                      <span className="font-medium text-sm">Separate WC</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateCount('separate_wc', false)}
-                        disabled={formData.separate_wc <= 0}
-                        className="h-7 w-7 p-0"
-                      >
-                        <Minus className="w-3 h-3" />
-                      </Button>
-                      <Badge variant="secondary" className="min-w-[2rem] justify-center">
-                        {formData.separate_wc}
-                      </Badge>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateCount('separate_wc', true)}
-                        className="h-7 w-7 p-0"
-                      >
-                        <Plus className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Features */}
+          {/* Additional Rooms */}
           <TabsContent value="features" className="space-y-4">
             {/* Additional Features */}
             <Card>
               <CardContent className="p-4 space-y-3">
-                <h3 className="font-semibold text-primary">Additional Features</h3>
+                <h3 className="font-semibold text-primary">Additional Rooms</h3>
                 <div className="grid grid-cols-2 gap-3">
                   {additionalFeatures.map(feature => {
                     const Icon = feature.icon;
@@ -628,182 +769,210 @@ export function EndOfTenancyBookingForm({ children, onSubmit }: EndOfTenancyBook
             </Card>
           </TabsContent>
 
-          {/* Services */}
-          <TabsContent value="services" className="space-y-4">
-            {/* Carpet Cleaning */}
+          {/* Cleaning Services */}
+          <TabsContent value="cleaning" className="space-y-4">
+            {/* Service Selection */}
             <Card>
               <CardContent className="p-4 space-y-3">
-                <h3 className="font-semibold text-primary">Carpet Cleaning</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {carpetRooms.map(room => {
-                    const Icon = room.icon;
-                    const quantity = getItemQuantity('carpet_cleaning', room.id);
-                    const isSelected = quantity > 0;
-                    
-                    return (
-                      <div key={room.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <Button
-                          variant={isSelected ? "default" : "outline"}
-                          className="flex-1 justify-start gap-2"
-                          onClick={() => toggleArrayItem('carpet_cleaning', room)}
-                        >
-                          <Icon className="w-4 h-4" />
-                          {room.label}
-                        </Button>
-                        {isSelected && (
-                          <div className="flex items-center gap-1 ml-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => decrementArrayItem('carpet_cleaning', room.id)}
-                              className="h-6 w-6 p-0"
-                            >
-                              <Minus className="w-3 h-3" />
-                            </Button>
-                            <Badge variant="secondary" className="min-w-[1.5rem] justify-center text-xs">
-                              {quantity}
-                            </Badge>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => toggleArrayItem('carpet_cleaning', room)}
-                              className="h-6 w-6 p-0"
-                            >
-                              <Plus className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                <h3 className="font-semibold text-primary">Do you need any of the following cleaning services?</h3>
+                <div className="grid grid-cols-3 gap-3">
+                  {cleaningServiceTypes.map(serviceType => (
+                    <Button
+                      key={serviceType.id}
+                      variant={isServiceEnabled(serviceType.id) ? "default" : "outline"}
+                      className="h-12"
+                      onClick={() => toggleServiceType(serviceType.id)}
+                    >
+                      {serviceType.label}
+                    </Button>
+                  ))}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Upholstery Cleaning */}
-            <Card>
-              <CardContent className="p-4 space-y-3">
-                <h3 className="font-semibold text-primary">Upholstery Cleaning</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {upholsteryOptions.map(item => {
-                    const Icon = item.icon;
-                    const quantity = getItemQuantity('upholstery_cleaning', item.id);
-                    const isSelected = quantity > 0;
-                    
-                    return (
-                      <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <Button
-                          variant={isSelected ? "default" : "outline"}
-                          className="flex-1 justify-start gap-2"
-                          onClick={() => toggleArrayItem('upholstery_cleaning', item)}
-                        >
-                          <Icon className="w-4 h-4" />
-                          {item.label}
-                        </Button>
-                        {isSelected && (
-                          <div className="flex items-center gap-1 ml-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => decrementArrayItem('upholstery_cleaning', item.id)}
-                              className="h-6 w-6 p-0"
-                            >
-                              <Minus className="w-3 h-3" />
-                            </Button>
-                            <Badge variant="secondary" className="min-w-[1.5rem] justify-center text-xs">
-                              {quantity}
-                            </Badge>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => toggleArrayItem('upholstery_cleaning', item)}
-                              className="h-6 w-6 p-0"
-                            >
-                              <Plus className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+            {/* Carpet Cleaning - only show if enabled */}
+            {isServiceEnabled('carpet_cleaning') && (
+              <Card>
+                <CardContent className="p-4 space-y-3">
+                  <h3 className="font-semibold text-primary">Carpet Cleaning</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {carpetRooms.map(room => {
+                      const Icon = room.icon;
+                      const quantity = getItemQuantity('carpet_cleaning', room.id);
+                      const isSelected = quantity > 0;
+                      
+                      return (
+                        <div key={room.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <Button
+                            variant={isSelected ? "default" : "outline"}
+                            className="flex-1 justify-start gap-2"
+                            onClick={() => toggleArrayItem('carpet_cleaning', room)}
+                          >
+                            <Icon className="w-4 h-4" />
+                            {room.label}
+                          </Button>
+                          {isSelected && (
+                            <div className="flex items-center gap-1 ml-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => decrementArrayItem('carpet_cleaning', room.id)}
+                                className="h-6 w-6 p-0"
+                              >
+                                <Minus className="w-3 h-3" />
+                              </Button>
+                              <Badge variant="secondary" className="min-w-[1.5rem] justify-center text-xs">
+                                {quantity}
+                              </Badge>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => toggleArrayItem('carpet_cleaning', room)}
+                                className="h-6 w-6 p-0"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-            {/* Mattress Cleaning */}
-            <Card>
-              <CardContent className="p-4 space-y-3">
-                <h3 className="font-semibold text-primary">Mattress Cleaning</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {mattressOptions.map(mattress => {
-                    const Icon = mattress.icon;
-                    const quantity = getItemQuantity('mattress_cleaning', mattress.id);
-                    const isSelected = quantity > 0;
-                    
-                    return (
-                      <div key={mattress.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <Button
-                          variant={isSelected ? "default" : "outline"}
-                          className="flex-1 justify-start gap-2"
-                          onClick={() => toggleArrayItem('mattress_cleaning', mattress)}
-                        >
-                          <Icon className="w-4 h-4" />
-                          {mattress.label}
-                        </Button>
-                        {isSelected && (
-                          <div className="flex items-center gap-1 ml-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => decrementArrayItem('mattress_cleaning', mattress.id)}
-                              className="h-6 w-6 p-0"
-                            >
-                              <Minus className="w-3 h-3" />
-                            </Button>
-                            <Badge variant="secondary" className="min-w-[1.5rem] justify-center text-xs">
-                              {quantity}
-                            </Badge>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => toggleArrayItem('mattress_cleaning', mattress)}
-                              className="h-6 w-6 p-0"
-                            >
-                              <Plus className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+            {/* Upholstery Cleaning - only show if enabled */}
+            {isServiceEnabled('upholstery_cleaning') && (
+              <Card>
+                <CardContent className="p-4 space-y-3">
+                  <h3 className="font-semibold text-primary">Upholstery Cleaning</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {upholsteryOptions.map(item => {
+                      const Icon = item.icon;
+                      const quantity = getItemQuantity('upholstery_cleaning', item.id);
+                      const isSelected = quantity > 0;
+                      
+                      return (
+                        <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <Button
+                            variant={isSelected ? "default" : "outline"}
+                            className="flex-1 justify-start gap-2"
+                            onClick={() => toggleArrayItem('upholstery_cleaning', item)}
+                          >
+                            <Icon className="w-4 h-4" />
+                            {item.label}
+                          </Button>
+                          {isSelected && (
+                            <div className="flex items-center gap-1 ml-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => decrementArrayItem('upholstery_cleaning', item.id)}
+                                className="h-6 w-6 p-0"
+                              >
+                                <Minus className="w-3 h-3" />
+                              </Button>
+                              <Badge variant="secondary" className="min-w-[1.5rem] justify-center text-xs">
+                                {quantity}
+                              </Badge>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => toggleArrayItem('upholstery_cleaning', item)}
+                                className="h-6 w-6 p-0"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-            {/* Booking Date and Notes */}
+            {/* Mattress Cleaning - only show if enabled */}
+            {isServiceEnabled('mattress_cleaning') && (
+              <Card>
+                <CardContent className="p-4 space-y-3">
+                  <h3 className="font-semibold text-primary">Mattress Cleaning</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {mattressOptions.map(mattress => {
+                      const Icon = mattress.icon;
+                      const quantity = getItemQuantity('mattress_cleaning', mattress.id);
+                      const isSelected = quantity > 0;
+                      
+                      return (
+                        <div key={mattress.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <Button
+                            variant={isSelected ? "default" : "outline"}
+                            className="flex-1 justify-start gap-2"
+                            onClick={() => toggleArrayItem('mattress_cleaning', mattress)}
+                          >
+                            <Icon className="w-4 h-4" />
+                            {mattress.label}
+                          </Button>
+                          {isSelected && (
+                            <div className="flex items-center gap-1 ml-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => decrementArrayItem('mattress_cleaning', mattress.id)}
+                                className="h-6 w-6 p-0"
+                              >
+                                <Minus className="w-3 h-3" />
+                              </Button>
+                              <Badge variant="secondary" className="min-w-[1.5rem] justify-center text-xs">
+                                {quantity}
+                              </Badge>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => toggleArrayItem('mattress_cleaning', mattress)}
+                                className="h-6 w-6 p-0"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Date & Time */}
+          <TabsContent value="datetime" className="space-y-4">
             <Card>
               <CardContent className="p-4 space-y-4">
                 <h3 className="font-semibold text-primary">Booking Details</h3>
                 
                 <div>
-                  <Label htmlFor="preferred_date">Preferred Cleaning Date</Label>
+                  <Label htmlFor="preferred_date" className="text-base font-medium">Preferred Cleaning Date</Label>
                   <Input
                     id="preferred_date"
                     type="date"
                     value={formData.preferred_date}
                     onChange={(e) => updateBasicField('preferred_date', e.target.value)}
-                    className="w-48"
+                    className="w-48 mt-2"
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="additional_notes">Additional Notes</Label>
+                  <Label htmlFor="additional_notes" className="text-base font-medium">Additional Notes</Label>
                   <Textarea
                     id="additional_notes"
                     value={formData.additional_notes}
                     onChange={(e) => updateBasicField('additional_notes', e.target.value)}
                     placeholder="Any additional requirements or information..."
                     rows={4}
+                    className="mt-2"
                   />
                 </div>
               </CardContent>
