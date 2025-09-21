@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Minus, Home, Bath, Bed, Utensils, Car, BookOpen, Sun, Trees, Trash2, Building, Building2, Users, Sofa, ChefHat, Blinds, Package, Armchair, BedDouble, Calendar as CalendarIcon, Mail, Phone, MapPin, Sparkles, Clock, CheckCircle2 } from 'lucide-react';
+import { Plus, Minus, Home, Bath, Bed, Utensils, Car, BookOpen, Sun, Trees, Trash2, Building, Building2, Users, Sofa, ChefHat, Blinds, Package, Armchair, BedDouble, Calendar as CalendarIcon, Mail, Phone, MapPin, Sparkles, Clock, CheckCircle2, ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import CustomerSelector from './CustomerSelector';
 import { BookingSidebar } from './BookingSidebar';
 import { Calendar } from '@/components/ui/calendar';
@@ -20,25 +20,32 @@ interface EndOfTenancyBookingFormProps {
   onSubmit?: (bookingData: any) => void;
 }
 
+const steps = [
+  { id: 1, title: 'Property Details', icon: Building2, description: 'Tell us about your property' },
+  { id: 2, title: 'Select Customer', icon: Users, description: 'Choose or add a customer' },
+  { id: 3, title: 'Additional Services', icon: Sparkles, description: 'Extra cleaning options' },
+  { id: 4, title: 'Date & Details', icon: CalendarIcon, description: 'When and where' }
+];
+
 const propertyTypes = [
-  { id: 'apartment', icon: Building, label: 'Apartment', color: 'bg-blue-500', colorLight: 'bg-blue-50' },
-  { id: 'house', icon: Home, label: 'House', color: 'bg-green-500', colorLight: 'bg-green-50' },
-  { id: 'shared_house', icon: Users, label: 'Shared House', color: 'bg-orange-500', colorLight: 'bg-orange-50' }
+  { id: 'apartment', icon: Building, label: 'Apartment', description: 'Flat or apartment unit' },
+  { id: 'house', icon: Home, label: 'House', description: 'Standalone house' },
+  { id: 'shared_house', icon: Users, label: 'Shared House', description: 'Single room in shared property' }
 ];
 
 const apartmentTypes = [
-  { id: 'studio', label: 'Studio Apartment', bedrooms: 0 },
-  { id: '1bed', label: '1 Bedroom', bedrooms: 1 },
-  { id: '2bed', label: '2 Bedrooms', bedrooms: 2 },
-  { id: '3bed', label: '3 Bedrooms', bedrooms: 3 },
-  { id: '4bed', label: '4+ Bedrooms', bedrooms: 4 }
+  { id: 'studio', label: 'Studio', bedrooms: 0, description: 'Open-plan living' },
+  { id: '1bed', label: '1 Bedroom', bedrooms: 1, description: 'One bedroom flat' },
+  { id: '2bed', label: '2 Bedrooms', bedrooms: 2, description: 'Two bedroom flat' },
+  { id: '3bed', label: '3 Bedrooms', bedrooms: 3, description: 'Three bedroom flat' },
+  { id: '4bed', label: '4+ Bedrooms', bedrooms: 4, description: 'Large apartment' }
 ];
 
 const propertyConditions = [
-  { id: 'well_maintained', label: 'Well-Maintained', icon: CheckCircle2, color: 'text-green-600' },
-  { id: 'moderate', label: 'Moderate Condition', icon: Clock, color: 'text-yellow-600' },
-  { id: 'heavily_used', label: 'Heavily Used', icon: Trash2, color: 'text-orange-600' },
-  { id: 'intensive_required', label: 'Intensive Cleaning Required', icon: Sparkles, color: 'text-red-600' }
+  { id: 'well_maintained', label: 'Well-Maintained', icon: CheckCircle2 },
+  { id: 'moderate', label: 'Moderate Condition', icon: Clock },
+  { id: 'heavily_used', label: 'Heavily Used', icon: Trash2 },
+  { id: 'intensive_required', label: 'Deep Clean Required', icon: Sparkles }
 ];
 
 const propertyStatuses = [
@@ -47,62 +54,39 @@ const propertyStatuses = [
   { id: 'part_furnished', label: 'Part Furnished', icon: Package }
 ];
 
-const ovenTypes = [
-  { id: 'no_oven', label: 'No Oven Cleaning Required' },
-  { id: 'single', label: 'Single Oven' },
-  { id: 'single_convection', label: 'Single & Convection Oven' },
-  { id: 'double', label: 'Double Oven' },
-  { id: 'range', label: 'Range Oven' },
-  { id: 'aga', label: 'AGA Oven' }
-];
-
 const additionalFeatures = [
-  { id: 'utility_room', icon: Car, label: 'Utility Room', color: 'bg-purple-100 text-purple-700 border-purple-200' },
-  { id: 'conservatory', icon: Sun, label: 'Conservatory', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
-  { id: 'separate_kitchen_living', icon: Home, label: 'Separate Kitchen/Living Room', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-  { id: 'dining_room', icon: Utensils, label: 'Dining Room', color: 'bg-green-100 text-green-700 border-green-200' },
-  { id: 'study_room', icon: BookOpen, label: 'Study Room', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
-  { id: 'other_room', icon: Building, label: 'Any Other Additional Room', color: 'bg-gray-100 text-gray-700 border-gray-200' }
-];
-
-const blindsOptions = [
-  { id: 'small', label: 'Small Blinds/Shutters', size: '60cm x 120cm' },
-  { id: 'medium', label: 'Medium Blinds/Shutters', size: '100cm x 160cm' },
-  { id: 'large', label: 'Large Blinds/Shutters', size: '140cm x 220cm' }
-];
-
-const extraServices = [
-  { id: 'balcony', icon: Trees, label: 'Balcony Cleaning', color: 'bg-green-100 text-green-700 border-green-200' },
-  { id: 'waste_removal', icon: Trash2, label: 'Household Waste Removal', color: 'bg-red-100 text-red-700 border-red-200' },
-  { id: 'garage', icon: Car, label: 'Garage Cleaning', color: 'bg-gray-100 text-gray-700 border-gray-200' }
+  { id: 'utility_room', icon: Car, label: 'Utility Room' },
+  { id: 'conservatory', icon: Sun, label: 'Conservatory' },
+  { id: 'separate_kitchen_living', icon: Home, label: 'Separate Kitchen/Living Room' },
+  { id: 'dining_room', icon: Utensils, label: 'Dining Room' },
+  { id: 'study_room', icon: BookOpen, label: 'Study Room' },
+  { id: 'other_room', icon: Building, label: 'Any Other Additional Room' }
 ];
 
 const carpetRooms = [
-  { id: 'bedroom', icon: Bed, label: 'Bedroom', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-  { id: 'living_room', icon: Sofa, label: 'Living Room', color: 'bg-purple-100 text-purple-700 border-purple-200' },
-  { id: 'dining_room', icon: Utensils, label: 'Dining Room', color: 'bg-green-100 text-green-700 border-green-200' },
-  { id: 'hallway', icon: Home, label: 'Hallway', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
-  { id: 'staircase', icon: Building, label: 'Staircase', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
-  { id: 'landing', icon: Home, label: 'Landing', color: 'bg-pink-100 text-pink-700 border-pink-200' }
+  { id: 'bedroom', icon: Bed, label: 'Bedroom' },
+  { id: 'living_room', icon: Sofa, label: 'Living Room' },
+  { id: 'dining_room', icon: Utensils, label: 'Dining Room' },
+  { id: 'hallway', icon: Home, label: 'Hallway' },
+  { id: 'staircase', icon: Building, label: 'Staircase' },
+  { id: 'landing', icon: Home, label: 'Landing' }
 ];
 
 const upholsteryOptions = [
-  { id: 'two_seater', icon: Sofa, label: 'Two Seater Sofa', color: 'bg-purple-100 text-purple-700 border-purple-200' },
-  { id: 'three_seater', icon: Sofa, label: 'Three Seater Sofa', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-  { id: 'four_seater', icon: Sofa, label: 'Four Seater or Corner Sofa', color: 'bg-green-100 text-green-700 border-green-200' },
-  { id: 'armchair', icon: Armchair, label: 'Armchair', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
-  { id: 'dining_chair', icon: Utensils, label: 'Dining Chair', color: 'bg-orange-100 text-orange-700 border-orange-200' },
-  { id: 'cushions', icon: Package, label: 'Cushions', color: 'bg-pink-100 text-pink-700 border-pink-200' },
-  { id: 'curtains', icon: Blinds, label: 'Curtains Pair', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' }
+  { id: 'two_seater', icon: Sofa, label: 'Two Seater Sofa' },
+  { id: 'three_seater', icon: Sofa, label: 'Three Seater Sofa' },
+  { id: 'four_seater', icon: Sofa, label: 'Four Seater or Corner Sofa' },
+  { id: 'armchair', icon: Armchair, label: 'Armchair' },
+  { id: 'dining_chair', icon: Utensils, label: 'Dining Chair' },
+  { id: 'curtains', icon: Blinds, label: 'Curtains Pair' }
 ];
 
 const mattressOptions = [
-  { id: 'single', icon: Bed, label: 'Single Mattress', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-  { id: 'double', icon: BedDouble, label: 'Double Mattress', color: 'bg-green-100 text-green-700 border-green-200' },
-  { id: 'king', icon: BedDouble, label: 'King Size Mattress', color: 'bg-purple-100 text-purple-700 border-purple-200' }
+  { id: 'single', icon: Bed, label: 'Single Mattress' },
+  { id: 'double', icon: BedDouble, label: 'Double Mattress' },
+  { id: 'king', icon: BedDouble, label: 'King Size Mattress' }
 ];
 
-// Shared house specific options
 const sharedHouseBedroomSizes = [
   { id: 'single_bedroom', label: 'Single Bedroom' },
   { id: 'double_bedroom', label: 'Double Bedroom' },
@@ -110,52 +94,36 @@ const sharedHouseBedroomSizes = [
 ];
 
 const sharedHouseServices = [
-  { id: 'bathroom', icon: Bath, label: 'Bathroom', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-  { id: 'single_oven_cleaning', icon: ChefHat, label: 'Single Oven Cleaning', color: 'bg-orange-100 text-orange-700 border-orange-200' },
-  { id: 'kitchen_cupboards', icon: Package, label: 'Kitchen Cupboards', color: 'bg-green-100 text-green-700 border-green-200' }
+  { id: 'bathroom', icon: Bath, label: 'Bathroom' },
+  { id: 'single_oven_cleaning', icon: ChefHat, label: 'Single Oven Cleaning' },
+  { id: 'kitchen_cupboards', icon: Package, label: 'Kitchen Cupboards' }
 ];
 
-// Cleaning service types for conditional display
 const cleaningServiceTypes = [
-  { id: 'carpet_cleaning', label: 'Carpet Cleaning', icon: Home, color: 'bg-blue-500' },
-  { id: 'upholstery_cleaning', label: 'Upholstery Cleaning', icon: Sofa, color: 'bg-green-500' },
-  { id: 'mattress_cleaning', label: 'Mattress Cleaning', icon: Bed, color: 'bg-purple-500' }
+  { id: 'carpet_cleaning', label: 'Carpet Cleaning', icon: Home },
+  { id: 'upholstery_cleaning', label: 'Upholstery Cleaning', icon: Sofa },
+  { id: 'mattress_cleaning', label: 'Mattress Cleaning', icon: Bed }
 ];
 
 export function EndOfTenancyBookingForm({ children, onSubmit }: EndOfTenancyBookingFormProps) {
   const [open, setOpen] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
-    // Customer info - will be set by CustomerSelector
     customer: null,
-    
-    // Property details
-    property_type: '', // Initially empty
-    apartment_type: '', // For apartment specific selection
+    property_type: '',
+    apartment_type: '',
     property_condition: 'well_maintained',
     property_status: 'furnished',
-    bedrooms: 1, // Changed to number
+    bedrooms: 1,
     bathrooms: 1,
     separate_wc: 0,
-    oven_type: 'single',
-    
-    // Shared house specific
     shared_house_bedroom_size: 'single_bedroom',
     shared_house_services: [],
-    
-    // Additional features
     additional_features: [],
-    
-    // Services
-    blinds_cleaning: [],
-    extra_services: [],
-    
-    // Cleaning services selection
     enabled_cleaning_services: [],
     carpet_cleaning: [],
     upholstery_cleaning: [],
     mattress_cleaning: [],
-    
-    // Booking details
     preferred_date: null as Date | null,
     address: '',
     postcode: '',
@@ -165,7 +133,6 @@ export function EndOfTenancyBookingForm({ children, onSubmit }: EndOfTenancyBook
   const updateBasicField = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
-    // Handle apartment type selection
     if (field === 'apartment_type' && value) {
       const selectedType = apartmentTypes.find(type => type.id === value);
       if (selectedType) {
@@ -242,7 +209,6 @@ export function EndOfTenancyBookingForm({ children, onSubmit }: EndOfTenancyBook
     setFormData(prev => ({ 
       ...prev, 
       customer,
-      // Auto-populate address fields if customer has address info
       address: customer?.address || prev.address,
       postcode: customer?.postcode || prev.postcode
     }));
@@ -254,14 +220,12 @@ export function EndOfTenancyBookingForm({ children, onSubmit }: EndOfTenancyBook
       const isEnabled = currentServices.includes(serviceType);
       
       if (isEnabled) {
-        // Remove the service type and clear its selections
         return {
           ...prev,
           enabled_cleaning_services: currentServices.filter(s => s !== serviceType),
           [serviceType]: []
         };
       } else {
-        // Add the service type
         return {
           ...prev,
           enabled_cleaning_services: [...currentServices, serviceType]
@@ -274,12 +238,38 @@ export function EndOfTenancyBookingForm({ children, onSubmit }: EndOfTenancyBook
     return (formData.enabled_cleaning_services || []).includes(serviceType);
   };
 
+  const nextStep = () => {
+    if (currentStep < steps.length) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const canProceed = () => {
+    switch (currentStep) {
+      case 1:
+        return formData.property_type !== '';
+      case 2:
+        return formData.customer !== null;
+      case 3:
+        return true; // Optional step
+      case 4:
+        return formData.preferred_date !== null && formData.address !== '';
+      default:
+        return false;
+    }
+  };
+
   const handleSubmit = () => {
     if (onSubmit) {
       const bookingData = {
         ...formData,
         service_type: 'End of Tenancy',
-        // Extract customer info for booking
         first_name: formData.customer?.first_name || '',
         last_name: formData.customer?.last_name || '',
         email: formData.customer?.email || '',
@@ -291,288 +281,219 @@ export function EndOfTenancyBookingForm({ children, onSubmit }: EndOfTenancyBook
     setOpen(false);
   };
 
-  const shouldShowOven = () => {
-    return formData.property_type !== '' && 
-           formData.property_type !== 'shared_house' && 
-           !(formData.property_type === 'apartment' && formData.bedrooms === 0);
-  };
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="w-full h-[95vh] max-w-[95vw] lg:max-w-7xl p-0 overflow-hidden">
-        <DialogHeader className="p-4 lg:p-6 border-b bg-gradient-to-r from-primary/10 via-primary-light/5 to-primary/10">
-          <DialogTitle className="text-xl lg:text-2xl font-bold flex items-center gap-3 text-primary">
-            <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 lg:w-6 lg:h-6" />
-            </div>
+      <DialogContent className="w-full h-[95vh] max-w-[95vw] lg:max-w-6xl p-0 overflow-hidden">
+        {/* Header */}
+        <DialogHeader className="p-6 lg:p-8 border-b bg-gradient-to-r from-slate-50 to-slate-100">
+          <DialogTitle className="text-2xl lg:text-3xl font-bold text-center text-slate-800">
             End of Tenancy Cleaning
           </DialogTitle>
+          <p className="text-slate-600 text-center mt-2">Complete your booking in 4 simple steps</p>
         </DialogHeader>
-        
-        <div className="flex flex-col lg:flex-row gap-0 lg:gap-6 h-[calc(95vh-80px)] lg:h-[calc(95vh-120px)]">
+
+        <div className="flex flex-col lg:flex-row h-[calc(95vh-120px)]">
           {/* Main Content */}
-          <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-4 lg:py-6 space-y-6 lg:space-y-8">
-            
-            {/* Customer Selection */}
-            <Card className="border-0 lg:border shadow-lg bg-gradient-to-r from-primary/5 to-primary-light/5">
-              <CardContent className="p-4 lg:p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Users className="w-4 h-4 text-primary" />
-                  </div>
-                  <h3 className="text-lg lg:text-xl font-bold text-primary">Select Customer</h3>
-                </div>
-                <CustomerSelector 
-                  onCustomerSelect={handleCustomerSelect}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Property Type Selection */}
-            <Card className="border-0 lg:border shadow-lg">
-              <CardContent className="p-4 lg:p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Building className="w-4 h-4 text-primary" />
-                  </div>
-                  <h3 className="text-lg lg:text-xl font-bold text-primary">Property Type</h3>
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:gap-4">
-                  {propertyTypes.map(type => {
-                    const Icon = type.icon;
-                    const isSelected = formData.property_type === type.id;
-                    return (
-                      <Button
-                        key={type.id}
-                        variant={isSelected ? "default" : "outline"}
-                        className={cn(
-                          "h-20 lg:h-24 flex-col gap-2 lg:gap-3 text-sm lg:text-base font-semibold hover:scale-105 transition-all duration-200 border-2",
-                          isSelected 
-                            ? "bg-primary text-primary-foreground border-primary shadow-lg" 
-                            : "border-border hover:border-primary/30 hover:bg-primary/5"
-                        )}
-                        onClick={() => updateBasicField('property_type', type.id)}
-                      >
-                        <div className={cn(
-                          "w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center",
-                          isSelected ? "bg-white/20" : type.colorLight
-                        )}>
+          <div className="flex-1 overflow-y-auto p-6 lg:p-8">
+            {/* Progress Bar */}
+            <div className="mb-8 lg:mb-12">
+              <div className="flex items-center justify-between mb-4">
+                {steps.map((step, index) => {
+                  const Icon = step.icon;
+                  const isActive = currentStep === step.id;
+                  const isCompleted = currentStep > step.id;
+                  
+                  return (
+                    <div key={step.id} className="flex flex-col items-center">
+                      <div className={cn(
+                        "w-12 h-12 lg:w-16 lg:h-16 rounded-full flex items-center justify-center border-2 transition-all duration-300",
+                        isActive ? "bg-primary border-primary text-white shadow-lg scale-110" :
+                        isCompleted ? "bg-green-500 border-green-500 text-white" :
+                        "bg-white border-slate-300 text-slate-400"
+                      )}>
+                        {isCompleted ? (
+                          <Check className="w-5 h-5 lg:w-6 lg:h-6" />
+                        ) : (
                           <Icon className="w-5 h-5 lg:w-6 lg:h-6" />
-                        </div>
-                        {type.label}
-                      </Button>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Apartment Type Selection - Only for apartments */}
-            {formData.property_type === 'apartment' && (
-              <Card className="border-0 lg:border shadow-lg bg-gradient-to-r from-blue-50 to-blue-100/50">
-                <CardContent className="p-4 lg:p-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
-                      <Bed className="w-4 h-4 text-blue-600" />
+                        )}
+                      </div>
+                      <div className="mt-2 text-center">
+                        <p className={cn(
+                          "text-xs lg:text-sm font-medium",
+                          isActive ? "text-primary" : 
+                          isCompleted ? "text-green-600" : "text-slate-500"
+                        )}>
+                          {step.title}
+                        </p>
+                        <p className="text-xs text-slate-400 hidden lg:block">{step.description}</p>
+                      </div>
+                      {index < steps.length - 1 && (
+                        <div className={cn(
+                          "hidden lg:block absolute w-20 h-0.5 translate-x-16 -translate-y-8",
+                          isCompleted ? "bg-green-500" : "bg-slate-300"
+                        )} />
+                      )}
                     </div>
-                    <h3 className="text-lg lg:text-xl font-bold text-blue-700">Apartment Configuration</h3>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Step Content */}
+            <div className="max-w-2xl mx-auto">
+              {/* Step 1: Property Details */}
+              {currentStep === 1 && (
+                <div className="space-y-8">
+                  <div className="text-center mb-8">
+                    <h2 className="text-2xl lg:text-3xl font-bold text-slate-800 mb-3">What type of property?</h2>
+                    <p className="text-slate-600">Select your property type to get started</p>
                   </div>
-                  <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-                    {apartmentTypes.map(type => {
-                      const isSelected = formData.apartment_type === type.id;
+
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    {propertyTypes.map(type => {
+                      const Icon = type.icon;
+                      const isSelected = formData.property_type === type.id;
                       return (
                         <Button
                           key={type.id}
-                          variant={isSelected ? "default" : "outline"}
+                          variant="outline"
                           className={cn(
-                            "h-16 flex-col gap-1 text-xs lg:text-sm font-medium transition-all duration-200",
+                            "h-32 lg:h-40 flex-col gap-4 p-6 border-2 transition-all duration-300 hover:scale-105",
                             isSelected 
-                              ? "bg-blue-500 text-white border-blue-500 shadow-lg" 
-                              : "border-blue-200 hover:border-blue-400 hover:bg-blue-50"
+                              ? "border-primary bg-primary/5 shadow-lg" 
+                              : "border-slate-200 hover:border-primary/50"
                           )}
-                          onClick={() => updateBasicField('apartment_type', type.id)}
+                          onClick={() => updateBasicField('property_type', type.id)}
                         >
-                          <span className="font-semibold">{type.label}</span>
-                          {type.bedrooms === 0 && <span className="text-xs opacity-75">Studio</span>}
+                          <div className={cn(
+                            "w-16 h-16 lg:w-20 lg:h-20 rounded-full flex items-center justify-center",
+                            isSelected ? "bg-primary text-white" : "bg-slate-100 text-slate-600"
+                          )}>
+                            <Icon className="w-8 h-8 lg:w-10 lg:h-10" />
+                          </div>
+                          <div className="text-center">
+                            <h3 className="font-semibold text-lg">{type.label}</h3>
+                            <p className="text-sm text-slate-500">{type.description}</p>
+                          </div>
                         </Button>
                       );
                     })}
                   </div>
-                </CardContent>
-              </Card>
-            )}
 
-            {/* Property Details - Only show after property type is selected */}
-            {formData.property_type && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-                <Card className="border-0 lg:border shadow-lg bg-gradient-to-r from-green-50 to-green-100/50">
-                  <CardContent className="p-4 lg:p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center">
-                        <CheckCircle2 className="w-4 h-4 text-green-600" />
-                      </div>
-                      <h4 className="font-bold text-green-700">Property Condition</h4>
-                    </div>
-                    <div className="space-y-2">
-                      {propertyConditions.map(condition => {
-                        const Icon = condition.icon;
-                        const isSelected = formData.property_condition === condition.id;
-                        return (
-                          <Button
-                            key={condition.id}
-                            variant={isSelected ? "default" : "ghost"}
-                            className={cn(
-                              "w-full justify-start gap-3 h-12 transition-all duration-200",
-                              isSelected 
-                                ? "bg-green-500 text-white shadow-md" 
-                                : "hover:bg-green-100 text-gray-700"
-                            )}
-                            onClick={() => updateBasicField('property_condition', condition.id)}
-                          >
-                            <Icon className="w-4 h-4" />
-                            {condition.label}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-0 lg:border shadow-lg bg-gradient-to-r from-purple-50 to-purple-100/50">
-                  <CardContent className="p-4 lg:p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center">
-                        <Package className="w-4 h-4 text-purple-600" />
-                      </div>
-                      <h4 className="font-bold text-purple-700">Furnished Status</h4>
-                    </div>
-                    <div className="space-y-2">
-                      {propertyStatuses.map(status => {
-                        const Icon = status.icon;
-                        const isSelected = formData.property_status === status.id;
-                        return (
-                          <Button
-                            key={status.id}
-                            variant={isSelected ? "default" : "ghost"}
-                            className={cn(
-                              "w-full justify-start gap-3 h-12 transition-all duration-200",
-                              isSelected 
-                                ? "bg-purple-500 text-white shadow-md" 
-                                : "hover:bg-purple-100 text-gray-700"
-                            )}
-                            onClick={() => updateBasicField('property_status', status.id)}
-                          >
-                            <Icon className="w-4 h-4" />
-                            {status.label}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            {/* Room Configuration - show after property type is selected */}
-            {formData.property_type && formData.property_type !== 'apartment' && (
-              <Card className="border-0 lg:border shadow-lg bg-gradient-to-r from-orange-50 to-orange-100/50">
-                <CardContent className="p-4 lg:p-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center">
-                      <Bed className="w-4 h-4 text-orange-600" />
-                    </div>
-                    <h3 className="text-lg lg:text-xl font-bold text-orange-700">Room Configuration</h3>
-                  </div>
-                  
-                  {/* House bedrooms */}
-                  {formData.property_type === 'house' && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-                      <div className="flex items-center justify-between p-4 border-2 border-orange-200 rounded-xl bg-white">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                            <Bed className="w-5 h-5 text-orange-600" />
-                          </div>
-                          <span className="font-semibold">Bedrooms</span>
+                  {/* Apartment Configuration */}
+                  {formData.property_type === 'apartment' && (
+                    <Card className="mt-8 border-2 border-blue-200 bg-blue-50/50">
+                      <CardContent className="p-6">
+                        <h3 className="text-xl font-semibold mb-4 text-blue-800">Choose apartment size</h3>
+                        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                          {apartmentTypes.map(type => {
+                            const isSelected = formData.apartment_type === type.id;
+                            return (
+                              <Button
+                                key={type.id}
+                                variant="outline"
+                                className={cn(
+                                  "h-20 flex-col gap-1 border-2 transition-all duration-200",
+                                  isSelected 
+                                    ? "border-blue-500 bg-blue-500 text-white shadow-md" 
+                                    : "border-blue-200 hover:border-blue-400 hover:bg-blue-50"
+                                )}
+                                onClick={() => updateBasicField('apartment_type', type.id)}
+                              >
+                                <span className="font-semibold">{type.label}</span>
+                                <span className="text-xs opacity-75">{type.description}</span>
+                              </Button>
+                            );
+                          })}
                         </div>
-                        <div className="flex items-center gap-3">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => updateCount('bedrooms', false)}
-                            disabled={formData.bedrooms <= 1}
-                            className="h-10 w-10 p-0 rounded-full border-orange-200 hover:bg-orange-100"
-                          >
-                            <Minus className="w-4 h-4" />
-                          </Button>
-                          <Badge variant="secondary" className="min-w-[3rem] justify-center text-base font-bold px-4 py-2 bg-orange-100 text-orange-700">
-                            {formData.bedrooms}
-                          </Badge>
-                          <Button
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => updateCount('bedrooms', true)}
-                            disabled={formData.bedrooms >= 8}
-                            className="h-10 w-10 p-0 rounded-full border-orange-200 hover:bg-orange-100"
-                          >
-                            <Plus className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 border-2 border-orange-200 rounded-xl bg-white">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                            <Bath className="w-5 h-5 text-orange-600" />
-                          </div>
-                          <span className="font-semibold">Bathrooms</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => updateCount('bathrooms', false)}
-                            disabled={formData.bathrooms <= 1}
-                            className="h-10 w-10 p-0 rounded-full border-orange-200 hover:bg-orange-100"
-                          >
-                            <Minus className="w-4 h-4" />
-                          </Button>
-                          <Badge variant="secondary" className="min-w-[3rem] justify-center text-base font-bold px-4 py-2 bg-orange-100 text-orange-700">
-                            {formData.bathrooms}
-                          </Badge>
-                          <Button
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => updateCount('bathrooms', true)}
-                            disabled={formData.bathrooms >= 10}
-                            className="h-10 w-10 p-0 rounded-full border-orange-200 hover:bg-orange-100"
-                          >
-                            <Plus className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
                   )}
 
-                  {/* Shared house specific */}
+                  {/* House Configuration */}
+                  {formData.property_type === 'house' && (
+                    <Card className="mt-8 border-2 border-green-200 bg-green-50/50">
+                      <CardContent className="p-6">
+                        <h3 className="text-xl font-semibold mb-6 text-green-800">Configure your house</h3>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          <div className="text-center">
+                            <Label className="text-sm font-semibold mb-4 block text-green-700">Bedrooms</Label>
+                            <div className="flex items-center justify-center gap-4">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => updateCount('bedrooms', false)}
+                                disabled={formData.bedrooms <= 1}
+                                className="h-12 w-12 rounded-full border-2 border-green-300"
+                              >
+                                <Minus className="w-4 h-4" />
+                              </Button>
+                              <div className="w-16 h-16 rounded-full bg-green-500 text-white flex items-center justify-center">
+                                <span className="text-2xl font-bold">{formData.bedrooms}</span>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => updateCount('bedrooms', true)}
+                                disabled={formData.bedrooms >= 8}
+                                className="h-12 w-12 rounded-full border-2 border-green-300"
+                              >
+                                <Plus className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          <div className="text-center">
+                            <Label className="text-sm font-semibold mb-4 block text-green-700">Bathrooms</Label>
+                            <div className="flex items-center justify-center gap-4">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => updateCount('bathrooms', false)}
+                                disabled={formData.bathrooms <= 1}
+                                className="h-12 w-12 rounded-full border-2 border-green-300"
+                              >
+                                <Minus className="w-4 h-4" />
+                              </Button>
+                              <div className="w-16 h-16 rounded-full bg-green-500 text-white flex items-center justify-center">
+                                <span className="text-2xl font-bold">{formData.bathrooms}</span>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => updateCount('bathrooms', true)}
+                                disabled={formData.bathrooms >= 10}
+                                className="h-12 w-12 rounded-full border-2 border-green-300"
+                              >
+                                <Plus className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Shared House Configuration */}
                   {formData.property_type === 'shared_house' && (
-                    <div className="space-y-4">
-                      <div>
-                        <Label className="text-sm font-semibold mb-3 block text-orange-700">Bedroom Size</Label>
+                    <Card className="mt-8 border-2 border-orange-200 bg-orange-50/50">
+                      <CardContent className="p-6">
+                        <h3 className="text-xl font-semibold mb-4 text-orange-800">Your bedroom size</h3>
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                           {sharedHouseBedroomSizes.map(size => {
                             const isSelected = formData.shared_house_bedroom_size === size.id;
                             return (
                               <Button
                                 key={size.id}
-                                variant={isSelected ? "default" : "outline"}
+                                variant="outline"
                                 className={cn(
-                                  "h-12 transition-all duration-200",
+                                  "h-16 border-2 transition-all duration-200",
                                   isSelected 
-                                    ? "bg-orange-500 text-white border-orange-500" 
-                                    : "border-orange-200 hover:border-orange-400 hover:bg-orange-50"
+                                    ? "border-orange-500 bg-orange-500 text-white" 
+                                    : "border-orange-200 hover:border-orange-400"
                                 )}
                                 onClick={() => updateBasicField('shared_house_bedroom_size', size.id)}
                               >
@@ -581,397 +502,447 @@ export function EndOfTenancyBookingForm({ children, onSubmit }: EndOfTenancyBook
                             );
                           })}
                         </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Property Condition & Status */}
+                  {formData.property_type && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+                      <Card className="border-2 border-slate-200">
+                        <CardContent className="p-6">
+                          <h4 className="font-semibold mb-4 text-slate-700">Property Condition</h4>
+                          <div className="space-y-2">
+                            {propertyConditions.map(condition => {
+                              const Icon = condition.icon;
+                              const isSelected = formData.property_condition === condition.id;
+                              return (
+                                <Button
+                                  key={condition.id}
+                                  variant="ghost"
+                                  className={cn(
+                                    "w-full justify-start gap-3 h-12",
+                                    isSelected ? "bg-primary text-white" : "hover:bg-slate-100"
+                                  )}
+                                  onClick={() => updateBasicField('property_condition', condition.id)}
+                                >
+                                  <Icon className="w-4 h-4" />
+                                  {condition.label}
+                                </Button>
+                              );
+                            })}
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="border-2 border-slate-200">
+                        <CardContent className="p-6">
+                          <h4 className="font-semibold mb-4 text-slate-700">Furnished Status</h4>
+                          <div className="space-y-2">
+                            {propertyStatuses.map(status => {
+                              const Icon = status.icon;
+                              const isSelected = formData.property_status === status.id;
+                              return (
+                                <Button
+                                  key={status.id}
+                                  variant="ghost"
+                                  className={cn(
+                                    "w-full justify-start gap-3 h-12",
+                                    isSelected ? "bg-primary text-white" : "hover:bg-slate-100"
+                                  )}
+                                  onClick={() => updateBasicField('property_status', status.id)}
+                                >
+                                  <Icon className="w-4 h-4" />
+                                  {status.label}
+                                </Button>
+                              );
+                            })}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Step 2: Customer Selection */}
+              {currentStep === 2 && (
+                <div className="space-y-8">
+                  <div className="text-center mb-8">
+                    <h2 className="text-2xl lg:text-3xl font-bold text-slate-800 mb-3">Choose customer</h2>
+                    <p className="text-slate-600">Select an existing customer or create a new one</p>
+                  </div>
+
+                  <Card className="border-2 border-slate-200 max-w-lg mx-auto">
+                    <CardContent className="p-8">
+                      <CustomerSelector onCustomerSelect={handleCustomerSelect} />
+                      
+                      {formData.customer && (
+                        <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                              <Check className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-green-800">
+                                {formData.customer.first_name} {formData.customer.last_name}
+                              </p>
+                              <p className="text-sm text-green-600">{formData.customer.email}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Step 3: Additional Services */}
+              {currentStep === 3 && (
+                <div className="space-y-8">
+                  <div className="text-center mb-8">
+                    <h2 className="text-2xl lg:text-3xl font-bold text-slate-800 mb-3">Additional services</h2>
+                    <p className="text-slate-600">Add extra rooms and cleaning services (optional)</p>
+                  </div>
+
+                  {/* Additional Rooms */}
+                  <Card className="border-2 border-slate-200">
+                    <CardContent className="p-6">
+                      <h3 className="text-xl font-semibold mb-4">Additional Rooms</h3>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {additionalFeatures.map(feature => {
+                          const Icon = feature.icon;
+                          const quantity = getItemQuantity('additional_features', feature.id);
+                          return (
+                            <div key={feature.id} className="flex items-center justify-between p-4 border-2 border-slate-200 rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <Icon className="w-5 h-5 text-slate-600" />
+                                <span className="font-medium">{feature.label}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {quantity > 0 && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => decrementArrayItem('additional_features', feature.id)}
+                                    className="h-8 w-8 p-0 rounded-full"
+                                  >
+                                    <Minus className="w-3 h-3" />
+                                  </Button>
+                                )}
+                                {quantity > 0 && (
+                                  <Badge className="min-w-[1.5rem] justify-center bg-primary">{quantity}</Badge>
+                                )}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => toggleArrayItem('additional_features', feature)}
+                                  className="h-8 w-8 p-0 rounded-full hover:bg-primary hover:text-white"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Cleaning Services */}
+                  <Card className="border-2 border-slate-200">
+                    <CardContent className="p-6">
+                      <h3 className="text-xl font-semibold mb-4">Extra Cleaning Services</h3>
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                        {cleaningServiceTypes.map(serviceType => {
+                          const Icon = serviceType.icon;
+                          const isEnabled = isServiceEnabled(serviceType.id);
+                          return (
+                            <Button
+                              key={serviceType.id}
+                              variant="outline"
+                              className={cn(
+                                "h-20 flex-col gap-2 border-2 transition-all duration-200",
+                                isEnabled 
+                                  ? "border-primary bg-primary text-white" 
+                                  : "border-slate-200 hover:border-primary/50"
+                              )}
+                              onClick={() => toggleServiceType(serviceType.id)}
+                            >
+                              <Icon className="w-6 h-6" />
+                              <span className="text-sm font-medium">{serviceType.label}</span>
+                            </Button>
+                          );
+                        })}
                       </div>
 
-                      <div>
-                        <Label className="text-sm font-semibold mb-3 block text-orange-700">Additional Services</Label>
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                          {sharedHouseServices.map(service => {
-                            const Icon = service.icon;
-                            const quantity = getItemQuantity('shared_house_services', service.id);
-                            return (
-                              <div key={service.id} className="flex items-center justify-between p-3 border-2 border-orange-200 rounded-lg bg-white">
-                                <div className="flex items-center gap-2">
-                                  <Icon className="w-4 h-4 text-orange-600" />
-                                  <span className="text-sm font-medium">{service.label}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  {quantity > 0 && (
+                      {/* Service Details */}
+                      {isServiceEnabled('carpet_cleaning') && (
+                        <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                          <h4 className="font-semibold mb-3 text-blue-800">Carpet Cleaning Rooms</h4>
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                            {carpetRooms.map(room => {
+                              const Icon = room.icon;
+                              const quantity = getItemQuantity('carpet_cleaning', room.id);
+                              return (
+                                <div key={room.id} className="flex items-center justify-between p-3 bg-white rounded border">
+                                  <div className="flex items-center gap-2">
+                                    <Icon className="w-4 h-4 text-blue-600" />
+                                    <span className="text-sm font-medium">{room.label}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {quantity > 0 && (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => decrementArrayItem('carpet_cleaning', room.id)}
+                                        className="h-7 w-7 p-0 rounded-full"
+                                      >
+                                        <Minus className="w-3 h-3" />
+                                      </Button>
+                                    )}
+                                    {quantity > 0 && (
+                                      <Badge className="bg-blue-500 text-white text-xs">{quantity}</Badge>
+                                    )}
                                     <Button
                                       variant="outline"
                                       size="sm"
-                                      onClick={() => decrementArrayItem('shared_house_services', service.id)}
-                                      className="h-8 w-8 p-0 rounded-full border-orange-200"
+                                      onClick={() => toggleArrayItem('carpet_cleaning', room)}
+                                      className="h-7 w-7 p-0 rounded-full"
                                     >
-                                      <Minus className="w-3 h-3" />
+                                      <Plus className="w-3 h-3" />
                                     </Button>
-                                  )}
-                                  {quantity > 0 && (
-                                    <Badge variant="secondary" className="min-w-[1.5rem] justify-center bg-orange-100 text-orange-700">
-                                      {quantity}
-                                    </Badge>
-                                  )}
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => toggleArrayItem('shared_house_services', service)}
-                                    className="h-8 w-8 p-0 rounded-full border-orange-200 hover:bg-orange-100"
-                                  >
-                                    <Plus className="w-3 h-3" />
-                                  </Button>
+                                  </div>
                                 </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Additional Features */}
-            {formData.property_type && (
-              <Card className="border-0 lg:border shadow-lg bg-gradient-to-r from-indigo-50 to-indigo-100/50">
-                <CardContent className="p-4 lg:p-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-8 h-8 rounded-full bg-indigo-500/10 flex items-center justify-center">
-                      <Building className="w-4 h-4 text-indigo-600" />
-                    </div>
-                    <h3 className="text-lg lg:text-xl font-bold text-indigo-700">Additional Rooms</h3>
-                  </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    {additionalFeatures.map(feature => {
-                      const Icon = feature.icon;
-                      const quantity = getItemQuantity('additional_features', feature.id);
-                      return (
-                        <div key={feature.id} className="flex items-center justify-between p-4 border-2 border-indigo-200 rounded-lg bg-white hover:shadow-md transition-shadow">
-                          <div className="flex items-center gap-3">
-                            <div className={cn("w-8 h-8 rounded-full flex items-center justify-center", feature.color)}>
-                              <Icon className="w-4 h-4" />
-                            </div>
-                            <span className="font-medium">{feature.label}</span>
+                              );
+                            })}
                           </div>
-                          <div className="flex items-center gap-2">
-                            {quantity > 0 && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => decrementArrayItem('additional_features', feature.id)}
-                                className="h-8 w-8 p-0 rounded-full border-indigo-200"
-                              >
-                                <Minus className="w-3 h-3" />
-                              </Button>
-                            )}
-                            {quantity > 0 && (
-                              <Badge className="min-w-[1.5rem] justify-center bg-indigo-500 text-white">
-                                {quantity}
-                              </Badge>
-                            )}
+                        </div>
+                      )}
+
+                      {isServiceEnabled('upholstery_cleaning') && (
+                        <div className="mb-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                          <h4 className="font-semibold mb-3 text-green-800">Upholstery Items</h4>
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                            {upholsteryOptions.map(item => {
+                              const Icon = item.icon;
+                              const quantity = getItemQuantity('upholstery_cleaning', item.id);
+                              return (
+                                <div key={item.id} className="flex items-center justify-between p-3 bg-white rounded border">
+                                  <div className="flex items-center gap-2">
+                                    <Icon className="w-4 h-4 text-green-600" />
+                                    <span className="text-sm font-medium">{item.label}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {quantity > 0 && (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => decrementArrayItem('upholstery_cleaning', item.id)}
+                                        className="h-7 w-7 p-0 rounded-full"
+                                      >
+                                        <Minus className="w-3 h-3" />
+                                      </Button>
+                                    )}
+                                    {quantity > 0 && (
+                                      <Badge className="bg-green-500 text-white text-xs">{quantity}</Badge>
+                                    )}
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => toggleArrayItem('upholstery_cleaning', item)}
+                                      className="h-7 w-7 p-0 rounded-full"
+                                    >
+                                      <Plus className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {isServiceEnabled('mattress_cleaning') && (
+                        <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                          <h4 className="font-semibold mb-3 text-purple-800">Mattress Cleaning</h4>
+                          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                            {mattressOptions.map(mattress => {
+                              const Icon = mattress.icon;
+                              const quantity = getItemQuantity('mattress_cleaning', mattress.id);
+                              return (
+                                <div key={mattress.id} className="flex items-center justify-between p-3 bg-white rounded border">
+                                  <div className="flex items-center gap-2">
+                                    <Icon className="w-4 h-4 text-purple-600" />
+                                    <span className="text-sm font-medium">{mattress.label}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {quantity > 0 && (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => decrementArrayItem('mattress_cleaning', mattress.id)}
+                                        className="h-7 w-7 p-0 rounded-full"
+                                      >
+                                        <Minus className="w-3 h-3" />
+                                      </Button>
+                                    )}
+                                    {quantity > 0 && (
+                                      <Badge className="bg-purple-500 text-white text-xs">{quantity}</Badge>
+                                    )}
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => toggleArrayItem('mattress_cleaning', mattress)}
+                                      className="h-7 w-7 p-0 rounded-full"
+                                    >
+                                      <Plus className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Step 4: Date & Details */}
+              {currentStep === 4 && (
+                <div className="space-y-8">
+                  <div className="text-center mb-8">
+                    <h2 className="text-2xl lg:text-3xl font-bold text-slate-800 mb-3">When and where?</h2>
+                    <p className="text-slate-600">Choose your preferred date and confirm the address</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <Card className="border-2 border-slate-200">
+                      <CardContent className="p-6">
+                        <h3 className="text-xl font-semibold mb-4">Preferred Date</h3>
+                        <Popover>
+                          <PopoverTrigger asChild>
                             <Button
                               variant="outline"
-                              size="sm"
-                              onClick={() => toggleArrayItem('additional_features', feature)}
-                              className="h-8 w-8 p-0 rounded-full border-indigo-200 hover:bg-indigo-100"
+                              className={cn(
+                                "w-full justify-start text-left font-normal h-16 text-lg border-2",
+                                !formData.preferred_date && "text-muted-foreground"
+                              )}
                             >
-                              <Plus className="w-3 h-3" />
+                              <CalendarIcon className="mr-3 h-6 w-6" />
+                              {formData.preferred_date ? format(formData.preferred_date, "EEEE, MMMM do, yyyy") : "Choose date"}
                             </Button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={formData.preferred_date || undefined}
+                              onSelect={(date) => updateBasicField('preferred_date', date)}
+                              disabled={(date) => date < new Date()}
+                              initialFocus
+                              className={cn("p-3 pointer-events-auto")}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </CardContent>
+                    </Card>
 
-            {/* Cleaning Services Selection */}
-            {formData.property_type && (
-              <Card className="border-0 lg:border shadow-lg bg-gradient-to-r from-pink-50 to-pink-100/50">
-                <CardContent className="p-4 lg:p-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-8 h-8 rounded-full bg-pink-500/10 flex items-center justify-center">
-                      <Sparkles className="w-4 h-4 text-pink-600" />
-                    </div>
-                    <h3 className="text-lg lg:text-xl font-bold text-pink-700">Cleaning Services</h3>
-                  </div>
-                  
-                  {/* Service Type Selection */}
-                  <div className="mb-6">
-                    <h4 className="font-semibold mb-3 text-pink-700">Select Services Needed:</h4>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                      {cleaningServiceTypes.map(serviceType => {
-                        const Icon = serviceType.icon;
-                        const isEnabled = isServiceEnabled(serviceType.id);
-                        return (
-                          <Button
-                            key={serviceType.id}
-                            variant={isEnabled ? "default" : "outline"}
-                            className={cn(
-                              "h-16 flex-col gap-2 transition-all duration-200",
-                              isEnabled 
-                                ? `${serviceType.color} text-white shadow-lg` 
-                                : "border-pink-200 hover:border-pink-400 hover:bg-pink-50"
-                            )}
-                            onClick={() => toggleServiceType(serviceType.id)}
-                          >
-                            <Icon className="w-5 h-5" />
-                            <span className="text-xs font-medium">{serviceType.label}</span>
-                          </Button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Carpet Cleaning Options */}
-                  {isServiceEnabled('carpet_cleaning') && (
-                    <div className="mb-6 p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
-                      <h4 className="font-semibold mb-3 text-blue-700 flex items-center gap-2">
-                        <Home className="w-4 h-4" />
-                        Carpet Cleaning Rooms
-                      </h4>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                        {carpetRooms.map(room => {
-                          const Icon = room.icon;
-                          const quantity = getItemQuantity('carpet_cleaning', room.id);
-                          return (
-                            <div key={room.id} className="flex items-center justify-between p-3 bg-white border-2 border-blue-200 rounded-lg">
-                              <div className="flex items-center gap-2">
-                                <div className={cn("w-6 h-6 rounded-full flex items-center justify-center", room.color)}>
-                                  <Icon className="w-3 h-3" />
-                                </div>
-                                <span className="text-sm font-medium">{room.label}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {quantity > 0 && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => decrementArrayItem('carpet_cleaning', room.id)}
-                                    className="h-7 w-7 p-0 rounded-full"
-                                  >
-                                    <Minus className="w-3 h-3" />
-                                  </Button>
-                                )}
-                                {quantity > 0 && (
-                                  <Badge className="min-w-[1.5rem] justify-center bg-blue-500 text-white text-xs">
-                                    {quantity}
-                                  </Badge>
-                                )}
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => toggleArrayItem('carpet_cleaning', room)}
-                                  className="h-7 w-7 p-0 rounded-full hover:bg-blue-100"
-                                >
-                                  <Plus className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Upholstery Cleaning Options */}
-                  {isServiceEnabled('upholstery_cleaning') && (
-                    <div className="mb-6 p-4 bg-green-50 rounded-lg border-2 border-green-200">
-                      <h4 className="font-semibold mb-3 text-green-700 flex items-center gap-2">
-                        <Sofa className="w-4 h-4" />
-                        Upholstery Cleaning Items
-                      </h4>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                        {upholsteryOptions.map(item => {
-                          const Icon = item.icon;
-                          const quantity = getItemQuantity('upholstery_cleaning', item.id);
-                          return (
-                            <div key={item.id} className="flex items-center justify-between p-3 bg-white border-2 border-green-200 rounded-lg">
-                              <div className="flex items-center gap-2">
-                                <div className={cn("w-6 h-6 rounded-full flex items-center justify-center", item.color)}>
-                                  <Icon className="w-3 h-3" />
-                                </div>
-                                <span className="text-sm font-medium">{item.label}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {quantity > 0 && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => decrementArrayItem('upholstery_cleaning', item.id)}
-                                    className="h-7 w-7 p-0 rounded-full"
-                                  >
-                                    <Minus className="w-3 h-3" />
-                                  </Button>
-                                )}
-                                {quantity > 0 && (
-                                  <Badge className="min-w-[1.5rem] justify-center bg-green-500 text-white text-xs">
-                                    {quantity}
-                                  </Badge>
-                                )}
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => toggleArrayItem('upholstery_cleaning', item)}
-                                  className="h-7 w-7 p-0 rounded-full hover:bg-green-100"
-                                >
-                                  <Plus className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Mattress Cleaning Options */}
-                  {isServiceEnabled('mattress_cleaning') && (
-                    <div className="mb-6 p-4 bg-purple-50 rounded-lg border-2 border-purple-200">
-                      <h4 className="font-semibold mb-3 text-purple-700 flex items-center gap-2">
-                        <Bed className="w-4 h-4" />
-                        Mattress Cleaning
-                      </h4>
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                        {mattressOptions.map(mattress => {
-                          const Icon = mattress.icon;
-                          const quantity = getItemQuantity('mattress_cleaning', mattress.id);
-                          return (
-                            <div key={mattress.id} className="flex items-center justify-between p-3 bg-white border-2 border-purple-200 rounded-lg">
-                              <div className="flex items-center gap-2">
-                                <div className={cn("w-6 h-6 rounded-full flex items-center justify-center", mattress.color)}>
-                                  <Icon className="w-3 h-3" />
-                                </div>
-                                <span className="text-sm font-medium">{mattress.label}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {quantity > 0 && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => decrementArrayItem('mattress_cleaning', mattress.id)}
-                                    className="h-7 w-7 p-0 rounded-full"
-                                  >
-                                    <Minus className="w-3 h-3" />
-                                  </Button>
-                                )}
-                                {quantity > 0 && (
-                                  <Badge className="min-w-[1.5rem] justify-center bg-purple-500 text-white text-xs">
-                                    {quantity}
-                                  </Badge>
-                                )}
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => toggleArrayItem('mattress_cleaning', mattress)}
-                                  className="h-7 w-7 p-0 rounded-full hover:bg-purple-100"
-                                >
-                                  <Plus className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Date & Address */}
-            {formData.property_type && (
-              <Card className="border-0 lg:border shadow-lg bg-gradient-to-r from-teal-50 to-teal-100/50">
-                <CardContent className="p-4 lg:p-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-8 h-8 rounded-full bg-teal-500/10 flex items-center justify-center">
-                      <CalendarIcon className="w-4 h-4 text-teal-600" />
-                    </div>
-                    <h3 className="text-lg lg:text-xl font-bold text-teal-700">Booking Details</h3>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div>
-                      <Label className="text-sm font-semibold mb-3 block text-teal-700">Preferred Date</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal h-12 border-2 border-teal-200 hover:border-teal-400",
-                              !formData.preferred_date && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4 text-teal-600" />
-                            {formData.preferred_date ? format(formData.preferred_date, "PPP") : <span>Pick a date</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={formData.preferred_date || undefined}
-                            onSelect={(date) => updateBasicField('preferred_date', date)}
-                            disabled={(date) => date < new Date()}
-                            initialFocus
-                            className={cn("p-3 pointer-events-auto")}
+                    <Card className="border-2 border-slate-200">
+                      <CardContent className="p-6 space-y-4">
+                        <h3 className="text-xl font-semibold">Property Address</h3>
+                        <div>
+                          <Label htmlFor="address" className="text-sm font-medium mb-2 block">Address</Label>
+                          <Input
+                            id="address"
+                            value={formData.address}
+                            onChange={(e) => updateBasicField('address', e.target.value)}
+                            placeholder="Enter property address"
+                            className="h-12 text-lg border-2"
                           />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="address" className="text-sm font-semibold mb-3 block text-teal-700">Address</Label>
-                        <Input
-                          id="address"
-                          value={formData.address}
-                          onChange={(e) => updateBasicField('address', e.target.value)}
-                          placeholder="Property address"
-                          className="h-12 border-2 border-teal-200 focus:border-teal-400"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="postcode" className="text-sm font-semibold mb-3 block text-teal-700">Postcode</Label>
-                        <Input
-                          id="postcode"
-                          value={formData.postcode}
-                          onChange={(e) => updateBasicField('postcode', e.target.value)}
-                          placeholder="Postcode"
-                          className="h-12 border-2 border-teal-200 focus:border-teal-400"
-                        />
-                      </div>
-                    </div>
+                        </div>
+                        <div>
+                          <Label htmlFor="postcode" className="text-sm font-medium mb-2 block">Postcode</Label>
+                          <Input
+                            id="postcode"
+                            value={formData.postcode}
+                            onChange={(e) => updateBasicField('postcode', e.target.value)}
+                            placeholder="Enter postcode"
+                            className="h-12 text-lg border-2"
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
-                  
-                  <div className="mt-6">
-                    <Label htmlFor="notes" className="text-sm font-semibold mb-3 block text-teal-700">Additional Notes</Label>
-                    <Textarea
-                      id="notes"
-                      value={formData.additional_notes}
-                      onChange={(e) => updateBasicField('additional_notes', e.target.value)}
-                      placeholder="Any special requirements, access instructions, or additional information..."
-                      rows={4}
-                      className="resize-none border-2 border-teal-200 focus:border-teal-400"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+
+                  <Card className="border-2 border-slate-200">
+                    <CardContent className="p-6">
+                      <h3 className="text-xl font-semibold mb-4">Additional Notes</h3>
+                      <Textarea
+                        value={formData.additional_notes}
+                        onChange={(e) => updateBasicField('additional_notes', e.target.value)}
+                        placeholder="Any special requirements, access instructions, or additional information..."
+                        rows={4}
+                        className="resize-none text-lg border-2"
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </div>
           </div>
-          
+
           {/* Sidebar - Desktop only */}
-          <div className="hidden lg:block lg:w-80 shrink-0">
+          <div className="hidden lg:block lg:w-80 shrink-0 border-l bg-slate-50">
             <BookingSidebar formData={formData} />
           </div>
         </div>
 
-        {/* Mobile Summary Card */}
-        <div className="lg:hidden border-t bg-gradient-to-r from-primary/5 to-primary-light/5 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Estimated Total</p>
+        {/* Navigation Footer */}
+        <div className="border-t bg-white p-4 lg:p-6">
+          <div className="flex items-center justify-between max-w-2xl mx-auto">
+            <Button
+              variant="outline"
+              onClick={prevStep}
+              disabled={currentStep === 1}
+              className="px-6 py-3"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
+
+            <div className="lg:hidden">
+              <p className="text-sm text-slate-600">Step {currentStep} of {steps.length}</p>
+            </div>
+
+            {currentStep < steps.length ? (
+              <Button
+                onClick={nextStep}
+                disabled={!canProceed()}
+                className="px-8 py-3 text-lg font-semibold"
+              >
+                Continue
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            ) : (
+              <Button
+                onClick={handleSubmit}
+                disabled={!canProceed()}
+                className="px-8 py-3 text-lg font-semibold bg-green-600 hover:bg-green-700"
+              >
+                Create Booking
+                <Check className="w-4 h-4 ml-2" />
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile Summary - Only show on step 4 */}
+        {currentStep === 4 && (
+          <div className="lg:hidden border-t bg-slate-50 p-4">
+            <div className="text-center">
+              <p className="text-sm text-slate-600">Estimated Total</p>
               <p className="text-2xl font-bold text-primary">£{(() => {
                 let basePrice = 0;
                 if (formData.property_type === 'apartment') {
@@ -994,29 +965,8 @@ export function EndOfTenancyBookingForm({ children, onSubmit }: EndOfTenancyBook
                 return basePrice;
               })()}</p>
             </div>
-            <Button 
-              onClick={handleSubmit}
-              className="px-8 py-3 h-auto font-semibold shadow-lg hover:shadow-xl transition-shadow"
-              disabled={!formData.customer || !formData.property_type || !formData.preferred_date}
-            >
-              Create Booking
-            </Button>
           </div>
-        </div>
-
-        {/* Desktop Submit Button */}
-        <div className="hidden lg:flex justify-end gap-3 p-6 border-t bg-gradient-to-r from-primary/5 to-primary-light/5">
-          <Button variant="outline" onClick={() => setOpen(false)} className="px-6">
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSubmit}
-            className="px-8 shadow-lg hover:shadow-xl transition-shadow"
-            disabled={!formData.customer || !formData.property_type || !formData.preferred_date}
-          >
-            Create Booking
-          </Button>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );
