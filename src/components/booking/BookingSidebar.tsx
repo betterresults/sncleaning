@@ -67,10 +67,12 @@ export function BookingSidebar({ formData }: BookingSidebarProps) {
   };
 
   return (
-    <Card className="sticky top-4">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Calculator className="w-5 h-5 text-primary" />
+    <Card className="sticky top-4 lg:w-80 hidden lg:block border-0 lg:border shadow-lg">
+      <CardHeader className="pb-3 bg-gradient-to-r from-primary/5 to-primary-light/5 rounded-t-lg">
+        <CardTitle className="flex items-center gap-2 text-lg font-bold text-primary">
+          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+            <Calculator className="w-4 h-4" />
+          </div>
           Booking Summary
         </CardTitle>
       </CardHeader>
@@ -150,9 +152,6 @@ export function BookingSidebar({ formData }: BookingSidebarProps) {
           <div className="text-right">
             <div className="text-2xl font-bold text-primary">
               £{calculatePrice()}
-            </div>
-            <div className="text-xs text-muted-foreground">
-              Final price may vary
             </div>
           </div>
         </div>
