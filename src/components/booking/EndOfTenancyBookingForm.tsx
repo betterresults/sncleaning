@@ -289,7 +289,7 @@ export function EndOfTenancyBookingForm({ onBookingCreated, children, onSubmit }
 
   const handleCustomerSelect = (customer: any) => {
     updateField('customerId', customer.id);
-    updateField('customerName', customer.name);
+    updateField('customerName', `${customer.first_name} ${customer.last_name}`);
   };
 
   const nextStep = () => {
@@ -598,7 +598,6 @@ export function EndOfTenancyBookingForm({ onBookingCreated, children, onSubmit }
                   <div>
                     <Label className="text-base font-semibold mb-3 block">Select Customer</Label>
                     <CustomerSelector
-                      selectedCustomerId={formData.customerId}
                       onCustomerSelect={handleCustomerSelect}
                     />
                   </div>
