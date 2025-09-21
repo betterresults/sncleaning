@@ -117,13 +117,10 @@ const mattressOptions = [
 ];
 
 const steps = [
-  { id: 'property', label: 'Property Type', icon: Home },
-  { id: 'condition', label: 'Property Condition', icon: Info },
-  { id: 'furnished', label: 'Furnished Status', icon: Package },
-  { id: 'details', label: 'Room Details', icon: Grid3X3 },
+  { id: 'property', label: 'Property', icon: Home },
   { id: 'extras', label: 'Extras', icon: Plus },
   { id: 'services', label: 'Services', icon: CheckSquare },
-  { id: 'booking', label: 'Booking Details', icon: Calendar },
+  { id: 'booking', label: 'Booking', icon: Calendar },
 ];
 
 interface FormData {
@@ -311,26 +308,20 @@ export function EndOfTenancyBookingForm({ onBookingCreated, children, onSubmit }
     setCurrentStep(stepId);
   };
 
-  const canProceed = () => {
-    switch (currentStep) {
-      case 'property':
-        return formData.propertyType;
-      case 'condition':
-        return formData.condition;
-      case 'furnished':
-        return formData.status;
-      case 'details':
-        return formData.bedrooms >= 0 && formData.bathrooms >= 0;
-      case 'extras':
-        return true; // Optional step
-      case 'services':
-        return true; // Optional step
-      case 'booking':
-        return formData.customerId && formData.preferredDate && formData.address;
-      default:
-        return false;
-    }
-  };
+const canProceed = () => {
+  switch (currentStep) {
+    case 'property':
+      return !!(formData.propertyType && formData.condition && formData.status);
+    case 'extras':
+      return true; // Optional step
+    case 'services':
+      return true; // Optional step
+    case 'booking':
+      return !!(formData.customerId && formData.preferredDate && formData.address);
+    default:
+      return false;
+  }
+};
 
   const handleSubmit = async () => {
     if (!canProceed()) return;
@@ -470,36 +461,159 @@ export function EndOfTenancyBookingForm({ onBookingCreated, children, onSubmit }
 
               {/* Form Content */}
               <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50">
-                {/* Step 1: Property Type */}
-                {currentStep === 'property' && (
-                  <div className="space-y-6">
-                    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200/60">
-                      <Label className="text-xl font-semibold mb-6 block text-primary">Select Property Type</Label>
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                        {propertyTypes.map((type) => {
-                          const Icon = type.icon;
-                          return (
-                            <Card 
-                              key={type.id}
-                              className={`cursor-pointer transition-all hover:shadow-lg border-2 ${
-                                formData.propertyType === type.id 
-                                  ? 'border-accent bg-accent/10 shadow-lg' 
-                                  : 'border-slate-200 hover:border-accent/50 hover:bg-accent/5'
-                              }`}
-                              onClick={() => updateField('propertyType', type.id)}
-                            >
-                              <CardContent className="p-6 text-center">
-                                <Icon className="w-12 h-12 mx-auto mb-3 text-primary" />
-                                <div className="font-semibold text-base mb-1">{type.label}</div>
-                                <div className="text-sm text-accent font-medium">From £{type.basePrice}</div>
-                              </CardContent>
-                            </Card>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                )}
+{/* Step 1: Property (Type + Condition + Status + Rooms) */}
+{currentStep === 'property' && (
+  <div className="space-y-6">
+    {/* Property Type */}
+    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200/60">
+      <Label className="text-xl font-semibold mb-6 block text-primary">Select Property Type</Label>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {propertyTypes.map((type) => {
+          const Icon = type.icon;
+          return (
+            <Card 
+              key={type.id}
+              className={`cursor-pointer transition-all hover:shadow-lg border-2 ${
+                formData.propertyType === type.id 
+                  ? 'border-accent bg-accent/10 shadow-lg' 
+                  : 'border-slate-200 hover:border-accent/50 hover:bg-accent/5'
+              }`}
+              onClick={() => updateField('propertyType', type.id)}
+            >
+              <CardContent className="p-6 text-center">
+                <Icon className="w-12 h-12 mx-auto mb-3 text-primary" />
+                <div className="font-semibold text-base mb-1">{type.label}</div>
+                <div className="text-sm text-accent font-medium">From £{type.basePrice}</div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+
+    {/* Property Condition */}
+    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200/60">
+      <div className="flex items-center justify-between mb-6">
+        <Label className="text-xl font-semibold text-primary">Property Condition</Label>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <Info className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <div className="max-w-xs">
+              <p className="text-sm">Property condition affects the final price. Better condition = lower price.</p>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {propertyConditions.map((condition) => (
+          <Card
+            key={condition.id}
+            className={`cursor-pointer transition-all hover:shadow-lg border-2 ${
+              formData.condition === condition.id 
+                ? 'border-accent bg-accent/10 shadow-lg' 
+                : 'border-slate-200 hover:border-accent/50 hover:bg-accent/5'
+            }`}
+            onClick={() => updateField('condition', condition.id)}
+          >
+            <CardContent className="p-5">
+              <div className="font-semibold text-base mb-2">{condition.label}</div>
+              <div className="text-sm text-muted-foreground mb-2">{condition.description}</div>
+              <div className="text-sm font-medium text-accent">Price multiplier: {condition.multiplier}x</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+
+    {/* Furnished Status */}
+    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200/60">
+      <Label className="text-xl font-semibold mb-6 block text-primary">Furnished Status</Label>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {propertyStatuses.map((status) => {
+          const Icon = status.icon;
+          return (
+            <Card
+              key={status.id}
+              className={`cursor-pointer transition-all hover:shadow-lg border-2 ${
+                formData.status === status.id 
+                  ? 'border-accent bg-accent/10 shadow-lg' 
+                  : 'border-slate-200 hover:border-accent/50 hover:bg-accent/5'
+              }`}
+              onClick={() => updateField('status', status.id)}
+            >
+              <CardContent className="p-6 text-center">
+                <Icon className="w-12 h-12 mx-auto mb-3 text-primary" />
+                <div className="font-semibold text-base mb-1">{status.label}</div>
+                <div className="text-sm text-muted-foreground">{status.description}</div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+
+    {/* Room Details */}
+    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200/60">
+      <Label className="text-xl font-semibold mb-6 block text-primary">Room Details</Label>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Bedrooms */}
+        <div className="space-y-3">
+          <Label className="text-base font-medium flex items-center gap-2">
+            <Bed className="w-4 h-4 text-accent" />
+            Bedrooms
+          </Label>
+          <div className="flex items-center justify-center gap-3 bg-slate-50 rounded-lg p-3">
+            <Button type="button" variant="outline" size="sm" onClick={() => updateField('bedrooms', Math.max(0, formData.bedrooms - 1))} disabled={formData.bedrooms <= 0}>
+              <Minus className="w-4 h-4" />
+            </Button>
+            <span className="text-xl font-semibold min-w-[3rem] text-center">{formData.bedrooms}</span>
+            <Button type="button" variant="outline" size="sm" onClick={() => updateField('bedrooms', formData.bedrooms + 1)}>
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Bathrooms */}
+        <div className="space-y-3">
+          <Label className="text-base font-medium flex items-center gap-2">
+            <Bath className="w-4 h-4 text-accent" />
+            Bathrooms
+          </Label>
+          <div className="flex items-center justify-center gap-3 bg-slate-50 rounded-lg p-3">
+            <Button type="button" variant="outline" size="sm" onClick={() => updateField('bathrooms', Math.max(0, formData.bathrooms - 1))} disabled={formData.bathrooms <= 0}>
+              <Minus className="w-4 h-4" />
+            </Button>
+            <span className="text-xl font-semibold min-w-[3rem] text-center">{formData.bathrooms}</span>
+            <Button type="button" variant="outline" size="sm" onClick={() => updateField('bathrooms', formData.bathrooms + 1)}>
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Toilets */}
+        <div className="space-y-3">
+          <Label className="text-base font-medium flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-accent" />
+            Separate Toilets
+          </Label>
+          <div className="flex items-center justify-center gap-3 bg-slate-50 rounded-lg p-3">
+            <Button type="button" variant="outline" size="sm" onClick={() => updateField('toilets', Math.max(0, formData.toilets - 1))} disabled={formData.toilets <= 0}>
+              <Minus className="w-4 h-4" />
+            </Button>
+            <span className="text-xl font-semibold min-w-[3rem] text-center">{formData.toilets}</span>
+            <Button type="button" variant="outline" size="sm" onClick={() => updateField('toilets', formData.toilets + 1)}>
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
                 {/* Step 2: Property Condition */}
                 {currentStep === 'condition' && (
@@ -889,9 +1003,20 @@ export function EndOfTenancyBookingForm({ onBookingCreated, children, onSubmit }
 
             {/* Price Calculator Sidebar */}
             <div className="w-80 bg-white border-l border-slate-200 flex flex-col">
-              <div className="p-6 border-b border-slate-200">
+              <div className="relative p-6 border-b border-slate-200 overflow-visible">
                 <h3 className="text-lg font-semibold text-primary mb-2">Booking Summary</h3>
                 <p className="text-sm text-muted-foreground">Live price calculation</p>
+                {/* Decorative illustration inspired by your reference */}
+                <div className="absolute -top-6 -right-4 w-16 h-16">
+                  <svg viewBox="0 0 64 64" className="w-16 h-16 drop-shadow" aria-hidden="true">
+                    <circle cx="32" cy="32" r="30" fill="hsl(var(--accent))" fillOpacity="0.2" />
+                    <g stroke="currentColor" strokeWidth="2" fill="none" className="text-primary">
+                      <path d="M24 36c0-6 16-6 16 0v8H24z" fill="hsl(var(--accent))" fillOpacity="0.6" />
+                      <circle cx="32" cy="24" r="6" />
+                      <path d="M20 44h24" />
+                    </g>
+                  </svg>
+                </div>
               </div>
 
               <div className="flex-1 p-6 space-y-4 overflow-y-auto">
