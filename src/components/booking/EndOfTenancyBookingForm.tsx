@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import CustomerSelector from './CustomerSelector';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,7 +17,6 @@ import {
   Bed,
   Bath,
   Users,
-  Building,
   CheckCircle,
   ChevronRight,
   Info,
@@ -31,11 +31,13 @@ import {
   Cookie,
   Shirt,
   Refrigerator,
-  Trash2,
   Monitor,
   Blinds,
-  HandHeart,
-  Scissors
+  Package,
+  Grid3X3,
+  CheckSquare,
+  User,
+  ChevronLeft
 } from 'lucide-react';
 
 interface EndOfTenancyBookingFormProps {
@@ -49,15 +51,7 @@ const propertyTypes = [
   { id: 'apartment', label: 'Apartment', icon: Building2, basePrice: 180 },
   { id: 'house', label: 'House', icon: Home, basePrice: 220 },
   { id: 'studio', label: 'Studio', icon: Bed, basePrice: 120 },
-  { id: 'shared_house', label: 'Shared House', icon: Users, basePrice: 200 },
-  { id: 'office', label: 'Office', icon: Building, basePrice: 150 }
-];
-
-const propertySizes = [
-  { id: '1bed', label: '1 Bedroom', multiplier: 1 },
-  { id: '2bed', label: '2 Bedrooms', multiplier: 1.3 },
-  { id: '3bed', label: '3 Bedrooms', multiplier: 1.6 },
-  { id: '4bed', label: '4+ Bedrooms', multiplier: 2 }
+  { id: 'shared_house', label: 'Shared House', icon: Users, basePrice: 200 }
 ];
 
 const propertyConditions = [
@@ -68,8 +62,8 @@ const propertyConditions = [
 ];
 
 const propertyStatuses = [
-  { id: 'furnished', label: 'Furnished', icon: Sofa },
-  { id: 'unfurnished', label: 'Unfurnished', icon: Home }
+  { id: 'furnished', label: 'Furnished', icon: Sofa, description: 'Property has furniture' },
+  { id: 'unfurnished', label: 'Unfurnished', icon: Home, description: 'Property is empty' }
 ];
 
 // Additional services
@@ -122,12 +116,22 @@ const mattressOptions = [
   { id: 'super_king', label: 'Super King Mattress', price: 55, icon: Bed }
 ];
 
+const steps = [
+  { id: 'property', label: 'Property Type', icon: Home },
+  { id: 'condition', label: 'Property Condition', icon: Info },
+  { id: 'furnished', label: 'Furnished Status', icon: Package },
+  { id: 'details', label: 'Room Details', icon: Grid3X3 },
+  { id: 'extras', label: 'Extras', icon: Plus },
+  { id: 'services', label: 'Services', icon: CheckSquare },
+  { id: 'booking', label: 'Booking Details', icon: Calendar },
+];
+
 interface FormData {
   // Property details
   propertyType: string;
-  propertySize: string;
   bedrooms: number;
   bathrooms: number;
+  toilets: number;
   condition: string;
   status: string;
   
@@ -151,22 +155,16 @@ interface FormData {
   notes: string;
 }
 
-const steps = [
-  { id: 1, title: 'Property', description: 'Property details' },
-  { id: 2, title: 'Customer', description: 'Customer selection' },
-  { id: 3, title: 'Services', description: 'Additional services' },
-  { id: 4, title: 'Booking', description: 'Date & details' }
-];
-
 export function EndOfTenancyBookingForm({ onBookingCreated, children, onSubmit }: EndOfTenancyBookingFormProps) {
   const [open, setOpen] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState('property');
   const [loading, setLoading] = useState(false);
+  const [showConditionInfo, setShowConditionInfo] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     propertyType: '',
-    propertySize: '',
     bedrooms: 1,
     bathrooms: 1,
+    toilets: 1,
     condition: '',
     status: '',
     customerId: '',
@@ -186,15 +184,16 @@ export function EndOfTenancyBookingForm({ onBookingCreated, children, onSubmit }
 
   // Calculate total price
   const totalPrice = useMemo(() => {
-    if (!formData.propertyType || !formData.propertySize || !formData.condition) return 0;
+    if (!formData.propertyType || !formData.condition) return 0;
 
     const propertyType = propertyTypes.find(p => p.id === formData.propertyType);
-    const propertySize = propertySizes.find(s => s.id === formData.propertySize);
     const condition = propertyConditions.find(c => c.id === formData.condition);
 
-    if (!propertyType || !propertySize || !condition) return 0;
+    if (!propertyType || !condition) return 0;
 
-    let basePrice = propertyType.basePrice * propertySize.multiplier * condition.multiplier;
+    // Base calculation: property base price * condition multiplier + (bedrooms + bathrooms) * 20
+    let basePrice = propertyType.basePrice * condition.multiplier;
+    basePrice += (formData.bedrooms + formData.bathrooms) * 20;
 
     // Add additional rooms
     basePrice += formData.additionalRooms.reduce((sum, roomId) => {
@@ -292,26 +291,42 @@ export function EndOfTenancyBookingForm({ onBookingCreated, children, onSubmit }
     updateField('customerName', `${customer.first_name} ${customer.last_name}`);
   };
 
+  const getCurrentStepIndex = () => steps.findIndex(step => step.id === currentStep);
+  
   const nextStep = () => {
-    if (canProceed()) {
-      setCurrentStep(prev => Math.min(prev + 1, steps.length));
+    const currentIndex = getCurrentStepIndex();
+    if (currentIndex < steps.length - 1) {
+      setCurrentStep(steps[currentIndex + 1].id);
     }
   };
 
   const prevStep = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1));
+    const currentIndex = getCurrentStepIndex();
+    if (currentIndex > 0) {
+      setCurrentStep(steps[currentIndex - 1].id);
+    }
+  };
+
+  const goToStep = (stepId: string) => {
+    setCurrentStep(stepId);
   };
 
   const canProceed = () => {
     switch (currentStep) {
-      case 1:
-        return formData.propertyType && formData.propertySize && formData.condition && formData.status;
-      case 2:
-        return formData.customerId;
-      case 3:
-        return true;
-      case 4:
-        return formData.preferredDate && formData.address;
+      case 'property':
+        return formData.propertyType;
+      case 'condition':
+        return formData.condition;
+      case 'furnished':
+        return formData.status;
+      case 'details':
+        return formData.bedrooms >= 0 && formData.bathrooms >= 0;
+      case 'extras':
+        return true; // Optional step
+      case 'services':
+        return true; // Optional step
+      case 'booking':
+        return formData.customerId && formData.preferredDate && formData.address;
       default:
         return false;
     }
@@ -326,7 +341,6 @@ export function EndOfTenancyBookingForm({ onBookingCreated, children, onSubmit }
         customer_id: formData.customerId,
         service_type: 'End of Tenancy Cleaning',
         property_type: formData.propertyType,
-        property_size: formData.propertySize,
         bedrooms: formData.bedrooms,
         bathrooms: formData.bathrooms,
         condition: formData.condition,
@@ -356,12 +370,12 @@ export function EndOfTenancyBookingForm({ onBookingCreated, children, onSubmit }
 
       toast.success('End of Tenancy booking created successfully!');
       setOpen(false);
-      setCurrentStep(1);
+      setCurrentStep('property');
       setFormData({
         propertyType: '',
-        propertySize: '',
         bedrooms: 1,
         bathrooms: 1,
+        toilets: 1,
         condition: '',
         status: '',
         customerId: '',
@@ -388,685 +402,600 @@ export function EndOfTenancyBookingForm({ onBookingCreated, children, onSubmit }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children || (
-          <Button className="bg-primary hover:bg-primary-dark text-primary-foreground">
-            <Sparkles className="w-4 h-4 mr-2" />
-            End of Tenancy Cleaning
-          </Button>
-        )}
-      </DialogTrigger>
-      
-      <DialogContent className="max-w-6xl h-[90vh] p-0 overflow-hidden">
-        <div className="flex h-full">
-          {/* Main Form */}
-          <div className="flex-1 flex flex-col">
-            {/* Header */}
-            <div className="px-6 py-4 border-b bg-card">
-              <h2 className="text-2xl font-bold text-primary mb-4">End of Tenancy Cleaning</h2>
-              
-              {/* Step Indicator */}
-              <div className="flex items-center justify-between">
-                {steps.map((step, index) => (
-                  <div key={step.id} className="flex items-center">
-                    <div className={`
-                      flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium
-                      ${currentStep > step.id 
-                        ? 'bg-accent text-accent-foreground' 
-                        : currentStep === step.id 
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-muted-foreground'
-                      }
-                    `}>
-                      {currentStep > step.id ? <CheckCircle className="w-4 h-4" /> : step.id}
+    <TooltipProvider>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          {children || (
+            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg">
+              <Sparkles className="w-4 h-4 mr-2" />
+              End of Tenancy Cleaning
+            </Button>
+          )}
+        </DialogTrigger>
+        
+        <DialogContent className="max-w-7xl h-[95vh] p-0 overflow-hidden bg-background">
+          <div className="flex h-full">
+            {/* Main Form */}
+            <div className="flex-1 flex flex-col">
+              {/* Modern Header with Illustration */}
+              <div className="relative px-6 py-6 bg-gradient-to-r from-primary to-accent text-primary-foreground overflow-hidden">
+                {/* Decorative element */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-8 translate-x-8"></div>
+                <div className="absolute bottom-0 right-16 w-16 h-16 bg-white/5 rounded-full translate-y-4"></div>
+                
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h2 className="text-3xl font-bold mb-2">End of Tenancy Cleaning</h2>
+                      <p className="text-primary-foreground/80">Professional cleaning for your move-out</p>
                     </div>
-                    <div className="ml-2 text-sm">
-                      <div className={`font-medium ${currentStep >= step.id ? 'text-foreground' : 'text-muted-foreground'}`}>
-                        {step.title}
-                      </div>
-                    </div>
-                    {index < steps.length - 1 && (
-                      <div className={`w-12 h-px mx-4 ${currentStep > step.id ? 'bg-accent' : 'bg-border'}`} />
-                    )}
+                    <Sparkles className="w-12 h-12 text-accent" />
                   </div>
-                ))}
+                  
+                  {/* Step Indicator */}
+                  <div className="flex items-center justify-between">
+                    {steps.map((step, index) => {
+                      const StepIcon = step.icon;
+                      const isActive = step.id === currentStep;
+                      const isCompleted = steps.findIndex(s => s.id === currentStep) > index;
+                      
+                      return (
+                        <div key={step.id} className="flex items-center">
+                          <button
+                            onClick={() => goToStep(step.id)}
+                            className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-medium transition-all ${
+                              isCompleted
+                                ? 'bg-accent text-accent-foreground cursor-pointer hover:scale-105'
+                                : isActive
+                                  ? 'bg-primary-foreground text-primary cursor-pointer'
+                                  : 'bg-primary-foreground/20 text-primary-foreground/60 cursor-pointer hover:bg-primary-foreground/30'
+                            }`}
+                          >
+                            {isCompleted ? <CheckCircle className="w-5 h-5" /> : <StepIcon className="w-5 h-5" />}
+                          </button>
+                          <div className="ml-2 text-sm">
+                            <div className={`font-medium ${isActive || isCompleted ? 'text-primary-foreground' : 'text-primary-foreground/60'}`}>
+                              {step.label}
+                            </div>
+                          </div>
+                          {index < steps.length - 1 && (
+                            <div className={`w-8 h-0.5 mx-3 ${isCompleted ? 'bg-accent' : 'bg-primary-foreground/20'}`} />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
-            </div>
 
-            {/* Form Content */}
-            <div className="flex-1 overflow-y-auto p-6">
-              {/* Step 1: Property Details */}
-              {currentStep === 1 && (
-                <div className="space-y-6">
-                  <div>
-                    <Label className="text-base font-semibold mb-3 block">Property Type</Label>
-                    <div className="grid grid-cols-3 gap-3">
-                      {propertyTypes.map((type) => {
-                        const Icon = type.icon;
-                        return (
-                          <Card 
-                            key={type.id}
-                            className={`cursor-pointer transition-all hover:shadow-md ${
-                              formData.propertyType === type.id 
-                                ? 'ring-2 ring-primary bg-primary/5' 
-                                : 'hover:bg-muted/50'
-                            }`}
-                            onClick={() => updateField('propertyType', type.id)}
-                          >
-                            <CardContent className="p-4 text-center">
-                              <Icon className="w-8 h-8 mx-auto mb-2 text-primary" />
-                              <div className="font-medium text-sm">{type.label}</div>
-                              <div className="text-xs text-muted-foreground">From £{type.basePrice}</div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <Label className="text-base font-semibold mb-3 block">Property Size</Label>
-                      <div className="space-y-2">
-                        {propertySizes.map((size) => (
-                          <Card
-                            key={size.id}
-                            className={`cursor-pointer transition-all ${
-                              formData.propertySize === size.id 
-                                ? 'ring-2 ring-primary bg-primary/5' 
-                                : 'hover:bg-muted/50'
-                            }`}
-                            onClick={() => updateField('propertySize', size.id)}
-                          >
-                            <CardContent className="p-3">
-                              <div className="font-medium text-sm">{size.label}</div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label className="text-base font-semibold mb-3 block">Property Condition</Label>
-                      <div className="space-y-2">
-                        {propertyConditions.map((condition) => (
-                          <Card
-                            key={condition.id}
-                            className={`cursor-pointer transition-all ${
-                              formData.condition === condition.id 
-                                ? 'ring-2 ring-primary bg-primary/5' 
-                                : 'hover:bg-muted/50'
-                            }`}
-                            onClick={() => updateField('condition', condition.id)}
-                          >
-                            <CardContent className="p-3 flex items-center justify-between">
-                              <div>
-                                <div className="font-medium text-sm capitalize">{condition.label}</div>
-                                <div className="text-xs text-muted-foreground">{condition.description}</div>
-                              </div>
-                              <Info className="w-4 h-4 text-muted-foreground" />
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <Label className="text-base font-semibold mb-3 block flex items-center gap-2">
-                        <Bed className="w-4 h-4" />
-                        Bedrooms: {formData.bedrooms}
-                      </Label>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateField('bedrooms', Math.max(1, formData.bedrooms - 1))}
-                          disabled={formData.bedrooms <= 1}
-                        >
-                          <Minus className="w-4 h-4" />
-                        </Button>
-                        <div className="w-12 text-center font-medium">{formData.bedrooms}</div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateField('bedrooms', formData.bedrooms + 1)}
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label className="text-base font-semibold mb-3 block flex items-center gap-2">
-                        <Bath className="w-4 h-4" />
-                        Bathrooms: {formData.bathrooms}
-                      </Label>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateField('bathrooms', Math.max(1, formData.bathrooms - 1))}
-                          disabled={formData.bathrooms <= 1}
-                        >
-                          <Minus className="w-4 h-4" />
-                        </Button>
-                        <div className="w-12 text-center font-medium">{formData.bathrooms}</div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateField('bathrooms', formData.bathrooms + 1)}
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-base font-semibold mb-3 block">Property Status</Label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {propertyStatuses.map((status) => {
-                        const Icon = status.icon;
-                        return (
-                          <Card
-                            key={status.id}
-                            className={`cursor-pointer transition-all ${
-                              formData.status === status.id 
-                                ? 'ring-2 ring-primary bg-primary/5' 
-                                : 'hover:bg-muted/50'
-                            }`}
-                            onClick={() => updateField('status', status.id)}
-                          >
-                            <CardContent className="p-4 text-center">
-                              <Icon className="w-6 h-6 mx-auto mb-2 text-primary" />
-                              <div className="font-medium text-sm">{status.label}</div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 2: Customer Selection */}
-              {currentStep === 2 && (
-                <div className="space-y-6">
-                  <div>
-                    <Label className="text-base font-semibold mb-3 block">Select Customer</Label>
-                    <CustomerSelector
-                      onCustomerSelect={handleCustomerSelect}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Step 3: Additional Services */}
-              {currentStep === 3 && (
-                <div className="space-y-8">
-                  {/* Additional Rooms */}
-                  <div>
-                    <Label className="text-base font-semibold mb-3 block">Additional Rooms</Label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {additionalRooms.map((room) => {
-                        const Icon = room.icon;
-                        const isSelected = formData.additionalRooms.includes(room.id);
-                        return (
-                          <Card
-                            key={room.id}
-                            className={`cursor-pointer transition-all ${
-                              isSelected ? 'ring-2 ring-accent bg-accent/5' : 'hover:bg-muted/50'
-                            }`}
-                            onClick={() => toggleArrayItem('additionalRooms', room.id)}
-                          >
-                            <CardContent className="p-3 flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Icon className="w-4 h-4 text-accent" />
-                                <span className="font-medium text-sm">{room.label}</span>
-                              </div>
-                              <Badge variant="secondary">+£{room.price}</Badge>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Oven Cleaning */}
-                  {formData.propertyType !== 'studio' && formData.propertyType !== 'shared_house' && (
-                    <div>
-                      <Label className="text-base font-semibold mb-3 block">Oven Cleaning</Label>
-                      <div className="grid grid-cols-2 gap-3">
-                        {ovenTypes.map((oven) => {
-                          const Icon = oven.icon;
-                          const isSelected = formData.ovenCleaning.includes(oven.id);
+              {/* Form Content */}
+              <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50">
+                {/* Step 1: Property Type */}
+                {currentStep === 'property' && (
+                  <div className="space-y-6">
+                    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200/60">
+                      <Label className="text-xl font-semibold mb-6 block text-primary">Select Property Type</Label>
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        {propertyTypes.map((type) => {
+                          const Icon = type.icon;
                           return (
-                            <Card
-                              key={oven.id}
-                              className={`cursor-pointer transition-all ${
-                                isSelected ? 'ring-2 ring-accent bg-accent/5' : 'hover:bg-muted/50'
+                            <Card 
+                              key={type.id}
+                              className={`cursor-pointer transition-all hover:shadow-lg border-2 ${
+                                formData.propertyType === type.id 
+                                  ? 'border-accent bg-accent/10 shadow-lg' 
+                                  : 'border-slate-200 hover:border-accent/50 hover:bg-accent/5'
                               }`}
-                              onClick={() => toggleArrayItem('ovenCleaning', oven.id)}
+                              onClick={() => updateField('propertyType', type.id)}
                             >
-                              <CardContent className="p-3 flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <Icon className="w-4 h-4 text-accent" />
-                                  <span className="font-medium text-sm">{oven.label}</span>
-                                </div>
-                                <Badge variant="secondary">+£{oven.price}</Badge>
+                              <CardContent className="p-6 text-center">
+                                <Icon className="w-12 h-12 mx-auto mb-3 text-primary" />
+                                <div className="font-semibold text-base mb-1">{type.label}</div>
+                                <div className="text-sm text-accent font-medium">From £{type.basePrice}</div>
                               </CardContent>
                             </Card>
                           );
                         })}
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {/* Step 2: Property Condition */}
+                {currentStep === 'condition' && (
+                  <div className="space-y-6">
+                    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200/60">
+                      <div className="flex items-center justify-between mb-6">
+                        <Label className="text-xl font-semibold text-primary">Property Condition</Label>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => setShowConditionInfo(!showConditionInfo)}
+                            >
+                              <Info className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div className="max-w-xs">
+                              <p className="text-sm">Property condition affects the final price. Better condition = lower price.</p>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {propertyConditions.map((condition) => (
+                          <Card
+                            key={condition.id}
+                            className={`cursor-pointer transition-all hover:shadow-lg border-2 ${
+                              formData.condition === condition.id 
+                                ? 'border-accent bg-accent/10 shadow-lg' 
+                                : 'border-slate-200 hover:border-accent/50 hover:bg-accent/5'
+                            }`}
+                            onClick={() => updateField('condition', condition.id)}
+                          >
+                            <CardContent className="p-5">
+                              <div className="font-semibold text-base mb-2">{condition.label}</div>
+                              <div className="text-sm text-muted-foreground mb-2">{condition.description}</div>
+                              <div className="text-sm font-medium text-accent">
+                                Price multiplier: {condition.multiplier}x
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 3: Furnished Status */}
+                {currentStep === 'furnished' && (
+                  <div className="space-y-6">
+                    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200/60">
+                      <Label className="text-xl font-semibold mb-6 block text-primary">Furnished Status</Label>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {propertyStatuses.map((status) => {
+                          const Icon = status.icon;
+                          return (
+                            <Card
+                              key={status.id}
+                              className={`cursor-pointer transition-all hover:shadow-lg border-2 ${
+                                formData.status === status.id 
+                                  ? 'border-accent bg-accent/10 shadow-lg' 
+                                  : 'border-slate-200 hover:border-accent/50 hover:bg-accent/5'
+                              }`}
+                              onClick={() => updateField('status', status.id)}
+                            >
+                              <CardContent className="p-6 text-center">
+                                <Icon className="w-12 h-12 mx-auto mb-3 text-primary" />
+                                <div className="font-semibold text-base mb-1">{status.label}</div>
+                                <div className="text-sm text-muted-foreground">{status.description}</div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 4: Room Details */}
+                {currentStep === 'details' && (
+                  <div className="space-y-6">
+                    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200/60">
+                      <Label className="text-xl font-semibold mb-6 block text-primary">Room Details</Label>
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Bedrooms */}
+                        <div className="space-y-3">
+                          <Label className="text-base font-medium flex items-center gap-2">
+                            <Bed className="w-4 h-4 text-accent" />
+                            Bedrooms
+                          </Label>
+                          <div className="flex items-center justify-center gap-3 bg-slate-50 rounded-lg p-3">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateField('bedrooms', Math.max(0, formData.bedrooms - 1))}
+                              disabled={formData.bedrooms <= 0}
+                            >
+                              <Minus className="w-4 h-4" />
+                            </Button>
+                            <span className="text-xl font-semibold min-w-[3rem] text-center">{formData.bedrooms}</span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateField('bedrooms', formData.bedrooms + 1)}
+                            >
+                              <Plus className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Bathrooms */}
+                        <div className="space-y-3">
+                          <Label className="text-base font-medium flex items-center gap-2">
+                            <Bath className="w-4 h-4 text-accent" />
+                            Bathrooms
+                          </Label>
+                          <div className="flex items-center justify-center gap-3 bg-slate-50 rounded-lg p-3">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateField('bathrooms', Math.max(0, formData.bathrooms - 1))}
+                              disabled={formData.bathrooms <= 0}
+                            >
+                              <Minus className="w-4 h-4" />
+                            </Button>
+                            <span className="text-xl font-semibold min-w-[3rem] text-center">{formData.bathrooms}</span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateField('bathrooms', formData.bathrooms + 1)}
+                            >
+                              <Plus className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Toilets */}
+                        <div className="space-y-3">
+                          <Label className="text-base font-medium flex items-center gap-2">
+                            <Building2 className="w-4 h-4 text-accent" />
+                            Separate Toilets
+                          </Label>
+                          <div className="flex items-center justify-center gap-3 bg-slate-50 rounded-lg p-3">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateField('toilets', Math.max(0, formData.toilets - 1))}
+                              disabled={formData.toilets <= 0}
+                            >
+                              <Minus className="w-4 h-4" />
+                            </Button>
+                            <span className="text-xl font-semibold min-w-[3rem] text-center">{formData.toilets}</span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateField('toilets', formData.toilets + 1)}
+                            >
+                              <Plus className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 5: Extras */}
+                {currentStep === 'extras' && (
+                  <div className="space-y-6">
+                    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200/60">
+                      <Label className="text-xl font-semibold mb-6 block text-primary">Additional Rooms</Label>
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                        {additionalRooms.map((room) => {
+                          const Icon = room.icon;
+                          const isSelected = formData.additionalRooms.includes(room.id);
+                          return (
+                            <Card
+                              key={room.id}
+                              className={`cursor-pointer transition-all border-2 ${
+                                isSelected 
+                                  ? 'border-accent bg-accent/10' 
+                                  : 'border-slate-200 hover:border-accent/50'
+                              }`}
+                              onClick={() => toggleArrayItem('additionalRooms', room.id)}
+                            >
+                              <CardContent className="p-4 text-center">
+                                <Icon className="w-6 h-6 mx-auto mb-2 text-primary" />
+                                <div className="text-sm font-medium mb-1">{room.label}</div>
+                                <div className="text-xs text-accent font-medium">+£{room.price}</div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200/60">
+                      <Label className="text-xl font-semibold mb-6 block text-primary">Oven Cleaning</Label>
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                        {ovenTypes.map((oven) => {
+                          const Icon = oven.icon;
+                          const isSelected = formData.ovenCleaning.includes(oven.id);
+                          return (
+                            <Card
+                              key={oven.id}
+                              className={`cursor-pointer transition-all border-2 ${
+                                isSelected 
+                                  ? 'border-accent bg-accent/10' 
+                                  : 'border-slate-200 hover:border-accent/50'
+                              }`}
+                              onClick={() => toggleArrayItem('ovenCleaning', oven.id)}
+                            >
+                              <CardContent className="p-4 text-center">
+                                <Icon className="w-6 h-6 mx-auto mb-2 text-primary" />
+                                <div className="text-sm font-medium mb-1">{oven.label}</div>
+                                <div className="text-xs text-accent font-medium">+£{oven.price}</div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 6: Services */}
+                {currentStep === 'services' && (
+                  <div className="space-y-6">
+                    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200/60">
+                      <Label className="text-xl font-semibold mb-6 block text-primary">Carpet Cleaning</Label>
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                        {carpetOptions.map((carpet) => {
+                          const Icon = carpet.icon;
+                          const isSelected = formData.carpetCleaning.includes(carpet.id);
+                          return (
+                            <Card
+                              key={carpet.id}
+                              className={`cursor-pointer transition-all border-2 ${
+                                isSelected 
+                                  ? 'border-accent bg-accent/10' 
+                                  : 'border-slate-200 hover:border-accent/50'
+                              }`}
+                              onClick={() => toggleArrayItem('carpetCleaning', carpet.id)}
+                            >
+                              <CardContent className="p-4 text-center">
+                                <Icon className="w-6 h-6 mx-auto mb-2 text-primary" />
+                                <div className="text-sm font-medium mb-1">{carpet.label}</div>
+                                <div className="text-xs text-accent font-medium">+£{carpet.price}</div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200/60">
+                      <Label className="text-xl font-semibold mb-6 block text-primary">Extra Services</Label>
+                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                        {extraServices.map((service) => {
+                          const Icon = service.icon;
+                          const isSelected = formData.extraServices.includes(service.id);
+                          return (
+                            <Card
+                              key={service.id}
+                              className={`cursor-pointer transition-all border-2 ${
+                                isSelected 
+                                  ? 'border-accent bg-accent/10' 
+                                  : 'border-slate-200 hover:border-accent/50'
+                              }`}
+                              onClick={() => toggleArrayItem('extraServices', service.id)}
+                            >
+                              <CardContent className="p-4 text-center">
+                                <Icon className="w-6 h-6 mx-auto mb-2 text-primary" />
+                                <div className="text-sm font-medium mb-1">{service.label}</div>
+                                <div className="text-xs text-accent font-medium">+£{service.price}</div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 7: Booking Details */}
+                {currentStep === 'booking' && (
+                  <div className="space-y-6">
+                    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200/60">
+                      <Label className="text-xl font-semibold mb-6 block text-primary">Customer Selection</Label>
+                      <CustomerSelector onCustomerSelect={handleCustomerSelect} />
+                    </div>
+
+                    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200/60">
+                      <Label className="text-xl font-semibold mb-6 block text-primary">Booking Details</Label>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="space-y-3">
+                          <Label htmlFor="date" className="text-base font-medium">Preferred Date</Label>
+                          <Input
+                            id="date"
+                            type="date"
+                            value={formData.preferredDate}
+                            onChange={(e) => updateField('preferredDate', e.target.value)}
+                            className="border-slate-300"
+                          />
+                        </div>
+                        <div className="space-y-3">
+                          <Label htmlFor="postcode" className="text-base font-medium">Postcode</Label>
+                          <Input
+                            id="postcode"
+                            placeholder="e.g. SW1A 1AA"
+                            value={formData.postcode}
+                            onChange={(e) => updateField('postcode', e.target.value)}
+                            className="border-slate-300"
+                          />
+                        </div>
+                      </div>
+                      <div className="mt-6 space-y-3">
+                        <Label htmlFor="address" className="text-base font-medium">Full Address</Label>
+                        <Textarea
+                          id="address"
+                          placeholder="Enter the complete property address"
+                          value={formData.address}
+                          onChange={(e) => updateField('address', e.target.value)}
+                          className="border-slate-300"
+                          rows={3}
+                        />
+                      </div>
+                      <div className="mt-6 space-y-3">
+                        <Label htmlFor="notes" className="text-base font-medium">Additional Notes</Label>
+                        <Textarea
+                          id="notes"
+                          placeholder="Any special requirements or notes..."
+                          value={formData.notes}
+                          onChange={(e) => updateField('notes', e.target.value)}
+                          className="border-slate-300"
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Navigation Buttons */}
+                <div className="flex justify-between items-center pt-6">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={prevStep}
+                    disabled={getCurrentStepIndex() === 0}
+                    className="border-slate-300"
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-2" />
+                    Previous
+                  </Button>
+                  
+                  {getCurrentStepIndex() === steps.length - 1 ? (
+                    <Button
+                      type="button"
+                      onClick={handleSubmit}
+                      disabled={!canProceed() || loading}
+                      className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                    >
+                      {loading ? 'Creating...' : 'Create Booking'}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      onClick={nextStep}
+                      disabled={!canProceed()}
+                      className="bg-primary hover:bg-primary/90"
+                    >
+                      Next
+                      <ChevronRight className="w-4 h-4 ml-2" />
+                    </Button>
                   )}
-
-                  {/* Blinds Cleaning */}
-                  <div>
-                    <Label className="text-base font-semibold mb-3 block">Blinds Cleaning (per window)</Label>
-                    <div className="space-y-3">
-                      {blindsOptions.map((blind) => {
-                        const Icon = blind.icon;
-                        const count = getBlindCount(blind.id);
-                        return (
-                          <Card key={blind.id} className="p-3">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Icon className="w-4 h-4 text-accent" />
-                                <span className="font-medium text-sm">{blind.label}</span>
-                                <Badge variant="secondary">£{blind.price}/window</Badge>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => updateBlindCount(blind.id, Math.max(0, count - 1))}
-                                  disabled={count <= 0}
-                                >
-                                  <Minus className="w-3 h-3" />
-                                </Button>
-                                <div className="w-8 text-center text-sm font-medium">{count}</div>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => updateBlindCount(blind.id, count + 1)}
-                                >
-                                  <Plus className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            </div>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Extra Services */}
-                  <div>
-                    <Label className="text-base font-semibold mb-3 block">Extra Services</Label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {extraServices.map((service) => {
-                        const Icon = service.icon;
-                        const isSelected = formData.extraServices.includes(service.id);
-                        return (
-                          <Card
-                            key={service.id}
-                            className={`cursor-pointer transition-all ${
-                              isSelected ? 'ring-2 ring-accent bg-accent/5' : 'hover:bg-muted/50'
-                            }`}
-                            onClick={() => toggleArrayItem('extraServices', service.id)}
-                          >
-                            <CardContent className="p-3 flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Icon className="w-4 h-4 text-accent" />
-                                <span className="font-medium text-sm">{service.label}</span>
-                              </div>
-                              <Badge variant="secondary">+£{service.price}</Badge>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Carpet Cleaning */}
-                  <div>
-                    <Label className="text-base font-semibold mb-3 block">Carpet Cleaning</Label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {carpetOptions.map((carpet) => {
-                        const Icon = carpet.icon;
-                        const isSelected = formData.carpetCleaning.includes(carpet.id);
-                        return (
-                          <Card
-                            key={carpet.id}
-                            className={`cursor-pointer transition-all ${
-                              isSelected ? 'ring-2 ring-accent bg-accent/5' : 'hover:bg-muted/50'
-                            }`}
-                            onClick={() => toggleArrayItem('carpetCleaning', carpet.id)}
-                          >
-                            <CardContent className="p-3 flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Icon className="w-4 h-4 text-accent" />
-                                <span className="font-medium text-sm">{carpet.label}</span>
-                              </div>
-                              <Badge variant="secondary">+£{carpet.price}</Badge>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Upholstery Cleaning */}
-                  <div>
-                    <Label className="text-base font-semibold mb-3 block">Upholstery Cleaning</Label>
-                    <div className="space-y-3">
-                      {upholsteryOptions.map((upholstery) => {
-                        const Icon = upholstery.icon;
-                        const count = getUpholsteryCount(upholstery.id);
-                        return (
-                          <Card key={upholstery.id} className="p-3">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Icon className="w-4 h-4 text-accent" />
-                                <span className="font-medium text-sm">{upholstery.label}</span>
-                                <Badge variant="secondary">£{upholstery.price}</Badge>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => updateUpholsteryCount(upholstery.id, Math.max(0, count - 1))}
-                                  disabled={count <= 0}
-                                >
-                                  <Minus className="w-3 h-3" />
-                                </Button>
-                                <div className="w-8 text-center text-sm font-medium">{count}</div>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => updateUpholsteryCount(upholstery.id, count + 1)}
-                                >
-                                  <Plus className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            </div>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Mattress Cleaning */}
-                  <div>
-                    <Label className="text-base font-semibold mb-3 block">Mattress Cleaning</Label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {mattressOptions.map((mattress) => {
-                        const Icon = mattress.icon;
-                        const isSelected = formData.mattressCleaning.includes(mattress.id);
-                        return (
-                          <Card
-                            key={mattress.id}
-                            className={`cursor-pointer transition-all ${
-                              isSelected ? 'ring-2 ring-accent bg-accent/5' : 'hover:bg-muted/50'
-                            }`}
-                            onClick={() => toggleArrayItem('mattressCleaning', mattress.id)}
-                          >
-                            <CardContent className="p-3 flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Icon className="w-4 h-4 text-accent" />
-                                <span className="font-medium text-sm">{mattress.label}</span>
-                              </div>
-                              <Badge variant="secondary">+£{mattress.price}</Badge>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </div>
                 </div>
-              )}
-
-              {/* Step 4: Booking Details */}
-              {currentStep === 4 && (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <Label htmlFor="preferred-date" className="text-base font-semibold mb-3 block flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        Preferred Date
-                      </Label>
-                      <Input
-                        id="preferred-date"
-                        type="date"
-                        value={formData.preferredDate}
-                        onChange={(e) => updateField('preferredDate', e.target.value)}
-                        className="w-full"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="postcode" className="text-base font-semibold mb-3 block">
-                        Postcode
-                      </Label>
-                      <Input
-                        id="postcode"
-                        value={formData.postcode}
-                        onChange={(e) => updateField('postcode', e.target.value)}
-                        placeholder="Enter postcode"
-                        className="w-full"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="address" className="text-base font-semibold mb-3 block flex items-center gap-2">
-                      <MapPin className="w-4 h-4" />
-                      Property Address
-                    </Label>
-                    <Textarea
-                      id="address"
-                      value={formData.address}
-                      onChange={(e) => updateField('address', e.target.value)}
-                      placeholder="Enter full property address"
-                      className="w-full min-h-[80px]"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="notes" className="text-base font-semibold mb-3 block flex items-center gap-2">
-                      <FileText className="w-4 h-4" />
-                      Additional Notes
-                    </Label>
-                    <Textarea
-                      id="notes"
-                      value={formData.notes}
-                      onChange={(e) => updateField('notes', e.target.value)}
-                      placeholder="Any special requirements or additional information..."
-                      className="w-full min-h-[100px]"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Footer Actions */}
-            <div className="px-6 py-4 border-t bg-card flex justify-between">
-              <Button
-                variant="outline"
-                onClick={prevStep}
-                disabled={currentStep === 1}
-              >
-                Back
-              </Button>
-              
-              {currentStep < steps.length ? (
-                <Button
-                  onClick={nextStep}
-                  disabled={!canProceed()}
-                  className="bg-primary hover:bg-primary-dark text-primary-foreground"
-                >
-                  Continue
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!canProceed() || loading}
-                  className="bg-accent hover:bg-accent-turquoise-dark text-accent-foreground"
-                >
-                  {loading ? 'Creating...' : 'Complete Booking'}
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {/* Sidebar Calculator */}
-          <div className="w-80 bg-muted/30 border-l flex flex-col">
-            <div className="p-4 border-b">
-              <h3 className="font-semibold text-lg mb-2">Booking Summary</h3>
-              <div className="text-2xl font-bold text-primary">
-                £{totalPrice.toLocaleString()}
               </div>
             </div>
-            
-            <div className="flex-1 overflow-y-auto p-4">
-              <div className="space-y-4">
-                {/* Property Details */}
+
+            {/* Price Calculator Sidebar */}
+            <div className="w-80 bg-white border-l border-slate-200 flex flex-col">
+              <div className="p-6 border-b border-slate-200">
+                <h3 className="text-lg font-semibold text-primary mb-2">Booking Summary</h3>
+                <p className="text-sm text-muted-foreground">Live price calculation</p>
+              </div>
+
+              <div className="flex-1 p-6 space-y-4 overflow-y-auto">
                 {formData.propertyType && (
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Property</h4>
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span>{propertyTypes.find(p => p.id === formData.propertyType)?.label}</span>
-                        <span>Base</span>
-                      </div>
-                      {formData.propertySize && (
-                        <div className="flex justify-between text-sm text-muted-foreground">
-                          <span>{propertySizes.find(s => s.id === formData.propertySize)?.label}</span>
-                        </div>
-                      )}
-                      {formData.condition && (
-                        <div className="flex justify-between text-sm text-muted-foreground">
-                          <span>Condition: {propertyConditions.find(c => c.id === formData.condition)?.label}</span>
-                        </div>
-                      )}
-                    </div>
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-sm">{propertyTypes.find(p => p.id === formData.propertyType)?.label}</span>
+                    <span className="font-medium text-accent">
+                      £{propertyTypes.find(p => p.id === formData.propertyType)?.basePrice}
+                    </span>
                   </div>
                 )}
 
-                {/* Additional Services */}
-                {(formData.additionalRooms.length > 0 || 
-                  formData.ovenCleaning.length > 0 || 
-                  formData.blindsCleaning.length > 0 || 
-                  formData.extraServices.length > 0 || 
-                  formData.carpetCleaning.length > 0 || 
-                  formData.upholsteryCleaning.length > 0 || 
-                  formData.mattressCleaning.length > 0) && (
-                  <>
-                    <Separator />
-                    <div className="space-y-2">
-                      <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Additional Services</h4>
-                      <div className="space-y-1">
-                        {formData.additionalRooms.map(roomId => {
-                          const room = additionalRooms.find(r => r.id === roomId);
-                          return room && (
-                            <div key={roomId} className="flex justify-between text-sm">
-                              <span>{room.label}</span>
-                              <span>+£{room.price}</span>
-                            </div>
-                          );
-                        })}
-                        
-                        {formData.ovenCleaning.map(ovenId => {
-                          const oven = ovenTypes.find(o => o.id === ovenId);
-                          return oven && (
-                            <div key={ovenId} className="flex justify-between text-sm">
-                              <span>{oven.label}</span>
-                              <span>+£{oven.price}</span>
-                            </div>
-                          );
-                        })}
-                        
-                        {formData.blindsCleaning.map(blind => {
-                          const blindType = blindsOptions.find(b => b.id === blind.type);
-                          return blindType && (
-                            <div key={blind.type} className="flex justify-between text-sm">
-                              <span>{blindType.label} x{blind.count}</span>
-                              <span>+£{blindType.price * blind.count}</span>
-                            </div>
-                          );
-                        })}
-                        
-                        {formData.extraServices.map(serviceId => {
-                          const service = extraServices.find(s => s.id === serviceId);
-                          return service && (
-                            <div key={serviceId} className="flex justify-between text-sm">
-                              <span>{service.label}</span>
-                              <span>+£{service.price}</span>
-                            </div>
-                          );
-                        })}
-                        
-                        {formData.carpetCleaning.map(carpetId => {
-                          const carpet = carpetOptions.find(c => c.id === carpetId);
-                          return carpet && (
-                            <div key={carpetId} className="flex justify-between text-sm">
-                              <span>{carpet.label}</span>
-                              <span>+£{carpet.price}</span>
-                            </div>
-                          );
-                        })}
-                        
-                        {formData.upholsteryCleaning.map(upholstery => {
-                          const upholsteryType = upholsteryOptions.find(u => u.id === upholstery.type);
-                          return upholsteryType && (
-                            <div key={upholstery.type} className="flex justify-between text-sm">
-                              <span>{upholsteryType.label} x{upholstery.count}</span>
-                              <span>+£{upholsteryType.price * upholstery.count}</span>
-                            </div>
-                          );
-                        })}
-                        
-                        {formData.mattressCleaning.map(mattressId => {
-                          const mattress = mattressOptions.find(m => m.id === mattressId);
-                          return mattress && (
-                            <div key={mattressId} className="flex justify-between text-sm">
-                              <span>{mattress.label}</span>
-                              <span>+£{mattress.price}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </>
+                {formData.condition && (
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-sm">Condition ({propertyConditions.find(c => c.id === formData.condition)?.label})</span>
+                    <span className="font-medium text-accent">
+                      x{propertyConditions.find(c => c.id === formData.condition)?.multiplier}
+                    </span>
+                  </div>
                 )}
 
-                {/* Customer Info */}
-                {formData.customerName && (
-                  <>
-                    <Separator />
-                    <div className="space-y-2">
-                      <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Customer</h4>
-                      <div className="text-sm font-medium">{formData.customerName}</div>
-                    </div>
-                  </>
+                {(formData.bedrooms > 0 || formData.bathrooms > 0) && (
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-sm">Rooms ({formData.bedrooms + formData.bathrooms})</span>
+                    <span className="font-medium text-accent">
+                      £{(formData.bedrooms + formData.bathrooms) * 20}
+                    </span>
+                  </div>
+                )}
+
+                {formData.additionalRooms.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="text-sm font-medium text-muted-foreground">Additional Rooms:</div>
+                    {formData.additionalRooms.map(roomId => {
+                      const room = additionalRooms.find(r => r.id === roomId);
+                      return room ? (
+                        <div key={roomId} className="flex justify-between items-center py-1 pl-3">
+                          <span className="text-xs">{room.label}</span>
+                          <span className="text-sm font-medium text-accent">£{room.price}</span>
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                )}
+
+                {formData.ovenCleaning.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="text-sm font-medium text-muted-foreground">Oven Cleaning:</div>
+                    {formData.ovenCleaning.map(ovenId => {
+                      const oven = ovenTypes.find(o => o.id === ovenId);
+                      return oven ? (
+                        <div key={ovenId} className="flex justify-between items-center py-1 pl-3">
+                          <span className="text-xs">{oven.label}</span>
+                          <span className="text-sm font-medium text-accent">£{oven.price}</span>
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                )}
+
+                {formData.carpetCleaning.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="text-sm font-medium text-muted-foreground">Carpet Cleaning:</div>
+                    {formData.carpetCleaning.map(carpetId => {
+                      const carpet = carpetOptions.find(c => c.id === carpetId);
+                      return carpet ? (
+                        <div key={carpetId} className="flex justify-between items-center py-1 pl-3">
+                          <span className="text-xs">{carpet.label}</span>
+                          <span className="text-sm font-medium text-accent">£{carpet.price}</span>
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                )}
+
+                {formData.extraServices.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="text-sm font-medium text-muted-foreground">Extra Services:</div>
+                    {formData.extraServices.map(serviceId => {
+                      const service = extraServices.find(s => s.id === serviceId);
+                      return service ? (
+                        <div key={serviceId} className="flex justify-between items-center py-1 pl-3">
+                          <span className="text-xs">{service.label}</span>
+                          <span className="text-sm font-medium text-accent">£{service.price}</span>
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
                 )}
               </div>
-            </div>
-            
-            <div className="p-4 border-t bg-card">
-              <div className="flex justify-between items-center text-lg font-bold">
-                <span>Total</span>
-                <span className="text-primary">£{totalPrice.toLocaleString()}</span>
+
+              <div className="p-6 border-t border-slate-200 bg-slate-50">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-lg font-semibold text-primary">Total Price:</span>
+                  <span className="text-2xl font-bold text-accent">£{totalPrice}</span>
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  Final price may vary based on property inspection
+                </p>
               </div>
             </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </TooltipProvider>
   );
 }
