@@ -10,10 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, ShoppingCart, Edit, Eye, Calendar, Package, CreditCard, MapPin, User, Banknote, Trash2 } from "lucide-react";
+import { Plus, ShoppingCart, Edit, Eye, Calendar, Package, CreditCard, MapPin, User, Banknote, Trash2, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { EditOrderDialog } from "./EditOrderDialog";
+import { DuplicateLinenOrderDialog } from "./DuplicateLinenOrderDialog";
 
 interface LinenOrder {
   id: string;
@@ -74,6 +75,7 @@ interface OrderFormData {
 export const LinenOrdersManager = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<string>("");
   const [formData, setFormData] = useState<OrderFormData>({
@@ -377,6 +379,11 @@ export const LinenOrdersManager = () => {
   const openEditDialog = (order: any) => {
     setSelectedOrder(order);
     setIsEditDialogOpen(true);
+  };
+
+  const openDuplicateDialog = (order: any) => {
+    setSelectedOrder(order);
+    setIsDuplicateDialogOpen(true);
   };
 
   if (ordersLoading) {
@@ -709,6 +716,15 @@ export const LinenOrdersManager = () => {
                       Edit
                     </Button>
                     
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => openDuplicateDialog(order)}
+                    >
+                      <Copy className="h-4 w-4 mr-1" />
+                      Duplicate
+                    </Button>
+                    
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button 
@@ -752,6 +768,16 @@ export const LinenOrdersManager = () => {
         order={selectedOrder}
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
+      />
+
+      {/* Duplicate Order Dialog */}
+      <DuplicateLinenOrderDialog 
+        order={selectedOrder}
+        open={isDuplicateDialogOpen}
+        onOpenChange={setIsDuplicateDialogOpen}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['linen-orders'] });
+        }}
       />
     </div>
   );
