@@ -156,21 +156,25 @@ const ManualLinenPaymentDialog = ({ order, isOpen, onClose, onSuccess }: ManualL
 
     setLoading(true);
     try {
-      // Use the system payment action with linen order metadata
-      const { data, error } = await supabase.functions.invoke('system-payment-action', {
+      // Create a direct Stripe payment intent for linen order
+      const { data, error } = await supabase.functions.invoke('stripe-capture-payment', {
         body: {
-          bookingId: `linen_${order.id}`,
-          action: 'charge',
-          amount: amount,
-          paymentMethodId: selectedPaymentMethod,
-          entityType: 'linen_order',
-          customData: {
-            customer_id: order.customer_id,
-            customer_email: order.customers.email,
-            customer_name: `${order.customers.first_name} ${order.customers.last_name}`,
-            description: paymentLinkDescription,
-            total_cost: amount
-          }
+          customer_id: order.customer_id,
+          payment_method_id: selectedPaymentMethod,
+          amount: Math.round(amount * 100), // Convert to cents
+          description: paymentLinkDescription,
+          metadata: {
+            type: 'linen_order',
+            order_id: order.id,
+            customer_email: order.customers.email
+          },
+          // Use new direct payment format
+          payment_items: [{
+            type: 'linen_order',
+            id: order.id,
+            amount: Math.round(amount * 100),
+            description: paymentLinkDescription
+          }]
         }
       });
 
