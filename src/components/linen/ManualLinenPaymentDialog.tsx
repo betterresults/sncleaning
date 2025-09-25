@@ -201,10 +201,46 @@ const ManualLinenPaymentDialog = ({ order, isOpen, onClose, onSuccess }: ManualL
       onClose();
     } catch (error: any) {
       console.error('Direct charge error:', error);
+      
+      // Extract specific error details from Stripe
+      let errorMessage = "Failed to charge customer. Please try again.";
+      let errorDetails = "";
+      
+      if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      // Check for specific decline reasons
+      if (error?.decline_code) {
+        const declineReasons: { [key: string]: string } = {
+          'insufficient_funds': 'Card has insufficient funds',
+          'card_declined': 'Card was declined by the bank',
+          'expired_card': 'Card has expired',
+          'incorrect_cvc': 'Incorrect security code',
+          'processing_error': 'Processing error occurred',
+          'lost_card': 'Card reported as lost',
+          'stolen_card': 'Card reported as stolen',
+          'generic_decline': 'Card was declined'
+        };
+        
+        errorDetails = declineReasons[error.decline_code] || `Decline code: ${error.decline_code}`;
+      }
+      
+      // Show network decline codes if available
+      if (error?.network_decline_code) {
+        errorDetails += ` (Network code: ${error.network_decline_code})`;
+      }
+      
       toast({
-        title: 'Payment Failed',
-        description: error.message || 'Failed to charge customer',
-        variant: 'destructive',
+        title: "Payment Failed",
+        description: (
+          <div className="space-y-1">
+            <p className="font-medium">{errorMessage}</p>
+            {errorDetails && <p className="text-sm">Reason: {errorDetails}</p>}
+            <p className="text-xs opacity-70">Try using a different payment method or contact the customer's bank.</p>
+          </div>
+        ),
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
