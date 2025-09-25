@@ -10,11 +10,13 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, ShoppingCart, Edit, Eye, Calendar, Package, CreditCard, MapPin, User, Banknote, Trash2, Copy, DollarSign } from "lucide-react";
+import { Plus, ShoppingCart, Edit, Eye, Calendar, Package, CreditCard, MapPin, User, Banknote, Trash2, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { EditOrderDialog } from "./EditOrderDialog";
 import { DuplicateLinenOrderDialog } from "./DuplicateLinenOrderDialog";
+import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
+import ManualLinenPaymentDialog from './ManualLinenPaymentDialog';
 
 interface LinenOrder {
   id: string;
@@ -76,6 +78,7 @@ export const LinenOrdersManager = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<string>("");
   const [formData, setFormData] = useState<OrderFormData>({
@@ -276,65 +279,6 @@ export const LinenOrdersManager = () => {
     }
   });
 
-  const chargeCustomerMutation = useMutation({
-    mutationFn: async (order: any) => {
-      // Create a temporary booking-like object for the payment system
-      const bookingData = {
-        id: `linen_${order.id}`,
-        customer: order.customer_id,
-        total_cost: order.total_cost,
-        email: order.customers?.email,
-        first_name: order.customers?.first_name,
-        last_name: order.customers?.last_name,
-        address: order.addresses?.address,
-        postcode: order.addresses?.postcode,
-        payment_status: 'unpaid',
-        type: 'linen_order'
-      };
-
-      // Call the system payment action to charge the customer
-      const { data, error } = await supabase.functions.invoke('system-payment-action', {
-        body: {
-          bookingId: order.id,
-          action: 'charge',
-          amount: order.total_cost,
-          entityType: 'linen_order'
-        }
-      });
-
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.message || 'Payment failed');
-
-      // Update the order payment status
-      const { error: updateError } = await supabase
-        .from('linen_orders')
-        .update({ 
-          payment_status: 'paid',
-          payment_method: 'stripe'
-        })
-        .eq('id', order.id);
-
-      if (updateError) throw updateError;
-
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['linen-orders'] });
-      toast({ 
-        title: "✅ Payment Processed", 
-        description: "Customer has been charged successfully",
-        className: "bg-green-50 border-green-200 text-green-800",
-      });
-    },
-    onError: (error) => {
-      toast({ 
-        title: "Payment Failed", 
-        description: error.message, 
-        variant: "destructive" 
-      });
-    }
-  });
-
   const resetForm = () => {
     setFormData({
       customer_id: "",
@@ -443,6 +387,11 @@ export const LinenOrdersManager = () => {
   const openDuplicateDialog = (order: any) => {
     setSelectedOrder(order);
     setIsDuplicateDialogOpen(true);
+  };
+
+  const openPaymentDialog = (order: any) => {
+    setSelectedOrder(order);
+    setIsPaymentDialogOpen(true);
   };
 
   if (ordersLoading) {
@@ -754,6 +703,12 @@ export const LinenOrdersManager = () => {
                         </p>
                       </div>
                     </div>
+                    <PaymentStatusIndicator 
+                      status={order.payment_status || 'unpaid'} 
+                      onClick={() => openPaymentDialog(order)}
+                      isClickable={true}
+                      size="lg"
+                    />
                   </div>
                   {order.total_cost > 0 && order.admin_cost > 0 && (
                     <div className="flex items-center justify-between text-sm">
@@ -783,19 +738,6 @@ export const LinenOrdersManager = () => {
                       <Copy className="h-4 w-4 mr-1" />
                       Duplicate
                     </Button>
-
-                    {order.payment_status === 'unpaid' && order.total_cost > 0 && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => chargeCustomerMutation.mutate(order)}
-                        disabled={chargeCustomerMutation.isPending}
-                        className="text-green-600 hover:text-green-700 border-green-200 hover:border-green-300"
-                      >
-                        <DollarSign className="h-4 w-4 mr-1" />
-                        {chargeCustomerMutation.isPending ? "Processing..." : "Charge Customer"}
-                      </Button>
-                    )}
                     
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
@@ -847,6 +789,16 @@ export const LinenOrdersManager = () => {
         order={selectedOrder}
         open={isDuplicateDialogOpen}
         onOpenChange={setIsDuplicateDialogOpen}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['linen-orders'] });
+        }}
+      />
+
+      {/* Payment Dialog */}
+      <ManualLinenPaymentDialog 
+        order={selectedOrder}
+        isOpen={isPaymentDialogOpen}
+        onClose={() => setIsPaymentDialogOpen(false)}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ['linen-orders'] });
         }}
