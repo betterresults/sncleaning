@@ -19,6 +19,8 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
+  let parsedBookingId: number | null = null;
+
   try {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -52,6 +54,7 @@ serve(async (req) => {
     }
 
     const { bookingId, action, amount, paymentMethodId }: PaymentActionRequest = await req.json()
+    parsedBookingId = bookingId
 
     if (!bookingId || !action) {
       throw new Error('Booking ID and action are required')
@@ -186,11 +189,44 @@ serve(async (req) => {
 
       // Handle different payment statuses - including 3D Secure requirements
       if (paymentIntent.status === 'requires_action') {
-        throw new Error(`Payment requires additional authentication. Please ask the customer to complete 3D Secure verification. Payment Intent: ${paymentIntent.id}`)
+        // Mark as collecting (3DS required) and save intent ID
+        if (isUpcoming) {
+          await supabaseClient
+            .from('bookings')
+            .update({ payment_status: 'collecting', invoice_id: paymentIntent.id })
+            .eq('id', bookingId)
+        } else if (isPast) {
+          await supabaseClient
+            .from('past_bookings')
+            .update({ payment_status: 'collecting', invoice_id: paymentIntent.id })
+            .eq('id', bookingId)
+        }
+        return new Response(
+          JSON.stringify({ success: true, action: 'requires_action', paymentIntentId: paymentIntent.id, amount: paymentAmount }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        )
       } else if (paymentIntent.status === 'requires_payment_method') {
-        throw new Error(`Payment method was declined. Please ask the customer to add a different payment method.`)
+        // Mark as failed
+        if (isUpcoming) {
+          await supabaseClient.from('bookings').update({ payment_status: 'failed' }).eq('id', bookingId)
+        } else if (isPast) {
+          await supabaseClient.from('past_bookings').update({ payment_status: 'failed' }).eq('id', bookingId)
+        }
+        return new Response(
+          JSON.stringify({ success: false, error: 'requires_payment_method', message: 'Payment method was declined. Please ask the customer to add a different payment method.' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        )
       } else if (paymentIntent.status === 'processing') {
-        throw new Error(`Payment is still processing. Please wait a few minutes and try again. Payment Intent: ${paymentIntent.id}`)
+        // Mark as processing and return
+        if (isUpcoming) {
+          await supabaseClient.from('bookings').update({ payment_status: 'processing', invoice_id: paymentIntent.id }).eq('id', bookingId)
+        } else if (isPast) {
+          await supabaseClient.from('past_bookings').update({ payment_status: 'processing', invoice_id: paymentIntent.id }).eq('id', bookingId)
+        }
+        return new Response(
+          JSON.stringify({ success: true, action: 'processing', paymentIntentId: paymentIntent.id, amount: paymentAmount }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        )
       } else if (paymentIntent.status !== 'requires_capture') {
         throw new Error(`Authorization incomplete: Payment status is ${paymentIntent.status}. Expected 'requires_capture' but got '${paymentIntent.status}'. This usually means the customer's card was declined or requires additional verification.`)
       }
@@ -482,8 +518,7 @@ serve(async (req) => {
 
     // Enhanced error handling - try to update correct table on error
     try {
-      const { bookingId } = await req.json()
-      if (bookingId) {
+      if (parsedBookingId) {
         const supabaseClient = createClient(
           Deno.env.get('SUPABASE_URL') ?? '',
           Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -495,7 +530,7 @@ serve(async (req) => {
           await supabaseClient
             .from('bookings')
             .update({ payment_status: 'failed' })
-            .eq('id', bookingId)
+            .eq('id', parsedBookingId)
         } catch (e) {
           // Ignore error if booking not in this table
         }
@@ -504,7 +539,7 @@ serve(async (req) => {
           await supabaseClient
             .from('past_bookings')
             .update({ payment_status: 'failed' })
-            .eq('id', bookingId)
+            .eq('id', parsedBookingId)
         } catch (e) {
           // Ignore error if booking not in this table
         }
