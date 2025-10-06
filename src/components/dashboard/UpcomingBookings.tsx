@@ -588,25 +588,25 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
       )}
 
       <Card>
-        <CardHeader className="pb-3 cursor-pointer" onClick={() => setFiltersCollapsed(!filtersCollapsed)}>
-          <CardTitle className="flex items-center justify-between text-base">
+        <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6 pt-3 sm:pt-6 cursor-pointer" onClick={() => setFiltersCollapsed(!filtersCollapsed)}>
+          <CardTitle className="flex items-center justify-between text-sm sm:text-base">
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4" />
-              {filtersCollapsed ? 'Filters' : ''}
+              <span>{filtersCollapsed ? 'Filters' : 'Filters'}</span>
               {hasActiveFilters && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                   Active
                 </span>
               )}
             </div>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-lg">
               {filtersCollapsed ? '+' : '−'}
             </Button>
           </CardTitle>
         </CardHeader>
         {!filtersCollapsed && (
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
               {/* Date From */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium">From</Label>
@@ -745,8 +745,8 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
             </div>
 
             {/* Clear Filters */}
-            <div className="flex justify-end mt-4">
-              <Button onClick={clearFilters} variant="outline" size="sm">
+            <div className="flex justify-end mt-3 sm:mt-4">
+              <Button onClick={clearFilters} variant="outline" size="sm" className="text-xs sm:text-sm">
                 Clear Filters
               </Button>
             </div>
@@ -754,18 +754,18 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
         )}
       </Card>
 
-      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
-        <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-          <div className="flex items-center space-x-2">
-            <Label htmlFor="itemsPerPage" className="text-sm whitespace-nowrap">Show:</Label>
+      <div className="flex flex-col gap-3 sm:gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <Label htmlFor="itemsPerPage" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">Show:</Label>
             <Select value={itemsPerPage.toString()} onValueChange={(value) => {
               setItemsPerPage(parseInt(value));
               setCurrentPage(1);
             }}>
-              <SelectTrigger className="w-16 sm:w-20">
+              <SelectTrigger className="w-20 h-9 text-sm">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white">
                 <SelectItem value="10">10</SelectItem>
                 <SelectItem value="20">20</SelectItem>
                 <SelectItem value="30">30</SelectItem>
@@ -775,62 +775,61 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
             </Select>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Label htmlFor="sortOrder" className="text-sm whitespace-nowrap">Sort:</Label>
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <Label htmlFor="sortOrder" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">Sort:</Label>
             <Select value={sortOrder} onValueChange={(value: 'asc' | 'desc') => setSortOrder(value)}>
-              <SelectTrigger className="w-28 sm:w-32">
+              <SelectTrigger className="w-32 h-9 text-sm">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="asc">Earliest first</SelectItem>
-                <SelectItem value="desc">Latest first</SelectItem>
+              <SelectContent className="bg-white">
+                <SelectItem value="asc">Earliest</SelectItem>
+                <SelectItem value="desc">Latest</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <Button 
             onClick={() => setBulkEditOpen(true)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm"
+            className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm h-9 flex-shrink-0"
             size="sm"
           >
             <Settings className="h-4 w-4" />
-            <span className="hidden sm:inline">Bulk Edit</span>
-            <span className="sm:hidden">Edit</span>
+            <span>Bulk Edit</span>
           </Button>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4">
           <div className="flex items-center rounded-lg border bg-background p-1">
             <Button
               variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('list')}
-              className="flex items-center gap-2"
+              className="flex items-center gap-1.5 text-xs sm:text-sm h-8 flex-1 sm:flex-initial"
             >
-              <List className="h-4 w-4" />
-              List
+              <List className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span>List</span>
             </Button>
             <Button
               variant={viewMode === 'calendar' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('calendar')}
-              className="flex items-center gap-2"
+              className="flex items-center gap-1.5 text-xs sm:text-sm h-8 flex-1 sm:flex-initial"
             >
-              <Calendar className="h-4 w-4" />
-              Calendar
+              <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span>Calendar</span>
             </Button>
           </div>
-          <div className="text-xs sm:text-sm text-gray-600 text-center lg:text-right">
+          <div className="text-xs text-gray-600 text-center sm:text-left">
             Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredBookings.length)} of {filteredBookings.length}
           </div>
         </div>
       </div>
 
       <Card>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-hidden">
           {viewMode === 'list' ? (
-            <div className="overflow-x-auto">
-              <Table className="min-w-full">
+            <div className="overflow-x-auto -mx-0">
+              <Table className="min-w-full text-sm">
                 <TableHeader className="bg-gray-50">
                   <TableRow className="border-b border-gray-200">
                     <TableHead className="font-semibold text-sm sm:text-base whitespace-nowrap">Date & Time</TableHead>
@@ -846,7 +845,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                 <TableBody>
                   {paginatedBookings.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-gray-500 text-base">
+                      <TableCell colSpan={8} className="text-center py-6 sm:py-8 text-gray-500 text-sm">
                         No bookings found
                       </TableCell>
                     </TableRow>
@@ -860,41 +859,41 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                           key={booking.id} 
                           className="hover:bg-gray-50 transition-colors"
                         >
-                          <TableCell>
-                            <div className="flex items-start space-x-3">
-                              <div className="flex flex-col items-center space-y-1">
-                                <CalendarDays className="h-4 w-4 text-gray-400" />
-                                <Clock className="h-4 w-4 text-gray-400" />
+                          <TableCell className="py-2 px-2 sm:px-4">
+                            <div className="flex items-start space-x-2">
+                              <div className="flex flex-col items-center space-y-0.5">
+                                <CalendarDays className="h-3.5 w-3.5 text-gray-400" />
+                                <Clock className="h-3.5 w-3.5 text-gray-400" />
                               </div>
-                              <div>
-                                <div className="font-medium text-base">
-                                  {format(new Date(booking.date_time), 'dd/MM/yyyy')}
+                              <div className="min-w-0">
+                                <div className="font-medium text-sm whitespace-nowrap">
+                                  {format(new Date(booking.date_time), 'dd/MM/yy')}
                                 </div>
-                                <div className="text-gray-500 text-sm">
+                                <div className="text-gray-500 text-xs">
                                   {format(new Date(booking.date_time), 'HH:mm')}
                                 </div>
                                 {booking.total_hours && (
                                   <div className="text-xs text-gray-600 font-medium">
-                                    {booking.total_hours === 1 ? '1 hour' : `${booking.total_hours} hours`}
+                                    {booking.total_hours}h
                                   </div>
                                 )}
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell className="max-w-[140px]">
-                            <div className="space-y-1">
-                              <div className="font-medium text-base flex items-center">
-                                <User className="h-3 w-3 mr-2 text-gray-400 flex-shrink-0" />
+                          <TableCell className="max-w-[120px] py-2 px-2 sm:px-4">
+                            <div className="space-y-0.5">
+                              <div className="font-medium text-sm flex items-center">
+                                <User className="h-3 w-3 mr-1.5 text-gray-400 flex-shrink-0" />
                                 <span className="truncate">{booking.first_name} {booking.last_name}</span>
                               </div>
-                              <div className="text-sm text-gray-500 flex items-center group">
-                                <Mail className="h-3 w-3 mr-2 flex-shrink-0" />
-                                <span className="truncate cursor-help" title={booking.email}>
-                                  {booking.email.length > 20 ? `${booking.email.substring(0, 20)}...` : booking.email}
+                              <div className="text-xs text-gray-500 flex items-center">
+                                <Mail className="h-3 w-3 mr-1.5 flex-shrink-0" />
+                                <span className="truncate" title={booking.email}>
+                                  {booking.email.length > 15 ? `${booking.email.substring(0, 15)}...` : booking.email}
                                 </span>
                               </div>
-                              <div className="text-sm text-gray-500 flex items-center">
-                                <Phone className="h-3 w-3 mr-2 flex-shrink-0" />
+                              <div className="text-xs text-gray-500 flex items-center">
+                                <Phone className="h-3 w-3 mr-1.5 flex-shrink-0" />
                                 <span className="truncate">{booking.phone_number}</span>
                               </div>
                             </div>
@@ -946,16 +945,16 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                               )}
                             </div>
                           </TableCell>
-                          <TableCell>
-                            <div className="space-y-2">
-                              <div className="flex items-center space-x-2">
+                          <TableCell className="py-2 px-2 sm:px-4">
+                            <div className="space-y-1.5">
+                              <div className="flex items-center space-x-1.5">
                                 <PaymentStatusIndicator 
                                   status={booking.payment_status} 
                                   isClickable={true}
                                   onClick={() => handlePaymentAction(booking)}
                                   size="sm"
                                 />
-                                <span className="font-semibold text-base">
+                                <span className="font-semibold text-sm whitespace-nowrap">
                                   £{booking.total_cost?.toFixed(2) || '0.00'}
                                 </span>
                               </div>
@@ -967,11 +966,11 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                               />
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-2 px-2 sm:px-4">
                             <div className="flex justify-center">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-gray-100">
+                                  <Button variant="ghost" className="h-7 w-7 p-0 hover:bg-gray-100">
                                     <MoreHorizontal className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
