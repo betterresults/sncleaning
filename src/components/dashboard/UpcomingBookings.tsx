@@ -828,7 +828,115 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
       <Card>
         <CardContent className="p-0 overflow-hidden">
           {viewMode === 'list' ? (
-            <div className="overflow-x-auto -mx-0">
+            <div>
+              {/* Mobile cards */}
+              <div className="md:hidden space-y-3 p-2">
+                {paginatedBookings.length === 0 ? (
+                  <div className="text-center py-6 text-gray-500 text-sm">No bookings found</div>
+                ) : (
+                  paginatedBookings.map((booking) => (
+                    <div key={booking.id} className="rounded-lg border bg-white p-3 shadow-sm">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="font-medium text-sm">{format(new Date(booking.date_time), 'dd/MM/yy')}</div>
+                          <div className="text-xs text-gray-500">
+                            {format(new Date(booking.date_time), 'HH:mm')}{booking.total_hours ? ` • ${booking.total_hours}h` : ''}
+                          </div>
+                          {booking.postcode && (
+                            <div className="mt-1 text-xs text-gray-600 line-clamp-1">{booking.postcode}</div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <PaymentStatusIndicator 
+                            status={booking.payment_status} 
+                            isClickable={true}
+                            onClick={() => handlePaymentAction(booking)}
+                            size="sm"
+                          />
+                          <span className="font-semibold text-sm whitespace-nowrap">£{booking.total_cost?.toFixed(2) || '0.00'}</span>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-7 w-7 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-44 bg-white z-50">
+                              <DropdownMenuItem onClick={() => handleEdit(booking.id)}>
+                                <Edit className="w-4 h-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDuplicate(booking)}>
+                                <Copy className="w-4 h-4 mr-2" />
+                                Duplicate
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleAssignCleaner(booking.id)}>
+                                <UserPlus className="w-4 h-4 mr-2" />
+                                Assign Cleaner
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleMakeRecurring(booking)}>
+                                <Repeat className="w-4 h-4 mr-2" />
+                                Make Recurring
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleSendEmail(booking)}>
+                                <Send className="w-4 h-4 mr-2" />
+                                Send Email
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handlePaymentAction(booking)}>
+                                <DollarSign className="w-4 h-4 mr-2" />
+                                Manage Payment
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleCancel(booking.id)} className="text-orange-600">
+                                <X className="w-4 h-4 mr-2" />
+                                Cancel
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDelete(booking.id)} className="text-red-600">
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+
+                      <div className="mt-2">
+                        <div className="font-medium text-sm truncate">{booking.first_name} {booking.last_name}</div>
+                        {booking.email && (
+                          <div className="text-xs text-gray-500 truncate">{booking.email}</div>
+                        )}
+                        {booking.phone_number && (
+                          <div className="text-xs text-gray-500 truncate">{booking.phone_number}</div>
+                        )}
+                      </div>
+
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-800">
+                          {booking.cleaning_type || 'Standard Cleaning'}
+                        </span>
+                        {booking.linen_management ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700">
+                            Linen
+                          </span>
+                        ) : null}
+                        {!booking.cleaner ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700">
+                            Unassigned
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs text-gray-700">
+                            <User className="h-3 w-3" />
+                            {getCleanerName(booking)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Desktop table */}
+              <div className="hidden md:block overflow-x-auto -mx-0">
               <Table className="min-w-full text-sm">
                 <TableHeader className="bg-gray-50">
                   <TableRow className="border-b border-gray-200">
@@ -1062,6 +1170,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                 </TableBody>
               </Table>
             </div>
+          </div>
           ) : (
             <div className="p-4" style={{ height: '600px' }}>
               <BigCalendar
