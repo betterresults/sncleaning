@@ -83,14 +83,14 @@ const Dashboard = () => {
               onSignOut={handleSignOut}
             />
             
-            <main className="flex-1 p-4 space-y-6 max-w-full overflow-x-hidden">
-              <div className="max-w-7xl mx-auto space-y-6">
+            <main className="flex-1 p-2 sm:p-4 md:p-6 space-y-4 sm:space-y-6 max-w-full overflow-x-hidden">
+              <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
                 {/* Time Filter Dropdown and Test Button */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-gray-600" />
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:justify-between">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600 flex-shrink-0" />
                     <Select value={selectedTimeRange} onValueChange={(value: 'today' | '3days' | '7days' | '30days') => setSelectedTimeRange(value)}>
-                      <SelectTrigger className="w-48 bg-white border-gray-300 shadow-sm">
+                      <SelectTrigger className="w-full sm:w-48 bg-white border-gray-300 shadow-sm text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-white border shadow-lg z-50">
@@ -104,10 +104,10 @@ const Dashboard = () => {
                   <Button 
                     onClick={() => setShowStorageTest(true)}
                     variant="outline"
-                    className="flex items-center gap-2"
+                    className="flex items-center justify-center gap-2 w-full sm:w-auto text-sm"
                   >
                     <TestTube className="h-4 w-4" />
-                    Test Photo Storage
+                    <span className="sm:inline">Test Photo Storage</span>
                   </Button>
                 </div>
 
@@ -116,7 +116,7 @@ const Dashboard = () => {
                 
                 {/* Bookings */}
                 <Card className="border shadow-sm">
-                  <CardContent className="p-4">
+                  <CardContent className="p-2 sm:p-4">
                     <UpcomingBookings 
                       dashboardDateFilter={dateRange}
                     />
