@@ -833,14 +833,14 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
               <Table className="min-w-full">
                 <TableHeader className="bg-gray-50">
                   <TableRow className="border-b border-gray-200">
-                    <TableHead className="font-semibold text-base">Date & Time</TableHead>
-                    <TableHead className="font-semibold text-base">Customer</TableHead>
-                    <TableHead className="font-semibold text-base">Address</TableHead>
-                    <TableHead className="font-semibold text-base">Service</TableHead>
-                    <TableHead className="font-semibold text-base">Linen</TableHead>
-                    <TableHead className="font-semibold text-base">Cleaner</TableHead>
-                    <TableHead className="font-semibold text-base">Cost</TableHead>
-                    <TableHead className="text-center font-semibold text-base">Actions</TableHead>
+                    <TableHead className="font-semibold text-sm sm:text-base whitespace-nowrap">Date & Time</TableHead>
+                    <TableHead className="font-semibold text-sm sm:text-base">Customer</TableHead>
+                    <TableHead className="hidden md:table-cell font-semibold text-sm sm:text-base">Address</TableHead>
+                    <TableHead className="hidden md:table-cell font-semibold text-sm sm:text-base">Service</TableHead>
+                    <TableHead className="hidden md:table-cell font-semibold text-sm sm:text-base">Linen</TableHead>
+                    <TableHead className="hidden md:table-cell font-semibold text-sm sm:text-base">Cleaner</TableHead>
+                    <TableHead className="font-semibold text-sm sm:text-base whitespace-nowrap">Cost</TableHead>
+                    <TableHead className="text-center font-semibold text-sm sm:text-base whitespace-nowrap">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -899,7 +899,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell className="max-w-[180px]">
+                          <TableCell className="hidden md:table-cell max-w-[180px]">
                             <div className="flex items-start space-x-2">
                               <MapPin className="h-3 w-3 mt-0.5 text-gray-400 flex-shrink-0" />
                               <div className="text-sm text-gray-700 leading-tight">
@@ -910,12 +910,12 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden md:table-cell">
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                               {booking.cleaning_type || 'Standard Cleaning'}
                             </span>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden md:table-cell">
                             {booking.linen_management ? (
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
                                 Enabled
@@ -926,7 +926,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                               </span>
                             )}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden md:table-cell">
                             <div className="space-y-1">
                               {isUnsigned ? (
                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
