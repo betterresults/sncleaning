@@ -843,7 +843,16 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                             {format(new Date(booking.date_time), 'HH:mm')}{booking.total_hours ? ` • ${booking.total_hours}h` : ''}
                           </div>
                           {booking.postcode && (
-                            <div className="mt-1 text-xs text-gray-600 line-clamp-1">{booking.postcode}</div>
+                            <div 
+                              className="mt-1 text-xs text-gray-600 line-clamp-1 cursor-pointer hover:text-primary transition-colors"
+                              onClick={() => {
+                                navigator.clipboard.writeText(booking.postcode);
+                                toast({ title: "Postcode copied!" });
+                              }}
+                              title="Click to copy postcode"
+                            >
+                              {booking.postcode}
+                            </div>
                           )}
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
@@ -903,10 +912,28 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                       <div className="mt-2">
                         <div className="font-medium text-sm truncate">{booking.first_name} {booking.last_name}</div>
                         {booking.email && (
-                          <div className="text-xs text-gray-500 truncate">{booking.email}</div>
+                          <div 
+                            className="text-xs text-gray-500 truncate cursor-pointer hover:text-primary transition-colors"
+                            onClick={() => {
+                              navigator.clipboard.writeText(booking.email);
+                              toast({ title: "Email copied!" });
+                            }}
+                            title="Click to copy email"
+                          >
+                            {booking.email}
+                          </div>
                         )}
                         {booking.phone_number && (
-                          <div className="text-xs text-gray-500 truncate">{booking.phone_number}</div>
+                          <div 
+                            className="text-xs text-gray-500 truncate cursor-pointer hover:text-primary transition-colors"
+                            onClick={() => {
+                              navigator.clipboard.writeText(booking.phone_number);
+                              toast({ title: "Phone copied!" });
+                            }}
+                            title="Click to copy phone"
+                          >
+                            {booking.phone_number}
+                          </div>
                         )}
                       </div>
 
@@ -914,11 +941,6 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-800">
                           {booking.cleaning_type || 'Standard Cleaning'}
                         </span>
-                        {booking.linen_management ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700">
-                            Linen
-                          </span>
-                        ) : null}
                         {!booking.cleaner ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700">
                             Unassigned
@@ -944,7 +966,6 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                     <TableHead className="font-semibold text-sm sm:text-base">Customer</TableHead>
                     <TableHead className="hidden md:table-cell font-semibold text-sm sm:text-base">Address</TableHead>
                     <TableHead className="hidden md:table-cell font-semibold text-sm sm:text-base">Service</TableHead>
-                    <TableHead className="hidden md:table-cell font-semibold text-sm sm:text-base">Linen</TableHead>
                     <TableHead className="hidden md:table-cell font-semibold text-sm sm:text-base">Cleaner</TableHead>
                     <TableHead className="font-semibold text-sm sm:text-base whitespace-nowrap">Cost</TableHead>
                     <TableHead className="text-center font-semibold text-sm sm:text-base whitespace-nowrap">Actions</TableHead>
@@ -953,7 +974,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                 <TableBody>
                   {paginatedBookings.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-6 sm:py-8 text-gray-500 text-sm">
+                      <TableCell colSpan={7} className="text-center py-6 sm:py-8 text-gray-500 text-sm">
                         No bookings found
                       </TableCell>
                     </TableRow>
@@ -994,13 +1015,27 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                                 <User className="h-3 w-3 mr-1.5 text-gray-400 flex-shrink-0" />
                                 <span className="truncate">{booking.first_name} {booking.last_name}</span>
                               </div>
-                              <div className="text-xs text-gray-500 flex items-center">
+                              <div 
+                                className="text-xs text-gray-500 flex items-center cursor-pointer hover:text-primary transition-colors"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(booking.email);
+                                  toast({ title: "Email copied!" });
+                                }}
+                                title="Click to copy email"
+                              >
                                 <Mail className="h-3 w-3 mr-1.5 flex-shrink-0" />
-                                <span className="truncate" title={booking.email}>
+                                <span className="truncate">
                                   {booking.email.length > 15 ? `${booking.email.substring(0, 15)}...` : booking.email}
                                 </span>
                               </div>
-                              <div className="text-xs text-gray-500 flex items-center">
+                              <div 
+                                className="text-xs text-gray-500 flex items-center cursor-pointer hover:text-primary transition-colors"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(booking.phone_number);
+                                  toast({ title: "Phone copied!" });
+                                }}
+                                title="Click to copy phone"
+                              >
                                 <Phone className="h-3 w-3 mr-1.5 flex-shrink-0" />
                                 <span className="truncate">{booking.phone_number}</span>
                               </div>
@@ -1010,8 +1045,24 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                             <div className="flex items-start space-x-2">
                               <MapPin className="h-3 w-3 mt-0.5 text-gray-400 flex-shrink-0" />
                               <div className="text-sm text-gray-700 leading-tight">
-                                <div className="text-gray-500 font-medium">{booking.postcode}</div>
-                                <div className="truncate cursor-help" title={booking.address}>
+                                <div 
+                                  className="text-gray-500 font-medium cursor-pointer hover:text-primary transition-colors"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(booking.postcode);
+                                    toast({ title: "Postcode copied!" });
+                                  }}
+                                  title="Click to copy postcode"
+                                >
+                                  {booking.postcode}
+                                </div>
+                                <div 
+                                  className="truncate cursor-pointer hover:text-primary transition-colors" 
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(booking.address);
+                                    toast({ title: "Address copied!" });
+                                  }}
+                                  title="Click to copy address"
+                                >
                                   {booking.address.length > 25 ? `${booking.address.substring(0, 25)}...` : booking.address}
                                 </div>
                               </div>
@@ -1021,17 +1072,6 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                               {booking.cleaning_type || 'Standard Cleaning'}
                             </span>
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            {booking.linen_management ? (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                                Enabled
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                                Disabled
-                              </span>
-                            )}
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
                             <div className="space-y-1">
