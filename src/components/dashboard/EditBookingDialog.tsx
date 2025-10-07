@@ -16,6 +16,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { User, Calendar, MapPin, CreditCard, UserCheck, Clock, Home, Phone, Mail, AlertTriangle, Settings } from 'lucide-react';
 import { EmailNotificationConfirmDialog } from '@/components/notifications/EmailNotificationConfirmDialog';
 import { useBookingEmailPrompt } from '@/hooks/useBookingEmailPrompt';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface EditBookingDialogProps {
   booking: any;
@@ -36,6 +37,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
+  const [isSameDayCleaning, setIsSameDayCleaning] = useState(false);
   const {
     showConfirmDialog,
     setShowConfirmDialog,
@@ -73,7 +75,8 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
     propertyDetails: '',
     deposit: 0,
     linenManagement: false,
-    linenUsed: []
+    linenUsed: [],
+    frequently: ''
   });
 
   // Format datetime for input field
@@ -116,6 +119,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
   useEffect(() => {
     if (booking && open) {
       console.log('Setting form data for booking:', booking);
+      const frequently = booking.frequently || '';
       setFormData({
         firstName: booking.first_name || '',
         lastName: booking.last_name || '',
@@ -139,8 +143,10 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         propertyDetails: booking.property_details || '',
         deposit: booking.deposit || 0,
         linenManagement: booking.linen_management || false,
-        linenUsed: booking.linen_used || []
+        linenUsed: booking.linen_used || [],
+        frequently: frequently
       });
+      setIsSameDayCleaning(frequently === 'Same Day');
     }
   }, [booking, open]);
 
@@ -214,6 +220,15 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         }
       }
 
+      // Determine frequently value for Airbnb bookings
+      let frequently = formData.frequently;
+      if (formData.cleaningType === 'Air BnB' && isSameDayCleaning) {
+        frequently = 'Same Day';
+      } else if (formData.cleaningType === 'Air BnB' && !isSameDayCleaning) {
+        // Reset to empty if unchecked for Airbnb
+        frequently = '';
+      }
+
       // Proceed with booking update
       const { error } = await supabase
         .from('bookings')
@@ -240,7 +255,8 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
           property_details: formData.propertyDetails,
           deposit: formData.deposit,
           linen_management: formData.linenManagement,
-          linen_used: formData.linenUsed
+          linen_used: formData.linenUsed,
+          frequently: frequently
         })
         .eq('id', booking.id);
 
@@ -462,6 +478,24 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                         </SelectContent>
                       </Select>
                     </div>
+                    
+                    {/* Same Day Cleaning Option for Airbnb */}
+                    {formData.cleaningType === 'Air BnB' && (
+                      <div className="md:col-span-2">
+                        <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <Checkbox
+                            id="isSameDayCleaning"
+                            checked={isSameDayCleaning}
+                            onCheckedChange={(checked) => setIsSameDayCleaning(checked === true)}
+                            className="border-2 border-blue-300 data-[state=checked]:bg-blue-600"
+                          />
+                          <Label htmlFor="isSameDayCleaning" className="text-sm font-medium text-gray-700 cursor-pointer">
+                            Same Day Cleaning (Airbnb)
+                          </Label>
+                        </div>
+                      </div>
+                    )}
+                    
                     <div>
                       <Label htmlFor="address" className="text-sm font-medium flex items-center gap-2">
                         <MapPin className="h-4 w-4" />
