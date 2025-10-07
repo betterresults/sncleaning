@@ -49,6 +49,7 @@ interface Booking {
   total_hours: number | null;
   linen_management?: boolean;
   additional_details?: string;
+  frequently?: string;
   cleaners?: {
     id: number;
     first_name: string;
@@ -835,7 +836,12 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                   <div className="text-center py-6 text-gray-500 text-sm">No bookings found</div>
                 ) : (
                   paginatedBookings.map((booking) => (
-                    <div key={booking.id} className="rounded-lg border bg-white p-3 shadow-sm">
+                    <div 
+                      key={booking.id} 
+                      className={`rounded-lg border bg-white p-3 shadow-sm ${
+                        booking.frequently === 'Same Day' ? 'border-l-4 border-l-orange-500 bg-orange-50/50' : ''
+                      }`}
+                    >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <div className="font-medium text-sm">{format(new Date(booking.date_time), 'dd/MM/yy')}</div>
@@ -941,6 +947,11 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-800">
                           {booking.cleaning_type || 'Standard Cleaning'}
                         </span>
+                        {booking.frequently === 'Same Day' && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-orange-500 text-white">
+                            Same Day
+                          </span>
+                        )}
                         {!booking.cleaner ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700">
                             Unassigned
@@ -986,7 +997,9 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                       return (
                         <TableRow 
                           key={booking.id} 
-                          className="hover:bg-gray-50 transition-colors"
+                          className={`hover:bg-gray-50 transition-colors ${
+                            booking.frequently === 'Same Day' ? 'border-l-4 border-l-orange-500 bg-orange-50/30' : ''
+                          }`}
                         >
                           <TableCell className="py-2 px-2 sm:px-4">
                             <div className="flex items-start space-x-2">
@@ -1069,9 +1082,16 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                             </div>
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                              {booking.cleaning_type || 'Standard Cleaning'}
-                            </span>
+                            <div className="flex flex-wrap gap-1">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                                {booking.cleaning_type || 'Standard Cleaning'}
+                              </span>
+                              {booking.frequently === 'Same Day' && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-orange-500 text-white">
+                                  Same Day
+                                </span>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
                             <div className="space-y-1">
