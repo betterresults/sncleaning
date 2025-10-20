@@ -25,15 +25,23 @@ serve(async (req) => {
     const tableName = bookingType === 'past' ? 'past_bookings' : 'bookings';
     const { data: booking, error: bookingError } = await supabaseClient
       .from(tableName)
-      .select(`
-        *,
-        customers!${tableName}_customer_fkey(id, first_name, last_name, email, company)
-      `)
+      .select('*')
       .eq('id', bookingId)
       .single();
 
     if (bookingError || !booking) {
       throw new Error(`Booking not found: ${bookingError?.message}`);
+    }
+
+    // Fetch customer details separately
+    const { data: customer, error: customerError } = await supabaseClient
+      .from('customers')
+      .select('id, first_name, last_name, email, company')
+      .eq('id', booking.customer)
+      .single();
+
+    if (customerError || !customer) {
+      throw new Error(`Customer not found: ${customerError?.message}`);
     }
 
     // Check if invoice already exists
@@ -50,7 +58,6 @@ serve(async (req) => {
       });
     }
 
-    const customer = booking.customers;
     if (!customer?.email) {
       throw new Error('Customer email is required');
     }
