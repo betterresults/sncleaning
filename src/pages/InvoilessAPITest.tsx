@@ -27,6 +27,7 @@ const InvoilessAPITest = () => {
   const { toast } = useToast();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
+  const [manualEmail, setManualEmail] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [apiResponse, setApiResponse] = useState<any>(null);
   
@@ -78,10 +79,12 @@ const InvoilessAPITest = () => {
   };
 
   const handleGetCustomer = async () => {
-    if (!selectedCustomerId) {
+    const emailToUse = manualEmail || selectedCustomer?.email;
+    
+    if (!emailToUse) {
       toast({
         title: 'Error',
-        description: 'Please select a customer',
+        description: 'Please select a customer or enter an email',
         variant: 'destructive',
       });
       return;
@@ -92,7 +95,7 @@ const InvoilessAPITest = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke('invoiless-get-customer', {
-        body: { email: selectedCustomer?.email }
+        body: { email: emailToUse }
       });
 
       if (error) {
@@ -314,8 +317,11 @@ const InvoilessAPITest = () => {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Select Customer</label>
-                        <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                        <label className="text-sm font-medium">Select Customer from Database</label>
+                        <Select value={selectedCustomerId} onValueChange={(value) => {
+                          setSelectedCustomerId(value);
+                          setManualEmail(''); // Clear manual email when selecting from dropdown
+                        }}>
                           <SelectTrigger>
                             <SelectValue placeholder="Choose a customer" />
                           </SelectTrigger>
@@ -329,6 +335,26 @@ const InvoilessAPITest = () => {
                         </Select>
                       </div>
 
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1 border-t border-border"></div>
+                        <span className="text-sm text-muted-foreground">OR</span>
+                        <div className="flex-1 border-t border-border"></div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="manual-email">Enter Email Manually</Label>
+                        <Input
+                          id="manual-email"
+                          type="email"
+                          placeholder="customer@example.com"
+                          value={manualEmail}
+                          onChange={(e) => {
+                            setManualEmail(e.target.value);
+                            setSelectedCustomerId(''); // Clear selection when typing email
+                          }}
+                        />
+                      </div>
+
                       {selectedCustomer && (
                         <div className="p-4 bg-muted rounded-lg space-y-1">
                           <p className="text-sm"><strong>Name:</strong> {selectedCustomer.first_name} {selectedCustomer.last_name}</p>
@@ -338,7 +364,7 @@ const InvoilessAPITest = () => {
 
                       <Button 
                         onClick={handleGetCustomer} 
-                        disabled={loading || !selectedCustomerId}
+                        disabled={loading || (!selectedCustomerId && !manualEmail)}
                         className="w-full"
                       >
                         {loading ? (
