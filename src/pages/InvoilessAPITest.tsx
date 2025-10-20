@@ -42,6 +42,19 @@ const InvoilessAPITest = () => {
     address: '',
   });
 
+  // Send Invoice state
+  const [sendLoading, setSendLoading] = useState(false);
+  const [sendResponse, setSendResponse] = useState<any>(null);
+  const [invoiceData, setInvoiceData] = useState({
+    customerId: '',
+    service: '',
+    cost: '',
+    hours: '',
+    discount: '',
+    dueDate: '',
+    notes: ''
+  });
+
   useEffect(() => {
     fetchCustomers();
   }, []);
@@ -206,6 +219,65 @@ const InvoilessAPITest = () => {
     }
   };
 
+  const handleSendInvoice = async () => {
+    try {
+      setSendLoading(true);
+      setSendResponse(null);
+
+      const { data, error } = await supabase.functions.invoke('invoiless-create-send', {
+        body: {
+          customerId: invoiceData.customerId,
+          service: invoiceData.service,
+          cost: parseFloat(invoiceData.cost) || 0,
+          hours: invoiceData.hours ? parseFloat(invoiceData.hours) : undefined,
+          discount: invoiceData.discount ? parseFloat(invoiceData.discount) : undefined,
+          dueDate: invoiceData.dueDate || undefined,
+          notes: invoiceData.notes || undefined
+        }
+      });
+
+      if (error) {
+        console.error('Error sending invoice:', error);
+        setSendResponse({ error: error.message });
+        toast({
+          title: "Error",
+          description: error.message || "Failed to send invoice",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setSendResponse(data);
+      toast({
+        title: "Success",
+        description: data.message || "Invoice created and sent successfully!",
+      });
+
+      // Clear form on success
+      if (data.success) {
+        setInvoiceData({
+          customerId: '',
+          service: '',
+          cost: '',
+          hours: '',
+          discount: '',
+          dueDate: '',
+          notes: ''
+        });
+      }
+    } catch (error: any) {
+      console.error('Error in handleSendInvoice:', error);
+      setSendResponse({ error: error.message });
+      toast({
+        title: "Error",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setSendLoading(false);
+    }
+  };
+
   const selectedCustomer = customers.find(c => c.id.toString() === selectedCustomerId);
 
   return (
@@ -226,9 +298,10 @@ const InvoilessAPITest = () => {
             
             <main className="flex-1 p-4 space-y-4 max-w-4xl mx-auto">
               <Tabs defaultValue="get-customer" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="get-customer">Get Customer</TabsTrigger>
                   <TabsTrigger value="create-customer">Create Customer</TabsTrigger>
+                  <TabsTrigger value="send-invoice">Send Invoice</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="get-customer" className="space-y-4">
@@ -396,6 +469,129 @@ const InvoilessAPITest = () => {
                       <CardContent>
                         <pre className="p-4 bg-muted rounded-lg overflow-auto text-xs">
                           {JSON.stringify(createResponse, null, 2)}
+                        </pre>
+                      </CardContent>
+                    </Card>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="send-invoice" className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Create and Send Invoice</CardTitle>
+                      <CardDescription>
+                        Create an invoice and send it to a customer via Invoiless
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="invoice-customer-id">Customer ID *</Label>
+                        <Input
+                          id="invoice-customer-id"
+                          placeholder="Enter Invoiless customer ID"
+                          value={invoiceData.customerId}
+                          onChange={(e) => setInvoiceData({ ...invoiceData, customerId: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="service">Service Description *</Label>
+                        <Input
+                          id="service"
+                          placeholder="e.g., House Cleaning Service"
+                          value={invoiceData.service}
+                          onChange={(e) => setInvoiceData({ ...invoiceData, service: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="cost">Cost (£) *</Label>
+                          <Input
+                            id="cost"
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={invoiceData.cost}
+                            onChange={(e) => setInvoiceData({ ...invoiceData, cost: e.target.value })}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="hours">Hours</Label>
+                          <Input
+                            id="hours"
+                            type="number"
+                            step="0.5"
+                            placeholder="0"
+                            value={invoiceData.hours}
+                            onChange={(e) => setInvoiceData({ ...invoiceData, hours: e.target.value })}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="discount">Discount (%)</Label>
+                          <Input
+                            id="discount"
+                            type="number"
+                            step="0.01"
+                            placeholder="0"
+                            value={invoiceData.discount}
+                            onChange={(e) => setInvoiceData({ ...invoiceData, discount: e.target.value })}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="due-date">Due Date</Label>
+                          <Input
+                            id="due-date"
+                            type="date"
+                            value={invoiceData.dueDate}
+                            onChange={(e) => setInvoiceData({ ...invoiceData, dueDate: e.target.value })}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="notes">Notes</Label>
+                        <Input
+                          id="notes"
+                          placeholder="Additional notes for the invoice"
+                          value={invoiceData.notes}
+                          onChange={(e) => setInvoiceData({ ...invoiceData, notes: e.target.value })}
+                        />
+                      </div>
+
+                      <Button 
+                        onClick={handleSendInvoice} 
+                        disabled={sendLoading || !invoiceData.customerId || !invoiceData.service || !invoiceData.cost}
+                        className="w-full"
+                      >
+                        {sendLoading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Sending...
+                          </>
+                        ) : (
+                          'Create and Send Invoice'
+                        )}
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  {sendResponse && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>API Response</CardTitle>
+                        <CardDescription>
+                          Status: {sendResponse.success ? 'Success' : 'Error'}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <pre className="p-4 bg-muted rounded-lg overflow-auto text-xs">
+                          {JSON.stringify(sendResponse, null, 2)}
                         </pre>
                       </CardContent>
                     </Card>
