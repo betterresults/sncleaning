@@ -64,8 +64,14 @@ const InvoilessAPITest = () => {
 
     try {
       const apiKey = 'invls_ak_t8T4u8dBDChqn2NudkHKzAi-Yqvk2wj6wPf31VKNTt-9XDjfWfwrMbSf6a6RXpSQ';
+      const searchEmail = selectedCustomer?.email || '';
       
-      const response = await fetch('https://api.invoiless.com/v1/customers', {
+      const url = new URL('https://api.invoiless.com/v1/customers');
+      if (searchEmail) {
+        url.searchParams.append('search', searchEmail);
+      }
+      
+      const response = await fetch(url.toString(), {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
