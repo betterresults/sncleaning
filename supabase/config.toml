@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.stripe-capture-payment]
 verify_jwt = false
+
+[functions.invoiless-get-customer]
+verify_jwt = false

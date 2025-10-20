@@ -63,42 +63,35 @@ const InvoilessAPITest = () => {
     setApiResponse(null);
 
     try {
-      const apiKey = 'invls_ak_t8T4u8dBDChqn2NudkHKzAi-Yqvk2wj6wPf31VKNTt-9XDjfWfwrMbSf6a6RXpSQ';
-      const searchEmail = selectedCustomer?.email || '';
-      
-      const url = new URL('https://api.invoiless.com/v1/customers');
-      if (searchEmail) {
-        url.searchParams.append('search', searchEmail);
-      }
-      
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        headers: {
-          'api-key': apiKey,
-          'Accept': 'application/json',
-        },
+      const { data, error } = await supabase.functions.invoke('invoiless-get-customer', {
+        body: { email: selectedCustomer?.email }
       });
 
-      const data = await response.json();
-      
+      if (error) {
+        setApiResponse({
+          status: 'error',
+          error: error.message,
+          details: error
+        });
+        toast({
+          title: 'Error',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return;
+      }
+
       setApiResponse({
-        status: response.status,
-        statusText: response.statusText,
+        status: 200,
+        statusText: 'OK',
         data: data,
       });
 
-      if (response.ok) {
-        toast({
-          title: 'Success',
-          description: 'Customer data fetched successfully',
-        });
-      } else {
-        toast({
-          title: 'API Error',
-          description: `Status ${response.status}: ${response.statusText}`,
-          variant: 'destructive',
-        });
-      }
+      toast({
+        title: 'Success',
+        description: 'Customer data fetched successfully',
+      });
+
     } catch (error: any) {
       toast({
         title: 'Error',
