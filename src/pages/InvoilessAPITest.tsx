@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
@@ -11,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
+import AdminGuard from '@/components/AdminGuard';
 
 interface Customer {
   id: number;
@@ -115,95 +115,93 @@ const InvoilessAPITest = () => {
     }
   };
 
-  if (!user || userRole !== 'admin') {
-    return <Navigate to="/auth" replace />;
-  }
-
   const selectedCustomer = customers.find(c => c.id.toString() === selectedCustomerId);
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
-        <UnifiedSidebar 
-          navigationItems={adminNavigation}
-          user={user}
-          onSignOut={handleSignOut}
-        />
-        <SidebarInset className="flex-1">
-          <UnifiedHeader 
-            title="Invoiless API Test 🧪"
+    <AdminGuard>
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-gray-50">
+          <UnifiedSidebar 
+            navigationItems={adminNavigation}
             user={user}
-            userRole={userRole}
+            onSignOut={handleSignOut}
           />
-          
-          <main className="flex-1 p-4 space-y-4 max-w-4xl mx-auto">
-            <Card>
-              <CardHeader>
-                <CardTitle>Test Invoiless Customer API</CardTitle>
-                <CardDescription>
-                  Select a customer from your database and test fetching their data from Invoiless
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Select Customer</label>
-                  <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a customer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {customers.map((customer) => (
-                        <SelectItem key={customer.id} value={customer.id.toString()}>
-                          {customer.first_name} {customer.last_name} - {customer.email}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {selectedCustomer && (
-                  <div className="p-4 bg-muted rounded-lg space-y-1">
-                    <p className="text-sm"><strong>Name:</strong> {selectedCustomer.first_name} {selectedCustomer.last_name}</p>
-                    <p className="text-sm"><strong>Email:</strong> {selectedCustomer.email}</p>
-                  </div>
-                )}
-
-                <Button 
-                  onClick={handleGetCustomer} 
-                  disabled={loading || !selectedCustomerId}
-                  className="w-full"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Fetching...
-                    </>
-                  ) : (
-                    'Get Customer Info from Invoiless'
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-
-            {apiResponse && (
+          <SidebarInset className="flex-1">
+            <UnifiedHeader 
+              title="Invoiless API Test 🧪"
+              user={user}
+              userRole={userRole}
+            />
+            
+            <main className="flex-1 p-4 space-y-4 max-w-4xl mx-auto">
               <Card>
                 <CardHeader>
-                  <CardTitle>API Response</CardTitle>
+                  <CardTitle>Test Invoiless Customer API</CardTitle>
                   <CardDescription>
-                    Status: {apiResponse.status || 'Error'} {apiResponse.statusText || ''}
+                    Select a customer from your database and test fetching their data from Invoiless
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <pre className="p-4 bg-muted rounded-lg overflow-auto text-xs">
-                    {JSON.stringify(apiResponse, null, 2)}
-                  </pre>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Select Customer</label>
+                    <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a customer" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {customers.map((customer) => (
+                          <SelectItem key={customer.id} value={customer.id.toString()}>
+                            {customer.first_name} {customer.last_name} - {customer.email}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {selectedCustomer && (
+                    <div className="p-4 bg-muted rounded-lg space-y-1">
+                      <p className="text-sm"><strong>Name:</strong> {selectedCustomer.first_name} {selectedCustomer.last_name}</p>
+                      <p className="text-sm"><strong>Email:</strong> {selectedCustomer.email}</p>
+                    </div>
+                  )}
+
+                  <Button 
+                    onClick={handleGetCustomer} 
+                    disabled={loading || !selectedCustomerId}
+                    className="w-full"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Fetching...
+                      </>
+                    ) : (
+                      'Get Customer Info from Invoiless'
+                    )}
+                  </Button>
                 </CardContent>
               </Card>
-            )}
-          </main>
-        </SidebarInset>
-      </div>
-    </SidebarProvider>
+
+              {apiResponse && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>API Response</CardTitle>
+                    <CardDescription>
+                      Status: {apiResponse.status || 'Error'} {apiResponse.statusText || ''}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <pre className="p-4 bg-muted rounded-lg overflow-auto text-xs">
+                      {JSON.stringify(apiResponse, null, 2)}
+                    </pre>
+                  </CardContent>
+                </Card>
+              )}
+            </main>
+          </SidebarInset>
+        </div>
+      </SidebarProvider>
+    </AdminGuard>
   );
 };
 
