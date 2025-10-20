@@ -74,8 +74,8 @@ const InvoilessAPITest = () => {
       const response = await fetch(url.toString(), {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
+          'api-key': apiKey,
+          'Accept': 'application/json',
         },
       });
 
