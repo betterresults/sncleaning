@@ -18,6 +18,7 @@ import EditPastBookingDialog from './EditPastBookingDialog';
 import PhotoManagementDialog from './PhotoManagementDialog';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
+import { InvoilessPaymentDialog } from '@/components/payments/InvoilessPaymentDialog';
 import { AdjustPaymentAmountDialog } from '@/components/payments/AdjustPaymentAmountDialog';
 import { CollectPaymentMethodDialog } from '@/components/payments/CollectPaymentMethodDialog';
 
@@ -37,6 +38,8 @@ interface PastBooking {
   cleaner_pay: number;
   payment_status: string;
   payment_method: string;
+  invoice_id?: string | null;
+  invoice_link?: string | null;
   booking_status: string;
   total_hours: number;
   property_details: string;
@@ -112,6 +115,8 @@ const PastBookingsTable = () => {
   const [adjustPaymentDialogOpen, setAdjustPaymentDialogOpen] = useState(false);
   const [collectPaymentDialogOpen, setCollectPaymentDialogOpen] = useState(false);
   const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<PastBooking | null>(null);
+  const [invoilessDialogOpen, setInvoilessDialogOpen] = useState(false);
+  const [selectedBookingForInvoiless, setSelectedBookingForInvoiless] = useState<PastBooking | null>(null);
 
   const getTimePeriodDates = (period: string) => {
     const now = new Date();
@@ -379,8 +384,13 @@ const PastBookingsTable = () => {
   };
 
   const handlePaymentAction = (booking: PastBooking) => {
-    setSelectedBookingForPayment(booking);
-    setPaymentDialogOpen(true);
+    if (booking.payment_method === 'Invoiless') {
+      setSelectedBookingForInvoiless(booking);
+      setInvoilessDialogOpen(true);
+    } else {
+      setSelectedBookingForPayment(booking);
+      setPaymentDialogOpen(true);
+    }
   };
 
   const handleAdjustPayment = (booking: PastBooking) => {
@@ -1094,6 +1104,13 @@ const PastBookingsTable = () => {
                                   Make Recurring
                                 </DropdownMenuItem>
                                 <DropdownMenuItem 
+                                  className="cursor-pointer"
+                                  onClick={() => handlePaymentAction(booking)}
+                                >
+                                  <CreditCard className="mr-2 h-4 w-4" />
+                                  {booking.payment_method === 'Invoiless' ? 'Manage Invoice' : 'Manage Payment'}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
                                   className="cursor-pointer text-red-600"
                                   onClick={() => handleDelete(booking.id)}
                                 >
@@ -1303,6 +1320,36 @@ const PastBookingsTable = () => {
             }}
           />
         </>
+      )}
+
+      {/* Invoiless Payment Dialog */}
+      {selectedBookingForInvoiless && (
+        <InvoilessPaymentDialog
+          booking={{
+            id: selectedBookingForInvoiless.id,
+            first_name: selectedBookingForInvoiless.first_name,
+            last_name: selectedBookingForInvoiless.last_name,
+            email: selectedBookingForInvoiless.email,
+            total_cost: selectedBookingForInvoiless.total_cost,
+            payment_method: selectedBookingForInvoiless.payment_method,
+            payment_status: selectedBookingForInvoiless.payment_status,
+            invoice_id: selectedBookingForInvoiless.invoice_id,
+            invoice_link: selectedBookingForInvoiless.invoice_link,
+            date_time: selectedBookingForInvoiless.date_time,
+            address: selectedBookingForInvoiless.address
+          }}
+          isOpen={invoilessDialogOpen}
+          bookingType="past"
+          onClose={() => {
+            setInvoilessDialogOpen(false);
+            setSelectedBookingForInvoiless(null);
+          }}
+          onSuccess={() => {
+            fetchData();
+            setInvoilessDialogOpen(false);
+            setSelectedBookingForInvoiless(null);
+          }}
+        />
       )}
     </div>
   );

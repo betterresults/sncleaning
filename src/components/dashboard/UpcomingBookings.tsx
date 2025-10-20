@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Edit, Trash2, Filter, Search, Settings, Copy, X, UserPlus, DollarSign, Repeat, Calendar, List, MoreHorizontal, CalendarDays, Clock, MapPin, User, Mail, Phone, Banknote, CheckCircle, XCircle, AlertCircle, AlertTriangle, Send } from 'lucide-react';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
+import { InvoilessPaymentDialog } from '@/components/payments/InvoilessPaymentDialog';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -43,6 +44,9 @@ interface Booking {
   service_type: string;
   total_cost: number;
   payment_status: string;
+  payment_method?: string;
+  invoice_id?: string | null;
+  invoice_link?: string | null;
   cleaner: number | null;
   customer: number;
   cleaner_pay: number | null;
@@ -130,6 +134,8 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   const [bookingToCancel, setBookingToCancel] = useState<number | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<Booking | null>(null);
+  const [invoilessDialogOpen, setInvoilessDialogOpen] = useState(false);
+  const [selectedBookingForInvoiless, setSelectedBookingForInvoiless] = useState<Booking | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [dayBookingsDialogOpen, setDayBookingsDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -432,8 +438,13 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   };
 
   const handlePaymentAction = (booking: Booking) => {
-    setSelectedBookingForPayment(booking);
-    setPaymentDialogOpen(true);
+    if (booking.payment_method === 'Invoiless') {
+      setSelectedBookingForInvoiless(booking);
+      setInvoilessDialogOpen(true);
+    } else {
+      setSelectedBookingForPayment(booking);
+      setPaymentDialogOpen(true);
+    }
   };
 
   const handleMakeRecurring = (booking: Booking) => {
@@ -896,12 +907,12 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                                 <Send className="w-4 h-4 mr-2" />
                                 Send Email
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handlePaymentAction(booking)}>
-                                <DollarSign className="w-4 h-4 mr-2" />
-                                Manage Payment
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handlePaymentAction(booking)}>
+                <DollarSign className="w-4 h-4 mr-2" />
+                {booking.payment_method === 'Invoiless' ? 'Manage Invoice' : 'Manage Payment'}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleCancel(booking.id)} className="text-orange-600">
                                 <X className="w-4 h-4 mr-2" />
                                 Cancel
@@ -1189,14 +1200,14 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
                                       Send Email
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handlePaymentAction(booking);
-                                      }}
-                                    >
-                                      <DollarSign className="w-4 h-4 mr-2" />
-                                      Manage Payment
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePaymentAction(booking);
+                      }}
+                    >
+                      <DollarSign className="w-4 h-4 mr-2" />
+                      {booking.payment_method === 'Invoiless' ? 'Manage Invoice' : 'Manage Payment'}
                                     </DropdownMenuItem>
                                    <DropdownMenuSeparator />
                                   <DropdownMenuItem
@@ -1373,6 +1384,21 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
           fetchData();
           setPaymentDialogOpen(false);
           setSelectedBookingForPayment(null);
+        }}
+      />
+
+      <InvoilessPaymentDialog
+        booking={selectedBookingForInvoiless || {} as any}
+        isOpen={invoilessDialogOpen}
+        bookingType="upcoming"
+        onClose={() => {
+          setInvoilessDialogOpen(false);
+          setSelectedBookingForInvoiless(null);
+        }}
+        onSuccess={() => {
+          fetchData();
+          setInvoilessDialogOpen(false);
+          setSelectedBookingForInvoiless(null);
         }}
       />
 
