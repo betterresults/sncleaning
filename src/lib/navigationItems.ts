@@ -1,4 +1,4 @@
-import { Briefcase, Calendar, History, DollarSign, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Calculator, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package, TrendingUp, Activity, Bell, CheckSquare } from 'lucide-react';
+import { Briefcase, Calendar, History, DollarSign, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Calculator, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package, TrendingUp, Activity, Bell, CheckSquare, TestTube } from 'lucide-react';
 
 export const cleanerNavigation = [
   {
@@ -212,6 +212,11 @@ export const adminNavigation = [
         title: "Notification Management",
         url: "/admin-notification-management",
         icon: Bell,
+      },
+      {
+        title: "Invoiless API Test",
+        url: "/invoiless-api-test",
+        icon: TestTube,
       },
     ],
   },

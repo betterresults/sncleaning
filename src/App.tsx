@@ -47,6 +47,7 @@ import AdminLinenManagement from "./pages/AdminLinenManagement";
 import AdminProfitTracking from "./pages/AdminProfitTracking";
 import AdminActivityLogs from "./pages/AdminActivityLogs";
 import AdminNotificationManagement from "./pages/AdminNotificationManagement";
+import InvoilessAPITest from "./pages/InvoilessAPITest";
 import NotFound from "./pages/NotFound";
 import { AdminCustomerProvider } from "./contexts/AdminCustomerContext";
 import { AdminCleanerProvider } from "./contexts/AdminCleanerContext";
@@ -105,6 +106,7 @@ const App = () => (
                    <Route path="/admin-profit-tracking" element={<AdminProfitTracking />} />
                    <Route path="/admin-activity-logs" element={<AdminActivityLogs />} />
                     <Route path="/admin-notification-management" element={<AdminNotificationManagement />} />
+                    <Route path="/invoiless-api-test" element={<InvoilessAPITest />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
             </Routes>
