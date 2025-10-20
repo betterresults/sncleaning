@@ -504,9 +504,9 @@ const InvoilessAPITest = () => {
                 <TabsContent value="send-invoice" className="space-y-4">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Create and Send Invoice</CardTitle>
+                      <CardTitle>Create Invoice</CardTitle>
                       <CardDescription>
-                        Create an invoice and send it to a customer via Invoiless
+                        Create a draft invoice in Invoiless (not sent to customer yet)
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -558,12 +558,12 @@ const InvoilessAPITest = () => {
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="discount">Discount (%)</Label>
+                          <Label htmlFor="discount">Discount (£)</Label>
                           <Input
                             id="discount"
                             type="number"
                             step="0.01"
-                            placeholder="0"
+                            placeholder="0.00"
                             value={invoiceData.discount}
                             onChange={(e) => setInvoiceData({ ...invoiceData, discount: e.target.value })}
                           />
@@ -598,10 +598,10 @@ const InvoilessAPITest = () => {
                         {sendLoading ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Sending...
+                            Creating...
                           </>
                         ) : (
-                          'Create and Send Invoice'
+                          'Create Invoice'
                         )}
                       </Button>
                     </CardContent>

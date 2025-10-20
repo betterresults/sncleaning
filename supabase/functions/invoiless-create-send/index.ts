@@ -30,13 +30,8 @@ serve(async (req) => {
       throw new Error('INVOILESS_API_KEY is not configured');
     }
 
-    // Calculate final amount after discount
-    const subtotal = parseFloat(cost);
-    const discountAmount = discount ? (subtotal * parseFloat(discount)) / 100 : 0;
-    const total = subtotal - discountAmount;
-
-    // Prepare invoice data
-    const invoiceData = {
+    // Prepare invoice data - discount is sent as actual amount, not percentage
+    const invoiceData: any = {
       customerId: customerId,
       items: [
         {
@@ -46,11 +41,18 @@ serve(async (req) => {
           quantity: 1
         }
       ],
-      dueDate: dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default 30 days from now
-      discount: discountAmount,
-      notes: notes || '',
-      status: 'draft'
+      notes: notes || ''
     };
+
+    // Only add discount if provided
+    if (discount && parseFloat(discount) > 0) {
+      invoiceData.discount = parseFloat(discount);
+    }
+
+    // Only add due date if provided
+    if (dueDate) {
+      invoiceData.dueDate = dueDate;
+    }
 
     console.log('Creating invoice in Invoiless:', invoiceData);
 
@@ -73,42 +75,12 @@ serve(async (req) => {
     const invoice = await createResponse.json();
     console.log('Invoice created successfully:', invoice);
 
-    // Send the invoice
-    const sendResponse = await fetch(`https://api.invoiless.com/v1/invoices/${invoice.id}/send`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${INVOILESS_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!sendResponse.ok) {
-      const errorText = await sendResponse.text();
-      console.error('Invoiless send error:', errorText);
-      // Return the created invoice even if send failed
-      return new Response(
-        JSON.stringify({
-          success: true,
-          invoice: invoice,
-          sendError: `Failed to send invoice: ${sendResponse.status}`,
-          message: 'Invoice created but not sent'
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    const sendResult = await sendResponse.json();
-    console.log('Invoice sent successfully:', sendResult);
-
+    // Return the created invoice (not sending it yet)
     return new Response(
       JSON.stringify({
         success: true,
         invoice: invoice,
-        sendResult: sendResult,
-        message: 'Invoice created and sent successfully'
+        message: 'Invoice created successfully'
       }),
       {
         status: 200,
