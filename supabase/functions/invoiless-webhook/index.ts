@@ -47,6 +47,45 @@ serve(async (req) => {
         newPaymentStatus = 'Overdue';
         console.log(`Invoice ${invoiceData.id} is overdue`);
         break;
+      case 'invoice.deleted':
+        // Clear invoice data when deleted
+        const { error: deleteBookingError } = await supabaseClient
+          .from('bookings')
+          .update({ 
+            invoice_id: null, 
+            invoice_link: null,
+            payment_status: 'Unpaid'
+          })
+          .eq('invoice_id', invoiceData.id);
+
+        if (deleteBookingError) {
+          console.error('Error clearing invoice from bookings:', deleteBookingError);
+        }
+
+        const { error: deletePastBookingError } = await supabaseClient
+          .from('past_bookings')
+          .update({ 
+            invoice_id: null, 
+            invoice_link: null,
+            payment_status: 'Unpaid'
+          })
+          .eq('invoice_id', invoiceData.id);
+
+        if (deletePastBookingError) {
+          console.error('Error clearing invoice from past_bookings:', deletePastBookingError);
+        }
+
+        console.log(`Invoice ${invoiceData.id} deleted - cleared from bookings`);
+        break;
+      case 'invoice.updated':
+        // Handle invoice updates - check if status changed
+        console.log(`Invoice ${invoiceData.id} was updated`);
+        if (invoiceData.status === 'paid') {
+          newPaymentStatus = 'Paid';
+        } else if (invoiceData.status === 'overdue') {
+          newPaymentStatus = 'Overdue';
+        }
+        break;
       default:
         console.log(`Unhandled event type: ${eventType}`);
     }
