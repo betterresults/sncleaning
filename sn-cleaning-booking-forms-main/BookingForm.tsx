@@ -1,0 +1,278 @@
+import React, { useState } from 'react';
+import { Card } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { PropertyStep } from './steps/PropertyStep';
+
+import { LinensStep } from './steps/LinensStep';
+import { ScheduleStep } from './steps/ScheduleStep';
+import { ContactStep } from './steps/ContactStep';
+import { BookingSummary } from './BookingSummary';
+import { PaymentStep } from './steps/PaymentStep';
+import { Home, Brush, Calendar, User, CreditCard, Package2 } from 'lucide-react';
+
+export interface BookingData {
+  // Property details
+  propertyType: 'flat' | 'house' | '';
+  bedrooms: string;
+  bathrooms: string;
+  toilets: string;
+  
+  // Additional rooms (for 2+ bedrooms)
+  additionalRooms: {
+    toilets: number;
+    studyRooms: number;
+    utilityRooms: number;
+    otherRooms: number;
+  };
+  
+  // Service details
+  serviceType: 'checkin-checkout' | 'midstay' | 'light' | 'deep' | '';
+  alreadyCleaned: boolean | null;
+  needsOvenCleaning: boolean | null;
+  ovenType: 'single' | 'double' | 'range' | 'convection' | '';
+  cleaningProducts: {
+    needed: boolean | null;
+    equipment: boolean | null;
+  };
+  equipmentArrangement: 'oneoff' | 'ongoing' | null;
+  equipmentStorageConfirmed: boolean;
+  
+  // Linens
+  linensHandling: 'customer-handles' | 'wash-hang' | 'wash-dry' | 'order-linens' | '';
+  needsIroning: boolean | null;
+  ironingHours: number;
+  linenPackages: Record<string, number>;
+  extraHours: number;
+  
+  // Schedule
+  selectedDate: Date | null;
+  selectedTime: string;
+  flexibility: 'not-flexible' | 'flexible-time' | 'flexible-date' | '';
+  notes: string;
+  
+  // Contact
+  firstName: string;
+  lastName: string;
+  name: string;
+  email: string;
+  phone: string;
+  houseNumber: string;
+  street: string;
+  postcode: string;
+  city: string;
+  propertyAccess: string;
+  accessNotes: string;
+  
+  // Calculations
+  estimatedHours: number | null;
+  hourlyRate: number;
+  totalCost: number;
+}
+
+const steps = [
+  { id: 1, title: 'Property', key: 'property', icon: <Home className="w-4 h-4" /> },
+  { id: 2, title: 'Linens', key: 'linens', icon: <Package2 className="w-4 h-4" /> },
+  { id: 3, title: 'Date', key: 'schedule', icon: <Calendar className="w-4 h-4" /> },
+  { id: 4, title: 'Details', key: 'contact', icon: <User className="w-4 h-4" /> },
+  { id: 5, title: 'Summary', key: 'payment', icon: <CreditCard className="w-4 h-4" /> },
+];
+
+const BookingForm: React.FC = () => {
+  const [currentStep, setCurrentStep] = useState(1);
+  const [bookingData, setBookingData] = useState<BookingData>({
+    propertyType: '',
+    bedrooms: '',
+    bathrooms: '',
+    toilets: '0',
+    additionalRooms: {
+      toilets: 0,
+      studyRooms: 0,
+      utilityRooms: 0,
+      otherRooms: 0,
+    },
+    serviceType: '',
+    alreadyCleaned: null,
+    needsOvenCleaning: null,
+    ovenType: '',
+    cleaningProducts: {
+      needed: null, // Start with null to indicate no selection
+      equipment: null,
+    },
+    equipmentArrangement: null,
+    equipmentStorageConfirmed: false,
+    linensHandling: '',
+    needsIroning: null,
+    ironingHours: 0,
+    linenPackages: {},
+    extraHours: 0,
+    selectedDate: null,
+    selectedTime: '',
+    flexibility: '',
+    notes: '',
+    firstName: '',
+    lastName: '',
+    name: '',
+    email: '',
+    phone: '',
+    houseNumber: '',
+    street: '',
+    postcode: '',
+    city: '',
+    propertyAccess: '',
+    accessNotes: '',
+    estimatedHours: null, // Start with null instead of 0
+    hourlyRate: 25,
+    totalCost: 0,
+  });
+
+  const updateBookingData = (updates: Partial<BookingData>) => {
+    setBookingData(prev => {
+      const newData = { ...prev, ...updates };
+      
+      // Recalculate costs when relevant data changes
+      if (updates.estimatedHours !== undefined || updates.extraHours !== undefined) {
+        const estimatedHours = updates.estimatedHours ?? newData.estimatedHours ?? 0;
+        const extraHours = updates.extraHours ?? newData.extraHours;
+        const totalHours = estimatedHours + extraHours;
+        newData.totalCost = totalHours * newData.hourlyRate;
+      }
+      
+      return newData;
+    });
+  };
+
+  const nextStep = () => {
+    if (currentStep < steps.length) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const progress = (currentStep / steps.length) * 100;
+
+  const renderStep = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <PropertyStep
+            data={bookingData}
+            onUpdate={updateBookingData}
+            onNext={nextStep}
+          />
+        );
+      case 2:
+        return (
+          <LinensStep
+            data={bookingData}
+            onUpdate={updateBookingData}
+            onNext={nextStep}
+            onBack={prevStep}
+          />
+        );
+      case 3:
+        return (
+          <ScheduleStep
+            data={bookingData}
+            onUpdate={updateBookingData}
+            onNext={nextStep}
+            onBack={prevStep}
+          />
+        );
+      case 4:
+        return (
+          <ContactStep
+            data={bookingData}
+            onUpdate={updateBookingData}
+            onNext={nextStep}
+            onBack={prevStep}
+          />
+        );
+      case 5:
+        return (
+          <PaymentStep
+            data={bookingData}
+            onBack={prevStep}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="bg-card border-2 border-border rounded-lg mx-1 md:mx-2 mt-1 md:mt-2 shadow-sm">
+        <div className="container mx-auto px-2 md:px-3 py-2 md:py-4">
+          <h1 className="text-2xl md:text-4xl font-bold text-foreground text-center mb-4 md:mb-6">
+            Airbnb Cleaning Booking Form
+          </h1>
+          
+          {/* Step Navigation */}
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-between bg-muted/20 rounded-2xl p-1 md:p-2 gap-1 md:gap-2">
+              {steps.map((step, index) => {
+                const stepNumber = index + 1;
+                const isActive = currentStep === stepNumber;
+                const isCompleted = currentStep > stepNumber;
+                const canNavigate = isCompleted || stepNumber <= currentStep;
+                
+                return (
+                  <button
+                    key={step.id}
+                    onClick={() => canNavigate && setCurrentStep(stepNumber)}
+                    disabled={!canNavigate}
+                    className={`flex items-center gap-2 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-xl transition-all duration-300 flex-1 ${
+                      isActive 
+                        ? 'bg-primary text-primary-foreground shadow-lg' 
+                        : isCompleted
+                        ? 'bg-primary/10 text-primary hover:bg-primary/20'
+                        : 'text-muted-foreground hover:text-foreground'
+                    } ${canNavigate ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
+                  >
+                    <div className={`w-6 h-6 md:w-8 md:h-8 rounded-lg flex items-center justify-center text-xs md:text-sm font-medium ${
+                      isActive 
+                        ? 'bg-white/20' 
+                        : isCompleted
+                        ? 'bg-primary/20'
+                        : 'bg-muted'
+                    }`}>
+                      {step.icon}
+                    </div>
+                    <span className="font-medium text-xs md:text-sm hidden sm:block">{step.title}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-1 md:px-2 py-2 md:py-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col lg:grid lg:grid-cols-6 gap-2 md:gap-4">
+            {/* Form Section */}
+            <div className="order-1 lg:col-span-4">
+              <Card className="p-3 md:p-6 shadow-lg">
+                {renderStep()}
+              </Card>
+            </div>
+            
+            {/* Summary Section - Bottom on mobile, right on desktop */}
+            <div className="order-2 lg:order-2 lg:col-span-2">
+              <BookingSummary data={bookingData} />
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default BookingForm;
