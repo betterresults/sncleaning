@@ -219,17 +219,17 @@ const BookingForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 py-6 mb-8">
+      <header className="bg-card border-b border-border py-6 mb-8">
         <div className="container mx-auto px-4">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-800 text-center mb-6">
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground text-center mb-6">
             Airbnb Cleaning Booking Form
           </h1>
           
           {/* Step Navigation */}
           <div className="max-w-4xl mx-auto">
-            <div className="flex items-center justify-between bg-gray-100 rounded-xl p-2 gap-2">
+            <div className="flex items-center justify-between bg-muted rounded-xl p-2 gap-2">
               {steps.map((step, index) => {
                 const stepNumber = index + 1;
                 const isActive = currentStep === stepNumber;
@@ -243,10 +243,10 @@ const BookingForm: React.FC = () => {
                     disabled={!canNavigate}
                     className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 flex-1 ${
                       isActive 
-                        ? 'bg-primary text-white shadow-md' 
+                        ? 'bg-primary text-primary-foreground shadow-md' 
                         : isCompleted
                         ? 'bg-primary/10 text-primary hover:bg-primary/20'
-                        : 'text-gray-400 hover:text-gray-600'
+                        : 'text-muted-foreground hover:text-foreground'
                     } ${canNavigate ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
                   >
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium ${
@@ -254,7 +254,7 @@ const BookingForm: React.FC = () => {
                         ? 'bg-white/20' 
                         : isCompleted
                         ? 'bg-primary/20'
-                        : 'bg-gray-200'
+                        : 'bg-muted'
                     }`}>
                       {step.icon}
                     </div>
@@ -272,7 +272,7 @@ const BookingForm: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Form Section - Takes 2 columns */}
           <div className="lg:col-span-2">
-            <Card className="p-8 shadow-sm bg-white">
+            <Card className="p-8 shadow-sm bg-card">
               {renderStep()}
             </Card>
           </div>
