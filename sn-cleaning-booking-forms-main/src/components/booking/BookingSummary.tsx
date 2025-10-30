@@ -370,7 +370,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
   );
 
   return (
-    <Card className="p-4 sticky top-4 shadow-sm border bg-card">
+    <Card className="p-4 shadow-sm border bg-card">
       {/* Mobile Collapsed View */}
       <div className="lg:hidden relative">
         <Button

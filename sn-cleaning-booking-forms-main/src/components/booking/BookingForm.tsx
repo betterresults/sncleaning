@@ -269,18 +269,20 @@ const BookingForm: React.FC = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-1 md:px-2 py-2 md:py-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col lg:grid lg:grid-cols-6 gap-2 md:gap-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 md:gap-6">
             {/* Form Section */}
-            <div className="order-1 lg:col-span-4">
+            <div className="lg:col-span-8">
               <Card className="p-3 md:p-6 shadow-lg">
                 {renderStep()}
               </Card>
             </div>
             
             {/* Summary Section - Bottom on mobile, right on desktop */}
-            <div className="order-2 lg:order-2 lg:col-span-2 lg:sticky lg:top-24">
-              <BookingSummary data={bookingData} />
+            <div className="lg:col-span-4">
+              <div className="lg:sticky lg:top-4">
+                <BookingSummary data={bookingData} />
+              </div>
             </div>
           </div>
         </div>
