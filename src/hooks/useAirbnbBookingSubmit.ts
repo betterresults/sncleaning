@@ -39,7 +39,7 @@ export const useAirbnbBookingSubmit = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
-  const submitBooking = async (bookingData: BookingSubmission) => {
+  const submitBooking = async (bookingData: BookingSubmission, skipPaymentAuth = false) => {
     try {
       setLoading(true);
 
@@ -116,33 +116,30 @@ export const useAirbnbBookingSubmit = () => {
         throw new Error('Failed to create booking');
       }
 
-      // Step 3: Authorize payment using customer's saved payment method
-      const { data: paymentResult, error: paymentError } = await supabase.functions.invoke(
-        'stripe-authorize-payment',
-        {
-          body: {
-            bookingId: booking.id
+      // Step 3: Authorize payment only if not skipped (for non-urgent bookings)
+      if (!skipPaymentAuth) {
+        const { data: paymentResult, error: paymentError } = await supabase.functions.invoke(
+          'stripe-authorize-payment',
+          {
+            body: {
+              bookingId: booking.id
+            }
           }
-        }
-      );
+        );
 
-      if (paymentError) {
-        console.error('Payment authorization failed:', paymentError);
-        // Booking is still created, just payment failed
-        toast({
-          title: "Booking Created",
-          description: "Booking created but payment authorization failed. We'll contact you to complete payment.",
-          variant: "destructive"
-        });
-        return { success: true, bookingId: booking.id, paymentFailed: true };
+        if (paymentError) {
+          console.error('Payment authorization failed:', paymentError);
+          // Booking is still created, just payment failed
+          toast({
+            title: "Booking Created",
+            description: "Booking created but payment authorization failed. We'll contact you to complete payment.",
+            variant: "destructive"
+          });
+          return { success: true, bookingId: booking.id, customerId, paymentFailed: true };
+        }
       }
 
-      toast({
-        title: "Booking Confirmed!",
-        description: `Your booking #${booking.id} has been created successfully.`,
-      });
-
-      return { success: true, bookingId: booking.id };
+      return { success: true, bookingId: booking.id, customerId };
 
     } catch (error: any) {
       console.error('Error submitting booking:', error);
