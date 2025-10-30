@@ -245,7 +245,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
           <span className="sm:hidden text-lg">←</span>
         </Button>
         <Button
-          variant="default"
+          variant="continue"
           size="lg"
           onClick={onNext}
           disabled={!canContinue}
