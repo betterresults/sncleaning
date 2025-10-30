@@ -219,9 +219,9 @@ const BookingForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-muted/20">
       {/* Header */}
-      <header className="bg-card border-2 border-border rounded-lg mx-1 md:mx-2 mt-1 md:mt-2 shadow-sm">
+      <header className="bg-card/80 backdrop-blur border border-border rounded-2xl mx-1 md:mx-2 mt-1 md:mt-2 shadow">
         <div className="container mx-auto px-2 md:px-3 py-2 md:py-4">
           <h1 className="text-2xl md:text-4xl font-bold text-foreground text-center mb-4 md:mb-6">
             Airbnb Cleaning Booking Form
@@ -279,7 +279,7 @@ const BookingForm: React.FC = () => {
             </div>
             
             {/* Summary Section - Bottom on mobile, right on desktop */}
-            <div className="order-2 lg:order-2 lg:col-span-2">
+            <div className="order-2 lg:order-2 lg:col-span-2 lg:sticky lg:top-24">
               <BookingSummary data={bookingData} />
             </div>
           </div>
