@@ -58,7 +58,7 @@ const PaymentForm: React.FC<{ data: BookingData; onBack: () => void }> = ({ data
         paymentMethodId = selectedPaymentMethod;
       }
 
-      // Submit booking with payment method
+      // Submit booking
       const result = await submitBooking({
         firstName: data.firstName,
         lastName: data.lastName,
@@ -81,7 +81,7 @@ const PaymentForm: React.FC<{ data: BookingData; onBack: () => void }> = ({ data
         hourlyRate: data.hourlyRate,
         notes: data.notes,
         additionalDetails: data
-      }, paymentMethodId);
+      });
 
       if (result.success) {
         navigate('/booking-confirmation', { state: { bookingId: result.bookingId } });
