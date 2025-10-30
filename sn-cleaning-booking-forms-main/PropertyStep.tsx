@@ -796,7 +796,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       {/* Continue Button */}
       <div className="flex justify-end pt-6">
         <Button
-          variant="continue"
+          variant="default"
           size="lg"
           onClick={onNext}
           disabled={!canContinue}

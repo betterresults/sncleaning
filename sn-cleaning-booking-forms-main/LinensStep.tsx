@@ -500,7 +500,7 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
           Back
         </Button>
         <Button
-          variant="continue"
+          variant="default"
           size="lg"
           onClick={onNext}
           disabled={!canContinue}
