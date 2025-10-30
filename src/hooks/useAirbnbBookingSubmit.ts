@@ -39,7 +39,7 @@ export const useAirbnbBookingSubmit = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
-  const submitBooking = async (bookingData: BookingSubmission, paymentMethodId?: string) => {
+  const submitBooking = async (bookingData: BookingSubmission) => {
     try {
       setLoading(true);
 
@@ -116,28 +116,25 @@ export const useAirbnbBookingSubmit = () => {
         throw new Error('Failed to create booking');
       }
 
-      // Step 3: Process payment if payment method provided
-      if (paymentMethodId) {
-        const { data: paymentResult, error: paymentError } = await supabase.functions.invoke(
-          'stripe-authorize-payment',
-          {
-            body: {
-              bookingId: booking.id,
-              paymentMethodId: paymentMethodId
-            }
+      // Step 3: Authorize payment using customer's saved payment method
+      const { data: paymentResult, error: paymentError } = await supabase.functions.invoke(
+        'stripe-authorize-payment',
+        {
+          body: {
+            bookingId: booking.id
           }
-        );
-
-        if (paymentError) {
-          console.error('Payment authorization failed:', paymentError);
-          // Booking is still created, just payment failed
-          toast({
-            title: "Booking Created",
-            description: "Booking created but payment authorization failed. We'll contact you to complete payment.",
-            variant: "destructive"
-          });
-          return { success: true, bookingId: booking.id, paymentFailed: true };
         }
+      );
+
+      if (paymentError) {
+        console.error('Payment authorization failed:', paymentError);
+        // Booking is still created, just payment failed
+        toast({
+          title: "Booking Created",
+          description: "Booking created but payment authorization failed. We'll contact you to complete payment.",
+          variant: "destructive"
+        });
+        return { success: true, bookingId: booking.id, paymentFailed: true };
       }
 
       toast({
