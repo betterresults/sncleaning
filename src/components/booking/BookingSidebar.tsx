@@ -68,7 +68,7 @@ export function BookingSidebar({ formData }: BookingSidebarProps) {
   };
 
   return (
-    <Card className="sticky top-4 lg:w-80 hidden lg:block border-0 lg:border shadow-lg">
+    <Card className="sticky top-4 lg:w-80 block border-0 lg:border shadow-lg">
       <CardHeader className="pb-3 bg-gradient-to-r from-primary/5 to-primary/10 rounded-t-lg">
         <CardTitle className="flex items-center gap-2 text-lg font-bold text-primary">
           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
