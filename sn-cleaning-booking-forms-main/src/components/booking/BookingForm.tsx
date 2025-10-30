@@ -6,7 +6,7 @@ import { PropertyStep } from './steps/PropertyStep';
 import { LinensStep } from './steps/LinensStep';
 import { ScheduleStep } from './steps/ScheduleStep';
 import { ContactStep } from './steps/ContactStep';
-import { BookingSummary } from './BookingSummary';
+import { BookingSidebar } from '@/components/booking/BookingSidebar';
 import { PaymentStep } from '../../../PaymentStep';
 import { Home, Brush, Calendar, User, CreditCard, Package2 } from 'lucide-react';
 
@@ -278,9 +278,9 @@ const BookingForm: React.FC = () => {
               </Card>
             </div>
             
-            {/* Summary Section - Bottom on mobile, right on desktop */}
+            {/* Price Calculator - Bottom on mobile, right on desktop */}
             <div className="order-2 lg:order-2 lg:col-span-2">
-              <BookingSummary data={bookingData} />
+              <BookingSidebar formData={bookingData} />
             </div>
           </div>
         </div>
