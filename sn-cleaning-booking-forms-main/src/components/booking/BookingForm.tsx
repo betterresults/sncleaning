@@ -219,17 +219,17 @@ const BookingForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-muted/20">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-card/80 backdrop-blur border border-border rounded-2xl mx-1 md:mx-2 mt-1 md:mt-2 shadow">
-        <div className="container mx-auto px-2 md:px-3 py-2 md:py-4">
-          <h1 className="text-2xl md:text-4xl font-bold text-foreground text-center mb-4 md:mb-6">
+      <header className="bg-white border-b border-gray-200 py-6 mb-8">
+        <div className="container mx-auto px-4">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-800 text-center mb-6">
             Airbnb Cleaning Booking Form
           </h1>
           
           {/* Step Navigation */}
           <div className="max-w-4xl mx-auto">
-            <div className="flex items-center justify-between bg-muted/20 rounded-2xl p-1 md:p-2 gap-1 md:gap-2">
+            <div className="flex items-center justify-between bg-gray-100 rounded-xl p-2 gap-2">
               {steps.map((step, index) => {
                 const stepNumber = index + 1;
                 const isActive = currentStep === stepNumber;
@@ -241,24 +241,24 @@ const BookingForm: React.FC = () => {
                     key={step.id}
                     onClick={() => canNavigate && setCurrentStep(stepNumber)}
                     disabled={!canNavigate}
-                    className={`flex items-center gap-2 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-xl transition-all duration-300 flex-1 ${
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 flex-1 ${
                       isActive 
-                        ? 'bg-primary text-primary-foreground shadow-lg' 
+                        ? 'bg-primary text-white shadow-md' 
                         : isCompleted
                         ? 'bg-primary/10 text-primary hover:bg-primary/20'
-                        : 'text-muted-foreground hover:text-foreground'
+                        : 'text-gray-400 hover:text-gray-600'
                     } ${canNavigate ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
                   >
-                    <div className={`w-6 h-6 md:w-8 md:h-8 rounded-lg flex items-center justify-center text-xs md:text-sm font-medium ${
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium ${
                       isActive 
                         ? 'bg-white/20' 
                         : isCompleted
                         ? 'bg-primary/20'
-                        : 'bg-muted'
+                        : 'bg-gray-200'
                     }`}>
                       {step.icon}
                     </div>
-                    <span className="font-medium text-xs md:text-sm hidden sm:block">{step.title}</span>
+                    <span className="font-medium text-sm hidden sm:block">{step.title}</span>
                   </button>
                 );
               })}
@@ -268,11 +268,11 @@ const BookingForm: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-2 py-4 max-w-[1400px]">
+      <main className="container mx-auto px-4 py-6 max-w-[1400px]">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Form Section - Takes 2 columns */}
           <div className="lg:col-span-2">
-            <Card className="p-6 shadow-lg">
+            <Card className="p-8 shadow-sm bg-white">
               {renderStep()}
             </Card>
           </div>
