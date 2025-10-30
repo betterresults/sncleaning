@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { BookingData } from '../BookingForm';
+import { BookingData } from './src/components/booking/BookingForm';
 import { CreditCard, Shield, Clock, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -95,25 +95,26 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
       lastName: data.lastName,
       email: data.email,
       phone: data.phone || '',
-      houseNumber: data.address?.split(' ')[0] || '',
-      street: data.address?.split(' ').slice(1).join(' ') || '',
+      houseNumber: data.houseNumber || '',
+      street: data.street || '',
       postcode: data.postcode || '',
-      city: '', 
-      propertyAccess: '',
-      accessNotes: data.specialRequests || '',
+      city: data.city || '', 
+      propertyAccess: data.propertyAccess || '',
+      accessNotes: data.accessNotes || '',
       propertyType: data.propertyType,
       bedrooms: data.bedrooms.toString(),
       bathrooms: data.bathrooms.toString(),
-      serviceType: 'airbnb',
+      serviceType: data.serviceType || 'airbnb',
       selectedDate: data.selectedDate || null,
       selectedTime: data.selectedTime || '09:00',
       totalCost: data.totalCost,
-      estimatedHours: data.estimatedHours + data.extraHours,
-      hourlyRate: 25,
-      notes: data.specialRequests || '',
+      estimatedHours: (data.estimatedHours || 0) + data.extraHours,
+      hourlyRate: data.hourlyRate,
+      notes: data.notes || '',
       additionalDetails: {
-        linenProvision: data.linenProvision,
-        changeFrequency: data.changeFrequency
+        linensHandling: data.linensHandling,
+        needsIroning: data.needsIroning,
+        ironingHours: data.ironingHours
       }
     };
 
@@ -383,7 +384,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
           Back
         </Button>
         <Button
-          variant="continue"
+          variant="default"
           size="lg"
           className="px-12"
           onClick={handleCompleteBooking}

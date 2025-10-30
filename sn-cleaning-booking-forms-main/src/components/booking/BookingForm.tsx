@@ -7,7 +7,7 @@ import { LinensStep } from './steps/LinensStep';
 import { ScheduleStep } from './steps/ScheduleStep';
 import { ContactStep } from './steps/ContactStep';
 import { BookingSummary } from './BookingSummary';
-import { PaymentStep } from './steps/PaymentStep';
+import { PaymentStep } from '../../../PaymentStep';
 import { Home, Brush, Calendar, User, CreditCard, Package2 } from 'lucide-react';
 
 export interface BookingData {
