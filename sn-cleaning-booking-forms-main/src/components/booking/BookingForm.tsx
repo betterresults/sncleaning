@@ -278,9 +278,9 @@ const BookingForm: React.FC = () => {
               </Card>
             </div>
             
-            {/* Price Calculator - Bottom on mobile, right on desktop */}
+            {/* Summary Section - Bottom on mobile, right on desktop */}
             <div className="order-2 lg:order-2 lg:col-span-2">
-              <BookingSidebar formData={bookingData} />
+              <BookingSummary data={bookingData} />
             </div>
           </div>
         </div>
