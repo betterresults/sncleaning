@@ -25,42 +25,42 @@ const ContactStep: React.FC<ContactStepProps> = ({ data, onUpdate, onNext, onBac
   const canContinue = (data.firstName || data.lastName) && data.phone && data.email && data.postcode && data.propertyAccess;
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground mb-2">
+    <div className="space-y-4">
+      {/* Name Fields */}
+      <div className="p-6 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] bg-white">
+        <h2 className="text-xl font-bold text-foreground mb-4">
           Customer Details
         </h2>
-      </div>
-
-      {/* Name Fields */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-        <div>
-          <div className="bg-card border border-border rounded-2xl p-3 md:p-4">
-            <Input
-              type="text"
-              placeholder="First name"
-              value={data.firstName}
-              onChange={(e) => onUpdate({ firstName: e.target.value })}
-              className="border-0 bg-transparent text-lg md:text-xl font-bold text-foreground placeholder:text-muted-foreground focus:ring-0"
-            />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+          <div>
+            <div className="bg-card border border-border rounded-2xl p-3 md:p-4">
+              <Input
+                type="text"
+                placeholder="First name"
+                value={data.firstName}
+                onChange={(e) => onUpdate({ firstName: e.target.value })}
+                className="border-0 bg-transparent text-lg md:text-xl font-bold text-foreground placeholder:text-muted-foreground focus:ring-0"
+              />
+            </div>
           </div>
-        </div>
-        
-        <div>
-          <div className="bg-card border border-border rounded-2xl p-3 md:p-4">
-            <Input
-              type="text"
-              placeholder="Last name"
-              value={data.lastName}
-              onChange={(e) => onUpdate({ lastName: e.target.value })}
-              className="border-0 bg-transparent text-lg md:text-xl font-bold text-foreground placeholder:text-muted-foreground focus:ring-0"
-            />
+          
+          <div>
+            <div className="bg-card border border-border rounded-2xl p-3 md:p-4">
+              <Input
+                type="text"
+                placeholder="Last name"
+                value={data.lastName}
+                onChange={(e) => onUpdate({ lastName: e.target.value })}
+                className="border-0 bg-transparent text-lg md:text-xl font-bold text-foreground placeholder:text-muted-foreground focus:ring-0"
+              />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Phone and Email */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+      <div className="p-6 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] bg-white">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <div>
           <div className="bg-card border border-border rounded-2xl p-3 md:p-4">
             <PhoneInput
@@ -83,9 +83,10 @@ const ContactStep: React.FC<ContactStepProps> = ({ data, onUpdate, onNext, onBac
           </div>
         </div>
       </div>
+      </div>
 
       {/* Address */}
-      <div>
+      <div className="p-6 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] bg-white">
         <div className="bg-card border border-border rounded-2xl p-3 md:p-4">
           <Input
             type="text"
@@ -98,7 +99,7 @@ const ContactStep: React.FC<ContactStepProps> = ({ data, onUpdate, onNext, onBac
       </div>
 
       {/* Property Access */}
-      <div>
+      <div className="p-6 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] bg-white">
         <h2 className="text-xl font-bold text-foreground mb-4 md:mb-6">
           Property Access
         </h2>
@@ -119,7 +120,7 @@ const ContactStep: React.FC<ContactStepProps> = ({ data, onUpdate, onNext, onBac
 
       {/* Additional Information for Access Options */}
       {(data.propertyAccess === 'collect-keys' || data.propertyAccess === 'keybox' || data.propertyAccess === 'other') && (
-        <div>
+        <div className="p-6 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] bg-white">
           <div className="bg-card border border-border rounded-2xl p-3 md:p-4">
             <Textarea
               placeholder={

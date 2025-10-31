@@ -149,9 +149,9 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
   }, [recommendedHours, data.propertyType, data.bedrooms, data.bathrooms, data.serviceType, data.estimatedHours, onUpdate]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Property Type */}
-      <div className="p-6 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] bg-white">
+      <div className="p-6 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] bg-white">
         <h2 className="text-xl font-bold text-[#185166] mb-4">
           Property Details
         </h2>
@@ -191,7 +191,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       </div>
 
       {/* Size of the property */}
-      <div className="p-6 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] bg-white">
+      <div className="p-6 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] bg-white">
         <h2 className="text-xl font-bold text-[#185166] mb-6">
           Size of the property
         </h2>
@@ -264,7 +264,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Additional Rooms - only show if 2+ bedrooms */}
       {data.bedrooms && !['studio', '1'].includes(data.bedrooms) && (
-        <div className="p-6 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] bg-white">
+        <div className="p-6 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] bg-white">
           <h2 className="text-xl font-bold text-[#185166] mb-6">
             Additional rooms
           </h2>
@@ -363,7 +363,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       )}
 
       {/* Property Features */}
-      <div className="p-6 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] bg-white">
+      <div className="p-6 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] bg-white">
         <h2 className="text-xl font-bold text-[#185166] mb-6">
           Property Features
         </h2>
@@ -486,7 +486,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       </div>
 
       {/* Service Type */}
-      <div className="p-6 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] bg-white">
+      <div className="p-6 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] bg-white">
         <h2 className="text-xl font-bold text-[#185166] mb-6">
           Choose your service
         </h2>
@@ -519,7 +519,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Property Already Cleaned */}
       {data.serviceType === 'checkin-checkout' && (
-        <div className="p-6 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] bg-white">
+        <div className="p-6 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] bg-white">
           <h2 className="text-xl font-bold text-[#185166] mb-4">
             Has the property been cleaned to Airbnb standard already?
           </h2>
@@ -558,7 +558,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Oven Cleaning - show if deep cleaning or not cleaned to Airbnb standard */}
       {(data.serviceType === 'deep' || data.alreadyCleaned === false) && (
-        <div className="p-6 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] bg-white">
+        <div className="p-6 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] bg-white">
           <h2 className="text-xl font-bold text-[#185166] mb-4">
             Do you require oven cleaning?
           </h2>
@@ -630,7 +630,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       )}
 
       {/* Cleaning Supplies */}
-      <div className="p-6 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] bg-white">
+      <div className="p-6 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] bg-white">
         <h2 className="text-xl font-bold text-[#185166] mb-6">
           Cleaning supplies
         </h2>
@@ -740,7 +740,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Equipment Arrangement */}
       {data.cleaningProducts.equipment && (
-        <div className="p-6 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] bg-white">
+        <div className="p-6 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] bg-white">
           <h2 className="text-xl font-bold text-[#185166] mb-6">
             Equipment arrangement
           </h2>
@@ -800,7 +800,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Recommended Hours Section */}
       {canContinue && (
-        <div className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] p-6">
+        <div className="bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-6">
           {/* Desktop Layout */}
           <div className="hidden lg:flex items-center justify-between">
             <div className="flex-1">
