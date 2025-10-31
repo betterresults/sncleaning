@@ -311,19 +311,18 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
               }
             </p>
             
-            <div className="h-16 rounded-2xl border-2 border-gray-200 bg-white px-6 flex items-center transition-all duration-200 focus-within:border-[#185166]">
+            <div className="rounded-2xl border-2 border-gray-200 bg-white p-6 transition-all duration-200 focus-within:border-[#185166]">
               <CardElement
                 options={{
                   style: {
                     base: {
-                      fontSize: '18px',
+                      fontSize: '16px',
                       color: '#1e293b',
                       fontFamily: 'system-ui, -apple-system, sans-serif',
                       fontWeight: '500',
                       '::placeholder': {
                         color: '#9ca3af',
                       },
-                      lineHeight: '64px',
                     },
                     invalid: {
                       color: '#dc2626',
