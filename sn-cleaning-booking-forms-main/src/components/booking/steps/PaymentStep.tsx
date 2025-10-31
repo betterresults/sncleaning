@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { BookingData } from '../BookingForm';
-import { CreditCard, Shield, Clock, Loader2 } from 'lucide-react';
+import { CreditCard, Shield, Clock, Loader2, AlertCircle } from 'lucide-react';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { useAirbnbBookingSubmit } from '@/hooks/useAirbnbBookingSubmit';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface PaymentStepProps {
   data: BookingData;
@@ -18,10 +20,22 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
   const stripe = useStripe();
   const elements = useElements();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { paymentMethods, loading: loadingMethods } = usePaymentMethods();
   const { submitBooking, loading: submitting } = useAirbnbBookingSubmit();
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('new');
   const [processing, setProcessing] = useState(false);
+
+  // Calculate if booking is urgent (within 72 hours)
+  const isUrgentBooking = useMemo(() => {
+    if (!data.selectedDate || !data.selectedTime) return false;
+    
+    const bookingDateTime = new Date(
+      `${data.selectedDate.toISOString().split('T')[0]}T${data.selectedTime}:00`
+    );
+    const hoursUntilBooking = (bookingDateTime.getTime() - Date.now()) / (1000 * 60 * 60);
+    return hoursUntilBooking <= 72;
+  }, [data.selectedDate, data.selectedTime]);
 
   const handleSubmit = async () => {
     if (!stripe || !elements) {
@@ -59,7 +73,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
         paymentMethodId = selectedPaymentMethod;
       }
 
-      // Submit booking
+      // Submit booking with skipPaymentAuth=true
       const result = await submitBooking({
         firstName: data.firstName,
         lastName: data.lastName,
@@ -82,13 +96,67 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
         hourlyRate: data.hourlyRate,
         notes: data.notes,
         additionalDetails: data
-      });
+      }, true);
 
-      if (result.success) {
-        navigate('/booking-confirmation', { state: { bookingId: result.bookingId } });
+      if (!result.success || !result.customerId || !result.bookingId) {
+        throw new Error('Failed to create booking');
       }
+
+      // Step 1: Verify payment method and attach to customer
+      const verifyAmountInPence = isUrgentBooking ? 0 : 100;
+      const { data: verifyResult, error: verifyError } = await supabase.functions.invoke(
+        'stripe-verify-payment-method',
+        {
+          body: {
+            customerId: result.customerId,
+            paymentMethodId,
+            verifyAmountInPence,
+            totalAmountInPence: Math.round(data.totalCost * 100)
+          }
+        }
+      );
+
+      if (verifyError || !verifyResult?.success) {
+        throw new Error(verifyResult?.error || 'Card verification failed');
+      }
+
+      // Step 2: For urgent bookings, charge immediately
+      if (isUrgentBooking) {
+        const { data: chargeResult, error: chargeError } = await supabase.functions.invoke(
+          'system-payment-action',
+          {
+            body: {
+              bookingId: result.bookingId,
+              action: 'charge',
+              paymentMethodId
+            }
+          }
+        );
+
+        if (chargeError || !chargeResult?.success) {
+          throw new Error(chargeResult?.error || 'Payment failed');
+        }
+
+        toast({
+          title: "Payment Successful",
+          description: `£${data.totalCost.toFixed(2)} has been charged to your card.`
+        });
+      } else {
+        toast({
+          title: "Card Verified",
+          description: "Your card has been verified. No payment collected now."
+        });
+      }
+
+      navigate('/booking-confirmation', { state: { bookingId: result.bookingId } });
+      
     } catch (error: any) {
       console.error('Payment error:', error);
+      toast({
+        title: "Payment Error",
+        description: error.message || "Failed to process payment. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setProcessing(false);
     }
@@ -103,6 +171,30 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
         <p className="text-muted-foreground">
           Complete your booking with secure payment processing.
         </p>
+      </div>
+
+      {/* Payment Information Notice */}
+      <div className={`bg-card border rounded-lg p-4 ${isUrgentBooking ? 'border-orange-500/50 bg-orange-500/5' : 'border-blue-500/50 bg-blue-500/5'}`}>
+        <div className="flex items-start gap-3">
+          <AlertCircle className={`h-5 w-5 mt-0.5 flex-shrink-0 ${isUrgentBooking ? 'text-orange-500' : 'text-blue-500'}`} />
+          <div className="flex-1">
+            {isUrgentBooking ? (
+              <>
+                <h4 className="font-semibold text-foreground mb-1">⚠️ Payment Required Now</h4>
+                <p className="text-sm text-muted-foreground">
+                  Your booking is within 3 days. Payment of <span className="font-semibold text-foreground">£{data.totalCost.toFixed(2)}</span> will be collected immediately to confirm your booking.
+                </p>
+              </>
+            ) : (
+              <>
+                <h4 className="font-semibold text-foreground mb-1">🔒 Card Verification</h4>
+                <p className="text-sm text-muted-foreground">
+                  We'll perform a quick £1 verification (immediately released) to confirm your card can hold <span className="font-semibold text-foreground">£{data.totalCost.toFixed(2)}</span>. No payment will be collected now.
+                </p>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Payment Method Selection */}
@@ -236,8 +328,10 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Processing...
             </>
+          ) : isUrgentBooking ? (
+            `Pay £${data.totalCost.toFixed(2)} & Confirm`
           ) : (
-            `Pay £${data.totalCost.toFixed(2)} & Confirm Booking`
+            `Verify Card & Confirm Booking`
           )}
         </Button>
       </div>
