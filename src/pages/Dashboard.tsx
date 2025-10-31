@@ -1,21 +1,20 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { adminNavigation } from '@/lib/navigationItems';
 import DashboardStats from '@/components/admin/DashboardStats';
-import TodaysSchedule from '@/components/dashboard/TodaysSchedule';
-import UpcomingScheduleCalendar from '@/components/dashboard/UpcomingScheduleCalendar';
-import StorageTestDialog from '@/components/debug/StorageTestDialog';
-import { TestTube } from 'lucide-react';
+import UpcomingBookings from '@/components/dashboard/UpcomingBookings';
+import { Calendar, Plus } from 'lucide-react';
 import AdminGuard from '@/components/AdminGuard';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const { user, userRole, cleanerId, loading, signOut } = useAuth();
-  const [showStorageTest, setShowStorageTest] = useState(false);
+  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     try {
@@ -26,6 +25,18 @@ const Dashboard = () => {
   };
 
   console.log('Dashboard - Auth state:', { user: !!user, userRole, cleanerId, loading });
+
+  // Calculate date range for today's bookings
+  const getTodayRange = () => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return {
+      dateFrom: today.toISOString(),
+      dateTo: new Date(today.getTime() + 24 * 60 * 60 * 1000 - 1).toISOString()
+    };
+  };
+
+  const todayRange = getTodayRange();
 
   // This dashboard is ADMIN-ONLY - wrap everything in AdminGuard
   return (
@@ -40,42 +51,65 @@ const Dashboard = () => {
           />
           <SidebarInset className="flex-1 flex flex-col">
             <UnifiedHeader 
-              title="Admin Dashboard 📊"
+              title=""
               user={user}
               userRole={userRole}
               onSignOut={handleSignOut}
             />
             
             <main className="flex-1 p-4 md:p-6 space-y-6 bg-gray-50">
-              {/* Test Button */}
-              <div className="flex justify-end">
-                <Button 
-                  onClick={() => setShowStorageTest(true)}
-                  variant="outline"
-                  className="flex items-center gap-2 text-sm"
-                >
-                  <TestTube className="h-4 w-4" />
-                  Test Photo Storage
-                </Button>
-              </div>
-
               {/* Statistics - Last 30 Days */}
               <DashboardStats />
               
-              {/* Upcoming Schedule Section */}
+              {/* Today's Bookings */}
+              <Card className="border shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between pb-3">
+                  <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    Today's Bookings
+                  </CardTitle>
+                  <Button 
+                    onClick={() => navigate('/bookings')}
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    New Booking
+                  </Button>
+                </CardHeader>
+                <CardContent className="p-2 sm:p-4 pt-0">
+                  <UpcomingBookings 
+                    dashboardDateFilter={todayRange}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Statistics Section */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <UpcomingScheduleCalendar />
-                <TodaysSchedule />
+                <Card className="border shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm text-gray-600">
+                      <p>• Recent bookings and activity will appear here</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-semibold">Monthly Performance</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm text-gray-600">
+                      <p>• Bookings and revenue charts will appear here</p>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </main>
           </SidebarInset>
         </div>
-        
-        {/* Storage Test Dialog */}
-        <StorageTestDialog 
-          open={showStorageTest} 
-          onOpenChange={setShowStorageTest} 
-        />
       </SidebarProvider>
     </AdminGuard>
   );

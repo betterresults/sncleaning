@@ -7,7 +7,7 @@ import { Calendar, DollarSign, AlertTriangle, Banknote } from 'lucide-react';
 interface Stats {
   totalBookings: number;
   monthlyRevenue: number;
-  outstandingInvoices: number;
+  expectedRevenue: number;
 }
 
 interface DashboardStatsProps {
@@ -23,7 +23,7 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
   const [stats, setStats] = useState<Stats>({
     totalBookings: 0,
     monthlyRevenue: 0,
-    outstandingInvoices: 0,
+    expectedRevenue: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -67,15 +67,14 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
         return;
       }
 
-      // Fetch unpaid bookings from the past
-      const { data: pastUnpaidBookings, error: unpaidError } = await supabase
+      // Fetch upcoming bookings for expected revenue
+      const { data: upcomingBookings, error: upcomingError } = await supabase
         .from('bookings')
-        .select('id, payment_status')
-        .lt('date_time', now.toISOString())
-        .neq('payment_status', 'Paid');
+        .select('total_cost')
+        .gte('date_time', now.toISOString());
 
-      if (unpaidError) {
-        console.error('Error fetching unpaid bookings:', unpaidError);
+      if (upcomingError) {
+        console.error('Error fetching upcoming bookings:', upcomingError);
       }
 
       // Calculate stats
@@ -83,12 +82,14 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
       const monthlyRevenue = bookingsData?.reduce((sum, booking) => {
         return sum + (parseFloat(String(booking.total_cost)) || 0);
       }, 0) || 0;
-      const outstandingInvoices = pastUnpaidBookings?.length || 0;
+      const expectedRevenue = upcomingBookings?.reduce((sum, booking) => {
+        return sum + (parseFloat(String(booking.total_cost)) || 0);
+      }, 0) || 0;
 
       setStats({
         totalBookings,
         monthlyRevenue,
-        outstandingInvoices,
+        expectedRevenue,
       });
 
     } catch (error) {
@@ -158,20 +159,20 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg border-0 bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 text-white transition-all duration-200">
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 text-white transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 pt-3 sm:px-4 sm:pt-4">
             <CardTitle className="text-sm font-medium opacity-90">
-              Outstanding Invoices
+              Expected Revenue
             </CardTitle>
             <div className="p-1.5 bg-white/20 rounded-lg">
-              <AlertTriangle className="h-4 w-4" />
+              <DollarSign className="h-4 w-4" />
             </div>
           </CardHeader>
           <CardContent className="pb-3 px-3 sm:pb-4 sm:px-4">
-            <div className="text-3xl sm:text-4xl font-bold">
-              {stats.outstandingInvoices}
+            <div className="text-2xl sm:text-3xl font-bold">
+              £{(stats.expectedRevenue || 0).toFixed(2)}
             </div>
-            <p className="text-xs opacity-75 mt-1">Unpaid Past Bookings</p>
+            <p className="text-xs opacity-75 mt-1">Upcoming Bookings</p>
           </CardContent>
         </Card>
       </div>
