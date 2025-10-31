@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, RefreshCw, AlertCircle, CheckCircle, XCircle, Download } from 'lucide-react';
+import { Loader2, RefreshCw, Download, Search } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -14,7 +14,13 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface StripePayment {
   stripe_payment_intent_id: string;
@@ -46,9 +52,10 @@ interface StripePayment {
 export const StripePaymentsDashboard = () => {
   const { toast } = useToast();
   const [payments, setPayments] = useState<StripePayment[]>([]);
-  const [bookingsNotInStripe, setBookingsNotInStripe] = useState<StripePayment[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchType, setSearchType] = useState<'all' | 'customer' | 'email'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'authorized' | 'unpaid'>('all');
 
   const fetchPayments = async () => {
     setLoading(true);
@@ -61,10 +68,9 @@ export const StripePaymentsDashboard = () => {
 
       if (data.success) {
         setPayments(data.payments || []);
-        setBookingsNotInStripe(data.bookingsNotInStripe || []);
         toast({
-          title: "Success",
-          description: `Loaded ${data.totalCount} payment records`,
+          title: "Успешно",
+          description: `Заредени ${data.payments?.length || 0} плащания`,
         });
       } else {
         throw new Error(data.error || 'Failed to fetch payments');
@@ -85,77 +91,76 @@ export const StripePaymentsDashboard = () => {
     fetchPayments();
   }, []);
 
-  const getStatusBadge = (status: string) => {
-    const statusMap: { [key: string]: { variant: any; label: string } } = {
-      succeeded: { variant: 'default', label: 'Succeeded' },
-      requires_capture: { variant: 'secondary', label: 'Authorized' },
-      processing: { variant: 'secondary', label: 'Processing' },
-      requires_payment_method: { variant: 'destructive', label: 'Requires Payment' },
-      canceled: { variant: 'destructive', label: 'Canceled' },
-      not_found_in_stripe: { variant: 'destructive', label: 'Not in Stripe' },
-    };
-
-    const config = statusMap[status] || { variant: 'outline', label: status };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
-
-  const getMatchIcon = (match: boolean | null) => {
-    if (match === null) return null;
-    return match ? (
-      <CheckCircle className="h-5 w-5 text-green-600" />
-    ) : (
-      <AlertCircle className="h-5 w-5 text-orange-600" />
-    );
+  const getStatusBadge = (bookingStatus?: string, stripeStatus?: string) => {
+    const status = bookingStatus?.toLowerCase() || '';
+    
+    if (status === 'paid' || stripeStatus === 'succeeded') {
+      return <Badge variant="default">Платено</Badge>;
+    } else if (status === 'authorized' || stripeStatus === 'requires_capture') {
+      return <Badge variant="secondary">Авторизирано</Badge>;
+    } else {
+      return <Badge variant="destructive">Неплатено</Badge>;
+    }
   };
 
   const filteredPayments = payments.filter((payment) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      payment.stripe_payment_intent_id?.toLowerCase().includes(searchLower) ||
-      payment.customer_name?.toLowerCase().includes(searchLower) ||
-      payment.customer_email?.toLowerCase().includes(searchLower) ||
-      payment.booking_id?.toString().includes(searchLower)
-    );
-  });
+    // Search filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      
+      if (searchType === 'customer') {
+        if (!payment.customer_name?.toLowerCase().includes(searchLower)) {
+          return false;
+        }
+      } else if (searchType === 'email') {
+        if (!payment.customer_email?.toLowerCase().includes(searchLower)) {
+          return false;
+        }
+      } else {
+        // all - search in everything
+        const matches = 
+          payment.customer_name?.toLowerCase().includes(searchLower) ||
+          payment.customer_email?.toLowerCase().includes(searchLower) ||
+          payment.booking_id?.toString().includes(searchLower);
+        
+        if (!matches) return false;
+      }
+    }
 
-  const mismatchedPayments = filteredPayments.filter((p) => p.status_match === false);
+    // Status filter
+    if (statusFilter !== 'all') {
+      const status = payment.booking_payment_status?.toLowerCase();
+      const stripeStatus = payment.stripe_status?.toLowerCase();
+      
+      if (statusFilter === 'paid') {
+        if (status !== 'paid' && stripeStatus !== 'succeeded') return false;
+      } else if (statusFilter === 'authorized') {
+        if (status !== 'authorized' && stripeStatus !== 'requires_capture') return false;
+      } else if (statusFilter === 'unpaid') {
+        if (status === 'paid' || status === 'authorized' || stripeStatus === 'succeeded' || stripeStatus === 'requires_capture') return false;
+      }
+    }
 
-  const filteredBookingsNotInStripe = bookingsNotInStripe.filter((booking) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      booking.customer_name?.toLowerCase().includes(searchLower) ||
-      booking.customer_email?.toLowerCase().includes(searchLower) ||
-      booking.booking_id?.toString().includes(searchLower) ||
-      booking.stripe_payment_intent_id?.toLowerCase().includes(searchLower)
-    );
+    return true;
   });
 
   const exportToCSV = () => {
-    const allData = [...payments, ...bookingsNotInStripe];
     const headers = [
       'Booking ID',
-      'Customer Name',
-      'Customer Email',
-      'Stripe Payment Intent',
-      'Stripe Status',
-      'Stripe Amount',
-      'Booking Status',
-      'Booking Amount',
-      'Status Match',
-      'Created Date',
+      'Клиент',
+      'Email',
+      'Сума',
+      'Статус',
+      'Дата',
     ];
 
-    const csvData = allData.map((payment) => [
+    const csvData = filteredPayments.map((payment) => [
       payment.booking_id || '',
       payment.customer_name || '',
       payment.customer_email || '',
-      payment.stripe_payment_intent_id || '',
-      payment.stripe_status || '',
-      payment.stripe_amount || '',
+      payment.stripe_amount || payment.booking_total_cost || '',
       payment.booking_payment_status || '',
-      payment.booking_total_cost || '',
-      payment.status_match === null ? 'N/A' : payment.status_match ? 'Match' : 'Mismatch',
-      payment.stripe_created ? new Date(payment.stripe_created).toLocaleDateString() : '',
+      payment.stripe_created ? new Date(payment.stripe_created).toLocaleDateString('bg-BG') : '',
     ]);
 
     const csv = [headers, ...csvData].map((row) => row.join(',')).join('\n');
@@ -167,22 +172,18 @@ export const StripePaymentsDashboard = () => {
     a.click();
   };
 
-  const mismatchCount = payments.filter((p) => p.status_match === false).length + bookingsNotInStripe.length;
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <Card className="p-6">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-start mb-6">
           <div>
-            <h2 className="text-2xl font-bold">Stripe Payments Dashboard</h2>
-            <p className="text-muted-foreground">
-              Compare Stripe payment data with booking records
-            </p>
+            <h2 className="text-2xl font-bold">Stripe Плащания</h2>
+            <p className="text-muted-foreground">Преглед на всички Stripe плащания</p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={exportToCSV} variant="outline" disabled={loading}>
+            <Button onClick={exportToCSV} variant="outline" disabled={loading || filteredPayments.length === 0}>
               <Download className="h-4 w-4 mr-2" />
-              Export CSV
+              Изтегли CSV
             </Button>
             <Button onClick={fetchPayments} disabled={loading}>
               {loading ? (
@@ -190,192 +191,110 @@ export const StripePaymentsDashboard = () => {
               ) : (
                 <RefreshCw className="h-4 w-4 mr-2" />
               )}
-              Refresh
+              Опресни
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card className="p-4">
-            <div className="text-sm text-muted-foreground">Total Payments</div>
-            <div className="text-2xl font-bold">{payments.length}</div>
-          </Card>
-          <Card className="p-4">
-            <div className="text-sm text-muted-foreground">Mismatches</div>
-            <div className="text-2xl font-bold text-orange-600">{mismatchCount}</div>
-          </Card>
-          <Card className="p-4">
-            <div className="text-sm text-muted-foreground">Not in Stripe</div>
-            <div className="text-2xl font-bold text-red-600">{bookingsNotInStripe.length}</div>
-          </Card>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <Select value={searchType} onValueChange={(value: any) => setSearchType(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Търси по" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Всичко</SelectItem>
+                <SelectItem value="customer">Клиент</SelectItem>
+                <SelectItem value="email">Email</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="md:col-span-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Търсене..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
+
+          <div>
+            <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Статус" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Всички</SelectItem>
+                <SelectItem value="paid">Платени</SelectItem>
+                <SelectItem value="authorized">Авторизирани</SelectItem>
+                <SelectItem value="unpaid">Неплатени</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        <div className="mb-4">
-          <Input
-            placeholder="Search by booking ID, customer name, email, or payment intent..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </Card>
-
-      {filteredBookingsNotInStripe.length > 0 && (
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <XCircle className="h-5 w-5 text-red-600" />
-            Bookings Not Found in Stripe ({filteredBookingsNotInStripe.length})
-          </h3>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Booking ID</TableHead>
+                <TableHead>Клиент</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Сума</TableHead>
+                <TableHead>Статус</TableHead>
+                <TableHead>Дата</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
                 <TableRow>
-                  <TableHead>Booking ID</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Invoice ID</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Date</TableHead>
+                  <TableCell colSpan={6} className="text-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredBookingsNotInStripe.map((booking, idx) => (
+              ) : filteredPayments.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    Няма намерени плащания
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredPayments.map((payment, idx) => (
                   <TableRow key={idx}>
-                    <TableCell className="font-medium">{booking.booking_id}</TableCell>
-                    <TableCell>{booking.customer_name}</TableCell>
-                    <TableCell className="text-sm">{booking.customer_email}</TableCell>
-                    <TableCell className="text-sm font-mono">{booking.stripe_payment_intent_id}</TableCell>
-                    <TableCell>{booking.booking_payment_status}</TableCell>
-                    <TableCell>£{booking.booking_total_cost?.toFixed(2)}</TableCell>
+                    <TableCell className="font-medium">{payment.booking_id}</TableCell>
+                    <TableCell>{payment.customer_name || '-'}</TableCell>
+                    <TableCell className="text-sm">{payment.customer_email || '-'}</TableCell>
+                    <TableCell className="font-medium">
+                      £{(payment.stripe_amount || payment.booking_total_cost || 0).toFixed(2)}
+                    </TableCell>
                     <TableCell>
-                      {booking.booking_date_time
-                        ? new Date(booking.booking_date_time).toLocaleDateString()
+                      {getStatusBadge(payment.booking_payment_status, payment.stripe_status)}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {payment.stripe_created
+                        ? new Date(payment.stripe_created).toLocaleDateString('bg-BG', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                          })
                         : '-'}
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {!loading && filteredPayments.length > 0 && (
+          <div className="mt-4 text-sm text-muted-foreground text-center">
+            Показани {filteredPayments.length} от {payments.length} плащания
           </div>
-        </Card>
-      )}
-
-      <Card className="p-6">
-        <Tabs defaultValue="all">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Stripe Bookings</h3>
-            <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="mismatches">Mismatches</TabsTrigger>
-            </TabsList>
-          </div>
-
-          <TabsContent value="all">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Match</TableHead>
-                    <TableHead>Booking ID</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Stripe Status</TableHead>
-                    <TableHead>Stripe Amount</TableHead>
-                    <TableHead>Booking Status</TableHead>
-                    <TableHead>Booking Amount</TableHead>
-                    <TableHead>Payment Intent</TableHead>
-                    <TableHead>Created</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredPayments.map((payment, idx) => (
-                    <TableRow key={idx} className={payment.status_match === false ? 'bg-orange-50 dark:bg-orange-950/20' : ''}>
-                      <TableCell>{getMatchIcon(payment.status_match)}</TableCell>
-                      <TableCell className="font-medium">{payment.booking_id || '-'}</TableCell>
-                      <TableCell>
-                        <div className="font-medium">{payment.customer_name || payment.stripe_customer_name || '-'}</div>
-                        <div className="text-xs text-muted-foreground">{payment.customer_email || payment.stripe_customer_email || '-'}</div>
-                      </TableCell>
-                      <TableCell>{getStatusBadge(payment.stripe_status)}</TableCell>
-                      <TableCell>
-                        £{payment.stripe_amount?.toFixed(2)}
-                        {payment.stripe_refunded && (
-                          <div className="text-xs text-red-600">
-                            Refunded: £{payment.stripe_amount_refunded?.toFixed(2)}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>{payment.booking_payment_status || '-'}</TableCell>
-                      <TableCell>{payment.booking_total_cost ? `£${payment.booking_total_cost.toFixed(2)}` : '-'}</TableCell>
-                      <TableCell className="text-xs font-mono max-w-[200px]">
-                        <div className="truncate" title={payment.stripe_payment_intent_id}>
-                          {payment.stripe_payment_intent_id}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm whitespace-nowrap">
-                        {payment.stripe_created
-                          ? new Date(payment.stripe_created).toLocaleDateString('en-GB')
-                          : '-'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="mismatches">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Match</TableHead>
-                    <TableHead>Booking ID</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Stripe Status</TableHead>
-                    <TableHead>Stripe Amount</TableHead>
-                    <TableHead>Booking Status</TableHead>
-                    <TableHead>Booking Amount</TableHead>
-                    <TableHead>Payment Intent</TableHead>
-                    <TableHead>Created</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mismatchedPayments.map((payment, idx) => (
-                    <TableRow key={idx} className="bg-orange-50 dark:bg-orange-950/20">
-                      <TableCell>{getMatchIcon(payment.status_match)}</TableCell>
-                      <TableCell className="font-medium">{payment.booking_id || '-'}</TableCell>
-                      <TableCell>
-                        <div className="font-medium">{payment.customer_name || payment.stripe_customer_name || '-'}</div>
-                        <div className="text-xs text-muted-foreground">{payment.customer_email || payment.stripe_customer_email || '-'}</div>
-                      </TableCell>
-                      <TableCell>{getStatusBadge(payment.stripe_status)}</TableCell>
-                      <TableCell>
-                        £{payment.stripe_amount?.toFixed(2)}
-                        {payment.stripe_refunded && (
-                          <div className="text-xs text-red-600">
-                            Refunded: £{payment.stripe_amount_refunded?.toFixed(2)}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>{payment.booking_payment_status || '-'}</TableCell>
-                      <TableCell>{payment.booking_total_cost ? `£${payment.booking_total_cost.toFixed(2)}` : '-'}</TableCell>
-                      <TableCell className="text-xs font-mono max-w-[200px]">
-                        <div className="truncate" title={payment.stripe_payment_intent_id}>
-                          {payment.stripe_payment_intent_id}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm whitespace-nowrap">
-                        {payment.stripe_created
-                          ? new Date(payment.stripe_created).toLocaleDateString('en-GB')
-                          : '-'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </TabsContent>
-        </Tabs>
+        )}
       </Card>
     </div>
   );
