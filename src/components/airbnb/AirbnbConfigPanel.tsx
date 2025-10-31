@@ -65,11 +65,15 @@ export const AirbnbConfigPanel: React.FC = () => {
   const [newTime, setNewTime] = useState(0);
   const [newTimeUnit, setNewTimeUnit] = useState<'minutes' | 'hours'>('minutes');
   const [newIcon, setNewIcon] = useState('');
+  const [newMinValue, setNewMinValue] = useState<number | null>(null);
   const [newMaxValue, setNewMaxValue] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [addingToCategory, setAddingToCategory] = useState<string | null>(null);
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
+  const [categoryVisibility, setCategoryVisibility] = useState<Record<string, boolean>>({});
+  const [editingIcon, setEditingIcon] = useState<string | null>(null);
+  const [customIconUrl, setCustomIconUrl] = useState('');
 
   const [currentFormula, setCurrentFormula] = useState<Partial<PricingFormula>>({
     name: '',
@@ -104,7 +108,7 @@ export const AirbnbConfigPanel: React.FC = () => {
       time: timeInMinutes,
       icon: newIcon || null,
       max_value: newMaxValue,
-      is_visible: true,
+      is_visible: categoryVisibility[category] ?? true,
       display_order: (groupedConfigs[category]?.length || 0) + 1,
     });
 
@@ -115,6 +119,7 @@ export const AirbnbConfigPanel: React.FC = () => {
     setNewTime(0);
     setNewTimeUnit('minutes');
     setNewIcon('');
+    setNewMinValue(null);
     setNewMaxValue(null);
     setSelectedCategory('');
     setAddingToCategory(null);
@@ -123,17 +128,30 @@ export const AirbnbConfigPanel: React.FC = () => {
 
   const renderIcon = (iconName: string | null) => {
     if (!iconName) return null;
+    
+    // Check if it's a URL
+    if (iconName.startsWith('http://') || iconName.startsWith('https://')) {
+      return <img src={iconName} alt="icon" className="h-4 w-4 object-contain" />;
+    }
+    
+    // Otherwise treat as Lucide icon name
     const IconComponent = (LucideIcons as any)[iconName];
-    if (!IconComponent) return <span className="text-xs text-muted-foreground">{iconName}</span>;
+    if (!IconComponent) return null;
     return <IconComponent className="h-4 w-4" />;
+  };
+
+  const toggleCategoryVisibility = (category: string) => {
+    const newVisibility = !categoryVisibility[category];
+    setCategoryVisibility(prev => ({ ...prev, [category]: newVisibility }));
+    
+    // Update all fields in this category
+    groupedConfigs[category]?.forEach(config => {
+      handleUpdateConfig(config.id, { is_visible: newVisibility });
+    });
   };
 
   const handleUpdateConfig = (id: string, updates: Partial<FieldConfig>) => {
     updateConfig.mutate({ id, updates });
-  };
-
-  const toggleVisibility = (id: string, currentVisibility: boolean | null) => {
-    handleUpdateConfig(id, { is_visible: !currentVisibility });
   };
 
   const toggleCategory = (category: string) => {
@@ -294,6 +312,41 @@ export const AirbnbConfigPanel: React.FC = () => {
                       </Select>
                     </div>
                   </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Min Value</Label>
+                      <Input
+                        type="number"
+                        value={newMinValue || ''}
+                        onChange={(e) => setNewMinValue(e.target.value ? Number(e.target.value) : null)}
+                        placeholder="Optional"
+                      />
+                    </div>
+                    <div>
+                      <Label>Max Value</Label>
+                      <Input
+                        type="number"
+                        value={newMaxValue || ''}
+                        onChange={(e) => setNewMaxValue(e.target.value ? Number(e.target.value) : null)}
+                        placeholder="Optional"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Icon URL or Lucide Name</Label>
+                    <div className="flex gap-2 items-center">
+                      <Input
+                        value={newIcon}
+                        onChange={(e) => setNewIcon(e.target.value)}
+                        placeholder="https://... or 'Home', 'Bath', etc."
+                      />
+                      {newIcon && (
+                        <div className="h-8 w-8 flex items-center justify-center border rounded">
+                          {renderIcon(newIcon)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   <div className="grid grid-cols-3 gap-4">
                     <div className="col-span-2">
                       <Label>Time</Label>
@@ -315,28 +368,6 @@ export const AirbnbConfigPanel: React.FC = () => {
                           <SelectItem value="hours">Hours</SelectItem>
                         </SelectContent>
                       </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Max Value (for counters)</Label>
-                      <Input
-                        type="number"
-                        value={newMaxValue || ''}
-                        onChange={(e) => setNewMaxValue(e.target.value ? Number(e.target.value) : null)}
-                        placeholder="Optional"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Icon (Lucide icon name)</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        value={newIcon}
-                        onChange={(e) => setNewIcon(e.target.value)}
-                        placeholder="e.g., 'Home', 'Bath', 'ChefHat'..."
-                      />
-                      {newIcon && renderIcon(newIcon)}
                     </div>
                   </div>
                   <Button onClick={handleAddField} className="w-full">
@@ -364,22 +395,32 @@ export const AirbnbConfigPanel: React.FC = () => {
                             ({groupedConfigs[category]?.length || 0} fields)
                           </span>
                         </div>
+                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                          <span className="text-xs text-muted-foreground mr-2">
+                            {categoryVisibility[category] === false ? 'Hidden' : 'Visible'}
+                          </span>
+                          <Switch
+                            checked={categoryVisibility[category] !== false}
+                            onCheckedChange={() => toggleCategoryVisibility(category)}
+                          />
+                        </div>
                       </div>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                       <div className="p-4 space-y-2 border-t">
-                        <div className="grid grid-cols-11 gap-2 text-xs font-semibold text-muted-foreground pb-2 border-b">
+                        <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground pb-2 border-b">
                           <div className="col-span-2">Label</div>
-                          <div className="col-span-1">Value</div>
-                          <div className="col-span-2">Type</div>
-                          <div className="col-span-1">Time (min)</div>
+                          <div className="col-span-1">Min</div>
                           <div className="col-span-1">Max</div>
-                          <div className="col-span-2">Icon</div>
-                          <div className="col-span-1">Visible</div>
+                          <div className="col-span-1">Icon</div>
+                          <div className="col-span-1"></div>
+                          <div className="col-span-2">Value</div>
+                          <div className="col-span-1">Type</div>
+                          <div className="col-span-2">Time (min)</div>
                           <div className="col-span-1">Actions</div>
                         </div>
                         {groupedConfigs[category]?.sort((a, b) => (a.display_order || 0) - (b.display_order || 0)).map((config) => (
-                          <div key={config.id} className="grid grid-cols-11 gap-2 items-center p-2 border rounded hover:bg-muted/30 transition-colors">
+                          <div key={config.id} className="grid grid-cols-12 gap-2 items-center p-2 border rounded hover:bg-muted/30 transition-colors">
                             <div className="col-span-2">
                               <Input
                                 value={config.label || config.option}
@@ -390,33 +431,10 @@ export const AirbnbConfigPanel: React.FC = () => {
                             <div className="col-span-1">
                               <Input
                                 type="number"
-                                step="0.5"
-                                value={config.value}
-                                onChange={(e) => handleUpdateConfig(config.id, { value: Number(e.target.value) })}
+                                value={(config as any).min_value || ''}
+                                onChange={(e) => handleUpdateConfig(config.id, { min_value: e.target.value ? Number(e.target.value) : null } as any)}
                                 className="h-8 text-sm"
-                              />
-                            </div>
-                            <div className="col-span-2">
-                              <Select 
-                                value={config.value_type} 
-                                onValueChange={(v) => handleUpdateConfig(config.id, { value_type: v })}
-                              >
-                                <SelectTrigger className="h-8 text-xs">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="fixed">Fixed</SelectItem>
-                                  <SelectItem value="percentage">%</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="col-span-1">
-                              <Input
-                                type="number"
-                                step="1"
-                                value={config.time || 0}
-                                onChange={(e) => handleUpdateConfig(config.id, { time: Number(e.target.value) })}
-                                className="h-8 text-sm"
+                                placeholder="Min"
                               />
                             </div>
                             <div className="col-span-1">
@@ -425,24 +443,85 @@ export const AirbnbConfigPanel: React.FC = () => {
                                 value={config.max_value || ''}
                                 onChange={(e) => handleUpdateConfig(config.id, { max_value: e.target.value ? Number(e.target.value) : null })}
                                 className="h-8 text-sm"
-                                placeholder="-"
+                                placeholder="Max"
                               />
                             </div>
-                            <div className="col-span-2">
-                              <div className="flex items-center gap-1">
-                                {renderIcon(config.icon)}
-                                <Input
-                                  value={config.icon || ''}
-                                  onChange={(e) => handleUpdateConfig(config.id, { icon: e.target.value })}
-                                  className="h-8 text-sm flex-1"
-                                  placeholder="Icon..."
-                                />
-                              </div>
-                            </div>
                             <div className="col-span-1 flex justify-center">
-                              <Switch
-                                checked={config.is_visible ?? true}
-                                onCheckedChange={() => toggleVisibility(config.id, config.is_visible)}
+                              <Dialog open={editingIcon === config.id} onOpenChange={(open) => !open && setEditingIcon(null)}>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 w-8 p-0"
+                                    onClick={() => {
+                                      setEditingIcon(config.id);
+                                      setCustomIconUrl(config.icon || '');
+                                    }}
+                                  >
+                                    {renderIcon(config.icon) || <Upload className="h-4 w-4" />}
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-md">
+                                  <DialogHeader>
+                                    <DialogTitle>Set Icon</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <div>
+                                      <Label>Icon URL or Lucide Name</Label>
+                                      <Input
+                                        value={customIconUrl}
+                                        onChange={(e) => setCustomIconUrl(e.target.value)}
+                                        placeholder="https://... or 'Home'"
+                                      />
+                                    </div>
+                                    <div className="flex justify-center p-4 border rounded">
+                                      {renderIcon(customIconUrl) || <span className="text-muted-foreground">Preview</span>}
+                                    </div>
+                                    <Button
+                                      onClick={() => {
+                                        handleUpdateConfig(config.id, { icon: customIconUrl });
+                                        setEditingIcon(null);
+                                      }}
+                                      className="w-full"
+                                    >
+                                      Save Icon
+                                    </Button>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            </div>
+                            <div className="col-span-1 border-r-2 border-muted"></div>
+                            <div className="col-span-2">
+                              <Input
+                                type="number"
+                                step="0.5"
+                                value={config.value}
+                                onChange={(e) => handleUpdateConfig(config.id, { value: Number(e.target.value) })}
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div className="col-span-1">
+                              <Select 
+                                value={config.value_type} 
+                                onValueChange={(v) => handleUpdateConfig(config.id, { value_type: v })}
+                              >
+                                <SelectTrigger className="h-8 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="fixed">£</SelectItem>
+                                  <SelectItem value="percentage">%</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="col-span-2">
+                              <Input
+                                type="number"
+                                step="1"
+                                value={config.time || 0}
+                                onChange={(e) => handleUpdateConfig(config.id, { time: Number(e.target.value) })}
+                                className="h-8 text-sm"
+                                placeholder="0"
                               />
                             </div>
                             <div className="col-span-1 flex justify-end">
