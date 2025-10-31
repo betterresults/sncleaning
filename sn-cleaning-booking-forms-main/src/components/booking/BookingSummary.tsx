@@ -119,12 +119,12 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
     rate += serviceRates[data.serviceType as keyof typeof serviceRates] || 0;
     
     // Cleaning products pricing
-    if (data.cleaningProducts.needed) {
+    if (data.cleaningProducts === 'products') {
       rate += 2; // Bring cleaning products
     }
     
     // Equipment pricing - only add to hourly rate for specific conditions
-    if (data.cleaningProducts.equipment) {
+    if (data.cleaningProducts === 'equipment') {
       // If ongoing arrangement, no extra hourly charge
       if (data.equipmentArrangement === 'ongoing') {
         rate += 5; // Ongoing arrangement adds £5/hour
@@ -149,7 +149,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
   };
 
   const calculateEquipmentCost = () => {
-    if (!data.cleaningProducts.equipment) return 0;
+    if (data.cleaningProducts !== 'equipment') return 0;
     
     if (data.serviceType === 'deep' || data.equipmentArrangement === 'oneoff') {
       return 30; // One-off cost
@@ -196,7 +196,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
       const serviceAdjustment = serviceRates[data.serviceType as keyof typeof serviceRates] || 0;
       
       // Products cost
-      const productsAdjustment = data.cleaningProducts.needed ? 2 : 0;
+      const productsAdjustment = data.cleaningProducts === 'products' ? 2 : 0;
       
       // Airbnb standard adjustment
       const airbnbAdjustment = (data.serviceType === 'checkin-checkout' && data.alreadyCleaned === false) ? 5 : 0;
@@ -273,7 +273,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
       )}
 
       {/* Equipment */}
-      {data.cleaningProducts.equipment && calculateEquipmentCost() > 0 && (
+      {data.cleaningProducts === 'equipment' && calculateEquipmentCost() > 0 && (
         <div className="space-y-3 mt-3">
           <div className="flex justify-between items-center pl-4">
             <span className="text-muted-foreground">

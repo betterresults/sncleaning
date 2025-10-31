@@ -38,10 +38,7 @@ export interface BookingData {
   alreadyCleaned: boolean | null;
   needsOvenCleaning: boolean | null;
   ovenType: 'single' | 'double' | 'range' | 'convection' | '';
-  cleaningProducts: {
-    needed: boolean | null;
-    equipment: boolean | null;
-  };
+  cleaningProducts: 'no' | 'products' | 'equipment' | '';
   equipmentArrangement: 'oneoff' | 'ongoing' | null;
   equipmentStorageConfirmed: boolean;
   
@@ -108,10 +105,7 @@ const BookingForm: React.FC = () => {
     alreadyCleaned: null,
     needsOvenCleaning: null,
     ovenType: '',
-    cleaningProducts: {
-      needed: null, // Start with null to indicate no selection
-      equipment: null,
-    },
+    cleaningProducts: '',
     equipmentArrangement: null,
     equipmentStorageConfirmed: false,
     linensHandling: '',

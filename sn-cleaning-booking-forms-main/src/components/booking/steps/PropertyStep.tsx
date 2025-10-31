@@ -23,8 +23,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
   const { data: cleaningHistoryConfigs = [] } = useAirbnbFieldConfigs('Cleaning History', true);
   const { data: ovenCleaningConfigs = [] } = useAirbnbFieldConfigs('Oven Cleaning', true);
   const { data: ovenTypeConfigs = [] } = useAirbnbFieldConfigs('Oven Type', true);
-  const { data: cleaningProductsConfigs = [] } = useAirbnbFieldConfigs('Cleaning Products', true);
-  const { data: equipmentConfigs = [] } = useAirbnbFieldConfigs('Equipment', true);
+  const { data: cleaningSuppliesConfigs = [] } = useAirbnbFieldConfigs('Cleaning Supplies', true);
   const { data: equipmentArrangementConfigs = [] } = useAirbnbFieldConfigs('Equipment Arrangement', true);
 
   // Helper function to render icon (Lucide or emoji)
@@ -158,16 +157,16 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
   const recommendedHours = calculateRecommendedHours();
   
   const canContinue = data.propertyType && data.bedrooms && data.bathrooms && data.serviceType && 
-    (!data.cleaningProducts.equipment || data.equipmentArrangement !== null);
+    (data.cleaningProducts !== 'equipment' || data.equipmentArrangement !== null);
 
   // Auto-select cleaning products for deep cleaning or uncleaned properties
   React.useEffect(() => {
     if (data.serviceType === 'deep' || data.alreadyCleaned === false) {
-      if (data.cleaningProducts.needed !== true) {
-        onUpdate({ cleaningProducts: { ...data.cleaningProducts, needed: true } });
+      if (data.cleaningProducts === 'no' || !data.cleaningProducts) {
+        onUpdate({ cleaningProducts: 'products' });
       }
     }
-  }, [data.serviceType, data.alreadyCleaned, data.cleaningProducts.needed, onUpdate]);
+  }, [data.serviceType, data.alreadyCleaned, data.cleaningProducts, onUpdate]);
 
   // Update recommended hours in booking data
   React.useEffect(() => {
@@ -672,145 +671,85 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
         </div>
       )}
 
-      {/* Cleaning Supplies */}
-      <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-        <h2 className="text-xl font-bold text-[#185166] mb-4">
-          Cleaning supplies
-        </h2>
-        
-        <div className="grid grid-cols-3 gap-4">
-          <button
-             className={`group relative h-24 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
-               data.cleaningProducts.needed === false && data.cleaningProducts.equipment === false
-                 ? 'border-primary bg-primary/5 shadow-xl'
-                 : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
-             }`}
-             onClick={() => {
-               if (data.cleaningProducts.needed === false && data.cleaningProducts.equipment === false) {
-                 // Currently selected "No", unselect it (back to null)
-                 onUpdate({ cleaningProducts: { needed: null, equipment: null } });
-               } else {
-                 // Select "No" and deselect others
-                 onUpdate({ cleaningProducts: { needed: false, equipment: false } });
-               }
-             }}
-             disabled={data.serviceType === 'deep' || data.alreadyCleaned === false}
-           >
-             <div className="flex flex-col items-center justify-center h-full relative">
-               <X className="h-8 w-8 text-green-500 mb-1" />
-               {(data.serviceType === 'deep' || data.alreadyCleaned === false) && (
-                 <div className="absolute inset-0 bg-muted/80 rounded-2xl flex items-center justify-center">
-                   <span className="text-xs text-muted-foreground font-semibold">Not available</span>
-                 </div>
-               )}
-             </div>
-           </button>
-          <button
-             className={`group relative h-24 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
-               data.cleaningProducts.needed === true
-                 ? 'border-primary bg-primary/5 shadow-xl'
-                 : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
-             }`}
-             onClick={() => {
-               const isCurrentlySelected = data.cleaningProducts.needed === true;
-               if (isCurrentlySelected) {
-                 // Deselect products but keep equipment if selected
-                 onUpdate({ 
-                   cleaningProducts: { 
-                     needed: false, 
-                     equipment: data.cleaningProducts.equipment 
-                   } 
-                 });
-               } else {
-                 // Select products
-                 onUpdate({ 
-                   cleaningProducts: { 
-                     needed: true, 
-                     equipment: data.cleaningProducts.equipment 
-                   } 
-                 });
-               }
-             }}
-             disabled={false}
-          >
-            <div className="flex flex-col items-center justify-center h-full">
-              <Droplets className="h-8 w-8 text-blue-500" />
-            </div>
-          </button>
-          <button
-             className={`group relative h-24 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
-               data.cleaningProducts.equipment === true
-                 ? 'border-primary bg-primary/5 shadow-xl'
-                 : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
-             }`}
-             onClick={() => {
-               const isCurrentlySelected = data.cleaningProducts.equipment === true;
-               if (isCurrentlySelected) {
-                 // Deselect equipment but keep products if selected
-                 onUpdate({ 
-                   cleaningProducts: { 
-                     needed: data.cleaningProducts.needed,
-                     equipment: false
-                   } 
-                 });
-               } else {
-                 // Select equipment
-                 onUpdate({ 
-                   cleaningProducts: { 
-                     needed: data.cleaningProducts.needed,
-                     equipment: true
-                   } 
-                 });
-               }
-             }}
-            
-          >
-            <div className="flex flex-col items-center justify-center h-full">
-              <Wrench className="h-8 w-8 text-gray-600" />
-            </div>
-          </button>
+      {/* Cleaning Supplies - Dynamic */}
+      {cleaningSuppliesConfigs.length > 0 && (
+        <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+          <h2 className="text-xl font-bold text-[#185166] mb-4">
+            Cleaning supplies
+          </h2>
+          
+          <div className="grid grid-cols-3 gap-4">
+            {cleaningSuppliesConfigs.map((supply: any) => {
+              const isSelected = data.cleaningProducts === supply.option;
+              const isDisabled = (supply.option === 'no') && (data.serviceType === 'deep' || data.alreadyCleaned === false);
+              
+              return (
+                <button
+                  key={supply.option}
+                  className={`group relative h-24 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+                    isSelected
+                      ? 'border-primary bg-primary/5 shadow-xl'
+                      : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                  }`}
+                  onClick={() => onUpdate({ 
+                    cleaningProducts: isSelected ? '' : supply.option 
+                  })}
+                  disabled={isDisabled}
+                >
+                  <div className="flex flex-col items-center justify-center h-full relative">
+                    <div className={`mb-2 transition-all duration-500 ${
+                      isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                    }`}>
+                      {renderIcon(supply.icon, 'h-8 w-8')}
+                    </div>
+                    <span className={`text-sm font-medium transition-colors ${
+                      isSelected ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
+                    }`}>{supply.label}</span>
+                    {isDisabled && (
+                      <div className="absolute inset-0 bg-muted/80 rounded-2xl flex items-center justify-center">
+                        <span className="text-xs text-muted-foreground font-semibold">Not available</span>
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Equipment Arrangement */}
-      {data.cleaningProducts.equipment && (
+      {/* Equipment Arrangement - Dynamic */}
+      {data.cleaningProducts === 'equipment' && equipmentArrangementConfigs.length > 0 && (
         <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
           <h2 className="text-xl font-bold text-[#185166] mb-4">
             Equipment arrangement
           </h2>
           
           <div className="grid grid-cols-2 gap-4">
-            <button
-              className={`group relative h-16 rounded-2xl border-2 transition-all duration-500 hover:scale-105 justify-start gap-3 p-4 flex items-center ${
-                data.equipmentArrangement === 'ongoing'
-                  ? 'border-primary bg-primary/5 shadow-xl'
-                  : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
-              }`}
-              onClick={() => onUpdate({ equipmentArrangement: 'ongoing' })}
-            >
-              <CheckCircle className={`h-6 w-6 transition-all duration-500 ${
-                data.equipmentArrangement === 'ongoing' ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
-              }`} />
-              <span className={`text-base font-medium transition-colors ${
-                data.equipmentArrangement === 'ongoing' ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
-              }`}>Ongoing</span>
-            </button>
-            
-            <button
-              className={`group relative h-16 rounded-2xl border-2 transition-all duration-500 hover:scale-105 justify-start gap-3 p-4 flex items-center ${
-                data.equipmentArrangement === 'oneoff'
-                  ? 'border-primary bg-primary/5 shadow-xl'
-                  : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
-              }`}
-              onClick={() => onUpdate({ equipmentArrangement: 'oneoff' })}
-            >
-              <Zap className={`h-6 w-6 transition-all duration-500 ${
-                data.equipmentArrangement === 'oneoff' ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
-              }`} />
-              <span className={`text-base font-medium transition-colors ${
-                data.equipmentArrangement === 'oneoff' ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
-              }`}>One-time</span>
-            </button>
+            {equipmentArrangementConfigs.map((arrangement: any) => {
+              const isSelected = data.equipmentArrangement === arrangement.option;
+              
+              return (
+                <button
+                  key={arrangement.option}
+                  className={`group relative h-16 rounded-2xl border-2 transition-all duration-500 hover:scale-105 justify-start gap-3 p-4 flex items-center ${
+                    isSelected
+                      ? 'border-primary bg-primary/5 shadow-xl'
+                      : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                  }`}
+                  onClick={() => onUpdate({ equipmentArrangement: arrangement.option })}
+                >
+                  <div className={`transition-all duration-500 ${
+                    isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                  }`}>
+                    {renderIcon(arrangement.icon, 'h-6 w-6')}
+                  </div>
+                  <span className={`text-base font-medium transition-colors ${
+                    isSelected ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
+                  }`}>{arrangement.label}</span>
+                </button>
+              );
+            })}
           </div>
 
           {data.equipmentArrangement === 'ongoing' && (
