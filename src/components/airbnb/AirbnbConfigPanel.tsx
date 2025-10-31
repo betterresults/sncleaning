@@ -255,12 +255,8 @@ export const AirbnbConfigPanel: React.FC = () => {
           <TabsTrigger value="formulas">Pricing Formulas</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="fields" className="space-y-6">
+         <TabsContent value="fields" className="space-y-6">
           <Card className="p-6">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold">Form Fields</h2>
-            </div>
-              
             <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
@@ -311,6 +307,12 @@ export const AirbnbConfigPanel: React.FC = () => {
                         step="0.5"
                         value={newValue}
                         onChange={(e) => setNewValue(Number(e.target.value))}
+                        onFocus={(e) => {
+                          if (newValue === 0) {
+                            setNewValue(0);
+                            e.target.select();
+                          }
+                        }}
                       />
                     </div>
                     <div>
@@ -370,6 +372,12 @@ export const AirbnbConfigPanel: React.FC = () => {
                         step="1"
                         value={newTime}
                         onChange={(e) => setNewTime(Number(e.target.value))}
+                        onFocus={(e) => {
+                          if (newTime === 0) {
+                            setNewTime(0);
+                            e.target.select();
+                          }
+                        }}
                       />
                     </div>
                     <div>
