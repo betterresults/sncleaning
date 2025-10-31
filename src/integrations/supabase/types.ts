@@ -100,6 +100,75 @@ export type Database = {
           },
         ]
       }
+      airbnb_field_configs: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          option: string
+          time: number | null
+          updated_at: string
+          value: number
+          value_type: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          option: string
+          time?: number | null
+          updated_at?: string
+          value?: number
+          value_type: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          option?: string
+          time?: number | null
+          updated_at?: string
+          value?: number
+          value_type?: string
+        }
+        Relationships: []
+      }
+      airbnb_pricing_formulas: {
+        Row: {
+          created_at: string
+          description: string | null
+          elements: Json
+          id: string
+          is_active: boolean | null
+          name: string
+          result_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          elements: Json
+          id?: string
+          is_active?: boolean | null
+          name: string
+          result_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          elements?: Json
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          result_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           access: string | null
@@ -485,7 +554,7 @@ export type Database = {
           is_auto_checked_in: boolean | null
           is_auto_checked_out: boolean | null
           updated_at: string
-          work_duration: unknown | null
+          work_duration: unknown
         }
         Insert: {
           booking_id: number
@@ -499,7 +568,7 @@ export type Database = {
           is_auto_checked_in?: boolean | null
           is_auto_checked_out?: boolean | null
           updated_at?: string
-          work_duration?: unknown | null
+          work_duration?: unknown
         }
         Update: {
           booking_id?: number
@@ -513,7 +582,7 @@ export type Database = {
           is_auto_checked_in?: boolean | null
           is_auto_checked_out?: boolean | null
           updated_at?: string
-          work_duration?: unknown | null
+          work_duration?: unknown
         }
         Relationships: [
           {
@@ -1932,22 +2001,10 @@ export type Database = {
         }
         Returns: boolean
       }
-      custom_access_token_hook: {
-        Args: { event: Json }
-        Returns: Json
-      }
-      generate_recurring_bookings: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      get_current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_user_role: {
-        Args: { user_uuid: string }
-        Returns: string
-      }
+      custom_access_token_hook: { Args: { event: Json }; Returns: Json }
+      generate_recurring_bookings: { Args: never; Returns: undefined }
+      get_current_user_role: { Args: never; Returns: string }
+      get_user_role: { Args: { user_uuid: string }; Returns: string }
       log_activity: {
         Args: {
           p_action_type: string
@@ -1958,24 +2015,18 @@ export type Database = {
         }
         Returns: undefined
       }
-      move_sub_bookings_to_past: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      move_to_past_bookings_table: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      populate_sample_activity_logs: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      send_booking_notification: {
-        Args:
-          | { booking_id: number; event_type: string }
-          | { booking_id: number; event_type: string }
-        Returns: undefined
-      }
+      move_sub_bookings_to_past: { Args: never; Returns: undefined }
+      move_to_past_bookings_table: { Args: never; Returns: undefined }
+      populate_sample_activity_logs: { Args: never; Returns: undefined }
+      send_booking_notification:
+        | {
+            Args: { booking_id: number; event_type: string }
+            Returns: undefined
+          }
+        | {
+            Args: { booking_id: number; event_type: string }
+            Returns: undefined
+          }
       send_email_notification: {
         Args: {
           p_recipient_email: string
@@ -1993,7 +2044,7 @@ export type Database = {
         Returns: Json
       }
       test_generate_recurring_bookings: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           address_found: boolean
           booking_date: string

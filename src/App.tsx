@@ -28,6 +28,7 @@ import CustomerPhotos from "./pages/CustomerPhotos";
 import CustomerAirbnbForm from "./pages/CustomerAirbnbForm";
 import CustomerLinenManagement from './pages/CustomerLinenManagement';
 import CreateCustomerAccounts from "./pages/CreateCustomerAccounts";
+import AirbnbBooking from "./pages/AirbnbBooking";
 import AdminAddBooking from "./pages/AdminAddBooking";
 import CleanerSettings from './pages/CleanerSettings';
 import CleanerChecklists from './pages/CleanerChecklists';
@@ -67,6 +68,7 @@ const App = () => (
             <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/airbnb" element={<AirbnbBooking />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/upcoming-bookings" element={<UpcomingBookings />} />
             <Route path="/admin" element={<Dashboard />} />

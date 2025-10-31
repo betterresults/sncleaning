@@ -370,80 +370,29 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
   );
 
   return (
-    <Card className="p-4 sticky top-4 shadow-sm border bg-card">
-      {/* Mobile Collapsed View */}
-      <div className="lg:hidden relative">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="absolute -top-2 -right-2 h-8 w-8 p-0 z-10"
-        >
-          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </Button>
-        
-        <Button
-          variant="ghost"
-          className="w-full p-0 h-auto justify-start"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          <div className="flex items-center justify-between w-full py-3">
-            <div className="flex items-center gap-3">
-              <div className="w-7 h-7 bg-muted rounded-lg flex items-center justify-center">
-                <span className="text-sm">🏠</span>
-              </div>
-              <h3 className="text-lg font-semibold text-foreground">Booking Summary</h3>
-            </div>
-            {data.estimatedHours && data.estimatedHours > 0 && (
-              <p className="text-lg font-bold text-primary mr-8">£{calculateTotal().toFixed(2)}</p>
-            )}
+    <Card className="p-4 shadow-sm border bg-card sticky top-4">
+      <div className="border-b border-border pb-4 mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-7 h-7 bg-muted rounded-lg flex items-center justify-center">
+            <span className="text-sm">🏠</span>
           </div>
-        </Button>
-        
-        {isExpanded && (
-          <div className="border-t border-border pt-4 mt-4">
-            {renderSummaryContent()}
-            
-            {/* Total Cost for Mobile */}
-            {data.estimatedHours && data.estimatedHours > 0 && (
-              <div className="border-t border-border pt-3 mt-4">
-                <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xl font-semibold text-foreground">Total Cost</span>
-                    <span className="text-3xl font-bold text-primary">£{calculateTotal().toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+          <h3 className="text-xl font-semibold text-foreground">Booking Summary</h3>
+        </div>
       </div>
 
-      {/* Desktop Full View */}
-      <div className="hidden lg:block">
-        <div className="border-b border-border pb-6 mb-6">
-          <div className="flex items-center gap-3 py-3">
-            <div className="w-7 h-7 bg-muted rounded-lg flex items-center justify-center">
-              <span className="text-sm">🏠</span>
+      {renderSummaryContent()}
+
+      {/* Total Cost */}
+      {data.estimatedHours && data.estimatedHours > 0 && (
+        <div className="border-t border-border pt-4 mt-4">
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+            <div className="flex justify-between items-center">
+              <span className="text-xl font-semibold text-foreground">Total Cost</span>
+              <span className="text-3xl font-bold text-primary">£{calculateTotal().toFixed(2)}</span>
             </div>
-            <h3 className="text-xl font-semibold text-foreground">Booking Summary</h3>
           </div>
         </div>
-
-        {renderSummaryContent()}
-
-        {/* Total Cost - Separate Footer */}
-        {data.estimatedHours && data.estimatedHours > 0 && (
-          <div className="border-t border-border pt-3 mt-3">
-            <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
-              <div className="flex justify-between items-center">
-                <span className="text-xl font-semibold text-foreground">Total Cost</span>
-                <span className="text-3xl font-bold text-primary">£{calculateTotal().toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      )}
     </Card>
   );
 };

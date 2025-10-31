@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
@@ -9,7 +10,6 @@ import { useCustomerLinenAccess } from '@/hooks/useCustomerLinenAccess';
 import { Button } from '@/components/ui/button';
 import ServiceSelection from '@/components/booking/ServiceSelection';
 import NewBookingForm from '@/components/booking/NewBookingForm';
-import AirbnbBookingForm from '@/components/booking/AirbnbBookingForm';
 import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -18,6 +18,7 @@ const CustomerAddBooking = () => {
   const { hasLinenAccess } = useCustomerLinenAccess();
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [customerData, setCustomerData] = useState<any>(null);
+  const navigate = useNavigate();
 
   // Fetch customer data when component mounts
   useEffect(() => {
@@ -47,7 +48,12 @@ const CustomerAddBooking = () => {
   };
 
   const handleServiceSelect = (serviceType: string) => {
-    setSelectedService(serviceType);
+    if (serviceType === 'airbnb-cleaning') {
+      // Redirect to dedicated Airbnb booking page
+      navigate('/airbnb');
+    } else {
+      setSelectedService(serviceType);
+    }
   };
 
   const handleBackToServices = () => {
@@ -89,12 +95,7 @@ const CustomerAddBooking = () => {
                     </Button>
                   )}
                   
-                  {selectedService === 'airbnb-cleaning' && customerData ? (
-                    <AirbnbBookingForm 
-                      customerData={customerData}
-                      onBookingCreated={handleBookingCreated}
-                    />
-                  ) : selectedService !== 'airbnb-cleaning' ? (
+                  {selectedService !== 'airbnb-cleaning' && (
                     <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl p-6">
                       <NewBookingForm 
                         onBookingCreated={handleBookingCreated}
@@ -102,7 +103,7 @@ const CustomerAddBooking = () => {
                         preselectedCustomer={customerData}
                       />
                     </div>
-                  ) : null}
+                  )}
                 </div>
               ) : (
                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl p-8">

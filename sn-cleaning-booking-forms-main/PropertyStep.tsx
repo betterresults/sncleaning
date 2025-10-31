@@ -143,8 +143,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-xl font-bold text-foreground mb-2">
-          Please Provide Details About The Property
+        <h2 className="text-2xl font-bold text-[#185166] mb-2">
+          Property Details
         </h2>
       </div>
 
@@ -162,8 +162,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
             <Building className={`h-6 w-6 transition-all duration-500 ${
               data.propertyType === 'flat' ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
             }`} />
-            <span className={`font-medium transition-colors ${
-              data.propertyType === 'flat' ? 'text-primary' : 'text-foreground group-hover:text-primary'
+            <span className={`text-base font-medium transition-colors ${
+              data.propertyType === 'flat' ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
             }`}>Flat</span>
           </button>
           <button
@@ -177,8 +177,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
             <Home className={`h-6 w-6 transition-all duration-500 ${
               data.propertyType === 'house' ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
             }`} />
-            <span className={`font-medium transition-colors ${
-              data.propertyType === 'house' ? 'text-primary' : 'text-foreground group-hover:text-primary'
+            <span className={`text-base font-medium transition-colors ${
+              data.propertyType === 'house' ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
             }`}>House</span>
           </button>
         </div>
@@ -186,7 +186,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Size of the property */}
       <div>
-        <label className="block text-xl font-bold text-foreground mb-6">
+        <label className="block text-sm font-semibold text-slate-700 mb-6">
           Size of the property
         </label>
         
@@ -206,7 +206,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                   <Minus className="h-5 w-5" />
                 </Button>
                 <div className="flex-1 text-center">
-                <div className="text-2xl font-bold text-foreground">
+                <div className="text-lg font-semibold text-slate-600">
                     {data.bedrooms ? getBedroomLabel(data.bedrooms) : 'Bedrooms'}
                   </div>
                 </div>
@@ -237,7 +237,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                   <Minus className="h-5 w-5" />
                 </Button>
                 <div className="flex-1 text-center">
-                  <div className="text-2xl font-bold text-foreground">
+                  <div className="text-lg font-semibold text-slate-600">
                     {data.bathrooms ? `${data.bathrooms} Bathroom${data.bathrooms !== '1' && data.bathrooms !== '6+' && parseInt(data.bathrooms) > 1 ? 's' : data.bathrooms === '6+' ? 's' : ''}` : 'Bathrooms'}
                   </div>
                 </div>
@@ -259,7 +259,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       {/* Additional Rooms - only show if 2+ bedrooms */}
       {data.bedrooms && !['studio', '1'].includes(data.bedrooms) && (
         <div>
-          <label className="block text-xl font-bold text-foreground mb-6">
+          <label className="block text-sm font-semibold text-slate-700 mb-6">
             Additional rooms
           </label>
           
@@ -292,7 +292,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                 {data.additionalRooms[room.type as keyof typeof data.additionalRooms] === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full">
                     <div className="text-2xl mb-2">{room.icon}</div>
-                    <span className="text-sm font-bold text-foreground group-hover:text-primary">
+                    <span className="text-sm font-medium text-slate-600 group-hover:text-primary">
                       {room.label}
                     </span>
                   </div>
@@ -358,7 +358,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Service Type */}
       <div>
-        <label className="block text-xl font-bold text-foreground mb-6">
+        <label className="block text-sm font-semibold text-slate-700 mb-6">
           Choose your service
         </label>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -379,8 +379,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
             >
               <div className="flex flex-col items-center justify-center h-full">
                 <div className="text-2xl mb-2">{service.emoji}</div>
-                <span className={`text-sm font-bold transition-colors ${
-                  data.serviceType === service.value ? 'text-primary' : 'text-foreground group-hover:text-primary'
+                <span className={`text-sm font-medium transition-colors ${
+                  data.serviceType === service.value ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
                 }`}>{service.label}</span>
               </div>
             </button>
@@ -391,7 +391,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       {/* Property Already Cleaned */}
       {data.serviceType === 'checkin-checkout' && (
         <div>
-          <label className="block text-lg font-semibold text-foreground mb-4">
+          <label className="block text-sm font-semibold text-slate-700 mb-4">
             Has the property been cleaned to Airbnb standard already?
           </label>
           <div className="grid grid-cols-2 gap-4">
@@ -404,8 +404,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
               onClick={() => onUpdate({ alreadyCleaned: data.alreadyCleaned === false ? null : false })}
             >
               <div className="flex items-center justify-center h-full">
-                <span className={`text-lg font-bold transition-colors ${
-                  data.alreadyCleaned === false ? 'text-primary' : 'text-foreground group-hover:text-primary'
+                <span className={`text-base font-medium transition-colors ${
+                  data.alreadyCleaned === false ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
                 }`}>No</span>
               </div>
             </button>
@@ -418,8 +418,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
               onClick={() => onUpdate({ alreadyCleaned: data.alreadyCleaned === true ? null : true })}
             >
               <div className="flex items-center justify-center h-full">
-                <span className={`text-lg font-bold transition-colors ${
-                  data.alreadyCleaned === true ? 'text-primary' : 'text-foreground group-hover:text-primary'
+                <span className={`text-base font-medium transition-colors ${
+                  data.alreadyCleaned === true ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
                 }`}>Yes</span>
               </div>
             </button>
@@ -430,7 +430,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       {/* Oven Cleaning - show if deep cleaning or not cleaned to Airbnb standard */}
       {(data.serviceType === 'deep' || data.alreadyCleaned === false) && (
         <div>
-          <label className="block text-lg font-semibold text-foreground mb-4">
+          <label className="block text-sm font-semibold text-slate-700 mb-4">
             Do you require oven cleaning?
           </label>
           <div className="grid grid-cols-2 gap-4 mb-4">
@@ -443,8 +443,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
               onClick={() => onUpdate({ needsOvenCleaning: data.needsOvenCleaning === false ? null : false })}
             >
               <div className="flex items-center justify-center h-full">
-                <span className={`text-lg font-bold transition-colors ${
-                  data.needsOvenCleaning === false ? 'text-primary' : 'text-foreground group-hover:text-primary'
+                <span className={`text-base font-medium transition-colors ${
+                  data.needsOvenCleaning === false ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
                 }`}>No</span>
               </div>
             </button>
@@ -457,8 +457,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
               onClick={() => onUpdate({ needsOvenCleaning: data.needsOvenCleaning === true ? null : true })}
             >
               <div className="flex items-center justify-center h-full">
-                <span className={`text-lg font-bold transition-colors ${
-                  data.needsOvenCleaning === true ? 'text-primary' : 'text-foreground group-hover:text-primary'
+                <span className={`text-base font-medium transition-colors ${
+                  data.needsOvenCleaning === true ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
                 }`}>Yes</span>
               </div>
             </button>
@@ -467,7 +467,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
           {/* Oven Type Selection */}
           {data.needsOvenCleaning === true && (
             <div>
-              <label className="block text-md font-semibold text-foreground mb-4">
+              <label className="block text-sm font-semibold text-slate-700 mb-4">
                 Select oven type
               </label>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -488,8 +488,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                   >
                     <div className="flex flex-col items-center justify-center h-full">
                       <div className="text-lg mb-1">{oven.emoji}</div>
-                      <span className={`text-xs font-bold transition-colors ${
-                        data.ovenType === oven.value ? 'text-primary' : 'text-foreground group-hover:text-primary'
+                      <span className={`text-sm font-medium transition-colors ${
+                        data.ovenType === oven.value ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
                       }`}>{oven.label}</span>
                     </div>
                   </button>
@@ -502,7 +502,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Cleaning Supplies */}
       <div>
-        <label className="block text-xl font-bold text-foreground mb-6">
+        <label className="block text-sm font-semibold text-slate-700 mb-6">
           Cleaning supplies
         </label>
         
@@ -612,7 +612,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       {/* Equipment Arrangement */}
       {data.cleaningProducts.equipment && (
         <div>
-          <label className="block text-xl font-bold text-foreground mb-6">
+          <label className="block text-sm font-semibold text-slate-700 mb-6">
             Equipment arrangement
           </label>
           
@@ -635,8 +635,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
               <CheckCircle className={`h-6 w-6 transition-all duration-500 ${
                 data.equipmentArrangement === 'ongoing' ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
               }`} />
-              <span className={`font-medium transition-colors ${
-                data.equipmentArrangement === 'ongoing' ? 'text-primary' : 'text-foreground group-hover:text-primary'
+              <span className={`text-base font-medium transition-colors ${
+                data.equipmentArrangement === 'ongoing' ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
               }`}>Ongoing</span>
             </button>
             
@@ -651,8 +651,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
               <Zap className={`h-6 w-6 transition-all duration-500 ${
                 data.equipmentArrangement === 'oneoff' ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
               }`} />
-              <span className={`font-medium transition-colors ${
-                data.equipmentArrangement === 'oneoff' ? 'text-primary' : 'text-foreground group-hover:text-primary'
+              <span className={`text-base font-medium transition-colors ${
+                data.equipmentArrangement === 'oneoff' ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
               }`}>One-time</span>
             </button>
           </div>
@@ -675,7 +675,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
           {/* Desktop Layout */}
           <div className="hidden lg:flex items-center justify-between">
             <div className="flex-1">
-              <h4 className="text-base font-medium text-foreground mb-2">Recommended Booking Time</h4>
+              <h4 className="text-sm font-semibold text-slate-700 mb-2">Recommended Booking Time</h4>
               <p className="text-sm text-muted-foreground">
                 Based on your property details and service type, we recommend this duration. You can adjust based on your specific needs.
               </p>
@@ -706,7 +706,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                   <Minus className="h-4 w-4" />
                 </Button>
                 <div className="flex-1 text-center mx-4">
-                  <div className="text-xl font-bold text-foreground">
+                  <div className="text-lg font-semibold text-slate-600">
                     {(roundToNearestHalf(data.estimatedHours || recommendedHours) % 1 === 0 
                       ? roundToNearestHalf(data.estimatedHours || recommendedHours).toString() 
                       : roundToNearestHalf(data.estimatedHours || recommendedHours).toFixed(1))} hours
@@ -734,7 +734,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
           {/* Mobile Layout */}
           <div className="block lg:hidden space-y-3">
             {/* Title */}
-            <h4 className="text-base font-medium text-foreground">Recommended Booking Time</h4>
+            <h4 className="text-sm font-semibold text-slate-700">Recommended Booking Time</h4>
             
             {/* Description */}
             <p className="text-sm text-muted-foreground">
@@ -767,7 +767,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                 <Minus className="h-5 w-5" />
               </Button>
               <div className="flex-1 text-center">
-                <div className="text-2xl font-bold text-foreground">
+                <div className="text-lg font-semibold text-slate-600">
                   {(roundToNearestHalf(data.estimatedHours || recommendedHours) % 1 === 0 
                     ? roundToNearestHalf(data.estimatedHours || recommendedHours).toString() 
                     : roundToNearestHalf(data.estimatedHours || recommendedHours).toFixed(1))} hours

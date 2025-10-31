@@ -219,17 +219,17 @@ const BookingForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-muted">
       {/* Header */}
-      <header className="bg-card border-2 border-border rounded-lg mx-1 md:mx-2 mt-1 md:mt-2 shadow-sm">
-        <div className="container mx-auto px-2 md:px-3 py-2 md:py-4">
-          <h1 className="text-2xl md:text-4xl font-bold text-foreground text-center mb-4 md:mb-6">
+      <header className="bg-white border-b border-gray-200 py-6 mb-8">
+        <div className="container mx-auto px-4">
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-700 text-center mb-6">
             Airbnb Cleaning Booking Form
           </h1>
           
           {/* Step Navigation */}
           <div className="max-w-4xl mx-auto">
-            <div className="flex items-center justify-between bg-muted/20 rounded-2xl p-1 md:p-2 gap-1 md:gap-2">
+            <div className="flex items-center justify-center gap-2">
               {steps.map((step, index) => {
                 const stepNumber = index + 1;
                 const isActive = currentStep === stepNumber;
@@ -241,24 +241,14 @@ const BookingForm: React.FC = () => {
                     key={step.id}
                     onClick={() => canNavigate && setCurrentStep(stepNumber)}
                     disabled={!canNavigate}
-                    className={`flex items-center gap-2 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-xl transition-all duration-300 flex-1 ${
+                    className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-300 ${
                       isActive 
-                        ? 'bg-primary text-primary-foreground shadow-lg' 
-                        : isCompleted
-                        ? 'bg-primary/10 text-primary hover:bg-primary/20'
-                        : 'text-muted-foreground hover:text-foreground'
+                        ? 'bg-primary text-white shadow-sm' 
+                        : 'text-gray-400 hover:text-gray-600'
                     } ${canNavigate ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
                   >
-                    <div className={`w-6 h-6 md:w-8 md:h-8 rounded-lg flex items-center justify-center text-xs md:text-sm font-medium ${
-                      isActive 
-                        ? 'bg-white/20' 
-                        : isCompleted
-                        ? 'bg-primary/20'
-                        : 'bg-muted'
-                    }`}>
-                      {step.icon}
-                    </div>
-                    <span className="font-medium text-xs md:text-sm hidden sm:block">{step.title}</span>
+                    {step.icon}
+                    <span className="font-medium text-sm">{step.title}</span>
                   </button>
                 );
               })}
@@ -268,20 +258,18 @@ const BookingForm: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-1 md:px-2 py-2 md:py-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col lg:grid lg:grid-cols-6 gap-2 md:gap-4">
-            {/* Form Section */}
-            <div className="order-1 lg:col-span-4">
-              <Card className="p-3 md:p-6 shadow-lg">
-                {renderStep()}
-              </Card>
-            </div>
-            
-            {/* Summary Section - Bottom on mobile, right on desktop */}
-            <div className="order-2 lg:order-2 lg:col-span-2">
-              <BookingSummary data={bookingData} />
-            </div>
+      <main className="container mx-auto px-4 py-6 max-w-[1400px]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Form Section - Takes 2 columns */}
+          <div className="lg:col-span-2">
+            <Card className="p-8 shadow-sm bg-card">
+              {renderStep()}
+            </Card>
+          </div>
+          
+          {/* Summary Section - Takes 1 column, always visible */}
+          <div className="lg:col-span-1">
+            <BookingSummary data={bookingData} />
           </div>
         </div>
       </main>
