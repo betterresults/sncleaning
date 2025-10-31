@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Trash2, Eye, EyeOff, GripVertical, Upload } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
+import { toast } from 'sonner';
 import { 
   useAirbnbFieldConfigs,
   useAllAirbnbCategories,
@@ -95,6 +96,15 @@ export const AirbnbConfigPanel: React.FC = () => {
     return acc;
   }, {} as Record<string, FieldConfig[]>);
 
+  const getCategoryFields = (category: string) => {
+    const list = groupedConfigs[category] || [];
+    if (category === 'Ironing') {
+      const allowed = new Set(['ironing', 'ironing_hours']);
+      return list.filter(f => allowed.has((f.option || '').toLowerCase()));
+    }
+    return list;
+  };
+
   const handleAddField = () => {
     const category = addingToCategory || selectedCategory || newCategory;
     if (!category || !newOption) return;
@@ -105,6 +115,21 @@ export const AirbnbConfigPanel: React.FC = () => {
     // Get category_order from existing fields in that category, or use a default
     const existingCategoryConfig = configs.find(c => c.category === category);
     const categoryOrder = existingCategoryConfig?.category_order ?? 999;
+
+    // Restrict Ironing category to only two allowed options
+    if (category === 'Ironing') {
+      const allowed = new Set(['ironing', 'ironing_hours']);
+      const optionKey = (newOption || '').toLowerCase();
+      if (!allowed.has(optionKey)) {
+        toast.error('Допустими опции за Гладене: "ironing" и "ironing_hours"');
+        return;
+      }
+      const exists = (groupedConfigs['Ironing'] || []).some(c => (c.option || '').toLowerCase() === optionKey);
+      if (exists) {
+        toast.error('Тази опция вече съществува в Гладене');
+        return;
+      }
+    }
 
     createConfig.mutate({
       category,
@@ -154,7 +179,7 @@ export const AirbnbConfigPanel: React.FC = () => {
     setCategoryVisibility(prev => ({ ...prev, [category]: newVisibility }));
     
     // Update all fields in this category
-    groupedConfigs[category]?.forEach(config => {
+    getCategoryFields(category).forEach(config => {
       handleUpdateConfig(config.id, { is_visible: newVisibility });
     });
   };
@@ -186,7 +211,7 @@ export const AirbnbConfigPanel: React.FC = () => {
   };
 
   const saveCategoryChanges = (category: string) => {
-    const fieldsToUpdate = groupedConfigs[category] || [];
+    const fieldsToUpdate = getCategoryFields(category);
     fieldsToUpdate.forEach(config => {
       if (localChanges[config.id]) {
         handleUpdateConfig(config.id, localChanges[config.id]);
@@ -443,7 +468,7 @@ export const AirbnbConfigPanel: React.FC = () => {
                           <ChevronDown className={`h-5 w-5 transition-transform ${openCategories[category] ? 'rotate-180' : ''}`} />
                           <h3 className="font-bold text-lg">{category}</h3>
                           <span className="text-sm text-muted-foreground">
-                            ({groupedConfigs[category]?.length || 0} fields)
+                            ({getCategoryFields(category).length || 0} fields)
                           </span>
                         </div>
                         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
@@ -470,7 +495,7 @@ export const AirbnbConfigPanel: React.FC = () => {
                           <div className="col-span-2">Time (min)</div>
                           <div className="col-span-1">Actions</div>
                         </div>
-                        {groupedConfigs[category]?.sort((a, b) => (a.display_order || 0) - (b.display_order || 0)).map((config) => (
+                        {getCategoryFields(category).sort((a, b) => (a.display_order || 0) - (b.display_order || 0)).map((config) => (
                           <div key={config.id} className="grid grid-cols-12 gap-2 items-center p-2 border rounded hover:bg-muted/30 transition-colors">
                             <div className="col-span-2">
                               <Input
