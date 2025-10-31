@@ -90,7 +90,6 @@ const App = () => (
                  <Route path="/customer-add-booking" element={<CustomerAddBooking />} />
           <Route path="/customer-linen-management" element={<CustomerLinenManagement />} />
                  <Route path="/customer/airbnb-form" element={<CustomerAirbnbForm />} />
-                 <Route path="/airbnb" element={<CustomerAirbnbForm />} />
                <Route path="/admin-add-booking" element={<AdminAddBooking />} />
                <Route path="/photos/:folderName" element={<CustomerPhotos />} />
                <Route path="/create-customer-accounts" element={<CreateCustomerAccounts />} />
