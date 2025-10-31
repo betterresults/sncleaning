@@ -916,9 +916,9 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
           size="lg"
           onClick={onNext}
           disabled={!canContinue}
-          className="px-12"
+          className="px-12 bg-[#185166] hover:bg-[#185166]/90 text-white"
         >
-          Continue
+          Продължи
         </Button>
       </div>
     </div>
