@@ -215,8 +215,7 @@ export default function EditRecurringBooking() {
     setFormData(prev => ({
       ...prev,
       cleaner: cleanerId,
-      cleaner_rate: cleaner?.hourly_rate?.toString() || '',
-      cost_per_hour: cleaner?.hourly_rate?.toString() || ''
+      cleaner_rate: cleaner?.hourly_rate?.toString() || prev.cleaner_rate,
     }));
   };
 
@@ -436,11 +435,74 @@ export default function EditRecurringBooking() {
           </CardContent>
         </Card>
 
-        {/* Cleaner and Pricing */}
+        {/* Client Pricing */}
         <Card>
           <CardHeader>
-            <CardTitle>Cleaner and Pricing</CardTitle>
-            <CardDescription>Assign cleaner and set pricing details</CardDescription>
+            <CardTitle>Client Pricing</CardTitle>
+            <CardDescription>Set pricing for the client</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="hours">Hours per Visit *</Label>
+                <Input
+                  id="hours"
+                  type="number"
+                  step="0.5"
+                  value={formData.hours}
+                  onChange={(e) => setFormData(prev => ({ ...prev, hours: e.target.value }))}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="cost_per_hour">Client Rate per Hour *</Label>
+                <Input
+                  id="cost_per_hour"
+                  type="number"
+                  step="0.01"
+                  value={formData.cost_per_hour}
+                  onChange={(e) => setFormData(prev => ({ ...prev, cost_per_hour: e.target.value }))}
+                  required
+                  className="text-green-600 font-semibold"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="total_cost">Client Cost per Visit *</Label>
+                <Input
+                  id="total_cost"
+                  type="number"
+                  step="0.01"
+                  value={formData.total_cost}
+                  onChange={(e) => setFormData(prev => ({ ...prev, total_cost: e.target.value }))}
+                  required
+                  className="text-green-600 font-semibold text-lg"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="payment_method">Payment Method *</Label>
+              <Select value={formData.payment_method} onValueChange={(value) => setFormData(prev => ({ ...prev, payment_method: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select payment method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Stripe">Stripe</SelectItem>
+                  <SelectItem value="Invoiceless">Invoiceless</SelectItem>
+                  <SelectItem value="Cash">Cash</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Cleaner Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Cleaner Information</CardTitle>
+            <CardDescription>Assign cleaner and set their payment rate</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex gap-4">
@@ -472,54 +534,32 @@ export default function EditRecurringBooking() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="hours">Hours per Visit *</Label>
+                <Label htmlFor="cleaner_rate">Cleaner Rate per Hour</Label>
                 <Input
-                  id="hours"
+                  id="cleaner_rate"
                   type="number"
-                  step="0.5"
-                  value={formData.hours}
-                  onChange={(e) => setFormData(prev => ({ ...prev, hours: e.target.value }))}
-                  required
+                  step="0.01"
+                  value={formData.cleaner_rate}
+                  onChange={(e) => setFormData(prev => ({ ...prev, cleaner_rate: e.target.value }))}
+                  placeholder="Enter cleaner hourly rate"
+                  className="text-blue-600 font-semibold"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Custom rate for this booking (overrides cleaner's default rate)
+                </p>
               </div>
 
               <div>
-                <Label htmlFor="cost_per_hour">Cost per Hour *</Label>
-                <Input
-                  id="cost_per_hour"
-                  type="number"
-                  step="0.01"
-                  value={formData.cost_per_hour}
-                  onChange={(e) => setFormData(prev => ({ ...prev, cost_per_hour: e.target.value }))}
-                  required
-                />
+                <Label>Cleaner Pay per Visit</Label>
+                <div className="h-10 px-3 py-2 border border-input bg-muted rounded-md flex items-center text-blue-600 font-semibold text-lg">
+                  £{formData.cleaner_rate && formData.hours 
+                    ? (parseFloat(formData.cleaner_rate) * parseFloat(formData.hours)).toFixed(2)
+                    : '0.00'}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Calculated: Cleaner Rate × Hours
+                </p>
               </div>
-
-              <div>
-                <Label htmlFor="total_cost">Total Cost per Visit *</Label>
-                <Input
-                  id="total_cost"
-                  type="number"
-                  step="0.01"
-                  value={formData.total_cost}
-                  onChange={(e) => setFormData(prev => ({ ...prev, total_cost: e.target.value }))}
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="payment_method">Payment Method *</Label>
-              <Select value={formData.payment_method} onValueChange={(value) => setFormData(prev => ({ ...prev, payment_method: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select payment method" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Stripe">Stripe</SelectItem>
-                  <SelectItem value="Invoiceless">Invoiceless</SelectItem>
-                  <SelectItem value="Cash">Cash</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
 
             <div className="flex items-center space-x-2">
