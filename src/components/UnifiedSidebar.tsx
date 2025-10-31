@@ -58,7 +58,7 @@ export function UnifiedSidebar({ navigationItems, user, userRole, customerId, cl
 
   return (
     <Sidebar 
-      className="border-r-0 bg-[#185166] flex flex-col h-screen" 
+      className="border-r-0 bg-[#185166] flex flex-col h-screen w-56" 
       collapsible="offcanvas"
       side="left"
       variant="sidebar"

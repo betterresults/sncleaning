@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
@@ -15,7 +15,6 @@ import AdminGuard from '@/components/AdminGuard';
 
 const Dashboard = () => {
   const { user, userRole, cleanerId, loading, signOut } = useAuth();
-  const [selectedTimeRange, setSelectedTimeRange] = useState<'today' | '3days' | '7days' | '30days'>('30days');
   const [showStorageTest, setShowStorageTest] = useState(false);
 
   const handleSignOut = async () => {
@@ -28,41 +27,17 @@ const Dashboard = () => {
 
   console.log('Dashboard - Auth state:', { user: !!user, userRole, cleanerId, loading });
 
-  // Calculate date range based on selected time range
-  const getDateRange = () => {
+  // Calculate date range for today's bookings
+  const getTodayRange = () => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
-    switch (selectedTimeRange) {
-      case 'today':
-        return {
-          dateFrom: today.toISOString(),
-          dateTo: new Date(today.getTime() + 24 * 60 * 60 * 1000 - 1).toISOString()
-        };
-      case '3days':
-        return {
-          dateFrom: today.toISOString(),
-          dateTo: new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString()
-        };
-      case '7days':
-        return {
-          dateFrom: today.toISOString(),
-          dateTo: new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString()
-        };
-      case '30days':
-        return {
-          dateFrom: today.toISOString(),
-          dateTo: new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
-        };
-      default:
-        return {
-          dateFrom: today.toISOString(),
-          dateTo: new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
-        };
-    }
+    return {
+      dateFrom: today.toISOString(),
+      dateTo: new Date(today.getTime() + 24 * 60 * 60 * 1000 - 1).toISOString()
+    };
   };
 
-  const dateRange = getDateRange();
+  const todayRange = getTodayRange();
 
   // This dashboard is ADMIN-ONLY - wrap everything in AdminGuard
   return (
@@ -85,40 +60,32 @@ const Dashboard = () => {
             
             <main className="flex-1 p-2 sm:p-4 md:p-6 space-y-4 sm:space-y-6 max-w-full overflow-x-hidden">
               <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
-                {/* Time Filter Dropdown and Test Button */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:justify-between">
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600 flex-shrink-0" />
-                    <Select value={selectedTimeRange} onValueChange={(value: 'today' | '3days' | '7days' | '30days') => setSelectedTimeRange(value)}>
-                      <SelectTrigger className="w-full sm:w-48 bg-white border-gray-300 shadow-sm text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border shadow-lg z-50">
-                        <SelectItem value="today">Today</SelectItem>
-                        <SelectItem value="3days">Next 3 Days</SelectItem>
-                        <SelectItem value="7days">Next 7 Days</SelectItem>
-                        <SelectItem value="30days">Next 30 Days</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                {/* Test Button */}
+                <div className="flex justify-end">
                   <Button 
                     onClick={() => setShowStorageTest(true)}
                     variant="outline"
-                    className="flex items-center justify-center gap-2 w-full sm:w-auto text-sm"
+                    className="flex items-center justify-center gap-2 text-sm"
                   >
                     <TestTube className="h-4 w-4" />
-                    <span className="sm:inline">Test Photo Storage</span>
+                    <span>Test Photo Storage</span>
                   </Button>
                 </div>
 
-                {/* Statistics */}
-                <DashboardStats filters={dateRange} />
+                {/* Statistics - Last 30 Days */}
+                <DashboardStats />
                 
-                {/* Bookings */}
+                {/* Today's Schedule */}
                 <Card className="border shadow-sm">
-                  <CardContent className="p-2 sm:p-4">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      Today's Schedule
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-2 sm:p-4 pt-0">
                     <UpcomingBookings 
-                      dashboardDateFilter={dateRange}
+                      dashboardDateFilter={todayRange}
                     />
                   </CardContent>
                 </Card>

@@ -5,11 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, DollarSign, AlertTriangle, Banknote } from 'lucide-react';
 
 interface Stats {
-  upcomingBookings: number;
-  expectedRevenue: number;
-  totalCleanerPay: number;
-  totalProfit: number;
-  unassignedBookings: number;
+  totalBookings: number;
+  monthlyRevenue: number;
+  outstandingInvoices: number;
 }
 
 interface DashboardStatsProps {
@@ -23,11 +21,9 @@ interface DashboardStatsProps {
 
 const DashboardStats = ({ filters }: DashboardStatsProps) => {
   const [stats, setStats] = useState<Stats>({
-    upcomingBookings: 0,
-    expectedRevenue: 0,
-    totalCleanerPay: 0,
-    totalProfit: 0,
-    unassignedBookings: 0,
+    totalBookings: 0,
+    monthlyRevenue: 0,
+    outstandingInvoices: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -35,19 +31,28 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
     try {
       setLoading(true);
       
-      // Base query for upcoming bookings
+      // If filters provided, use them; otherwise calculate last 30 days
+      const now = new Date();
+      let dateFrom: string;
+      let dateTo: string;
+      
+      if (filters?.dateFrom && filters?.dateTo) {
+        dateFrom = filters.dateFrom;
+        dateTo = filters.dateTo;
+      } else {
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        dateFrom = thirtyDaysAgo.toISOString();
+        dateTo = now.toISOString();
+      }
+      
+      // Build query for bookings in date range
       let bookingsQuery = supabase
         .from('bookings')
-        .select('total_cost, cleaner_pay, payment_status, customer, cleaner')
-        .gte('date_time', new Date().toISOString());
+        .select('total_cost, payment_status, date_time')
+        .gte('date_time', dateFrom)
+        .lte('date_time', dateTo);
 
-      // Apply filters if provided
-      if (filters?.dateFrom) {
-        bookingsQuery = bookingsQuery.gte('date_time', filters.dateFrom);
-      }
-      if (filters?.dateTo) {
-        bookingsQuery = bookingsQuery.lte('date_time', filters.dateTo);
-      }
+      // Apply additional filters if provided
       if (filters?.cleanerId) {
         bookingsQuery = bookingsQuery.eq('cleaner', filters.cleanerId);
       }
@@ -55,42 +60,35 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
         bookingsQuery = bookingsQuery.eq('customer', filters.customerId);
       }
 
-      const { data: bookings, error: bookingsError } = await bookingsQuery;
+      const { data: bookingsData, error: bookingsError } = await bookingsQuery;
 
       if (bookingsError) {
         console.error('Error fetching bookings:', bookingsError);
         return;
       }
 
+      // Fetch unpaid bookings from the past
+      const { data: pastUnpaidBookings, error: unpaidError } = await supabase
+        .from('bookings')
+        .select('id, payment_status')
+        .lt('date_time', now.toISOString())
+        .neq('payment_status', 'Paid');
+
+      if (unpaidError) {
+        console.error('Error fetching unpaid bookings:', unpaidError);
+      }
+
       // Calculate stats
-      const upcomingBookings = bookings?.length || 0;
-      const unassignedBookings = bookings?.filter(booking => !booking.cleaner).length || 0;
-      
-      // Debug logging
-      console.log('DashboardStats debug:', {
-        totalBookings: upcomingBookings,
-        unassignedBookings,
-        bookingsWithoutCleaner: bookings?.filter(booking => !booking.cleaner).map(b => ({
-          id: b.customer,
-          cleaner: b.cleaner,
-          hasCleanerProperty: 'cleaner' in b
-        }))
-      });
-      
-      const expectedRevenue = bookings?.reduce((sum, booking) => {
+      const totalBookings = bookingsData?.length || 0;
+      const monthlyRevenue = bookingsData?.reduce((sum, booking) => {
         return sum + (parseFloat(String(booking.total_cost)) || 0);
       }, 0) || 0;
-      const totalCleanerPay = bookings?.reduce((sum, booking) => {
-        return sum + (parseFloat(String(booking.cleaner_pay)) || 0);
-      }, 0) || 0;
-      const totalProfit = expectedRevenue - totalCleanerPay;
+      const outstandingInvoices = pastUnpaidBookings?.length || 0;
 
       setStats({
-        upcomingBookings,
-        expectedRevenue,
-        totalCleanerPay,
-        totalProfit,
-        unassignedBookings,
+        totalBookings,
+        monthlyRevenue,
+        outstandingInvoices,
       });
 
     } catch (error) {
@@ -119,9 +117,6 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
             </Card>
           ))}
         </div>
-        {stats.unassignedBookings > 0 && (
-          <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-        )}
       </div>
     );
   }
@@ -129,10 +124,10 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
   return (
     <div className="space-y-3 sm:space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-        <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 text-white transition-all duration-200">
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-teal-500 via-teal-600 to-cyan-700 text-white transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 pt-3 sm:px-4 sm:pt-4">
             <CardTitle className="text-sm font-medium opacity-90">
-              Bookings
+              Total Bookings
             </CardTitle>
             <div className="p-1.5 bg-white/20 rounded-lg">
               <Calendar className="h-4 w-4" />
@@ -140,15 +135,16 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
           </CardHeader>
           <CardContent className="pb-3 px-3 sm:pb-4 sm:px-4">
             <div className="text-3xl sm:text-4xl font-bold">
-              {stats.upcomingBookings}
+              {stats.totalBookings}
             </div>
+            <p className="text-xs opacity-75 mt-1">Last 30 Days</p>
           </CardContent>
         </Card>
 
         <Card className="shadow-lg border-0 bg-gradient-to-br from-emerald-500 via-green-600 to-teal-700 text-white transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 pt-3 sm:px-4 sm:pt-4">
             <CardTitle className="text-sm font-medium opacity-90">
-              Revenue
+              Monthly Revenue
             </CardTitle>
             <div className="p-1.5 bg-white/20 rounded-lg">
               <DollarSign className="h-4 w-4" />
@@ -156,24 +152,26 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
           </CardHeader>
           <CardContent className="pb-3 px-3 sm:pb-4 sm:px-4">
             <div className="text-2xl sm:text-3xl font-bold">
-              £{(stats.expectedRevenue || 0).toFixed(2)}
+              £{(stats.monthlyRevenue || 0).toFixed(2)}
             </div>
+            <p className="text-xs opacity-75 mt-1">Last 30 Days</p>
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg border-0 bg-gradient-to-br from-yellow-500 via-amber-600 to-orange-700 text-white transition-all duration-200">
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 text-white transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 pt-3 sm:px-4 sm:pt-4">
             <CardTitle className="text-sm font-medium opacity-90">
-              Profit
+              Outstanding Invoices
             </CardTitle>
             <div className="p-1.5 bg-white/20 rounded-lg">
-              <Banknote className="h-4 w-4" />
+              <AlertTriangle className="h-4 w-4" />
             </div>
           </CardHeader>
           <CardContent className="pb-3 px-3 sm:pb-4 sm:px-4">
-            <div className="text-2xl sm:text-3xl font-bold">
-              £{(stats.totalProfit || 0).toFixed(2)}
+            <div className="text-3xl sm:text-4xl font-bold">
+              {stats.outstandingInvoices}
             </div>
+            <p className="text-xs opacity-75 mt-1">Unpaid Past Bookings</p>
           </CardContent>
         </Card>
       </div>
