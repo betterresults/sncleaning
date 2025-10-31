@@ -259,7 +259,6 @@ export const AirbnbConfigPanel: React.FC = () => {
           <Card className="p-6">
             <div className="mb-6">
               <h2 className="text-2xl font-bold">Form Fields</h2>
-              <p className="text-muted-foreground">Manage categories and options</p>
             </div>
               
             <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
