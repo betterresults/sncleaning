@@ -293,76 +293,68 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
           const bookingTime = booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'N/A';
 
         return (
-          <Card 
+          <div 
             key={booking.id} 
-            className="shadow-md border hover:shadow-lg transition-all duration-200"
+            className="bg-white border-b border-gray-200 hover:bg-gray-50 transition-colors duration-150"
           >
-            <CardContent className="p-4">
-              <div className="flex items-center gap-6">
-                {/* Time - Fixed width */}
-                <div className="flex items-center gap-2 min-w-[90px]">
-                  <Clock className="h-4 w-4 text-gray-400" />
-                  <span className="text-base font-semibold text-gray-900">{bookingTime}</span>
-                </div>
+            <div className="px-6 py-4 flex items-center gap-6">
+              {/* Time */}
+              <div className="w-20 flex-shrink-0">
+                <div className="text-sm font-medium text-gray-900">{bookingTime}</div>
+              </div>
 
-                {/* Customer Name - Fixed width */}
-                <div className="flex items-center gap-2 min-w-[180px]">
-                  <User className="h-4 w-4 text-gray-400" />
-                  <span className="text-base font-medium text-gray-900">
-                    {booking.first_name} {booking.last_name}
-                  </span>
+              {/* Customer */}
+              <div className="w-48 flex-shrink-0">
+                <div className="text-sm font-medium text-gray-900">
+                  {booking.first_name} {booking.last_name}
                 </div>
+              </div>
 
-                {/* Address - Flexible width */}
-                <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-                  <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                  <span className="text-sm text-gray-700 truncate">
-                    {booking.address}, {booking.postcode}
-                  </span>
+              {/* Address */}
+              <div className="flex-1 min-w-0">
+                <div className="text-sm text-gray-700 truncate">
+                  {booking.address}, {booking.postcode}
                 </div>
+              </div>
 
-                {/* Service - Fixed width */}
-                <div className="min-w-[180px]">
-                  <div className="text-sm font-medium text-gray-900">{booking.service_type}</div>
-                  <div className="text-xs text-gray-600">{booking.cleaning_type}</div>
-                </div>
+              {/* Service */}
+              <div className="w-44 flex-shrink-0">
+                <div className="text-sm font-medium text-gray-900">{booking.service_type}</div>
+                <div className="text-xs text-gray-500">{booking.cleaning_type}</div>
+              </div>
 
-                {/* Cleaner - Fixed width */}
-                <div className="min-w-[140px]">
-                  {isUnsigned ? (
-                    <Badge variant="destructive" className="text-xs">Unassigned</Badge>
-                  ) : (
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{cleanerName}</div>
-                      {booking.cleaner_pay && (
-                        <div className="text-xs text-gray-600">
-                          £{booking.cleaner_pay.toFixed(2)}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+              {/* Cleaner */}
+              <div className="w-36 flex-shrink-0">
+                {isUnsigned ? (
+                  <Badge variant="destructive" className="text-xs font-normal">Unassigned</Badge>
+                ) : (
+                  <div className="text-sm text-gray-900">{cleanerName}</div>
+                )}
+              </div>
 
-                {/* Payment Status - Fixed width */}
-                <div className="flex items-center gap-2 min-w-[100px]">
-                  <PaymentStatusIndicator 
-                    status={booking.payment_status} 
-                    isClickable={true}
-                    onClick={() => handlePaymentAction(booking)}
-                    size="sm"
-                  />
-                </div>
+              {/* Payment */}
+              <div className="w-24 flex-shrink-0">
+                <PaymentStatusIndicator 
+                  status={booking.payment_status} 
+                  isClickable={true}
+                  onClick={() => handlePaymentAction(booking)}
+                  size="sm"
+                />
+              </div>
 
-                {/* Price - Fixed width */}
-                <div className="text-base font-semibold text-gray-900 min-w-[80px] text-right">
+              {/* Price */}
+              <div className="w-24 flex-shrink-0 text-right">
+                <div className="text-sm font-semibold text-gray-900">
                   £{booking.total_cost?.toFixed(2) || '0.00'}
                 </div>
+              </div>
 
-                {/* Actions */}
+              {/* Actions */}
+              <div className="w-10 flex-shrink-0">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-gray-100">
-                      <MoreHorizontal className="h-5 w-5" />
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                      <MoreHorizontal className="h-4 w-4 text-gray-500" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-44">
@@ -404,22 +396,15 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
                 </DropdownMenu>
               </div>
 
-              {/* Same Day Badge - if applicable */}
-              {booking.frequently === 'Same Day' && (
-                <div className="mt-2">
-                  <Badge className="bg-orange-500 text-white text-xs">Same Day</Badge>
-                </div>
-              )}
-
-              {/* Authorize Remaining Amount - Hidden but functional */}
+              {/* Hidden but functional */}
               <div className="hidden">
                 <AuthorizeRemainingAmountDialog
                   booking={booking}
                   onSuccess={fetchData}
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         );
       })}
 
