@@ -206,12 +206,15 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
   };
 
   return (
-    <div className="space-y-4">
-      {/* Linen Handling Options */}
-      <div className="p-6 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] bg-white">
-        <h2 className="text-xl font-bold text-foreground mb-4">
+    <div className="space-y-8">
+      <div>
+        <h2 className="text-2xl font-bold text-foreground mb-2">
           Linen Handling
         </h2>
+      </div>
+
+      {/* Linen Handling Options */}
+      <div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {linensOptions.map((option) => {
             const Icon = option.icon;
@@ -236,7 +239,7 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
 
       {/* Ironing Switch */}
       {showIroning && (
-        <div className="p-6 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] bg-white">
+        <div>
           <h2 className="text-xl font-bold text-foreground mb-4">
             Select ironing option <span className="text-destructive">*</span>
           </h2>
@@ -268,8 +271,8 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
 
       {/* Extra Hours for Linen Handling */}
       {(data.linensHandling === 'wash-hang' || data.linensHandling === 'wash-dry' || data.needsIroning) && (
-        <div className="p-6 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] bg-white">
-          <div className="bg-muted/10 rounded-lg p-4">
+        <div>
+          <div className="bg-muted/10 border border-border rounded-lg p-4">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div className="flex-1">
                 <h4 className="text-base font-medium text-foreground mb-2">Recommended Extra Time</h4>

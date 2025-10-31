@@ -137,12 +137,15 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
   };
 
   return (
-    <div className="space-y-4">
-      {/* Calendar and Time Selection */}
-      <div className="p-6 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] bg-white">
-        <h2 className="text-xl font-bold text-foreground mb-4">
+    <div className="space-y-8">
+      <div>
+        <h2 className="text-2xl font-bold text-foreground mb-2">
           Cleaning Schedule
         </h2>
+      </div>
+
+      {/* Calendar and Time Selection */}
+      <div className={`grid gap-6 md:gap-8 ${data.selectedDate ? 'lg:grid-cols-2' : 'grid-cols-1 max-w-2xl mx-auto'}`}>
         {/* Left: Calendar - Now bigger and more mobile-friendly */}
         <div className="bg-slate-800 rounded-lg p-4 md:p-8">
           <Calendar
