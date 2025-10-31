@@ -157,7 +157,9 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
   const recommendedHours = calculateRecommendedHours();
   
   const canContinue = data.propertyType && data.bedrooms && data.bathrooms && data.serviceType && 
-    (data.cleaningProducts !== 'equipment' || data.equipmentArrangement !== null);
+    (data.cleaningProducts !== 'equipment' || 
+     (data.equipmentArrangement !== null && 
+      (data.equipmentArrangement !== 'ongoing' || data.equipmentStorageConfirmed)));
 
   // Auto-select cleaning products for deep cleaning or uncleaned properties
   React.useEffect(() => {
