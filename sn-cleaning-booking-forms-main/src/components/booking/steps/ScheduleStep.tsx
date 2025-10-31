@@ -152,9 +152,9 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
         </h2>
 
       {/* Calendar and Time Selection - Side by Side */}
-      <div className="grid gap-6 lg:grid-cols-[450px,1fr]">
+      <div className="grid gap-6 lg:grid-cols-2">
         {/* Left: Calendar */}
-        <div className="bg-slate-800 rounded-lg p-6">
+        <div className="bg-slate-800 rounded-lg p-6 flex items-center justify-center">
           <Calendar
             mode="single"
             selected={data.selectedDate || undefined}
@@ -272,7 +272,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
       {/* Property Access Section */}
       <div className="mt-8 p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
         <h2 className="text-2xl font-bold text-foreground mb-6">
-          How will you access the property?
+          How will we access the property?
         </h2>
         
         <div className="grid grid-cols-2 gap-4 mb-6">
@@ -301,8 +301,8 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
         {/* Conditional fields based on selection */}
         {data.propertyAccess === 'collect' && (
           <div className="mb-4">
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Key collection details *
+            <label className="block text-2xl font-bold text-foreground mb-2">
+              Key collection details
             </label>
             <Textarea
               placeholder="Please provide details about where and when to collect the keys..."
@@ -315,8 +315,8 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
 
         {data.propertyAccess === 'keybox' && (
           <div className="mb-4">
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Keybox access details *
+            <label className="block text-2xl font-bold text-foreground mb-2">
+              Keybox access details
             </label>
             <Textarea
               placeholder="Please provide keybox location and access code..."
@@ -329,8 +329,8 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
 
         {data.propertyAccess === 'other' && (
           <div className="mb-4">
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Access details *
+            <label className="block text-2xl font-bold text-foreground mb-2">
+              Access details
             </label>
             <Textarea
               placeholder="Please explain how we can access the property..."
@@ -343,7 +343,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
 
         {/* Additional booking details - always visible */}
         <div className="mt-6">
-          <label className="block text-sm font-medium text-foreground mb-2">
+          <label className="block text-2xl font-bold text-foreground mb-2">
             Additional booking details (optional)
           </label>
           <Textarea
