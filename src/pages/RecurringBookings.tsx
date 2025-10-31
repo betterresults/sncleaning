@@ -341,53 +341,77 @@ export default function RecurringBookings() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="space-y-6">
+                  {/* Service Details Section */}
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Service Type</p>
-                    <p className="font-medium">{service.cleaning_type}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Frequency</p>
-                    <Badge className={getFrequencyBadgeColor(service.frequently)}>
-                      {service.frequently}
-                    </Badge>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Hours per Visit</p>
-                    <p className="font-medium">{service.hours}h</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Cost per Visit</p>
-                    <p className="font-medium">£{Number(service.total_cost).toFixed(2)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Start Date</p>
-                    <p className="font-medium">{new Date(service.start_date).toLocaleDateString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Start Time</p>
-                    <p className="font-medium">{service.start_time}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Cleaner</p>
-                    <p className="font-medium">{service.cleaner_name}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Payment Method</p>
-                    <p className="font-medium">{service.payment_method}</p>
-                  </div>
-                  {service.days_of_the_week && (
-                    <div className="md:col-span-2">
-                      <p className="text-sm font-medium text-muted-foreground">Days of Week</p>
-                      <p className="font-medium">{service.days_of_the_week.split(', ').map(day => day.charAt(0).toUpperCase() + day.slice(1)).join(', ')}</p>
+                    <h4 className="text-sm font-semibold text-foreground mb-3 border-b pb-2">Service Details</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Service Type</p>
+                        <p className="font-medium">{service.cleaning_type}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Frequency</p>
+                        <Badge className={getFrequencyBadgeColor(service.frequently)}>
+                          {service.frequently}
+                        </Badge>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Hours per Visit</p>
+                        <p className="font-medium">{service.hours}h</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Start Date</p>
+                        <p className="font-medium">{new Date(service.start_date).toLocaleDateString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Start Time</p>
+                        <p className="font-medium">{service.start_time}</p>
+                      </div>
+                      {service.days_of_the_week && (
+                        <div className="md:col-span-2">
+                          <p className="text-sm font-medium text-muted-foreground">Days of Week</p>
+                          <p className="font-medium">{service.days_of_the_week.split(', ').map(day => day.charAt(0).toUpperCase() + day.slice(1)).join(', ')}</p>
+                        </div>
+                      )}
+                      {service.postponed && service.resume_date && (
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Resume Date</p>
+                          <p className="font-medium text-orange-700">{new Date(service.resume_date).toLocaleDateString()}</p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {service.postponed && service.resume_date && (
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Resume Date</p>
-                      <p className="font-medium text-orange-700">{new Date(service.resume_date).toLocaleDateString()}</p>
+                  </div>
+
+                  {/* Client Pricing Section */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground mb-3 border-b pb-2">Client Pricing</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Client Rate per Hour</p>
+                        <p className="font-medium text-green-600">£{Number(service.cost_per_hour).toFixed(2)}/h</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Client Cost per Visit</p>
+                        <p className="font-medium text-green-600 text-lg">£{Number(service.total_cost).toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Payment Method</p>
+                        <p className="font-medium">{service.payment_method}</p>
+                      </div>
                     </div>
-                  )}
+                  </div>
+
+                  {/* Cleaner Information Section */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground mb-3 border-b pb-2">Cleaner Information</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Assigned Cleaner</p>
+                        <p className="font-medium">{service.cleaner_name}</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
