@@ -106,6 +106,8 @@ export default function EditRecurringBooking() {
       if (error) throw error;
 
       if (data) {
+        const startTimeRaw = (data.start_time as unknown as string) || '';
+        const startTime = typeof startTimeRaw === 'string' ? startTimeRaw.substring(0,5) : '';
         setFormData({
           client: data.customer?.toString() || '',
           address: data.address || '',
@@ -120,8 +122,8 @@ export default function EditRecurringBooking() {
           cost_per_hour: data.cost_per_hour?.toString() || '',
           total_cost: data.total_cost?.toString() || '',
           payment_method: data.payment_method || '',
-          start_date: data.start_date || '',
-          start_time: data.start_time || '',
+          start_date: (data.start_date as unknown as string) || '',
+          start_time: startTime,
           postponed: data.postponed || false,
         });
 
@@ -431,9 +433,18 @@ export default function EditRecurringBooking() {
                   required
                 />
               </div>
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="postponed"
+                  checked={formData.postponed}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, postponed: Boolean(checked) }))}
+                />
+                <Label htmlFor="postponed">Postpone service</Label>
+              </div>
+            </CardContent>
+          </Card>
 
         {/* Client Pricing */}
         <Card>
@@ -562,14 +573,6 @@ export default function EditRecurringBooking() {
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="postponed"
-                checked={formData.postponed}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, postponed: Boolean(checked) }))}
-              />
-              <Label htmlFor="postponed">Postponed</Label>
-            </div>
           </CardContent>
         </Card>
 
