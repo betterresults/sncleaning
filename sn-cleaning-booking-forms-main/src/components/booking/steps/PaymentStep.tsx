@@ -7,7 +7,7 @@ import { useAirbnbBookingSubmit } from '@/hooks/useAirbnbBookingSubmit';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
-import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 interface PaymentStepProps {
   data: BookingData;
@@ -34,14 +34,19 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
       let paymentMethodId: string | undefined;
 
       if (selectedPaymentMethod === 'new') {
-        // Create new payment method from Stripe Elements
-        const { error: submitError } = await elements.submit();
-        if (submitError) {
-          throw new Error(submitError.message);
+        // Create new payment method from CardElement
+        const cardElement = elements.getElement(CardElement);
+        if (!cardElement) {
+          throw new Error('Card element not found');
         }
 
         const { error, paymentMethod } = await stripe.createPaymentMethod({
-          elements,
+          type: 'card',
+          card: cardElement,
+          billing_details: {
+            name: `${data.firstName} ${data.lastName}`,
+            email: data.email,
+          },
         });
 
         if (error || !paymentMethod) {
@@ -144,8 +149,20 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
                   Add New Payment Method
                 </Label>
                 {selectedPaymentMethod === 'new' && (
-                  <div className="mt-3">
-                    <PaymentElement />
+                  <div className="mt-3 p-4 border border-border rounded-lg bg-background">
+                    <CardElement
+                      options={{
+                        style: {
+                          base: {
+                            fontSize: '16px',
+                            color: 'hsl(var(--foreground))',
+                            '::placeholder': {
+                              color: 'hsl(var(--muted-foreground))',
+                            },
+                          },
+                        },
+                      }}
+                    />
                   </div>
                 )}
               </div>
