@@ -192,6 +192,7 @@ const BookingForm: React.FC = () => {
         return (
           <PaymentStep
             data={bookingData}
+            onUpdate={updateBookingData}
             onBack={prevStep}
           />
         );
@@ -251,7 +252,7 @@ const BookingForm: React.FC = () => {
           
           {/* Summary Section - Takes 1 column, always visible */}
           <div className="lg:col-span-1">
-            <BookingSummary data={bookingData} onUpdate={updateBookingData} />
+            <BookingSummary data={bookingData} />
           </div>
         </div>
       </main>

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { BookingData } from '../BookingForm';
 import { CreditCard, Shield, Clock, Loader2, AlertCircle } from 'lucide-react';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
@@ -13,10 +14,11 @@ import { useToast } from '@/hooks/use-toast';
 
 interface PaymentStepProps {
   data: BookingData;
+  onUpdate: (updates: Partial<BookingData>) => void;
   onBack: () => void;
 }
 
-const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
+const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => {
   const stripe = useStripe();
   const elements = useElements();
   const navigate = useNavigate();
@@ -162,15 +164,89 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
     }
   };
 
+  const canContinue = data.firstName && data.lastName && data.email && data.phone && data.street && data.postcode;
+
   return (
     <div className="space-y-8">
       <div>
         <h2 className="text-2xl font-bold text-foreground mb-2">
-          Payment
+          Your Details & Payment
         </h2>
         <p className="text-muted-foreground">
-          Complete your booking with secure payment processing.
+          Complete your details and payment information.
         </p>
+      </div>
+
+      {/* Customer Details Section */}
+      <div className="bg-card border border-border rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-foreground mb-4">
+          Contact Information
+        </h3>
+        
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="firstName">First Name *</Label>
+              <Input
+                id="firstName"
+                placeholder="First name"
+                value={data.firstName || ''}
+                onChange={(e) => onUpdate({ firstName: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="lastName">Last Name *</Label>
+              <Input
+                id="lastName"
+                placeholder="Last name"
+                value={data.lastName || ''}
+                onChange={(e) => onUpdate({ lastName: e.target.value })}
+              />
+            </div>
+          </div>
+          
+          <div>
+            <Label htmlFor="email">Email Address *</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="your.email@example.com"
+              value={data.email || ''}
+              onChange={(e) => onUpdate({ email: e.target.value })}
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="phone">Phone Number *</Label>
+            <Input
+              id="phone"
+              type="tel"
+              placeholder="+44 7xxx xxxxxx"
+              value={data.phone || ''}
+              onChange={(e) => onUpdate({ phone: e.target.value })}
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="address">Full Address *</Label>
+            <Input
+              id="address"
+              placeholder="Street address"
+              value={data.street || ''}
+              onChange={(e) => onUpdate({ street: e.target.value })}
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="postcode">Postcode *</Label>
+            <Input
+              id="postcode"
+              placeholder="SW1A 1AA"
+              value={data.postcode || ''}
+              onChange={(e) => onUpdate({ postcode: e.target.value })}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Payment Information Notice */}
@@ -321,7 +397,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
           size="lg"
           className="px-12"
           onClick={handleSubmit}
-          disabled={!stripe || processing || submitting || loadingMethods}
+          disabled={!stripe || processing || submitting || loadingMethods || !canContinue}
         >
           {(processing || submitting) ? (
             <>
