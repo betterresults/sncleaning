@@ -32,15 +32,15 @@ export function UnifiedHeader({ title, user, userRole, onSignOut, showBackToAdmi
   };
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center gap-2 border-b border-white/10 bg-[#185166] px-2 sm:px-4 shadow-sm" style={{ paddingTop: 'max(0px, env(safe-area-inset-top))' }}>
-      <SidebarTrigger className="-ml-1 p-2 text-white hover:bg-white/10 hover:text-white border-0 bg-transparent flex-shrink-0" />
+    <header className="sticky top-0 z-50 flex h-14 shrink-0 items-center gap-2 border-b border-gray-200 bg-white px-4 sm:px-6 shadow-sm" style={{ paddingTop: 'max(0px, env(safe-area-inset-top))' }}>
+      <SidebarTrigger className="-ml-1 p-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900 border-0 bg-transparent flex-shrink-0" />
       
       {showBackToAdmin && (
         <Button
           onClick={() => navigate('/dashboard')}
           size="sm"
           variant="ghost"
-          className="h-8 gap-1 px-2 text-white hover:bg-white/10 hover:text-white flex-shrink-0 border border-white/20"
+          className="h-8 gap-1 px-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900 flex-shrink-0 border border-gray-300"
           title="Върни се към Admin Dashboard"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -48,14 +48,14 @@ export function UnifiedHeader({ title, user, userRole, onSignOut, showBackToAdmi
         </Button>
       )}
       
-      <div className="flex-1 text-center">
-        <div className="text-sm sm:text-base font-semibold text-white truncate px-2">
+      <div className="flex-1">
+        <div className="text-sm sm:text-base font-semibold text-gray-800 truncate px-2">
           {title}
         </div>
       </div>
       
-      <div className="flex items-center gap-2 flex-shrink-0" style={{ paddingRight: 'max(0px, env(safe-area-inset-right))' }}>
-        <div className="hidden sm:block text-sm text-white/80 truncate max-w-24">
+      <div className="flex items-center gap-3 flex-shrink-0" style={{ paddingRight: 'max(0px, env(safe-area-inset-right))' }}>
+        <div className="hidden sm:block text-sm text-gray-600 truncate">
           {getGreeting()}
         </div>
         
@@ -66,7 +66,7 @@ export function UnifiedHeader({ title, user, userRole, onSignOut, showBackToAdmi
             onClick={onSignOut}
             size="sm"
             variant="ghost"
-            className="h-8 w-8 p-0 text-white hover:bg-white/10 hover:text-white flex-shrink-0 border border-white/20"
+            className="h-8 w-8 p-0 text-gray-700 hover:bg-gray-100 hover:text-gray-900 flex-shrink-0 border border-gray-300 rounded-full"
             title="Sign Out"
           >
             <LogOut className="h-4 w-4" />

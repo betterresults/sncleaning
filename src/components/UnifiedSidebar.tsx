@@ -58,18 +58,20 @@ export function UnifiedSidebar({ navigationItems, user, userRole, customerId, cl
 
   return (
     <Sidebar 
-      className="border-r-0 bg-[#185166] flex flex-col h-screen w-56" 
+      className="border-r-0 bg-[#2c3e50] flex flex-col h-screen" 
       collapsible="offcanvas"
       side="left"
       variant="sidebar"
+      style={{ width: '220px', minWidth: '220px' }}
     >
-      <SidebarHeader className="border-b border-white/10 bg-[#185166] px-4 py-3 flex-shrink-0">
-        <div className="text-lg font-semibold text-white">
-          SN Cleaning
+      <SidebarHeader className="border-b border-white/10 bg-[#2c3e50] px-4 py-4 flex-shrink-0">
+        <div className="text-xl font-bold text-white flex items-center gap-2">
+          <span className="text-[#1abc9c]">SN</span>
+          <span>Cleaning</span>
         </div>
       </SidebarHeader>
       
-      <SidebarContent className="p-0 bg-[#185166] flex-1 overflow-y-auto min-h-0">
+      <SidebarContent className="p-0 bg-[#2c3e50] flex-1 overflow-y-auto min-h-0">
         <SidebarGroup className="h-full">
           <SidebarGroupContent className="px-2 py-1 h-full">
             <SidebarMenu className="space-y-0.5 h-full">
@@ -98,10 +100,10 @@ export function UnifiedSidebar({ navigationItems, user, userRole, customerId, cl
                     <SidebarMenuButton 
                       asChild={!item.disabled && !hasSubItems}
                       onClick={hasSubItems ? toggleExpanded : undefined}
-                      className={`h-11 transition-all duration-200 border-0 justify-start px-3 rounded-lg font-medium text-base ${
+                      className={`h-10 transition-all duration-200 border-0 justify-start px-3 rounded-md font-medium text-sm ${
                         isActive || hasActiveSubItem
-                          ? "!bg-white/20 !text-white" 
-                          : "!text-white hover:!text-white hover:!bg-white/10"
+                          ? "!bg-[#1abc9c] !text-white" 
+                          : "!text-white/90 hover:!text-white hover:!bg-white/10"
                       } ${item.disabled ? "opacity-60 cursor-not-allowed" : ""} ${hasSubItems ? "cursor-pointer" : ""}`}
                     >
                       {item.disabled ? (
@@ -188,7 +190,7 @@ export function UnifiedSidebar({ navigationItems, user, userRole, customerId, cl
       </SidebarContent>
 
       <SidebarFooter 
-        className="border-t border-white/10 bg-[#185166] px-3 py-3 flex-shrink-0 min-h-[120px] !block !visible !opacity-100" 
+        className="border-t border-white/10 bg-[#2c3e50] px-3 py-3 flex-shrink-0 min-h-[100px] !block !visible !opacity-100" 
         style={{ 
           paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
           position: 'sticky',
@@ -216,7 +218,7 @@ export function UnifiedSidebar({ navigationItems, user, userRole, customerId, cl
               navigate(settingsUrl);
             }}
           >
-            <div className="w-8 h-8 bg-gradient-to-br from-[#18A5A5] to-[#18A5A5]/80 rounded-full flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 bg-gradient-to-br from-[#1abc9c] to-[#16a085] rounded-full flex items-center justify-center flex-shrink-0">
               <User className="h-4 w-4 text-white" />
             </div>
             <div className="ml-2.5 flex flex-col items-start min-w-0 flex-1">
