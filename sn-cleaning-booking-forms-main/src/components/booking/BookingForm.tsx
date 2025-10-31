@@ -53,6 +53,7 @@ export interface BookingData {
   flexibility: 'not-flexible' | 'flexible-time' | 'flexible-date' | '';
   notes: string;
   additionalDetails: string;
+  sameDayTurnaround: boolean;
   
   // Contact
   firstName: string;
@@ -116,6 +117,7 @@ const BookingForm: React.FC = () => {
     flexibility: '',
     notes: '',
     additionalDetails: '',
+    sameDayTurnaround: false,
     firstName: '',
     lastName: '',
     name: '',

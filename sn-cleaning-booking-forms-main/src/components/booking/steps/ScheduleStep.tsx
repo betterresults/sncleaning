@@ -184,21 +184,23 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
             </h2>
           </div>
 
-          {/* Time Flexibility Toggle */}
-          <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-            <label className="text-xl font-bold text-[#185166]">
-              I am flexible with the start time
-            </label>
-            <Switch
-              checked={isFlexible}
-              onCheckedChange={(checked) => 
-                onUpdate({ 
-                  flexibility: checked ? 'flexible-time' : 'not-flexible',
-                  selectedTime: checked ? undefined : data.selectedTime
-                })
-              }
-            />
-          </div>
+          {/* Time Flexibility Toggle - Only show if no time selected */}
+          {!data.selectedTime && (
+            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+              <label className="text-xl font-bold text-[#185166]">
+                I am flexible with the start time
+              </label>
+              <Switch
+                checked={isFlexible}
+                onCheckedChange={(checked) => 
+                  onUpdate({ 
+                    flexibility: checked ? 'flexible-time' : 'not-flexible',
+                    selectedTime: checked ? undefined : data.selectedTime
+                  })
+                }
+              />
+            </div>
+          )}
 
           {/* Time Selection - Only show if not flexible */}
           {!isFlexible && (
@@ -208,11 +210,26 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
                   key={time}
                   variant={data.selectedTime === time ? 'default' : 'outline'}
                   className="h-12 text-sm"
-                  onClick={() => onUpdate({ selectedTime: time })}
+                  onClick={() => onUpdate({ selectedTime: data.selectedTime === time ? undefined : time })}
                 >
                   {time}
                 </Button>
               ))}
+            </div>
+          )}
+
+          {/* Same Day Turnaround - Only show for check-in/checkout when time is selected */}
+          {data.selectedTime && data.serviceType === 'checkin-checkout' && (
+            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+              <label className="text-xl font-bold text-[#185166]">
+                Is this a same day turnaround?
+              </label>
+              <Switch
+                checked={data.sameDayTurnaround || false}
+                onCheckedChange={(checked) => 
+                  onUpdate({ sameDayTurnaround: checked })
+                }
+              />
             </div>
           )}
 
