@@ -82,31 +82,6 @@ const Dashboard = () => {
                   />
                 </CardContent>
                 </Card>
-
-                {/* Statistics Section */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card className="border shadow-sm">
-                    <CardHeader>
-                      <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2 text-sm text-gray-600">
-                        <p>• Recent bookings and activity will appear here</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border shadow-sm">
-                    <CardHeader>
-                      <CardTitle className="text-lg font-semibold">Monthly Performance</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2 text-sm text-gray-600">
-                        <p>• Bookings and revenue charts will appear here</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
               </main>
             </SidebarInset>
           </div>
