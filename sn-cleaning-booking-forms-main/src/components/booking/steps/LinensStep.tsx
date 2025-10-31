@@ -206,7 +206,7 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
         <h2 className="text-2xl font-bold text-foreground mb-4">
           Linen Handling

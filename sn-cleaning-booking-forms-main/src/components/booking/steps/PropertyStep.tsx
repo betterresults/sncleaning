@@ -149,7 +149,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
   }, [recommendedHours, data.propertyType, data.bedrooms, data.bathrooms, data.serviceType, data.estimatedHours, onUpdate]);
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
         <h2 className="text-2xl font-bold text-[#185166] mb-4">
           Property Details

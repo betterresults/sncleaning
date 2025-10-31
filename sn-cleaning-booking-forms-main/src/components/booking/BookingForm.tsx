@@ -262,7 +262,7 @@ const BookingForm: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Form Section - Takes 2 columns */}
           <div className="lg:col-span-2">
-            <Card className="p-8 shadow-[0_8px_24px_rgba(0,0,0,0.12)] border-0 bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
+            <Card className="p-8 shadow-[0_16px_48px_rgba(0,0,0,0.2),0_0_1px_rgba(0,0,0,0.15)] border-0 bg-white transition-shadow duration-300">
               {renderStep()}
             </Card>
           </div>
