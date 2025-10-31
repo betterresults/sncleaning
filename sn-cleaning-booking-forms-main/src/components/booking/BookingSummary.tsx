@@ -366,7 +366,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
   );
 
   return (
-    <Card className="p-4 shadow-[0_16px_48px_rgba(0,0,0,0.2),0_0_1px_rgba(0,0,0,0.15)] border-0 bg-white transition-shadow duration-300 sticky top-4">
+    <Card className="p-4 shadow-[0_16px_48px_rgba(0,0,0,0.2),0_0_1px_rgba(0,0,0,0.15)] border border-border bg-white transition-shadow duration-300 sticky top-4">
       <div className="pb-4 mb-4">
         <div className="flex items-center gap-3">
           <div className="w-7 h-7 bg-muted rounded-lg flex items-center justify-center">
