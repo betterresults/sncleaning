@@ -221,7 +221,7 @@ const BookingForm: React.FC = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-white py-4 mb-3">
+      <header className="bg-white py-4 mb-3 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
         <div className="container mx-auto px-4">
           <h1 className="text-3xl md:text-4xl font-bold text-slate-700 text-center mb-4">
             Airbnb Cleaning Booking Form
