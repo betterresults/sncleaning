@@ -106,6 +106,8 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
     role: userType === 'customer' ? 'guest' : userType === 'cleaner' ? 'user' : 'guest'
   });
   const [addingUser, setAddingUser] = useState(false);
+  const [showRoleChangeDialog, setShowRoleChangeDialog] = useState(false);
+  const [existingUserEmail, setExistingUserEmail] = useState<string>('');
   
   // Delete user state
   const [userToDelete, setUserToDelete] = useState<UserData | null>(null);
@@ -354,11 +356,85 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         role: userType === 'customer' ? 'guest' : userType === 'cleaner' ? 'user' : 'guest'
       });
       fetchUsers();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating user:', error);
+      
+      // Check if it's an "email already exists" error
+      if (error.message && error.message.includes('already been registered')) {
+        setExistingUserEmail(newUserData.email);
+        setShowAddUserDialog(false);
+        setShowRoleChangeDialog(true);
+      } else {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to create user',
+          variant: 'destructive'
+        });
+      }
+    } finally {
+      setAddingUser(false);
+    }
+  };
+
+  const handleChangeUserRole = async () => {
+    setAddingUser(true);
+    try {
+      // Find the user by email
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('email', existingUserEmail)
+        .single();
+
+      if (profileError || !profileData) {
+        throw new Error('User not found');
+      }
+
+      // Get existing role
+      const { data: existingRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', profileData.user_id)
+        .single();
+
+      // Delete existing role if exists
+      if (existingRole) {
+        await supabase
+          .from('user_roles')
+          .delete()
+          .eq('user_id', profileData.user_id);
+      }
+
+      // Insert new role
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert([{
+          user_id: profileData.user_id,
+          role: newUserData.role
+        }] as any);
+
+      if (roleError) throw roleError;
+
+      toast({
+        title: 'Success',
+        description: `User role updated to ${newUserData.role === 'admin' ? 'Admin' : newUserData.role === 'user' ? 'Cleaner' : 'Customer'}`
+      });
+
+      setShowRoleChangeDialog(false);
+      setNewUserData({
+        first_name: '',
+        last_name: '',
+        email: '',
+        password: '',
+        role: userType === 'customer' ? 'guest' : userType === 'cleaner' ? 'user' : 'guest'
+      });
+      setExistingUserEmail('');
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error updating user role:', error);
       toast({
         title: 'Error',
-        description: 'Failed to create user',
+        description: error.message || 'Failed to update user role',
         variant: 'destructive'
       });
     } finally {
@@ -1148,6 +1224,38 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Change User Role Dialog */}
+      <AlertDialog open={showRoleChangeDialog} onOpenChange={setShowRoleChangeDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>User Already Exists</AlertDialogTitle>
+            <AlertDialogDescription>
+              A user with email <strong>{existingUserEmail}</strong> already exists in the system. 
+              Would you like to change their role to <strong>{newUserData.role === 'admin' ? 'Admin' : newUserData.role === 'user' ? 'Cleaner' : 'Customer'}</strong> instead?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowRoleChangeDialog(false);
+              setExistingUserEmail('');
+              setNewUserData({
+                first_name: '',
+                last_name: '',
+                email: '',
+                password: '',
+                role: userType === 'customer' ? 'guest' : userType === 'cleaner' ? 'user' : 'guest'
+              });
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleChangeUserRole} disabled={addingUser}>
+              {addingUser ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Change Role
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete User Confirmation Dialog */}
       <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
