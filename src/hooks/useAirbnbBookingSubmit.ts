@@ -34,10 +34,7 @@ interface BookingSubmission {
   alreadyCleaned?: boolean | null;
   needsOvenCleaning?: boolean | null;
   ovenType?: string;
-  cleaningProducts?: {
-    needed: boolean | null;
-    equipment: boolean | null;
-  };
+  cleaningProducts?: string; // 'no' | 'products' | 'equipment' from form
   equipmentArrangement?: string | null;
   equipmentStorageConfirmed?: boolean;
   
@@ -115,13 +112,12 @@ const buildAdditionalDetails = (data: BookingSubmission) => {
   }
   
   // Cleaning products & equipment
-  if (data.cleaningProducts?.needed !== null && data.cleaningProducts?.needed !== undefined) {
-    details.cleaningProducts = data.cleaningProducts;
-  }
-  
-  if (data.equipmentArrangement) {
-    details.equipmentArrangement = data.equipmentArrangement;
-    details.equipmentStorageConfirmed = data.equipmentStorageConfirmed;
+  if (data.cleaningProducts) {
+    details.cleaningProducts = {
+      type: data.cleaningProducts,
+      arrangement: data.equipmentArrangement,
+      storageConfirmed: data.equipmentStorageConfirmed
+    };
   }
   
   // Linens

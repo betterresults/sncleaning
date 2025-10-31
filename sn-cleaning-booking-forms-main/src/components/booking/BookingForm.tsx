@@ -54,6 +54,7 @@ export interface BookingData {
   notes: string;
   additionalDetails: string;
   sameDayTurnaround: boolean;
+  shortNoticeCharge?: number;
   
   // Contact
   firstName: string;
@@ -70,6 +71,7 @@ export interface BookingData {
   
   // Calculations
   estimatedHours: number | null;
+  totalHours?: number;
   hourlyRate: number;
   totalCost: number;
 }
