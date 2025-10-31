@@ -50,6 +50,7 @@ import AdminProfitTracking from "./pages/AdminProfitTracking";
 import AdminActivityLogs from "./pages/AdminActivityLogs";
 import AdminNotificationManagement from "./pages/AdminNotificationManagement";
 import InvoilessAPITest from "./pages/InvoilessAPITest";
+import AdminAirbnbFormSettings from "./pages/AdminAirbnbFormSettings";
 import NotFound from "./pages/NotFound";
 import { AdminCustomerProvider } from "./contexts/AdminCustomerContext";
 import { AdminCleanerProvider } from "./contexts/AdminCleanerContext";
@@ -111,6 +112,7 @@ const App = () => (
                    <Route path="/admin-activity-logs" element={<AdminActivityLogs />} />
                     <Route path="/admin-notification-management" element={<AdminNotificationManagement />} />
                     <Route path="/invoiless-api-test" element={<InvoilessAPITest />} />
+                    <Route path="/admin-airbnb-form-settings" element={<AdminAirbnbFormSettings />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
             </Routes>

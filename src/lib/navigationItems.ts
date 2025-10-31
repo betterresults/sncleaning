@@ -200,6 +200,17 @@ export const adminNavigation = [
     icon: Package,
   },
   {
+    title: "Forms",
+    icon: CheckSquare,
+    subItems: [
+      {
+        title: "Airbnb Form Settings",
+        url: "/admin-airbnb-form-settings",
+        icon: Settings,
+      },
+    ],
+  },
+  {
     title: "Settings",
     icon: Settings,
     subItems: [
