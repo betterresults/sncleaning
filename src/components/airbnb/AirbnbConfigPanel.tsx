@@ -174,18 +174,15 @@ export const AirbnbConfigPanel: React.FC = () => {
     setOpenCategories(prev => ({ ...prev, [category]: !prev[category] }));
   };
 
-  const handleLocalChange = (id: string, updates: Partial<FieldConfig>) => {
+  const handleLocalChange = (id: string, field: string, value: any) => {
     setLocalChanges(prev => ({
       ...prev,
-      [id]: { ...(prev[id] || {}), ...updates }
+      [id]: { ...(prev[id] || {}), [field]: value }
     }));
   };
 
-  const getFieldValue = (config: FieldConfig, field: keyof FieldConfig) => {
-    if (localChanges[config.id] && field in localChanges[config.id]) {
-      return localChanges[config.id][field];
-    }
-    return config[field];
+  const getCurrentValue = (configId: string, field: string, defaultValue: any) => {
+    return localChanges[configId]?.[field] ?? defaultValue;
   };
 
   const saveCategoryChanges = (category: string) => {
@@ -195,7 +192,6 @@ export const AirbnbConfigPanel: React.FC = () => {
         handleUpdateConfig(config.id, localChanges[config.id]);
       }
     });
-    // Clear local changes for this category
     setLocalChanges(prev => {
       const newChanges = { ...prev };
       fieldsToUpdate.forEach(config => {
@@ -473,8 +469,8 @@ export const AirbnbConfigPanel: React.FC = () => {
                           <div key={config.id} className="grid grid-cols-12 gap-2 items-center p-2 border rounded hover:bg-muted/30 transition-colors">
                             <div className="col-span-2">
                               <Input
-                                value={String(getFieldValue(config, 'label') || config.option)}
-                                onChange={(e) => handleLocalChange(config.id, { label: e.target.value })}
+                                value={getCurrentValue(config.id, 'label', config.label || config.option)}
+                                onChange={(e) => handleLocalChange(config.id, 'label', e.target.value)}
                                 className="h-8 text-sm"
                               />
                             </div>
@@ -482,12 +478,12 @@ export const AirbnbConfigPanel: React.FC = () => {
                               <Input
                                 type="number"
                                 value={(() => {
-                                  const val = getFieldValue(config, 'min_value' as any);
+                                  const val = getCurrentValue(config.id, 'min_value', (config as any).min_value);
                                   return val !== null && val !== undefined ? Number(val) : '';
                                 })()}
                                 onChange={(e) => {
                                   const val = e.target.value;
-                                  handleLocalChange(config.id, { min_value: val === '' ? null : Number(val) } as any);
+                                  handleLocalChange(config.id, 'min_value', val === '' ? null : Number(val));
                                 }}
                                 className="h-8 text-sm"
                                 placeholder="Min"
@@ -497,12 +493,12 @@ export const AirbnbConfigPanel: React.FC = () => {
                               <Input
                                 type="number"
                                 value={(() => {
-                                  const val = getFieldValue(config, 'max_value');
+                                  const val = getCurrentValue(config.id, 'max_value', config.max_value);
                                   return val !== null && val !== undefined ? Number(val) : '';
                                 })()}
                                 onChange={(e) => {
                                   const val = e.target.value;
-                                  handleLocalChange(config.id, { max_value: val === '' ? null : Number(val) });
+                                  handleLocalChange(config.id, 'max_value', val === '' ? null : Number(val));
                                 }}
                                 className="h-8 text-sm"
                                 placeholder="Max"
@@ -615,16 +611,16 @@ export const AirbnbConfigPanel: React.FC = () => {
                               <Input
                                 type="number"
                                 step="0.5"
-                                value={Number(getFieldValue(config, 'value'))}
-                                onChange={(e) => handleLocalChange(config.id, { value: Number(e.target.value) })}
+                                value={getCurrentValue(config.id, 'value', config.value)}
+                                onChange={(e) => handleLocalChange(config.id, 'value', Number(e.target.value))}
                                 onFocus={(e) => e.target.select()}
                                 className="h-8 text-sm"
                               />
                             </div>
                             <div className="col-span-1">
                               <Select 
-                                value={String(getFieldValue(config, 'value_type'))} 
-                                onValueChange={(v) => handleLocalChange(config.id, { value_type: v })}
+                                value={getCurrentValue(config.id, 'value_type', config.value_type)} 
+                                onValueChange={(v) => handleLocalChange(config.id, 'value_type', v)}
                               >
                                 <SelectTrigger className="h-8 text-xs">
                                   <SelectValue />
@@ -640,8 +636,8 @@ export const AirbnbConfigPanel: React.FC = () => {
                               <Input
                                 type="number"
                                 step="1"
-                                value={Number(getFieldValue(config, 'time')) || 0}
-                                onChange={(e) => handleLocalChange(config.id, { time: Number(e.target.value) })}
+                                value={getCurrentValue(config.id, 'time', config.time) || 0}
+                                onChange={(e) => handleLocalChange(config.id, 'time', Number(e.target.value))}
                                 onFocus={(e) => e.target.select()}
                                 className="h-8 text-sm"
                                 placeholder="0"
