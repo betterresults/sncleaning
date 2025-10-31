@@ -63,14 +63,7 @@ export function UnifiedSidebar({ navigationItems, user, userRole, customerId, cl
       side="left"
       variant="sidebar"
     >
-      <SidebarHeader className="border-b border-white/10 bg-[#2c3e50] px-4 py-4 flex-shrink-0">
-        <div className="text-xl font-bold text-white flex items-center gap-2">
-          <span className="text-[#1abc9c]">SN</span>
-          <span>Cleaning</span>
-        </div>
-      </SidebarHeader>
-      
-      <SidebarContent className="p-0 bg-[#2c3e50] flex-1 overflow-y-auto min-h-0">
+      <SidebarContent className="p-0 bg-[#2c3e50] flex-1 overflow-y-auto min-h-0 pt-2">
         <SidebarGroup className="h-full">
           <SidebarGroupContent className="px-2 py-1 h-full">
             <SidebarMenu className="space-y-0.5 h-full">

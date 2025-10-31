@@ -48,9 +48,13 @@ export function UnifiedHeader({ title, user, userRole, onSignOut, showBackToAdmi
         </Button>
       )}
       
-      <div className="flex-1">
+      <div className="flex-1 flex items-center">
+        <div className="text-lg font-bold text-white flex items-center gap-2">
+          <span className="text-[#1abc9c]">SN</span>
+          <span>Cleaning</span>
+        </div>
         {title && (
-          <div className="text-sm sm:text-base font-semibold text-white truncate px-2">
+          <div className="ml-4 text-sm sm:text-base font-semibold text-white/80 truncate px-2">
             {title}
           </div>
         )}
