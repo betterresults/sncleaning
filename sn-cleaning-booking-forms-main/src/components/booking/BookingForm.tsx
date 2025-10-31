@@ -219,11 +219,11 @@ const BookingForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-muted">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 py-6 mb-8">
+      <header className="bg-white py-4 mb-3">
         <div className="container mx-auto px-4">
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-700 text-center mb-6">
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-700 text-center mb-4">
             Airbnb Cleaning Booking Form
           </h1>
           
@@ -258,11 +258,11 @@ const BookingForm: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-6 max-w-[1400px]">
+      <main className="container mx-auto px-4 py-2 max-w-[1400px]">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Form Section - Takes 2 columns */}
           <div className="lg:col-span-2">
-            <Card className="p-8 shadow-sm bg-card">
+            <Card className="p-8 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-white hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] transition-shadow duration-300">
               {renderStep()}
             </Card>
           </div>

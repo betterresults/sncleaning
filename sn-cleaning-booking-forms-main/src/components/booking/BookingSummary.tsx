@@ -244,13 +244,12 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
               {(data.estimatedHours + (data.extraHours || 0))}h × £{calculateHourlyRate().toFixed(2)}/hr
             </span>
           </div>
-          <div className="border-t border-border/30"></div>
         </div>
       )}
 
       {/* Schedule Section */}
       {data.selectedDate && (
-        <div className="space-y-3">
+        <div className="space-y-3 mt-3">
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Clean date</span>
             <span className="text-foreground font-medium">
@@ -270,13 +269,12 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
               </span>
             </div>
           )}
-          <div className="border-t border-border/30"></div>
         </div>
       )}
 
       {/* Equipment */}
       {data.cleaningProducts.equipment && calculateEquipmentCost() > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-3 mt-3">
           <div className="flex justify-between items-center pl-4">
             <span className="text-muted-foreground">
               Equipment {data.equipmentArrangement === 'oneoff' ? 'delivery' : ''}
@@ -285,13 +283,12 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
               £{calculateEquipmentCost().toFixed(2)}
             </span>
           </div>
-          <div className="border-t border-border/30"></div>
         </div>
       )}
 
       {/* Oven Cleaning Section */}
       {data.needsOvenCleaning && (
-        <div className="space-y-3">
+        <div className="space-y-3 mt-3">
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">
               {data.ovenType ? `${data.ovenType.charAt(0).toUpperCase() + data.ovenType.slice(1)} oven cleaning` : 'Oven cleaning'}
@@ -300,7 +297,6 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
               £{calculateOvenCost().toFixed(2)}
             </span>
           </div>
-          <div className="border-t border-border/30"></div>
         </div>
       )}
 
@@ -370,8 +366,8 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
   );
 
   return (
-    <Card className="p-4 shadow-sm border bg-card sticky top-4">
-      <div className="border-b border-border pb-4 mb-4">
+    <Card className="p-4 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-white hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] transition-shadow duration-300 sticky top-4">
+      <div className="pb-4 mb-4">
         <div className="flex items-center gap-3">
           <div className="w-7 h-7 bg-muted rounded-lg flex items-center justify-center">
             <span className="text-sm">🏠</span>
@@ -384,8 +380,8 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
 
       {/* Total Cost */}
       {data.estimatedHours && data.estimatedHours > 0 && (
-        <div className="border-t border-border pt-4 mt-4">
-          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+        <div className="pt-4 mt-4">
+          <div className="bg-primary/5 rounded-lg p-4">
             <div className="flex justify-between items-center">
               <span className="text-xl font-semibold text-foreground">Total Cost</span>
               <span className="text-3xl font-bold text-primary">£{calculateTotal().toFixed(2)}</span>
