@@ -29,7 +29,6 @@ import CustomerAirbnbForm from "./pages/CustomerAirbnbForm";
 import CustomerLinenManagement from './pages/CustomerLinenManagement';
 import CreateCustomerAccounts from "./pages/CreateCustomerAccounts";
 import AdminAddBooking from "./pages/AdminAddBooking";
-import BookingForm from "../sn-cleaning-booking-forms-main/src/components/booking/BookingForm";
 import CleanerSettings from './pages/CleanerSettings';
 import CleanerChecklists from './pages/CleanerChecklists';
 import CleanerChecklist from './pages/CleanerChecklist';
@@ -91,7 +90,7 @@ const App = () => (
                  <Route path="/customer-add-booking" element={<CustomerAddBooking />} />
           <Route path="/customer-linen-management" element={<CustomerLinenManagement />} />
                  <Route path="/customer/airbnb-form" element={<CustomerAirbnbForm />} />
-                 <Route path="/airbnb" element={<BookingForm />} />
+                 <Route path="/airbnb" element={<CustomerAirbnbForm />} />
                <Route path="/admin-add-booking" element={<AdminAddBooking />} />
                <Route path="/photos/:folderName" element={<CustomerPhotos />} />
                <Route path="/create-customer-accounts" element={<CreateCustomerAccounts />} />
