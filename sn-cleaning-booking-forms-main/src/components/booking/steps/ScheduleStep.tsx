@@ -153,7 +153,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
 
       {/* Calendar - Full Width */}
       <div className="mb-6">
-        <div className="bg-slate-800 rounded-lg p-6 flex items-center justify-center">
+        <div className="bg-slate-800 rounded-lg p-8 flex items-center justify-center">
           <Calendar
             mode="single"
             selected={data.selectedDate || undefined}
@@ -166,7 +166,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
               checkDate.setHours(0, 0, 0, 0);
               return checkDate < today;
             }}
-            className="rounded-md pointer-events-auto w-full [&_.rdp-day]:text-white [&_.rdp-day_button]:text-white [&_.rdp-day_button]:h-12 [&_.rdp-day_button]:w-12 [&_.rdp-day_button]:text-base [&_.rdp-nav_button]:text-white [&_.rdp-nav_button]:h-10 [&_.rdp-nav_button]:w-10 [&_.rdp-caption]:text-white [&_.rdp-caption]:text-xl [&_.rdp-caption]:mb-4 [&_.rdp-head_cell]:text-white [&_.rdp-head_cell]:text-base [&_.rdp-day_button:hover]:bg-primary [&_.rdp-day_selected]:bg-primary [&_.rdp-day_selected]:text-primary-foreground"
+            className="rounded-md pointer-events-auto w-full [&_.rdp-day]:text-white [&_.rdp-day_button]:text-white [&_.rdp-day_button]:h-14 [&_.rdp-day_button]:w-14 [&_.rdp-day_button]:text-lg [&_.rdp-nav_button]:text-white [&_.rdp-nav_button]:h-12 [&_.rdp-nav_button]:w-12 [&_.rdp-caption]:text-white [&_.rdp-caption]:text-2xl [&_.rdp-caption]:mb-6 [&_.rdp-head_cell]:text-white [&_.rdp-head_cell]:text-lg [&_.rdp-day_button:hover]:bg-primary [&_.rdp-day_selected]:bg-primary [&_.rdp-day_selected]:text-primary-foreground"
           />
         </div>
       </div>
@@ -274,27 +274,92 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
           How will we access the property?
         </h2>
         
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <SelectionCard
-            label="Meet at property"
-            isSelected={data.propertyAccess === 'meet'}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <button
+            className={`group relative h-24 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+              data.propertyAccess === 'meet'
+                ? 'border-primary bg-primary/5 shadow-xl'
+                : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+            }`}
             onClick={() => onUpdate({ propertyAccess: 'meet' })}
-          />
-          <SelectionCard
-            label="Collect keys"
-            isSelected={data.propertyAccess === 'collect'}
+          >
+            <div className="flex flex-col items-center justify-center h-full">
+              <div className="mb-2">
+                <CalendarDays className={`h-6 w-6 transition-all duration-500 ${
+                  data.propertyAccess === 'meet' ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                }`} />
+              </div>
+              <span className={`text-sm font-medium transition-colors ${
+                data.propertyAccess === 'meet' ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
+              }`}>Meet at property</span>
+            </div>
+          </button>
+          
+          <button
+            className={`group relative h-24 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+              data.propertyAccess === 'collect'
+                ? 'border-primary bg-primary/5 shadow-xl'
+                : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+            }`}
             onClick={() => onUpdate({ propertyAccess: 'collect' })}
-          />
-          <SelectionCard
-            label="Keybox"
-            isSelected={data.propertyAccess === 'keybox'}
+          >
+            <div className="flex flex-col items-center justify-center h-full">
+              <div className="mb-2">
+                <svg className={`h-6 w-6 transition-all duration-500 ${
+                  data.propertyAccess === 'collect' ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                }`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                </svg>
+              </div>
+              <span className={`text-sm font-medium transition-colors ${
+                data.propertyAccess === 'collect' ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
+              }`}>Collect keys</span>
+            </div>
+          </button>
+          
+          <button
+            className={`group relative h-24 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+              data.propertyAccess === 'keybox'
+                ? 'border-primary bg-primary/5 shadow-xl'
+                : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+            }`}
             onClick={() => onUpdate({ propertyAccess: 'keybox' })}
-          />
-          <SelectionCard
-            label="Other"
-            isSelected={data.propertyAccess === 'other'}
+          >
+            <div className="flex flex-col items-center justify-center h-full">
+              <div className="mb-2">
+                <svg className={`h-6 w-6 transition-all duration-500 ${
+                  data.propertyAccess === 'keybox' ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                }`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <span className={`text-sm font-medium transition-colors ${
+                data.propertyAccess === 'keybox' ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
+              }`}>Keybox</span>
+            </div>
+          </button>
+          
+          <button
+            className={`group relative h-24 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+              data.propertyAccess === 'other'
+                ? 'border-primary bg-primary/5 shadow-xl'
+                : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+            }`}
             onClick={() => onUpdate({ propertyAccess: 'other' })}
-          />
+          >
+            <div className="flex flex-col items-center justify-center h-full">
+              <div className="mb-2">
+                <svg className={`h-6 w-6 transition-all duration-500 ${
+                  data.propertyAccess === 'other' ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                }`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+              </div>
+              <span className={`text-sm font-medium transition-colors ${
+                data.propertyAccess === 'other' ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
+              }`}>Other</span>
+            </div>
+          </button>
         </div>
 
         {/* Conditional fields based on selection */}
