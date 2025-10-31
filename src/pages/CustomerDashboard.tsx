@@ -153,6 +153,7 @@ const CustomerDashboard = () => {
             title="Customer Dashboard 🏠"
             user={user}
             userRole={userRole}
+            showBackToAdmin={isAdminViewing}
           />
           
           <main className="flex-1 p-2 sm:p-4 lg:p-6 w-full overflow-x-hidden">

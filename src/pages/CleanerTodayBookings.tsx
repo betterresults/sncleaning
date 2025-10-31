@@ -51,6 +51,7 @@ const CleanerTodayBookings = () => {
             title="Today's Work 📍"
             user={user}
             userRole={userRole}
+            showBackToAdmin={isAdminViewing}
           />
           
           <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">

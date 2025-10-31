@@ -59,6 +59,7 @@ const CustomerCompletedBookings = () => {
             title="Completed Bookings 📋"
             user={user}
             userRole={userRole}
+            showBackToAdmin={userRole === 'admin'}
           />
           
           <main className="flex-1 p-2 sm:p-4 lg:p-6 w-full overflow-x-hidden">

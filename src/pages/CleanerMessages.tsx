@@ -94,6 +94,7 @@ const CleanerMessages = () => {
             title="Messages 💬"
             user={user}
             userRole={userRole}
+            showBackToAdmin={userRole === 'admin'}
           />
           
           <main className="flex-1 overflow-hidden">

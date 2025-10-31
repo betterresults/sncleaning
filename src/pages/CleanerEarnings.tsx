@@ -46,6 +46,7 @@ const CleanerEarningsPage = () => {
             title="My Earnings 💰"
             user={user}
             userRole={userRole}
+            showBackToAdmin={userRole === 'admin'}
           />
           
           <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">

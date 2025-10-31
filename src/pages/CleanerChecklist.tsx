@@ -101,6 +101,7 @@ const CleanerChecklist = () => {
               title="Cleaning Checklist"
               user={user}
               userRole={userRole}
+              showBackToAdmin={isAdminViewing}
             />
             
             <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
@@ -136,6 +137,7 @@ const CleanerChecklist = () => {
               title="Cleaning Checklist"
               user={user}
               userRole={userRole}
+              showBackToAdmin={isAdminViewing}
             />
             
             <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
@@ -171,6 +173,7 @@ const CleanerChecklist = () => {
             title="Cleaning Checklist 📋"
             user={user}
             userRole={userRole}
+            showBackToAdmin={isAdminViewing}
           />
           
           <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">

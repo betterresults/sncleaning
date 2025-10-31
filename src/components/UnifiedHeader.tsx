@@ -1,8 +1,9 @@
 import React from 'react';
-import { LogOut } from 'lucide-react';
+import { LogOut, ArrowLeft } from 'lucide-react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useNavigate } from 'react-router-dom';
 import NotificationBell from './NotificationBell';
 
 interface UnifiedHeaderProps {
@@ -10,10 +11,12 @@ interface UnifiedHeaderProps {
   user: any;
   userRole?: string;
   onSignOut?: () => void;
+  showBackToAdmin?: boolean;
 }
 
-export function UnifiedHeader({ title, user, userRole, onSignOut }: UnifiedHeaderProps) {
+export function UnifiedHeader({ title, user, userRole, onSignOut, showBackToAdmin }: UnifiedHeaderProps) {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   
   console.log('UnifiedHeader render:', { isMobile, hasOnSignOut: !!onSignOut });
   const getGreeting = () => {
@@ -31,6 +34,19 @@ export function UnifiedHeader({ title, user, userRole, onSignOut }: UnifiedHeade
   return (
     <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center gap-2 border-b border-white/10 bg-[#185166] px-2 sm:px-4 shadow-sm" style={{ paddingTop: 'max(0px, env(safe-area-inset-top))' }}>
       <SidebarTrigger className="-ml-1 p-2 text-white hover:bg-white/10 hover:text-white border-0 bg-transparent flex-shrink-0" />
+      
+      {showBackToAdmin && (
+        <Button
+          onClick={() => navigate('/dashboard')}
+          size="sm"
+          variant="ghost"
+          className="h-8 gap-1 px-2 text-white hover:bg-white/10 hover:text-white flex-shrink-0 border border-white/20"
+          title="Върни се към Admin Dashboard"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="hidden sm:inline">Admin</span>
+        </Button>
+      )}
       
       <div className="flex-1 text-center">
         <div className="text-sm sm:text-base font-semibold text-white truncate px-2">

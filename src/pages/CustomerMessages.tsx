@@ -112,6 +112,7 @@ const CustomerMessages = () => {
             title="Messages 💬"
             user={user}
             userRole={userRole}
+            showBackToAdmin={isAdminViewing}
           />
           
           <main className="flex-1 flex flex-col overflow-hidden">
