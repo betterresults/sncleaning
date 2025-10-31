@@ -49,7 +49,7 @@ const Dashboard = () => {
             userRole={userRole}
             onSignOut={handleSignOut}
           />
-          <SidebarInset className="flex-1 flex flex-col p-0 m-0 ml-1">
+          <SidebarInset className="flex-1 flex flex-col p-0 m-0">
             <UnifiedHeader 
               title=""
               user={user}
@@ -57,7 +57,7 @@ const Dashboard = () => {
               onSignOut={handleSignOut}
             />
             
-            <main className="flex-1 bg-gray-50 m-0 pl-0 pr-4 md:pr-6 py-4 md:py-6 space-y-6" >
+            <main className="flex-1 bg-gray-50 m-0 pl-1 pr-4 md:pr-6 py-4 md:py-6 space-y-6" >
               {/* Statistics - Last 30 Days */}
               <DashboardStats />
               
