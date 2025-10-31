@@ -61,7 +61,7 @@ export const AirbnbConfigPanel: React.FC = () => {
   const [newOption, setNewOption] = useState('');
   const [newLabel, setNewLabel] = useState('');
   const [newValue, setNewValue] = useState(0);
-  const [newValueType, setNewValueType] = useState<'fixed' | 'percentage'>('fixed');
+  const [newValueType, setNewValueType] = useState<'fixed' | 'percentage' | 'none'>('none');
   const [newTime, setNewTime] = useState(0);
   const [newTimeUnit, setNewTimeUnit] = useState<'minutes' | 'hours'>('minutes');
   const [newIcon, setNewIcon] = useState('');
@@ -308,6 +308,7 @@ export const AirbnbConfigPanel: React.FC = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="none">None</SelectItem>
                           <SelectItem value="fixed">Fixed (Price)</SelectItem>
                           <SelectItem value="percentage">Percentage (%)</SelectItem>
                         </SelectContent>
@@ -381,7 +382,7 @@ export const AirbnbConfigPanel: React.FC = () => {
           </Card>
 
           <div className="space-y-4">
-            {categories.sort().map((category) => (
+            {categories.map((category) => (
                 <Collapsible
                   key={category}
                   open={openCategories[category]}
@@ -433,8 +434,11 @@ export const AirbnbConfigPanel: React.FC = () => {
                             <div className="col-span-1">
                               <Input
                                 type="number"
-                                value={(config as any).min_value ?? ''}
-                                onChange={(e) => handleUpdateConfig(config.id, { min_value: e.target.value ? Number(e.target.value) : null } as any)}
+                                value={(config as any).min_value !== null && (config as any).min_value !== undefined ? (config as any).min_value : ''}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  handleUpdateConfig(config.id, { min_value: val === '' ? null : Number(val) } as any);
+                                }}
                                 className="h-8 text-sm"
                                 placeholder="Min"
                               />
@@ -442,8 +446,11 @@ export const AirbnbConfigPanel: React.FC = () => {
                             <div className="col-span-1">
                               <Input
                                 type="number"
-                                value={config.max_value ?? ''}
-                                onChange={(e) => handleUpdateConfig(config.id, { max_value: e.target.value ? Number(e.target.value) : null })}
+                                value={config.max_value !== null && config.max_value !== undefined ? config.max_value : ''}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  handleUpdateConfig(config.id, { max_value: val === '' ? null : Number(val) });
+                                }}
                                 className="h-8 text-sm"
                                 placeholder="Max"
                               />
@@ -569,6 +576,7 @@ export const AirbnbConfigPanel: React.FC = () => {
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
+                                  <SelectItem value="none">-</SelectItem>
                                   <SelectItem value="fixed">£</SelectItem>
                                   <SelectItem value="percentage">%</SelectItem>
                                 </SelectContent>
