@@ -7,7 +7,7 @@ import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { adminNavigation } from '@/lib/navigationItems';
 import DashboardStats from '@/components/admin/DashboardStats';
-import UpcomingBookings from '@/components/dashboard/UpcomingBookings';
+import TodayBookingsCards from '@/components/dashboard/TodayBookingsCards';
 import { Calendar, Plus } from 'lucide-react';
 import AdminGuard from '@/components/AdminGuard';
 import { useNavigate } from 'react-router-dom';
@@ -76,11 +76,11 @@ const Dashboard = () => {
                       New Booking
                     </Button>
                   </CardHeader>
-                  <CardContent className="p-2 sm:p-4 pt-0">
-                    <UpcomingBookings 
-                      dashboardDateFilter={todayRange}
-                    />
-                  </CardContent>
+                <CardContent className="p-4 sm:p-6 pt-0">
+                  <TodayBookingsCards 
+                    dashboardDateFilter={todayRange}
+                  />
+                </CardContent>
                 </Card>
 
                 {/* Statistics Section */}
