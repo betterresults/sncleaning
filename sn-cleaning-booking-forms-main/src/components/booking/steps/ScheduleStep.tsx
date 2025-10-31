@@ -123,7 +123,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
       {/* Calendar and Time Selection */}
       <div className={`grid gap-6 md:gap-8 ${data.selectedDate ? 'lg:grid-cols-2' : 'grid-cols-1'}`}>
         {/* Left: Calendar */}
-        <div className="bg-card rounded-lg p-4 md:p-6 border border-border">
+        <div className="bg-slate-800 rounded-lg p-4 md:p-6">
           <Calendar
             mode="single"
             selected={data.selectedDate || undefined}
@@ -135,7 +135,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
               checkDate.setHours(0, 0, 0, 0);
               return checkDate < today;
             }}
-            className="rounded-md pointer-events-auto w-full px-3 md:px-5 py-3"
+            className="rounded-md pointer-events-auto w-full px-3 md:px-5 py-3 [&_.rdp-day]:text-white [&_.rdp-day_button]:text-white [&_.rdp-nav_button]:text-white [&_.rdp-caption]:text-white [&_.rdp-head_cell]:text-white [&_.rdp-day_button:hover]:bg-primary [&_.rdp-day_selected]:bg-primary [&_.rdp-day_selected]:text-primary-foreground"
           />
         </div>
 
