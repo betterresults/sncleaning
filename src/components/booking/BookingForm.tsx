@@ -99,7 +99,7 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
     propertyDetails: '',
     additionalDetails: '',
     carpetCleaning: false,
-    paymentMethod: 'Cash',
+    paymentMethod: 'Stripe',
     paymentStatus: 'Unpaid',
     recurringGroupId: null,
     linenManagement: false,
@@ -526,11 +526,9 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="Stripe">Stripe</SelectItem>
+                  <SelectItem value="Invoiceless">Invoiceless</SelectItem>
                   <SelectItem value="Cash">Cash</SelectItem>
-                  <SelectItem value="Card">Card</SelectItem>
-                  <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                  <SelectItem value="Online">Online</SelectItem>
-                  <SelectItem value="Invoiless">Invoiless</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -66,7 +66,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
     cleanerId: null as number | null,
     cleanerRate: 0,
     cleanerPercentage: 0,
-    paymentMethod: 'Cash',
+    paymentMethod: 'Stripe',
     paymentStatus: 'Unpaid',
     bookingStatus: 'Confirmed',
     cleaningType: '',
@@ -658,15 +658,9 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Cash">Cash</SelectItem>
-                            <SelectItem value="Card">Card</SelectItem>
-                            <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                            <SelectItem value="Online">Online</SelectItem>
-                            <SelectItem value="Invoiless">Invoiless</SelectItem>
-                            <SelectItem value="PayPal">PayPal</SelectItem>
                             <SelectItem value="Stripe">Stripe</SelectItem>
-                            <SelectItem value="Direct Debit">Direct Debit</SelectItem>
-                            <SelectItem value="Cheque">Cheque</SelectItem>
+                            <SelectItem value="Invoiceless">Invoiceless</SelectItem>
+                            <SelectItem value="Cash">Cash</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

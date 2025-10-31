@@ -82,7 +82,7 @@ export default function AddRecurringBooking() {
     hours: '',
     cost_per_hour: '',
     total_cost: '',
-    payment_method: '',
+    payment_method: 'Stripe',
     start_date: '',
     start_time: '',
     postponed: false,
@@ -783,10 +783,9 @@ export default function AddRecurringBooking() {
                     <SelectValue placeholder="Select payment method" />
                   </SelectTrigger>
                    <SelectContent>
-                     <SelectItem value="Invoiless">Invoiless</SelectItem>
                      <SelectItem value="Stripe">Stripe</SelectItem>
+                     <SelectItem value="Invoiceless">Invoiceless</SelectItem>
                      <SelectItem value="Cash">Cash</SelectItem>
-                     <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
                    </SelectContent>
                 </Select>
               </div>

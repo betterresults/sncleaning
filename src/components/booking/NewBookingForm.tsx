@@ -131,7 +131,7 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
     keyCollectionNotes: '',
     totalCost: 0,
     cleanerPay: 0,
-    paymentMethod: 'Cash',
+    paymentMethod: 'Stripe',
     paymentStatus: 'Unpaid',
     cleanerHourlyRate: 0,
     cleanerPercentage: 70,
@@ -187,12 +187,9 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
   ]);
 
   const [paymentMethods, setPaymentMethods] = useState([
-    'Cash',
-    'Card',
-    'Bank Transfer',
-    'Online',
     'Stripe',
-    'Invoiless'
+    'Invoiceless',
+    'Cash'
   ]);
 
   const hours = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
