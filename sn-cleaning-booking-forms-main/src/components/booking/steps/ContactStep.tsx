@@ -26,7 +26,7 @@ const ContactStep: React.FC<ContactStepProps> = ({ data, onUpdate, onNext, onBac
 
   return (
     <div className="space-y-4">
-      <div className="p-2 rounded-2xl border border-border shadow-[0_16px_48px_rgba(0,0,0,0.2),0_1px_3px_rgba(0,0,0,0.06)] bg-white transition-shadow duration-300">
+      <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
         <h2 className="text-2xl font-bold text-foreground mb-2">
           Customer Details
         </h2>
