@@ -16,6 +16,8 @@ export interface BookingData {
   bedrooms: string;
   bathrooms: string;
   toilets: string;
+  numberOfFloors?: number;
+  propertyFeatures?: Record<string, boolean>;
   
   // Additional rooms (for 2+ bedrooms)
   additionalRooms: {
@@ -48,6 +50,8 @@ export interface BookingData {
   selectedDate: Date | null;
   selectedTime: string;
   flexibility: 'not-flexible' | 'flexible-time' | 'flexible-date' | '';
+  sameDayTurnaround?: boolean;
+  shortNoticeCharge?: number;
   notes: string;
   
   // Contact
@@ -65,6 +69,7 @@ export interface BookingData {
   
   // Calculations
   estimatedHours: number | null;
+  totalHours?: number;
   hourlyRate: number;
   totalCost: number;
 }

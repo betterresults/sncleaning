@@ -45,25 +45,61 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
         setProcessing(true);
         
         const result = await submitBooking({
+          // Customer details
           firstName: data.firstName,
           lastName: data.lastName,
           email: data.email,
           phone: data.phone,
+          
+          // Property address
           houseNumber: data.houseNumber,
           street: data.street,
           postcode: data.postcode,
           city: data.city,
-          propertyAccess: data.propertyAccess,
-          accessNotes: data.accessNotes,
+          
+          // Property details
           propertyType: data.propertyType,
           bedrooms: data.bedrooms,
           bathrooms: data.bathrooms,
+          toilets: data.toilets,
+          numberOfFloors: data.numberOfFloors,
+          additionalRooms: data.additionalRooms,
+          propertyFeatures: data.propertyFeatures,
+          
+          // Service details
           serviceType: data.serviceType,
+          alreadyCleaned: data.alreadyCleaned,
+          needsOvenCleaning: data.needsOvenCleaning,
+          ovenType: data.ovenType,
+          cleaningProducts: data.cleaningProducts,
+          equipmentArrangement: data.equipmentArrangement,
+          equipmentStorageConfirmed: data.equipmentStorageConfirmed,
+          
+          // Linens
+          linensHandling: data.linensHandling,
+          needsIroning: data.needsIroning,
+          ironingHours: data.ironingHours,
+          linenPackages: data.linenPackages,
+          extraHours: data.extraHours,
+          
+          // Schedule
           selectedDate: data.selectedDate,
           selectedTime: data.selectedTime,
+          flexibility: data.flexibility,
+          sameDayTurnaround: data.sameDayTurnaround,
+          shortNoticeCharge: data.shortNoticeCharge,
+          
+          // Access
+          propertyAccess: data.propertyAccess,
+          accessNotes: data.accessNotes,
+          
+          // Costs
           totalCost: data.totalCost,
           estimatedHours: data.estimatedHours,
+          totalHours: data.totalHours,
           hourlyRate: data.hourlyRate,
+          
+          // Notes
           notes: data.notes,
           additionalDetails: data
         }, true);
@@ -122,25 +158,61 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
 
       // Submit booking with skipPaymentAuth=true
       const result = await submitBooking({
+        // Customer details
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
         phone: data.phone,
+        
+        // Property address
         houseNumber: data.houseNumber,
         street: data.street,
         postcode: data.postcode,
         city: data.city,
-        propertyAccess: data.propertyAccess,
-        accessNotes: data.accessNotes,
+        
+        // Property details
         propertyType: data.propertyType,
         bedrooms: data.bedrooms,
         bathrooms: data.bathrooms,
+        toilets: data.toilets,
+        numberOfFloors: data.numberOfFloors,
+        additionalRooms: data.additionalRooms,
+        propertyFeatures: data.propertyFeatures,
+        
+        // Service details
         serviceType: data.serviceType,
+        alreadyCleaned: data.alreadyCleaned,
+        needsOvenCleaning: data.needsOvenCleaning,
+        ovenType: data.ovenType,
+        cleaningProducts: data.cleaningProducts,
+        equipmentArrangement: data.equipmentArrangement,
+        equipmentStorageConfirmed: data.equipmentStorageConfirmed,
+        
+        // Linens
+        linensHandling: data.linensHandling,
+        needsIroning: data.needsIroning,
+        ironingHours: data.ironingHours,
+        linenPackages: data.linenPackages,
+        extraHours: data.extraHours,
+        
+        // Schedule
         selectedDate: data.selectedDate,
         selectedTime: data.selectedTime,
+        flexibility: data.flexibility,
+        sameDayTurnaround: data.sameDayTurnaround,
+        shortNoticeCharge: data.shortNoticeCharge,
+        
+        // Access
+        propertyAccess: data.propertyAccess,
+        accessNotes: data.accessNotes,
+        
+        // Costs
         totalCost: data.totalCost,
         estimatedHours: data.estimatedHours,
+        totalHours: data.totalHours,
         hourlyRate: data.hourlyRate,
+        
+        // Notes
         notes: data.notes,
         additionalDetails: data
       }, true);
