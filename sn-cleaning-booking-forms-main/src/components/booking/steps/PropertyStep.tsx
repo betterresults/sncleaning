@@ -723,9 +723,12 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       {/* Equipment Arrangement - Dynamic */}
       {data.cleaningProducts === 'equipment' && equipmentArrangementConfigs.length > 0 && (
         <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-          <h2 className="text-xl font-bold text-[#185166] mb-4">
+          <h2 className="text-xl font-bold text-[#185166] mb-2">
             Equipment arrangement
           </h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Choose whether you need equipment on an ongoing basis (stored at the property) or as a one-time delivery for this booking.
+          </p>
           
           <div className="grid grid-cols-2 gap-4">
             {equipmentArrangementConfigs.map((arrangement: any) => {
