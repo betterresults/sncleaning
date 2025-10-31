@@ -74,6 +74,8 @@ export const AirbnbConfigPanel: React.FC = () => {
   const [categoryVisibility, setCategoryVisibility] = useState<Record<string, boolean>>({});
   const [editingIcon, setEditingIcon] = useState<string | null>(null);
   const [customIconUrl, setCustomIconUrl] = useState('');
+  const [iconSearchQuery, setIconSearchQuery] = useState('');
+  const [iconMode, setIconMode] = useState<'lucide' | 'url'>('lucide');
 
   const [currentFormula, setCurrentFormula] = useState<Partial<PricingFormula>>({
     name: '',
@@ -431,7 +433,7 @@ export const AirbnbConfigPanel: React.FC = () => {
                             <div className="col-span-1">
                               <Input
                                 type="number"
-                                value={(config as any).min_value || ''}
+                                value={(config as any).min_value ?? ''}
                                 onChange={(e) => handleUpdateConfig(config.id, { min_value: e.target.value ? Number(e.target.value) : null } as any)}
                                 className="h-8 text-sm"
                                 placeholder="Min"
@@ -440,7 +442,7 @@ export const AirbnbConfigPanel: React.FC = () => {
                             <div className="col-span-1">
                               <Input
                                 type="number"
-                                value={config.max_value || ''}
+                                value={config.max_value ?? ''}
                                 onChange={(e) => handleUpdateConfig(config.id, { max_value: e.target.value ? Number(e.target.value) : null })}
                                 className="h-8 text-sm"
                                 placeholder="Max"
@@ -461,26 +463,84 @@ export const AirbnbConfigPanel: React.FC = () => {
                                     {renderIcon(config.icon) || <Upload className="h-4 w-4" />}
                                   </Button>
                                 </DialogTrigger>
-                                <DialogContent className="max-w-md">
+                                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                                   <DialogHeader>
                                     <DialogTitle>Set Icon</DialogTitle>
                                   </DialogHeader>
                                   <div className="space-y-4">
-                                    <div>
-                                      <Label>Icon URL or Lucide Name</Label>
-                                      <Input
-                                        value={customIconUrl}
-                                        onChange={(e) => setCustomIconUrl(e.target.value)}
-                                        placeholder="https://... or 'Home'"
-                                      />
-                                    </div>
+                                    <Tabs value={iconMode} onValueChange={(v: any) => setIconMode(v)}>
+                                      <TabsList className="grid w-full grid-cols-2">
+                                        <TabsTrigger value="lucide">Lucide Icons</TabsTrigger>
+                                        <TabsTrigger value="url">Custom URL</TabsTrigger>
+                                      </TabsList>
+                                      
+                                      <TabsContent value="lucide" className="space-y-4">
+                                        <div>
+                                          <Label>Search Icons</Label>
+                                          <Input
+                                            value={iconSearchQuery}
+                                            onChange={(e) => setIconSearchQuery(e.target.value)}
+                                            placeholder="Search by name..."
+                                            className="mb-4"
+                                          />
+                                        </div>
+                                        <div className="grid grid-cols-6 gap-2 max-h-[400px] overflow-y-auto border rounded p-2">
+                                          {Object.keys(LucideIcons)
+                                            .filter(name => 
+                                              name !== 'createLucideIcon' && 
+                                              name !== 'default' &&
+                                              !name.startsWith('Lucide') &&
+                                              name.toLowerCase().includes(iconSearchQuery.toLowerCase())
+                                            )
+                                            .slice(0, 100)
+                                            .map(iconName => {
+                                              const IconComponent = (LucideIcons as any)[iconName];
+                                              return (
+                                                <button
+                                                  key={iconName}
+                                                  onClick={() => setCustomIconUrl(iconName)}
+                                                  className={`flex flex-col items-center justify-center p-2 border rounded hover:bg-muted transition-colors ${customIconUrl === iconName ? 'bg-primary text-primary-foreground' : ''}`}
+                                                  title={iconName}
+                                                >
+                                                  <IconComponent className="h-6 w-6" />
+                                                  <span className="text-[8px] mt-1 truncate w-full text-center">{iconName}</span>
+                                                </button>
+                                              );
+                                            })}
+                                        </div>
+                                      </TabsContent>
+                                      
+                                      <TabsContent value="url" className="space-y-4">
+                                        <div>
+                                          <Label>Image URL</Label>
+                                          <Input
+                                            value={customIconUrl}
+                                            onChange={(e) => setCustomIconUrl(e.target.value)}
+                                            placeholder="https://example.com/icon.png"
+                                          />
+                                          <p className="text-xs text-muted-foreground mt-1">
+                                            Enter a direct URL to an image file
+                                          </p>
+                                        </div>
+                                        <div className="flex justify-center p-8 border rounded bg-muted/20">
+                                          {customIconUrl && (customIconUrl.startsWith('http://') || customIconUrl.startsWith('https://')) ? (
+                                            <img src={customIconUrl} alt="Preview" className="max-h-16 max-w-16 object-contain" />
+                                          ) : (
+                                            <span className="text-muted-foreground">Preview</span>
+                                          )}
+                                        </div>
+                                      </TabsContent>
+                                    </Tabs>
+                                    
                                     <div className="flex justify-center p-4 border rounded">
-                                      {renderIcon(customIconUrl) || <span className="text-muted-foreground">Preview</span>}
+                                      {renderIcon(customIconUrl) || <span className="text-muted-foreground">Icon preview</span>}
                                     </div>
+                                    
                                     <Button
                                       onClick={() => {
                                         handleUpdateConfig(config.id, { icon: customIconUrl });
                                         setEditingIcon(null);
+                                        setIconSearchQuery('');
                                       }}
                                       className="w-full"
                                     >
