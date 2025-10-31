@@ -6,6 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BookingData } from '../BookingForm';
 import { CalendarDays, Clock, Mic, AlertTriangle } from 'lucide-react';
+import { useAirbnbFieldConfigs } from '@/hooks/useAirbnbFieldConfigs';
 
 interface ScheduleStepProps {
   data: BookingData;
@@ -16,6 +17,29 @@ interface ScheduleStepProps {
 
 const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onBack }) => {
   const [isRecording, setIsRecording] = useState(false);
+  
+  // Fetch dynamic time flexibility configs from Supabase
+  const { data: timeFlexConfigs = [] } = useAirbnbFieldConfigs('Time Flexibility', true);
+  
+  // Get short notice charges from configs (fallback to hardcoded if not found)
+  const getChargeFromConfig = (option: string, fallback: number) => {
+    const config = timeFlexConfigs.find((c: any) => c.option === option);
+    return config ? Number(config.value) : fallback;
+  };
+  
+  const charge48h = getChargeFromConfig('under_48h', 15);
+  const charge24h = getChargeFromConfig('under_24h', 30);
+  const charge12h = getChargeFromConfig('under_12h', 50);
+  
+  // Smart calendar month display - show next month if we're near end of current month
+  const getDefaultMonth = () => {
+    const today = new Date();
+    const daysLeftInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate() - today.getDate();
+    // If less than 7 days left in current month, show next month
+    return daysLeftInMonth < 7 
+      ? new Date(today.getFullYear(), today.getMonth() + 1, 1)
+      : today;
+  };
 
   // Generate time slots based on current time for same-day booking
   const generateTimeSlots = () => {
@@ -54,7 +78,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
   const timeSlots = generateTimeSlots();
   const isFlexible = data.flexibility === 'flexible-time';
   
-  // Calculate short notice charges
+  // Calculate short notice charges using dynamic configs
   const calculateShortNoticeCharge = () => {
     if (!data.selectedDate) return { charge: 0, notice: '', hoursUntil: 0 };
     
@@ -80,7 +104,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
         cleaningDate.setHours(twoHoursFromNow.getHours(), twoHoursFromNow.getMinutes(), 0, 0);
       }
       const hoursUntilCleaning = (cleaningDate.getTime() - now.getTime()) / (1000 * 60 * 60);
-      return { charge: 50, notice: 'Same day booking (within 12 hours)', hoursUntil: hoursUntilCleaning };
+      return { charge: charge12h, notice: 'Same day booking (within 12 hours)', hoursUntil: hoursUntilCleaning };
     }
     
     // Not same-day: compute hours until cleaning based on selected time or default
@@ -97,8 +121,8 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
 
     const hoursUntilCleaning = (cleaningDate.getTime() - now.getTime()) / (1000 * 60 * 60);
     if (hoursUntilCleaning < 0) return { charge: 0, notice: '', hoursUntil: hoursUntilCleaning };
-    if (hoursUntilCleaning <= 24) return { charge: 30, notice: 'Short notice booking (within 24 hours)', hoursUntil: hoursUntilCleaning };
-    if (hoursUntilCleaning <= 48) return { charge: 15, notice: 'Short notice booking (within 48 hours)', hoursUntil: hoursUntilCleaning };
+    if (hoursUntilCleaning <= 24) return { charge: charge24h, notice: 'Short notice booking (within 24 hours)', hoursUntil: hoursUntilCleaning };
+    if (hoursUntilCleaning <= 48) return { charge: charge48h, notice: 'Short notice booking (within 48 hours)', hoursUntil: hoursUntilCleaning };
     return { charge: 0, notice: '', hoursUntil: hoursUntilCleaning };
   };
 
@@ -121,13 +145,14 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
       </div>
 
       {/* Calendar and Time Selection */}
-      <div className={`grid gap-6 md:gap-8 ${data.selectedDate ? 'lg:grid-cols-2' : 'grid-cols-1'}`}>
-        {/* Left: Calendar */}
-        <div className="bg-slate-800 rounded-lg p-4 md:p-6">
+      <div className={`grid gap-6 md:gap-8 ${data.selectedDate ? 'lg:grid-cols-2' : 'grid-cols-1 max-w-2xl mx-auto'}`}>
+        {/* Left: Calendar - Now bigger and more mobile-friendly */}
+        <div className="bg-slate-800 rounded-lg p-4 md:p-8">
           <Calendar
             mode="single"
             selected={data.selectedDate || undefined}
             onSelect={(date) => onUpdate({ selectedDate: date || null })}
+            defaultMonth={getDefaultMonth()}
             disabled={(date) => {
               const today = new Date();
               today.setHours(0, 0, 0, 0);
@@ -135,7 +160,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
               checkDate.setHours(0, 0, 0, 0);
               return checkDate < today;
             }}
-            className="rounded-md pointer-events-auto w-full px-3 md:px-5 py-3 [&_.rdp-day]:text-white [&_.rdp-day_button]:text-white [&_.rdp-nav_button]:text-white [&_.rdp-caption]:text-white [&_.rdp-head_cell]:text-white [&_.rdp-day_button:hover]:bg-primary [&_.rdp-day_selected]:bg-primary [&_.rdp-day_selected]:text-primary-foreground"
+            className="rounded-md pointer-events-auto w-full scale-110 md:scale-125 origin-center [&_.rdp-day]:text-white [&_.rdp-day_button]:text-white [&_.rdp-day_button]:h-10 [&_.rdp-day_button]:w-10 md:[&_.rdp-day_button]:h-12 md:[&_.rdp-day_button]:w-12 [&_.rdp-day_button]:text-base md:[&_.rdp-day_button]:text-lg [&_.rdp-nav_button]:text-white [&_.rdp-nav_button]:h-10 [&_.rdp-nav_button]:w-10 [&_.rdp-caption]:text-white [&_.rdp-caption]:text-lg md:[&_.rdp-caption]:text-xl [&_.rdp-caption]:mb-4 [&_.rdp-head_cell]:text-white [&_.rdp-head_cell]:text-sm md:[&_.rdp-head_cell]:text-base [&_.rdp-day_button:hover]:bg-primary [&_.rdp-day_selected]:bg-primary [&_.rdp-day_selected]:text-primary-foreground"
           />
         </div>
 
