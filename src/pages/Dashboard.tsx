@@ -57,7 +57,7 @@ const Dashboard = () => {
               onSignOut={handleSignOut}
             />
             
-            <main className="flex-1 p-4 md:p-6 space-y-6 bg-gray-50 m-0">
+            <main className="flex-1 bg-gray-50 m-0 pl-0 pr-4 md:pr-6 py-4 md:py-6 space-y-6" >
               {/* Statistics - Last 30 Days */}
               <DashboardStats />
               
