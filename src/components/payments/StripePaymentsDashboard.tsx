@@ -22,6 +22,8 @@ interface StripePayment {
   stripe_currency: string;
   stripe_created: string;
   stripe_customer_id?: string;
+  stripe_customer_name?: string;
+  stripe_customer_email?: string;
   stripe_payment_method?: string;
   stripe_description?: string;
   stripe_receipt_email?: string;
@@ -274,12 +276,12 @@ export const StripePaymentsDashboard = () => {
             </TableHeader>
             <TableBody>
               {filteredPayments.map((payment, idx) => (
-                <TableRow key={idx} className={payment.status_match === false ? 'bg-orange-50' : ''}>
+                <TableRow key={idx} className={payment.status_match === false ? 'bg-orange-50 dark:bg-orange-950/20' : ''}>
                   <TableCell>{getMatchIcon(payment.status_match)}</TableCell>
                   <TableCell className="font-medium">{payment.booking_id || '-'}</TableCell>
                   <TableCell>
-                    <div>{payment.customer_name || '-'}</div>
-                    <div className="text-xs text-muted-foreground">{payment.customer_email}</div>
+                    <div className="font-medium">{payment.customer_name || payment.stripe_customer_name || '-'}</div>
+                    <div className="text-xs text-muted-foreground">{payment.customer_email || payment.stripe_customer_email || '-'}</div>
                   </TableCell>
                   <TableCell>{getStatusBadge(payment.stripe_status)}</TableCell>
                   <TableCell>
@@ -291,13 +293,15 @@ export const StripePaymentsDashboard = () => {
                     )}
                   </TableCell>
                   <TableCell>{payment.booking_payment_status || '-'}</TableCell>
-                  <TableCell>£{payment.booking_total_cost?.toFixed(2) || '-'}</TableCell>
-                  <TableCell className="text-xs font-mono max-w-[150px] truncate">
-                    {payment.stripe_payment_intent_id}
+                  <TableCell>{payment.booking_total_cost ? `£${payment.booking_total_cost.toFixed(2)}` : '-'}</TableCell>
+                  <TableCell className="text-xs font-mono max-w-[200px]">
+                    <div className="truncate" title={payment.stripe_payment_intent_id}>
+                      {payment.stripe_payment_intent_id}
+                    </div>
                   </TableCell>
-                  <TableCell className="text-sm">
+                  <TableCell className="text-sm whitespace-nowrap">
                     {payment.stripe_created
-                      ? new Date(payment.stripe_created).toLocaleDateString()
+                      ? new Date(payment.stripe_created).toLocaleDateString('en-GB')
                       : '-'}
                   </TableCell>
                 </TableRow>

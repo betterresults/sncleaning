@@ -52,9 +52,10 @@ Deno.serve(async (req) => {
 
     const { limit = 100, startingAfter, endingBefore } = await req.json().catch(() => ({}));
 
-    // Get all payment intents from Stripe
+    // Get all payment intents from Stripe with expanded customer data
     const paymentIntents = await stripe.paymentIntents.list({
       limit: limit,
+      expand: ['data.customer'],
       ...(startingAfter && { starting_after: startingAfter }),
       ...(endingBefore && { ending_before: endingBefore }),
     });
@@ -99,6 +100,20 @@ Deno.serve(async (req) => {
       // Find matching charge
       const matchingCharge = charges.data.find((c) => c.payment_intent === pi.id);
 
+      // Get customer info from Stripe if available
+      const stripeCustomer = typeof pi.customer === 'object' ? pi.customer : null;
+      const stripeCustomerEmail = stripeCustomer?.email || pi.receipt_email;
+      const stripeCustomerName = stripeCustomer?.name || '';
+
+      // Determine customer data priority: booking > stripe > empty
+      const customerName = matchingBooking?.customers?.full_name || 
+                          matchingBooking ? `${matchingBooking.first_name || ''} ${matchingBooking.last_name || ''}`.trim() : 
+                          stripeCustomerName;
+      
+      const customerEmail = matchingBooking?.customers?.email || 
+                           matchingBooking?.email || 
+                           stripeCustomerEmail;
+
       return {
         // Stripe data
         stripe_payment_intent_id: pi.id,
@@ -106,7 +121,9 @@ Deno.serve(async (req) => {
         stripe_amount: pi.amount / 100, // Convert from cents
         stripe_currency: pi.currency,
         stripe_created: new Date(pi.created * 1000).toISOString(),
-        stripe_customer_id: pi.customer,
+        stripe_customer_id: typeof pi.customer === 'string' ? pi.customer : stripeCustomer?.id,
+        stripe_customer_name: stripeCustomerName,
+        stripe_customer_email: stripeCustomerEmail,
         stripe_payment_method: pi.payment_method,
         stripe_description: pi.description,
         stripe_receipt_email: pi.receipt_email,
@@ -122,11 +139,10 @@ Deno.serve(async (req) => {
         booking_total_cost: matchingBooking?.total_cost,
         booking_date_time: matchingBooking?.date_time,
         
-        // Customer data
+        // Customer data (merged from both sources)
         customer_id: matchingBooking?.customer,
-        customer_name: matchingBooking?.customers?.full_name || 
-                       `${matchingBooking?.first_name || ''} ${matchingBooking?.last_name || ''}`.trim(),
-        customer_email: matchingBooking?.customers?.email || matchingBooking?.email,
+        customer_name: customerName,
+        customer_email: customerEmail,
         
         // Status comparison
         status_match: matchingBooking ? 
