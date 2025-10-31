@@ -213,12 +213,6 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-3xl font-bold text-[#185166]">
-          Secure Booking
-        </h2>
-      </div>
-
       {/* Admin Test Mode Warning */}
       {adminTestMode && (
         <div className="bg-orange-50 border-2 border-orange-500 rounded-xl p-6">
@@ -236,7 +230,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
 
       {/* Your Details Section */}
       <div className="space-y-6">
-        <h3 className="text-2xl font-bold text-[#185166]">
+        <h3 className="text-2xl font-bold text-[#185166] mb-4">
           Your Details
         </h3>
         
@@ -245,13 +239,13 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
             placeholder="First Name"
             value={data.firstName || ''}
             onChange={(e) => onUpdate({ firstName: e.target.value })}
-            className="h-14 text-base rounded-xl border-2 border-gray-300 focus:border-[#185166] transition-colors"
+            className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
           />
           <Input
             placeholder="Last Name"
             value={data.lastName || ''}
             onChange={(e) => onUpdate({ lastName: e.target.value })}
-            className="h-14 text-base rounded-xl border-2 border-gray-300 focus:border-[#185166] transition-colors"
+            className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
           />
         </div>
         
@@ -260,7 +254,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
           placeholder="Email Address"
           value={data.email || ''}
           onChange={(e) => onUpdate({ email: e.target.value })}
-          className="h-14 text-base rounded-xl border-2 border-gray-300 focus:border-[#185166] transition-colors"
+          className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
         />
         
         <Input
@@ -268,13 +262,13 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
           placeholder="Phone Number"
           value={data.phone || ''}
           onChange={(e) => onUpdate({ phone: e.target.value })}
-          className="h-14 text-base rounded-xl border-2 border-gray-300 focus:border-[#185166] transition-colors"
+          className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
         />
       </div>
 
       {/* Booking Address Section */}
       <div className="space-y-6">
-        <h3 className="text-2xl font-bold text-[#185166]">
+        <h3 className="text-2xl font-bold text-[#185166] mb-4">
           Booking Address
         </h3>
         
@@ -282,7 +276,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
           placeholder="Street Address"
           value={data.street || ''}
           onChange={(e) => onUpdate({ street: e.target.value })}
-          className="h-14 text-base rounded-xl border-2 border-gray-300 focus:border-[#185166] transition-colors"
+          className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
         />
         
         <div className="grid grid-cols-2 gap-4">
@@ -290,14 +284,14 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
             placeholder="Postcode"
             value={data.postcode || ''}
             onChange={(e) => onUpdate({ postcode: e.target.value })}
-            className="h-14 text-base rounded-xl border-2 border-gray-300 focus:border-[#185166] transition-colors"
+            className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
           />
           
           <Input
             placeholder="City"
             value={data.city || ''}
             onChange={(e) => onUpdate({ city: e.target.value })}
-            className="h-14 text-base rounded-xl border-2 border-gray-300 focus:border-[#185166] transition-colors"
+            className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
           />
         </div>
       </div>
@@ -305,24 +299,19 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
       {/* Payment Method Section - Skip in admin test mode */}
       {!adminTestMode && (
         <div className="space-y-6">
-          <h3 className="text-2xl font-bold text-[#185166]">
+          <h3 className="text-2xl font-bold text-[#185166] mb-4">
             Payment Details
           </h3>
-        
-          <div className="p-8 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300 hover:shadow-[0_15px_35px_rgba(0,0,0,0.22)]">
-            <div className="mb-8">
-              <p className="text-lg text-[#185166] font-semibold mb-3">
-                {isUrgentBooking ? 'Payment Information' : 'Card Verification'}
-              </p>
-              <p className="text-base text-gray-600 leading-relaxed">
-                {isUrgentBooking 
-                  ? `Payment will be collected now - £${data.totalCost.toFixed(2)}`
-                  : 'We will verify your card with a £1 temporary hold (immediately released). No payment will be collected now.'
-                }
-              </p>
-            </div>
+          
+          <div className="space-y-4">
+            <p className="text-base text-gray-600">
+              {isUrgentBooking 
+                ? `Payment will be collected now - £${data.totalCost.toFixed(2)}`
+                : 'We will verify your card with a £1 temporary hold (immediately released). No payment will be collected now.'
+              }
+            </p>
             
-            <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-2xl p-8 transition-all duration-200 hover:border-[#185166]">
+            <div className="h-16 rounded-2xl border-2 border-gray-200 bg-white px-6 flex items-center transition-all duration-200 focus-within:border-[#185166]">
               <CardElement
                 options={{
                   style: {
@@ -330,11 +319,11 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
                       fontSize: '18px',
                       color: '#1e293b',
                       fontFamily: 'system-ui, -apple-system, sans-serif',
+                      fontWeight: '500',
                       '::placeholder': {
-                        color: '#94a3b8',
+                        color: '#9ca3af',
                       },
-                      padding: '16px',
-                      lineHeight: '24px',
+                      lineHeight: '64px',
                     },
                     invalid: {
                       color: '#dc2626',
@@ -344,14 +333,14 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
               />
             </div>
             
-            <div className="mt-8 flex items-center justify-center gap-8 text-base text-gray-500">
+            <div className="flex items-center justify-start gap-6 text-sm text-gray-500 pt-2">
               <div className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-[#185166]" />
-                <span className="font-medium">Secure Payment</span>
+                <Shield className="h-4 w-4 text-[#185166]" />
+                <span>Secure Payment</span>
               </div>
               <div className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-[#185166]" />
-                <span className="font-medium">PCI Compliant</span>
+                <CreditCard className="h-4 w-4 text-[#185166]" />
+                <span>PCI Compliant</span>
               </div>
             </div>
           </div>
