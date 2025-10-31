@@ -23,7 +23,17 @@ const BookingConfirmation = () => {
 
   useEffect(() => {
     if (!bookingId) {
-      navigate('/airbnb');
+      // Show demo data if accessed directly
+      setBooking({
+        id: 12345,
+        date_time: new Date(Date.now() + 86400000 * 2).toISOString(), // 2 days from now
+        address: '123 Demo Street, London',
+        postcode: 'SW1A 1AA',
+        service_type: 'end-of-tenancy',
+        total_cost: 250.00,
+        customer: 1
+      });
+      setLoading(false);
       return;
     }
 
