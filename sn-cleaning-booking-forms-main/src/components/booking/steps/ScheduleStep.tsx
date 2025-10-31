@@ -147,13 +147,12 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
   return (
     <div className="space-y-4">
       <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-        <h2 className="text-2xl font-bold text-foreground mb-2">
+        <h2 className="text-2xl font-bold text-[#185166] mb-4">
           Cleaning Schedule
         </h2>
 
-      {/* Calendar and Time Selection - Side by Side */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Left: Calendar */}
+      {/* Calendar - Full Width */}
+      <div className="mb-6">
         <div className="bg-slate-800 rounded-lg p-6 flex items-center justify-center">
           <Calendar
             mode="single"
@@ -170,68 +169,69 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
             className="rounded-md pointer-events-auto w-full [&_.rdp-day]:text-white [&_.rdp-day_button]:text-white [&_.rdp-day_button]:h-12 [&_.rdp-day_button]:w-12 [&_.rdp-day_button]:text-base [&_.rdp-nav_button]:text-white [&_.rdp-nav_button]:h-10 [&_.rdp-nav_button]:w-10 [&_.rdp-caption]:text-white [&_.rdp-caption]:text-xl [&_.rdp-caption]:mb-4 [&_.rdp-head_cell]:text-white [&_.rdp-head_cell]:text-base [&_.rdp-day_button:hover]:bg-primary [&_.rdp-day_selected]:bg-primary [&_.rdp-day_selected]:text-primary-foreground"
           />
         </div>
+      </div>
 
-        {/* Right: Time Selection */}
-        {data.selectedDate && (
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">
-                {data.selectedDate.toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  month: 'long',
-                  day: 'numeric',
-                })}
-              </h2>
+      {/* Time Selection - Below Calendar */}
+      {data.selectedDate && (
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-xl font-bold text-[#185166] mb-4">
+              {data.selectedDate.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </h2>
+          </div>
+
+          {/* Time Flexibility Toggle */}
+          <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+            <label className="text-xl font-bold text-[#185166]">
+              I am flexible with the start time
+            </label>
+            <Switch
+              checked={isFlexible}
+              onCheckedChange={(checked) => 
+                onUpdate({ 
+                  flexibility: checked ? 'flexible-time' : 'not-flexible',
+                  selectedTime: checked ? undefined : data.selectedTime
+                })
+              }
+            />
+          </div>
+
+          {/* Time Selection - Only show if not flexible */}
+          {!isFlexible && (
+            <div className="grid grid-cols-2 gap-3">
+              {timeSlots.map((time) => (
+                <Button
+                  key={time}
+                  variant={data.selectedTime === time ? 'default' : 'outline'}
+                  className="h-12 text-sm"
+                  onClick={() => onUpdate({ selectedTime: time })}
+                >
+                  {time}
+                </Button>
+              ))}
             </div>
+          )}
 
-            {/* Time Flexibility Toggle */}
-            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-              <label className="text-2xl font-bold text-foreground">
-                I am flexible with the start time
+          {/* Additional Notes - Only show if flexible */}
+          {isFlexible && (
+            <div>
+              <label className="block text-xl font-bold text-[#185166] mb-2">
+                Additional timing preferences
               </label>
-              <Switch
-                checked={isFlexible}
-                onCheckedChange={(checked) => 
-                  onUpdate({ 
-                    flexibility: checked ? 'flexible-time' : 'not-flexible',
-                    selectedTime: checked ? undefined : data.selectedTime
-                  })
-                }
+              <Textarea
+                placeholder="e.g., anytime in the morning, after 2 PM, etc."
+                value={data.notes || ''}
+                onChange={(e) => onUpdate({ notes: e.target.value })}
+                rows={3}
               />
             </div>
-
-            {/* Time Selection - Only show if not flexible */}
-            {!isFlexible && (
-              <div className="grid grid-cols-2 gap-3">
-                {timeSlots.map((time) => (
-                  <Button
-                    key={time}
-                    variant={data.selectedTime === time ? 'default' : 'outline'}
-                    className="h-12 text-sm"
-                    onClick={() => onUpdate({ selectedTime: time })}
-                  >
-                    {time}
-                  </Button>
-                ))}
-              </div>
-            )}
-
-            {/* Additional Notes - Only show if flexible */}
-            {isFlexible && (
-              <div>
-                <label className="block text-2xl font-bold text-foreground mb-2">
-                  Additional timing preferences
-                </label>
-                <Textarea
-                  placeholder="e.g., anytime in the morning, after 2 PM, etc."
-                  value={data.notes || ''}
-                  onChange={(e) => onUpdate({ notes: e.target.value })}
-                  rows={3}
-                />
-              </div>
-            )}
-          </div>
-        )}
+          )}
+        </div>
+      )}
       </div>
 
       {/* Short Notice Charge Alert */}
@@ -267,11 +267,10 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
           return null;
         })()
       )}
-      </div>
 
       {/* Property Access Section */}
       <div className="mt-8 p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-        <h2 className="text-2xl font-bold text-foreground mb-6">
+        <h2 className="text-xl font-bold text-[#185166] mb-4">
           How will we access the property?
         </h2>
         
@@ -301,7 +300,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
         {/* Conditional fields based on selection */}
         {data.propertyAccess === 'collect' && (
           <div className="mb-4">
-            <label className="block text-2xl font-bold text-foreground mb-2">
+            <label className="block text-xl font-bold text-[#185166] mb-2">
               Key collection details
             </label>
             <Textarea
@@ -315,7 +314,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
 
         {data.propertyAccess === 'keybox' && (
           <div className="mb-4">
-            <label className="block text-2xl font-bold text-foreground mb-2">
+            <label className="block text-xl font-bold text-[#185166] mb-2">
               Keybox access details
             </label>
             <Textarea
@@ -329,7 +328,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
 
         {data.propertyAccess === 'other' && (
           <div className="mb-4">
-            <label className="block text-2xl font-bold text-foreground mb-2">
+            <label className="block text-xl font-bold text-[#185166] mb-2">
               Access details
             </label>
             <Textarea
@@ -343,7 +342,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
 
         {/* Additional booking details - always visible */}
         <div className="mt-6">
-          <label className="block text-2xl font-bold text-foreground mb-2">
+          <label className="block text-xl font-bold text-[#185166] mb-2">
             Additional booking details (optional)
           </label>
           <Textarea

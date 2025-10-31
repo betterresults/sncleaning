@@ -169,7 +169,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-foreground mb-2">
+        <h2 className="text-2xl font-bold text-[#185166] mb-4">
           Your Details & Payment
         </h2>
         <p className="text-muted-foreground">

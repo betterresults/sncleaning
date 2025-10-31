@@ -208,7 +208,7 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
   return (
     <div className="space-y-4">
       <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-        <h2 className="text-2xl font-bold text-foreground mb-4">
+        <h2 className="text-2xl font-bold text-[#185166] mb-4">
           Linen Handling
         </h2>
 
@@ -239,7 +239,7 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
       {/* Ironing Switch */}
       {showIroning && (
         <div>
-          <h2 className="text-xl font-bold text-foreground mb-4">
+          <h2 className="text-xl font-bold text-[#185166] mb-4">
             Select ironing option <span className="text-destructive">*</span>
           </h2>
           <div className="grid grid-cols-2 gap-4">

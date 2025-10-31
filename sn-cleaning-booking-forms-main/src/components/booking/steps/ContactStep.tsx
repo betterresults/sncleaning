@@ -27,7 +27,7 @@ const ContactStep: React.FC<ContactStepProps> = ({ data, onUpdate, onNext, onBac
   return (
     <div className="space-y-4">
       <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-        <h2 className="text-2xl font-bold text-foreground mb-2">
+        <h2 className="text-2xl font-bold text-[#185166] mb-4">
           Customer Details
         </h2>
 
@@ -98,7 +98,7 @@ const ContactStep: React.FC<ContactStepProps> = ({ data, onUpdate, onNext, onBac
 
       {/* Property Access */}
       <div>
-        <h2 className="text-xl font-bold text-foreground mb-4 md:mb-6">
+        <h2 className="text-xl font-bold text-[#185166] mb-4">
           Property Access
         </h2>
         <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
