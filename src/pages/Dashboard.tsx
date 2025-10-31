@@ -42,14 +42,14 @@ const Dashboard = () => {
   return (
     <AdminGuard>
       <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-gray-50">
+        <div className="min-h-screen flex w-full bg-gray-50 gap-0">
           <UnifiedSidebar 
             navigationItems={adminNavigation}
             user={user}
             userRole={userRole}
             onSignOut={handleSignOut}
           />
-          <SidebarInset className="flex-1 flex flex-col">
+          <SidebarInset className="flex-1 flex flex-col p-0 m-0">
             <UnifiedHeader 
               title=""
               user={user}
@@ -57,7 +57,7 @@ const Dashboard = () => {
               onSignOut={handleSignOut}
             />
             
-            <main className="flex-1 p-4 md:p-6 space-y-6 bg-gray-50">
+            <main className="flex-1 p-4 md:p-6 space-y-6 bg-gray-50 m-0">
               {/* Statistics - Last 30 Days */}
               <DashboardStats />
               

@@ -32,7 +32,7 @@ export function UnifiedHeader({ title, user, userRole, onSignOut, showBackToAdmi
   };
 
   return (
-    <header className="sticky top-0 z-50 flex h-14 shrink-0 items-center gap-2 border-b border-white/10 bg-[#185166] px-4 sm:px-6 shadow-sm" style={{ paddingTop: 'max(0px, env(safe-area-inset-top))' }}>
+    <header className="sticky top-0 z-50 flex h-14 shrink-0 items-center gap-2 border-b border-white/10 bg-[#2c3e50] px-4 sm:px-6 shadow-sm" style={{ paddingTop: 'max(0px, env(safe-area-inset-top))' }}>
       <SidebarTrigger className="-ml-1 p-2 text-white hover:bg-white/10 hover:text-white border-0 bg-transparent flex-shrink-0" />
       
       {showBackToAdmin && (
