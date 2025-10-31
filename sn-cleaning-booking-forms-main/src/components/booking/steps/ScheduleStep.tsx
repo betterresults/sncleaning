@@ -152,23 +152,21 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
         </h2>
 
       {/* Calendar - Full Width */}
-      <div className="mb-6">
-        <div className="bg-slate-800 rounded-lg p-8 flex items-center justify-center">
-          <Calendar
-            mode="single"
-            selected={data.selectedDate || undefined}
-            onSelect={(date) => onUpdate({ selectedDate: date || null })}
-            defaultMonth={getDefaultMonth()}
-            disabled={(date) => {
-              const today = new Date();
-              today.setHours(0, 0, 0, 0);
-              const checkDate = new Date(date);
-              checkDate.setHours(0, 0, 0, 0);
-              return checkDate < today;
-            }}
-            className="rounded-md pointer-events-auto w-full [&_.rdp-day]:text-white [&_.rdp-day_button]:text-white [&_.rdp-day_button]:h-14 [&_.rdp-day_button]:w-14 [&_.rdp-day_button]:text-lg [&_.rdp-nav_button]:text-white [&_.rdp-nav_button]:h-12 [&_.rdp-nav_button]:w-12 [&_.rdp-caption]:text-white [&_.rdp-caption]:text-2xl [&_.rdp-caption]:mb-6 [&_.rdp-head_cell]:text-white [&_.rdp-head_cell]:text-lg [&_.rdp-day_button:hover]:bg-primary [&_.rdp-day_selected]:bg-primary [&_.rdp-day_selected]:text-primary-foreground"
-          />
-        </div>
+      <div className="mb-8">
+        <Calendar
+          mode="single"
+          selected={data.selectedDate || undefined}
+          onSelect={(date) => onUpdate({ selectedDate: date || null })}
+          defaultMonth={getDefaultMonth()}
+          disabled={(date) => {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const checkDate = new Date(date);
+            checkDate.setHours(0, 0, 0, 0);
+            return checkDate < today;
+          }}
+          className="rounded-2xl pointer-events-auto w-full"
+        />
       </div>
 
       {/* Time Selection - Below Calendar */}
