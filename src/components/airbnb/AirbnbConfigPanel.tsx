@@ -256,7 +256,7 @@ export const AirbnbConfigPanel: React.FC = () => {
         </TabsList>
 
          <TabsContent value="fields" className="space-y-6">
-          <Card className="p-6">
+          
             <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
@@ -307,12 +307,7 @@ export const AirbnbConfigPanel: React.FC = () => {
                         step="0.5"
                         value={newValue}
                         onChange={(e) => setNewValue(Number(e.target.value))}
-                        onFocus={(e) => {
-                          if (newValue === 0) {
-                            setNewValue(0);
-                            e.target.select();
-                          }
-                        }}
+                        onFocus={(e) => e.target.select()}
                       />
                     </div>
                     <div>
@@ -372,12 +367,7 @@ export const AirbnbConfigPanel: React.FC = () => {
                         step="1"
                         value={newTime}
                         onChange={(e) => setNewTime(Number(e.target.value))}
-                        onFocus={(e) => {
-                          if (newTime === 0) {
-                            setNewTime(0);
-                            e.target.select();
-                          }
-                        }}
+                        onFocus={(e) => e.target.select()}
                       />
                     </div>
                     <div>
@@ -399,7 +389,6 @@ export const AirbnbConfigPanel: React.FC = () => {
                 </div>
               </DialogContent>
             </Dialog>
-          </Card>
 
           <div className="space-y-4">
             {categories.map((category) => (
@@ -584,6 +573,7 @@ export const AirbnbConfigPanel: React.FC = () => {
                                 step="0.5"
                                 value={config.value}
                                 onChange={(e) => handleUpdateConfig(config.id, { value: Number(e.target.value) })}
+                                onFocus={(e) => e.target.select()}
                                 className="h-8 text-sm"
                               />
                             </div>
@@ -608,6 +598,7 @@ export const AirbnbConfigPanel: React.FC = () => {
                                 step="1"
                                 value={config.time || 0}
                                 onChange={(e) => handleUpdateConfig(config.id, { time: Number(e.target.value) })}
+                                onFocus={(e) => e.target.select()}
                                 className="h-8 text-sm"
                                 placeholder="0"
                               />
