@@ -101,6 +101,10 @@ export const AirbnbConfigPanel: React.FC = () => {
     // Convert time to minutes if in hours
     const timeInMinutes = newTimeUnit === 'hours' ? newTime * 60 : newTime;
 
+    // Get category_order from existing fields in that category, or use a default
+    const existingCategoryConfig = configs.find(c => c.category === category);
+    const categoryOrder = existingCategoryConfig?.category_order ?? 999;
+
     createConfig.mutate({
       category,
       option: newOption,
@@ -113,7 +117,8 @@ export const AirbnbConfigPanel: React.FC = () => {
       max_value: newMaxValue,
       is_visible: categoryVisibility[category] ?? true,
       display_order: (groupedConfigs[category]?.length || 0) + 1,
-    });
+      category_order: categoryOrder,
+    } as any);
 
     setNewCategory('');
     setNewOption('');
@@ -154,6 +159,13 @@ export const AirbnbConfigPanel: React.FC = () => {
   };
 
   const handleUpdateConfig = (id: string, updates: Partial<FieldConfig>) => {
+    // If category is being changed, ensure category_order is set for the new category
+    if (updates.category) {
+      const existingConfig = configs.find(c => c.category === updates.category);
+      if (existingConfig && !updates.category_order) {
+        updates.category_order = existingConfig.category_order;
+      }
+    }
     updateConfig.mutate({ id, updates });
   };
 

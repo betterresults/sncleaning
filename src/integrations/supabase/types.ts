@@ -103,6 +103,7 @@ export type Database = {
       airbnb_field_configs: {
         Row: {
           category: string
+          category_order: number | null
           created_at: string
           display_order: number | null
           icon: string | null
@@ -120,6 +121,7 @@ export type Database = {
         }
         Insert: {
           category: string
+          category_order?: number | null
           created_at?: string
           display_order?: number | null
           icon?: string | null
@@ -137,6 +139,7 @@ export type Database = {
         }
         Update: {
           category?: string
+          category_order?: number | null
           created_at?: string
           display_order?: number | null
           icon?: string | null

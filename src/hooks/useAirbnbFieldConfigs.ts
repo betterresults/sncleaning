@@ -16,6 +16,7 @@ export interface FieldConfig {
   max_value: number | null;
   is_visible: boolean | null;
   display_order: number | null;
+  category_order: number | null;
 }
 
 export const useAirbnbFieldConfigs = (category?: string, onlyVisible = false) => {
@@ -50,14 +51,29 @@ export const useAllAirbnbCategories = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('airbnb_field_configs')
-        .select('category')
+        .select('category, category_order')
         .eq('is_active', true)
-        .order('display_order', { ascending: true });
+        .order('category_order', { ascending: true });
 
       if (error) throw error;
       
-      const uniqueCategories = Array.from(new Set(data.map(d => d.category)));
-      return uniqueCategories;
+      // Get unique categories while preserving order
+      const seen = new Set();
+      const orderedCategories: { category: string; order: number }[] = [];
+      
+      data.forEach(d => {
+        if (!seen.has(d.category)) {
+          seen.add(d.category);
+          orderedCategories.push({ 
+            category: d.category, 
+            order: d.category_order || 999 
+          });
+        }
+      });
+      
+      return orderedCategories
+        .sort((a, b) => a.order - b.order)
+        .map(c => c.category);
     },
   });
 };
@@ -81,6 +97,7 @@ export const useCreateFieldConfig = () => {
           max_value: config.max_value,
           is_visible: config.is_visible ?? true,
           display_order: config.display_order ?? 0,
+          category_order: (config as any).category_order ?? 0,
         }])
         .select()
         .single();
