@@ -19,7 +19,7 @@ import {
 
 const SIDEBAR_COOKIE_NAME = "sidebar:state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
-const SIDEBAR_WIDTH = "12rem"
+const SIDEBAR_WIDTH = "14rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
@@ -223,7 +223,8 @@ const Sidebar = React.forwardRef<
         <div
           className={cn(
             "duration-200 relative h-svh bg-transparent transition-[width] ease-linear",
-            "w-0",
+            "w-[--sidebar-width]",
+            "group-data-[collapsible=offcanvas]:w-0",
             "group-data-[side=right]:rotate-180"
           )}
         />
