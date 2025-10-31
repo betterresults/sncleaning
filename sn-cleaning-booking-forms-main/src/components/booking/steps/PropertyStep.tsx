@@ -150,8 +150,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
   return (
     <div className="space-y-4">
-      <div className="p-6 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
-        <h2 className="text-2xl font-bold text-[#185166] mb-6">
+      <div className="p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
+        <h2 className="text-2xl font-bold text-[#185166] mb-4">
           Property Details
         </h2>
         <div className="grid grid-cols-2 gap-4">
@@ -190,8 +190,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       </div>
 
       {/* Size of the property */}
-      <div className="p-6 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
-        <h2 className="text-xl font-bold text-[#185166] mb-6">
+      <div className="p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
+        <h2 className="text-xl font-bold text-[#185166] mb-4">
           Size of the property
         </h2>
         
@@ -263,8 +263,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Additional Rooms - only show if 2+ bedrooms */}
       {data.bedrooms && !['studio', '1'].includes(data.bedrooms) && (
-        <div className="p-6 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
-          <h2 className="text-xl font-bold text-[#185166] mb-6">
+        <div className="p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
+          <h2 className="text-xl font-bold text-[#185166] mb-4">
             Additional rooms
           </h2>
           
@@ -362,8 +362,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       )}
 
       {/* Property Features */}
-      <div className="p-6 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
-        <h2 className="text-xl font-bold text-[#185166] mb-6">
+      <div className="p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
+        <h2 className="text-xl font-bold text-[#185166] mb-4">
           Property Features
         </h2>
         
@@ -485,8 +485,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       </div>
 
       {/* Service Type */}
-      <div className="p-6 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
-        <h2 className="text-xl font-bold text-[#185166] mb-6">
+      <div className="p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
+        <h2 className="text-xl font-bold text-[#185166] mb-4">
           Choose your service
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -518,7 +518,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Property Already Cleaned */}
       {data.serviceType === 'checkin-checkout' && (
-        <div className="p-6 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
+        <div className="p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
           <h2 className="text-xl font-bold text-[#185166] mb-4">
             Has the property been cleaned to Airbnb standard already?
           </h2>
@@ -557,7 +557,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Oven Cleaning - show if deep cleaning or not cleaned to Airbnb standard */}
       {(data.serviceType === 'deep' || data.alreadyCleaned === false) && (
-        <div className="p-6 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
+        <div className="p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
           <h2 className="text-xl font-bold text-[#185166] mb-4">
             Do you require oven cleaning?
           </h2>
@@ -629,8 +629,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       )}
 
       {/* Cleaning Supplies */}
-      <div className="p-6 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
-        <h2 className="text-xl font-bold text-[#185166] mb-6">
+      <div className="p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
+        <h2 className="text-xl font-bold text-[#185166] mb-4">
           Cleaning supplies
         </h2>
         
@@ -739,8 +739,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Equipment Arrangement */}
       {data.cleaningProducts.equipment && (
-        <div className="p-6 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
-          <h2 className="text-xl font-bold text-[#185166] mb-6">
+        <div className="p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
+          <h2 className="text-xl font-bold text-[#185166] mb-4">
             Equipment arrangement
           </h2>
           
