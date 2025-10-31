@@ -5,6 +5,8 @@ import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
 import { BookingData } from '../BookingForm';
 import { Truck, Shirt, Plus, Minus, Package, Info } from 'lucide-react';
+import { useAirbnbFieldConfigs } from '@/hooks/useAirbnbFieldConfigs';
+import { useLinenProducts } from '@/hooks/useLinenProducts';
 
 interface LinensStepProps {
   data: BookingData;
@@ -15,28 +17,26 @@ interface LinensStepProps {
 
 const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack }) => {
   const [showInfo, setShowInfo] = React.useState<string | null>(null);
-  const linensOptions = [
-    {
-      value: 'customer-handles',
-      label: 'I will provide my own',
-      icon: Truck
-    },
-    {
-      value: 'wash-hang',
-      label: 'Wash and hang dry',
-      icon: Shirt
-    },
-    {
-      value: 'wash-dry',
-      label: 'Wash and tumble dry',
-      icon: Shirt
-    },
-    {
-      value: 'order-linens',
-      label: 'Order linens from us',
-      icon: Package
-    }
-  ];
+  
+  // Fetch dynamic configs from Supabase
+  const { data: linenHandlingConfigs = [] } = useAirbnbFieldConfigs('Linen Handling', true);
+  const { data: ironingConfigs = [] } = useAirbnbFieldConfigs('Ironing', true);
+  const { products: linenProductsFromDB = [] } = useLinenProducts();
+  
+  // Fallback to hardcoded options if no configs exist
+  const linensOptions = linenHandlingConfigs.length > 0 
+    ? linenHandlingConfigs.map((config: any) => ({
+        value: config.option,
+        label: config.label,
+        icon: config.option.includes('customer') ? Truck : 
+              config.option.includes('wash') ? Shirt : Package
+      }))
+    : [
+        { value: 'customer-handles', label: 'I will provide my own', icon: Truck },
+        { value: 'wash-hang', label: 'Wash and hang dry', icon: Shirt },
+        { value: 'wash-dry', label: 'Wash and tumble dry', icon: Shirt },
+        { value: 'order-linens', label: 'Order linens from us', icon: Package }
+      ];
 
   const getRecommendedExtraHours = () => {
     // If ironing is selected, it includes washing time (1.5 hours total)
@@ -75,96 +75,108 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
     onUpdate(updates);
   };
 
-  const linenPackages = [
-    {
-      id: 'single',
-      name: 'Single bed linen set',
-      price: 19.95,
-      includes: [
-        '1 x White Single Duvet Cover',
-        '1 x White Single Fitted Sheet',
-        '2 x White Pillowcases',
-        '1 x White Bath Towel (500gsm)',
-        '1 x White Hand Towel (500gsm)'
-      ],
-      description: 'White single duvet cover, fitted sheet, 2 pillowcases, bath towel and hand towel',
-      icon: '🛏️'
-    },
-    {
-      id: 'double',
-      name: 'Double bed linen set',
-      price: 23.95,
-      includes: [
-        '1 x White Double Duvet Cover',
-        '1 x White Double Fitted Sheet',
-        '4 x White Pillowcases',
-        '2 x White Bath Towels (500gsm)',
-        '2 x White Hand Towels (500gsm)'
-      ],
-      description: 'White double duvet cover, fitted sheet, 4 pillowcases, 2 bath towels and 2 hand towels',
-      icon: '🛏️'
-    },
-    {
-      id: 'king',
-      name: 'King bed linen set',
-      price: 25.75,
-      includes: [
-        '1 x White King Duvet Cover',
-        '1 x White King Fitted Sheet',
-        '4 x White Pillowcases',
-        '2 x White Bath Towels (500gsm)',
-        '2 x White Hand Towels (500gsm)'
-      ],
-      description: 'White king duvet cover, fitted sheet, 4 pillowcases, 2 bath towels and 2 hand towels',
-      icon: '🛏️'
-    },
-    {
-      id: 'superking',
-      name: 'Super king bed linen set',
-      price: 26.75,
-      includes: [
-        '1 x White Super King Duvet Cover',
-        '1 x White Super King Fitted Sheet',
-        '4 x White Pillowcases',
-        '2 x White Bath Towels (500gsm)',
-        '2 x White Hand Towels (500gsm)'
-      ],
-      description: 'White super king duvet cover, fitted sheet, 4 pillowcases, 2 bath towels and 2 hand towels',
-      icon: '🛏️'
-    },
-    {
-      id: 'bathmat',
-      name: 'Bath mat',
-      price: 2.80,
-      includes: ['1 x Bath Mat'],
-      description: 'White bath mat',
-      icon: '🛁'
-    },
-    {
-      id: 'bathsheet',
-      name: 'Bath sheet',
-      price: 3.10,
-      includes: ['1 x Bath Sheet'],
-      description: 'White bath sheet',
-      icon: '🛁'
-    },
-    {
-      id: 'bathrobe',
-      name: 'Bath robe',
-      price: 6.50,
-      includes: ['1 x Bath Robe'],
-      description: 'White bath robe',
-      icon: '👘'
-    },
-    {
-      id: 'teatowel',
-      name: 'Tea towel',
-      price: 1.30,
-      includes: ['1 x Tea Towel'],
-      description: 'White tea towel',
-      icon: '🧽'
-    }
-  ];
+  // Use dynamic linen products or fallback to hardcoded
+  const linenPackages = linenProductsFromDB.length > 0
+    ? linenProductsFromDB.map((product: any) => ({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        includes: product.items_included ? product.items_included.split(',').map((i: string) => i.trim()) : [],
+        description: product.description || product.name,
+        icon: product.type === 'bed_linen' ? '🛏️' : 
+              product.type === 'bath_linen' ? '🛁' : 
+              product.type === 'accessories' ? '👘' : '🧽'
+      }))
+    : [
+        {
+          id: 'single',
+          name: 'Single bed linen set',
+          price: 19.95,
+          includes: [
+            '1 x White Single Duvet Cover',
+            '1 x White Single Fitted Sheet',
+            '2 x White Pillowcases',
+            '1 x White Bath Towel (500gsm)',
+            '1 x White Hand Towel (500gsm)'
+          ],
+          description: 'White single duvet cover, fitted sheet, 2 pillowcases, bath towel and hand towel',
+          icon: '🛏️'
+        },
+        {
+          id: 'double',
+          name: 'Double bed linen set',
+          price: 23.95,
+          includes: [
+            '1 x White Double Duvet Cover',
+            '1 x White Double Fitted Sheet',
+            '4 x White Pillowcases',
+            '2 x White Bath Towels (500gsm)',
+            '2 x White Hand Towels (500gsm)'
+          ],
+          description: 'White double duvet cover, fitted sheet, 4 pillowcases, 2 bath towels and 2 hand towels',
+          icon: '🛏️'
+        },
+        {
+          id: 'king',
+          name: 'King bed linen set',
+          price: 25.75,
+          includes: [
+            '1 x White King Duvet Cover',
+            '1 x White King Fitted Sheet',
+            '4 x White Pillowcases',
+            '2 x White Bath Towels (500gsm)',
+            '2 x White Hand Towels (500gsm)'
+          ],
+          description: 'White king duvet cover, fitted sheet, 4 pillowcases, 2 bath towels and 2 hand towels',
+          icon: '🛏️'
+        },
+        {
+          id: 'superking',
+          name: 'Super king bed linen set',
+          price: 26.75,
+          includes: [
+            '1 x White Super King Duvet Cover',
+            '1 x White Super King Fitted Sheet',
+            '4 x White Pillowcases',
+            '2 x White Bath Towels (500gsm)',
+            '2 x White Hand Towels (500gsm)'
+          ],
+          description: 'White super king duvet cover, fitted sheet, 4 pillowcases, 2 bath towels and 2 hand towels',
+          icon: '🛏️'
+        },
+        {
+          id: 'bathmat',
+          name: 'Bath mat',
+          price: 2.80,
+          includes: ['1 x Bath Mat'],
+          description: 'White bath mat',
+          icon: '🛁'
+        },
+        {
+          id: 'bathsheet',
+          name: 'Bath sheet',
+          price: 3.10,
+          includes: ['1 x Bath Sheet'],
+          description: 'White bath sheet',
+          icon: '🛁'
+        },
+        {
+          id: 'bathrobe',
+          name: 'Bath robe',
+          price: 6.50,
+          includes: ['1 x Bath Robe'],
+          description: 'White bath robe',
+          icon: '👘'
+        },
+        {
+          id: 'teatowel',
+          name: 'Tea towel',
+          price: 1.30,
+          includes: ['1 x Tea Towel'],
+          description: 'White tea towel',
+          icon: '🧽'
+        }
+      ];
 
   const showIroning = data.linensHandling === 'wash-hang' || data.linensHandling === 'wash-dry';
   const showDelivery = data.linensHandling === 'order-linens';
@@ -232,28 +244,27 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
             Select ironing option <span className="text-destructive">*</span>
           </h2>
           <div className="grid grid-cols-2 gap-4">
-            <button
-              onClick={() => onUpdate({ needsIroning: true })}
-              className={`p-4 rounded-lg border-2 transition-all duration-200 text-center ${
-                data.needsIroning === true
-                  ? 'border-primary bg-primary/5 text-primary'
-                  : 'border-border bg-card hover:border-primary/50 text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Shirt className={`h-6 w-6 mx-auto mb-2 ${data.needsIroning === true ? 'text-primary' : 'text-muted-foreground'}`} />
-              <span className="text-sm font-medium">Yes, iron linens</span>
-            </button>
-            <button
-              onClick={() => onUpdate({ needsIroning: false })}
-              className={`p-4 rounded-lg border-2 transition-all duration-200 text-center ${
-                data.needsIroning === false
-                  ? 'border-primary bg-primary/5 text-primary'
-                  : 'border-border bg-card hover:border-primary/50 text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Shirt className={`h-6 w-6 mx-auto mb-2 ${data.needsIroning === false ? 'text-primary' : 'text-muted-foreground'}`} />
-              <span className="text-sm font-medium">No ironing needed</span>
-            </button>
+            {(ironingConfigs.length > 0 ? ironingConfigs : [
+              { option: 'yes_iron_linens', label: 'Yes, iron linens' },
+              { option: 'no_ironing_needed', label: 'No ironing needed' }
+            ]).map((option: any, index: number) => {
+              const isYes = option.option.includes('yes') || index === 0;
+              const isSelected = data.needsIroning === isYes;
+              return (
+                <button
+                  key={option.option}
+                  onClick={() => onUpdate({ needsIroning: isYes })}
+                  className={`p-4 rounded-lg border-2 transition-all duration-200 text-center ${
+                    isSelected
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-border bg-card hover:border-primary/50 text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Shirt className={`h-6 w-6 mx-auto mb-2 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <span className="text-sm font-medium">{option.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
