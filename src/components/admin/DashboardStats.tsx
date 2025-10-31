@@ -7,6 +7,7 @@ import { Calendar, DollarSign, AlertTriangle, Banknote } from 'lucide-react';
 interface Stats {
   totalBookings: number;
   monthlyRevenue: number;
+  unpaidInvoices: number;
 }
 
 interface DashboardStatsProps {
@@ -22,6 +23,7 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
   const [stats, setStats] = useState<Stats>({
     totalBookings: 0,
     monthlyRevenue: 0,
+    unpaidInvoices: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -43,12 +45,12 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
         dateTo = now.toISOString();
       }
       
-      // Build query for bookings in date range
+      // Build query for past bookings in date range
       let bookingsQuery = supabase
-        .from('bookings')
-        .select('total_cost, payment_status, date_time')
-        .gte('date_time', dateFrom)
-        .lte('date_time', dateTo);
+        .from('past_bookings')
+        .select('total_cost, payment_status, date_only')
+        .gte('date_only', dateFrom.split('T')[0])
+        .lte('date_only', dateTo.split('T')[0]);
 
       // Apply additional filters if provided
       if (filters?.cleanerId) {
@@ -70,10 +72,14 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
       const monthlyRevenue = bookingsData?.reduce((sum, booking) => {
         return sum + (parseFloat(String(booking.total_cost)) || 0);
       }, 0) || 0;
+      const unpaidInvoices = bookingsData?.filter(booking => 
+        booking.payment_status === 'Unpaid' || booking.payment_status === 'Not Paid'
+      ).length || 0;
 
       setStats({
         totalBookings,
         monthlyRevenue,
+        unpaidInvoices,
       });
 
     } catch (error) {
@@ -90,8 +96,8 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
   if (loading) {
     return (
       <div className="space-y-3 sm:space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-          {[1, 2].map((i) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          {[1, 2, 3].map((i) => (
             <Card key={i} className="shadow-lg border-0 bg-gradient-to-br from-gray-50 to-gray-100">
               <CardContent className="p-3 sm:p-4 lg:p-6">
                 <div className="animate-pulse">
@@ -108,7 +114,7 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
   
   return (
     <div className="space-y-3 sm:space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         <Card className="shadow-lg border-0 bg-gradient-to-br from-teal-500 via-teal-600 to-cyan-700 text-white transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 pt-3 sm:px-4 sm:pt-4">
             <CardTitle className="text-sm font-medium opacity-90">
@@ -140,6 +146,23 @@ const DashboardStats = ({ filters }: DashboardStatsProps) => {
               £{(stats.monthlyRevenue || 0).toFixed(2)}
             </div>
             <p className="text-xs opacity-75 mt-1">Last 30 Days</p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 text-white transition-all duration-200">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 pt-3 sm:px-4 sm:pt-4">
+            <CardTitle className="text-sm font-medium opacity-90">
+              Unpaid Invoices
+            </CardTitle>
+            <div className="p-1.5 bg-white/20 rounded-lg">
+              <AlertTriangle className="h-4 w-4" />
+            </div>
+          </CardHeader>
+          <CardContent className="pb-3 px-3 sm:pb-4 sm:px-4">
+            <div className="text-3xl sm:text-4xl font-bold">
+              {stats.unpaidInvoices}
+            </div>
+            <p className="text-xs opacity-75 mt-1">Pending Payment</p>
           </CardContent>
         </Card>
       </div>
