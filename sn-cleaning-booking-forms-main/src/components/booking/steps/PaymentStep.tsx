@@ -2,9 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { BookingData } from '../BookingForm';
-import { CreditCard, Shield, Loader2 } from 'lucide-react';
+import { CreditCard, Shield, Loader2, AlertTriangle } from 'lucide-react';
 import { useAirbnbBookingSubmit } from '@/hooks/useAirbnbBookingSubmit';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +22,10 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
   const { toast } = useToast();
   const { submitBooking, loading: submitting } = useAirbnbBookingSubmit();
   const [processing, setProcessing] = useState(false);
+  const [searchParams] = useSearchParams();
+  
+  // Admin testing mode - skip payment if URL has ?adminTest=true
+  const adminTestMode = searchParams.get('adminTest') === 'true';
 
   // Calculate if booking is urgent (within 72 hours)
   const isUrgentBooking = useMemo(() => {
@@ -35,6 +39,59 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
   }, [data.selectedDate, data.selectedTime]);
 
   const handleSubmit = async () => {
+    // Admin test mode - skip payment completely
+    if (adminTestMode) {
+      try {
+        setProcessing(true);
+        
+        const result = await submitBooking({
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          phone: data.phone,
+          houseNumber: data.houseNumber,
+          street: data.street,
+          postcode: data.postcode,
+          city: data.city,
+          propertyAccess: data.propertyAccess,
+          accessNotes: data.accessNotes,
+          propertyType: data.propertyType,
+          bedrooms: data.bedrooms,
+          bathrooms: data.bathrooms,
+          serviceType: data.serviceType,
+          selectedDate: data.selectedDate,
+          selectedTime: data.selectedTime,
+          totalCost: data.totalCost,
+          estimatedHours: data.estimatedHours,
+          hourlyRate: data.hourlyRate,
+          notes: data.notes,
+          additionalDetails: data
+        }, true);
+
+        if (!result.success || !result.bookingId) {
+          throw new Error('Failed to create booking');
+        }
+
+        toast({
+          title: "Test Booking Created",
+          description: "Admin test mode - payment skipped"
+        });
+
+        navigate('/booking-confirmation', { state: { bookingId: result.bookingId } });
+        return;
+      } catch (error: any) {
+        console.error('Booking error:', error);
+        toast({
+          title: "Booking Error",
+          description: error.message || "Failed to create booking",
+          variant: "destructive"
+        });
+        setProcessing(false);
+        return;
+      }
+    }
+
+    // Normal payment flow
     if (!stripe || !elements) {
       return;
     }
@@ -162,6 +219,21 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
         </h2>
       </div>
 
+      {/* Admin Test Mode Warning */}
+      {adminTestMode && (
+        <div className="bg-orange-50 border-2 border-orange-500 rounded-xl p-6">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-6 w-6 text-orange-500 flex-shrink-0" />
+            <div>
+              <h3 className="font-bold text-orange-900">Admin Test Mode Active</h3>
+              <p className="text-sm text-orange-700">
+                Payment will be skipped. This booking will be created without payment verification.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Contact Information Section */}
       <div className="space-y-6">
         <h3 className="text-xl font-bold text-[#185166]">
@@ -214,52 +286,54 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
         />
       </div>
 
-      {/* Payment Method Section */}
-      <div className="space-y-6">
-        <h3 className="text-xl font-bold text-[#185166]">
-          Add Payment Method
-        </h3>
+      {/* Payment Method Section - Skip in admin test mode */}
+      {!adminTestMode && (
+        <div className="space-y-6">
+          <h3 className="text-xl font-bold text-[#185166]">
+            Add Payment Method
+          </h3>
         
-        <div className="bg-card border border-border rounded-xl p-8">
-          <div className="mb-6">
-            <p className="text-base text-[#185166] font-medium mb-2">
-              To confirm your card
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {isUrgentBooking 
-                ? `Payment will be collected now - £${data.totalCost.toFixed(2)}`
-                : `Payment will be collected later. We'll perform a £1 verification (immediately released).`
-              }
-            </p>
-          </div>
-          
-          <CardElement
-            options={{
-              style: {
-                base: {
-                  fontSize: '16px',
-                  color: 'hsl(var(--foreground))',
-                  '::placeholder': {
-                    color: 'hsl(var(--muted-foreground))',
-                  },
-                  padding: '12px',
-                },
-              },
-            }}
-          />
-          
-          <div className="mt-6 flex items-center justify-center gap-6 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-primary" />
-              <span>Secure Payment</span>
+          <div className="bg-card border border-border rounded-xl p-8">
+            <div className="mb-6">
+              <p className="text-base text-[#185166] font-medium mb-2">
+                To confirm your card
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {isUrgentBooking 
+                  ? `Payment will be collected now - £${data.totalCost.toFixed(2)}`
+                  : `Payment will be collected later. We'll perform a £1 verification (immediately released).`
+                }
+              </p>
             </div>
-            <div className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-primary" />
-              <span>PCI Compliant</span>
+            
+            <CardElement
+              options={{
+                style: {
+                  base: {
+                    fontSize: '16px',
+                    color: 'hsl(var(--foreground))',
+                    '::placeholder': {
+                      color: 'hsl(var(--muted-foreground))',
+                    },
+                    padding: '12px',
+                  },
+                },
+              }}
+            />
+            
+            <div className="mt-6 flex items-center justify-center gap-6 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-primary" />
+                <span>Secure Payment</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-primary" />
+                <span>PCI Compliant</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Navigation */}
       <div className="flex justify-between pt-6">
@@ -271,13 +345,15 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
           size="lg"
           className="px-12"
           onClick={handleSubmit}
-          disabled={!stripe || processing || submitting || !canContinue}
+          disabled={!stripe || processing || submitting || !canContinue || (adminTestMode ? false : !stripe)}
         >
           {(processing || submitting) ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Processing...
             </>
+          ) : adminTestMode ? (
+            'Create Test Booking (No Payment)'
           ) : isUrgentBooking ? (
             `Pay £${data.totalCost.toFixed(2)} & Confirm`
           ) : (
