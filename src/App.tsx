@@ -40,6 +40,7 @@ import EditRecurringBooking from "./pages/EditRecurringBooking";
 import AdminCleanerPayments from "./pages/AdminCleanerPayments";
 import AdminCustomerPayments from "./pages/AdminCustomerPayments";
 import AdminPaymentManagement from "./pages/AdminPaymentManagement";
+import AdminStripePayments from "./pages/AdminStripePayments";
 import UpcomingBookings from "./pages/UpcomingBookings";
 import UsersAdmins from "./pages/UsersAdmins";
 import UsersCleaners from "./pages/UsersCleaners";
@@ -101,6 +102,7 @@ const App = () => (
                  <Route path="/admin-cleaner-payments" element={<AdminCleanerPayments />} />
                  <Route path="/admin-customer-payments" element={<AdminCustomerPayments />} />
                  <Route path="/admin-payment-management" element={<AdminPaymentManagement />} />
+                 <Route path="/admin-stripe-payments" element={<AdminStripePayments />} />
                   <Route path="/users/admins" element={<UsersAdmins />} />
                   <Route path="/users/cleaners" element={<UsersCleaners />} />
                   <Route path="/users/customers" element={<UsersCustomers />} />

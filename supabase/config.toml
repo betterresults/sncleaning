@@ -62,3 +62,6 @@ verify_jwt = false
 
 [functions.invoiless-create-send]
 verify_jwt = false
+
+[functions.stripe-get-payments]
+verify_jwt = true
