@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
       limit: limit,
     });
 
-    // Get bookings from database with customer info
+    // Get bookings from database with customer info (Stripe only)
     const { data: bookings } = await supabase
       .from('bookings')
       .select(`
@@ -87,71 +87,76 @@ Deno.serve(async (req) => {
           full_name
         )
       `)
+      .eq('payment_method', 'Stripe')
       .order('id', { ascending: false })
       .limit(500);
 
     // Match Stripe data with our database
-    const enrichedPayments = paymentIntents.data.map((pi) => {
-      // Find matching booking by invoice_id or payment_intent id
-      const matchingBooking = bookings?.find(
-        (b) => b.invoice_id === pi.id || b.invoice_id?.includes(pi.id)
-      );
+    const enrichedPayments = paymentIntents.data
+      .map((pi) => {
+        // Find matching booking by invoice_id or payment_intent id
+        const matchingBooking = bookings?.find(
+          (b) => b.invoice_id === pi.id || b.invoice_id?.includes(pi.id)
+        );
 
-      // Find matching charge
-      const matchingCharge = charges.data.find((c) => c.payment_intent === pi.id);
+        // Skip payments that don't map to a Stripe booking
+        if (!matchingBooking) return null;
 
-      // Get customer info from Stripe if available
-      const stripeCustomer = typeof pi.customer === 'object' ? pi.customer : null;
-      const stripeCustomerEmail = stripeCustomer?.email || pi.receipt_email;
-      const stripeCustomerName = stripeCustomer?.name || '';
+        // Find matching charge
+        const matchingCharge = charges.data.find((c) => c.payment_intent === pi.id);
 
-      // Determine customer data priority: booking > stripe > empty
-      const customerName = matchingBooking?.customers?.full_name || 
-                          matchingBooking ? `${matchingBooking.first_name || ''} ${matchingBooking.last_name || ''}`.trim() : 
-                          stripeCustomerName;
-      
-      const customerEmail = matchingBooking?.customers?.email || 
-                           matchingBooking?.email || 
-                           stripeCustomerEmail;
+        // Get customer info from Stripe if available
+        const stripeCustomer = typeof pi.customer === 'object' ? pi.customer : null;
+        const stripeCustomerEmail = stripeCustomer?.email || pi.receipt_email;
+        const stripeCustomerName = stripeCustomer?.name || '';
 
-      return {
-        // Stripe data
-        stripe_payment_intent_id: pi.id,
-        stripe_status: pi.status,
-        stripe_amount: pi.amount / 100, // Convert from cents
-        stripe_currency: pi.currency,
-        stripe_created: new Date(pi.created * 1000).toISOString(),
-        stripe_customer_id: typeof pi.customer === 'string' ? pi.customer : stripeCustomer?.id,
-        stripe_customer_name: stripeCustomerName,
-        stripe_customer_email: stripeCustomerEmail,
-        stripe_payment_method: pi.payment_method,
-        stripe_description: pi.description,
-        stripe_receipt_email: pi.receipt_email,
-        stripe_charge_id: matchingCharge?.id,
-        stripe_paid: matchingCharge?.paid,
-        stripe_refunded: matchingCharge?.refunded,
-        stripe_amount_refunded: matchingCharge?.amount_refunded ? matchingCharge.amount_refunded / 100 : 0,
+        // Determine customer data priority: booking > stripe > empty
+        const customerName = matchingBooking?.customers?.full_name ||
+          `${matchingBooking.first_name || ''} ${matchingBooking.last_name || ''}`.trim() ||
+          stripeCustomerName;
         
-        // Database data
-        booking_id: matchingBooking?.id,
-        booking_payment_status: matchingBooking?.payment_status,
-        booking_payment_method: matchingBooking?.payment_method,
-        booking_total_cost: matchingBooking?.total_cost,
-        booking_date_time: matchingBooking?.date_time,
-        
-        // Customer data (merged from both sources)
-        customer_id: matchingBooking?.customer,
-        customer_name: customerName,
-        customer_email: customerEmail,
-        
-        // Status comparison
-        status_match: matchingBooking ? 
-          (pi.status === 'succeeded' && matchingBooking.payment_status?.toLowerCase() === 'paid') ||
-          (pi.status === 'requires_capture' && matchingBooking.payment_status?.toLowerCase() === 'authorized') ||
-          (pi.status === 'processing' && matchingBooking.payment_status?.toLowerCase() === 'pending')
-          : null,
-      };
-    });
+        const customerEmail = matchingBooking?.customers?.email ||
+          matchingBooking?.email ||
+          stripeCustomerEmail;
+
+        return {
+          // Stripe data
+          stripe_payment_intent_id: pi.id,
+          stripe_status: pi.status,
+          stripe_amount: pi.amount / 100, // Convert from cents
+          stripe_currency: pi.currency,
+          stripe_created: new Date(pi.created * 1000).toISOString(),
+          stripe_customer_id: typeof pi.customer === 'string' ? pi.customer : stripeCustomer?.id,
+          stripe_customer_name: stripeCustomerName,
+          stripe_customer_email: stripeCustomerEmail,
+          stripe_payment_method: pi.payment_method,
+          stripe_description: pi.description,
+          stripe_receipt_email: pi.receipt_email,
+          stripe_charge_id: matchingCharge?.id,
+          stripe_paid: matchingCharge?.paid,
+          stripe_refunded: matchingCharge?.refunded,
+          stripe_amount_refunded: matchingCharge?.amount_refunded ? matchingCharge.amount_refunded / 100 : 0,
+          
+          // Database data
+          booking_id: matchingBooking.id,
+          booking_payment_status: matchingBooking.payment_status,
+          booking_payment_method: matchingBooking.payment_method,
+          booking_total_cost: matchingBooking.total_cost,
+          booking_date_time: matchingBooking.date_time,
+          
+          // Customer data (merged from both sources)
+          customer_id: matchingBooking.customer,
+          customer_name: customerName,
+          customer_email: customerEmail,
+          
+          // Status comparison
+          status_match:
+            (pi.status === 'succeeded' && matchingBooking.payment_status?.toLowerCase() === 'paid') ||
+            (pi.status === 'requires_capture' && matchingBooking.payment_status?.toLowerCase() === 'authorized') ||
+            (pi.status === 'processing' && matchingBooking.payment_status?.toLowerCase() === 'pending'),
+        };
+      })
+      .filter((p): p is NonNullable<typeof p> => Boolean(p));
 
     // Also find bookings that might not be in Stripe
     const bookingsNotInStripe = bookings?.filter(

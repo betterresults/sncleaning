@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface StripePayment {
   stripe_payment_intent_id: string;
@@ -116,6 +117,8 @@ export const StripePaymentsDashboard = () => {
       payment.booking_id?.toString().includes(searchLower)
     );
   });
+
+  const mismatchedPayments = filteredPayments.filter((p) => p.status_match === false);
 
   const filteredBookingsNotInStripe = bookingsNotInStripe.filter((booking) => {
     const searchLower = searchTerm.toLowerCase();
@@ -258,57 +261,121 @@ export const StripePaymentsDashboard = () => {
       )}
 
       <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">All Stripe Payments ({filteredPayments.length})</h3>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Match</TableHead>
-                <TableHead>Booking ID</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Stripe Status</TableHead>
-                <TableHead>Stripe Amount</TableHead>
-                <TableHead>Booking Status</TableHead>
-                <TableHead>Booking Amount</TableHead>
-                <TableHead>Payment Intent</TableHead>
-                <TableHead>Created</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredPayments.map((payment, idx) => (
-                <TableRow key={idx} className={payment.status_match === false ? 'bg-orange-50 dark:bg-orange-950/20' : ''}>
-                  <TableCell>{getMatchIcon(payment.status_match)}</TableCell>
-                  <TableCell className="font-medium">{payment.booking_id || '-'}</TableCell>
-                  <TableCell>
-                    <div className="font-medium">{payment.customer_name || payment.stripe_customer_name || '-'}</div>
-                    <div className="text-xs text-muted-foreground">{payment.customer_email || payment.stripe_customer_email || '-'}</div>
-                  </TableCell>
-                  <TableCell>{getStatusBadge(payment.stripe_status)}</TableCell>
-                  <TableCell>
-                    £{payment.stripe_amount?.toFixed(2)}
-                    {payment.stripe_refunded && (
-                      <div className="text-xs text-red-600">
-                        Refunded: £{payment.stripe_amount_refunded?.toFixed(2)}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>{payment.booking_payment_status || '-'}</TableCell>
-                  <TableCell>{payment.booking_total_cost ? `£${payment.booking_total_cost.toFixed(2)}` : '-'}</TableCell>
-                  <TableCell className="text-xs font-mono max-w-[200px]">
-                    <div className="truncate" title={payment.stripe_payment_intent_id}>
-                      {payment.stripe_payment_intent_id}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-sm whitespace-nowrap">
-                    {payment.stripe_created
-                      ? new Date(payment.stripe_created).toLocaleDateString('en-GB')
-                      : '-'}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <Tabs defaultValue="all">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Stripe Bookings</h3>
+            <TabsList>
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="mismatches">Mismatches</TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="all">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Match</TableHead>
+                    <TableHead>Booking ID</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Stripe Status</TableHead>
+                    <TableHead>Stripe Amount</TableHead>
+                    <TableHead>Booking Status</TableHead>
+                    <TableHead>Booking Amount</TableHead>
+                    <TableHead>Payment Intent</TableHead>
+                    <TableHead>Created</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredPayments.map((payment, idx) => (
+                    <TableRow key={idx} className={payment.status_match === false ? 'bg-orange-50 dark:bg-orange-950/20' : ''}>
+                      <TableCell>{getMatchIcon(payment.status_match)}</TableCell>
+                      <TableCell className="font-medium">{payment.booking_id || '-'}</TableCell>
+                      <TableCell>
+                        <div className="font-medium">{payment.customer_name || payment.stripe_customer_name || '-'}</div>
+                        <div className="text-xs text-muted-foreground">{payment.customer_email || payment.stripe_customer_email || '-'}</div>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(payment.stripe_status)}</TableCell>
+                      <TableCell>
+                        £{payment.stripe_amount?.toFixed(2)}
+                        {payment.stripe_refunded && (
+                          <div className="text-xs text-red-600">
+                            Refunded: £{payment.stripe_amount_refunded?.toFixed(2)}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>{payment.booking_payment_status || '-'}</TableCell>
+                      <TableCell>{payment.booking_total_cost ? `£${payment.booking_total_cost.toFixed(2)}` : '-'}</TableCell>
+                      <TableCell className="text-xs font-mono max-w-[200px]">
+                        <div className="truncate" title={payment.stripe_payment_intent_id}>
+                          {payment.stripe_payment_intent_id}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">
+                        {payment.stripe_created
+                          ? new Date(payment.stripe_created).toLocaleDateString('en-GB')
+                          : '-'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="mismatches">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Match</TableHead>
+                    <TableHead>Booking ID</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Stripe Status</TableHead>
+                    <TableHead>Stripe Amount</TableHead>
+                    <TableHead>Booking Status</TableHead>
+                    <TableHead>Booking Amount</TableHead>
+                    <TableHead>Payment Intent</TableHead>
+                    <TableHead>Created</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {mismatchedPayments.map((payment, idx) => (
+                    <TableRow key={idx} className="bg-orange-50 dark:bg-orange-950/20">
+                      <TableCell>{getMatchIcon(payment.status_match)}</TableCell>
+                      <TableCell className="font-medium">{payment.booking_id || '-'}</TableCell>
+                      <TableCell>
+                        <div className="font-medium">{payment.customer_name || payment.stripe_customer_name || '-'}</div>
+                        <div className="text-xs text-muted-foreground">{payment.customer_email || payment.stripe_customer_email || '-'}</div>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(payment.stripe_status)}</TableCell>
+                      <TableCell>
+                        £{payment.stripe_amount?.toFixed(2)}
+                        {payment.stripe_refunded && (
+                          <div className="text-xs text-red-600">
+                            Refunded: £{payment.stripe_amount_refunded?.toFixed(2)}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>{payment.booking_payment_status || '-'}</TableCell>
+                      <TableCell>{payment.booking_total_cost ? `£${payment.booking_total_cost.toFixed(2)}` : '-'}</TableCell>
+                      <TableCell className="text-xs font-mono max-w-[200px]">
+                        <div className="truncate" title={payment.stripe_payment_intent_id}>
+                          {payment.stripe_payment_intent_id}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">
+                        {payment.stripe_created
+                          ? new Date(payment.stripe_created).toLocaleDateString('en-GB')
+                          : '-'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+        </Tabs>
       </Card>
     </div>
   );
