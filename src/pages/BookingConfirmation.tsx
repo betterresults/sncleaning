@@ -164,7 +164,7 @@ const BookingConfirmation = () => {
             onClick={() => navigate('/auth')}
             className="flex-1 h-12 text-base bg-[#185166] hover:bg-[#185166]/90"
           >
-            Create Account / Log In
+            Log In to Your Account
           </Button>
           <Button
             onClick={() => navigate('/airbnb')}
