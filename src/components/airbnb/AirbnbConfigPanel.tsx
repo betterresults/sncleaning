@@ -109,6 +109,7 @@ export const AirbnbConfigPanel: React.FC = () => {
       value_type: newValueType,
       time: timeInMinutes,
       icon: newIcon || null,
+      min_value: newMinValue,
       max_value: newMaxValue,
       is_visible: categoryVisibility[category] ?? true,
       display_order: (groupedConfigs[category]?.length || 0) + 1,

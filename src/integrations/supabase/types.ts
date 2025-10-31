@@ -111,6 +111,7 @@ export type Database = {
           is_visible: boolean | null
           label: string | null
           max_value: number | null
+          min_value: number | null
           option: string
           time: number | null
           updated_at: string
@@ -127,6 +128,7 @@ export type Database = {
           is_visible?: boolean | null
           label?: string | null
           max_value?: number | null
+          min_value?: number | null
           option: string
           time?: number | null
           updated_at?: string
@@ -143,6 +145,7 @@ export type Database = {
           is_visible?: boolean | null
           label?: string | null
           max_value?: number | null
+          min_value?: number | null
           option?: string
           time?: number | null
           updated_at?: string

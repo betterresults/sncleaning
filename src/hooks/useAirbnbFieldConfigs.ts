@@ -12,6 +12,7 @@ export interface FieldConfig {
   is_active: boolean | null;
   icon: string | null;
   label: string | null;
+  min_value: number | null;
   max_value: number | null;
   is_visible: boolean | null;
   display_order: number | null;
@@ -51,7 +52,7 @@ export const useAllAirbnbCategories = () => {
         .from('airbnb_field_configs')
         .select('category')
         .eq('is_active', true)
-        .order('category');
+        .order('display_order', { ascending: true });
 
       if (error) throw error;
       
@@ -76,6 +77,7 @@ export const useCreateFieldConfig = () => {
           time: config.time,
           icon: config.icon,
           label: config.label,
+          min_value: (config as any).min_value ?? null,
           max_value: config.max_value,
           is_visible: config.is_visible ?? true,
           display_order: config.display_order ?? 0,
