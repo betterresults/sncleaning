@@ -188,9 +188,9 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
               {/* Additional Notes - Only show if flexible */}
               {isFlexible && (
                 <div>
-                  <label className="block text-sm font-semibold text-foreground mb-3">
+                  <h2 className="text-xl font-bold text-foreground mb-3">
                     Additional timing preferences
-                  </label>
+                  </h2>
                   <Textarea
                     placeholder="e.g., anytime in the morning, after 2 PM, etc."
                     value={data.notes || ''}

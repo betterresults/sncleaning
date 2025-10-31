@@ -228,9 +228,9 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
       {/* Ironing Switch */}
       {showIroning && (
         <div>
-          <label className="block text-lg font-semibold text-foreground mb-4">
+          <h2 className="text-xl font-bold text-foreground mb-4">
             Select ironing option <span className="text-destructive">*</span>
-          </label>
+          </h2>
           <div className="grid grid-cols-2 gap-4">
             <button
               onClick={() => onUpdate({ needsIroning: true })}

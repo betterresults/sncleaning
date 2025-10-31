@@ -186,9 +186,9 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Size of the property */}
       <div>
-        <label className="block text-sm font-semibold text-slate-700 mb-6">
+        <h2 className="text-xl font-bold text-[#185166] mb-6">
           Size of the property
-        </label>
+        </h2>
         
         {/* Bedrooms and Bathrooms side by side */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -259,9 +259,9 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       {/* Additional Rooms - only show if 2+ bedrooms */}
       {data.bedrooms && !['studio', '1'].includes(data.bedrooms) && (
         <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-6">
+          <h2 className="text-xl font-bold text-[#185166] mb-6">
             Additional rooms
-          </label>
+          </h2>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             {[
@@ -358,9 +358,9 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Property Features */}
       <div>
-        <label className="block text-sm font-semibold text-slate-700 mb-6">
+        <h2 className="text-xl font-bold text-[#185166] mb-6">
           Property Features
-        </label>
+        </h2>
         
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {/* Separate Kitchen & Living Room combined */}
@@ -481,9 +481,9 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Service Type */}
       <div>
-        <label className="block text-sm font-semibold text-slate-700 mb-6">
+        <h2 className="text-xl font-bold text-[#185166] mb-6">
           Choose your service
-        </label>
+        </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { value: 'checkin-checkout', label: 'Check-in/Check-out', emoji: '🏠' },
@@ -514,9 +514,9 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       {/* Property Already Cleaned */}
       {data.serviceType === 'checkin-checkout' && (
         <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-4">
+          <h2 className="text-xl font-bold text-[#185166] mb-4">
             Has the property been cleaned to Airbnb standard already?
-          </label>
+          </h2>
           <div className="grid grid-cols-2 gap-4">
             <button
               className={`group relative h-16 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
@@ -553,9 +553,9 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       {/* Oven Cleaning - show if deep cleaning or not cleaned to Airbnb standard */}
       {(data.serviceType === 'deep' || data.alreadyCleaned === false) && (
         <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-4">
+          <h2 className="text-xl font-bold text-[#185166] mb-4">
             Do you require oven cleaning?
-          </label>
+          </h2>
           <div className="grid grid-cols-2 gap-4 mb-4">
             <button
               className={`group relative h-16 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
@@ -590,9 +590,9 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
           {/* Oven Type Selection */}
           {data.needsOvenCleaning === true && (
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-4">
+              <h2 className="text-xl font-bold text-[#185166] mb-4">
                 Select oven type
-              </label>
+              </h2>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                   { value: 'single', label: 'Single Oven', emoji: '🔥' },
@@ -625,9 +625,9 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Cleaning Supplies */}
       <div>
-        <label className="block text-sm font-semibold text-slate-700 mb-6">
+        <h2 className="text-xl font-bold text-[#185166] mb-6">
           Cleaning supplies
-        </label>
+        </h2>
         
         {/* Message for deep cleaning or uncleaned properties */}
         {(data.serviceType === 'deep' || data.alreadyCleaned === false) && (
@@ -735,9 +735,9 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       {/* Equipment Arrangement */}
       {data.cleaningProducts.equipment && (
         <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-6">
+          <h2 className="text-xl font-bold text-[#185166] mb-6">
             Equipment arrangement
-          </label>
+          </h2>
           
           {/* Explanation */}
           <div className="mb-4 p-4 bg-muted/20 border border-muted-foreground/20 rounded-2xl">
