@@ -634,15 +634,6 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
           Cleaning supplies
         </h2>
         
-        {/* Message for deep cleaning or uncleaned properties */}
-        {(data.serviceType === 'deep' || data.alreadyCleaned === false) && (
-          <div className="mb-4 p-4 bg-muted/20 border border-muted-foreground/20 rounded-2xl">
-            <p className="text-muted-foreground font-semibold">
-              {data.serviceType === 'deep' ? 'For deep cleaning, we provide cleaning products by default. You can still choose equipment options below.' : 'For properties not cleaned to Airbnb standard, we provide cleaning products by default. You can still choose equipment options below.'}
-            </p>
-          </div>
-        )}
-        
         <div className="grid grid-cols-3 gap-4">
           <button
              className={`group relative h-24 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
@@ -743,13 +734,6 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
           <h2 className="text-xl font-bold text-[#185166] mb-4">
             Equipment arrangement
           </h2>
-          
-          {/* Explanation */}
-          <div className="mb-4 p-4 bg-muted/20 border border-muted-foreground/20 rounded-2xl">
-            <p className="text-muted-foreground font-semibold">
-              For Airbnb turnovers and regular bookings, we supply and keep equipment on site for ongoing service. For one-time cleaning only, we deliver equipment with a delivery charge.
-            </p>
-          </div>
           
           <div className="grid grid-cols-2 gap-4">
             <button
