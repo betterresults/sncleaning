@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { BookingData } from '../BookingForm';
 import { Home, Building, Plus, Minus, CheckCircle, Droplets, Wrench, X, BookOpen, Zap, Bed } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import { useAirbnbFieldConfigs } from '@/hooks/useAirbnbFieldConfigs';
 
 interface PropertyStepProps {
@@ -13,6 +14,7 @@ interface PropertyStepProps {
 
 const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) => {
   const { data: propertyTypeConfigs = [] } = useAirbnbFieldConfigs('Property Type', true);
+  const { data: propertyFeatureConfigs = [] } = useAirbnbFieldConfigs('Property Features', true);
 
   const getBedroomLabel = (value: string) => {
     if (value === 'studio') return 'Studio';
@@ -368,119 +370,126 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
         </h2>
         
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {/* Separate Kitchen & Living Room combined */}
-          <button
-            className={`group relative h-24 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
-              (data.propertyFeatures.separateKitchen || data.propertyFeatures.livingRoom)
-                ? 'border-primary bg-primary/5 shadow-xl'
-                : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
-            }`}
-            onClick={() => {
-              const newValue = !(data.propertyFeatures.separateKitchen || data.propertyFeatures.livingRoom);
-              onUpdate({
-                propertyFeatures: {
-                  ...data.propertyFeatures,
-                  separateKitchen: newValue,
-                  livingRoom: newValue
-                }
-              });
-            }}
-          >
-            <div className="flex flex-col items-center justify-center h-full">
-              <div className="text-2xl mb-2">🍳 🛋️</div>
-              <span className={`text-sm font-medium transition-colors ${
-                (data.propertyFeatures.separateKitchen || data.propertyFeatures.livingRoom) ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
-              }`}>Separate Kitchen & Living Room</span>
-            </div>
-          </button>
-
-          {/* Dining Room */}
-          <button
-            className={`group relative h-24 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
-              data.propertyFeatures.diningRoom
-                ? 'border-primary bg-primary/5 shadow-xl'
-                : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
-            }`}
-            onClick={() => {
-              onUpdate({
-                propertyFeatures: {
-                  ...data.propertyFeatures,
-                  diningRoom: !data.propertyFeatures.diningRoom
-                }
-              });
-            }}
-          >
-            <div className="flex flex-col items-center justify-center h-full">
-              <div className="text-2xl mb-2">🍽️</div>
-              <span className={`text-sm font-medium transition-colors ${
-                data.propertyFeatures.diningRoom ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
-              }`}>Dining Room</span>
-            </div>
-          </button>
-
-          {/* Number of Floors with counter */}
-          <button
-            className={`group relative ${data.numberOfFloors > 0 ? 'h-32' : 'h-24'} rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
-              data.numberOfFloors > 0
-                ? 'border-primary bg-primary/5 shadow-xl'
-                : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
-            }`}
-            onClick={() => {
-              if (data.numberOfFloors === 0) {
-                onUpdate({ numberOfFloors: 1 });
-              }
-            }}
-          >
-            {data.numberOfFloors > 0 ? (
-              <div className="flex flex-col items-center justify-center h-full p-2">
-                <div className="text-xl mb-1">🏢</div>
-                <span className="text-xs font-bold text-primary mb-2">
-                  Number of Floors
-                </span>
-                <div className="flex items-center w-full">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (data.numberOfFloors > 0) {
-                        onUpdate({ numberOfFloors: data.numberOfFloors - 1 });
+          {propertyFeatureConfigs.filter((feat: any) => feat.option !== 'numberOfFloors').map((feature: any) => {
+            const isSelected = feature.option === 'separateKitchenLivingRoom' 
+              ? (data.propertyFeatures.separateKitchen || data.propertyFeatures.livingRoom)
+              : data.propertyFeatures[feature.option as keyof typeof data.propertyFeatures];
+            
+            const IconComponent = (LucideIcons as any)[feature.icon];
+            
+            return (
+              <button
+                key={feature.option}
+                className={`group relative h-24 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+                  isSelected
+                    ? 'border-primary bg-primary/5 shadow-xl'
+                    : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                }`}
+                onClick={() => {
+                  if (feature.option === 'separateKitchenLivingRoom') {
+                    const newValue = !(data.propertyFeatures.separateKitchen || data.propertyFeatures.livingRoom);
+                    onUpdate({
+                      propertyFeatures: {
+                        ...data.propertyFeatures,
+                        separateKitchen: newValue,
+                        livingRoom: newValue
                       }
-                    }}
-                  >
-                    <Minus className="h-3 w-3" />
-                  </Button>
-                  <div className="flex-1 text-center mx-1">
-                    <div className="text-lg font-bold text-primary">
-                      {data.numberOfFloors}
+                    });
+                  } else {
+                    onUpdate({
+                      propertyFeatures: {
+                        ...data.propertyFeatures,
+                        [feature.option]: !data.propertyFeatures[feature.option as keyof typeof data.propertyFeatures]
+                      }
+                    });
+                  }
+                }}
+              >
+                <div className="flex flex-col items-center justify-center h-full">
+                  {IconComponent && (
+                    <IconComponent className={`h-6 w-6 mb-2 transition-all duration-500 ${
+                      isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                    }`} />
+                  )}
+                  <span className={`text-sm font-medium transition-colors ${
+                    isSelected ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
+                  }`}>{feature.label}</span>
+                </div>
+              </button>
+            );
+          })}
+
+          {/* Number of Floors - Dynamic from Database */}
+          {propertyFeatureConfigs.find((feat: any) => feat.option === 'numberOfFloors') && (() => {
+            const floorsConfig = propertyFeatureConfigs.find((feat: any) => feat.option === 'numberOfFloors');
+            const IconComponent = (LucideIcons as any)[floorsConfig.icon];
+            const maxFloors = floorsConfig.max_value || 10;
+            
+            return (
+              <button
+                className={`group relative ${data.numberOfFloors > 0 ? 'h-32' : 'h-24'} rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+                  data.numberOfFloors > 0
+                    ? 'border-primary bg-primary/5 shadow-xl'
+                    : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                }`}
+                onClick={() => {
+                  if (data.numberOfFloors === 0) {
+                    onUpdate({ numberOfFloors: 1 });
+                  }
+                }}
+              >
+                {data.numberOfFloors > 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full p-2">
+                    {IconComponent && <IconComponent className="h-5 w-5 text-primary mb-1" />}
+                    <span className="text-xs font-bold text-primary mb-2">
+                      {floorsConfig.label}
+                    </span>
+                    <div className="flex items-center w-full">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (data.numberOfFloors > 0) {
+                            onUpdate({ numberOfFloors: data.numberOfFloors - 1 });
+                          }
+                        }}
+                      >
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <div className="flex-1 text-center mx-1">
+                        <div className="text-lg font-bold text-primary">
+                          {data.numberOfFloors}
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (data.numberOfFloors < maxFloors) {
+                            onUpdate({ numberOfFloors: data.numberOfFloors + 1 });
+                          }
+                        }}
+                        disabled={data.numberOfFloors >= maxFloors}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (data.numberOfFloors < 10) {
-                        onUpdate({ numberOfFloors: data.numberOfFloors + 1 });
-                      }
-                    }}
-                    disabled={data.numberOfFloors >= 10}
-                  >
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full">
-                <div className="text-2xl mb-2">🏢</div>
-                <span className={`text-sm font-medium transition-colors ${
-                  data.numberOfFloors > 0 ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
-                }`}>Number of Floors</span>
-              </div>
-            )}
-          </button>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full">
+                    {IconComponent && <IconComponent className="h-6 w-6 mb-2 text-muted-foreground group-hover:text-primary transition-all duration-500" />}
+                    <span className={`text-sm font-medium transition-colors ${
+                      data.numberOfFloors > 0 ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
+                    }`}>{floorsConfig.label}</span>
+                  </div>
+                )}
+              </button>
+            );
+          })()}
         </div>
       </div>
 
