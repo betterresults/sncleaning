@@ -5,7 +5,7 @@ import { Check, LucideIcon } from "lucide-react"
 export interface SelectionCardProps
   extends React.HTMLAttributes<HTMLDivElement> {
   isSelected?: boolean
-  icon?: React.ComponentType<any> | React.ReactNode
+  icon?: React.ElementType<any> | React.ReactNode
   label?: string
   description?: string
   value?: string
@@ -16,9 +16,16 @@ const SelectionCard = React.forwardRef<HTMLDivElement, SelectionCardProps>(
   ({ className, isSelected, icon, label, description, children, value, selectedValue, ...props }, ref) => {
     const selected = isSelected !== undefined ? isSelected : value === selectedValue;
     
-    // Handle icon rendering - if it's a component class, instantiate it
-    const IconComponent = typeof icon === 'function' ? (icon as React.ComponentType<any>) : null;
-    const iconElement: React.ReactNode = IconComponent ? <IconComponent className="h-5 w-5" /> : (icon as React.ReactNode);
+    // Handle icon rendering for element types and React nodes
+    let iconElement: React.ReactNode = null;
+    if (icon) {
+      if (React.isValidElement(icon)) {
+        iconElement = icon;
+      } else {
+        const IconComp = icon as React.ElementType<any>;
+        iconElement = <IconComp className="h-5 w-5" />;
+      }
+    }
     
     return (
       <div
