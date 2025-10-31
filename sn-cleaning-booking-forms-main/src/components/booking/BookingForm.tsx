@@ -2,10 +2,8 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { PropertyStep } from './steps/PropertyStep';
-
 import { LinensStep } from './steps/LinensStep';
 import { ScheduleStep } from './steps/ScheduleStep';
-import { ContactStep } from './steps/ContactStep';
 import { BookingSummary } from './BookingSummary';
 import { PaymentStep } from './steps/PaymentStep';
 import { Home, Brush, Calendar, User, CreditCard, Package2 } from 'lucide-react';
@@ -77,9 +75,8 @@ export interface BookingData {
 const steps = [
   { id: 1, title: 'Property', key: 'property', icon: <Home className="w-4 h-4" /> },
   { id: 2, title: 'Linens', key: 'linens', icon: <Package2 className="w-4 h-4" /> },
-  { id: 3, title: 'Date', key: 'schedule', icon: <Calendar className="w-4 h-4" /> },
-  { id: 4, title: 'Details', key: 'contact', icon: <User className="w-4 h-4" /> },
-  { id: 5, title: 'Summary', key: 'payment', icon: <CreditCard className="w-4 h-4" /> },
+  { id: 3, title: 'Schedule', key: 'schedule', icon: <Calendar className="w-4 h-4" /> },
+  { id: 4, title: 'Summary', key: 'payment', icon: <CreditCard className="w-4 h-4" /> },
 ];
 
 const BookingForm: React.FC = () => {
@@ -193,15 +190,6 @@ const BookingForm: React.FC = () => {
         );
       case 4:
         return (
-          <ContactStep
-            data={bookingData}
-            onUpdate={updateBookingData}
-            onNext={nextStep}
-            onBack={prevStep}
-          />
-        );
-      case 5:
-        return (
           <PaymentStep
             data={bookingData}
             onBack={prevStep}
@@ -263,7 +251,7 @@ const BookingForm: React.FC = () => {
           
           {/* Summary Section - Takes 1 column, always visible */}
           <div className="lg:col-span-1">
-            <BookingSummary data={bookingData} />
+            <BookingSummary data={bookingData} onUpdate={updateBookingData} />
           </div>
         </div>
       </main>

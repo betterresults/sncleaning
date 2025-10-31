@@ -4,12 +4,14 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BookingData } from './BookingForm';
 import { Home, Clock, Calendar, PoundSterling, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface BookingSummaryProps {
   data: BookingData;
+  onUpdate: (updates: Partial<BookingData>) => void;
 }
 
-const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
+const BookingSummary: React.FC<BookingSummaryProps> = ({ data, onUpdate }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const getPropertyDescription = () => {
@@ -374,6 +376,60 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
           </div>
           <h3 className="text-xl font-semibold text-foreground">Booking Summary</h3>
         </div>
+      </div>
+
+      {/* Customer Details Form */}
+      <div className="space-y-3 mb-6 pb-6 border-b border-border">
+        <h4 className="text-sm font-semibold text-foreground mb-3">Your Details</h4>
+        
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Input
+              placeholder="First name"
+              value={data.firstName || ''}
+              onChange={(e) => onUpdate({ firstName: e.target.value })}
+              className="h-9 text-sm"
+            />
+          </div>
+          <div>
+            <Input
+              placeholder="Last name"
+              value={data.lastName || ''}
+              onChange={(e) => onUpdate({ lastName: e.target.value })}
+              className="h-9 text-sm"
+            />
+          </div>
+        </div>
+        
+        <Input
+          type="email"
+          placeholder="Email address"
+          value={data.email || ''}
+          onChange={(e) => onUpdate({ email: e.target.value })}
+          className="h-9 text-sm"
+        />
+        
+        <Input
+          type="tel"
+          placeholder="Phone number"
+          value={data.phone || ''}
+          onChange={(e) => onUpdate({ phone: e.target.value })}
+          className="h-9 text-sm"
+        />
+        
+        <Input
+          placeholder="Full address"
+          value={data.street || ''}
+          onChange={(e) => onUpdate({ street: e.target.value })}
+          className="h-9 text-sm"
+        />
+        
+        <Input
+          placeholder="Postcode"
+          value={data.postcode || ''}
+          onChange={(e) => onUpdate({ postcode: e.target.value })}
+          className="h-9 text-sm"
+        />
       </div>
 
       {renderSummaryContent()}

@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BookingData } from '../BookingForm';
 import { CalendarDays, Clock, Mic, AlertTriangle } from 'lucide-react';
 import { useAirbnbFieldConfigs } from '@/hooks/useAirbnbFieldConfigs';
+import { SelectionCard } from '@/components/ui/selection-card';
 
 interface ScheduleStepProps {
   data: BookingData;
@@ -261,6 +262,53 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
           return null;
         })()
       )}
+      </div>
+
+      {/* Property Access Section */}
+      <div className="mt-8 p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+        <h2 className="text-2xl font-bold text-foreground mb-4">
+          Property Access
+        </h2>
+        <p className="text-muted-foreground mb-4">
+          How will we access the property?
+        </p>
+        
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <SelectionCard
+            label="Meet at property"
+            isSelected={data.propertyAccess === 'meet'}
+            onClick={() => onUpdate({ propertyAccess: 'meet' })}
+          />
+          <SelectionCard
+            label="Collect keys"
+            isSelected={data.propertyAccess === 'collect'}
+            onClick={() => onUpdate({ propertyAccess: 'collect' })}
+          />
+          <SelectionCard
+            label="Keybox"
+            isSelected={data.propertyAccess === 'keybox'}
+            onClick={() => onUpdate({ propertyAccess: 'keybox' })}
+          />
+          <SelectionCard
+            label="Other"
+            isSelected={data.propertyAccess === 'other'}
+            onClick={() => onUpdate({ propertyAccess: 'other' })}
+          />
+        </div>
+
+        {data.propertyAccess && (
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Additional access details
+            </label>
+            <Textarea
+              placeholder="Please provide any additional details about property access..."
+              value={data.accessNotes || ''}
+              onChange={(e) => onUpdate({ accessNotes: e.target.value })}
+              rows={4}
+            />
+          </div>
+        )}
       </div>
 
       {/* Navigation */}
