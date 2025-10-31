@@ -38,6 +38,7 @@ interface RecurringService {
   total_cost: number;
   cleaner: number;
   cleaner_name?: string;
+  cleaner_rate: number;
   payment_method: string;
   days_of_the_week?: string;
   postponed: boolean;
@@ -409,6 +410,14 @@ export default function RecurringBookings() {
                       <div>
                         <p className="text-sm font-medium text-muted-foreground">Assigned Cleaner</p>
                         <p className="font-medium">{service.cleaner_name}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Cleaner Rate per Hour</p>
+                        <p className="font-medium text-blue-600">£{Number(service.cleaner_rate).toFixed(2)}/h</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Cleaner Pay per Visit</p>
+                        <p className="font-medium text-blue-600 text-lg">£{(Number(service.cleaner_rate) * Number(service.hours)).toFixed(2)}</p>
                       </div>
                     </div>
                   </div>
