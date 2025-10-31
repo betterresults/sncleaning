@@ -49,7 +49,7 @@ const Dashboard = () => {
             userRole={userRole}
             onSignOut={handleSignOut}
           />
-          <SidebarInset className="flex-1 flex flex-col p-0 m-0">
+          <SidebarInset className="flex-1 flex flex-col p-0 m-0 ml-1">
             <UnifiedHeader 
               title=""
               user={user}
