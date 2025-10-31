@@ -403,6 +403,11 @@ export const AirbnbConfigPanel: React.FC = () => {
                         onChange={(e) => setNewTime(Number(e.target.value))}
                         onFocus={(e) => e.target.select()}
                       />
+                      {newMinValue !== null && newMaxValue !== null && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Per unit above minimum (e.g., min=1, value=3 → (3-1) × time)
+                        </p>
+                      )}
                     </div>
                     <div>
                       <Label>Unit</Label>
@@ -633,15 +638,23 @@ export const AirbnbConfigPanel: React.FC = () => {
                               </Select>
                             </div>
                             <div className="col-span-2">
-                              <Input
-                                type="number"
-                                step="1"
-                                value={getCurrentValue(config.id, 'time', config.time) || 0}
-                                onChange={(e) => handleLocalChange(config.id, 'time', Number(e.target.value))}
-                                onFocus={(e) => e.target.select()}
-                                className="h-8 text-sm"
-                                placeholder="0"
-                              />
+                              <div className="space-y-1">
+                                <Input
+                                  type="number"
+                                  step="1"
+                                  value={getCurrentValue(config.id, 'time', config.time) || 0}
+                                  onChange={(e) => handleLocalChange(config.id, 'time', Number(e.target.value))}
+                                  onFocus={(e) => e.target.select()}
+                                  className="h-8 text-sm"
+                                  placeholder="0"
+                                  title={config.min_value !== null && config.max_value !== null ? `Per unit above min (${config.min_value})` : undefined}
+                                />
+                                {config.min_value !== null && config.max_value !== null && (
+                                  <p className="text-[10px] text-muted-foreground">
+                                    × (value - {config.min_value})
+                                  </p>
+                                )}
+                              </div>
                             </div>
                             <div className="col-span-1 flex justify-end">
                               <Button
