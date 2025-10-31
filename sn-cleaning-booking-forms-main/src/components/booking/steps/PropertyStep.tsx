@@ -785,130 +785,6 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
         </div>
       )}
 
-      {/* Recommended Hours Section */}
-      {canContinue && (
-        <div className="bg-muted/10 border border-border rounded-lg p-4">
-          {/* Desktop Layout */}
-          <div className="hidden lg:flex items-center justify-between">
-            <div className="flex-1">
-              <h4 className="text-sm font-semibold text-slate-700 mb-2">Recommended Booking Time</h4>
-              <p className="text-sm text-muted-foreground">
-                Based on your property details and service type, we recommend this duration. You can adjust based on your specific needs.
-              </p>
-              
-              {(data.serviceType === 'deep' || data.alreadyCleaned === false) && (
-                <div className="text-amber-600 text-sm font-medium mt-2 flex items-center gap-1">
-                  <span>⚠️</span>
-                  <span>Deep cleaning required - 30% extra time has been added</span>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex items-center ml-6">
-              <div className="flex items-center bg-card border border-border rounded-2xl p-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-10 w-10 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
-                  onClick={() => {
-                    console.log('Minus button clicked, current hours:', data.estimatedHours || recommendedHours);
-                    const currentHours = data.estimatedHours || recommendedHours;
-                    const newHours = roundToNearestHalf(Math.max(currentHours - 0.5, 2));
-                    console.log('Setting new hours to:', newHours);
-                    onUpdate({ estimatedHours: newHours });
-                  }}
-                  disabled={(data.estimatedHours || recommendedHours) <= 2}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <div className="flex-1 text-center mx-4">
-                  <div className="text-lg font-semibold text-slate-600">
-                    {(roundToNearestHalf(data.estimatedHours || recommendedHours) % 1 === 0 
-                      ? roundToNearestHalf(data.estimatedHours || recommendedHours).toString() 
-                      : roundToNearestHalf(data.estimatedHours || recommendedHours).toFixed(1))} hours
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-10 w-10 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
-                  onClick={() => {
-                    console.log('Plus button clicked, current hours:', data.estimatedHours || recommendedHours);
-                    const currentHours = data.estimatedHours || recommendedHours;
-                    const newHours = roundToNearestHalf(Math.min(currentHours + 0.5, 12));
-                    console.log('Setting new hours to:', newHours);
-                    onUpdate({ estimatedHours: newHours });
-                  }}
-                  disabled={(data.estimatedHours || recommendedHours) >= 12}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile Layout */}
-          <div className="block lg:hidden space-y-3">
-            {/* Title */}
-            <h4 className="text-sm font-semibold text-slate-700">Recommended Booking Time</h4>
-            
-            {/* Description */}
-            <p className="text-sm text-muted-foreground">
-              Based on your property details and service type, we recommend this duration. You can adjust based on your specific needs.
-            </p>
-            
-            {/* Deep cleaning notification */}
-            {(data.serviceType === 'deep' || data.alreadyCleaned === false) && (
-              <div className="text-amber-600 text-sm font-medium flex items-center gap-1">
-                <span>⚠️</span>
-                <span>Deep cleaning required - 30% extra time has been added</span>
-              </div>
-            )}
-            
-            {/* Hour selector - full width */}
-            <div className="flex items-center bg-card border border-border rounded-2xl p-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
-                onClick={() => {
-                  console.log('Minus button clicked, current hours:', data.estimatedHours || recommendedHours);
-                  const currentHours = data.estimatedHours || recommendedHours;
-                  const newHours = roundToNearestHalf(Math.max(currentHours - 0.5, 2));
-                  console.log('Setting new hours to:', newHours);
-                  onUpdate({ estimatedHours: newHours });
-                }}
-                disabled={(data.estimatedHours || recommendedHours) <= 2}
-              >
-                <Minus className="h-5 w-5" />
-              </Button>
-              <div className="flex-1 text-center">
-                <div className="text-lg font-semibold text-slate-600">
-                  {(roundToNearestHalf(data.estimatedHours || recommendedHours) % 1 === 0 
-                    ? roundToNearestHalf(data.estimatedHours || recommendedHours).toString() 
-                    : roundToNearestHalf(data.estimatedHours || recommendedHours).toFixed(1))} hours
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
-                onClick={() => {
-                  console.log('Plus button clicked, current hours:', data.estimatedHours || recommendedHours);
-                  const currentHours = data.estimatedHours || recommendedHours;
-                  const newHours = roundToNearestHalf(Math.min(currentHours + 0.5, 12));
-                  console.log('Setting new hours to:', newHours);
-                  onUpdate({ estimatedHours: newHours });
-                }}
-                disabled={(data.estimatedHours || recommendedHours) >= 12}
-              >
-                <Plus className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Continue Button */}
       <div className="flex justify-end pt-6">
         <Button
@@ -918,7 +794,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
           disabled={!canContinue}
           className="px-12 bg-[#185166] hover:bg-[#185166]/90 text-white"
         >
-          Продължи
+          Continue
         </Button>
       </div>
     </div>
