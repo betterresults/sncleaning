@@ -5,7 +5,7 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { adminNavigation } from '@/lib/navigationItems';
-import AdminPanel from '../../sn-cleaning-booking-forms-main/AdminPanel';
+import { AirbnbConfigPanel } from '@/components/airbnb/AirbnbConfigPanel';
 
 const AdminAirbnbFormSettings = () => {
   const { user, userRole, customerId, cleanerId, signOut } = useAuth();
@@ -42,7 +42,7 @@ const AdminAirbnbFormSettings = () => {
           />
           
           <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
-            <AdminPanel />
+            <AirbnbConfigPanel />
           </main>
         </SidebarInset>
       </div>
