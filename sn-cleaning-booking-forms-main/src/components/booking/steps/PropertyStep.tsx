@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { BookingData } from '../BookingForm';
 import { Home, Building, Plus, Minus, CheckCircle, Droplets, Wrench, X, BookOpen, Zap, Bed } from 'lucide-react';
+import { useAirbnbFieldConfigs } from '@/hooks/useAirbnbFieldConfigs';
 
 interface PropertyStepProps {
   data: BookingData;
@@ -11,6 +12,8 @@ interface PropertyStepProps {
 }
 
 const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) => {
+  const { data: propertyTypeConfigs = [] } = useAirbnbFieldConfigs('Property Type', true);
+
   const getBedroomLabel = (value: string) => {
     if (value === 'studio') return 'Studio';
     if (value === '6+') return '6+ Bedrooms';
@@ -86,9 +89,14 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
   const calculateRecommendedHours = () => {
     let totalHours = 0;
     
-    // Property type base hours
-    const propertyTypeHours = { flat: 2, house: 3 };
-    totalHours += propertyTypeHours[data.propertyType as keyof typeof propertyTypeHours] || 0;
+    // Property type base hours (from dynamic config if available)
+    const selectedPropertyType = propertyTypeConfigs.find((cfg: any) => cfg.option === data.propertyType);
+    if (selectedPropertyType && typeof selectedPropertyType.time === 'number') {
+      totalHours += Math.max(0, selectedPropertyType.time) / 60; // time is in minutes
+    } else {
+      const propertyTypeHours = { flat: 2, house: 3 } as const;
+      totalHours += (propertyTypeHours as any)[data.propertyType] || 0;
+    }
     
     // Bedrooms
     const bedroomHours = { studio: 0.5, '1': 0.5, '2': 1, '3': 1.5, '4': 2, '5': 2.5, '6+': 3 };
@@ -151,36 +159,37 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       {/* Property Type */}
       <div>
         <div className="grid grid-cols-2 gap-4">
-          <button
-            className={`group relative h-16 rounded-2xl border-2 transition-all duration-500 hover:scale-105 justify-start gap-3 p-4 flex items-center ${
-              data.propertyType === 'flat'
-                ? 'border-primary bg-primary/5 shadow-xl'
-                : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
-            }`}
-            onClick={() => onUpdate({ propertyType: data.propertyType === 'flat' ? '' : 'flat' })}
-          >
-            <Building className={`h-6 w-6 transition-all duration-500 ${
-              data.propertyType === 'flat' ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
-            }`} />
-            <span className={`text-base font-medium transition-colors ${
-              data.propertyType === 'flat' ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
-            }`}>Flat</span>
-          </button>
-          <button
-            className={`group relative h-16 rounded-2xl border-2 transition-all duration-500 hover:scale-105 justify-start gap-3 p-4 flex items-center ${
-              data.propertyType === 'house'
-                ? 'border-primary bg-primary/5 shadow-xl'
-                : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
-            }`}
-            onClick={() => onUpdate({ propertyType: data.propertyType === 'house' ? '' : 'house' })}
-          >
-            <Home className={`h-6 w-6 transition-all duration-500 ${
-              data.propertyType === 'house' ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
-            }`} />
-            <span className={`text-base font-medium transition-colors ${
-              data.propertyType === 'house' ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
-            }`}>House</span>
-          </button>
+          {(propertyTypeConfigs && propertyTypeConfigs.length > 0 ? propertyTypeConfigs : [
+            { option: 'flat', label: 'Flat' },
+            { option: 'house', label: 'House' },
+          ]).map((opt: any) => {
+            const isSelected = data.propertyType === opt.option;
+            const isHouse = opt.option === 'house';
+            return (
+              <button
+                key={opt.option}
+                className={`group relative h-16 rounded-2xl border-2 transition-all duration-500 hover:scale-105 justify-start gap-3 p-4 flex items-center ${
+                  isSelected
+                    ? 'border-primary bg-primary/5 shadow-xl'
+                    : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                }`}
+                onClick={() => onUpdate({ propertyType: isSelected ? '' : opt.option })}
+              >
+                {isHouse ? (
+                  <Home className={`h-6 w-6 transition-all duration-500 ${
+                    isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                  }`} />
+                ) : (
+                  <Building className={`h-6 w-6 transition-all duration-500 ${
+                    isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                  }`} />
+                )}
+                <span className={`text-base font-medium transition-colors ${
+                  isSelected ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
+                }`}>{opt.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
