@@ -214,12 +214,9 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-3xl font-bold text-[#185166] mb-2">
+        <h2 className="text-3xl font-bold text-[#185166]">
           Secure Booking
         </h2>
-        <p className="text-base text-gray-600">
-          Complete your booking details
-        </p>
       </div>
 
       {/* Admin Test Mode Warning */}
@@ -288,57 +285,73 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
           className="h-14 text-base rounded-xl border-2 border-gray-300 focus:border-[#185166] transition-colors"
         />
         
-        <Input
-          placeholder="Postcode"
-          value={data.postcode || ''}
-          onChange={(e) => onUpdate({ postcode: e.target.value })}
-          className="h-14 text-base rounded-xl border-2 border-gray-300 focus:border-[#185166] transition-colors"
-        />
+        <div className="grid grid-cols-2 gap-4">
+          <Input
+            placeholder="Postcode"
+            value={data.postcode || ''}
+            onChange={(e) => onUpdate({ postcode: e.target.value })}
+            className="h-14 text-base rounded-xl border-2 border-gray-300 focus:border-[#185166] transition-colors"
+          />
+          
+          <Input
+            placeholder="City"
+            value={data.city || ''}
+            onChange={(e) => onUpdate({ city: e.target.value })}
+            className="h-14 text-base rounded-xl border-2 border-gray-300 focus:border-[#185166] transition-colors"
+          />
+        </div>
       </div>
 
       {/* Payment Method Section - Skip in admin test mode */}
       {!adminTestMode && (
         <div className="space-y-6">
-          <h3 className="text-xl font-bold text-[#185166]">
-            Add Payment Method
+          <h3 className="text-2xl font-bold text-[#185166]">
+            Payment Details
           </h3>
         
-          <div className="bg-card border border-border rounded-xl p-8">
-            <div className="mb-6">
-              <p className="text-base text-[#185166] font-medium mb-2">
-                To confirm your card
+          <div className="p-8 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300 hover:shadow-[0_15px_35px_rgba(0,0,0,0.22)]">
+            <div className="mb-8">
+              <p className="text-lg text-[#185166] font-semibold mb-3">
+                {isUrgentBooking ? 'Payment Information' : 'Card Verification'}
               </p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-base text-gray-600 leading-relaxed">
                 {isUrgentBooking 
                   ? `Payment will be collected now - £${data.totalCost.toFixed(2)}`
-                  : `Payment will be collected later. We'll perform a £1 verification (immediately released).`
+                  : 'We will verify your card with a £1 temporary hold (immediately released). No payment will be collected now.'
                 }
               </p>
             </div>
             
-            <CardElement
-              options={{
-                style: {
-                  base: {
-                    fontSize: '16px',
-                    color: 'hsl(var(--foreground))',
-                    '::placeholder': {
-                      color: 'hsl(var(--muted-foreground))',
+            <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-2xl p-8 transition-all duration-200 hover:border-[#185166]">
+              <CardElement
+                options={{
+                  style: {
+                    base: {
+                      fontSize: '18px',
+                      color: '#1e293b',
+                      fontFamily: 'system-ui, -apple-system, sans-serif',
+                      '::placeholder': {
+                        color: '#94a3b8',
+                      },
+                      padding: '16px',
+                      lineHeight: '24px',
                     },
-                    padding: '12px',
+                    invalid: {
+                      color: '#dc2626',
+                    },
                   },
-                },
-              }}
-            />
+                }}
+              />
+            </div>
             
-            <div className="mt-6 flex items-center justify-center gap-6 text-sm text-muted-foreground">
+            <div className="mt-8 flex items-center justify-center gap-8 text-base text-gray-500">
               <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-primary" />
-                <span>Secure Payment</span>
+                <Shield className="h-5 w-5 text-[#185166]" />
+                <span className="font-medium">Secure Payment</span>
               </div>
               <div className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-primary" />
-                <span>PCI Compliant</span>
+                <CreditCard className="h-5 w-5 text-[#185166]" />
+                <span className="font-medium">PCI Compliant</span>
               </div>
             </div>
           </div>
