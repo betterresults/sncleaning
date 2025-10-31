@@ -25,12 +25,11 @@ const ContactStep: React.FC<ContactStepProps> = ({ data, onUpdate, onNext, onBac
   const canContinue = (data.firstName || data.lastName) && data.phone && data.email && data.postcode && data.propertyAccess;
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground mb-2">
+    <div className="space-y-4">
+      <div className="p-6 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
+        <h2 className="text-2xl font-bold text-foreground mb-6">
           Customer Details
         </h2>
-      </div>
 
       {/* Name Fields */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -155,6 +154,7 @@ const ContactStep: React.FC<ContactStepProps> = ({ data, onUpdate, onNext, onBac
         >
           <span className="font-medium text-sm">Schedule The Cleaning</span>
         </button>
+      </div>
       </div>
     </div>
   );
