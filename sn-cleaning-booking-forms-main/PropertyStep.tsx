@@ -143,7 +143,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-foreground mb-2">
+        <h2 className="text-xl font-bold text-foreground mb-2">
           Please Provide Details About The Property
         </h2>
       </div>
