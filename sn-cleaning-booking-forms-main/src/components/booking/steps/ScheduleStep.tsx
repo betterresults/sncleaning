@@ -130,7 +130,14 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
   const shortNoticeInfo = calculateShortNoticeCharge();
   const hasShortNoticeCharge = shortNoticeInfo.charge > 0;
   
-  const canContinue = data.selectedDate && (isFlexible || data.selectedTime);
+  // Validation: check if access notes are required based on selection
+  const requiresAccessNotes = ['collect', 'keybox', 'other'].includes(data.propertyAccess);
+  const hasRequiredAccessNotes = !requiresAccessNotes || (data.accessNotes && data.accessNotes.trim() !== '');
+  
+  const canContinue = data.selectedDate && 
+                      (isFlexible || data.selectedTime) && 
+                      data.propertyAccess && 
+                      hasRequiredAccessNotes;
 
   const toggleRecording = () => {
     setIsRecording(!isRecording);
@@ -144,10 +151,10 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
           Cleaning Schedule
         </h2>
 
-      {/* Calendar and Time Selection */}
-      <div className={`grid gap-6 md:gap-8 ${data.selectedDate ? 'lg:grid-cols-2' : 'grid-cols-1 max-w-2xl mx-auto'}`}>
-        {/* Left: Calendar - Now bigger and more mobile-friendly */}
-        <div className="bg-slate-800 rounded-lg p-4 md:p-8">
+      {/* Calendar and Time Selection - Side by Side */}
+      <div className="grid gap-6 lg:grid-cols-[450px,1fr]">
+        {/* Left: Calendar */}
+        <div className="bg-slate-800 rounded-lg p-6">
           <Calendar
             mode="single"
             selected={data.selectedDate || undefined}
@@ -160,73 +167,71 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
               checkDate.setHours(0, 0, 0, 0);
               return checkDate < today;
             }}
-            className="rounded-md pointer-events-auto w-full scale-110 md:scale-125 origin-center [&_.rdp-day]:text-white [&_.rdp-day_button]:text-white [&_.rdp-day_button]:h-10 [&_.rdp-day_button]:w-10 md:[&_.rdp-day_button]:h-12 md:[&_.rdp-day_button]:w-12 [&_.rdp-day_button]:text-base md:[&_.rdp-day_button]:text-lg [&_.rdp-nav_button]:text-white [&_.rdp-nav_button]:h-10 [&_.rdp-nav_button]:w-10 [&_.rdp-caption]:text-white [&_.rdp-caption]:text-lg md:[&_.rdp-caption]:text-xl [&_.rdp-caption]:mb-4 [&_.rdp-head_cell]:text-white [&_.rdp-head_cell]:text-sm md:[&_.rdp-head_cell]:text-base [&_.rdp-day_button:hover]:bg-primary [&_.rdp-day_selected]:bg-primary [&_.rdp-day_selected]:text-primary-foreground"
+            className="rounded-md pointer-events-auto w-full [&_.rdp-day]:text-white [&_.rdp-day_button]:text-white [&_.rdp-day_button]:h-12 [&_.rdp-day_button]:w-12 [&_.rdp-day_button]:text-base [&_.rdp-nav_button]:text-white [&_.rdp-nav_button]:h-10 [&_.rdp-nav_button]:w-10 [&_.rdp-caption]:text-white [&_.rdp-caption]:text-xl [&_.rdp-caption]:mb-4 [&_.rdp-head_cell]:text-white [&_.rdp-head_cell]:text-base [&_.rdp-day_button:hover]:bg-primary [&_.rdp-day_selected]:bg-primary [&_.rdp-day_selected]:text-primary-foreground"
           />
         </div>
 
         {/* Right: Time Selection */}
-        <div className="p-4 md:p-6">
-          {data.selectedDate && (
-            <div className="space-y-3">
-              <div>
-                <h3 className="-mt-1 text-lg font-semibold text-foreground">
-                  {data.selectedDate.toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </h3>
-              </div>
+        {data.selectedDate && (
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">
+                {data.selectedDate.toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </h3>
+            </div>
 
-              {/* Time Flexibility Toggle */}
-              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                <label className="text-sm font-medium text-foreground">
-                  I am flexible with the start time
+            {/* Time Flexibility Toggle */}
+            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+              <label className="text-sm font-medium text-foreground">
+                I am flexible with the start time
+              </label>
+              <Switch
+                checked={isFlexible}
+                onCheckedChange={(checked) => 
+                  onUpdate({ 
+                    flexibility: checked ? 'flexible-time' : 'not-flexible',
+                    selectedTime: checked ? undefined : data.selectedTime
+                  })
+                }
+              />
+            </div>
+
+            {/* Time Selection - Only show if not flexible */}
+            {!isFlexible && (
+              <div className="grid grid-cols-2 gap-3">
+                {timeSlots.map((time) => (
+                  <Button
+                    key={time}
+                    variant={data.selectedTime === time ? 'default' : 'outline'}
+                    className="h-12 text-sm"
+                    onClick={() => onUpdate({ selectedTime: time })}
+                  >
+                    {time}
+                  </Button>
+                ))}
+              </div>
+            )}
+
+            {/* Additional Notes - Only show if flexible */}
+            {isFlexible && (
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Additional timing preferences
                 </label>
-                <Switch
-                  checked={isFlexible}
-                  onCheckedChange={(checked) => 
-                    onUpdate({ 
-                      flexibility: checked ? 'flexible-time' : 'not-flexible',
-                      selectedTime: checked ? undefined : data.selectedTime
-                    })
-                  }
+                <Textarea
+                  placeholder="e.g., anytime in the morning, after 2 PM, etc."
+                  value={data.notes || ''}
+                  onChange={(e) => onUpdate({ notes: e.target.value })}
+                  rows={3}
                 />
               </div>
-
-              {/* Time Selection - Only show if not flexible */}
-              {!isFlexible && (
-                <div className="grid grid-cols-2 gap-2 md:gap-3">
-                  {timeSlots.map((time) => (
-                    <Button
-                      key={time}
-                      variant={data.selectedTime === time ? 'default' : 'outline'}
-                      className="h-10 md:h-12 text-xs md:text-sm"
-                      onClick={() => onUpdate({ selectedTime: time })}
-                    >
-                      {time}
-                    </Button>
-                  ))}
-                </div>
-              )}
-
-              {/* Additional Notes - Only show if flexible */}
-              {isFlexible && (
-                <div>
-                  <h2 className="text-xl font-bold text-foreground mb-3">
-                    Additional timing preferences
-                  </h2>
-                  <Textarea
-                    placeholder="e.g., anytime in the morning, after 2 PM, etc."
-                    value={data.notes || ''}
-                    onChange={(e) => onUpdate({ notes: e.target.value })}
-                    rows={3}
-                  />
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Short Notice Charge Alert */}
@@ -266,12 +271,9 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
 
       {/* Property Access Section */}
       <div className="mt-8 p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-        <h2 className="text-2xl font-bold text-foreground mb-4">
-          Property Access
+        <h2 className="text-2xl font-bold text-foreground mb-6">
+          How will you access the property?
         </h2>
-        <p className="text-muted-foreground mb-4">
-          How will we access the property?
-        </p>
         
         <div className="grid grid-cols-2 gap-4 mb-6">
           <SelectionCard
@@ -296,19 +298,61 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
           />
         </div>
 
-        {data.propertyAccess && (
-          <div className="mt-4">
+        {/* Conditional fields based on selection */}
+        {data.propertyAccess === 'collect' && (
+          <div className="mb-4">
             <label className="block text-sm font-medium text-foreground mb-2">
-              Additional access details
+              Key collection details *
             </label>
             <Textarea
-              placeholder="Please provide any additional details about property access..."
+              placeholder="Please provide details about where and when to collect the keys..."
               value={data.accessNotes || ''}
               onChange={(e) => onUpdate({ accessNotes: e.target.value })}
-              rows={4}
+              rows={3}
             />
           </div>
         )}
+
+        {data.propertyAccess === 'keybox' && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Keybox access details *
+            </label>
+            <Textarea
+              placeholder="Please provide keybox location and access code..."
+              value={data.accessNotes || ''}
+              onChange={(e) => onUpdate({ accessNotes: e.target.value })}
+              rows={3}
+            />
+          </div>
+        )}
+
+        {data.propertyAccess === 'other' && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Access details *
+            </label>
+            <Textarea
+              placeholder="Please explain how we can access the property..."
+              value={data.accessNotes || ''}
+              onChange={(e) => onUpdate({ accessNotes: e.target.value })}
+              rows={3}
+            />
+          </div>
+        )}
+
+        {/* Additional booking details - always visible */}
+        <div className="mt-6">
+          <label className="block text-sm font-medium text-foreground mb-2">
+            Additional booking details (optional)
+          </label>
+          <Textarea
+            placeholder="Any other information you'd like us to know about this booking..."
+            value={data.additionalDetails || ''}
+            onChange={(e) => onUpdate({ additionalDetails: e.target.value })}
+            rows={3}
+          />
+        </div>
       </div>
 
       {/* Navigation */}

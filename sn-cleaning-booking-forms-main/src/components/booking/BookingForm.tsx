@@ -52,6 +52,7 @@ export interface BookingData {
   selectedTime: string;
   flexibility: 'not-flexible' | 'flexible-time' | 'flexible-date' | '';
   notes: string;
+  additionalDetails: string;
   
   // Contact
   firstName: string;
@@ -114,6 +115,7 @@ const BookingForm: React.FC = () => {
     selectedTime: '',
     flexibility: '',
     notes: '',
+    additionalDetails: '',
     firstName: '',
     lastName: '',
     name: '',
