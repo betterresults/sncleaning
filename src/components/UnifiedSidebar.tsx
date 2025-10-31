@@ -62,7 +62,6 @@ export function UnifiedSidebar({ navigationItems, user, userRole, customerId, cl
       collapsible="offcanvas"
       side="left"
       variant="sidebar"
-      style={{ width: '220px', minWidth: '220px' }}
     >
       <SidebarHeader className="border-b border-white/10 bg-[#2c3e50] px-4 py-4 flex-shrink-0">
         <div className="text-xl font-bold text-white flex items-center gap-2">
