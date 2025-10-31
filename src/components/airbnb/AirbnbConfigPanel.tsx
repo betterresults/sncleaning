@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Trash2, Eye, EyeOff, GripVertical } from 'lucide-react';
+import { Plus, Trash2, Eye, EyeOff, GripVertical, Upload } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import { 
   useAirbnbFieldConfigs,
   useAllAirbnbCategories,
@@ -60,12 +61,14 @@ export const AirbnbConfigPanel: React.FC = () => {
   const [newOption, setNewOption] = useState('');
   const [newLabel, setNewLabel] = useState('');
   const [newValue, setNewValue] = useState(0);
-  const [newValueType, setNewValueType] = useState<'fixed' | 'percentage' | 'hours' | 'currency' | 'counter' | 'boolean' | 'multiplier'>('fixed');
+  const [newValueType, setNewValueType] = useState<'fixed' | 'percentage'>('fixed');
   const [newTime, setNewTime] = useState(0);
+  const [newTimeUnit, setNewTimeUnit] = useState<'minutes' | 'hours'>('minutes');
   const [newIcon, setNewIcon] = useState('');
   const [newMaxValue, setNewMaxValue] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [addingToCategory, setAddingToCategory] = useState<string | null>(null);
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
 
   const [currentFormula, setCurrentFormula] = useState<Partial<PricingFormula>>({
@@ -86,8 +89,11 @@ export const AirbnbConfigPanel: React.FC = () => {
   }, {} as Record<string, FieldConfig[]>);
 
   const handleAddField = () => {
-    const category = selectedCategory || newCategory;
+    const category = addingToCategory || selectedCategory || newCategory;
     if (!category || !newOption) return;
+
+    // Convert time to minutes if in hours
+    const timeInMinutes = newTimeUnit === 'hours' ? newTime * 60 : newTime;
 
     createConfig.mutate({
       category,
@@ -95,7 +101,7 @@ export const AirbnbConfigPanel: React.FC = () => {
       label: newLabel || newOption,
       value: newValue,
       value_type: newValueType,
-      time: newTime,
+      time: timeInMinutes,
       icon: newIcon || null,
       max_value: newMaxValue,
       is_visible: true,
@@ -107,10 +113,19 @@ export const AirbnbConfigPanel: React.FC = () => {
     setNewLabel('');
     setNewValue(0);
     setNewTime(0);
+    setNewTimeUnit('minutes');
     setNewIcon('');
     setNewMaxValue(null);
     setSelectedCategory('');
+    setAddingToCategory(null);
     setShowAddDialog(false);
+  };
+
+  const renderIcon = (iconName: string | null) => {
+    if (!iconName) return null;
+    const IconComponent = (LucideIcons as any)[iconName];
+    if (!IconComponent) return <span className="text-xs text-muted-foreground">{iconName}</span>;
+    return <IconComponent className="h-4 w-4" />;
   };
 
   const handleUpdateConfig = (id: string, updates: Partial<FieldConfig>) => {
@@ -209,23 +224,18 @@ export const AirbnbConfigPanel: React.FC = () => {
 
         <TabsContent value="fields" className="space-y-6">
           <Card className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h2 className="text-2xl font-bold">Form Fields</h2>
-                <p className="text-muted-foreground">Manage categories and options</p>
-              </div>
-              <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add New Field
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Add New Field</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold">Form Fields</h2>
+              <p className="text-muted-foreground">Manage categories and options</p>
+            </div>
+              
+            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Add New Field to {addingToCategory || 'Category'}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  {!addingToCategory && (
                     <div>
                       <Label>Category</Label>
                       <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -249,88 +259,96 @@ export const AirbnbConfigPanel: React.FC = () => {
                         className="mt-1"
                       />
                     </div>
+                  )}
+                  <div>
+                    <Label>Display Label</Label>
+                    <Input
+                      value={newLabel}
+                      onChange={(e) => {
+                        setNewLabel(e.target.value);
+                        if (!newOption) setNewOption(e.target.value.toLowerCase().replace(/\s+/g, '_'));
+                      }}
+                      placeholder="e.g., 'Flat', '1 Bedroom', 'Yes'..."
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Option Key</Label>
+                      <Label>Value</Label>
                       <Input
-                        value={newOption}
-                        onChange={(e) => setNewOption(e.target.value)}
-                        placeholder="e.g., 'flat', '1', 'yes'..."
+                        type="number"
+                        step="0.5"
+                        value={newValue}
+                        onChange={(e) => setNewValue(Number(e.target.value))}
                       />
                     </div>
                     <div>
-                      <Label>Display Label</Label>
+                      <Label>Value Type</Label>
+                      <Select value={newValueType} onValueChange={(v: any) => setNewValueType(v)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fixed">Fixed (Price)</SelectItem>
+                          <SelectItem value="percentage">Percentage (%)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="col-span-2">
+                      <Label>Time</Label>
                       <Input
-                        value={newLabel}
-                        onChange={(e) => setNewLabel(e.target.value)}
-                        placeholder="e.g., 'Flat', '1 Bedroom', 'Yes'..."
+                        type="number"
+                        step="1"
+                        value={newTime}
+                        onChange={(e) => setNewTime(Number(e.target.value))}
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Value</Label>
-                        <Input
-                          type="number"
-                          step="0.5"
-                          value={newValue}
-                          onChange={(e) => setNewValue(Number(e.target.value))}
-                        />
-                      </div>
-                      <div>
-                        <Label>Value Type</Label>
-                        <Select value={newValueType} onValueChange={(v: any) => setNewValueType(v)}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="fixed">Fixed</SelectItem>
-                            <SelectItem value="percentage">Percentage</SelectItem>
-                            <SelectItem value="hours">Hours</SelectItem>
-                            <SelectItem value="currency">Currency</SelectItem>
-                            <SelectItem value="counter">Counter</SelectItem>
-                            <SelectItem value="boolean">Boolean</SelectItem>
-                            <SelectItem value="multiplier">Multiplier</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Time (hours)</Label>
-                        <Input
-                          type="number"
-                          step="0.25"
-                          value={newTime}
-                          onChange={(e) => setNewTime(Number(e.target.value))}
-                        />
-                      </div>
-                      <div>
-                        <Label>Max Value (for counters)</Label>
-                        <Input
-                          type="number"
-                          value={newMaxValue || ''}
-                          onChange={(e) => setNewMaxValue(e.target.value ? Number(e.target.value) : null)}
-                          placeholder="Optional"
-                        />
-                      </div>
-                    </div>
                     <div>
-                      <Label>Icon (Lucide icon name)</Label>
+                      <Label>Unit</Label>
+                      <Select value={newTimeUnit} onValueChange={(v: any) => setNewTimeUnit(v)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="minutes">Minutes</SelectItem>
+                          <SelectItem value="hours">Hours</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Max Value (for counters)</Label>
+                      <Input
+                        type="number"
+                        value={newMaxValue || ''}
+                        onChange={(e) => setNewMaxValue(e.target.value ? Number(e.target.value) : null)}
+                        placeholder="Optional"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Icon (Lucide icon name)</Label>
+                    <div className="flex gap-2">
                       <Input
                         value={newIcon}
                         onChange={(e) => setNewIcon(e.target.value)}
                         placeholder="e.g., 'Home', 'Bath', 'ChefHat'..."
                       />
+                      {newIcon && renderIcon(newIcon)}
                     </div>
-                    <Button onClick={handleAddField} className="w-full">
-                      Add Field
-                    </Button>
                   </div>
-                </DialogContent>
-              </Dialog>
-            </div>
+                  <Button onClick={handleAddField} className="w-full">
+                    Add Field
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </Card>
 
-            <div className="space-y-4">
-              {categories.sort().map((category) => (
+          <div className="space-y-4">
+            {categories.sort().map((category) => (
                 <Collapsible
                   key={category}
                   open={openCategories[category]}
@@ -350,28 +368,24 @@ export const AirbnbConfigPanel: React.FC = () => {
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                       <div className="p-4 space-y-2 border-t">
-                        <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground pb-2 border-b">
+                        <div className="grid grid-cols-11 gap-2 text-xs font-semibold text-muted-foreground pb-2 border-b">
                           <div className="col-span-2">Label</div>
-                          <div className="col-span-1">Key</div>
                           <div className="col-span-1">Value</div>
                           <div className="col-span-2">Type</div>
-                          <div className="col-span-1">Time</div>
+                          <div className="col-span-1">Time (min)</div>
                           <div className="col-span-1">Max</div>
                           <div className="col-span-2">Icon</div>
                           <div className="col-span-1">Visible</div>
                           <div className="col-span-1">Actions</div>
                         </div>
                         {groupedConfigs[category]?.sort((a, b) => (a.display_order || 0) - (b.display_order || 0)).map((config) => (
-                          <div key={config.id} className="grid grid-cols-12 gap-2 items-center p-2 border rounded hover:bg-muted/30 transition-colors">
+                          <div key={config.id} className="grid grid-cols-11 gap-2 items-center p-2 border rounded hover:bg-muted/30 transition-colors">
                             <div className="col-span-2">
                               <Input
                                 value={config.label || config.option}
                                 onChange={(e) => handleUpdateConfig(config.id, { label: e.target.value })}
                                 className="h-8 text-sm"
                               />
-                            </div>
-                            <div className="col-span-1">
-                              <span className="text-xs text-muted-foreground">{config.option}</span>
                             </div>
                             <div className="col-span-1">
                               <Input
@@ -392,19 +406,14 @@ export const AirbnbConfigPanel: React.FC = () => {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="fixed">Fixed</SelectItem>
-                                  <SelectItem value="percentage">Percentage</SelectItem>
-                                  <SelectItem value="hours">Hours</SelectItem>
-                                  <SelectItem value="currency">Currency</SelectItem>
-                                  <SelectItem value="counter">Counter</SelectItem>
-                                  <SelectItem value="boolean">Boolean</SelectItem>
-                                  <SelectItem value="multiplier">Multiplier</SelectItem>
+                                  <SelectItem value="percentage">%</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
                             <div className="col-span-1">
                               <Input
                                 type="number"
-                                step="0.25"
+                                step="1"
                                 value={config.time || 0}
                                 onChange={(e) => handleUpdateConfig(config.id, { time: Number(e.target.value) })}
                                 className="h-8 text-sm"
@@ -420,12 +429,15 @@ export const AirbnbConfigPanel: React.FC = () => {
                               />
                             </div>
                             <div className="col-span-2">
-                              <Input
-                                value={config.icon || ''}
-                                onChange={(e) => handleUpdateConfig(config.id, { icon: e.target.value })}
-                                className="h-8 text-sm"
-                                placeholder="Icon..."
-                              />
+                              <div className="flex items-center gap-1">
+                                {renderIcon(config.icon)}
+                                <Input
+                                  value={config.icon || ''}
+                                  onChange={(e) => handleUpdateConfig(config.id, { icon: e.target.value })}
+                                  className="h-8 text-sm flex-1"
+                                  placeholder="Icon..."
+                                />
+                              </div>
                             </div>
                             <div className="col-span-1 flex justify-center">
                               <Switch
@@ -449,13 +461,26 @@ export const AirbnbConfigPanel: React.FC = () => {
                             </div>
                           </div>
                         ))}
+                        <div className="pt-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            onClick={() => {
+                              setAddingToCategory(category);
+                              setShowAddDialog(true);
+                            }}
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add New Field to {category}
+                          </Button>
+                        </div>
                       </div>
                     </CollapsibleContent>
                   </Card>
                 </Collapsible>
               ))}
             </div>
-          </Card>
         </TabsContent>
 
         <TabsContent value="formulas" className="space-y-6">
