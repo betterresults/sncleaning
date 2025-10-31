@@ -175,18 +175,18 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
         {data.selectedDate && (
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-semibold text-foreground">
+              <h2 className="text-2xl font-bold text-foreground">
                 {data.selectedDate.toLocaleDateString('en-US', {
                   weekday: 'long',
                   month: 'long',
                   day: 'numeric',
                 })}
-              </h3>
+              </h2>
             </div>
 
             {/* Time Flexibility Toggle */}
             <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-              <label className="text-sm font-medium text-foreground">
+              <label className="text-2xl font-bold text-foreground">
                 I am flexible with the start time
               </label>
               <Switch
@@ -219,7 +219,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
             {/* Additional Notes - Only show if flexible */}
             {isFlexible && (
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
+                <label className="block text-2xl font-bold text-foreground mb-2">
                   Additional timing preferences
                 </label>
                 <Textarea
