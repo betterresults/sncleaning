@@ -214,9 +214,12 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-[#185166] mb-8">
-          Your Details & Payment
+        <h2 className="text-3xl font-bold text-[#185166] mb-2">
+          Secure Booking
         </h2>
+        <p className="text-base text-gray-600">
+          Complete your booking details
+        </p>
       </div>
 
       {/* Admin Test Mode Warning */}
@@ -234,55 +237,62 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
         </div>
       )}
 
-      {/* Contact Information Section */}
+      {/* Your Details Section */}
       <div className="space-y-6">
-        <h3 className="text-xl font-bold text-[#185166]">
-          Contact Information
+        <h3 className="text-2xl font-bold text-[#185166]">
+          Your Details
         </h3>
         
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 gap-4">
           <Input
-            placeholder="First Name *"
+            placeholder="First Name"
             value={data.firstName || ''}
             onChange={(e) => onUpdate({ firstName: e.target.value })}
-            className="h-14 text-base"
+            className="h-14 text-base rounded-xl border-2 border-gray-300 focus:border-[#185166] transition-colors"
           />
           <Input
-            placeholder="Last Name *"
+            placeholder="Last Name"
             value={data.lastName || ''}
             onChange={(e) => onUpdate({ lastName: e.target.value })}
-            className="h-14 text-base"
+            className="h-14 text-base rounded-xl border-2 border-gray-300 focus:border-[#185166] transition-colors"
           />
         </div>
         
         <Input
           type="email"
-          placeholder="Email Address *"
+          placeholder="Email Address"
           value={data.email || ''}
           onChange={(e) => onUpdate({ email: e.target.value })}
-          className="h-14 text-base"
+          className="h-14 text-base rounded-xl border-2 border-gray-300 focus:border-[#185166] transition-colors"
         />
         
         <Input
           type="tel"
-          placeholder="Phone Number *"
+          placeholder="Phone Number"
           value={data.phone || ''}
           onChange={(e) => onUpdate({ phone: e.target.value })}
-          className="h-14 text-base"
+          className="h-14 text-base rounded-xl border-2 border-gray-300 focus:border-[#185166] transition-colors"
         />
+      </div>
+
+      {/* Booking Address Section */}
+      <div className="space-y-6">
+        <h3 className="text-2xl font-bold text-[#185166]">
+          Booking Address
+        </h3>
         
         <Input
-          placeholder="Street Address *"
+          placeholder="Street Address"
           value={data.street || ''}
           onChange={(e) => onUpdate({ street: e.target.value })}
-          className="h-14 text-base"
+          className="h-14 text-base rounded-xl border-2 border-gray-300 focus:border-[#185166] transition-colors"
         />
         
         <Input
-          placeholder="Postcode *"
+          placeholder="Postcode"
           value={data.postcode || ''}
           onChange={(e) => onUpdate({ postcode: e.target.value })}
-          className="h-14 text-base"
+          className="h-14 text-base rounded-xl border-2 border-gray-300 focus:border-[#185166] transition-colors"
         />
       </div>
 
