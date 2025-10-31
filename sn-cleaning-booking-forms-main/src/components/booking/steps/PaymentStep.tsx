@@ -7,18 +7,14 @@ import { useAirbnbBookingSubmit } from '@/hooks/useAirbnbBookingSubmit';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
-import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
+import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 interface PaymentStepProps {
   data: BookingData;
   onBack: () => void;
 }
 
-// Initialize Stripe (you'll need to add your Stripe publishable key)
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
-
-const PaymentForm: React.FC<{ data: BookingData; onBack: () => void }> = ({ data, onBack }) => {
+const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
   const stripe = useStripe();
   const elements = useElements();
   const navigate = useNavigate();
@@ -229,14 +225,6 @@ const PaymentForm: React.FC<{ data: BookingData; onBack: () => void }> = ({ data
         </Button>
       </div>
     </div>
-  );
-};
-
-const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
-  return (
-    <Elements stripe={stripePromise}>
-      <PaymentForm data={data} onBack={onBack} />
-    </Elements>
   );
 };
 
