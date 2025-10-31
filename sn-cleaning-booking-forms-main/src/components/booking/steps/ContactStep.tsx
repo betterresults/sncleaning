@@ -25,9 +25,9 @@ const ContactStep: React.FC<ContactStepProps> = ({ data, onUpdate, onNext, onBac
   const canContinue = (data.firstName || data.lastName) && data.phone && data.email && data.postcode && data.propertyAccess;
 
   return (
-    <div className="space-y-4">
-      <div className="p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
-        <h2 className="text-2xl font-bold text-foreground mb-4">
+    <div className="space-y-2">
+      <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+        <h2 className="text-2xl font-bold text-foreground mb-2">
           Customer Details
         </h2>
 
