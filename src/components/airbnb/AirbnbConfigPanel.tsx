@@ -76,6 +76,7 @@ export const AirbnbConfigPanel: React.FC = () => {
   const [customIconUrl, setCustomIconUrl] = useState('');
   const [iconSearchQuery, setIconSearchQuery] = useState('');
   const [iconMode, setIconMode] = useState<'lucide' | 'url'>('lucide');
+  const [localChanges, setLocalChanges] = useState<Record<string, Partial<FieldConfig>>>({});
 
   const [currentFormula, setCurrentFormula] = useState<Partial<PricingFormula>>({
     name: '',
@@ -172,6 +173,43 @@ export const AirbnbConfigPanel: React.FC = () => {
   const toggleCategory = (category: string) => {
     setOpenCategories(prev => ({ ...prev, [category]: !prev[category] }));
   };
+
+  const handleLocalChange = (id: string, updates: Partial<FieldConfig>) => {
+    setLocalChanges(prev => ({
+      ...prev,
+      [id]: { ...(prev[id] || {}), ...updates }
+    }));
+  };
+
+  const getFieldValue = (config: FieldConfig, field: keyof FieldConfig) => {
+    if (localChanges[config.id] && field in localChanges[config.id]) {
+      return localChanges[config.id][field];
+    }
+    return config[field];
+  };
+
+  const saveCategoryChanges = (category: string) => {
+    const fieldsToUpdate = groupedConfigs[category] || [];
+    fieldsToUpdate.forEach(config => {
+      if (localChanges[config.id]) {
+        handleUpdateConfig(config.id, localChanges[config.id]);
+      }
+    });
+    // Clear local changes for this category
+    setLocalChanges(prev => {
+      const newChanges = { ...prev };
+      fieldsToUpdate.forEach(config => {
+        delete newChanges[config.id];
+      });
+      return newChanges;
+    });
+  };
+
+  const hasCategoryChanges = (category: string) => {
+    const fieldsInCategory = groupedConfigs[category] || [];
+    return fieldsInCategory.some(config => localChanges[config.id]);
+  };
+
 
   // Formula builder functions
   const availableFields = [
@@ -435,18 +473,21 @@ export const AirbnbConfigPanel: React.FC = () => {
                           <div key={config.id} className="grid grid-cols-12 gap-2 items-center p-2 border rounded hover:bg-muted/30 transition-colors">
                             <div className="col-span-2">
                               <Input
-                                value={config.label || config.option}
-                                onChange={(e) => handleUpdateConfig(config.id, { label: e.target.value })}
+                                value={String(getFieldValue(config, 'label') || config.option)}
+                                onChange={(e) => handleLocalChange(config.id, { label: e.target.value })}
                                 className="h-8 text-sm"
                               />
                             </div>
                             <div className="col-span-1">
                               <Input
                                 type="number"
-                                value={(config as any).min_value !== null && (config as any).min_value !== undefined ? (config as any).min_value : ''}
+                                value={(() => {
+                                  const val = getFieldValue(config, 'min_value' as any);
+                                  return val !== null && val !== undefined ? Number(val) : '';
+                                })()}
                                 onChange={(e) => {
                                   const val = e.target.value;
-                                  handleUpdateConfig(config.id, { min_value: val === '' ? null : Number(val) } as any);
+                                  handleLocalChange(config.id, { min_value: val === '' ? null : Number(val) } as any);
                                 }}
                                 className="h-8 text-sm"
                                 placeholder="Min"
@@ -455,10 +496,13 @@ export const AirbnbConfigPanel: React.FC = () => {
                             <div className="col-span-1">
                               <Input
                                 type="number"
-                                value={config.max_value !== null && config.max_value !== undefined ? config.max_value : ''}
+                                value={(() => {
+                                  const val = getFieldValue(config, 'max_value');
+                                  return val !== null && val !== undefined ? Number(val) : '';
+                                })()}
                                 onChange={(e) => {
                                   const val = e.target.value;
-                                  handleUpdateConfig(config.id, { max_value: val === '' ? null : Number(val) });
+                                  handleLocalChange(config.id, { max_value: val === '' ? null : Number(val) });
                                 }}
                                 className="h-8 text-sm"
                                 placeholder="Max"
@@ -571,16 +615,16 @@ export const AirbnbConfigPanel: React.FC = () => {
                               <Input
                                 type="number"
                                 step="0.5"
-                                value={config.value}
-                                onChange={(e) => handleUpdateConfig(config.id, { value: Number(e.target.value) })}
+                                value={Number(getFieldValue(config, 'value'))}
+                                onChange={(e) => handleLocalChange(config.id, { value: Number(e.target.value) })}
                                 onFocus={(e) => e.target.select()}
                                 className="h-8 text-sm"
                               />
                             </div>
                             <div className="col-span-1">
                               <Select 
-                                value={config.value_type} 
-                                onValueChange={(v) => handleUpdateConfig(config.id, { value_type: v })}
+                                value={String(getFieldValue(config, 'value_type'))} 
+                                onValueChange={(v) => handleLocalChange(config.id, { value_type: v })}
                               >
                                 <SelectTrigger className="h-8 text-xs">
                                   <SelectValue />
@@ -596,8 +640,8 @@ export const AirbnbConfigPanel: React.FC = () => {
                               <Input
                                 type="number"
                                 step="1"
-                                value={config.time || 0}
-                                onChange={(e) => handleUpdateConfig(config.id, { time: Number(e.target.value) })}
+                                value={Number(getFieldValue(config, 'time')) || 0}
+                                onChange={(e) => handleLocalChange(config.id, { time: Number(e.target.value) })}
                                 onFocus={(e) => e.target.select()}
                                 className="h-8 text-sm"
                                 placeholder="0"
@@ -619,18 +663,27 @@ export const AirbnbConfigPanel: React.FC = () => {
                             </div>
                           </div>
                         ))}
-                        <div className="pt-2">
+                        <div className="pt-2 flex gap-2">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full"
+                            className="flex-1"
                             onClick={() => {
                               setAddingToCategory(category);
                               setShowAddDialog(true);
                             }}
                           >
                             <Plus className="h-4 w-4 mr-2" />
-                            Add New Field to {category}
+                            Add New Field
+                          </Button>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => saveCategoryChanges(category)}
+                            disabled={!hasCategoryChanges(category)}
+                          >
+                            Save Changes
                           </Button>
                         </div>
                       </div>
