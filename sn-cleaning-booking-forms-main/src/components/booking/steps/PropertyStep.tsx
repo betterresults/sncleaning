@@ -755,12 +755,28 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
           </div>
 
           {data.equipmentArrangement === 'ongoing' && (
-            <div className="mt-6 flex items-center justify-between p-4 bg-card rounded-lg border">
-              <span className="text-sm font-medium">Dedicated space to store equipment on site</span>
-              <Switch
-                checked={!!data.equipmentStorageConfirmed}
-                onCheckedChange={(checked) => onUpdate({ equipmentStorageConfirmed: checked })}
-              />
+            <div className="mt-6 p-4 bg-card rounded-lg border space-y-2">
+              <p className="text-sm text-muted-foreground">
+                For ongoing equipment, please confirm there is a dedicated space at the property to store vacuum, mop and supplies between visits.
+              </p>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Dedicated space to store equipment on site</span>
+                <Switch
+                  checked={!!data.equipmentStorageConfirmed}
+                  onCheckedChange={(checked) => onUpdate({ equipmentStorageConfirmed: checked })}
+                />
+              </div>
+              {!data.equipmentStorageConfirmed && (
+                <p className="text-xs text-destructive">Please confirm there is a dedicated storage space to continue.</p>
+              )}
+            </div>
+          )}
+
+          {data.equipmentArrangement === 'oneoff' && (
+            <div className="mt-6 p-4 bg-card rounded-lg border">
+              <p className="text-sm text-muted-foreground">
+                We will bring equipment for this visit. A one-time delivery and collection fee will be added. No storage is required.
+              </p>
             </div>
           )}
         </div>
