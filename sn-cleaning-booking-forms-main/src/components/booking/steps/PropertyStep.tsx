@@ -13,8 +13,34 @@ interface PropertyStepProps {
 }
 
 const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) => {
+  // Fetch all dynamic configurations from database
   const { data: propertyTypeConfigs = [] } = useAirbnbFieldConfigs('Property Type', true);
+  const { data: bedroomConfigs = [] } = useAirbnbFieldConfigs('Bedrooms', true);
+  const { data: bathroomConfigs = [] } = useAirbnbFieldConfigs('Bathrooms', true);
+  const { data: additionalRoomsConfigs = [] } = useAirbnbFieldConfigs('Additional Rooms', true);
   const { data: propertyFeatureConfigs = [] } = useAirbnbFieldConfigs('Property Features', true);
+  const { data: serviceTypeConfigs = [] } = useAirbnbFieldConfigs('Service Type', true);
+  const { data: cleaningHistoryConfigs = [] } = useAirbnbFieldConfigs('Cleaning History', true);
+  const { data: ovenCleaningConfigs = [] } = useAirbnbFieldConfigs('Oven Cleaning', true);
+  const { data: ovenTypeConfigs = [] } = useAirbnbFieldConfigs('Oven Type', true);
+  const { data: cleaningProductsConfigs = [] } = useAirbnbFieldConfigs('Cleaning Products', true);
+  const { data: equipmentConfigs = [] } = useAirbnbFieldConfigs('Equipment', true);
+  const { data: equipmentArrangementConfigs = [] } = useAirbnbFieldConfigs('Equipment Arrangement', true);
+
+  // Helper function to render icon (Lucide or emoji)
+  const renderIcon = (iconName: string | null, className: string = "h-6 w-6") => {
+    if (!iconName) return null;
+    
+    // Check if it's an emoji (single character or emoji pattern)
+    if (iconName.length <= 2 || /\p{Emoji}/u.test(iconName)) {
+      return <span className="text-2xl">{iconName}</span>;
+    }
+    
+    // Otherwise treat as Lucide icon name
+    const IconComponent = (LucideIcons as any)[iconName];
+    if (!IconComponent) return null;
+    return <IconComponent className={className} />;
+  };
 
   const getBedroomLabel = (value: string) => {
     if (value === 'studio') return 'Studio';
@@ -263,102 +289,104 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
         </div>
       </div>
 
-      {/* Additional Rooms - only show if 2+ bedrooms */}
-      {data.bedrooms && !['studio', '1'].includes(data.bedrooms) && (
+      {/* Additional Rooms - Dynamic Icons */}
+      {data.bedrooms && !['studio', '1'].includes(data.bedrooms) && additionalRoomsConfigs.length > 0 && (
         <div className="p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
           <h2 className="text-xl font-bold text-[#185166] mb-4">
             Additional rooms
           </h2>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
-            {[
-              { type: 'toilets', label: 'Toilets', icon: '🚽' },
-              { type: 'studyRooms', label: 'Study Room', icon: '📚' },
-              { type: 'utilityRooms', label: 'Utility Room', icon: '🔧' },
-              { type: 'otherRooms', label: 'Other Room', icon: '🏠' },
-            ].map((room) => (
-              <button
-                key={room.type}
-                className={`group relative ${data.additionalRooms[room.type as keyof typeof data.additionalRooms] > 0 ? 'h-32' : 'h-24'} rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
-                  data.additionalRooms[room.type as keyof typeof data.additionalRooms] > 0
-                    ? 'border-primary bg-primary/5 shadow-xl'
-                    : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
-                }`}
-                onClick={() => {
-                  const currentCount = data.additionalRooms[room.type as keyof typeof data.additionalRooms];
-                  if (currentCount === 0) {
-                    onUpdate({
-                      additionalRooms: {
-                        ...data.additionalRooms,
-                        [room.type]: 1
-                      }
-                    });
-                  }
-                }}
-              >
-                {data.additionalRooms[room.type as keyof typeof data.additionalRooms] === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full">
-                    <div className="text-2xl mb-2">{room.icon}</div>
-                    <span className="text-sm font-medium text-slate-600 group-hover:text-primary">
-                      {room.label}
-                    </span>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full p-2">
-                    <div className="text-xl mb-1">{room.icon}</div>
-                    <span className="text-xs font-bold text-primary mb-2">
-                      {room.label}
-                    </span>
-                    <div className="flex items-center w-full">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const currentCount = data.additionalRooms[room.type as keyof typeof data.additionalRooms];
-                          if (currentCount > 0) {
-                            onUpdate({
-                              additionalRooms: {
-                                ...data.additionalRooms,
-                                [room.type]: currentCount - 1
-                              }
-                            });
-                          }
-                        }}
-                      >
-                        <Minus className="h-3 w-3" />
-                      </Button>
-                      <div className="flex-1 text-center mx-1">
-                        <div className="text-lg font-bold text-primary">
-                          {data.additionalRooms[room.type as keyof typeof data.additionalRooms]}
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const currentCount = data.additionalRooms[room.type as keyof typeof data.additionalRooms];
-                          if (currentCount < 6) {
-                            onUpdate({
-                              additionalRooms: {
-                                ...data.additionalRooms,
-                                [room.type]: currentCount + 1
-                              }
-                            });
-                          }
-                        }}
-                        disabled={data.additionalRooms[room.type as keyof typeof data.additionalRooms] >= 6}
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
+            {additionalRoomsConfigs.map((room: any) => {
+              const currentCount = data.additionalRooms[room.option as keyof typeof data.additionalRooms] || 0;
+              const maxValue = room.max_value || 6;
+              const IconComponent = (LucideIcons as any)[room.icon];
+              
+              return (
+                <button
+                  key={room.option}
+                  className={`group relative ${currentCount > 0 ? 'h-32' : 'h-24'} rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+                    currentCount > 0
+                      ? 'border-primary bg-primary/5 shadow-xl'
+                      : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                  }`}
+                  onClick={() => {
+                    if (currentCount === 0) {
+                      onUpdate({
+                        additionalRooms: {
+                          ...data.additionalRooms,
+                          [room.option]: 1
+                        }
+                      });
+                    }
+                  }}
+                >
+                  {currentCount === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full">
+                      {IconComponent && (
+                        <IconComponent className="h-6 w-6 mb-2 text-muted-foreground group-hover:text-primary transition-all duration-500" />
+                      )}
+                      <span className="text-sm font-medium text-slate-600 group-hover:text-primary">
+                        {room.label}
+                      </span>
                     </div>
-                  </div>
-                )}
-              </button>
-            ))}
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full p-2">
+                      {IconComponent && (
+                        <IconComponent className="h-5 w-5 mb-1 text-primary" />
+                      )}
+                      <span className="text-xs font-bold text-primary mb-2">
+                        {room.label}
+                      </span>
+                      <div className="flex items-center w-full">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (currentCount > 0) {
+                              onUpdate({
+                                additionalRooms: {
+                                  ...data.additionalRooms,
+                                  [room.option]: currentCount - 1
+                                }
+                              });
+                            }
+                          }}
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <div className="flex-1 text-center mx-1">
+                          <div className="text-lg font-bold text-primary">
+                            {currentCount}
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (currentCount < maxValue) {
+                              onUpdate({
+                                additionalRooms: {
+                                  ...data.additionalRooms,
+                                  [room.option]: currentCount + 1
+                                }
+                              });
+                            }
+                          }}
+                          disabled={currentCount >= maxValue}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -493,31 +521,30 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
         </div>
       </div>
 
-      {/* Service Type */}
+      {/* Service Type - Dynamic */}
       <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
         <h2 className="text-xl font-bold text-[#185166] mb-4">
           Choose your service
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { value: 'checkin-checkout', label: 'Check-in/Check-out', emoji: '🏠' },
-            { value: 'midstay', label: 'Mid-stay', emoji: '🛏️' },
-            { value: 'light', label: 'Light Cleaning', emoji: '✨' },
-            { value: 'deep', label: 'Deep Cleaning', emoji: '🧽' },
-          ].map((service) => (
+          {serviceTypeConfigs.map((service: any) => (
             <button
-              key={service.value}
+              key={service.option}
               className={`group relative h-24 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
-                data.serviceType === service.value
+                data.serviceType === service.option
                   ? 'border-primary bg-primary/5 shadow-xl'
                   : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
               }`}
-              onClick={() => onUpdate({ serviceType: data.serviceType === service.value ? '' : service.value as any })}
+              onClick={() => onUpdate({ serviceType: data.serviceType === service.option ? '' : service.option as any })}
             >
               <div className="flex flex-col items-center justify-center h-full">
-                <div className="text-2xl mb-2">{service.emoji}</div>
+                <div className="mb-2">
+                  {renderIcon(service.icon, `transition-all duration-500 ${
+                    data.serviceType === service.option ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                  }`)}
+                </div>
                 <span className={`text-sm font-medium transition-colors ${
-                  data.serviceType === service.value ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
+                  data.serviceType === service.option ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
                 }`}>{service.label}</span>
               </div>
             </button>
@@ -525,112 +552,120 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
         </div>
       </div>
 
-      {/* Property Already Cleaned */}
-      {data.serviceType === 'checkin-checkout' && (
+      {/* Property Already Cleaned - Dynamic */}
+      {data.serviceType === 'checkin-checkout' && cleaningHistoryConfigs.length > 0 && (
         <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
           <h2 className="text-xl font-bold text-[#185166] mb-4">
             Has the property been cleaned to Airbnb standard already?
           </h2>
           <div className="grid grid-cols-2 gap-4">
-            <button
-              className={`group relative h-16 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
-                data.alreadyCleaned === false
-                  ? 'border-primary bg-primary/5 shadow-xl'
-                  : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
-              }`}
-              onClick={() => onUpdate({ alreadyCleaned: data.alreadyCleaned === false ? null : false })}
-            >
-              <div className="flex items-center justify-center h-full">
-                <span className={`text-base font-medium transition-colors ${
-                  data.alreadyCleaned === false ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
-                }`}>No</span>
-              </div>
-            </button>
-            <button
-              className={`group relative h-16 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
-                data.alreadyCleaned === true
-                  ? 'border-primary bg-primary/5 shadow-xl'
-                  : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
-              }`}
-              onClick={() => onUpdate({ alreadyCleaned: data.alreadyCleaned === true ? null : true })}
-            >
-              <div className="flex items-center justify-center h-full">
-                <span className={`text-base font-medium transition-colors ${
-                  data.alreadyCleaned === true ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
-                }`}>Yes</span>
-              </div>
-            </button>
+            {cleaningHistoryConfigs.map((option: any) => {
+              const isSelected = (option.option === 'yes' && data.alreadyCleaned === true) || 
+                               (option.option === 'no' && data.alreadyCleaned === false);
+              const IconComponent = (LucideIcons as any)[option.icon];
+              
+              return (
+                <button
+                  key={option.option}
+                  className={`group relative h-16 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+                    isSelected
+                      ? 'border-primary bg-primary/5 shadow-xl'
+                      : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                  }`}
+                  onClick={() => onUpdate({ 
+                    alreadyCleaned: isSelected ? null : (option.option === 'yes' ? true : false)
+                  })}
+                >
+                  <div className="flex items-center justify-center gap-2 h-full">
+                    {IconComponent && (
+                      <IconComponent className={`h-5 w-5 transition-all duration-500 ${
+                        isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                      }`} />
+                    )}
+                    <span className={`text-base font-medium transition-colors ${
+                      isSelected ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
+                    }`}>{option.label}</span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* Oven Cleaning - show if deep cleaning or not cleaned to Airbnb standard */}
-      {(data.serviceType === 'deep' || data.alreadyCleaned === false) && (
+      {/* Oven Cleaning - Dynamic */}
+      {(data.serviceType === 'deep' || data.alreadyCleaned === false) && ovenCleaningConfigs.length > 0 && (
         <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
           <h2 className="text-xl font-bold text-[#185166] mb-4">
             Do you require oven cleaning?
           </h2>
           <div className="grid grid-cols-2 gap-4 mb-4">
-            <button
-              className={`group relative h-16 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
-                data.needsOvenCleaning === false
-                  ? 'border-primary bg-primary/5 shadow-xl'
-                  : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
-              }`}
-              onClick={() => onUpdate({ needsOvenCleaning: data.needsOvenCleaning === false ? null : false })}
-            >
-              <div className="flex items-center justify-center h-full">
-                <span className={`text-base font-medium transition-colors ${
-                  data.needsOvenCleaning === false ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
-                }`}>No</span>
-              </div>
-            </button>
-            <button
-              className={`group relative h-16 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
-                data.needsOvenCleaning === true
-                  ? 'border-primary bg-primary/5 shadow-xl'
-                  : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
-              }`}
-              onClick={() => onUpdate({ needsOvenCleaning: data.needsOvenCleaning === true ? null : true })}
-            >
-              <div className="flex items-center justify-center h-full">
-                <span className={`text-base font-medium transition-colors ${
-                  data.needsOvenCleaning === true ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
-                }`}>Yes</span>
-              </div>
-            </button>
+            {ovenCleaningConfigs.map((option: any) => {
+              const isSelected = (option.option === 'yes' && data.needsOvenCleaning === true) || 
+                               (option.option === 'no' && data.needsOvenCleaning === false);
+              const IconComponent = (LucideIcons as any)[option.icon];
+              
+              return (
+                <button
+                  key={option.option}
+                  className={`group relative h-16 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+                    isSelected
+                      ? 'border-primary bg-primary/5 shadow-xl'
+                      : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                  }`}
+                  onClick={() => onUpdate({ 
+                    needsOvenCleaning: isSelected ? null : (option.option === 'yes' ? true : false)
+                  })}
+                >
+                  <div className="flex items-center justify-center gap-2 h-full">
+                    {IconComponent && (
+                      <IconComponent className={`h-5 w-5 transition-all duration-500 ${
+                        isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                      }`} />
+                    )}
+                    <span className={`text-base font-medium transition-colors ${
+                      isSelected ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
+                    }`}>{option.label}</span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
 
-          {/* Oven Type Selection */}
-          {data.needsOvenCleaning === true && (
+          {/* Oven Type Selection - Dynamic */}
+          {data.needsOvenCleaning === true && ovenTypeConfigs.length > 0 && (
             <div>
               <h2 className="text-xl font-bold text-[#185166] mb-4">
                 Select oven type
               </h2>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                  { value: 'single', label: 'Single Oven', emoji: '🔥' },
-                  { value: 'double', label: 'Double Oven', emoji: '🔥🔥' },
-                  { value: 'range', label: 'Range Oven', emoji: '🍳' },
-                  { value: 'convection', label: 'Convection', emoji: '🌪️' },
-                ].map((oven) => (
-                  <button
-                    key={oven.value}
-                    className={`group relative h-20 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
-                      data.ovenType === oven.value
-                        ? 'border-primary bg-primary/5 shadow-xl'
-                        : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
-                    }`}
-                    onClick={() => onUpdate({ ovenType: data.ovenType === oven.value ? '' : oven.value as any })}
-                  >
-                    <div className="flex flex-col items-center justify-center h-full">
-                      <div className="text-lg mb-1">{oven.emoji}</div>
-                      <span className={`text-sm font-medium transition-colors ${
-                        data.ovenType === oven.value ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
-                      }`}>{oven.label}</span>
-                    </div>
-                  </button>
-                ))}
+                {ovenTypeConfigs.map((oven: any) => {
+                  const isSelected = data.ovenType === oven.option;
+                  const IconComponent = (LucideIcons as any)[oven.icon];
+                  
+                  return (
+                    <button
+                      key={oven.option}
+                      className={`group relative h-20 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+                        isSelected
+                          ? 'border-primary bg-primary/5 shadow-xl'
+                          : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                      }`}
+                      onClick={() => onUpdate({ ovenType: isSelected ? '' : oven.option as any })}
+                    >
+                      <div className="flex flex-col items-center justify-center h-full">
+                        {IconComponent && (
+                          <IconComponent className={`h-6 w-6 mb-1 transition-all duration-500 ${
+                            isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                          }`} />
+                        )}
+                        <span className={`text-sm font-medium transition-colors ${
+                          isSelected ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
+                        }`}>{oven.label}</span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
