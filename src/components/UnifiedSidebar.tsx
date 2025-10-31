@@ -63,7 +63,7 @@ export function UnifiedSidebar({ navigationItems, user, userRole, customerId, cl
       side="left"
       variant="sidebar"
     >
-      <SidebarContent className="p-0 bg-[#2c3e50] flex-1 overflow-y-auto min-h-0 pt-2">
+      <SidebarContent className="p-0 bg-[#2c3e50] flex-1 overflow-y-auto min-h-0 pt-16">
         <SidebarGroup className="h-full">
           <SidebarGroupContent className="px-2 py-1 h-full">
             <SidebarMenu className="space-y-0.5 h-full">
