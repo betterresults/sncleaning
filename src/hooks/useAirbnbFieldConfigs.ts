@@ -10,21 +10,53 @@ export interface FieldConfig {
   value_type: string;
   time: number | null;
   is_active: boolean | null;
+  icon: string | null;
+  label: string | null;
+  max_value: number | null;
+  is_visible: boolean | null;
+  display_order: number | null;
 }
 
-export const useAirbnbFieldConfigs = () => {
+export const useAirbnbFieldConfigs = (category?: string, onlyVisible = false) => {
   return useQuery({
-    queryKey: ['airbnb-field-configs'],
+    queryKey: ['airbnb-field-configs', category, onlyVisible],
+    queryFn: async () => {
+      let query = supabase
+        .from('airbnb_field_configs')
+        .select('*')
+        .eq('is_active', true);
+      
+      if (category) {
+        query = query.eq('category', category);
+      }
+      
+      if (onlyVisible) {
+        query = query.eq('is_visible', true);
+      }
+      
+      query = query.order('display_order', { ascending: true });
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data as FieldConfig[];
+    },
+  });
+};
+
+export const useAllAirbnbCategories = () => {
+  return useQuery({
+    queryKey: ['airbnb-categories'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('airbnb_field_configs')
-        .select('*')
+        .select('category')
         .eq('is_active', true)
-        .order('category', { ascending: true })
-        .order('option', { ascending: true });
+        .order('category');
 
       if (error) throw error;
-      return data as FieldConfig[];
+      
+      const uniqueCategories = Array.from(new Set(data.map(d => d.category)));
+      return uniqueCategories;
     },
   });
 };
@@ -42,6 +74,11 @@ export const useCreateFieldConfig = () => {
           value: config.value,
           value_type: config.value_type,
           time: config.time,
+          icon: config.icon,
+          label: config.label,
+          max_value: config.max_value,
+          is_visible: config.is_visible ?? true,
+          display_order: config.display_order ?? 0,
         }])
         .select()
         .single();
@@ -51,10 +88,11 @@ export const useCreateFieldConfig = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['airbnb-field-configs'] });
-      toast.success('Успешно добавихте ново поле');
+      queryClient.invalidateQueries({ queryKey: ['airbnb-categories'] });
+      toast.success('Successfully added new field');
     },
     onError: (error: any) => {
-      toast.error('Грешка при добавяне: ' + error.message);
+      toast.error('Error adding field: ' + error.message);
     },
   });
 };
@@ -76,10 +114,11 @@ export const useUpdateFieldConfig = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['airbnb-field-configs'] });
-      toast.success('Успешно обновихте полето');
+      queryClient.invalidateQueries({ queryKey: ['airbnb-categories'] });
+      toast.success('Successfully updated field');
     },
     onError: (error: any) => {
-      toast.error('Грешка при обновяване: ' + error.message);
+      toast.error('Error updating field: ' + error.message);
     },
   });
 };
@@ -98,10 +137,11 @@ export const useDeleteFieldConfig = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['airbnb-field-configs'] });
-      toast.success('Успешно изтрихте полето');
+      queryClient.invalidateQueries({ queryKey: ['airbnb-categories'] });
+      toast.success('Successfully deleted field');
     },
     onError: (error: any) => {
-      toast.error('Грешка при изтриване: ' + error.message);
+      toast.error('Error deleting field: ' + error.message);
     },
   });
 };

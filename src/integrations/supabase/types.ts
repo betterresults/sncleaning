@@ -104,8 +104,13 @@ export type Database = {
         Row: {
           category: string
           created_at: string
+          display_order: number | null
+          icon: string | null
           id: string
           is_active: boolean | null
+          is_visible: boolean | null
+          label: string | null
+          max_value: number | null
           option: string
           time: number | null
           updated_at: string
@@ -115,8 +120,13 @@ export type Database = {
         Insert: {
           category: string
           created_at?: string
+          display_order?: number | null
+          icon?: string | null
           id?: string
           is_active?: boolean | null
+          is_visible?: boolean | null
+          label?: string | null
+          max_value?: number | null
           option: string
           time?: number | null
           updated_at?: string
@@ -126,8 +136,13 @@ export type Database = {
         Update: {
           category?: string
           created_at?: string
+          display_order?: number | null
+          icon?: string | null
           id?: string
           is_active?: boolean | null
+          is_visible?: boolean | null
+          label?: string | null
+          max_value?: number | null
           option?: string
           time?: number | null
           updated_at?: string
