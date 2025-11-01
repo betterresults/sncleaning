@@ -86,7 +86,7 @@ const PricingFormulasManager: React.FC = () => {
           service_type: 'Airbnb',
           sub_service_type: 'Standard',
           formula_name: 'Airbnb Standard Cleaning',
-          formula_config: { baseFormula: 'hours_required * base_hourly_rate' },
+          formula_config: { baseFormula: 'total_hours * base_hourly_rate' },
           base_hourly_rate: airbnbStandard,
           is_active: true
         },
@@ -94,7 +94,7 @@ const PricingFormulasManager: React.FC = () => {
           service_type: 'Airbnb',
           sub_service_type: 'Mid-stay',
           formula_name: 'Airbnb Mid-stay Cleaning',
-          formula_config: { baseFormula: 'hours_required * base_hourly_rate' },
+          formula_config: { baseFormula: 'total_hours * base_hourly_rate' },
           base_hourly_rate: airbnbMidStay,
           is_active: true
         },
@@ -102,7 +102,7 @@ const PricingFormulasManager: React.FC = () => {
           service_type: 'Airbnb',
           sub_service_type: 'Deep',
           formula_name: 'Airbnb Deep Cleaning',
-          formula_config: { baseFormula: 'hours_required * base_hourly_rate' },
+          formula_config: { baseFormula: 'total_hours * base_hourly_rate' },
           base_hourly_rate: airbnbDeep,
           is_active: true
         },
@@ -110,7 +110,7 @@ const PricingFormulasManager: React.FC = () => {
           service_type: 'Standard',
           sub_service_type: null,
           formula_name: 'Standard Cleaning',
-          formula_config: { baseFormula: 'hours_required * base_hourly_rate' },
+          formula_config: { baseFormula: 'total_hours * base_hourly_rate' },
           base_hourly_rate: standardCleaning,
           is_active: true
         },

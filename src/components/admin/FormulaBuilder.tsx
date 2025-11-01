@@ -27,7 +27,7 @@ interface ConditionRule {
 }
 
 const AVAILABLE_FIELDS = [
-  { value: 'hours_required', label: 'Hours Required' },
+  { value: 'total_hours', label: 'Total Hours' },
   { value: 'total_cost', label: 'Total Cost' },
   { value: 'base_hourly_rate', label: 'Base Hourly Rate' },
   { value: 'property_size', label: 'Property Size' },
@@ -46,7 +46,7 @@ const OPERATORS = [
 
 const FormulaBuilder: React.FC<FormulaBuilderProps> = ({ onSave, initialFormula }) => {
   const { toast } = useToast();
-  const [baseFormula, setBaseFormula] = useState(initialFormula?.baseFormula || 'hours_required * base_hourly_rate');
+  const [baseFormula, setBaseFormula] = useState(initialFormula?.baseFormula || 'total_hours * base_hourly_rate');
   const [conditions, setConditions] = useState<ConditionRule[]>(initialFormula?.conditions || []);
 
   const addCondition = useCallback(() => {
@@ -109,7 +109,7 @@ const FormulaBuilder: React.FC<FormulaBuilderProps> = ({ onSave, initialFormula 
               id="baseFormula"
               value={baseFormula}
               onChange={(e) => setBaseFormula(e.target.value)}
-              placeholder="e.g., hours_required * base_hourly_rate"
+              placeholder="e.g., total_hours * base_hourly_rate"
               className="font-mono"
             />
             <p className="text-sm text-muted-foreground mt-1">
