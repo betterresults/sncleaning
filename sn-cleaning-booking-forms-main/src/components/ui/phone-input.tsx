@@ -24,32 +24,32 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   const [error, setError] = useState<string>('');
 
   const formatPhoneNumber = (input: string) => {
+    // Always keep +44 prefix
+    if (!input || input.length === 0) {
+      return '+44';
+    }
+
     // Remove all non-digit characters except +
     let cleaned = input.replace(/[^\d+]/g, '');
     
-    // If user starts typing without +44, add it
-    if (!cleaned.startsWith('+44') && cleaned.length > 0) {
-      // Remove any leading zeros
-      cleaned = cleaned.replace(/^0+/, '');
-      cleaned = '+44' + cleaned;
+    // Make sure it starts with +44
+    if (!cleaned.startsWith('+44')) {
+      // If user is typing digits, add +44 prefix
+      const digitsOnly = cleaned.replace(/\D/g, '');
+      cleaned = '+44' + digitsOnly;
     }
     
-    // If it starts with +44, remove any zeros immediately after
-    if (cleaned.startsWith('+44')) {
-      cleaned = cleaned.replace(/^\+44(0+)/, '+44');
-    }
+    // Remove any zeros immediately after +44 (user might type 0 out of habit)
+    cleaned = cleaned.replace(/^\+44(0+)/, '+44');
     
-    // Ensure we have at least +44
-    if (!cleaned && input.includes('+')) {
-      cleaned = '+44';
-    }
+    // Get just the digits after +44
+    const digitsAfter44 = cleaned.substring(3);
     
-    // Limit to reasonable UK phone number length (+44 + 10 digits = 13 characters)
-    if (cleaned.length > 13) {
-      cleaned = cleaned.substring(0, 13);
-    }
+    // Limit to exactly 10 digits after +44
+    const limitedDigits = digitsAfter44.substring(0, 10);
     
-    return cleaned;
+    // Return +44 plus the limited digits
+    return '+44' + limitedDigits;
   };
 
   const validatePhone = (phone: string) => {
