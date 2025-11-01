@@ -84,7 +84,7 @@ const Dashboard = () => {
                     </CardTitle>
                     <Button 
                       onClick={() => navigate('/bookings')}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 rounded-full px-6 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 hover:from-gray-200 hover:to-gray-300 shadow-md hover:shadow-lg transition-all duration-200"
                     >
                       <Plus className="h-4 w-4" />
                       New Booking
