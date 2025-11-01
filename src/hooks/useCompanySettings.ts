@@ -17,6 +17,7 @@ export interface ServiceType {
   key: string;
   label: string;
   badge_color: string;
+  allowed_cleaning_types?: string[];
 }
 
 export interface CleaningType {
@@ -53,6 +54,7 @@ export const useServiceTypes = () => {
     key: setting.setting_key,
     label: setting.setting_value.label,
     badge_color: setting.setting_value.badge_color || 'bg-gray-500/10 text-gray-700 border-gray-200',
+    allowed_cleaning_types: setting.setting_value.allowed_cleaning_types || [],
   })) || [];
 
   return { data: serviceTypes, ...rest };

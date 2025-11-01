@@ -36,6 +36,7 @@ const CompanySettingsManager = () => {
       label: setting.setting_value.label,
       badge_color: setting.setting_value.badge_color || '',
       description: setting.setting_value.description || '',
+      allowed_cleaning_types: setting.setting_value.allowed_cleaning_types || [],
       display_order: setting.display_order,
       is_active: setting.is_active,
     });
@@ -43,7 +44,11 @@ const CompanySettingsManager = () => {
 
   const handleSave = (id: string, category: string) => {
     const setting_value = category === 'service_type'
-      ? { label: editForm.label, badge_color: editForm.badge_color }
+      ? { 
+          label: editForm.label, 
+          badge_color: editForm.badge_color,
+          allowed_cleaning_types: editForm.allowed_cleaning_types || []
+        }
       : { label: editForm.label, description: editForm.description };
 
     updateMutation.mutate({
@@ -105,14 +110,37 @@ const CompanySettingsManager = () => {
               </div>
             </div>
             {category === 'service_type' && (
-              <div>
-                <Label>Badge Color (Tailwind classes)</Label>
-                <Input
-                  value={editForm.badge_color}
-                  onChange={(e) => setEditForm({ ...editForm, badge_color: e.target.value })}
-                  placeholder="bg-blue-500/10 text-blue-700 border-blue-200"
-                />
-              </div>
+              <>
+                <div>
+                  <Label>Badge Color (Tailwind classes)</Label>
+                  <Input
+                    value={editForm.badge_color}
+                    onChange={(e) => setEditForm({ ...editForm, badge_color: e.target.value })}
+                    placeholder="bg-blue-500/10 text-blue-700 border-blue-200"
+                  />
+                </div>
+                <div>
+                  <Label>Allowed Cleaning Types</Label>
+                  <div className="flex flex-wrap gap-2 mt-2 p-3 border rounded-lg">
+                    {cleaningTypes?.map((ct) => (
+                      <Badge
+                        key={ct.id}
+                        variant={editForm.allowed_cleaning_types?.includes(ct.setting_key) ? "default" : "outline"}
+                        className="cursor-pointer"
+                        onClick={() => {
+                          const current = editForm.allowed_cleaning_types || [];
+                          const updated = current.includes(ct.setting_key)
+                            ? current.filter((k: string) => k !== ct.setting_key)
+                            : [...current, ct.setting_key];
+                          setEditForm({ ...editForm, allowed_cleaning_types: updated });
+                        }}
+                      >
+                        {ct.setting_value.label}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
             {category === 'cleaning_type' && (
               <div>
@@ -162,6 +190,11 @@ const CompanySettingsManager = () => {
               </div>
               {setting.setting_value.description && (
                 <p className="text-sm text-gray-600 mt-1">{setting.setting_value.description}</p>
+              )}
+              {category === 'service_type' && setting.setting_value.allowed_cleaning_types && (
+                <div className="text-xs text-gray-500 mt-1">
+                  Allowed: {setting.setting_value.allowed_cleaning_types.join(', ')}
+                </div>
               )}
               <span className="text-xs text-gray-400">Order: {setting.display_order}</span>
             </div>

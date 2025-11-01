@@ -186,10 +186,21 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
     };
   }) || [];
 
-  const cleaningSubTypes = cleaningTypesFromSettings?.map((ct) => ({
-    value: ct.key,
-    label: ct.label,
-  })) || [];
+  const cleaningSubTypes = React.useMemo(() => {
+    if (!formData.serviceType || !serviceTypesFromSettings || !cleaningTypesFromSettings) {
+      return [];
+    }
+    
+    const currentServiceType = serviceTypesFromSettings.find(st => st.key === formData.serviceType);
+    const allowedCleaningTypes = currentServiceType?.allowed_cleaning_types || [];
+    
+    return cleaningTypesFromSettings
+      .filter(ct => allowedCleaningTypes.includes(ct.key))
+      .map((ct) => ({
+        value: ct.key,
+        label: ct.label,
+      }));
+  }, [formData.serviceType, serviceTypesFromSettings, cleaningTypesFromSettings]);
 
   const [propertyAccessOptions, setPropertyAccessOptions] = useState([
     { value: 'customer_present', label: 'Customer will be present', icon: '👤' },
