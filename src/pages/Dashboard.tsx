@@ -90,7 +90,7 @@ const Dashboard = () => {
                       New Booking
                     </Button>
                   </CardHeader>
-                  <CardContent className="p-4 sm:p-6 pt-0">
+                  <CardContent className="p-4 sm:p-6 pt-0 pb-4">
                     <TodayBookingsCards 
                       dashboardDateFilter={todayRange}
                     />

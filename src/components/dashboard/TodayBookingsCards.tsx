@@ -285,13 +285,13 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
 
   if (bookings.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 px-4">
-        <div className="rounded-3xl bg-gradient-to-br from-gray-50 to-gray-100 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.08)] text-center max-w-md">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-            <Calendar className="h-8 w-8 text-gray-500" />
+      <div className="flex flex-col items-center justify-center py-6 px-4">
+        <div className="rounded-3xl bg-gradient-to-br from-gray-50 to-gray-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.08)] text-center max-w-sm">
+          <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+            <Calendar className="h-6 w-6 text-gray-500" />
           </div>
-          <p className="text-lg font-semibold text-gray-700 mb-2">Няма букинги за този период</p>
-          <p className="text-sm text-gray-500">Изберете друг период или създайте нов букинг</p>
+          <p className="text-base font-semibold text-gray-700 mb-1">No bookings for this period</p>
+          <p className="text-xs text-gray-500">Select another period or create a new booking</p>
         </div>
       </div>
     );
