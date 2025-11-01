@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { LinenUsageEditor } from '@/components/dashboard/LinenUsageEditor';
+import { useServiceTypes, useCleaningTypes } from '@/hooks/useCompanySettings';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
@@ -105,6 +106,10 @@ const BulkEditBookings = () => {
       console.error('Error signing out:', error);
     }
   };
+
+  // Fetch service types and cleaning types
+  const { data: serviceTypes } = useServiceTypes();
+  const { data: cleaningTypes } = useCleaningTypes();
 
   useEffect(() => {
     fetchBookings();
@@ -366,6 +371,7 @@ const BulkEditBookings = () => {
       ironing_hours: 'Ironing Hours',
       payment_status: 'Payment Status',
       booking_status: 'Booking Status',
+      service_type: 'Service Type',
       cleaning_type: 'Cleaning Type',
       occupied: 'Occupied',
       frequently: 'Frequency',
@@ -403,6 +409,7 @@ const BulkEditBookings = () => {
       { value: 'ironing_hours', label: 'Ironing Hours' },
       { value: 'payment_status', label: 'Payment Status' },
       { value: 'booking_status', label: 'Booking Status' },
+      { value: 'service_type', label: 'Service Type' },
       { value: 'cleaning_type', label: 'Cleaning Type' },
       { value: 'occupied', label: 'Occupied' },
       { value: 'frequently', label: 'Frequency' },
@@ -464,6 +471,8 @@ const BulkEditBookings = () => {
         { value: 'Cancelled', label: 'Cancelled' },
         { value: 'Completed', label: 'Completed' }
       ],
+      service_type: serviceTypes?.map(st => ({ value: st, label: st })) || [],
+      cleaning_type: cleaningTypes?.map(ct => ({ value: ct, label: ct })) || [],
       occupied: [
         { value: 'Yes', label: 'Yes' },
         { value: 'No', label: 'No' }
