@@ -233,7 +233,8 @@ const CompanySettingsManager = () => {
                   onClick={() => {
                     setIsAddingNew(true);
                     setNewItemCategory('service_type');
-                    setEditForm({ label: '', badge_color: '', display_order: 0 });
+                    const maxOrder = Math.max(0, ...(serviceTypes?.map(s => s.display_order) || []));
+                    setEditForm({ label: '', badge_color: '', display_order: maxOrder + 1 });
                   }}
                 >
                   <Plus className="w-4 h-4 mr-2" /> Add Service Type
@@ -309,7 +310,8 @@ const CompanySettingsManager = () => {
                   onClick={() => {
                     setIsAddingNew(true);
                     setNewItemCategory('cleaning_type');
-                    setEditForm({ label: '', description: '', display_order: 0 });
+                    const maxOrder = Math.max(0, ...(cleaningTypes?.map(s => s.display_order) || []));
+                    setEditForm({ label: '', description: '', display_order: maxOrder + 1 });
                   }}
                 >
                   <Plus className="w-4 h-4 mr-2" /> Add Cleaning Type
