@@ -75,7 +75,7 @@ const CompanySettingsManager = () => {
       setting_category: newItemCategory,
       setting_key: editForm.key,
       setting_value,
-      display_order: editForm.display_order || 999,
+      display_order: editForm.display_order || 0,
       is_active: true,
     });
     
@@ -156,8 +156,8 @@ const CompanySettingsManager = () => {
                 <Label>Display Order</Label>
                 <Input
                   type="number"
-                  value={editForm.display_order}
-                  onChange={(e) => setEditForm({ ...editForm, display_order: parseInt(e.target.value) })}
+                  value={editForm.display_order || ''}
+                  onChange={(e) => setEditForm({ ...editForm, display_order: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
                 />
               </div>
               <div className="flex items-center space-x-2">
@@ -233,7 +233,7 @@ const CompanySettingsManager = () => {
                   onClick={() => {
                     setIsAddingNew(true);
                     setNewItemCategory('service_type');
-                    setEditForm({ label: '', badge_color: '', display_order: 999 });
+                    setEditForm({ label: '', badge_color: '', display_order: 0 });
                   }}
                 >
                   <Plus className="w-4 h-4 mr-2" /> Add Service Type
@@ -273,8 +273,9 @@ const CompanySettingsManager = () => {
                     <Label>Display Order</Label>
                     <Input
                       type="number"
-                      value={editForm.display_order || 999}
-                      onChange={(e) => setEditForm({ ...editForm, display_order: parseInt(e.target.value) })}
+                      value={editForm.display_order || ''}
+                      onChange={(e) => setEditForm({ ...editForm, display_order: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
+                      placeholder="0"
                     />
                   </div>
                   <div className="flex gap-2">
@@ -308,7 +309,7 @@ const CompanySettingsManager = () => {
                   onClick={() => {
                     setIsAddingNew(true);
                     setNewItemCategory('cleaning_type');
-                    setEditForm({ label: '', description: '', display_order: 999 });
+                    setEditForm({ label: '', description: '', display_order: 0 });
                   }}
                 >
                   <Plus className="w-4 h-4 mr-2" /> Add Cleaning Type
@@ -348,8 +349,9 @@ const CompanySettingsManager = () => {
                     <Label>Display Order</Label>
                     <Input
                       type="number"
-                      value={editForm.display_order || 999}
-                      onChange={(e) => setEditForm({ ...editForm, display_order: parseInt(e.target.value) })}
+                      value={editForm.display_order || ''}
+                      onChange={(e) => setEditForm({ ...editForm, display_order: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
+                      placeholder="0"
                     />
                   </div>
                   <div className="flex gap-2">
