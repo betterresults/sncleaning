@@ -291,7 +291,7 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
                 </div>
                 <div>
                   <p><strong>Address:</strong> {booking.address}</p>
-                  <p><strong>Total Cost:</strong> £{booking.total_cost}</p>
+                  <p><strong>Total Cost:</strong> £{Number(booking.total_cost || 0).toFixed(2)}</p>
                   <p><strong>Payment Status:</strong> {getPaymentStatusBadge(booking.payment_status)}</p>
                 </div>
               </div>

@@ -190,7 +190,7 @@ const CustomerPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: Customer
             <CardContent className="p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-[#185166]">{booking.service_type}</h3>
-                <span className="text-lg font-bold text-[#18A5A5]">£{booking.total_cost}</span>
+                <span className="text-lg font-bold text-[#18A5A5]">£{Number(booking.total_cost || 0).toFixed(2)}</span>
               </div>
               
               <div className="space-y-2 text-sm">

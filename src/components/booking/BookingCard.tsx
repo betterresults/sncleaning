@@ -85,7 +85,7 @@ const BookingCard = <T extends BaseBooking>({
         </div>
         <div className="text-right flex items-center gap-3">
           <div className="flex flex-col items-end gap-1">
-            <div className="text-2xl font-bold text-[#18A5A5]">£{booking.total_cost}</div>
+            <div className="text-2xl font-bold text-[#18A5A5]">£{Number(booking.total_cost || 0).toFixed(2)}</div>
             {/* Invoice link - show for completed bookings if available */}
             {type === 'completed' && booking.invoice_link && (
               <a

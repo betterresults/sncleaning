@@ -316,7 +316,7 @@ const ActivityLogsView = () => {
                             {log.booking_info.address}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            £{log.booking_info.total_cost}
+                            £{Number(log.booking_info.total_cost || 0).toFixed(2)}
                           </div>
                         </div>
                       )}

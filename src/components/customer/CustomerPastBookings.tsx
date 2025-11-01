@@ -868,7 +868,7 @@ const CustomerPastBookings = () => {
                         {format(bookingDate, 'dd MMM yyyy')} - {booking.address}
                       </p>
                       <p className="text-sm text-gray-600">
-                        Amount: £{booking.total_cost} • {daysOverdue} days overdue
+                        Amount: £{Number(booking.total_cost || 0).toFixed(2)} • {daysOverdue} days overdue
                       </p>
                     </div>
                     <Button

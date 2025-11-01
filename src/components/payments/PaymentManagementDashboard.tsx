@@ -507,7 +507,7 @@ const PaymentManagementDashboard = () => {
                         {format(new Date(booking.date_time), 'HH:mm')}
                       </TableCell>
                       <TableCell className="max-w-xs truncate">{booking.address}</TableCell>
-                      <TableCell>£{typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost}</TableCell>
+                      <TableCell>£{(typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost).toFixed(2)}</TableCell>
                       <TableCell>
                         <PaymentStatusIndicator status={booking.payment_status} />
                       </TableCell>
@@ -566,7 +566,7 @@ const PaymentManagementDashboard = () => {
                         {format(new Date(booking.date_time), 'MMM dd, yyyy HH:mm')}
                       </TableCell>
                       <TableCell className="max-w-xs truncate">{booking.address}</TableCell>
-                      <TableCell>£{typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost}</TableCell>
+                      <TableCell>£{(typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost).toFixed(2)}</TableCell>
                       <TableCell>
                         <PaymentStatusIndicator status={booking.payment_status} />
                       </TableCell>
@@ -625,7 +625,7 @@ const PaymentManagementDashboard = () => {
                         {format(new Date(booking.date_time), 'MMM dd, yyyy HH:mm')}
                       </TableCell>
                       <TableCell className="max-w-xs truncate">{booking.address}</TableCell>
-                      <TableCell>£{typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost}</TableCell>
+                      <TableCell>£{(typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost).toFixed(2)}</TableCell>
                       <TableCell>
                         <PaymentStatusIndicator status={booking.payment_status} />
                       </TableCell>
@@ -678,7 +678,7 @@ const PaymentManagementDashboard = () => {
                         {format(new Date(booking.date_time), 'MMM dd, yyyy HH:mm')}
                       </TableCell>
                       <TableCell className="max-w-xs truncate">{booking.address}</TableCell>
-                      <TableCell>£{typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost}</TableCell>
+                      <TableCell>£{(typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost).toFixed(2)}</TableCell>
                       <TableCell>
                         <PaymentStatusIndicator status={booking.payment_status} />
                       </TableCell>
@@ -734,7 +734,7 @@ const PaymentManagementDashboard = () => {
                       <TableCell>
                         {format(new Date(booking.date_time), 'MMM dd, yyyy HH:mm')}
                       </TableCell>
-                      <TableCell>£{typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost}</TableCell>
+                      <TableCell>£{(typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost).toFixed(2)}</TableCell>
                       <TableCell>
                         <PaymentStatusIndicator status={booking.payment_status} />
                       </TableCell>
@@ -788,7 +788,7 @@ const PaymentManagementDashboard = () => {
                       <TableCell>
                         {format(new Date(booking.date_time), 'MMM dd, yyyy HH:mm')}
                       </TableCell>
-                      <TableCell>£{typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost}</TableCell>
+                      <TableCell>£{(typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost).toFixed(2)}</TableCell>
                       <TableCell>
                         <PaymentStatusIndicator status={booking.payment_status} />
                       </TableCell>

@@ -137,7 +137,7 @@ export const AdjustPaymentAmountDialog: React.FC<AdjustPaymentAmountDialogProps>
             <p className="text-sm text-muted-foreground">Customer</p>
             <p className="font-medium">{booking.first_name} {booking.last_name}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Current Amount: <span className="font-semibold">£{booking.total_cost || 0}</span>
+              Current Amount: <span className="font-semibold">£{Number(booking.total_cost || 0).toFixed(2)}</span>
             </p>
             <p className="text-sm text-muted-foreground">
               Status: <span className="font-semibold capitalize">{booking.payment_status}</span>
