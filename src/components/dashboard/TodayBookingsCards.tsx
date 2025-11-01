@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Edit, Trash2, Copy, X, UserPlus, DollarSign, Repeat, MoreHorizontal, Clock, MapPin, User, Mail, Phone, Send, Calendar } from 'lucide-react';
+import { Edit, Trash2, Copy, X, UserPlus, DollarSign, Repeat, MoreHorizontal, Clock, MapPin, User, Mail, Phone, Send } from 'lucide-react';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import { InvoilessPaymentDialog } from '@/components/payments/InvoilessPaymentDialog';
@@ -18,7 +18,6 @@ import AssignCleanerDialog from './AssignCleanerDialog';
 import DuplicateBookingDialog from './DuplicateBookingDialog';
 import ConvertToRecurringDialog from './ConvertToRecurringDialog';
 import ManualEmailDialog from './ManualEmailDialog';
-import { useServiceTypes, getServiceTypeBadgeColor as getBadgeColor } from '@/hooks/useCompanySettings';
 
 interface Booking {
   id: number;
@@ -66,7 +65,6 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<Booking | null>(null);
   const [assignCleanerOpen, setAssignCleanerOpen] = useState(false);
@@ -86,9 +84,6 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
   const [invoilessDialogOpen, setInvoilessDialogOpen] = useState(false);
   const [selectedBookingForInvoiless, setSelectedBookingForInvoiless] = useState<Booking | null>(null);
   const { toast } = useToast();
-  
-  // Fetch service types for badge colors
-  const { data: serviceTypes } = useServiceTypes();
 
   const fetchData = async () => {
     try {
@@ -139,7 +134,6 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
 
   useEffect(() => {
     fetchData();
-    setCurrentPage(1); // Reset to page 1 when filter changes
   }, [dashboardDateFilter]);
 
   const handleEdit = (bookingId: number) => {
@@ -285,52 +279,52 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
 
   if (bookings.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-6 px-4">
-        <div className="rounded-3xl bg-gradient-to-br from-gray-50 to-gray-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.08)] text-center max-w-sm">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-            <Calendar className="h-6 w-6 text-gray-500" />
-          </div>
-          <p className="text-base font-semibold text-gray-700 mb-1">No bookings for this period</p>
-          <p className="text-xs text-gray-500">Select another period or create a new booking</p>
-        </div>
+      <div className="py-2 text-center">
+        <p className="text-muted-foreground text-sm">Няма букинги за този период</p>
       </div>
     );
   }
 
-  // Pagination: 10 bookings per page
-  const itemsPerPage = 10;
-  const totalPages = Math.ceil(bookings.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const displayedBookings = bookings.slice(startIndex, endIndex);
+  const getServiceTypeBadgeColor = (serviceType: string) => {
+    const type = serviceType.toLowerCase();
+    if (type.includes('airbnb') || type.includes('air bnb')) {
+      return 'bg-green-500 text-white';
+    }
+    if (type.includes('commercial')) {
+      return 'bg-blue-500 text-white';
+    }
+    if (type.includes('domestic')) {
+      return 'bg-gray-500 text-white';
+    }
+    return 'bg-purple-500 text-white';
+  };
 
   return (
     <div className="space-y-4">
-      {/* Cards View - Current page bookings */}
-      {displayedBookings.map((booking) => {
-        const isUnsigned = !booking.cleaner;
-        const cleanerName = getCleanerName(booking);
-        const bookingTime = booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'N/A';
-        const bookingDate = booking.date_time ? format(new Date(booking.date_time), 'dd MMM') : 'N/A';
-        const serviceBadgeColor = serviceTypes ? getBadgeColor(booking.service_type, serviceTypes) : 'bg-gray-500 text-white';
+      {bookings.map((booking) => {
+          const isUnsigned = !booking.cleaner;
+          const cleanerName = getCleanerName(booking);
+          const bookingTime = booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'N/A';
+          const bookingDate = booking.date_time ? format(new Date(booking.date_time), 'dd MMM') : 'N/A';
+          const serviceBadgeColor = getServiceTypeBadgeColor(booking.service_type);
 
         return (
           <div
             key={booking.id} 
-            className="bg-card rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.18)] hover:-translate-y-1 transition-all duration-200 border-0 overflow-hidden"
+            className="bg-card rounded-3x3 shadow-sm hover:shadow-md transition-all duration-200 border-0 overflow-hidden"
           >
-            <div className="flex flex-col md:flex-row md:items-center">
+            <div className="flex flex-col md:flex-row md:items-center relative">
               {/* Time Box - Integrated into card with no border */}
               <div className="flex-shrink-0 bg-primary/10">
-                <div className="px-4 py-5 text-center min-w-[90px]">
+                <div className="px-0 py-5 text-center min-w-[90px]">
                   <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{bookingDate}</div>
                   <div className="text-2xl font-bold text-primary mt-1">{bookingTime}</div>
                 </div>
               </div>
 
               {/* Main Content */}
-              <div className="flex-1 py-5 px-5">
-                <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6 relative">
+              <div className="flex-1 p-4 md:py-5 md:px-5">
+                <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
                   {/* Customer Name - Large, Bold */}
                   <div className="md:min-w-[180px] md:max-w-[200px] flex-shrink-0">
                     <h3 className="text-lg font-bold text-foreground leading-tight">
@@ -396,7 +390,7 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
                   </div>
 
                   {/* Actions */}
-                  <div className="absolute top-2 right-2 md:relative md:top-0 md:right-0 md:flex-shrink-0">
+                  <div className="absolute top-4 right-4 md:relative md:top-0 md:right-0 md:flex-shrink-0">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-accent">
@@ -455,38 +449,6 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
           </div>
         );
       })}
-
-      {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-6 px-4">
-          <div className="text-sm text-muted-foreground">
-            Showing {startIndex + 1}-{Math.min(endIndex, bookings.length)} of {bookings.length} bookings
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
-            >
-              Previous
-            </Button>
-            <div className="flex items-center gap-2 px-4">
-              <span className="text-sm font-medium">
-                Page {currentPage} of {totalPages}
-              </span>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
 
       {/* All Dialogs */}
       <EditBookingDialog
