@@ -237,7 +237,18 @@ export const useAirbnbBookingSubmit = () => {
                          (bookingData.extraHours || 0) + 
                          (bookingData.ironingHours || 0);
 
+      // Generate incremental ID because bookings.id has no default
+      const { data: latestBooking } = await supabase
+        .from('bookings')
+        .select('id')
+        .order('id', { ascending: false })
+        .limit(1)
+        .single();
+      const nextId = (latestBooking?.id ?? 0) + 1;
+
       const bookingInsert: any = {
+        // Primary Key
+        id: nextId,
         // Customer
         customer: customerId,
         first_name: bookingData.firstName,
