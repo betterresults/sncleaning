@@ -169,7 +169,8 @@ const CustomerUpcomingBookings = () => {
           date_time,
           address,
           postcode,
-          cleaning_type,
+           cleaning_type,
+           service_type,
           total_hours,
           total_cost,
           cleaning_cost_per_hour,
@@ -203,10 +204,10 @@ const CustomerUpcomingBookings = () => {
 
       if (error) throw error;
       
-      // Map cleaning_type to service_type for BookingCard compatibility
+      // Ensure correct types for BookingCard
       const processedBookings = (data || []).map(booking => ({
         ...booking,
-        service_type: booking.cleaning_type,
+        service_type: booking.service_type, // main category (e.g., airbnb, domestic)
         linen_management: booking.linen_management || false,
         linen_used: booking.linen_used || []
       }));
