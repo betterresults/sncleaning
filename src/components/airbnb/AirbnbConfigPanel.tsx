@@ -998,11 +998,12 @@ export const AirbnbConfigPanel: React.FC = () => {
                 <div className="grid grid-cols-3 gap-4">
                   <div className="col-span-2">
                     <Label>Formula</Label>
-                    <Textarea
-                      value={currentFormula.elements?.map(el => el.value).join(' ') || ''}
+                     <Textarea
+                      value={currentFormula.elements?.map(el => el.value).join('') || ''}
                       onChange={(e) => {
                         const formulaText = e.target.value;
                         const tokens = tokenize(formulaText);
+                        console.log('Tokenized formula:', tokens);
                         const elements = tokens.map(token => {
                           // Operators
                           if (['+', '-', '*', '/', '(', ')', '===', '!==', '>', '<', '>=', '<=', '&&', '||', '!', '?', ':'].includes(token)) {
