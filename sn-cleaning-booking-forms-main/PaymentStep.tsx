@@ -170,17 +170,6 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
           throw new Error(pmError.message);
         }
 
-        // Save payment method
-        const { data: pmData, error: collectError } = await supabase.functions.invoke('stripe-collect-payment-method', {
-          body: {
-            customerEmail: data.email,
-            customerName: `${data.firstName} ${data.lastName}`,
-            paymentMethodId: paymentMethod.id,
-            isDefault: true
-          }
-        });
-
-        if (collectError) throw collectError;
         paymentMethodId = paymentMethod.id;
       }
 
