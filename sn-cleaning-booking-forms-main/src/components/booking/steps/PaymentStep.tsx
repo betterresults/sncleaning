@@ -379,25 +379,30 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
         navigate('/booking-confirmation', { state: { bookingId: result.bookingId } });
       } else {
         // No saved payment method - use CardElement to create payment method
+        console.log('[PaymentStep] No saved payment method, using CardElement');
+        
         if (!stripe || !elements) {
+          console.error('[PaymentStep] Stripe/Elements not loaded:', { stripe: !!stripe, elements: !!elements });
           throw new Error('Stripe not loaded');
         }
 
         const cardElement = elements.getElement(CardElement);
         if (!cardElement) {
+          console.error('[PaymentStep] CardElement not found');
           throw new Error('Card information is incomplete');
         }
 
-        // Submit booking first
+        console.log('[PaymentStep] Submitting booking...');
         const result = await submitBooking(bookingPayload, true);
 
-        console.log('[PaymentStep] submitBooking result (no default PM):', result);
+        console.log('[PaymentStep] submitBooking result:', result);
 
         if (!result.success || !result.customerId || !result.bookingId) {
+          console.error('[PaymentStep] Booking submission failed:', result);
           throw new Error('Failed to create booking');
         }
 
-        // Create payment method with card element
+        console.log('[PaymentStep] Creating payment method with Stripe...');
         const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
           type: 'card',
           card: cardElement,
@@ -409,12 +414,23 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
         });
 
         if (pmError || !paymentMethod) {
+          console.error('[PaymentStep] Payment method creation failed:', pmError);
           throw new Error(pmError?.message || 'Failed to create payment method');
         }
+
+        console.log('[PaymentStep] Payment method created:', paymentMethod.id);
 
         // Verify & attach payment method using existing backend flow
         const verifyAmount = isUrgentBooking ? 0 : 100; // £1 verification for non-urgent
         const totalAmount = Math.round((data.totalCost || 0) * 100);
+
+        console.log('[PaymentStep] Verifying payment method...', {
+          customerId: result.customerId,
+          paymentMethodId: paymentMethod.id,
+          verifyAmount,
+          totalAmount,
+          isUrgent: isUrgentBooking
+        });
 
         const { data: verifyResult, error: verifyError } = await supabase.functions.invoke(
           'stripe-verify-payment-method',
@@ -428,12 +444,16 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
           }
         );
 
+        console.log('[PaymentStep] Verify result:', { verifyResult, verifyError });
+
         if (verifyError || verifyResult?.success === false) {
+          console.error('[PaymentStep] Payment verification failed:', { verifyError, verifyResult });
           throw new Error(verifyResult?.error || 'Failed to verify card');
         }
 
         // For urgent bookings, charge immediately
         if (isUrgentBooking) {
+          console.log('[PaymentStep] Urgent booking - charging immediately...');
           const { data: chargeResult, error: chargeError } = await supabase.functions.invoke(
             'system-payment-action',
             {
@@ -444,7 +464,10 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
             }
           );
 
+          console.log('[PaymentStep] Charge result:', { chargeResult, chargeError });
+
           if (chargeError || !chargeResult?.success) {
+            console.error('[PaymentStep] Payment charge failed:', { chargeError, chargeResult });
             throw new Error(chargeResult?.error || 'Payment failed');
           }
 
@@ -453,12 +476,14 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
             description: `£${data.totalCost.toFixed(2)} has been charged.`
           });
         } else {
+          console.log('[PaymentStep] Non-urgent booking - card saved for later');
           toast({
             title: "Card Added Successfully",
             description: "Your booking has been confirmed. Payment will be processed 3 days before the cleaning date."
           });
         }
 
+        console.log('[PaymentStep] Navigating to confirmation...');
         navigate('/booking-confirmation', { state: { bookingId: result.bookingId } });
       }
       
