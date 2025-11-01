@@ -395,7 +395,7 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
               </div>
 
               {/* Actions */}
-              <div className="py-4 flex justify-center">
+              <div className="bg-accent/30 h-full flex items-center justify-center">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-accent">
