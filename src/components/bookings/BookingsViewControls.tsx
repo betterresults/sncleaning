@@ -25,7 +25,7 @@ export function BookingsViewControls({
   onBulkEditClick
 }: BookingsViewControlsProps) {
   return (
-    <div className="bg-white p-2 sm:p-4 rounded-xl border shadow-sm">
+    <div className="bg-white p-3 sm:p-5 rounded-xl shadow-sm">
       {/* Mobile: 2 rows layout */}
       <div className="flex flex-col gap-2 sm:hidden">
         {/* Row 1: View + Show */}

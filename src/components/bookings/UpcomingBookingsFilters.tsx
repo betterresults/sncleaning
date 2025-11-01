@@ -105,7 +105,7 @@ export function UpcomingBookingsFilters({ filters, onFiltersChange, cleaners }: 
                           (filters.bookingStatus && filters.bookingStatus !== 'all');
 
   return (
-    <div className="bg-white p-2 sm:p-4 rounded-xl border shadow-sm">
+    <div className="bg-white p-3 sm:p-5 rounded-xl shadow-sm">
       <div className="flex flex-col gap-2">
         {/* Search Bar - Full width on all screens */}
         <div className="relative w-full">
@@ -114,7 +114,7 @@ export function UpcomingBookingsFilters({ filters, onFiltersChange, cleaners }: 
             placeholder="Search by customer name, email, phone, or address..."
             value={filters.searchTerm}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="pl-9 sm:pl-10 h-9 sm:h-11 text-sm sm:text-base rounded-lg"
+            className="pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-3 h-10 sm:h-12 text-sm sm:text-base rounded-lg"
           />
         </div>
 
