@@ -341,7 +341,7 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
             key={booking.id} 
             className="bg-card rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.18)] hover:-translate-y-1 transition-all duration-200 border-0 overflow-hidden"
           >
-            <div className="grid grid-cols-[100px_1fr_3fr_13%_14%_15%_40px] items-center gap-2 p-0">
+            <div className="grid grid-cols-[100px_1fr_2.5fr_16%_13%_15%_40px] items-center gap-2 p-0">
               {/* Time Box */}
               <div className="bg-primary/10 h-full flex items-center justify-center">
                 <div className="text-center py-4">
