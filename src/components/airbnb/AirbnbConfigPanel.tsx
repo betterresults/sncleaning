@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Trash2, Eye, EyeOff, GripVertical, Upload } from 'lucide-react';
@@ -865,7 +866,7 @@ export const AirbnbConfigPanel: React.FC = () => {
                 <div className="grid grid-cols-3 gap-4">
                   <div className="col-span-2">
                     <Label>Formula</Label>
-                    <Input
+                    <Textarea
                       value={currentFormula.elements?.map(el => el.value).join(' ') || ''}
                       onChange={(e) => {
                         const formulaText = e.target.value;
@@ -881,16 +882,18 @@ export const AirbnbConfigPanel: React.FC = () => {
                         });
                         setCurrentFormula({...currentFormula, elements});
                       }}
-                      placeholder="e.g. bedrooms.value * 3 + bathrooms.time / 2"
-                      className="font-mono"
+                      placeholder="e.g. bedrooms.value * 3 + bathrooms.time / 2 + CleaningTimeFormula"
+                      className="font-mono min-h-[120px]"
+                      rows={5}
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Write your formula or use the field selector →
+                      Write your formula or use the selectors → You can use fields, numbers, operators, and other formulas
                     </p>
                   </div>
                   <div>
-                    <Label>Add Fields</Label>
-                    <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                    <Label>Add Elements</Label>
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                      <div className="text-xs font-semibold text-muted-foreground mb-1">Fields</div>
                       {availableFields.map((field) => (
                         <Select 
                           key={field.value}
@@ -918,6 +921,33 @@ export const AirbnbConfigPanel: React.FC = () => {
                           </SelectContent>
                         </Select>
                       ))}
+                      
+                      {formulas.length > 0 && (
+                        <>
+                          <div className="text-xs font-semibold text-muted-foreground mb-1 mt-3">Existing Formulas</div>
+                          {formulas.filter(f => f.id !== currentFormula.id).map((formula) => (
+                            <Button
+                              key={formula.id}
+                              variant="outline"
+                              size="sm"
+                              className="w-full h-9 text-xs justify-start"
+                              onClick={() => {
+                                const newElement = { 
+                                  type: 'field' as const, 
+                                  value: formula.name.replace(/\s+/g, ''),
+                                  label: formula.name 
+                                };
+                                setCurrentFormula({
+                                  ...currentFormula,
+                                  elements: [...(currentFormula.elements || []), newElement]
+                                });
+                              }}
+                            >
+                              {formula.name}
+                            </Button>
+                          ))}
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
