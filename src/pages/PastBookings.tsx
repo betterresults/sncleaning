@@ -5,7 +5,7 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { adminNavigation } from '@/lib/navigationItems';
-import PastBookingsTable from '@/components/dashboard/PastBookingsTable';
+import PastBookingsListView from '@/components/bookings/PastBookingsListView';
 
 const PastBookings = () => {
   const { user, userRole, signOut } = useAuth();
@@ -38,9 +38,9 @@ const PastBookings = () => {
             onSignOut={handleSignOut}
           />
           <SidebarInset className="flex-1">
-            <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
+            <main className="flex-1 p-2 sm:p-4 lg:p-6 space-y-2 sm:space-y-4 max-w-full overflow-x-hidden">
               <div className="max-w-7xl mx-auto">
-                <PastBookingsTable />
+                <PastBookingsListView />
               </div>
             </main>
           </SidebarInset>
