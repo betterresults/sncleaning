@@ -208,17 +208,20 @@ export const AirbnbConfigPanel: React.FC = () => {
   };
 
 
-  // Formula builder functions - dynamically generate from database categories and options
-  const availableFields = React.useMemo(() => {
-    return categories.map(category => ({
-      category,
-      options: (groupedConfigs[category] || []).map(config => ({
-        value: config.option,
-        label: config.label || config.option,
-        id: config.id
-      }))
-    }));
-  }, [categories, groupedConfigs]);
+  // Formula builder functions
+  const availableFields = [
+    { value: 'propertyType', label: 'Property Type' },
+    { value: 'bedrooms', label: 'Bedrooms' },
+    { value: 'bathrooms', label: 'Bathrooms' },
+    { value: 'additionalRooms', label: 'Additional Rooms' },
+    { value: 'serviceType', label: 'Service Type' },
+    { value: 'airbnbStandard', label: 'Airbnb Standard' },
+    { value: 'ovenCleaning', label: 'Oven Cleaning' },
+    { value: 'cleaningProducts', label: 'Cleaning Products' },
+    { value: 'linenHandling', label: 'Linen Handling' },
+    { value: 'scheduling', label: 'Scheduling' },
+    { value: 'timeFlexibility', label: 'Time Flexibility' }
+  ];
 
   const operators = [
     { value: '+', label: 'Add (+)' },
@@ -891,37 +894,32 @@ export const AirbnbConfigPanel: React.FC = () => {
                     <Label>Add Elements</Label>
                     <div className="space-y-2 max-h-[300px] overflow-y-auto">
                       <div className="text-xs font-semibold text-muted-foreground mb-1">Fields</div>
-                      {availableFields.map((fieldGroup) => (
-                        <div key={fieldGroup.category} className="space-y-1">
-                          <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{fieldGroup.category}</div>
-                          {fieldGroup.options.map((option) => (
-                            <Select 
-                              key={option.id}
-                              onValueChange={(attribute) => {
-                                const newElement = { 
-                                  type: 'field' as const, 
-                                  value: `${fieldGroup.category}.${option.value}.${attribute}`,
-                                  attribute: attribute,
-                                  label: `${fieldGroup.category}.${option.label}.${attribute}` 
-                                };
-                                setCurrentFormula({
-                                  ...currentFormula,
-                                  elements: [...(currentFormula.elements || []), newElement]
-                                });
-                              }}
-                            >
-                              <SelectTrigger className="h-9 text-xs">
-                                <SelectValue placeholder={option.label} />
-                              </SelectTrigger>
-                              <SelectContent className="z-50 bg-background">
-                                <SelectItem value="value">Value</SelectItem>
-                                <SelectItem value="time">Time</SelectItem>
-                                <SelectItem value="min_value">Min Value</SelectItem>
-                                <SelectItem value="max_value">Max Value</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          ))}
-                        </div>
+                      {availableFields.map((field) => (
+                        <Select 
+                          key={field.value}
+                          onValueChange={(attribute) => {
+                            const newElement = { 
+                              type: 'field' as const, 
+                              value: `${field.value}.${attribute}`,
+                              attribute: attribute,
+                              label: `${field.label}.${attribute}` 
+                            };
+                            setCurrentFormula({
+                              ...currentFormula,
+                              elements: [...(currentFormula.elements || []), newElement]
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="h-9 text-xs">
+                            <SelectValue placeholder={field.label} />
+                          </SelectTrigger>
+                          <SelectContent className="z-50 bg-background">
+                            <SelectItem value="value">Value</SelectItem>
+                            <SelectItem value="time">Time</SelectItem>
+                            <SelectItem value="min_value">Min Value</SelectItem>
+                            <SelectItem value="max_value">Max Value</SelectItem>
+                          </SelectContent>
+                        </Select>
                       ))}
                       
                       {formulas.length > 0 && (
