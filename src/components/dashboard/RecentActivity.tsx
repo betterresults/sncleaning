@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
-import { CheckCircle, DollarSign, Calendar, TrendingUp } from 'lucide-react';
+import { CheckCircle, DollarSign, Calendar, TrendingUp, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 interface ActivityItem {
   id: number;
@@ -15,6 +17,7 @@ interface ActivityItem {
 const RecentActivity = () => {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchRecentActivity();
@@ -99,30 +102,42 @@ const RecentActivity = () => {
   }
 
   return (
-    <div className="space-y-2">
-      {activities.map((activity) => (
-        <div 
-          key={`${activity.type}-${activity.id}`}
-          className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-lg transition-colors"
-        >
-          <div className="flex-shrink-0">
-            {getIcon(activity.type)}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">
-              {activity.title}
-            </p>
-            <p className="text-xs text-gray-500">
-              {activity.subtitle} • {format(new Date(activity.timestamp), 'dd MMM, HH:mm')}
-            </p>
-          </div>
-          {activity.amount && (
-            <div className="flex-shrink-0 text-sm font-semibold text-gray-900">
-              £{activity.amount.toFixed(2)}
+    <div className="space-y-4">
+      <div className="space-y-2">
+        {activities.map((activity) => (
+          <div 
+            key={`${activity.type}-${activity.id}`}
+            className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-lg transition-colors"
+          >
+            <div className="flex-shrink-0">
+              {getIcon(activity.type)}
             </div>
-          )}
-        </div>
-      ))}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                {activity.title}
+              </p>
+              <p className="text-xs text-gray-500">
+                {activity.subtitle} • {format(new Date(activity.timestamp), 'dd MMM, HH:mm')}
+              </p>
+            </div>
+            {activity.amount && (
+              <div className="flex-shrink-0 text-sm font-semibold text-gray-900">
+                £{activity.amount.toFixed(2)}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="pt-2 border-t">
+        <Button 
+          variant="ghost" 
+          className="w-full justify-center gap-2 text-sm"
+          onClick={() => navigate('/past-bookings')}
+        >
+          View All Activity
+          <ArrowRight className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 };

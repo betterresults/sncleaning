@@ -79,45 +79,65 @@ const PerformanceChart = () => {
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <defs>
+            <linearGradient id="colorBookings" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.9}/>
+              <stop offset="100%" stopColor="#60a5fa" stopOpacity={0.7}/>
+            </linearGradient>
+            <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#10b981" stopOpacity={0.9}/>
+              <stop offset="100%" stopColor="#34d399" stopOpacity={0.7}/>
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
           <XAxis 
             dataKey="date" 
-            tick={{ fill: '#6b7280', fontSize: 12 }}
-            stroke="#9ca3af"
+            tick={{ fill: '#6b7280', fontSize: 12, fontWeight: 500 }}
+            stroke="#e5e7eb"
+            axisLine={false}
           />
           <YAxis 
             yAxisId="left"
             tick={{ fill: '#6b7280', fontSize: 12 }}
-            stroke="#9ca3af"
+            stroke="#e5e7eb"
+            axisLine={false}
           />
           <YAxis 
             yAxisId="right"
             orientation="right"
             tick={{ fill: '#6b7280', fontSize: 12 }}
-            stroke="#9ca3af"
+            stroke="#e5e7eb"
+            axisLine={false}
           />
           <Tooltip 
             contentStyle={{ 
               backgroundColor: '#ffffff', 
               border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              borderRadius: '12px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+              padding: '12px'
             }}
+            cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }}
           />
-          <Legend />
+          <Legend 
+            wrapperStyle={{ paddingTop: '20px' }}
+            iconType="circle"
+          />
           <Bar 
             yAxisId="left"
             dataKey="bookings" 
-            fill="#3b82f6" 
+            fill="url(#colorBookings)" 
             name="Bookings"
-            radius={[4, 4, 0, 0]}
+            radius={[8, 8, 0, 0]}
+            maxBarSize={40}
           />
           <Bar 
             yAxisId="right"
             dataKey="revenue" 
-            fill="#10b981" 
+            fill="url(#colorRevenue)" 
             name="Revenue (£)"
-            radius={[4, 4, 0, 0]}
+            radius={[8, 8, 0, 0]}
+            maxBarSize={40}
           />
         </BarChart>
       </ResponsiveContainer>

@@ -279,7 +279,7 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
 
   if (bookings.length === 0) {
     return (
-      <div className="py-2 px-4 text-center">
+      <div className="py-1 text-center">
         <p className="text-gray-500 text-sm">Няма букинги за този период</p>
       </div>
     );
