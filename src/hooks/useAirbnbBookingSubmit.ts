@@ -249,13 +249,32 @@ export const useAirbnbBookingSubmit = () => {
           // Validate the date
           if (!isNaN(dateObj.getTime())) {
             const dateStr = dateObj.toISOString().split('T')[0];
-            bookingDateTime = new Date(`${dateStr}T${bookingData.selectedTime}:00`);
+            
+            // Convert time from "9:00 AM" format to 24-hour "09:00" format
+            let time24 = bookingData.selectedTime;
+            if (bookingData.selectedTime.includes('AM') || bookingData.selectedTime.includes('PM')) {
+              const [time, period] = bookingData.selectedTime.split(' ');
+              let [hours, minutes] = time.split(':');
+              let hour = parseInt(hours);
+              
+              if (period === 'PM' && hour !== 12) {
+                hour += 12;
+              } else if (period === 'AM' && hour === 12) {
+                hour = 0;
+              }
+              
+              time24 = `${hour.toString().padStart(2, '0')}:${minutes}`;
+            }
+            
+            console.log('[useAirbnbBookingSubmit] Converted time:', bookingData.selectedTime, '->', time24);
+            
+            bookingDateTime = new Date(`${dateStr}T${time24}:00`);
             
             console.log('[useAirbnbBookingSubmit] Created booking datetime:', bookingDateTime.toISOString());
             
             // Validate the final datetime
             if (isNaN(bookingDateTime.getTime())) {
-              console.error('Invalid datetime created:', { dateStr, time: bookingData.selectedTime });
+              console.error('Invalid datetime created:', { dateStr, time: time24 });
               bookingDateTime = null;
             }
           } else {
