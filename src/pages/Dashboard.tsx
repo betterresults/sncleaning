@@ -9,6 +9,7 @@ import { adminNavigation } from '@/lib/navigationItems';
 import DashboardStats from '@/components/admin/DashboardStats';
 import TodayBookingsCards from '@/components/dashboard/TodayBookingsCards';
 import RecentActivity from '@/components/dashboard/RecentActivity';
+import QuickStats from '@/components/dashboard/QuickStats';
 import { Calendar, Plus } from 'lucide-react';
 import AdminGuard from '@/components/AdminGuard';
 import { useNavigate } from 'react-router-dom';
@@ -70,7 +71,7 @@ const Dashboard = () => {
               onSignOut={handleSignOut}
             />
             <SidebarInset className="flex-1 flex flex-col p-0 m-0">
-              <main className="flex-1 bg-gray-50 m-0 pl-1 pr-4 md:pr-6 py-4 md:py-6 space-y-6" >
+              <main className="flex-1 bg-gray-50 m-0 px-4 md:px-6 py-4 md:py-6 space-y-6 max-w-[1600px]">
                 {/* Statistics - Last 30 Days */}
                 <DashboardStats />
                 
@@ -110,6 +111,9 @@ const Dashboard = () => {
                     />
                   </CardContent>
                 </Card>
+
+                {/* Quick Stats */}
+                <QuickStats />
 
                 {/* Recent Activity */}
                 <Card className="border shadow-sm">

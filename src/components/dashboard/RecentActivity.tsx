@@ -29,7 +29,7 @@ const RecentActivity = () => {
         .from('past_bookings')
         .select('id, date_time, first_name, last_name, total_cost, service_type')
         .order('date_time', { ascending: false })
-        .limit(10);
+        .limit(5);
 
       if (completedError) throw completedError;
 
@@ -48,12 +48,12 @@ const RecentActivity = () => {
         });
       });
 
-      // Sort by timestamp and take top 10
+      // Sort by timestamp and take top 5
       combinedActivities.sort((a, b) => 
         new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       );
 
-      setActivities(combinedActivities.slice(0, 10));
+      setActivities(combinedActivities.slice(0, 5));
     } catch (error) {
       console.error('Error fetching recent activity:', error);
     } finally {
