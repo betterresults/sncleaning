@@ -90,6 +90,29 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack, isAdm
   // Admin testing mode - skip payment if URL has ?adminTest=true
   const adminTestMode = searchParams.get('adminTest') === 'true';
   
+  // Auto-fill logged-in customer data on mount
+  useEffect(() => {
+    if (!isAdminMode && customerId && user && !data.firstName && !data.email) {
+      const fetchCustomerData = async () => {
+        const { data: customerData } = await supabase
+          .from('customers')
+          .select('first_name, last_name, email, phone')
+          .eq('id', customerId)
+          .single();
+        
+        if (customerData) {
+          onUpdate({
+            firstName: customerData.first_name || '',
+            lastName: customerData.last_name || '',
+            email: customerData.email || '',
+            phone: customerData.phone || ''
+          });
+        }
+      };
+      fetchCustomerData();
+    }
+  }, [customerId, user, isAdminMode]);
+  
   // Fetch company payment methods from settings (for admin mode)
   useEffect(() => {
     if (isAdminMode) {
@@ -595,8 +618,8 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack, isAdm
         </div>
       )}
 
-      {/* Customer Details - Always show if not guest, editable after selection */}
-      {(isAdminMode || user) && (
+      {/* Customer Details - Show for logged-in customers (non-admin) or admin after customer selection */}
+      {((isAdminMode && data.customerId) || (!isAdminMode && user)) && (
         <div className="space-y-6">
           <h3 className="text-2xl font-bold text-[#185166] mb-4">
             {isAdminMode ? 'Customer Details' : 'Your Details'}

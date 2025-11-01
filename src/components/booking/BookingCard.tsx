@@ -57,6 +57,21 @@ const BookingCard = <T extends BaseBooking>({
     const diffInHours = (bookingDate.getTime() - now.getTime()) / (1000 * 60 * 60);
     return diffInHours <= 24 && diffInHours >= 0;
   };
+  
+  // Format service type to human-readable text
+  const getServiceTypeLabel = (serviceType: string) => {
+    const labels: Record<string, string> = {
+      'checkin-checkout': 'Airbnb Cleaning',
+      'midstay': 'Mid-stay Cleaning',
+      'light': 'Light Cleaning',
+      'deep': 'Deep Cleaning',
+      'Standard Cleaning': 'Standard Cleaning',
+      'Deep Cleaning': 'Deep Cleaning',
+      'End of Tenancy': 'End of Tenancy',
+      'Air BnB': 'Airbnb Cleaning'
+    };
+    return labels[serviceType] || serviceType;
+  };
   return (
     <div className={`group relative overflow-hidden rounded-2xl border p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/30 ${
       isOverdue
@@ -70,7 +85,9 @@ const BookingCard = <T extends BaseBooking>({
       <div className="flex items-start justify-between mb-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <h3 className="text-xl font-bold text-[#185166] tracking-tight">{booking.cleaning_type || booking.service_type}</h3>
+            <h3 className="text-xl font-bold text-[#185166] tracking-tight">
+              {booking.cleaning_type ? getServiceTypeLabel(booking.cleaning_type) : getServiceTypeLabel(booking.service_type)}
+            </h3>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-500 font-medium">Booking #{booking.id}</span>

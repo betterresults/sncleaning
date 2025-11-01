@@ -294,7 +294,7 @@ const AirbnbBookingForm: React.FC = () => {
                         isActive 
                           ? 'bg-primary text-white scale-110' 
                           : isCompleted 
-                          ? 'bg-primary/70 text-white' 
+                          ? 'bg-primary text-white' 
                           : 'bg-gray-200 text-gray-400'
                       }`}>
                         {stepNumber}
