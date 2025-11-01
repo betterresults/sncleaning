@@ -98,19 +98,17 @@ const Dashboard = () => {
                 </Card>
 
                 {/* Next 7 Days Bookings */}
-                <Card className="border shadow-sm">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                <div>
+                  <div className="mb-4">
+                    <h2 className="text-xl font-semibold flex items-center gap-2">
                       <Calendar className="h-5 w-5" />
                       Bookings for Next 7 Days
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 sm:p-6 pt-0">
-                    <TodayBookingsCards 
-                      dashboardDateFilter={next7DaysRange}
-                    />
-                  </CardContent>
-                </Card>
+                    </h2>
+                  </div>
+                  <TodayBookingsCards 
+                    dashboardDateFilter={next7DaysRange}
+                  />
+                </div>
 
                 {/* Activity and Stats Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
