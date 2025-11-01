@@ -58,19 +58,32 @@ const BookingCard = <T extends BaseBooking>({
     return diffInHours <= 24 && diffInHours >= 0;
   };
   
-  // Format service type to human-readable text
+  // Format service type (main category) to human-readable text
   const getServiceTypeLabel = (serviceType: string) => {
     const labels: Record<string, string> = {
-      'checkin-checkout': 'Airbnb Cleaning',
-      'midstay': 'Mid-stay Cleaning',
-      'light': 'Light Cleaning',
-      'deep': 'Deep Cleaning',
-      'Standard Cleaning': 'Standard Cleaning',
-      'Deep Cleaning': 'Deep Cleaning',
-      'End of Tenancy': 'End of Tenancy',
-      'Air BnB': 'Airbnb Cleaning'
+      'airbnb': 'Airbnb Cleaning',
+      'domestic': 'Domestic Cleaning',
+      'carpet': 'Carpet Cleaning',
+      'commercial': 'Commercial Cleaning',
+      'End of Tenancy': 'End of Tenancy Cleaning'
     };
     return labels[serviceType] || serviceType;
+  };
+
+  // Format cleaning type (specific type) to human-readable text
+  const getCleaningTypeLabel = (cleaningType: string) => {
+    const labels: Record<string, string> = {
+      'check_in_check_out': 'Check-in / Check-out',
+      'checkin-checkout': 'Check-in / Check-out',
+      'midstay': 'Mid-stay',
+      'light': 'Light Cleaning',
+      'deep': 'Deep Cleaning',
+      'standard_cleaning': 'Standard Cleaning',
+      'deep_cleaning': 'Deep Cleaning',
+      'Standard Cleaning': 'Standard Cleaning',
+      'Deep Cleaning': 'Deep Cleaning'
+    };
+    return labels[cleaningType] || cleaningType;
   };
   return (
     <div className={`group relative overflow-hidden rounded-2xl border p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/30 ${
@@ -91,7 +104,7 @@ const BookingCard = <T extends BaseBooking>({
           </div>
           {booking.cleaning_type && (
             <p className="text-sm text-gray-600 font-medium">
-              {getServiceTypeLabel(booking.cleaning_type)}
+              {getCleaningTypeLabel(booking.cleaning_type)}
             </p>
           )}
           <div className="flex items-center gap-2">
