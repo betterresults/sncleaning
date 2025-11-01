@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { PropertyStep } from './steps/PropertyStep';
@@ -7,6 +7,9 @@ import { ScheduleStep } from './steps/ScheduleStep';
 import { BookingSummary } from './BookingSummary';
 import { PaymentStep } from './steps/PaymentStep';
 import { Home, Brush, Calendar, User, CreditCard, Package2 } from 'lucide-react';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe, Stripe } from '@stripe/stripe-js';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface BookingData {
   // Property details
@@ -85,6 +88,7 @@ const steps = [
 
 const BookingForm: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
+  const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [bookingData, setBookingData] = useState<BookingData>({
     propertyType: '',
     bedrooms: '',
@@ -135,6 +139,22 @@ const BookingForm: React.FC = () => {
     hourlyRate: 25,
     totalCost: 0,
   });
+
+  // Load Stripe on mount
+  useEffect(() => {
+    const initStripe = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('stripe-get-publishable-key');
+        if (error) throw error;
+        if (data?.publishable_key) {
+          setStripePromise(loadStripe(data.publishable_key));
+        }
+      } catch (error) {
+        console.error('Failed to load Stripe:', error);
+      }
+    };
+    initStripe();
+  }, []);
 
   const updateBookingData = (updates: Partial<BookingData>) => {
     setBookingData(prev => {
@@ -195,12 +215,16 @@ const BookingForm: React.FC = () => {
           />
         );
       case 4:
-        return (
-          <PaymentStep
-            data={bookingData}
-            onUpdate={updateBookingData}
-            onBack={prevStep}
-          />
+        return stripePromise ? (
+          <Elements stripe={stripePromise}>
+            <PaymentStep
+              data={bookingData}
+              onUpdate={updateBookingData}
+              onBack={prevStep}
+            />
+          </Elements>
+        ) : (
+          <div className="text-center py-8">Loading payment form...</div>
         );
       default:
         return null;

@@ -9,6 +9,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
+import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 // Simple auth check without using AuthContext
 const useSimpleAuth = () => {
@@ -71,6 +72,9 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
   const [searchParams] = useSearchParams();
   const [emailError, setEmailError] = useState('');
   const [phoneError, setPhoneError] = useState('');
+  const stripe = useStripe();
+  const elements = useElements();
+  const [cardComplete, setCardComplete] = useState(false);
   
   // Admin testing mode - skip payment if URL has ?adminTest=true
   const adminTestMode = searchParams.get('adminTest') === 'true';
@@ -374,7 +378,17 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
 
         navigate('/booking-confirmation', { state: { bookingId: result.bookingId } });
       } else {
-        // No saved payment method - submit booking first, then redirect to Stripe
+        // No saved payment method - use CardElement to create payment method
+        if (!stripe || !elements) {
+          throw new Error('Stripe not loaded');
+        }
+
+        const cardElement = elements.getElement(CardElement);
+        if (!cardElement) {
+          throw new Error('Card information is incomplete');
+        }
+
+        // Submit booking first
         const result = await submitBooking(bookingPayload, true);
 
         console.log('[PaymentStep] submitBooking result (no default PM):', result);
@@ -383,30 +397,64 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
           throw new Error('Failed to create booking');
         }
 
-        // Call stripe-collect-payment-method
-        const returnUrl = `${window.location.origin}/airbnb?payment_setup=success&bookingId=${result.bookingId}&urgent=${isUrgentBooking ? '1' : '0'}`;
-        const cancelUrl = `${window.location.origin}/airbnb?payment_setup=cancelled`;
+        // Create payment method with card element
+        const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
+          type: 'card',
+          card: cardElement,
+          billing_details: {
+            name: `${data.firstName} ${data.lastName}`,
+            email: data.email,
+            phone: data.phone,
+          },
+        });
 
-        const { data: collectResult, error: collectError } = await supabase.functions.invoke(
-          'stripe-collect-payment-method',
+        if (pmError || !paymentMethod) {
+          throw new Error(pmError?.message || 'Failed to create payment method');
+        }
+
+        // Attach payment method to customer
+        const { data: attachResult, error: attachError } = await supabase.functions.invoke(
+          'stripe-attach-payment-method',
           {
             body: {
+              payment_method_id: paymentMethod.id,
               customer_id: result.customerId,
-              customer_email: data.email,
-              customer_name: `${data.firstName} ${data.lastName}`,
-              return_url: returnUrl,
-              cancel_url: cancelUrl,
-              collect_only: true
             }
           }
         );
 
-        if (collectError || !collectResult?.checkout_url) {
-          throw new Error(collectResult?.error || 'Failed to setup payment');
+        if (attachError || !attachResult?.success) {
+          throw new Error('Failed to save payment method');
         }
 
-        // Redirect to Stripe Checkout
-        window.location.href = collectResult.checkout_url;
+        // For urgent bookings, charge immediately
+        if (isUrgentBooking) {
+          const { data: chargeResult, error: chargeError } = await supabase.functions.invoke(
+            'system-payment-action',
+            {
+              body: {
+                bookingId: result.bookingId,
+                action: 'charge'
+              }
+            }
+          );
+
+          if (chargeError || !chargeResult?.success) {
+            throw new Error(chargeResult?.error || 'Payment failed');
+          }
+
+          toast({
+            title: "Payment Successful",
+            description: `£${data.totalCost.toFixed(2)} has been charged.`
+          });
+        } else {
+          toast({
+            title: "Card Added Successfully",
+            description: "Your booking has been confirmed. Payment will be processed 3 days before the cleaning date."
+          });
+        }
+
+        navigate('/booking-confirmation', { state: { bookingId: result.bookingId } });
       }
       
     } catch (error: any) {
@@ -564,29 +612,55 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
                 </p>
               </div>
             ) : (
-              // No saved payment method - will redirect to Stripe
-              <div className="rounded-2xl border-2 border-dashed border-gray-300 bg-white p-8">
-                <div className="text-center space-y-4">
-                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
-                    <CreditCard className="h-8 w-8 text-primary" />
+              // No saved payment method - show CardElement
+              <div className="rounded-2xl border-2 border-gray-200 bg-white p-8">
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <CreditCard className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold text-gray-900">Card Details</p>
+                      <p className="text-sm text-gray-600">
+                        {isUrgentBooking 
+                          ? `Enter your card to pay £${data.totalCost.toFixed(2)}`
+                          : "Add your payment method. No charge will be made now."
+                        }
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-lg font-bold text-gray-900 mb-2">Add Payment Method</p>
-                    <p className="text-sm text-gray-600">
-                      {isUrgentBooking 
-                        ? `You'll securely add your card and pay £${data.totalCost.toFixed(2)} through Stripe.`
-                        : "You'll be redirected to securely add your payment method via Stripe. No payment will be collected now."
-                      }
-                    </p>
+                  
+                  <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-200">
+                    <CardElement 
+                      options={{
+                        style: {
+                          base: {
+                            fontSize: '16px',
+                            color: '#1f2937',
+                            fontFamily: 'system-ui, -apple-system, sans-serif',
+                            '::placeholder': {
+                              color: '#9ca3af',
+                            },
+                            iconColor: '#185166',
+                          },
+                          invalid: {
+                            color: '#ef4444',
+                            iconColor: '#ef4444',
+                          },
+                        },
+                      }}
+                      onChange={(e) => setCardComplete(e.complete)}
+                    />
                   </div>
-                  <div className="flex items-center justify-center gap-4 pt-4">
+
+                  <div className="flex items-center justify-center gap-4 pt-2">
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Shield className="h-4 w-4 text-green-600" />
                       <span>Bank-level security</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <CreditCard className="h-4 w-4 text-blue-600" />
-                      <span>All major cards accepted</span>
+                      <span>All major cards</span>
                     </div>
                   </div>
                 </div>
@@ -617,7 +691,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
           size="lg"
           className="px-12"
           onClick={handleSubmit}
-          disabled={processing || submitting || !canContinue}
+          disabled={processing || submitting || !canContinue || (!customerId && !cardComplete && !adminTestMode) || (!customerId && !defaultPaymentMethod && !stripe)}
         >
           {(processing || submitting) ? (
             <>
@@ -630,8 +704,10 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
             `Pay £${data.totalCost.toFixed(2)} & Confirm`
           ) : customerId && defaultPaymentMethod ? (
             'Complete Booking'
+          ) : isUrgentBooking ? (
+            `Pay £${data.totalCost.toFixed(2)} & Confirm`
           ) : (
-            'Continue to Secure Payment'
+            'Complete Booking'
           )}
         </Button>
       </div>
