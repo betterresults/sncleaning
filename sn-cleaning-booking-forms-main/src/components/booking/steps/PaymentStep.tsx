@@ -535,55 +535,72 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
             {customerId && defaultPaymentMethod ? (
               // Customer has saved payment method
               <div className="space-y-4">
-                <div className="rounded-2xl border-2 border-gray-200 bg-white p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <CreditCard className="h-6 w-6 text-[#185166]" />
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {defaultPaymentMethod.card_brand.toUpperCase()} •••• {defaultPaymentMethod.card_last4}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          Expires {defaultPaymentMethod.card_exp_month}/{defaultPaymentMethod.card_exp_year}
-                        </p>
-                      </div>
+                <div className="rounded-2xl border-2 border-primary/20 bg-gradient-to-br from-white to-primary/5 p-6 shadow-lg">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <CreditCard className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600 font-medium">Saved Payment Method</p>
+                      <p className="text-lg font-bold text-gray-900">
+                        {defaultPaymentMethod.card_brand.toUpperCase()} •••• {defaultPaymentMethod.card_last4}
+                      </p>
                     </div>
                   </div>
-                  <p className="text-sm text-gray-600 mt-4">
-                    {isUrgentBooking 
-                      ? `£${data.totalCost.toFixed(2)} will be charged to this card.`
-                      : 'No payment will be collected now. Your card will be charged later.'
-                    }
-                  </p>
+                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+                    <span>Expires {defaultPaymentMethod.card_exp_month}/{defaultPaymentMethod.card_exp_year}</span>
+                  </div>
+                  <div className="bg-white/80 rounded-lg p-4 border border-primary/10">
+                    <p className="text-sm text-gray-700">
+                      {isUrgentBooking 
+                        ? `💳 £${data.totalCost.toFixed(2)} will be charged to this card immediately.`
+                        : '✅ Your card is saved. Payment will be processed 3 days before the cleaning date.'
+                      }
+                    </p>
+                  </div>
                 </div>
                 <p className="text-sm text-gray-500 text-center">
-                  or add a different card during checkout
+                  Need to use a different card? You can update it during checkout.
                 </p>
               </div>
             ) : (
               // No saved payment method - will redirect to Stripe
-              <div className="rounded-2xl border-2 border-gray-200 bg-white p-6">
-                <div className="flex items-center gap-3 mb-3">
-                  <CreditCard className="h-6 w-6 text-[#185166]" />
-                  <p className="font-medium text-gray-900">Add Payment Method</p>
+              <div className="rounded-2xl border-2 border-dashed border-gray-300 bg-white p-8">
+                <div className="text-center space-y-4">
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+                    <CreditCard className="h-8 w-8 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-gray-900 mb-2">Add Payment Method</p>
+                    <p className="text-sm text-gray-600">
+                      {isUrgentBooking 
+                        ? `You'll securely add your card and pay £${data.totalCost.toFixed(2)} through Stripe.`
+                        : "You'll be redirected to securely add your payment method via Stripe. No payment will be collected now."
+                      }
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-center gap-4 pt-4">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Shield className="h-4 w-4 text-green-600" />
+                      <span>Bank-level security</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <CreditCard className="h-4 w-4 text-blue-600" />
+                      <span>All major cards accepted</span>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-base text-gray-600">
-                  {isUrgentBooking 
-                    ? `Payment of £${data.totalCost.toFixed(2)} will be collected securely through Stripe.`
-                    : 'You will be redirected to securely add your payment method. No payment will be collected now.'
-                  }
-                </p>
               </div>
             )}
             
-            <div className="flex items-center justify-start gap-6 text-sm text-gray-500 pt-2">
+            <div className="flex items-center justify-center gap-6 text-xs text-gray-400 pt-2">
               <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-[#185166]" />
-                <span>Secure Payment</span>
+                <Shield className="h-3 w-3" />
+                <span>256-bit SSL encryption</span>
               </div>
               <div className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-[#185166]" />
-                <span>PCI Compliant</span>
+                <Shield className="h-3 w-3" />
+                <span>PCI DSS compliant</span>
               </div>
             </div>
           </div>
