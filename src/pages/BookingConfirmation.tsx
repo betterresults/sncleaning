@@ -6,7 +6,7 @@ import { CheckCircle, Calendar, Clock, MapPin, Loader2 } from 'lucide-react';
 
 interface BookingDetails {
   id: number;
-  date_time: string;
+  date_time: string | null;
   address: string;
   postcode: string;
   service_type: string;
@@ -14,11 +14,17 @@ interface BookingDetails {
   customer: number;
 }
 
+interface ServiceTypeSetting {
+  label: string;
+  badge_color: string;
+}
+
 const BookingConfirmation = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [booking, setBooking] = useState<BookingDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [serviceTypeLabel, setServiceTypeLabel] = useState<string>('');
   const bookingId = location.state?.bookingId;
 
   useEffect(() => {
@@ -29,10 +35,11 @@ const BookingConfirmation = () => {
         date_time: new Date(Date.now() + 86400000 * 2).toISOString(), // 2 days from now
         address: '123 Demo Street, London',
         postcode: 'SW1A 1AA',
-        service_type: 'end-of-tenancy',
+        service_type: 'airbnb',
         total_cost: 250.00,
         customer: 1
       });
+      setServiceTypeLabel('Airbnb Cleaning');
       setLoading(false);
       return;
     }
@@ -47,6 +54,24 @@ const BookingConfirmation = () => {
 
         if (error) throw error;
         setBooking(data);
+
+        // Fetch service type label from company_settings
+        if (data?.service_type) {
+          const { data: settingData } = await supabase
+            .from('company_settings')
+            .select('setting_value')
+            .eq('setting_category', 'service_type')
+            .eq('setting_key', data.service_type)
+            .eq('is_active', true)
+            .single();
+
+          if (settingData?.setting_value) {
+            const settingValue = settingData.setting_value as Record<string, any>;
+            setServiceTypeLabel(settingValue.label || data.service_type);
+          } else {
+            setServiceTypeLabel(data.service_type.replace('-', ' '));
+          }
+        }
       } catch (error) {
         console.error('Error fetching booking:', error);
       } finally {
@@ -103,20 +128,26 @@ const BookingConfirmation = () => {
             <Calendar className="h-6 w-6 text-[#185166] mt-1 flex-shrink-0" />
             <div>
               <p className="text-sm text-gray-500">Date & Time</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {new Date(booking.date_time).toLocaleDateString('en-GB', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </p>
-              <p className="text-base text-gray-700">
-                {new Date(booking.date_time).toLocaleTimeString('en-GB', {
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </p>
+              {booking.date_time ? (
+                <>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {new Date(booking.date_time).toLocaleDateString('en-GB', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                  <p className="text-base text-gray-700">
+                    {new Date(booking.date_time).toLocaleTimeString('en-GB', {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </>
+              ) : (
+                <p className="text-lg text-gray-500">Date & time to be confirmed</p>
+              )}
             </div>
           </div>
 
@@ -135,8 +166,8 @@ const BookingConfirmation = () => {
           <div className="pt-4 border-t border-gray-200">
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Service Type</span>
-              <span className="font-semibold text-gray-900 capitalize">
-                {booking.service_type.replace('-', ' ')}
+              <span className="font-semibold text-gray-900">
+                {serviceTypeLabel || booking.service_type.replace('-', ' ')}
               </span>
             </div>
             <div className="flex justify-between items-center mt-3">
