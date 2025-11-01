@@ -612,7 +612,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
         onBulkEditClick={() => navigate('/bulk-edit-bookings')}
       />
 
-      <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border-0 shadow-sm overflow-hidden">
           {viewMode === 'list' ? (
             <BookingsListView 
               dashboardDateFilter={dashboardDateFilter}
