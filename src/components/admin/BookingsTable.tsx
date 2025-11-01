@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +12,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Edit, Trash2, Filter, Search, Settings, Copy, X } from 'lucide-react';
 import { format } from 'date-fns';
 import DashboardStats from './DashboardStats';
-import BulkEditBookingsDialog from '../dashboard/BulkEditBookingsDialog';
 import EditBookingDialog from '../dashboard/EditBookingDialog';
 
 interface Booking {
@@ -60,6 +60,7 @@ interface Filters {
 }
 
 const BookingsTable = () => {
+  const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
@@ -76,7 +77,6 @@ const BookingsTable = () => {
     customerId: 'all',
     customerSearch: '',
   });
-  const [bulkEditOpen, setBulkEditOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<Booking | null>(null);
 
@@ -471,7 +471,7 @@ const BookingsTable = () => {
 
           {/* Bulk Edit Button - Added next to sort controls */}
           <Button 
-            onClick={() => setBulkEditOpen(true)}
+            onClick={() => navigate('/bulk-edit-bookings')}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
           >
             <Settings className="h-4 w-4" />
@@ -640,12 +640,6 @@ const BookingsTable = () => {
           </Button>
         </div>
       )}
-
-      <BulkEditBookingsDialog
-        open={bulkEditOpen}
-        onOpenChange={setBulkEditOpen}
-        onSuccess={fetchData}
-      />
 
       <EditBookingDialog
         open={editDialogOpen}

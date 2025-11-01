@@ -24,7 +24,6 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { AuthorizeRemainingAmountDialog } from '@/components/payments/AuthorizeRemainingAmountDialog';
 
-import BulkEditBookingsDialog from './BulkEditBookingsDialog';
 import EditBookingDialog from './EditBookingDialog';
 import AssignCleanerDialog from './AssignCleanerDialog';
 import DuplicateBookingDialog from './DuplicateBookingDialog';
@@ -117,7 +116,6 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
     bookingIdSearch: '',
   });
   const [filtersCollapsed, setFiltersCollapsed] = useState(true);
-  const [bulkEditOpen, setBulkEditOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<Booking | null>(null);
   const [assignCleanerOpen, setAssignCleanerOpen] = useState(false);
@@ -1302,12 +1300,6 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
           </Button>
         </div>
       )}
-
-      <BulkEditBookingsDialog
-        open={bulkEditOpen}
-        onOpenChange={setBulkEditOpen}
-        onSuccess={fetchData}
-      />
 
       <EditBookingDialog
         open={editDialogOpen}
