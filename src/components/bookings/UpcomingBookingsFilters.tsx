@@ -139,24 +139,24 @@ export function UpcomingBookingsFilters({ filters, onFiltersChange, cleaners }: 
               }
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-4 bg-white shadow-lg rounded-xl z-50" align="start">
-            <div className="space-y-3">
+          <PopoverContent className="w-auto p-6 bg-white shadow-lg rounded-xl z-50" align="start">
+            <div className="space-y-4">
               {/* Tab buttons for From/To Date */}
-              <div className="flex gap-2 border-b pb-2">
+              <div className="flex gap-3 border-b pb-3">
                 <Button
                   variant={activeDateTab === 'from' ? 'default' : 'outline'}
-                  size="sm"
+                  size="default"
                   onClick={() => setActiveDateTab('from')}
-                  className="flex-1"
+                  className="flex-1 h-11"
                 >
                   <Calendar className="mr-2 h-4 w-4" />
                   {filters.dateFrom ? format(new Date(filters.dateFrom), 'dd MMM yyyy') : 'From Date'}
                 </Button>
                 <Button
                   variant={activeDateTab === 'to' ? 'default' : 'outline'}
-                  size="sm"
+                  size="default"
                   onClick={() => setActiveDateTab('to')}
-                  className="flex-1"
+                  className="flex-1 h-11"
                 >
                   <Calendar className="mr-2 h-4 w-4" />
                   {filters.dateTo ? format(new Date(filters.dateTo), 'dd MMM yyyy') : 'To Date'}
@@ -169,7 +169,7 @@ export function UpcomingBookingsFilters({ filters, onFiltersChange, cleaners }: 
                   mode="single"
                   selected={filters.dateFrom ? new Date(filters.dateFrom) : undefined}
                   onSelect={handleDateFromChange}
-                  className="p-0 pointer-events-auto rounded-lg"
+                  className="pointer-events-auto rounded-lg [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_table]:w-full [&_td]:p-2 [&_button]:h-10 [&_button]:w-10"
                 />
               )}
               
@@ -178,7 +178,7 @@ export function UpcomingBookingsFilters({ filters, onFiltersChange, cleaners }: 
                   mode="single"
                   selected={filters.dateTo ? new Date(filters.dateTo) : undefined}
                   onSelect={handleDateToChange}
-                  className="p-0 pointer-events-auto rounded-lg"
+                  className="pointer-events-auto rounded-lg [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_table]:w-full [&_td]:p-2 [&_button]:h-10 [&_button]:w-10"
                 />
               )}
               
@@ -186,12 +186,12 @@ export function UpcomingBookingsFilters({ filters, onFiltersChange, cleaners }: 
               {(filters.dateFrom || filters.dateTo) && (
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="default"
                   onClick={() => {
                     onFiltersChange({ ...filters, dateFrom: '', dateTo: '' });
                     setActiveDateTab('from');
                   }}
-                  className="w-full text-muted-foreground hover:text-foreground"
+                  className="w-full text-muted-foreground hover:text-foreground h-10"
                 >
                   <X className="mr-2 h-4 w-4" />
                   Clear dates
