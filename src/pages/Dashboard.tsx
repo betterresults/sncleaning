@@ -7,7 +7,7 @@ import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { adminNavigation } from '@/lib/navigationItems';
 import DashboardStats from '@/components/admin/DashboardStats';
-import TodayBookingsCards from '@/components/dashboard/TodayBookingsCards';
+import BookingsListView from '@/components/bookings/BookingsListView';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import PerformanceChart from '@/components/dashboard/PerformanceChart';
 import { Calendar, Plus } from 'lucide-react';
@@ -91,7 +91,7 @@ const Dashboard = () => {
                     </Button>
                   </CardHeader>
                   <CardContent className="p-4 sm:p-6 pt-0 pb-4">
-                    <TodayBookingsCards 
+                    <BookingsListView 
                       dashboardDateFilter={todayRange}
                     />
                   </CardContent>
@@ -105,7 +105,7 @@ const Dashboard = () => {
                       Bookings for Next 7 Days
                     </h2>
                   </div>
-                  <TodayBookingsCards 
+                  <BookingsListView 
                     dashboardDateFilter={next7DaysRange}
                   />
                 </div>

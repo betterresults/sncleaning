@@ -14,11 +14,11 @@ import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { AuthorizeRemainingAmountDialog } from '@/components/payments/AuthorizeRemainingAmountDialog';
 
-import EditBookingDialog from './EditBookingDialog';
-import AssignCleanerDialog from './AssignCleanerDialog';
-import DuplicateBookingDialog from './DuplicateBookingDialog';
-import ConvertToRecurringDialog from './ConvertToRecurringDialog';
-import ManualEmailDialog from './ManualEmailDialog';
+import EditBookingDialog from '../dashboard/EditBookingDialog';
+import AssignCleanerDialog from '../dashboard/AssignCleanerDialog';
+import DuplicateBookingDialog from '../dashboard/DuplicateBookingDialog';
+import ConvertToRecurringDialog from '../dashboard/ConvertToRecurringDialog';
+import ManualEmailDialog from '../dashboard/ManualEmailDialog';
 import { useServiceTypes, useCleaningTypes, getServiceTypeBadgeColor as getBadgeColor } from '@/hooks/useCompanySettings';
 
 interface Booking {
@@ -63,7 +63,7 @@ interface TodayBookingsCardsProps {
   };
 }
 
-const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
+const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -840,4 +840,4 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
   );
 };
 
-export default TodayBookingsCards;
+export default BookingsListView;
