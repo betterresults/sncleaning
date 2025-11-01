@@ -366,6 +366,7 @@ const CustomerDashboard = () => {
           </main>
         </SidebarInset>
       </div>
+      </div>
       
       <BulkPaymentDialog
         open={showBulkPayment}

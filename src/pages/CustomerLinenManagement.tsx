@@ -61,6 +61,7 @@ const CustomerLinenManagement = () => {
             </main>
         </SidebarInset>
       </div>
+      </div>
     </SidebarProvider>
   );
 };

@@ -115,6 +115,7 @@ const CustomerAddBooking = () => {
           </main>
         </SidebarInset>
       </div>
+      </div>
     </SidebarProvider>
   );
 };
