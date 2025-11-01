@@ -103,7 +103,13 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
     last_name: '',
     email: '',
     password: '',
-    role: userType === 'customer' ? 'guest' : userType === 'cleaner' ? 'user' : 'guest'
+    role: userType === 'customer' 
+      ? 'guest' 
+      : userType === 'cleaner' 
+        ? 'user' 
+        : userType === 'admin'
+          ? 'admin'
+          : 'guest'
   });
   const [addingUser, setAddingUser] = useState(false);
   const [showRoleChangeDialog, setShowRoleChangeDialog] = useState(false);
@@ -332,7 +338,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           password: newUserData.password,
           firstName: newUserData.first_name,
           lastName: newUserData.last_name,
-          role: newUserData.role
+          role: userType === 'admin' ? 'admin' : newUserData.role
         }
       });
 
@@ -349,7 +355,13 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         last_name: '',
         email: '',
         password: '',
-        role: userType === 'customer' ? 'guest' : userType === 'cleaner' ? 'user' : 'guest'
+        role: userType === 'customer' 
+          ? 'guest' 
+          : userType === 'cleaner' 
+            ? 'user' 
+            : userType === 'admin'
+              ? 'admin'
+              : 'guest'
       });
       fetchUsers();
     } catch (error: any) {
