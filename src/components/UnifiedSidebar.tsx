@@ -148,14 +148,14 @@ export function UnifiedSidebar({ navigationItems, user, userRole, customerId, cl
                     </SidebarMenuButton>
                     
                     {hasSubItems && isExpanded && (
-                      <SidebarMenuSub className="mt-0 ml-0 border-0 space-y-0">
+                      <SidebarMenuSub className="mt-0 mx-0 px-0 py-0 border-l-0 translate-x-0 gap-0">
                         {item.subItems?.map((subItem) => {
                           const isSubActive = location.pathname === subItem.url;
                           return (
                             <SidebarMenuSubItem key={subItem.title}>
                               <SidebarMenuSubButton 
                                 asChild
-                                className={`h-9 transition-all duration-200 rounded-md px-3 py-1.5 font-medium text-sm ${
+                                className={`h-7 transition-all duration-200 rounded-md px-2 font-medium text-sm ${
                                   isSubActive
                                     ? "!bg-white/20 !text-white"
                                     : "!text-white/90 hover:!text-white hover:!bg-white/10"
