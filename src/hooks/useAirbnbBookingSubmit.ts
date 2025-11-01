@@ -252,7 +252,7 @@ export const useAirbnbBookingSubmit = () => {
         property_details: buildPropertyDetails(bookingData),
         
         // Service
-        service_type: 'airbnb', // Airbnb service type
+        service_type: 'Air BnB', // FIXED - form name
         cleaning_type: bookingData.serviceType, // checkin-checkout, midstay, etc.
         
         // Dates
