@@ -229,6 +229,13 @@ export const useAirbnbBookingSubmit = () => {
       }
 
       // Step 2: Create booking
+      console.log('[useAirbnbBookingSubmit] Creating booking datetime from:', {
+        selectedDate: bookingData.selectedDate,
+        selectedTime: bookingData.selectedTime,
+        dateType: typeof bookingData.selectedDate,
+        timeType: typeof bookingData.selectedTime
+      });
+
       let bookingDateTime = null;
       if (bookingData.selectedDate && bookingData.selectedTime) {
         try {
@@ -237,10 +244,14 @@ export const useAirbnbBookingSubmit = () => {
             ? bookingData.selectedDate 
             : new Date(bookingData.selectedDate);
           
+          console.log('[useAirbnbBookingSubmit] Date object:', dateObj, 'isValid:', !isNaN(dateObj.getTime()));
+          
           // Validate the date
           if (!isNaN(dateObj.getTime())) {
             const dateStr = dateObj.toISOString().split('T')[0];
             bookingDateTime = new Date(`${dateStr}T${bookingData.selectedTime}:00`);
+            
+            console.log('[useAirbnbBookingSubmit] Created booking datetime:', bookingDateTime.toISOString());
             
             // Validate the final datetime
             if (isNaN(bookingDateTime.getTime())) {
@@ -254,6 +265,11 @@ export const useAirbnbBookingSubmit = () => {
           console.error('Error creating booking datetime:', error);
           bookingDateTime = null;
         }
+      } else {
+        console.warn('[useAirbnbBookingSubmit] Missing selectedDate or selectedTime:', {
+          hasDate: !!bookingData.selectedDate,
+          hasTime: !!bookingData.selectedTime
+        });
       }
 
       const totalHours = (bookingData.totalHours || bookingData.estimatedHours || 0) + 
@@ -303,6 +319,9 @@ export const useAirbnbBookingSubmit = () => {
         payment_method: 'Stripe',
         payment_status: 'Unpaid',
         booking_status: 'active',
+        
+        // Cleaner - only add if not set (no default value)
+        cleaner_percentage: null,
         
         // Access
         access: bookingData.propertyAccess,
