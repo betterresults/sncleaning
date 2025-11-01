@@ -286,114 +286,127 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
   }
 
   return (
-    <div className="space-y-3 overflow-x-auto">
+    <div className="space-y-3">
       {bookings.map((booking) => {
           const isUnsigned = !booking.cleaner;
           const cleanerName = getCleanerName(booking);
           const bookingTime = booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'N/A';
+          const bookingDate = booking.date_time ? format(new Date(booking.date_time), 'dd MMM') : 'N/A';
 
         return (
-          <div 
+          <Card 
             key={booking.id} 
-            className="bg-white border-b border-gray-200 hover:bg-gray-50 transition-colors duration-150 min-w-[1000px]"
+            className="hover:shadow-md transition-shadow duration-150"
           >
-            <div className="px-6 py-4 flex items-center gap-6">
-              {/* Time */}
-              <div className="w-20 flex-shrink-0">
-                <div className="text-sm font-medium text-gray-900">{bookingTime}</div>
-              </div>
-
-              {/* Customer */}
-              <div className="w-48 flex-shrink-0">
-                <div className="text-sm font-medium text-gray-900">
-                  {booking.first_name} {booking.last_name}
+            <CardContent className="p-4">
+              <div className="flex gap-4">
+                {/* Time Box */}
+                <div className="flex-shrink-0">
+                  <div className="bg-primary/10 rounded-lg px-3 py-2 text-center min-w-[70px]">
+                    <div className="text-xs text-muted-foreground">{bookingDate}</div>
+                    <div className="text-sm font-semibold text-primary mt-1">{bookingTime}</div>
+                  </div>
                 </div>
-              </div>
 
-              {/* Address */}
-              <div className="flex-1 min-w-0">
-                <div className="text-sm text-gray-700 truncate">
-                  {booking.address}, {booking.postcode}
+                {/* Main Content */}
+                <div className="flex-1 min-w-0">
+                  {/* Customer Name */}
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <h3 className="text-base font-semibold text-foreground">
+                      {booking.first_name} {booking.last_name}
+                    </h3>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0 -mt-1">
+                          <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-44">
+                        <DropdownMenuItem onClick={() => handleEdit(booking.id)}>
+                          <Edit className="w-4 h-4 mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDuplicate(booking)}>
+                          <Copy className="w-4 h-4 mr-2" />
+                          Duplicate
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleAssignCleaner(booking.id)}>
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          Assign Cleaner
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleMakeRecurring(booking)}>
+                          <Repeat className="w-4 h-4 mr-2" />
+                          Make Recurring
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleSendEmail(booking)}>
+                          <Send className="w-4 h-4 mr-2" />
+                          Send Email
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handlePaymentAction(booking)}>
+                          <DollarSign className="w-4 h-4 mr-2" />
+                          {booking.payment_method === 'Invoiless' ? 'Manage Invoice' : 'Manage Payment'}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleCancel(booking.id)} className="text-orange-600">
+                          <X className="w-4 h-4 mr-2" />
+                          Cancel
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDelete(booking.id)} className="text-red-600">
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  {/* Service Type */}
+                  <p className="text-sm text-muted-foreground mb-2">{booking.service_type}</p>
+
+                  {/* Address */}
+                  <p className="text-sm text-muted-foreground mb-3 truncate">
+                    {booking.address}, {booking.postcode}
+                  </p>
+
+                  {/* Tags and Info Row */}
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <Badge variant="secondary" className="text-xs">
+                      {booking.cleaning_type}
+                    </Badge>
+                    
+                    {!isUnsigned && (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                          <User className="w-3 h-3 text-white" />
+                        </div>
+                        <span>{cleanerName}</span>
+                      </div>
+                    )}
+
+                    {isUnsigned && (
+                      <Badge variant="destructive" className="text-xs">
+                        Unassigned
+                      </Badge>
+                    )}
+
+                    <div className="ml-auto flex items-center gap-2">
+                      <PaymentStatusIndicator 
+                        status={booking.payment_status} 
+                        isClickable={true}
+                        onClick={() => handlePaymentAction(booking)}
+                        size="sm"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Cost */}
+                  <div className="flex items-center justify-between pt-2 border-t">
+                    <span className="text-sm text-muted-foreground">Booking Cost</span>
+                    <span className="text-lg font-semibold text-foreground">
+                      £{booking.total_cost?.toFixed(2) || '0.00'}
+                    </span>
+                  </div>
                 </div>
-              </div>
-
-              {/* Service */}
-              <div className="w-44 flex-shrink-0">
-                <div className="text-sm font-medium text-gray-900">{booking.service_type}</div>
-                <div className="text-xs text-gray-500">{booking.cleaning_type}</div>
-              </div>
-
-              {/* Cleaner */}
-              <div className="w-36 flex-shrink-0">
-                {isUnsigned ? (
-                  <Badge variant="destructive" className="text-xs font-normal">Unassigned</Badge>
-                ) : (
-                  <div className="text-sm text-gray-900">{cleanerName}</div>
-                )}
-              </div>
-
-              {/* Payment */}
-              <div className="w-24 flex-shrink-0">
-                <PaymentStatusIndicator 
-                  status={booking.payment_status} 
-                  isClickable={true}
-                  onClick={() => handlePaymentAction(booking)}
-                  size="sm"
-                />
-              </div>
-
-              {/* Price */}
-              <div className="w-24 flex-shrink-0 text-right">
-                <div className="text-sm font-semibold text-gray-900">
-                  £{booking.total_cost?.toFixed(2) || '0.00'}
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="w-10 flex-shrink-0">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                      <MoreHorizontal className="h-4 w-4 text-gray-500" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-44">
-                    <DropdownMenuItem onClick={() => handleEdit(booking.id)}>
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleDuplicate(booking)}>
-                      <Copy className="w-4 h-4 mr-2" />
-                      Duplicate
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleAssignCleaner(booking.id)}>
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Assign Cleaner
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleMakeRecurring(booking)}>
-                      <Repeat className="w-4 h-4 mr-2" />
-                      Make Recurring
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleSendEmail(booking)}>
-                      <Send className="w-4 h-4 mr-2" />
-                      Send Email
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => handlePaymentAction(booking)}>
-                      <DollarSign className="w-4 h-4 mr-2" />
-                      {booking.payment_method === 'Invoiless' ? 'Manage Invoice' : 'Manage Payment'}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => handleCancel(booking.id)} className="text-orange-600">
-                      <X className="w-4 h-4 mr-2" />
-                      Cancel
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleDelete(booking.id)} className="text-red-600">
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </div>
 
               {/* Hidden but functional */}
@@ -403,8 +416,8 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
                   onSuccess={fetchData}
                 />
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         );
       })}
 
