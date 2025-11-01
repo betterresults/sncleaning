@@ -44,6 +44,7 @@ import AdminCustomerPayments from "./pages/AdminCustomerPayments";
 import AdminPaymentManagement from "./pages/AdminPaymentManagement";
 import AdminStripePayments from "./pages/AdminStripePayments";
 import UpcomingBookings from "./pages/UpcomingBookings";
+import BulkEditBookings from "./pages/BulkEditBookings";
 import UsersAdmins from "./pages/UsersAdmins";
 import UsersCleaners from "./pages/UsersCleaners";
 import UsersCustomers from "./pages/UsersCustomers";
@@ -76,6 +77,7 @@ const App = () => (
             <Route path="/booking-confirmation" element={<BookingConfirmation />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/upcoming-bookings" element={<UpcomingBookings />} />
+            <Route path="/bulk-edit-bookings" element={<BulkEditBookings />} />
             <Route path="/admin" element={<Dashboard />} />
             <Route path="/admin-settings" element={<AdminSettings />} />
             <Route path="/users" element={<Users />} />

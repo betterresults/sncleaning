@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -96,6 +97,7 @@ interface UpcomingBookingsProps {
 }
 
 const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
+  const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
@@ -801,7 +803,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
           </div>
 
           <Button 
-            onClick={() => setBulkEditOpen(true)}
+            onClick={() => navigate('/bulk-edit-bookings')}
             className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm h-9 flex-shrink-0"
             size="sm"
           >
