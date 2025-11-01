@@ -319,7 +319,7 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
             key={booking.id} 
             className="bg-card rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.18)] hover:-translate-y-1 transition-all duration-200 border-0 overflow-hidden"
           >
-            <div className="grid grid-cols-[100px_1fr_2fr_15%_15%_12%_8%_40px] items-center gap-4 p-0">
+            <div className="grid grid-cols-[100px_1fr_2fr_15%_15%_20%_40px] items-center gap-4 p-0">
               {/* Time Box */}
               <div className="bg-primary/10 h-full flex items-center justify-center">
                 <div className="text-center py-4">
@@ -377,18 +377,14 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
                 )}
               </div>
 
-              {/* Payment Status */}
-              <div className="py-4 flex justify-center">
+              {/* Payment Status & Total Cost */}
+              <div className="py-4 flex items-center justify-end gap-2 pr-2">
                 <PaymentStatusIndicator 
                   status={booking.payment_status} 
                   isClickable={true}
                   onClick={() => handlePaymentAction(booking)}
                   size="md"
                 />
-              </div>
-
-              {/* Total Cost */}
-              <div className="py-4 text-right pr-2">
                 <span className="text-2xl font-bold text-foreground">
                   £{booking.total_cost?.toFixed(2) || '0.00'}
                 </span>
