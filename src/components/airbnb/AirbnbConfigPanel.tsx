@@ -399,20 +399,13 @@ export const AirbnbConfigPanel: React.FC = () => {
         }
       });
 
-      // Create safe evaluation string
-      let evalString = formulaString;
+      // Try to evaluate using Function constructor with proper context
+      // Create parameter names and values from sampleData
+      const paramNames = Object.keys(sampleData);
+      const paramValues = Object.values(sampleData);
       
-      // Replace field references with sample data
-      for (const fieldName in sampleData) {
-        const regex = new RegExp(`\\b${fieldName}\\.value\\b`, 'g');
-        evalString = evalString.replace(regex, '"test"');
-        const timeRegex = new RegExp(`\\b${fieldName}\\.time\\b`, 'g');
-        evalString = evalString.replace(timeRegex, '1');
-      }
-
-      // Try to evaluate (this is just for validation, using Function constructor for safety)
-      const func = new Function(`return ${evalString};`);
-      const result = func();
+      const func = new Function(...paramNames, `return ${formulaString};`);
+      const result = func(...paramValues);
       
       if (typeof result === 'number' && !isFinite(result)) {
         throw new Error('Computation error: result is not finite');
