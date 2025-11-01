@@ -574,12 +574,14 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
         </div>
       )}
 
-      {/* Filters */}
-      <UpcomingBookingsFilters
-        filters={filters}
-        onFiltersChange={setFilters}
-        cleaners={cleaners}
-      />
+      {/* Filters - Only show when NOT in list mode (list mode has its own filters) */}
+      {viewMode !== 'list' && (
+        <UpcomingBookingsFilters
+          filters={filters}
+          onFiltersChange={setFilters}
+          cleaners={cleaners}
+        />
+      )}
 
       {/* View Controls */}
       <BookingsViewControls

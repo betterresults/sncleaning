@@ -13,6 +13,7 @@ import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { AuthorizeRemainingAmountDialog } from '@/components/payments/AuthorizeRemainingAmountDialog';
+import { UpcomingBookingsFilters } from '@/components/bookings/UpcomingBookingsFilters';
 
 import EditBookingDialog from '../dashboard/EditBookingDialog';
 import AssignCleanerDialog from '../dashboard/AssignCleanerDialog';
@@ -56,6 +57,19 @@ interface Booking {
   } | null;
 }
 
+interface Cleaner {
+  id: number;
+  first_name: string;
+  last_name: string;
+}
+
+interface Filters {
+  searchTerm: string;
+  dateFrom: string;
+  dateTo: string;
+  cleanerId: string;
+}
+
 interface TodayBookingsCardsProps {
   dashboardDateFilter?: {
     dateFrom: string;
@@ -65,9 +79,17 @@ interface TodayBookingsCardsProps {
 
 const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
+  const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [filters, setFilters] = useState<Filters>({
+    searchTerm: '',
+    dateFrom: '',
+    dateTo: '',
+    cleanerId: 'all',
+  });
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<Booking | null>(null);
   const [assignCleanerOpen, setAssignCleanerOpen] = useState(false);
@@ -149,6 +171,20 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
         return;
       }
 
+      // Fetch cleaners for filter dropdown (only when showing all bookings)
+      if (!dashboardDateFilter) {
+        const { data: cleanersData, error: cleanersError } = await supabase
+          .from('cleaners')
+          .select('id, first_name, last_name')
+          .order('first_name');
+
+        if (cleanersError) {
+          console.error('Error fetching cleaners:', cleanersError);
+        } else {
+          setCleaners(cleanersData || []);
+        }
+      }
+
       setBookings(bookingsData || []);
     } catch (error) {
       console.error('Error in fetchData:', error);
@@ -158,10 +194,52 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
     }
   };
 
+  const applyFilters = () => {
+    let filtered = [...bookings];
+
+    // Apply date filters
+    if (filters.dateFrom) {
+      filtered = filtered.filter(booking => 
+        new Date(booking.date_time) >= new Date(filters.dateFrom)
+      );
+    }
+    if (filters.dateTo) {
+      filtered = filtered.filter(booking => 
+        new Date(booking.date_time) <= new Date(filters.dateTo)
+      );
+    }
+
+    // Apply cleaner filter
+    if (filters.cleanerId && filters.cleanerId !== 'all') {
+      filtered = filtered.filter(booking => 
+        booking.cleaner === parseInt(filters.cleanerId)
+      );
+    }
+
+    // Apply search term - searches in customer name, email, phone, address
+    if (filters.searchTerm) {
+      const searchLower = filters.searchTerm.toLowerCase();
+      filtered = filtered.filter(booking => 
+        `${booking.first_name} ${booking.last_name}`.toLowerCase().includes(searchLower) ||
+        booking.email.toLowerCase().includes(searchLower) ||
+        booking.phone_number?.toLowerCase().includes(searchLower) ||
+        booking.address?.toLowerCase().includes(searchLower) ||
+        booking.postcode?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    setFilteredBookings(filtered);
+    setCurrentPage(1);
+  };
+
   useEffect(() => {
     fetchData();
     setCurrentPage(1); // Reset to page 1 when filter changes
   }, [dashboardDateFilter]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [bookings, filters]);
 
   const handleEdit = (bookingId: number) => {
     const booking = bookings.find(b => b.id === bookingId);
@@ -304,7 +382,7 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
     );
   }
 
-  if (bookings.length === 0) {
+  if (bookings.length === 0 && filteredBookings.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-6 px-4">
         <div className="rounded-3xl bg-gradient-to-br from-gray-50 to-gray-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.08)] text-center max-w-sm">
@@ -318,15 +396,30 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
     );
   }
 
+  // Determine which bookings to display
+  const displayBookings = !dashboardDateFilter ? filteredBookings : bookings;
+
   // Pagination: 10 bookings per page
   const itemsPerPage = 10;
-  const totalPages = Math.ceil(bookings.length / itemsPerPage);
+  const totalPages = Math.ceil(displayBookings.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const displayedBookings = bookings.slice(startIndex, endIndex);
+  const displayedBookings = displayBookings.slice(startIndex, endIndex);
+
+  // Show filters only when displaying all future bookings (no dashboardDateFilter)
+  const showFilters = !dashboardDateFilter;
 
   return (
     <div className="space-y-4">
+      {/* Filters - only show for upcoming bookings page */}
+      {showFilters && (
+        <UpcomingBookingsFilters
+          filters={filters}
+          onFiltersChange={setFilters}
+          cleaners={cleaners}
+        />
+      )}
+
       {/* Cards View - Current page bookings */}
       {displayedBookings.map((booking) => {
         const isUnsigned = !booking.cleaner;
