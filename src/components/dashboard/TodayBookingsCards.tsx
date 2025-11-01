@@ -341,7 +341,7 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
             key={booking.id} 
             className="bg-card rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.18)] hover:-translate-y-1 transition-all duration-200 border-0 overflow-hidden"
           >
-            <div className="grid grid-cols-[100px_1fr_3fr_13%_11%_15%_40px] items-center gap-4 p-0">
+            <div className="grid grid-cols-[100px_1fr_3fr_13%_14%_15%_40px] items-center gap-2 p-0">
               {/* Time Box */}
               <div className="bg-primary/10 h-full flex items-center justify-center">
                 <div className="text-center py-4">
@@ -370,10 +370,10 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
 
               {/* Service Type Badge */}
               <div className="py-4">
-                <Badge className={`${serviceBadgeColor} text-sm font-medium px-3 py-1.5 rounded-full`}>
-                  {serviceLabel}
+                <Badge className={`${serviceBadgeColor} text-sm font-medium px-3 py-1.5 rounded-full flex flex-col items-center`}>
+                  <span>{serviceLabel}</span>
+                  <span className="text-xs italic font-normal mt-0.5">{cleaningLabel}</span>
                 </Badge>
-                <p className="text-sm font-medium text-muted-foreground mt-1">{cleaningLabel}</p>
               </div>
 
               {/* Cleaner Info */}
