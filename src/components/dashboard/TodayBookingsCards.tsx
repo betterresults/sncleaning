@@ -341,7 +341,7 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
                   <MapPin className="w-4 h-4 mt-1 flex-shrink-0" />
                   <div className="leading-tight min-w-0">
                     <div className="font-medium truncate">{booking.address}</div>
-                    <div className="text-sm text-muted-foreground">{booking.postcode}</div>
+                    <div className="font-medium truncate">{booking.postcode}</div>
                   </div>
                 </div>
               </div>
@@ -349,9 +349,9 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
               {/* Service Type Badge */}
               <div className="py-4">
                 <Badge className={`${serviceBadgeColor} text-sm font-medium px-3 py-1.5 rounded-full`}>
-                  {booking.service_type}
+                  {booking.service_type.charAt(0).toUpperCase() + booking.service_type.slice(1)}
                 </Badge>
-                <p className="text-sm text-muted-foreground mt-1">{booking.cleaning_type}</p>
+                <p className="text-sm text-muted-foreground mt-1 capitalize">{booking.cleaning_type}</p>
               </div>
 
               {/* Cleaner Info */}
@@ -362,11 +362,16 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
                       <div className="w-7 h-7 rounded-full bg-green-500/90 flex items-center justify-center flex-shrink-0">
                         <User className="w-4 h-4 text-white" />
                       </div>
-                      <span className="text-base font-bold text-foreground truncate">{cleanerName}</span>
+                      <span className="font-medium truncate">{cleanerName}</span>
                     </div>
                     {booking.cleaner_pay && (
-                      <p className="text-base font-bold text-foreground pl-9">
+                      <p className="text-sm text-gray-400 pl-9">
                         £{booking.cleaner_pay.toFixed(2)}
+                      </p>
+                    )}
+                    {booking.payment_method && (
+                      <p className="text-sm text-gray-400 pl-9 capitalize">
+                        {booking.payment_method}
                       </p>
                     )}
                   </div>
@@ -385,7 +390,7 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
                   onClick={() => handlePaymentAction(booking)}
                   size="md"
                 />
-                <span className="text-2xl font-bold text-foreground">
+                <span className="text-lg font-bold" style={{ color: '#18A5A5' }}>
                   £{booking.total_cost?.toFixed(2) || '0.00'}
                 </span>
               </div>
