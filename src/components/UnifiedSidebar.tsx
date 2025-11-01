@@ -66,7 +66,7 @@ export function UnifiedSidebar({ navigationItems, user, userRole, customerId, cl
       <SidebarContent className="p-0 bg-[#2c3e50] flex-1 overflow-y-auto min-h-0 pt-16">
         <SidebarGroup className="h-full">
           <SidebarGroupContent className="px-2 py-1 h-full">
-            <SidebarMenu className="space-y-0.5 h-full">
+            <SidebarMenu className="space-y-0 h-full">
               {navigationItems.map((item) => {
                 const isActive = item.url && location.pathname === item.url && !item.disabled;
                 const hasSubItems = item.subItems && item.subItems.length > 0;
@@ -148,7 +148,7 @@ export function UnifiedSidebar({ navigationItems, user, userRole, customerId, cl
                     </SidebarMenuButton>
                     
                     {hasSubItems && isExpanded && (
-                      <SidebarMenuSub className="mt-0.5 ml-0 border-0">
+                      <SidebarMenuSub className="mt-0 ml-0 border-0 space-y-0">
                         {item.subItems?.map((subItem) => {
                           const isSubActive = location.pathname === subItem.url;
                           return (
