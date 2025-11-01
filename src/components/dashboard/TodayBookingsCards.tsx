@@ -341,7 +341,8 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
             key={booking.id} 
             className="bg-card rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.18)] hover:-translate-y-1 transition-all duration-200 border-0 overflow-hidden"
           >
-            <div className="grid grid-cols-[100px_1fr_2fr_15%_16%_15%_40px] items-center gap-3 p-0">
+            {/* Desktop Layout */}
+            <div className="hidden lg:grid lg:grid-cols-[100px_1fr_2fr_15%_16%_15%_40px] items-center gap-3 p-0">
               {/* Time Box */}
               <div className="bg-primary/10 h-full flex items-center justify-center">
                 <div className="text-center py-4">
@@ -470,6 +471,121 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
                   booking={booking}
                   onSuccess={fetchData}
                 />
+              </div>
+            </div>
+
+            {/* Mobile & Tablet Layout */}
+            <div className="lg:hidden p-4 space-y-3">
+              {/* Row 1: Time, Customer, Actions */}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  {/* Time Box - Compact */}
+                  <div className="bg-primary/10 rounded-xl px-3 py-2 min-w-[70px]">
+                    <div className="text-center">
+                      <div className="text-xs text-muted-foreground font-medium">{bookingDate}</div>
+                      <div className="text-lg font-bold text-primary">{bookingTime}</div>
+                      {booking.total_hours && (
+                        <div className="text-xs font-semibold text-muted-foreground">
+                          {booking.total_hours}h
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Customer Name */}
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">
+                      {booking.first_name} {booking.last_name}
+                    </h3>
+                  </div>
+                </div>
+
+                {/* Actions Menu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48 z-50 bg-popover">
+                    <DropdownMenuItem onClick={() => handleEdit(booking.id)}>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleDuplicate(booking)}>
+                      <Copy className="w-4 h-4 mr-2" />
+                      Duplicate
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleAssignCleaner(booking.id)}>
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Assign Cleaner
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleMakeRecurring(booking)}>
+                      <Repeat className="w-4 h-4 mr-2" />
+                      Make Recurring
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleSendEmail(booking)}>
+                      <Send className="w-4 h-4 mr-2" />
+                      Send Email
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => handlePaymentAction(booking)}>
+                      <DollarSign className="w-4 h-4 mr-2" />
+                      {booking.payment_method === 'Invoiless' ? 'Manage Invoice' : 'Manage Payment'}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => handleCancel(booking.id)} className="text-orange-600">
+                      <X className="w-4 h-4 mr-2" />
+                      Cancel
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleDelete(booking.id)} className="text-red-600">
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {/* Row 2: Address */}
+              <div className="flex items-start gap-2">
+                <MapPin className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
+                <div className="text-sm">
+                  <div className="font-medium">{booking.address}</div>
+                  <div className="text-muted-foreground">{booking.postcode}</div>
+                </div>
+              </div>
+
+              {/* Row 3: Service Badge & Cleaner */}
+              <div className="flex flex-wrap items-center gap-3">
+                <Badge className={`${serviceBadgeColor} text-xs px-2 py-1 rounded-full`}>
+                  {serviceLabel} - {cleaningLabel}
+                </Badge>
+                
+                {!isUnsigned ? (
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="w-6 h-6 rounded-full bg-gray-400 flex items-center justify-center">
+                      <User className="w-3 h-3 text-white" />
+                    </div>
+                    <span className="font-medium">{cleanerName}</span>
+                  </div>
+                ) : (
+                  <Badge variant="destructive" className="text-xs px-2 py-1">
+                    Unassigned
+                  </Badge>
+                )}
+              </div>
+
+              {/* Row 4: Payment & Cost */}
+              <div className="flex items-center justify-between pt-2 border-t">
+                <PaymentStatusIndicator 
+                  status={booking.payment_status} 
+                  isClickable={true}
+                  onClick={() => handlePaymentAction(booking)}
+                  size="sm"
+                />
+                <span className="text-xl font-bold" style={{ color: '#18A5A5' }}>
+                  £{booking.total_cost?.toFixed(2) || '0.00'}
+                </span>
               </div>
             </div>
           </div>
