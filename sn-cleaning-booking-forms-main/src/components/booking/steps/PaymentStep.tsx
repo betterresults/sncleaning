@@ -475,12 +475,6 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
             title: "Payment Successful",
             description: `£${data.totalCost.toFixed(2)} has been charged.`
           });
-        } else {
-          console.log('[PaymentStep] Non-urgent booking - card saved for later');
-          toast({
-            title: "Card Added Successfully",
-            description: "Your booking has been confirmed. Payment will be processed 3 days before the cleaning date."
-          });
         }
 
         console.log('[PaymentStep] Navigating to confirmation...');
