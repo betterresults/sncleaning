@@ -148,17 +148,20 @@ export function UnifiedSidebar({ navigationItems, user, userRole, customerId, cl
                     </SidebarMenuButton>
                     
                     {hasSubItems && isExpanded && (
-                      <SidebarMenuSub className="mt-0 mx-0 px-0 py-0 border-l-0 translate-x-0 gap-0">
-                        {item.subItems?.map((subItem) => {
+                      <SidebarMenuSub className="mt-1 mx-0 px-0 py-0 border-l-0 translate-x-0 space-y-1">
+                        {item.subItems?.map((subItem, index) => {
                           const isSubActive = location.pathname === subItem.url;
+                          const isAddNewBooking = subItem.title === "Add New Booking";
                           return (
                             <SidebarMenuSubItem key={subItem.title}>
                               <SidebarMenuSubButton 
                                 asChild
-                                className={`h-7 transition-all duration-200 rounded-md px-2 font-medium text-sm ${
-                                  isSubActive
+                                className={`h-8 transition-all duration-200 rounded-md pl-3 pr-3 font-medium text-sm ${
+                                  isAddNewBooking
+                                    ? "!bg-[#1abc9c] !text-white hover:!bg-[#16a085]"
+                                    : isSubActive
                                     ? "!bg-white/20 !text-white"
-                                    : "!text-white/90 hover:!text-white hover:!bg-white/10"
+                                    : "!text-white/70 hover:!text-white hover:!bg-white/10"
                                 }`}
                               >
                                 <Link to={subItem.url} className="flex items-center w-full">
