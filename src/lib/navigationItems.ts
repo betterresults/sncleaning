@@ -174,11 +174,6 @@ export const adminNavigation = [
     icon: MessageCircle,
   },
   {
-    title: "Activity Logs",
-    url: "/admin-activity-logs",
-    icon: Activity,
-  },
-  {
     title: "Views",
     icon: BarChart3,
     subItems: [
@@ -192,23 +187,17 @@ export const adminNavigation = [
         url: "/customer-dashboard",
         icon: UserPlus,
       },
+      {
+        title: "Activity Logs",
+        url: "/admin-activity-logs",
+        icon: Activity,
+      },
     ],
   },
   {
     title: "Linen Management",
     url: "/admin-linen-management",
     icon: Package,
-  },
-  {
-    title: "Forms",
-    icon: CheckSquare,
-    subItems: [
-      {
-        title: "Airbnb Form Settings",
-        url: "/admin-airbnb-form-settings",
-        icon: Settings,
-      },
-    ],
   },
   {
     title: "Settings",
@@ -233,6 +222,11 @@ export const adminNavigation = [
         title: "Notification Management",
         url: "/admin-notification-management",
         icon: Bell,
+      },
+      {
+        title: "Airbnb Form Settings",
+        url: "/admin-airbnb-form-settings",
+        icon: CheckSquare,
       },
       {
         title: "Invoiless API Test",
