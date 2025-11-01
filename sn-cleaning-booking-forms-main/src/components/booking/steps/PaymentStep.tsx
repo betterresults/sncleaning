@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PhoneInput } from '../../ui/phone-input';
+import { PhoneInput } from '../../../../phone-input';
 import { BookingData } from '../BookingForm';
 import { CreditCard, Shield, Loader2, AlertTriangle } from 'lucide-react';
 import { useAirbnbBookingSubmit } from '@/hooks/useAirbnbBookingSubmit';
@@ -272,6 +272,8 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
     try {
       setProcessing(true);
 
+      console.log('[PaymentStep] Submitting booking payload');
+
       // Prepare booking data
       const bookingPayload = {
         firstName: data.firstName,
@@ -321,6 +323,8 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
         // Submit booking first
         const result = await submitBooking(bookingPayload, true);
 
+        console.log('[PaymentStep] submitBooking result (has default PM):', result);
+
         if (!result.success || !result.bookingId) {
           throw new Error('Failed to create booking');
         }
@@ -356,6 +360,8 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
       } else {
         // No saved payment method - submit booking first, then redirect to Stripe
         const result = await submitBooking(bookingPayload, true);
+
+        console.log('[PaymentStep] submitBooking result (no default PM):', result);
 
         if (!result.success || !result.customerId || !result.bookingId) {
           throw new Error('Failed to create booking');

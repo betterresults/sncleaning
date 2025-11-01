@@ -222,7 +222,8 @@ export const useAirbnbBookingSubmit = () => {
           .single();
 
         if (customerError || !newCustomer) {
-          throw new Error('Failed to create customer');
+          console.error('Create customer failed:', customerError);
+          throw new Error(customerError?.message || 'Failed to create customer');
         }
         customerId = newCustomer.id;
       }
@@ -337,7 +338,8 @@ export const useAirbnbBookingSubmit = () => {
         .single();
 
       if (bookingError || !booking) {
-        throw new Error('Failed to create booking');
+        console.error('Booking insert failed:', bookingError, { bookingInsert });
+        throw new Error(bookingError?.message || 'Failed to create booking');
       }
 
       // Step 3: Authorize payment only if not skipped (for non-urgent bookings)
