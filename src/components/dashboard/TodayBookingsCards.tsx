@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Edit, Trash2, Copy, X, UserPlus, DollarSign, Repeat, MoreHorizontal, Clock, MapPin, User, Mail, Phone, Send, Calendar } from 'lucide-react';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
@@ -358,9 +359,63 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
 
               {/* Customer Name */}
               <div className="py-4">
-                <h3 className="text-lg font-bold text-foreground leading-tight">
+                <h3 className="text-lg font-bold text-foreground leading-tight lowercase">
                   {booking.first_name} {booking.last_name}
                 </h3>
+                <div className="flex items-center gap-2 mt-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="p-1 hover:bg-accent rounded-md transition-colors">
+                        <Phone className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">{booking.phone_number}</span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0"
+                          onClick={() => {
+                            navigator.clipboard.writeText(booking.phone_number);
+                            toast({
+                              title: "Copied",
+                              description: "Phone number copied to clipboard",
+                            });
+                          }}
+                        >
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="p-1 hover:bg-accent rounded-md transition-colors">
+                        <Mail className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">{booking.email}</span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0"
+                          onClick={() => {
+                            navigator.clipboard.writeText(booking.email);
+                            toast({
+                              title: "Copied",
+                              description: "Email copied to clipboard",
+                            });
+                          }}
+                        >
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
 
               {/* Address */}
@@ -494,9 +549,63 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
                   
                   {/* Customer Name */}
                   <div>
-                    <h3 className="text-base font-bold text-foreground">
+                    <h3 className="text-base font-bold text-foreground lowercase">
                       {booking.first_name} {booking.last_name}
                     </h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button className="p-1 hover:bg-accent rounded-md transition-colors">
+                            <Phone className="w-3 h-3 text-muted-foreground" />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">{booking.phone_number}</span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0"
+                              onClick={() => {
+                                navigator.clipboard.writeText(booking.phone_number);
+                                toast({
+                                  title: "Copied",
+                                  description: "Phone number copied to clipboard",
+                                });
+                              }}
+                            >
+                              <Copy className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button className="p-1 hover:bg-accent rounded-md transition-colors">
+                            <Mail className="w-3 h-3 text-muted-foreground" />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">{booking.email}</span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0"
+                              onClick={() => {
+                                navigator.clipboard.writeText(booking.email);
+                                toast({
+                                  title: "Copied",
+                                  description: "Email copied to clipboard",
+                                });
+                              }}
+                            >
+                              <Copy className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                   </div>
                 </div>
 
