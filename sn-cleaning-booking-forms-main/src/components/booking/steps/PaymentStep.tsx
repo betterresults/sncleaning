@@ -87,6 +87,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack, isAdm
 // Use admin-selected customerId or logged-in/selected customerId
 const { selectedCustomerId } = useAdminCustomer();
 const effectiveCustomerId = isAdminMode ? data.customerId : (customerId || selectedCustomerId || null);
+console.log('[PaymentStep] ID context', { isAdminMode, customerId, selectedCustomerId, effectiveCustomerId });
 const { hasPaymentMethods, loading: checkingPaymentMethods } = usePaymentMethodCheck(effectiveCustomerId || null);
   
 // Admin testing mode - skip payment if URL has ?adminTest=true
@@ -95,19 +96,32 @@ const adminTestMode = searchParams.get('adminTest') === 'true';
 // Auto-fill logged-in or selected customer data on mount
 useEffect(() => {
   if (!isAdminMode && effectiveCustomerId && (!data.firstName || !data.email || !data.phone)) {
+    console.log('[PaymentStep] Prefill condition met', {
+      effectiveCustomerId,
+      hasNames: !!data.firstName,
+      hasEmail: !!data.email,
+      hasPhone: !!data.phone,
+    });
     const fetchCustomerData = async () => {
-      const { data: customerData } = await supabase
+      const { data: customerData, error } = await supabase
         .from('customers')
         .select('first_name, last_name, email, phone')
         .eq('id', effectiveCustomerId)
         .single();
+      
+      if (error) {
+        console.error('[PaymentStep] Prefill fetch error', error);
+        return;
+      }
       
       if (customerData) {
         onUpdate({
           firstName: customerData.first_name || '',
           lastName: customerData.last_name || '',
           email: customerData.email || '',
-          phone: customerData.phone || ''
+          phone: customerData.phone || '',
+          // Ensure booking data knows the customer in customer mode
+          customerId: data.customerId ?? effectiveCustomerId,
         });
       }
     };
