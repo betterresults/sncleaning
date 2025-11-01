@@ -54,7 +54,7 @@ const UpcomingBookingsPage = () => {
             onSignOut={handleSignOut}
           />
           <SidebarInset className="flex-1">
-            <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
+            <main className="flex-1 p-2 sm:p-4 lg:p-6 space-y-2 sm:space-y-4 max-w-full overflow-x-hidden">
               <div className="max-w-7xl mx-auto">
                 <UpcomingBookings 
                   dashboardDateFilter={noDateFilter}
