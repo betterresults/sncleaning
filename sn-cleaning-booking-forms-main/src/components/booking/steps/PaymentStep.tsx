@@ -82,7 +82,8 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack, isAdm
   const stripe = useStripe();
   const elements = useElements();
   const [cardComplete, setCardComplete] = useState(false);
-  const [companyPaymentMethods, setCompanyPaymentMethods] = useState<string[]>([]);
+const [companyPaymentMethods, setCompanyPaymentMethods] = useState<string[]>([]);
+const [editDetails, setEditDetails] = useState(false);
   
 // Use admin-selected customerId or logged-in/selected customerId
 const { selectedCustomerId } = useAdminCustomer();
@@ -634,13 +635,12 @@ useEffect(() => {
         </div>
       )}
 
-      {/* Customer Details - Show for logged-in customers (non-admin) or admin after customer selection */}
-      {((isAdminMode && data.customerId) || (!isAdminMode && user)) && (
+      {/* Customer Details - Admin (editable when a customer is selected) */}
+      {isAdminMode && data.customerId && (
         <div className="space-y-6">
           <h3 className="text-2xl font-bold text-[#185166] mb-4">
-            {isAdminMode ? 'Customer Details' : 'Your Details'}
+            Customer Details
           </h3>
-          
           <div className="grid grid-cols-2 gap-4">
             <Input
               placeholder="First Name"
@@ -655,7 +655,6 @@ useEffect(() => {
               className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
             />
           </div>
-          
           <div>
             <Input
               type="email"
@@ -672,7 +671,6 @@ useEffect(() => {
               <p className="text-xs text-red-600 font-medium mt-1">{emailError}</p>
             )}
           </div>
-          
           <div>
             <PhoneInput
               value={data.phone || ''}
@@ -687,6 +685,74 @@ useEffect(() => {
               <p className="text-xs text-red-600 font-medium mt-1">{phoneError}</p>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Customer Details - Customer mode (collapsed by default, editable on demand) */}
+      {!isAdminMode && user && (
+        <div className="space-y-4">
+          <h3 className="text-2xl font-bold text-[#185166] mb-2">Your Details</h3>
+          <div className="rounded-2xl border-2 border-gray-200 bg-white p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-lg font-bold text-gray-900">{`${data.firstName || ''} ${data.lastName || ''}`.trim()}</p>
+                <p className="text-sm text-gray-600">{data.email || '—'}</p>
+                <p className="text-sm text-gray-600">{data.phone || '—'}</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => setEditDetails(!editDetails)}>
+                {editDetails ? 'Close' : 'Edit'}
+              </Button>
+            </div>
+          </div>
+
+          {editDetails && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  placeholder="First Name"
+                  value={data.firstName || ''}
+                  onChange={(e) => onUpdate({ firstName: e.target.value })}
+                  className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
+                />
+                <Input
+                  placeholder="Last Name"
+                  value={data.lastName || ''}
+                  onChange={(e) => onUpdate({ lastName: e.target.value })}
+                  className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
+                />
+              </div>
+              <div>
+                <Input
+                  type="email"
+                  placeholder="Email Address"
+                  value={data.email || ''}
+                  onChange={(e) => {
+                    onUpdate({ email: e.target.value });
+                    setEmailError('');
+                  }}
+                  onBlur={(e) => validateEmail(e.target.value)}
+                  className={`h-16 text-lg rounded-2xl border-2 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400 ${emailError ? 'border-red-500' : 'border-gray-200'}`}
+                />
+                {emailError && (
+                  <p className="text-xs text-red-600 font-medium mt-1">{emailError}</p>
+                )}
+              </div>
+              <div>
+                <PhoneInput
+                  value={data.phone || ''}
+                  onChange={(value) => {
+                    onUpdate({ phone: value });
+                    setPhoneError('');
+                  }}
+                  placeholder="Phone number"
+                  className={`h-16 text-lg rounded-2xl border-2 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400 ${phoneError ? 'border-red-500' : 'border-gray-200'}`}
+                />
+                {phoneError && (
+                  <p className="text-xs text-red-600 font-medium mt-1">{phoneError}</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
       
@@ -895,8 +961,8 @@ useEffect(() => {
           </h3>
           
           <div className="space-y-4">
-            {customerId && defaultPaymentMethod ? (
-              // Customer has saved payment method
+            {hasPaymentMethods ? (
+              // Customer has saved payment method (may be limited info in view-as-client)
               <div className="space-y-4">
                 <div className="rounded-2xl border-2 border-primary/20 bg-gradient-to-br from-white to-primary/5 p-6 shadow-lg">
                   <div className="flex items-center gap-3 mb-4">
@@ -906,17 +972,21 @@ useEffect(() => {
                     <div>
                       <p className="text-sm text-gray-600 font-medium">Saved Payment Method</p>
                       <p className="text-lg font-bold text-gray-900">
-                        {defaultPaymentMethod.card_brand.toUpperCase()} •••• {defaultPaymentMethod.card_last4}
+                        {defaultPaymentMethod
+                          ? `${defaultPaymentMethod.card_brand?.toUpperCase?.() || 'CARD'} •••• ${defaultPaymentMethod.card_last4}`
+                          : 'A payment method is saved on file'}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-                    <span>Expires {defaultPaymentMethod.card_exp_month}/{defaultPaymentMethod.card_exp_year}</span>
-                  </div>
+                  {defaultPaymentMethod && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+                      <span>Expires {defaultPaymentMethod.card_exp_month}/{defaultPaymentMethod.card_exp_year}</span>
+                    </div>
+                  )}
                   <div className="bg-white/80 rounded-lg p-4 border border-primary/10">
                     <p className="text-sm text-gray-700">
                       {isUrgentBooking 
-                        ? `💳 £${data.totalCost.toFixed(2)} will be charged to this card immediately.`
+                        ? `💳 £${data.totalCost.toFixed(2)} will be charged to the saved card immediately.`
                         : '✅ Your card is saved. Payment will be processed 3 days before the cleaning date.'
                       }
                     </p>
