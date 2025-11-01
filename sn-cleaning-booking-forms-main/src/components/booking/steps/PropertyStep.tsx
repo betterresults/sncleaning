@@ -178,8 +178,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
   }, [recommendedHours, data.propertyType, data.bedrooms, data.bathrooms, data.serviceType, data.estimatedHours, onUpdate]);
 
   return (
-    <div className="space-y-4">
-      <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+    <div className="space-y-6">
+      <div className="relative z-10 p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
         <h2 className="text-2xl font-bold text-[#185166] mb-4">
           Property Details
         </h2>
@@ -219,7 +219,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       </div>
 
       {/* Size of the property */}
-      <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+      <div className="relative z-[9] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
         <h2 className="text-xl font-bold text-[#185166] mb-4">
           Size of the property
         </h2>
@@ -393,7 +393,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       )}
 
       {/* Property Features */}
-      <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+      <div className="relative z-[8] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
         <h2 className="text-xl font-bold text-[#185166] mb-4">
           Property Features
         </h2>
@@ -523,7 +523,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       </div>
 
       {/* Service Type - Dynamic */}
-      <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+      <div className="relative z-[7] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
         <h2 className="text-xl font-bold text-[#185166] mb-4">
           Choose your service
         </h2>
@@ -555,7 +555,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Property Already Cleaned - Dynamic */}
       {data.serviceType === 'checkin-checkout' && cleaningHistoryConfigs.length > 0 && (
-        <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+        <div className="relative z-[6] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
           <h2 className="text-xl font-bold text-[#185166] mb-4">
             Has the property been cleaned to Airbnb standard already?
           </h2>
@@ -596,7 +596,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Oven Cleaning - Dynamic */}
       {(data.serviceType === 'deep' || data.alreadyCleaned === false) && ovenCleaningConfigs.length > 0 && (
-        <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+        <div className="relative z-[5] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
           <h2 className="text-xl font-bold text-[#185166] mb-4">
             Do you require oven cleaning?
           </h2>
@@ -675,7 +675,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Cleaning Supplies - Dynamic */}
       {cleaningSuppliesConfigs.length > 0 && (
-        <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+        <div className="relative z-[4] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
           <h2 className="text-xl font-bold text-[#185166] mb-4">
             Cleaning supplies
           </h2>
@@ -722,7 +722,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Equipment Arrangement - Dynamic */}
       {data.cleaningProducts === 'equipment' && equipmentArrangementConfigs.length > 0 && (
-        <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+        <div className="relative z-[3] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
           <h2 className="text-xl font-bold text-[#185166] mb-2">
             Equipment arrangement
           </h2>
