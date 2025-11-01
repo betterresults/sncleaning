@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Plus, Check, ChevronsUpDown, Search } from 'lucide-react';
-import CreateCustomerDialog from './CreateCustomerDialog';
+
 import { cn } from '@/lib/utils';
 import {
   Command,
@@ -89,7 +89,7 @@ const CustomerSelector = ({ onCustomerSelect }: CustomerSelectorProps) => {
               variant="outline"
               role="combobox"
               aria-expanded={open}
-              className="h-16 flex-1 justify-between overflow-hidden text-ellipsis text-lg rounded-2xl border-2 border-gray-200 bg-white hover:bg-gray-50 focus:border-[#185166] px-6 font-medium transition-all duration-200"
+              className="h-16 flex-1 justify-between overflow-hidden text-ellipsis text-lg rounded-2xl border-2 border-gray-200 bg-white hover:bg-gray-50 focus:border-[#185166] px-6 font-medium transition-all duration-200 text-gray-900 hover:text-gray-900"
             >
               {selectedCustomer
                 ? getCustomerDisplayText(selectedCustomer)
@@ -137,11 +137,18 @@ const CustomerSelector = ({ onCustomerSelect }: CustomerSelectorProps) => {
           </PopoverContent>
         </Popover>
         
-        <CreateCustomerDialog onCustomerCreated={handleCustomerCreated}>
-          <Button type="button" variant="outline" size="icon" className="h-16 w-16 rounded-2xl border-2 border-gray-200 hover:bg-gray-50">
-            <Plus className="h-5 w-5" />
-          </Button>
-        </CreateCustomerDialog>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-16 w-16 rounded-2xl border-2 border-gray-200 hover:bg-gray-50"
+          onClick={() => {
+            setSelectedCustomer(null);
+            onCustomerSelect(null);
+          }}
+        >
+          <Plus className="h-5 w-5" />
+        </Button>
       </div>
     </div>
   );

@@ -915,7 +915,12 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack, isAdm
           size="lg"
           className="px-12"
           onClick={handleSubmit}
-          disabled={processing || submitting || !canContinue || (!customerId && !cardComplete && !adminTestMode) || (!customerId && !defaultPaymentMethod && !stripe)}
+          disabled={
+            processing ||
+            submitting ||
+            !canContinue ||
+            (!hasPaymentMethods && !adminTestMode && (!stripe || !cardComplete))
+          }
         >
           {(processing || submitting) ? (
             <>
