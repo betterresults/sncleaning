@@ -33,7 +33,7 @@ serve(async (req) => {
     // Step 1: Get customer details from database
     const { data: customer, error: customerError } = await supabase
       .from('customers')
-      .select('email, first_name, last_name, stripe_customer_id')
+      .select('email, first_name, last_name')
       .eq('id', customerId)
       .single();
 
@@ -41,37 +41,29 @@ serve(async (req) => {
       throw new Error('Customer not found');
     }
 
-    // Step 2: Get or create Stripe customer
-    let stripeCustomerId = customer.stripe_customer_id;
+    // Step 2: Get or create Stripe customer by email (do not rely on DB column)
+    let stripeCustomerId: string | undefined;
 
-    if (!stripeCustomerId) {
-      // Search for existing Stripe customer by email
-      const existingCustomers = await stripe.customers.list({
-        email: customer.email,
-        limit: 1,
+    // Search for existing Stripe customer by email
+    const existingCustomers = await stripe.customers.list({
+      email: customer.email || undefined,
+      limit: 1,
+    });
+
+    if (existingCustomers.data.length > 0) {
+      stripeCustomerId = existingCustomers.data[0].id;
+      console.log('Found existing Stripe customer:', stripeCustomerId);
+    } else {
+      // Create new Stripe customer
+      const newStripeCustomer = await stripe.customers.create({
+        email: customer.email || undefined,
+        name: `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || undefined,
+        metadata: {
+          customer_id: customerId.toString(),
+        },
       });
-
-      if (existingCustomers.data.length > 0) {
-        stripeCustomerId = existingCustomers.data[0].id;
-      } else {
-        // Create new Stripe customer
-        const newStripeCustomer = await stripe.customers.create({
-          email: customer.email,
-          name: `${customer.first_name || ''} ${customer.last_name || ''}`.trim(),
-          metadata: {
-            customer_id: customerId.toString(),
-          },
-        });
-        stripeCustomerId = newStripeCustomer.id;
-      }
-
-      // Update customer with Stripe customer ID
-      await supabase
-        .from('customers')
-        .update({ stripe_customer_id: stripeCustomerId })
-        .eq('id', customerId);
-
-      console.log('Created/found Stripe customer:', stripeCustomerId);
+      stripeCustomerId = newStripeCustomer.id;
+      console.log('Created new Stripe customer:', stripeCustomerId);
     }
 
     // Step 3: Attach payment method to Stripe customer
