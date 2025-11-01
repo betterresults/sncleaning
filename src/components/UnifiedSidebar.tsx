@@ -155,15 +155,14 @@ export function UnifiedSidebar({ navigationItems, user, userRole, customerId, cl
                             <SidebarMenuSubItem key={subItem.title}>
                               <SidebarMenuSubButton 
                                 asChild
-                                className={`h-10 transition-all duration-200 rounded-md px-3 font-medium text-sm ml-6 ${
+                                className={`h-10 transition-all duration-200 rounded-md px-3 font-medium text-xs ${
                                   isSubActive
                                     ? "!bg-white/20 !text-white"
                                     : "!text-white/90 hover:!text-white hover:!bg-white/10"
                                 }`}
                               >
                                 <Link to={subItem.url} className="flex items-center w-full">
-                                  <subItem.icon className="h-4 w-4 flex-shrink-0 !text-white/80" />
-                                  <span className="ml-3 leading-tight">
+                                  <span className="leading-tight">
                                     {subItem.title}
                                   </span>
                                 </Link>
