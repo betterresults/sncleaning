@@ -9,7 +9,7 @@ import { adminNavigation } from '@/lib/navigationItems';
 import DashboardStats from '@/components/admin/DashboardStats';
 import TodayBookingsCards from '@/components/dashboard/TodayBookingsCards';
 import RecentActivity from '@/components/dashboard/RecentActivity';
-import QuickStats from '@/components/dashboard/QuickStats';
+import PerformanceChart from '@/components/dashboard/PerformanceChart';
 import { Calendar, Plus } from 'lucide-react';
 import AdminGuard from '@/components/AdminGuard';
 import { useNavigate } from 'react-router-dom';
@@ -70,8 +70,8 @@ const Dashboard = () => {
               userRole={userRole}
               onSignOut={handleSignOut}
             />
-            <SidebarInset className="flex-1 flex flex-col p-0 m-0">
-              <main className="flex-1 bg-gray-50 m-0 px-4 md:px-6 py-4 md:py-6 space-y-6 max-w-[1600px]">
+            <SidebarInset className="flex-1 flex flex-col p-0 m-0 overflow-x-hidden">
+              <main className="flex-1 bg-gray-50 m-0 px-4 md:px-6 py-4 md:py-6 space-y-6 w-full">
                 {/* Statistics - Last 30 Days */}
                 <DashboardStats />
                 
@@ -102,7 +102,7 @@ const Dashboard = () => {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-xl font-semibold flex items-center gap-2">
                       <Calendar className="h-5 w-5" />
-                      Next 7 Days
+                      Bookings for Next 7 Days
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-4 sm:p-6 pt-0">
@@ -112,18 +112,28 @@ const Dashboard = () => {
                   </CardContent>
                 </Card>
 
-                {/* Quick Stats */}
-                <QuickStats />
+                {/* Activity and Stats Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Recent Activity */}
+                  <Card className="border shadow-sm">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-xl font-semibold">Recent Activity</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 sm:p-6 pt-0">
+                      <RecentActivity />
+                    </CardContent>
+                  </Card>
 
-                {/* Recent Activity */}
-                <Card className="border shadow-sm">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-xl font-semibold">Recent Activity</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 sm:p-6 pt-0">
-                    <RecentActivity />
-                  </CardContent>
-                </Card>
+                  {/* Performance Stats */}
+                  <Card className="border shadow-sm">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-xl font-semibold">Performance</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 sm:p-6 pt-0">
+                      <PerformanceChart />
+                    </CardContent>
+                  </Card>
+                </div>
               </main>
             </SidebarInset>
           </div>

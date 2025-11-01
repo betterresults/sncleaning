@@ -279,14 +279,14 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
 
   if (bookings.length === 0) {
     return (
-      <div className="py-4 px-6 text-center bg-gray-50 rounded border border-gray-200">
+      <div className="py-2 px-4 text-center">
         <p className="text-gray-500 text-sm">Няма букинги за този период</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 overflow-x-auto">
       {bookings.map((booking) => {
           const isUnsigned = !booking.cleaner;
           const cleanerName = getCleanerName(booking);
@@ -295,7 +295,7 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
         return (
           <div 
             key={booking.id} 
-            className="bg-white border-b border-gray-200 hover:bg-gray-50 transition-colors duration-150"
+            className="bg-white border-b border-gray-200 hover:bg-gray-50 transition-colors duration-150 min-w-[1000px]"
           >
             <div className="px-6 py-4 flex items-center gap-6">
               {/* Time */}
