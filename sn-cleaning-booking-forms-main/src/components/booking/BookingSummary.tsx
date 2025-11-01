@@ -2,17 +2,22 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BookingData } from './AirbnbBookingForm';
-import { Home, Clock, Calendar, PoundSterling, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import { Home, Clock, Calendar, PoundSterling, ChevronDown, ChevronUp, AlertTriangle, Edit2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 interface BookingSummaryProps {
   data: BookingData;
+  isAdminMode?: boolean;
+  onUpdate?: (updates: Partial<BookingData>) => void;
 }
 
-const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
+const BookingSummary: React.FC<BookingSummaryProps> = ({ data, isAdminMode = false, onUpdate }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isEditingPricing, setIsEditingPricing] = useState(false);
 
   // Fetch linen products from database
   const { data: linenProducts = [] } = useQuery({
@@ -200,26 +205,18 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
   };
 
   const calculateTotal = () => {
+    // If admin has set a total cost override, use that
+    if (isAdminMode && data.adminTotalCostOverride !== undefined && data.adminTotalCostOverride !== null) {
+      return data.adminTotalCostOverride;
+    }
+    
     let total = 0;
-    const hourlyRate = calculateHourlyRate();
+    const hourlyRate = data.adminHourlyRateOverride !== undefined ? data.adminHourlyRateOverride : calculateHourlyRate();
     
     // Cleaning service cost
     if (data.estimatedHours) {
       const cleaningHours = data.estimatedHours + (data.extraHours || 0);
-      const baseRate = 25;
-      
-      // Service type cost
-      const serviceRates = { 'checkin-checkout': 0, 'midstay': 0, 'light': -3, 'deep': 5 };
-      const serviceAdjustment = serviceRates[data.serviceType as keyof typeof serviceRates] || 0;
-      
-      // Products cost
-      const productsAdjustment = data.cleaningProducts === 'products' ? 2 : 0;
-      
-      // Airbnb standard adjustment
-      const airbnbAdjustment = (data.serviceType === 'checkin-checkout' && data.alreadyCleaned === false) ? 5 : 0;
-      
-      const cleaningRate = baseRate + serviceAdjustment + productsAdjustment + airbnbAdjustment;
-      total += cleaningHours * cleaningRate;
+      total += cleaningHours * hourlyRate;
     }
     
     // Equipment cost (separate from hourly rate)
@@ -242,11 +239,23 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
       });
     }
     
-    return total;
+    const subtotal = total;
+    
+    // Apply admin discount if set (apply percentage first, then fixed amount)
+    if (isAdminMode && data.adminDiscountPercentage) {
+      total -= (subtotal * data.adminDiscountPercentage) / 100;
+    }
+    if (isAdminMode && data.adminDiscountAmount) {
+      total -= data.adminDiscountAmount;
+    }
+    
+    return Math.max(0, total); // Ensure total is never negative
   };
 
   const shortNoticeInfo = calculateShortNoticeCharge();
   const hasShortNoticeCharge = shortNoticeInfo.charge > 0;
+  
+  const effectiveHourlyRate = data.adminHourlyRateOverride !== undefined ? data.adminHourlyRateOverride : calculateHourlyRate();
 
   const renderSummaryContent = () => (
     <div className="space-y-3">
@@ -256,7 +265,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">{getServiceDescription()}</span>
             <span className="text-foreground font-semibold whitespace-nowrap">
-              {(data.estimatedHours + (data.extraHours || 0))}h × £{calculateHourlyRate().toFixed(2)}/hr
+              {(data.estimatedHours + (data.extraHours || 0))}h × £{effectiveHourlyRate.toFixed(2)}/hr
             </span>
           </div>
         </div>
@@ -368,6 +377,44 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
           </span>
         </div>
       )}
+      
+      {/* Admin Discount - Show only if set */}
+      {isAdminMode && data.adminDiscountPercentage && data.adminDiscountPercentage > 0 && (
+        <div className="flex justify-between items-center text-red-600">
+          <span>Discount ({data.adminDiscountPercentage}%)</span>
+          <span className="font-semibold">
+            -£{(() => {
+              let subtotal = 0;
+              const hourlyRate = data.adminHourlyRateOverride !== undefined ? data.adminHourlyRateOverride : calculateHourlyRate();
+              if (data.estimatedHours) {
+                const cleaningHours = data.estimatedHours + (data.extraHours || 0);
+                subtotal += cleaningHours * hourlyRate;
+              }
+              subtotal += calculateEquipmentCost();
+              subtotal += calculateOvenCost();
+              subtotal += shortNoticeInfo.charge;
+              if (data.linenPackages) {
+                Object.entries(data.linenPackages).forEach(([packageId, quantity]) => {
+                  const product = linenProducts.find((p: any) => p.id === packageId);
+                  if (product && quantity > 0) {
+                    subtotal += product.price * quantity;
+                  }
+                });
+              }
+              return ((subtotal * data.adminDiscountPercentage!) / 100).toFixed(2);
+            })()}
+          </span>
+        </div>
+      )}
+      
+      {isAdminMode && data.adminDiscountAmount && data.adminDiscountAmount > 0 && (
+        <div className="flex justify-between items-center text-red-600">
+          <span>Discount (Fixed)</span>
+          <span className="font-semibold">
+            -£{data.adminDiscountAmount.toFixed(2)}
+          </span>
+        </div>
+      )}
     </div>
   );
 
@@ -383,6 +430,97 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
       </div>
 
       {renderSummaryContent()}
+
+      {/* Admin Pricing Controls */}
+      {isAdminMode && onUpdate && (
+        <div className="pt-4 mt-4 border-t">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsEditingPricing(!isEditingPricing)}
+            className="w-full flex items-center justify-center gap-2 mb-3"
+          >
+            <Edit2 className="w-4 h-4" />
+            {isEditingPricing ? 'Hide' : 'Edit'} Pricing
+          </Button>
+          
+          {isEditingPricing && (
+            <div className="space-y-3 p-3 bg-gray-50 rounded-lg">
+              <div>
+                <Label className="text-xs text-gray-600">Hourly Rate Override (£)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder={`Default: £${calculateHourlyRate().toFixed(2)}`}
+                  value={data.adminHourlyRateOverride ?? ''}
+                  onChange={(e) => onUpdate({ 
+                    adminHourlyRateOverride: e.target.value ? parseFloat(e.target.value) : undefined 
+                  })}
+                  className="h-10 mt-1"
+                />
+              </div>
+              
+              <div>
+                <Label className="text-xs text-gray-600">Discount Amount (£)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={data.adminDiscountAmount ?? ''}
+                  onChange={(e) => onUpdate({ 
+                    adminDiscountAmount: e.target.value ? parseFloat(e.target.value) : undefined 
+                  })}
+                  className="h-10 mt-1"
+                />
+              </div>
+              
+              <div>
+                <Label className="text-xs text-gray-600">Discount Percentage (%)</Label>
+                <Input
+                  type="number"
+                  step="1"
+                  min="0"
+                  max="100"
+                  placeholder="0"
+                  value={data.adminDiscountPercentage ?? ''}
+                  onChange={(e) => onUpdate({ 
+                    adminDiscountPercentage: e.target.value ? parseFloat(e.target.value) : undefined 
+                  })}
+                  className="h-10 mt-1"
+                />
+              </div>
+              
+              <div>
+                <Label className="text-xs text-gray-600">Total Cost Override (£)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder={`Calculated: £${calculateTotal().toFixed(2)}`}
+                  value={data.adminTotalCostOverride ?? ''}
+                  onChange={(e) => onUpdate({ 
+                    adminTotalCostOverride: e.target.value ? parseFloat(e.target.value) : undefined 
+                  })}
+                  className="h-10 mt-1"
+                />
+              </div>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onUpdate({
+                  adminHourlyRateOverride: undefined,
+                  adminDiscountAmount: undefined,
+                  adminDiscountPercentage: undefined,
+                  adminTotalCostOverride: undefined
+                })}
+                className="w-full text-xs"
+              >
+                Reset All Overrides
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Total Cost */}
       {data.estimatedHours && data.estimatedHours > 0 && (

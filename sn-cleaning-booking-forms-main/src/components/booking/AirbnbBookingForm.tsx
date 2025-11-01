@@ -78,6 +78,12 @@ export interface BookingData {
   hourlyRate: number;
   totalCost: number;
   
+  // Admin pricing overrides
+  adminDiscountAmount?: number;
+  adminDiscountPercentage?: number;
+  adminHourlyRateOverride?: number;
+  adminTotalCostOverride?: number;
+  
   // Admin/Customer specific fields
   customerId?: number;
   selectedCustomer?: any;
@@ -308,7 +314,11 @@ const AirbnbBookingForm: React.FC = () => {
           
           {/* Summary Section - Takes 1 column, always visible */}
           <div className="lg:col-span-1">
-            <BookingSummary data={bookingData} />
+            <BookingSummary 
+              data={bookingData} 
+              isAdminMode={isAdminMode}
+              onUpdate={updateBookingData}
+            />
           </div>
         </div>
       </main>
