@@ -16,7 +16,7 @@ import LinenManagementSelector from './LinenManagementSelector';
 import { LinenUsageItem } from '@/hooks/useLinenProducts';
 import { EmailNotificationConfirmDialog } from '@/components/notifications/EmailNotificationConfirmDialog';
 import { useBookingEmailPrompt } from '@/hooks/useBookingEmailPrompt';
-import { useServiceTypes, useCleaningTypes } from '@/hooks/useCompanySettings';
+import { useServiceTypes, useCleaningTypes, usePaymentMethods } from '@/hooks/useCompanySettings';
 
 interface BookingFormProps {
   onBookingCreated: () => void;
@@ -70,6 +70,7 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
   // Fetch service and cleaning types from company settings
   const { data: serviceTypesFromSettings, isLoading: loadingServiceTypes } = useServiceTypes();
   const { data: cleaningTypesFromSettings, isLoading: loadingCleaningTypes } = useCleaningTypes();
+  const { data: paymentMethodsFromSettings, isLoading: loadingPaymentMethods } = usePaymentMethods();
   
   const {
     showConfirmDialog,
@@ -531,9 +532,15 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Stripe">Stripe</SelectItem>
-                  <SelectItem value="Invoiceless">Invoiceless</SelectItem>
-                  <SelectItem value="Cash">Cash</SelectItem>
+                  {paymentMethodsFromSettings && paymentMethodsFromSettings.length === 0 ? (
+                    <SelectItem value="none" disabled>No payment methods configured</SelectItem>
+                  ) : (
+                    paymentMethodsFromSettings?.map((method) => (
+                      <SelectItem key={method.key} value={method.label}>
+                        {method.label}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>

@@ -26,6 +26,11 @@ export interface CleaningType {
   description?: string;
 }
 
+export interface PaymentMethod {
+  key: string;
+  label: string;
+}
+
 export const useCompanySettings = (category?: string) => {
   return useQuery({
     queryKey: ['company-settings', category],
@@ -70,6 +75,19 @@ export const useCleaningTypes = () => {
   })) || [];
 
   return { data: cleaningTypes, ...rest };
+};
+
+export const usePaymentMethods = () => {
+  const { data, ...rest } = useCompanySettings('payment_method');
+  
+  const paymentMethods: PaymentMethod[] = data
+    ?.filter(setting => setting.is_active)
+    ?.map(setting => ({
+      key: setting.setting_key,
+      label: setting.setting_value.label,
+    })) || [];
+
+  return { data: paymentMethods, ...rest };
 };
 
 export const useUpdateCompanySetting = () => {

@@ -20,7 +20,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import LinenManagementSelector from './LinenManagementSelector';
 import { LinenUsageItem } from '@/hooks/useLinenProducts';
-import { useServiceTypes, useCleaningTypes, getServiceTypeBadgeColor, getServiceTypeLabel, getCleaningTypeLabel } from '@/hooks/useCompanySettings';
+import { useServiceTypes, useCleaningTypes, usePaymentMethods, getServiceTypeBadgeColor, getServiceTypeLabel, getCleaningTypeLabel } from '@/hooks/useCompanySettings';
 
 interface NewBookingFormProps {
   onBookingCreated: () => void;
@@ -145,13 +145,12 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
 
   const [showAddPropertyAccessDialog, setShowAddPropertyAccessDialog] = useState(false);
   const [newPropertyAccess, setNewPropertyAccess] = useState({ label: '', value: '', icon: '' });
-  const [showAddPaymentMethodDialog, setShowAddPaymentMethodDialog] = useState(false);
-  const [newPaymentMethod, setNewPaymentMethod] = useState('');
   const navigate = useNavigate();
   
   // Fetch service and cleaning types from company settings
   const { data: serviceTypesFromSettings, isLoading: loadingServiceTypes } = useServiceTypes();
   const { data: cleaningTypesFromSettings, isLoading: loadingCleaningTypes } = useCleaningTypes();
+  const { data: paymentMethodsFromSettings, isLoading: loadingPaymentMethods } = usePaymentMethods();
   
   console.log('NewBookingForm: State initialized, formData:', formData);
 
@@ -210,11 +209,8 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
     { value: 'other', label: 'Other arrangement', icon: '📝' }
   ]);
 
-  const [paymentMethods, setPaymentMethods] = useState([
-    'Stripe',
-    'Invoiceless',
-    'Cash'
-  ]);
+  // Map payment methods from settings
+  const paymentMethods = paymentMethodsFromSettings?.map(pm => pm.label) || [];
 
   const hours = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
   const minutes = ['00', '15', '30', '45'];
@@ -479,18 +475,6 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
       toast({
         title: "Success",
         description: "New property access option added!",
-      });
-    }
-  };
-
-  const handleAddPaymentMethod = () => {
-    if (newPaymentMethod.trim()) {
-      setPaymentMethods(prev => [...prev, newPaymentMethod.trim()]);
-      setNewPaymentMethod('');
-      setShowAddPaymentMethodDialog(false);
-      toast({
-        title: "Success",
-        description: "New payment method added!",
       });
     }
   };
@@ -1254,46 +1238,21 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
                 />
               </div>
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="paymentMethod" className="text-sm font-semibold text-gray-700">Payment Method</Label>
-                  <Dialog open={showAddPaymentMethodDialog} onOpenChange={setShowAddPaymentMethodDialog}>
-                    <DialogTrigger asChild>
-                      <Button type="button" variant="outline" size="sm" className="text-indigo-600 border-indigo-300 hover:border-indigo-400">
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add New
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Add New Payment Method</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="paymentMethodName">Payment Method Name</Label>
-                          <Input
-                            id="paymentMethodName"
-                            value={newPaymentMethod}
-                            onChange={(e) => setNewPaymentMethod(e.target.value)}
-                            placeholder="e.g., PayPal, Cryptocurrency"
-                          />
-                        </div>
-                        <Button onClick={handleAddPaymentMethod} className="w-full">
-                          Add Payment Method
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
+                <Label htmlFor="paymentMethod" className="text-sm font-semibold text-gray-700">Payment Method</Label>
                 <Select value={formData.paymentMethod} onValueChange={(value) => handleInputChange('paymentMethod', value)}>
                   <SelectTrigger className="border-2 border-gray-200 focus:border-indigo-500">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {paymentMethods.map((method) => (
-                      <SelectItem key={method} value={method}>
-                        {method}
-                      </SelectItem>
-                    ))}
+                    {paymentMethods.length === 0 ? (
+                      <SelectItem value="none" disabled>No payment methods configured</SelectItem>
+                    ) : (
+                      paymentMethods.map((method) => (
+                        <SelectItem key={method} value={method}>
+                          {method}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>

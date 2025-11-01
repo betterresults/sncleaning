@@ -192,6 +192,7 @@ const CompanySettingsManager = () => {
   const { data: serviceTypes, isLoading: loadingServiceTypes } = useCompanySettings('service_type');
   const { data: cleaningTypes, isLoading: loadingCleaningTypes } = useCompanySettings('cleaning_type');
   const { data: companyInfo, isLoading: loadingCompanyInfo } = useCompanySettings('company_info');
+  const { data: paymentMethods, isLoading: loadingPaymentMethods } = useCompanySettings('payment_method');
 
   const createMutation = useCreateCompanySetting();
   const updateMutation = useUpdateCompanySetting();
@@ -200,7 +201,7 @@ const CompanySettingsManager = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>({});
   const [isAddingNew, setIsAddingNew] = useState(false);
-  const [newItemCategory, setNewItemCategory] = useState<'service_type' | 'cleaning_type'>('service_type');
+  const [newItemCategory, setNewItemCategory] = useState<'service_type' | 'cleaning_type' | 'payment_method'>('service_type');
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -229,6 +230,8 @@ const CompanySettingsManager = () => {
           badge_color: editForm.badge_color,
           allowed_cleaning_types: editForm.allowed_cleaning_types || []
         }
+      : category === 'payment_method'
+      ? { label: editForm.label }
       : { label: editForm.label, description: editForm.description };
 
     updateMutation.mutate({
@@ -249,6 +252,8 @@ const CompanySettingsManager = () => {
 
     const setting_value = newItemCategory === 'service_type'
       ? { label: editForm.label, badge_color: editForm.badge_color || 'bg-gray-500/10 text-gray-700 border-gray-200' }
+      : newItemCategory === 'payment_method'
+      ? { label: editForm.label }
       : { label: editForm.label, description: editForm.description || '' };
 
     createMutation.mutate({
@@ -293,9 +298,10 @@ const CompanySettingsManager = () => {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="service_types" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="service_types">Service Types</TabsTrigger>
           <TabsTrigger value="cleaning_types">Cleaning Types</TabsTrigger>
+          <TabsTrigger value="payment_methods">Payment Methods</TabsTrigger>
           <TabsTrigger value="company_info">Company Info</TabsTrigger>
         </TabsList>
 
@@ -486,6 +492,99 @@ const CompanySettingsManager = () => {
                         key={setting.id}
                         setting={setting}
                         category="cleaning_type"
+                        editingId={editingId}
+                        editForm={editForm}
+                        onEdit={handleEdit}
+                        onSave={handleSave}
+                        onDelete={handleDelete}
+                        onFormChange={setEditForm}
+                        onCancelEdit={() => setEditingId(null)}
+                      />
+                    ))}
+                  </SortableContext>
+                </DndContext>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="payment_methods">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Payment Methods</CardTitle>
+                  <CardDescription>Manage available payment methods for bookings</CardDescription>
+                </div>
+                <Button
+                  onClick={() => {
+                    setIsAddingNew(true);
+                    setNewItemCategory('payment_method');
+                    const maxOrder = Math.max(0, ...(paymentMethods?.map(s => s.display_order) || []));
+                    setEditForm({ label: '', display_order: maxOrder + 1 });
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-2" /> Add Payment Method
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {isAddingNew && newItemCategory === 'payment_method' && (
+                <div className="p-4 border-2 border-dashed rounded-lg space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Key (ID) *</Label>
+                      <Input
+                        value={editForm.key || ''}
+                        onChange={(e) => setEditForm({ ...editForm, key: e.target.value })}
+                        placeholder="stripe"
+                      />
+                    </div>
+                    <div>
+                      <Label>Label *</Label>
+                      <Input
+                        value={editForm.label || ''}
+                        onChange={(e) => setEditForm({ ...editForm, label: e.target.value })}
+                        placeholder="Stripe"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Display Order</Label>
+                    <Input
+                      type="number"
+                      value={editForm.display_order || ''}
+                      onChange={(e) => setEditForm({ ...editForm, display_order: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={handleAddNew}>
+                      <Save className="w-4 h-4 mr-1" /> Create
+                    </Button>
+                    <Button variant="outline" onClick={() => { setIsAddingNew(false); setEditForm({}); }}>
+                      <X className="w-4 h-4 mr-1" /> Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+              {loadingPaymentMethods ? (
+                <div>Loading...</div>
+              ) : (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={(event) => handleDragEnd(event, paymentMethods)}
+                >
+                  <SortableContext
+                    items={paymentMethods?.map(s => s.id) || []}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {paymentMethods?.map((setting) => (
+                      <SortableItem
+                        key={setting.id}
+                        setting={setting}
+                        category="payment_method"
                         editingId={editingId}
                         editForm={editForm}
                         onEdit={handleEdit}

@@ -158,7 +158,7 @@ export function UnifiedSidebar({ navigationItems, user, userRole, customerId, cl
                                 asChild
                                 className={`h-8 transition-all duration-200 rounded-md pl-3 pr-3 font-medium text-sm ${
                                   isAddNewBooking
-                                    ? "!bg-[#1abc9c] !text-white hover:!bg-[#16a085]"
+                                    ? "!bg-gray-200 !text-gray-800 hover:!bg-gray-300"
                                     : isSubActive
                                     ? "!bg-white/20 !text-white"
                                     : "!text-white/70 hover:!text-white hover:!bg-white/10"
