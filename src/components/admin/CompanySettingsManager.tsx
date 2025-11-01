@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil, Trash2, Save, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Save, X, GripVertical } from 'lucide-react';
 import {
   useCompanySettings,
   useCreateCompanySetting,
@@ -14,6 +14,179 @@ import {
   CompanySetting,
 } from '@/hooks/useCompanySettings';
 import { Switch } from '@/components/ui/switch';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+interface SortableItemProps {
+  setting: CompanySetting;
+  category: string;
+  editingId: string | null;
+  editForm: any;
+  cleaningTypes?: CompanySetting[];
+  onEdit: (setting: CompanySetting) => void;
+  onSave: (id: string, category: string) => void;
+  onDelete: (id: string) => void;
+  onFormChange: (updates: any) => void;
+  onCancelEdit: () => void;
+}
+
+const SortableItem = ({ setting, category, editingId, editForm, cleaningTypes, onEdit, onSave, onDelete, onFormChange, onCancelEdit }: SortableItemProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: setting.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const isEditing = editingId === setting.id;
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-2">
+      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+        <GripVertical className="w-5 h-5 text-gray-400" />
+      </div>
+      <div className="flex-1 flex items-center justify-between p-4 border rounded-lg">
+        {isEditing ? (
+          <div className="flex-1 space-y-3">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Key (ID)</Label>
+                <Input value={setting.setting_key} disabled className="bg-gray-100" />
+              </div>
+              <div>
+                <Label>Label</Label>
+                <Input
+                  value={editForm.label}
+                  onChange={(e) => onFormChange({ ...editForm, label: e.target.value })}
+                />
+              </div>
+            </div>
+            {category === 'service_type' && (
+              <>
+                <div>
+                  <Label>Badge Color (Tailwind classes)</Label>
+                  <Input
+                    value={editForm.badge_color}
+                    onChange={(e) => onFormChange({ ...editForm, badge_color: e.target.value })}
+                    placeholder="bg-blue-500/10 text-blue-700 border-blue-200"
+                  />
+                </div>
+                <div>
+                  <Label>Allowed Cleaning Types</Label>
+                  <div className="flex flex-wrap gap-2 mt-2 p-3 border rounded-lg">
+                    {cleaningTypes?.map((ct) => (
+                      <Badge
+                        key={ct.id}
+                        variant={editForm.allowed_cleaning_types?.includes(ct.setting_key) ? "default" : "outline"}
+                        className="cursor-pointer"
+                        onClick={() => {
+                          const current = editForm.allowed_cleaning_types || [];
+                          const updated = current.includes(ct.setting_key)
+                            ? current.filter((k: string) => k !== ct.setting_key)
+                            : [...current, ct.setting_key];
+                          onFormChange({ ...editForm, allowed_cleaning_types: updated });
+                        }}
+                      >
+                        {ct.setting_value.label}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+            {category === 'cleaning_type' && (
+              <div>
+                <Label>Description</Label>
+                <Input
+                  value={editForm.description}
+                  onChange={(e) => onFormChange({ ...editForm, description: e.target.value })}
+                />
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Display Order</Label>
+                <Input
+                  type="number"
+                  value={editForm.display_order || ''}
+                  onChange={(e) => onFormChange({ ...editForm, display_order: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={editForm.is_active}
+                  onCheckedChange={(checked) => onFormChange({ ...editForm, is_active: checked })}
+                />
+                <Label>Active</Label>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => onSave(setting.id, category)}>
+                <Save className="w-4 h-4 mr-1" /> Save
+              </Button>
+              <Button size="sm" variant="outline" onClick={onCancelEdit}>
+                <X className="w-4 h-4 mr-1" /> Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex-1">
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-sm text-gray-600">{setting.setting_key}</span>
+                <span className="font-semibold">{setting.setting_value.label}</span>
+                {category === 'service_type' && setting.setting_value.badge_color && (
+                  <Badge className={setting.setting_value.badge_color}>Preview</Badge>
+                )}
+                {!setting.is_active && <Badge variant="secondary">Inactive</Badge>}
+              </div>
+              {setting.setting_value.description && (
+                <p className="text-sm text-gray-600 mt-1">{setting.setting_value.description}</p>
+              )}
+              {category === 'service_type' && setting.setting_value.allowed_cleaning_types && (
+                <div className="text-xs text-gray-500 mt-1">
+                  Allowed: {setting.setting_value.allowed_cleaning_types.join(', ')}
+                </div>
+              )}
+              <span className="text-xs text-gray-400">Order: {setting.display_order}</span>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => onEdit(setting)}>
+                <Pencil className="w-4 h-4" />
+              </Button>
+              <Button size="sm" variant="destructive" onClick={() => onDelete(setting.id)}>
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const CompanySettingsManager = () => {
   const { data: serviceTypes, isLoading: loadingServiceTypes } = useCompanySettings('service_type');
@@ -28,6 +201,13 @@ const CompanySettingsManager = () => {
   const [editForm, setEditForm] = useState<any>({});
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [newItemCategory, setNewItemCategory] = useState<'service_type' | 'cleaning_type'>('service_type');
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const handleEdit = (setting: CompanySetting) => {
     setEditingId(setting.id);
@@ -89,127 +269,25 @@ const CompanySettingsManager = () => {
     }
   };
 
-  const renderSettingRow = (setting: CompanySetting, category: string) => {
-    const isEditing = editingId === setting.id;
+  const handleDragEnd = (event: DragEndEvent, items: CompanySetting[] | undefined) => {
+    const { active, over } = event;
 
-    return (
-      <div key={setting.id} className="flex items-center justify-between p-4 border rounded-lg">
-        {isEditing ? (
-          <div className="flex-1 space-y-3">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Key (ID)</Label>
-                <Input value={setting.setting_key} disabled className="bg-gray-100" />
-              </div>
-              <div>
-                <Label>Label</Label>
-                <Input
-                  value={editForm.label}
-                  onChange={(e) => setEditForm({ ...editForm, label: e.target.value })}
-                />
-              </div>
-            </div>
-            {category === 'service_type' && (
-              <>
-                <div>
-                  <Label>Badge Color (Tailwind classes)</Label>
-                  <Input
-                    value={editForm.badge_color}
-                    onChange={(e) => setEditForm({ ...editForm, badge_color: e.target.value })}
-                    placeholder="bg-blue-500/10 text-blue-700 border-blue-200"
-                  />
-                </div>
-                <div>
-                  <Label>Allowed Cleaning Types</Label>
-                  <div className="flex flex-wrap gap-2 mt-2 p-3 border rounded-lg">
-                    {cleaningTypes?.map((ct) => (
-                      <Badge
-                        key={ct.id}
-                        variant={editForm.allowed_cleaning_types?.includes(ct.setting_key) ? "default" : "outline"}
-                        className="cursor-pointer"
-                        onClick={() => {
-                          const current = editForm.allowed_cleaning_types || [];
-                          const updated = current.includes(ct.setting_key)
-                            ? current.filter((k: string) => k !== ct.setting_key)
-                            : [...current, ct.setting_key];
-                          setEditForm({ ...editForm, allowed_cleaning_types: updated });
-                        }}
-                      >
-                        {ct.setting_value.label}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-            {category === 'cleaning_type' && (
-              <div>
-                <Label>Description</Label>
-                <Input
-                  value={editForm.description}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                />
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Display Order</Label>
-                <Input
-                  type="number"
-                  value={editForm.display_order || ''}
-                  onChange={(e) => setEditForm({ ...editForm, display_order: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
-                />
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  checked={editForm.is_active}
-                  onCheckedChange={(checked) => setEditForm({ ...editForm, is_active: checked })}
-                />
-                <Label>Active</Label>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button size="sm" onClick={() => handleSave(setting.id, category)}>
-                <Save className="w-4 h-4 mr-1" /> Save
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => setEditingId(null)}>
-                <X className="w-4 h-4 mr-1" /> Cancel
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="flex-1">
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-sm text-gray-600">{setting.setting_key}</span>
-                <span className="font-semibold">{setting.setting_value.label}</span>
-                {category === 'service_type' && setting.setting_value.badge_color && (
-                  <Badge className={setting.setting_value.badge_color}>Preview</Badge>
-                )}
-                {!setting.is_active && <Badge variant="secondary">Inactive</Badge>}
-              </div>
-              {setting.setting_value.description && (
-                <p className="text-sm text-gray-600 mt-1">{setting.setting_value.description}</p>
-              )}
-              {category === 'service_type' && setting.setting_value.allowed_cleaning_types && (
-                <div className="text-xs text-gray-500 mt-1">
-                  Allowed: {setting.setting_value.allowed_cleaning_types.join(', ')}
-                </div>
-              )}
-              <span className="text-xs text-gray-400">Order: {setting.display_order}</span>
-            </div>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => handleEdit(setting)}>
-                <Pencil className="w-4 h-4" />
-              </Button>
-              <Button size="sm" variant="destructive" onClick={() => handleDelete(setting.id)}>
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
-          </>
-        )}
-      </div>
-    );
+    if (!over || !items || active.id === over.id) return;
+
+    const oldIndex = items.findIndex((item) => item.id === active.id);
+    const newIndex = items.findIndex((item) => item.id === over.id);
+
+    const reorderedItems = arrayMove(items, oldIndex, newIndex);
+
+    // Update display_order for all affected items
+    reorderedItems.forEach((item, index) => {
+      if (item.display_order !== index) {
+        updateMutation.mutate({
+          id: item.id,
+          updates: { display_order: index },
+        });
+      }
+    });
   };
 
   return (
@@ -292,7 +370,32 @@ const CompanySettingsManager = () => {
               {loadingServiceTypes ? (
                 <div>Loading...</div>
               ) : (
-                serviceTypes?.map((setting) => renderSettingRow(setting, 'service_type'))
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={(event) => handleDragEnd(event, serviceTypes)}
+                >
+                  <SortableContext
+                    items={serviceTypes?.map(s => s.id) || []}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {serviceTypes?.map((setting) => (
+                      <SortableItem
+                        key={setting.id}
+                        setting={setting}
+                        category="service_type"
+                        editingId={editingId}
+                        editForm={editForm}
+                        cleaningTypes={cleaningTypes}
+                        onEdit={handleEdit}
+                        onSave={handleSave}
+                        onDelete={handleDelete}
+                        onFormChange={setEditForm}
+                        onCancelEdit={() => setEditingId(null)}
+                      />
+                    ))}
+                  </SortableContext>
+                </DndContext>
               )}
             </CardContent>
           </Card>
@@ -369,7 +472,31 @@ const CompanySettingsManager = () => {
               {loadingCleaningTypes ? (
                 <div>Loading...</div>
               ) : (
-                cleaningTypes?.map((setting) => renderSettingRow(setting, 'cleaning_type'))
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={(event) => handleDragEnd(event, cleaningTypes)}
+                >
+                  <SortableContext
+                    items={cleaningTypes?.map(s => s.id) || []}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {cleaningTypes?.map((setting) => (
+                      <SortableItem
+                        key={setting.id}
+                        setting={setting}
+                        category="cleaning_type"
+                        editingId={editingId}
+                        editForm={editForm}
+                        onEdit={handleEdit}
+                        onSave={handleSave}
+                        onDelete={handleDelete}
+                        onFormChange={setEditForm}
+                        onCancelEdit={() => setEditingId(null)}
+                      />
+                    ))}
+                  </SortableContext>
+                </DndContext>
               )}
             </CardContent>
           </Card>
