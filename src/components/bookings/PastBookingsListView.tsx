@@ -891,20 +891,22 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
         }}
       />
 
-      <InvoilessPaymentDialog
-        booking={selectedBookingForInvoiless as any}
-        isOpen={invoilessDialogOpen}
-        bookingType="past"
-        onClose={() => {
-          setInvoilessDialogOpen(false);
-          setSelectedBookingForInvoiless(null);
-        }}
-        onSuccess={() => {
-          fetchData();
-          setInvoilessDialogOpen(false);
-          setSelectedBookingForInvoiless(null);
-        }}
-      />
+      {selectedBookingForInvoiless && (
+        <InvoilessPaymentDialog
+          booking={selectedBookingForInvoiless as any}
+          isOpen={invoilessDialogOpen}
+          bookingType="past"
+          onClose={() => {
+            setInvoilessDialogOpen(false);
+            setSelectedBookingForInvoiless(null);
+          }}
+          onSuccess={() => {
+            fetchData();
+            setInvoilessDialogOpen(false);
+            setSelectedBookingForInvoiless(null);
+          }}
+        />
+      )}
 
       {selectedBookingForEmail && (
         <ManualEmailDialog
