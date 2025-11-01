@@ -274,8 +274,8 @@ const AirbnbBookingForm: React.FC = () => {
           
           {/* Step Navigation - Mobile Optimized */}
           <div className="max-w-4xl mx-auto">
-            {/* Mobile: Compact stepper */}
-            <div className="flex md:hidden items-center justify-center gap-1 px-2">
+            {/* Compact stepper with progress */}
+            <div className="flex items-center justify-center gap-1 px-2">
               {steps.map((step, index) => {
                 const stepNumber = index + 1;
                 const isActive = currentStep === stepNumber;
@@ -300,44 +300,18 @@ const AirbnbBookingForm: React.FC = () => {
                         {stepNumber}
                       </div>
                       {isActive && (
-                        <span className="text-xs font-medium text-primary mt-1 text-center">
+                        <span className="text-xs sm:text-sm font-medium text-primary mt-1 text-center">
                           {step.title}
                         </span>
                       )}
                     </button>
                     
                     {index < steps.length - 1 && (
-                      <div className={`h-0.5 flex-1 max-w-[20px] transition-all ${
+                      <div className={`h-0.5 flex-1 max-w-[20px] sm:max-w-[30px] transition-all ${
                         currentStep > stepNumber ? 'bg-primary' : 'bg-gray-200'
                       }`} />
                     )}
                   </React.Fragment>
-                );
-              })}
-            </div>
-            
-            {/* Desktop: Full stepper */}
-            <div className="hidden md:flex items-center justify-center gap-2">
-              {steps.map((step, index) => {
-                const stepNumber = index + 1;
-                const isActive = currentStep === stepNumber;
-                const isCompleted = currentStep > stepNumber;
-                const canNavigate = isCompleted || stepNumber <= currentStep;
-                
-                return (
-                  <button
-                    key={step.id}
-                    onClick={() => canNavigate && setCurrentStep(stepNumber)}
-                    disabled={!canNavigate}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-300 ${
-                      isActive 
-                        ? 'bg-primary text-white shadow-sm' 
-                        : 'text-gray-400 hover:text-gray-600'
-                    } ${canNavigate ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
-                  >
-                    {step.icon}
-                    <span className="font-medium text-sm">{step.title}</span>
-                  </button>
                 );
               })}
             </div>
