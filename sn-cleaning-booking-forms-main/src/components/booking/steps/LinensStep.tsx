@@ -238,7 +238,7 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
 
       {/* Ironing Switch */}
       {showIroning && (
-        <div>
+        <div className="mt-6">
           <h2 className="text-xl font-bold text-[#185166] mb-4">
             Select ironing option <span className="text-destructive">*</span>
           </h2>
@@ -268,9 +268,9 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
         </div>
       )}
 
-      {/* Extra Hours for Linen Handling */}
-      {(data.linensHandling === 'wash-hang' || data.linensHandling === 'wash-dry' || data.needsIroning) && (
-        <div>
+      {/* Extra Hours for Linen Handling - Only show when ironing is selected */}
+      {data.needsIroning === true && (
+        <div className="mt-6">
           <div className="bg-muted/10 border border-border rounded-lg p-4 space-y-3">
             {/* Title and controls on same line */}
             <div className="flex items-center justify-between gap-4">
