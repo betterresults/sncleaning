@@ -862,31 +862,64 @@ export const AirbnbConfigPanel: React.FC = () => {
                   </Select>
                 </div>
 
-                <div>
-                  <Label>Formula</Label>
-                  <Input
-                    value={currentFormula.elements?.map(el => el.value).join(' ') || ''}
-                    onChange={(e) => {
-                      const formulaText = e.target.value;
-                      // Convert the string into elements for now - simple parsing
-                      const elements = formulaText.split(' ').filter(s => s.trim()).map(part => {
-                        const trimmed = part.trim();
-                        if (['+', '-', '*', '/', '(', ')'].includes(trimmed)) {
-                          return { type: 'operator' as const, value: trimmed };
-                        } else if (!isNaN(Number(trimmed))) {
-                          return { type: 'number' as const, value: trimmed, label: trimmed };
-                        } else {
-                          return { type: 'field' as const, value: trimmed, label: trimmed };
-                        }
-                      });
-                      setCurrentFormula({...currentFormula, elements});
-                    }}
-                    placeholder="e.g. bedrooms.value * 3 + bathrooms.time / 2"
-                    className="font-mono"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Write your formula using field names, operators (+, -, *, /, (, )), and numbers
-                  </p>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="col-span-2">
+                    <Label>Formula</Label>
+                    <Input
+                      value={currentFormula.elements?.map(el => el.value).join(' ') || ''}
+                      onChange={(e) => {
+                        const formulaText = e.target.value;
+                        const elements = formulaText.split(' ').filter(s => s.trim()).map(part => {
+                          const trimmed = part.trim();
+                          if (['+', '-', '*', '/', '(', ')'].includes(trimmed)) {
+                            return { type: 'operator' as const, value: trimmed };
+                          } else if (!isNaN(Number(trimmed))) {
+                            return { type: 'number' as const, value: trimmed, label: trimmed };
+                          } else {
+                            return { type: 'field' as const, value: trimmed, label: trimmed };
+                          }
+                        });
+                        setCurrentFormula({...currentFormula, elements});
+                      }}
+                      placeholder="e.g. bedrooms.value * 3 + bathrooms.time / 2"
+                      className="font-mono"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Write your formula or use the field selector →
+                    </p>
+                  </div>
+                  <div>
+                    <Label>Add Fields</Label>
+                    <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                      {availableFields.map((field) => (
+                        <Select 
+                          key={field.value}
+                          onValueChange={(attribute) => {
+                            const newElement = { 
+                              type: 'field' as const, 
+                              value: `${field.value}.${attribute}`,
+                              attribute: attribute,
+                              label: `${field.label}.${attribute}` 
+                            };
+                            setCurrentFormula({
+                              ...currentFormula,
+                              elements: [...(currentFormula.elements || []), newElement]
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="h-9 text-xs">
+                            <SelectValue placeholder={field.label} />
+                          </SelectTrigger>
+                          <SelectContent className="z-50 bg-background">
+                            <SelectItem value="value">Value</SelectItem>
+                            <SelectItem value="time">Time</SelectItem>
+                            <SelectItem value="min_value">Min Value</SelectItem>
+                            <SelectItem value="max_value">Max Value</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
                 <div>
