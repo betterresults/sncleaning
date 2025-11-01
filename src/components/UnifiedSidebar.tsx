@@ -155,7 +155,7 @@ export function UnifiedSidebar({ navigationItems, user, userRole, customerId, cl
                             <SidebarMenuSubItem key={subItem.title}>
                               <SidebarMenuSubButton 
                                 asChild
-                                className={`h-10 transition-all duration-200 rounded-md px-3 font-medium text-xs ${
+                                className={`h-8 transition-all duration-200 rounded-md px-3 py-1 font-medium text-xs ${
                                   isSubActive
                                     ? "!bg-white/20 !text-white"
                                     : "!text-white/90 hover:!text-white hover:!bg-white/10"
