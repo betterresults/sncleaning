@@ -37,6 +37,11 @@ export function InvoilessPaymentDialog({
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  // Guard against null/undefined booking
+  if (!booking) {
+    return null;
+  }
+
   const customerName = `${booking.first_name || ''} ${booking.last_name || ''}`.trim() || 'Customer';
   const hasInvoice = !!booking.invoice_id && !!booking.invoice_link;
 
