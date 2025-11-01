@@ -347,6 +347,11 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
                 <div className="text-center py-4">
                   <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{bookingDate}</div>
                   <div className="text-2xl font-bold text-primary mt-1">{bookingTime}</div>
+                  {booking.total_hours && (
+                    <div className="text-sm font-semibold text-muted-foreground mt-1">
+                      {booking.total_hours}h
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -373,11 +378,6 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
                 <Badge className={`${serviceBadgeColor} text-sm font-medium px-3 py-1.5 rounded-full flex flex-col items-center`}>
                   <span>{serviceLabel}</span>
                   <span className="text-xs italic font-normal mt-0.5">{cleaningLabel}</span>
-                  {booking.total_hours && (
-                    <span className="text-xs font-semibold mt-1 bg-white/20 px-2 py-0.5 rounded">
-                      {booking.total_hours}h
-                    </span>
-                  )}
                 </Badge>
               </div>
 
