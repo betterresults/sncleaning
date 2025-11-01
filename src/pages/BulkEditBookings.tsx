@@ -16,7 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { LinenUsageEditor } from '@/components/dashboard/LinenUsageEditor';
-import { useServiceTypes, useCleaningTypes } from '@/hooks/useCompanySettings';
+import { useServiceTypes, useCleaningTypes, ServiceType, CleaningType } from '@/hooks/useCompanySettings';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
@@ -471,8 +471,8 @@ const BulkEditBookings = () => {
         { value: 'Cancelled', label: 'Cancelled' },
         { value: 'Completed', label: 'Completed' }
       ],
-      service_type: serviceTypes?.map(st => ({ value: st, label: st })) || [],
-      cleaning_type: cleaningTypes?.map(ct => ({ value: ct, label: ct })) || [],
+      service_type: serviceTypes?.map(st => ({ value: st.key, label: st.label })) || [],
+      cleaning_type: cleaningTypes?.map(ct => ({ value: ct.key, label: ct.label })) || [],
       occupied: [
         { value: 'Yes', label: 'Yes' },
         { value: 'No', label: 'No' }
