@@ -36,6 +36,7 @@ interface UpcomingBookingsFiltersProps {
 export function UpcomingBookingsFilters({ filters, onFiltersChange, cleaners }: UpcomingBookingsFiltersProps) {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [filterType, setFilterType] = useState<'cleaner' | 'paymentMethod' | 'paymentStatus' | 'serviceType' | 'cleaningType' | 'bookingStatus' | ''>('');
+  const [activeDateTab, setActiveDateTab] = useState<'from' | 'to'>('from');
 
   const handleSearchChange = (value: string) => {
     onFiltersChange({ ...filters, searchTerm: value });
@@ -140,66 +141,59 @@ export function UpcomingBookingsFilters({ filters, onFiltersChange, cleaners }: 
           </PopoverTrigger>
           <PopoverContent className="w-auto p-4 bg-white shadow-lg rounded-xl z-50" align="start">
             <div className="space-y-3">
-              <div className="flex gap-2">
-                {/* From Date Button */}
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "justify-start text-left font-normal w-[180px]",
-                        !filters.dateFrom && "text-muted-foreground"
-                      )}
-                    >
-                      <Calendar className="mr-2 h-4 w-4" />
-                      {filters.dateFrom ? format(new Date(filters.dateFrom), 'dd MMM yyyy') : 'From Date'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-white shadow-lg rounded-xl z-[60]" align="start">
-                    <CalendarComponent
-                      mode="single"
-                      selected={filters.dateFrom ? new Date(filters.dateFrom) : undefined}
-                      onSelect={handleDateFromChange}
-                      className="p-3 pointer-events-auto rounded-lg"
-                    />
-                  </PopoverContent>
-                </Popover>
-
-                {/* To Date Button */}
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "justify-start text-left font-normal w-[180px]",
-                        !filters.dateTo && "text-muted-foreground"
-                      )}
-                    >
-                      <Calendar className="mr-2 h-4 w-4" />
-                      {filters.dateTo ? format(new Date(filters.dateTo), 'dd MMM yyyy') : 'To Date'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-white shadow-lg rounded-xl z-[60]" align="start">
-                    <CalendarComponent
-                      mode="single"
-                      selected={filters.dateTo ? new Date(filters.dateTo) : undefined}
-                      onSelect={handleDateToChange}
-                      className="p-3 pointer-events-auto rounded-lg"
-                    />
-                  </PopoverContent>
-                </Popover>
+              {/* Tab buttons for From/To Date */}
+              <div className="flex gap-2 border-b pb-2">
+                <Button
+                  variant={activeDateTab === 'from' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setActiveDateTab('from')}
+                  className="flex-1"
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {filters.dateFrom ? format(new Date(filters.dateFrom), 'dd MMM yyyy') : 'From Date'}
+                </Button>
+                <Button
+                  variant={activeDateTab === 'to' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setActiveDateTab('to')}
+                  className="flex-1"
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {filters.dateTo ? format(new Date(filters.dateTo), 'dd MMM yyyy') : 'To Date'}
+                </Button>
               </div>
+
+              {/* Calendar display - shows based on active tab */}
+              {activeDateTab === 'from' && (
+                <CalendarComponent
+                  mode="single"
+                  selected={filters.dateFrom ? new Date(filters.dateFrom) : undefined}
+                  onSelect={handleDateFromChange}
+                  className="p-0 pointer-events-auto rounded-lg"
+                />
+              )}
               
-              {/* Optional: Clear dates button */}
+              {activeDateTab === 'to' && (
+                <CalendarComponent
+                  mode="single"
+                  selected={filters.dateTo ? new Date(filters.dateTo) : undefined}
+                  onSelect={handleDateToChange}
+                  className="p-0 pointer-events-auto rounded-lg"
+                />
+              )}
+              
+              {/* Clear dates button */}
               {(filters.dateFrom || filters.dateTo) && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => {
                     onFiltersChange({ ...filters, dateFrom: '', dateTo: '' });
+                    setActiveDateTab('from');
                   }}
                   className="w-full text-muted-foreground hover:text-foreground"
                 >
+                  <X className="mr-2 h-4 w-4" />
                   Clear dates
                 </Button>
               )}
