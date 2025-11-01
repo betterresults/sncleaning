@@ -16,6 +16,7 @@ import LinenManagementSelector from './LinenManagementSelector';
 import { LinenUsageItem } from '@/hooks/useLinenProducts';
 import { EmailNotificationConfirmDialog } from '@/components/notifications/EmailNotificationConfirmDialog';
 import { useBookingEmailPrompt } from '@/hooks/useBookingEmailPrompt';
+import { useServiceTypes, useCleaningTypes } from '@/hooks/useCompanySettings';
 
 interface BookingFormProps {
   onBookingCreated: () => void;
@@ -65,6 +66,11 @@ interface BookingData {
 const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  
+  // Fetch service and cleaning types from company settings
+  const { data: serviceTypesFromSettings, isLoading: loadingServiceTypes } = useServiceTypes();
+  const { data: cleaningTypesFromSettings, isLoading: loadingCleaningTypes } = useCleaningTypes();
+  
   const {
     showConfirmDialog,
     setShowConfirmDialog,
@@ -386,10 +392,9 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
                   <SelectValue placeholder="Select service type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Standard Cleaning">Standard Cleaning</SelectItem>
-                  <SelectItem value="Deep Cleaning">Deep Cleaning</SelectItem>
-                  <SelectItem value="End of Tenancy">End of Tenancy</SelectItem>
-                  <SelectItem value="Office Cleaning">Office Cleaning</SelectItem>
+                  {cleaningTypesFromSettings?.map((ct) => (
+                    <SelectItem key={ct.key} value={ct.label}>{ct.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -400,9 +405,9 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
                   <SelectValue placeholder="Select property type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Domestic">Domestic</SelectItem>
-                  <SelectItem value="Commercial">Commercial</SelectItem>
-                  <SelectItem value="Air BnB">Air BnB</SelectItem>
+                  {serviceTypesFromSettings?.map((st) => (
+                    <SelectItem key={st.key} value={st.label}>{st.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

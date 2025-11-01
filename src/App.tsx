@@ -17,6 +17,7 @@ import CustomerMessages from "./pages/CustomerMessages";
 import CleanerMessages from "./pages/CleanerMessages";
 import AdminChatManagement from "./pages/AdminChatManagement";
 import AdminPricingFormulas from "./pages/AdminPricingFormulas";
+import AdminCompanySettings from "./pages/AdminCompanySettings";
 import CleanerPastBookings from "./pages/CleanerPastBookings";
 import CleanerEarnings from "./pages/CleanerEarnings";
 import CleanerAvailableBookings from "./pages/CleanerAvailableBookings";
@@ -114,8 +115,9 @@ const App = () => (
                    <Route path="/admin-activity-logs" element={<AdminActivityLogs />} />
                     <Route path="/admin-notification-management" element={<AdminNotificationManagement />} />
                     <Route path="/invoiless-api-test" element={<InvoilessAPITest />} />
-                    <Route path="/admin-airbnb-form-settings" element={<AdminAirbnbFormSettings />} />
-                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                     <Route path="/admin-airbnb-form-settings" element={<AdminAirbnbFormSettings />} />
+                     <Route path="/admin-company-settings" element={<AdminCompanySettings />} />
+                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
             </Routes>
               </AdminCleanerProvider>

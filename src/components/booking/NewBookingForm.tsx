@@ -20,6 +20,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import LinenManagementSelector from './LinenManagementSelector';
 import { LinenUsageItem } from '@/hooks/useLinenProducts';
+import { useServiceTypes, useCleaningTypes, getServiceTypeBadgeColor, getServiceTypeLabel, getCleaningTypeLabel } from '@/hooks/useCompanySettings';
 
 interface NewBookingFormProps {
   onBookingCreated: () => void;
@@ -148,6 +149,10 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
   const [newPaymentMethod, setNewPaymentMethod] = useState('');
   const navigate = useNavigate();
   
+  // Fetch service and cleaning types from company settings
+  const { data: serviceTypesFromSettings, isLoading: loadingServiceTypes } = useServiceTypes();
+  const { data: cleaningTypesFromSettings, isLoading: loadingCleaningTypes } = useCleaningTypes();
+  
   console.log('NewBookingForm: State initialized, formData:', formData);
 
   // Auto-populate customer information if in customer view
@@ -164,19 +169,27 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
     }
   }, [isCustomerView, preselectedCustomer]);
 
-  const serviceTypes = [
-    { value: 'domestic', label: 'Domestic Cleaning', color: 'from-blue-500 to-cyan-500' },
-    { value: 'commercial', label: 'Commercial Cleaning', color: 'from-purple-500 to-pink-500' },
-    { value: 'airbnb', label: 'Airbnb Cleaning', color: 'from-green-500 to-emerald-500' },
-    { value: 'end_of_tenancy', label: 'End of Tenancy Cleaning', color: 'from-orange-500 to-red-500' },
-    { value: 'deep_cleaning', label: 'Deep Cleaning', color: 'from-indigo-500 to-purple-500' },
-    { value: 'carpet_cleaning', label: 'Carpet Cleaning', color: 'from-teal-500 to-blue-500' }
-  ];
+  // Map service types from settings to the format expected by the form
+  const serviceTypes = serviceTypesFromSettings?.map((st) => {
+    const colorMap: Record<string, string> = {
+      domestic: 'from-blue-500 to-cyan-500',
+      commercial: 'from-purple-500 to-pink-500',
+      airbnb: 'from-green-500 to-emerald-500',
+      end_of_tenancy: 'from-orange-500 to-red-500',
+      deep_cleaning: 'from-indigo-500 to-purple-500',
+      carpet_cleaning: 'from-teal-500 to-blue-500',
+    };
+    return {
+      value: st.key,
+      label: st.label,
+      color: colorMap[st.key] || 'from-gray-500 to-gray-600',
+    };
+  }) || [];
 
-  const cleaningSubTypes = [
-    { value: 'standard_cleaning', label: 'Standard Cleaning' },
-    { value: 'deep_cleaning', label: 'Deep Cleaning' }
-  ];
+  const cleaningSubTypes = cleaningTypesFromSettings?.map((ct) => ({
+    value: ct.key,
+    label: ct.label,
+  })) || [];
 
   const [propertyAccessOptions, setPropertyAccessOptions] = useState([
     { value: 'customer_present', label: 'Customer will be present', icon: '👤' },

@@ -18,6 +18,7 @@ import AssignCleanerDialog from './AssignCleanerDialog';
 import DuplicateBookingDialog from './DuplicateBookingDialog';
 import ConvertToRecurringDialog from './ConvertToRecurringDialog';
 import ManualEmailDialog from './ManualEmailDialog';
+import { useServiceTypes, getServiceTypeBadgeColor as getBadgeColor } from '@/hooks/useCompanySettings';
 
 interface Booking {
   id: number;
@@ -84,6 +85,9 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
   const [invoilessDialogOpen, setInvoilessDialogOpen] = useState(false);
   const [selectedBookingForInvoiless, setSelectedBookingForInvoiless] = useState<Booking | null>(null);
   const { toast } = useToast();
+  
+  // Fetch service types for badge colors
+  const { data: serviceTypes } = useServiceTypes();
 
   const fetchData = async () => {
     try {
@@ -285,20 +289,6 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
     );
   }
 
-  const getServiceTypeBadgeColor = (serviceType: string) => {
-    const type = serviceType.toLowerCase();
-    if (type.includes('airbnb') || type.includes('air bnb')) {
-      return 'bg-green-500 text-white';
-    }
-    if (type.includes('commercial')) {
-      return 'bg-blue-500 text-white';
-    }
-    if (type.includes('domestic')) {
-      return 'bg-gray-500 text-white';
-    }
-    return 'bg-purple-500 text-white';
-  };
-
   return (
     <div className="space-y-4">
       {bookings.map((booking) => {
@@ -306,7 +296,7 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
           const cleanerName = getCleanerName(booking);
           const bookingTime = booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'N/A';
           const bookingDate = booking.date_time ? format(new Date(booking.date_time), 'dd MMM') : 'N/A';
-          const serviceBadgeColor = getServiceTypeBadgeColor(booking.service_type);
+          const serviceBadgeColor = serviceTypes ? getBadgeColor(booking.service_type, serviceTypes) : 'bg-gray-500 text-white';
 
         return (
           <div

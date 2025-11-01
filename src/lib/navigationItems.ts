@@ -215,6 +215,11 @@ export const adminNavigation = [
     icon: Settings,
     subItems: [
       {
+        title: "Company Settings",
+        url: "/admin-company-settings",
+        icon: Settings,
+      },
+      {
         title: "Admin Settings",
         url: "/admin-settings",
         icon: Settings,
