@@ -267,14 +267,57 @@ const AirbnbBookingForm: React.FC = () => {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="bg-white py-4 mb-3 border-b border-border shadow-[0_10px_30px_rgba(0,0,0,0.14)]">
-        <div className="container mx-auto px-4">
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-700 text-center mb-4">
+        <div className="container mx-auto px-2 sm:px-4">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700 text-center mb-4">
             Airbnb Cleaning Booking Form
           </h1>
           
-          {/* Step Navigation */}
+          {/* Step Navigation - Mobile Optimized */}
           <div className="max-w-4xl mx-auto">
-            <div className="flex items-center justify-center gap-2">
+            {/* Mobile: Compact stepper */}
+            <div className="flex md:hidden items-center justify-center gap-1 px-2">
+              {steps.map((step, index) => {
+                const stepNumber = index + 1;
+                const isActive = currentStep === stepNumber;
+                const isCompleted = currentStep > stepNumber;
+                
+                return (
+                  <React.Fragment key={step.id}>
+                    <button
+                      onClick={() => (isCompleted || stepNumber <= currentStep) && setCurrentStep(stepNumber)}
+                      disabled={!(isCompleted || stepNumber <= currentStep)}
+                      className={`flex flex-col items-center justify-center transition-all duration-300 ${
+                        isActive ? 'flex-1' : 'w-12'
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                        isActive 
+                          ? 'bg-primary text-white scale-110' 
+                          : isCompleted 
+                          ? 'bg-primary/70 text-white' 
+                          : 'bg-gray-200 text-gray-400'
+                      }`}>
+                        {stepNumber}
+                      </div>
+                      {isActive && (
+                        <span className="text-xs font-medium text-primary mt-1 text-center">
+                          {step.title}
+                        </span>
+                      )}
+                    </button>
+                    
+                    {index < steps.length - 1 && (
+                      <div className={`h-0.5 flex-1 max-w-[20px] transition-all ${
+                        currentStep > stepNumber ? 'bg-primary' : 'bg-gray-200'
+                      }`} />
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+            
+            {/* Desktop: Full stepper */}
+            <div className="hidden md:flex items-center justify-center gap-2">
               {steps.map((step, index) => {
                 const stepNumber = index + 1;
                 const isActive = currentStep === stepNumber;
@@ -303,11 +346,11 @@ const AirbnbBookingForm: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-2 max-w-[1400px]">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <main className="container mx-auto px-2 sm:px-4 py-2 max-w-[1400px]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
           {/* Form Section - Takes 2 columns */}
           <div className="lg:col-span-2">
-            <Card className="p-8 bg-white transition-shadow duration-300 border border-border shadow-[0_20px_60px_rgba(0,0,0,0.18),0_2px_8px_rgba(0,0,0,0.12)]">
+            <Card className="p-4 sm:p-6 lg:p-8 bg-white transition-shadow duration-300 border border-border shadow-[0_20px_60px_rgba(0,0,0,0.18),0_2px_8px_rgba(0,0,0,0.12)]">
               {renderStep()}
             </Card>
           </div>
