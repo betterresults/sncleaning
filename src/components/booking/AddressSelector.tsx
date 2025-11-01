@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Plus, Check, ChevronsUpDown, MapPin } from 'lucide-react';
-import { Label } from '@/components/ui/label';
 import CreateAddressDialog from './CreateAddressDialog';
 import { cn } from '@/lib/utils';
 import {
@@ -94,82 +93,82 @@ const AddressSelector = ({ customerId, onAddressSelect }: AddressSelectorProps) 
 
   return (
     <div className="space-y-4">
-      <div>
-        <Label htmlFor="addressSelect" className="flex items-center gap-2">
-          <MapPin className="h-4 w-4" />
-          Select Address
-        </Label>
-        <div className="flex gap-2 mt-2">
-          <Popover open={open} onOpenChange={setOpen} modal>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={open}
-                className="flex-1 justify-between overflow-hidden text-ellipsis"
-              >
-                {selectedAddress
-                  ? getAddressDisplayText(selectedAddress)
-                  : "Search and select an address..."}
-                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[520px] p-0 bg-white pointer-events-auto" side="bottom" align="start">
-              <Command className="bg-white">
-                <CommandInput placeholder="Search addresses..." />
-                <CommandList className="max-h-72 overflow-y-auto pointer-events-auto">
-                  <CommandEmpty>No addresses found.</CommandEmpty>
-                  <CommandGroup>
-                    {addresses.map((address) => (
-                      <CommandItem
-                        key={address.id}
-                        value={getAddressDisplayText(address)}
-                        onSelect={() => handleAddressSelect(address)}
-                        className="cursor-pointer hover:bg-gray-100"
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            selectedAddress?.id === address.id ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        <div className="flex flex-col flex-1">
-                          <span className="font-medium flex items-center gap-2">
-                            {address.address}, {address.postcode}
-                            {address.is_default && (
-                              <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">
-                                Default
-                              </span>
-                            )}
-                          </span>
-                          {address.deatails && (
-                            <span className="text-sm text-gray-500">
-                              {address.deatails}
-                            </span>
-                          )}
-                          {address.access && (
-                            <span className="text-xs text-gray-400 mt-1">
-                              Access: {address.access}
-                            </span>
-                          )}
-                        </div>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-          
-          <CreateAddressDialog 
-            customerId={customerId}
-            onAddressCreated={handleAddressCreated}
-          >
-            <Button type="button" variant="outline" size="icon">
-              <Plus className="h-4 w-4" />
+      <div className="flex gap-2">
+        <Popover open={open} onOpenChange={setOpen} modal>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
+              className="h-16 flex-1 justify-between overflow-hidden text-ellipsis text-lg rounded-2xl border-2 border-gray-200 bg-white hover:bg-gray-50 focus:border-[#185166] px-6 font-medium transition-all duration-200"
+              disabled={!customerId}
+            >
+              <div className="flex items-center gap-2 overflow-hidden">
+                <MapPin className="h-5 w-5 flex-shrink-0 text-gray-400" />
+                <span className="truncate">
+                  {selectedAddress
+                    ? getAddressDisplayText(selectedAddress)
+                    : "Search and select an address..."}
+                </span>
+              </div>
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
-          </CreateAddressDialog>
-        </div>
+          </PopoverTrigger>
+          <PopoverContent className="w-[520px] p-0 bg-white pointer-events-auto z-50" side="bottom" align="start">
+            <Command className="bg-white">
+              <CommandInput placeholder="Search addresses..." className="h-12" />
+              <CommandList className="max-h-72 overflow-y-auto pointer-events-auto">
+                <CommandEmpty>No addresses found.</CommandEmpty>
+                <CommandGroup>
+                  {addresses.map((address) => (
+                    <CommandItem
+                      key={address.id}
+                      value={getAddressDisplayText(address)}
+                      onSelect={() => handleAddressSelect(address)}
+                      className="cursor-pointer hover:bg-gray-100 py-3"
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          selectedAddress?.id === address.id ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      <div className="flex flex-col flex-1">
+                        <span className="font-medium flex items-center gap-2">
+                          {address.address}, {address.postcode}
+                          {address.is_default && (
+                            <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">
+                              Default
+                            </span>
+                          )}
+                        </span>
+                        {address.deatails && (
+                          <span className="text-sm text-gray-500">
+                            {address.deatails}
+                          </span>
+                        )}
+                        {address.access && (
+                          <span className="text-xs text-gray-400 mt-1">
+                            Access: {address.access}
+                          </span>
+                        )}
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+        
+        <CreateAddressDialog 
+          customerId={customerId}
+          onAddressCreated={handleAddressCreated}
+        >
+          <Button type="button" variant="outline" size="icon" className="h-16 w-16 rounded-2xl border-2 border-gray-200 hover:bg-gray-50" disabled={!customerId}>
+            <Plus className="h-5 w-5" />
+          </Button>
+        </CreateAddressDialog>
       </div>
     </div>
   );
