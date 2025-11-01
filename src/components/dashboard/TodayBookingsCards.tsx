@@ -311,7 +311,7 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
         return (
           <div
             key={booking.id} 
-            className="bg-card rounded-3x3 shadow-sm hover:shadow-md transition-all duration-200 border-0 overflow-hidden"
+            className="bg-card rounded-1x1 shadow-sm hover:shadow-md transition-all duration-200 border-0 overflow-hidden"
           >
             <div className="flex flex-col md:flex-row md:items-center relative">
               {/* Time Box - Integrated into card with no border */}
