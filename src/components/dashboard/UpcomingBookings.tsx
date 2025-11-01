@@ -6,8 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Edit, Trash2, Filter, Search, Settings, Copy, X, UserPlus, DollarSign, Repeat, Calendar, List, MoreHorizontal, CalendarDays, Clock, MapPin, User, Mail, Phone, Banknote, CheckCircle, XCircle, AlertCircle, AlertTriangle, Send } from 'lucide-react';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
@@ -562,7 +560,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   const unassignedBookings = filteredBookings.filter(booking => !booking.cleaner);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Unassigned Bookings Notification */}
       {unassignedBookings.length > 0 && (
         <div className="bg-gradient-to-r from-red-50 to-rose-100 border border-red-200 rounded-xl p-4 shadow-sm">
@@ -593,26 +591,10 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
           setItemsPerPage(count);
           setCurrentPage(1);
         }}
-        totalItems={filteredBookings.length}
-        currentRange={{
-          start: startIndex + 1,
-          end: Math.min(startIndex + itemsPerPage, filteredBookings.length)
-        }}
+        onBulkEditClick={() => navigate('/bulk-edit-bookings')}
       />
 
-      {/* Bulk Edit Button */}
-      <div className="flex justify-end">
-        <Button 
-          onClick={() => navigate('/bulk-edit-bookings')}
-          className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white rounded-lg shadow-sm h-10 px-4"
-        >
-          <Settings className="h-4 w-4" />
-          <span>Bulk Edit</span>
-        </Button>
-      </div>
-
-      <Card>
-        <CardContent className="p-0 overflow-hidden">
+      <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
           {viewMode === 'list' ? (
             <div>
               {/* Mobile cards */}
@@ -1039,8 +1021,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
               />
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
 
       {totalPages > 1 && (
         <div className="flex justify-center space-x-2">

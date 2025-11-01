@@ -1,7 +1,6 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
@@ -55,15 +54,11 @@ const UpcomingBookingsPage = () => {
             onSignOut={handleSignOut}
           />
           <SidebarInset className="flex-1">
-            <main className="flex-1 p-4 space-y-6 max-w-full overflow-x-hidden">
-              <div className="max-w-7xl mx-auto space-y-6">
-                <Card className="border shadow-sm">
-                  <CardContent className="p-4">
-                    <UpcomingBookings 
-                      dashboardDateFilter={noDateFilter}
-                    />
-                  </CardContent>
-                </Card>
+            <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
+              <div className="max-w-7xl mx-auto">
+                <UpcomingBookings 
+                  dashboardDateFilter={noDateFilter}
+                />
               </div>
             </main>
           </SidebarInset>
