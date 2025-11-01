@@ -49,8 +49,8 @@ const CustomerAddBooking = () => {
 
   const handleServiceSelect = (serviceType: string) => {
     if (serviceType === 'airbnb-cleaning') {
-      // Redirect to dedicated Airbnb booking page
-      navigate('/airbnb');
+      // Redirect to dedicated customer Airbnb booking page
+      navigate('/customer/airbnb-form');
     } else {
       setSelectedService(serviceType);
     }
@@ -108,7 +108,7 @@ const CustomerAddBooking = () => {
                 </div>
               ) : (
                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl p-8">
-                  <ServiceSelection onServiceSelect={handleServiceSelect} />
+                  <ServiceSelection onServiceSelect={handleServiceSelect} isAdminView={false} />
                 </div>
               )}
             </div>

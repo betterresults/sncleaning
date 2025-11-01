@@ -6,70 +6,68 @@ import { Users, Droplets, Home, HardHat, Layers, Building, Waves } from 'lucide-
 
 interface ServiceSelectionProps {
   onServiceSelect: (serviceType: string) => void;
+  isAdminView?: boolean;
 }
 
-const services = [
+const getServices = (isAdminView: boolean = false) => [
   {
     id: 'airbnb-cleaning',
     title: 'Airbnb Cleaning',
     icon: Building,
-    available: false,
+    available: true, // Always available for both admin and customer
     description: 'Turnaround cleaning for short-term rentals'
   },
   {
     id: 'end-of-tenancy',
     title: 'End Of Tenancy Cleaning',
     icon: Users,
-    available: false,
-    image: '/lovable-uploads/5ae020cf-fd8c-46fe-8586-933da3fa509c.png', // Using uploaded image as reference
+    available: isAdminView, // Available only in admin view
+    image: '/lovable-uploads/5ae020cf-fd8c-46fe-8586-933da3fa509c.png',
     description: 'Deep clean for move-out properties'
   },
   {
     id: 'deep-cleaning',
     title: 'Deep Cleaning',
     icon: Droplets,
-    available: false,
+    available: isAdminView, // Available only in admin view
     description: 'Thorough cleaning for all areas'
   },
   {
     id: 'domestic-cleaning',
     title: 'Domestic Cleaning',
     icon: Home,
-    available: false,
+    available: isAdminView, // Available only in admin view
     description: 'Regular home cleaning services'
   },
   {
     id: 'after-builders',
     title: 'After Builders Cleaning',
     icon: HardHat,
-    available: false,
+    available: isAdminView, // Available only in admin view
     description: 'Post-construction cleanup'
   },
   {
     id: 'carpet-cleaning',
     title: 'Carpet Cleaning',
     icon: Layers,
-    available: false,
+    available: isAdminView, // Available only in admin view
     description: 'Professional carpet deep cleaning'
   },
   {
     id: 'commercial-cleaning',
     title: 'Commercial Cleaning',
     icon: Building,
-    available: false,
+    available: isAdminView, // Available only in admin view
     description: 'Office and business cleaning'
   }
 ];
 
-const ServiceSelection = ({ onServiceSelect }: ServiceSelectionProps) => {
-  const navigate = useNavigate();
+const ServiceSelection = ({ onServiceSelect, isAdminView = false }: ServiceSelectionProps) => {
+  const services = getServices(isAdminView);
 
   const handleServiceClick = (serviceId: string) => {
-    if (serviceId === 'airbnb-cleaning') {
-      navigate('/customer/airbnb-form');
-    } else {
-      onServiceSelect(serviceId);
-    }
+    // Always call onServiceSelect for any service
+    onServiceSelect(serviceId);
   };
 
   return (
