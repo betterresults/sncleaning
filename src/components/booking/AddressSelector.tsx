@@ -72,7 +72,17 @@ const AddressSelector = ({ customerId, onAddressSelect }: AddressSelectorProps) 
   useEffect(() => {
     if (customerId) {
       fetchAddresses();
+    } else {
+      // Clear addresses and selection when no customer
+      setAddresses([]);
+      setSelectedAddress(null);
     }
+  }, [customerId]);
+
+  // Reset selected address when customer changes
+  useEffect(() => {
+    setSelectedAddress(null);
+    onAddressSelect(null);
   }, [customerId]);
 
   const handleAddressSelect = (address: Address) => {

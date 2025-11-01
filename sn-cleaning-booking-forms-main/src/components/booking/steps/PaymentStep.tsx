@@ -567,7 +567,13 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack, isAdm
                   firstName: customer.first_name,
                   lastName: customer.last_name,
                   email: customer.email,
-                  phone: customer.phone
+                  phone: customer.phone,
+                  // Clear address when customer changes
+                  addressId: undefined,
+                  selectedAddress: undefined,
+                  street: '',
+                  postcode: '',
+                  city: ''
                 });
               } else {
                 onUpdate({ 
@@ -578,7 +584,10 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack, isAdm
                   email: '',
                   phone: '',
                   addressId: undefined,
-                  selectedAddress: undefined
+                  selectedAddress: undefined,
+                  street: '',
+                  postcode: '',
+                  city: ''
                 });
               }
             }}
