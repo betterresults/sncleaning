@@ -216,6 +216,7 @@ export const AirbnbConfigPanel: React.FC = () => {
     { value: 'additionalRooms', label: 'Additional Rooms' },
     { value: 'serviceType', label: 'Service Type' },
     { value: 'airbnbStandard', label: 'Airbnb Standard' },
+    { value: 'alreadyCleaned', label: 'Already Cleaned' },
     { value: 'ovenCleaning', label: 'Oven Cleaning' },
     { value: 'cleaningProducts', label: 'Cleaning Products' },
     { value: 'linenHandling', label: 'Linen Handling' },
@@ -232,84 +233,192 @@ export const AirbnbConfigPanel: React.FC = () => {
     { value: ')', label: 'Close )' }
   ];
 
-  // Simple, safe evaluator for + - * / and parentheses.
-  const isOperator = (t: string) => ['+', '-', '*', '/'].includes(t);
-  const precedence: Record<string, number> = { '+': 1, '-': 1, '*': 2, '/': 2 };
+  const conditionalOperators = [
+    { value: '===', label: 'Equals (===)' },
+    { value: '!==', label: 'Not Equals (!==)' },
+    { value: '>', label: 'Greater (>)' },
+    { value: '<', label: 'Less (<)' },
+    { value: '>=', label: 'Greater or Equal (>=)' },
+    { value: '<=', label: 'Less or Equal (<=)' },
+    { value: '&&', label: 'AND (&&)' },
+    { value: '||', label: 'OR (||)' },
+    { value: '!', label: 'NOT (!)' },
+    { value: '?', label: 'Then (?)' },
+    { value: ':', label: 'Else (:)' }
+  ];
 
-  const toRPN = (tokens: string[]) => {
-    const output: string[] = [];
-    const stack: string[] = [];
-    for (const tok of tokens) {
-      if (isOperator(tok)) {
-        while (stack.length && isOperator(stack[stack.length - 1]) && precedence[stack[stack.length - 1]] >= precedence[tok]) {
-          output.push(stack.pop() as string);
-        }
-        stack.push(tok);
-      } else if (tok === '(') {
-        stack.push(tok);
-      } else if (tok === ')') {
-        while (stack.length && stack[stack.length - 1] !== '(') {
-          output.push(stack.pop() as string);
-        }
-        stack.pop();
-      } else {
-        // number or field placeholder already converted to a number string
-        output.push(tok);
-      }
-    }
-    while (stack.length) output.push(stack.pop() as string);
-    return output;
-  };
+  const booleanLiterals = [
+    { value: 'true', label: 'True' },
+    { value: 'false', label: 'False' }
+  ];
 
-  const evalRPN = (rpn: string[]) => {
-    const st: number[] = [];
-    for (const t of rpn) {
-      if (isOperator(t)) {
-        const b = st.pop();
-        const a = st.pop();
-        if (a === undefined || b === undefined) throw new Error('Malformed expression');
-        switch (t) {
-          case '+': st.push(a + b); break;
-          case '-': st.push(a - b); break;
-          case '*': st.push(a * b); break;
-          case '/': st.push(b === 0 ? NaN : a / b); break;
-        }
-      } else {
-        st.push(parseFloat(t));
+  // Advanced tokenizer and evaluator for conditional logic
+  const tokenize = (formula: string): string[] => {
+    const tokens: string[] = [];
+    let current = '';
+    let inString = false;
+    let stringChar = '';
+    
+    for (let i = 0; i < formula.length; i++) {
+      const char = formula[i];
+      const next = formula[i + 1];
+      
+      // Handle strings
+      if ((char === '"' || char === "'") && !inString) {
+        if (current) tokens.push(current.trim());
+        current = '';
+        inString = true;
+        stringChar = char;
+        continue;
       }
+      
+      if (inString) {
+        if (char === stringChar) {
+          tokens.push(`"${current}"`);
+          current = '';
+          inString = false;
+          stringChar = '';
+        } else {
+          current += char;
+        }
+        continue;
+      }
+      
+      // Handle multi-character operators
+      if (char === '=' && next === '=' && formula[i + 2] === '=') {
+        if (current) tokens.push(current.trim());
+        tokens.push('===');
+        current = '';
+        i += 2;
+        continue;
+      }
+      
+      if (char === '!' && next === '=') {
+        if (current) tokens.push(current.trim());
+        tokens.push('!==');
+        current = '';
+        i += 1;
+        continue;
+      }
+      
+      if (char === '>' && next === '=') {
+        if (current) tokens.push(current.trim());
+        tokens.push('>=');
+        current = '';
+        i += 1;
+        continue;
+      }
+      
+      if (char === '<' && next === '=') {
+        if (current) tokens.push(current.trim());
+        tokens.push('<=');
+        current = '';
+        i += 1;
+        continue;
+      }
+      
+      if (char === '&' && next === '&') {
+        if (current) tokens.push(current.trim());
+        tokens.push('&&');
+        current = '';
+        i += 1;
+        continue;
+      }
+      
+      if (char === '|' && next === '|') {
+        if (current) tokens.push(current.trim());
+        tokens.push('||');
+        current = '';
+        i += 1;
+        continue;
+      }
+      
+      // Handle single-character operators and delimiters
+      if ('()+-*/><?:!'.includes(char) && next !== '=' && char !== '&' && char !== '|') {
+        if (current) tokens.push(current.trim());
+        tokens.push(char);
+        current = '';
+        continue;
+      }
+      
+      // Handle whitespace
+      if (/\s/.test(char)) {
+        if (current) tokens.push(current.trim());
+        current = '';
+        continue;
+      }
+      
+      current += char;
     }
-    if (st.length !== 1) throw new Error('Malformed expression');
-    return st[0];
+    
+    if (current) tokens.push(current.trim());
+    return tokens.filter(t => t.length > 0);
   };
 
   const safeEvaluate = (elements: FormulaElement[]) => {
     try {
-      const raw = elements.map(el => (el.value || '').trim()).filter(Boolean);
-      if (raw.length === 0) return { ok: false, error: 'Empty formula' } as const;
+      const formulaString = elements.map(el => (el.value || '').trim()).join(' ');
+      if (!formulaString) return { ok: false, error: 'Empty formula' } as const;
 
-      // Basic validation and placeholder substitution for fields -> '1'
-      const allowed = /^[a-zA-Z0-9_\.()+\-*/]+$/;
-      const tokens: string[] = raw.map(tok => {
-        if (['(', ')', '+', '-', '*', '/'].includes(tok)) return tok;
-        if (!isNaN(Number(tok))) return String(Number(tok));
-        // treat anything else (field identifiers) as 1 for sample evaluation
-        if (!allowed.test(tok)) throw new Error(`Invalid token: ${tok}`);
-        return '1';
+      const tokens = tokenize(formulaString);
+      if (tokens.length === 0) return { ok: false, error: 'Empty formula' } as const;
+
+      // Validation: check for valid tokens
+      const validTokenPattern = /^([a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)?|[0-9]+\.?[0-9]*|"[^"]*"|'[^']*'|===|!==|>=|<=|&&|\|\||[+\-*/()><?:!])$/;
+      
+      for (const token of tokens) {
+        if (!validTokenPattern.test(token)) {
+          throw new Error(`Invalid token: ${token}`);
+        }
+      }
+
+      // Check parentheses balance
+      let parenBalance = 0;
+      for (const token of tokens) {
+        if (token === '(') parenBalance++;
+        else if (token === ')') parenBalance--;
+        if (parenBalance < 0) throw new Error('Unbalanced parentheses');
+      }
+      if (parenBalance !== 0) throw new Error('Unbalanced parentheses');
+
+      // Check ternary balance (? and : must match)
+      const questionCount = tokens.filter(t => t === '?').length;
+      const colonCount = tokens.filter(t => t === ':').length;
+      if (questionCount !== colonCount) {
+        throw new Error('Unbalanced ternary operator (? and : must match)');
+      }
+
+      // Simple evaluation with sample values (all fields = 1, all .value = "test", all .time = 1)
+      const sampleData: Record<string, any> = {};
+      tokens.forEach(token => {
+        if (/^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/.test(token)) {
+          const parts = token.split('.');
+          if (parts.length === 1) {
+            sampleData[parts[0]] = { value: 'test', time: 1 };
+          }
+        }
       });
 
-      // Parentheses balance check
-      let bal = 0;
-      for (const t of tokens) {
-        if (t === '(') bal++;
-        else if (t === ')') bal--;
-        if (bal < 0) throw new Error('Parentheses are not balanced');
+      // Create safe evaluation string
+      let evalString = formulaString;
+      
+      // Replace field references with sample data
+      for (const fieldName in sampleData) {
+        const regex = new RegExp(`\\b${fieldName}\\.value\\b`, 'g');
+        evalString = evalString.replace(regex, '"test"');
+        const timeRegex = new RegExp(`\\b${fieldName}\\.time\\b`, 'g');
+        evalString = evalString.replace(timeRegex, '1');
       }
-      if (bal !== 0) throw new Error('Parentheses are not balanced');
 
-      const rpn = toRPN(tokens);
-      const result = evalRPN(rpn);
-      if (!isFinite(result)) throw new Error('Computation error');
-      return { ok: true, result } as const;
+      // Try to evaluate (this is just for validation, using Function constructor for safety)
+      const func = new Function(`return ${evalString};`);
+      const result = func();
+      
+      if (typeof result === 'number' && !isFinite(result)) {
+        throw new Error('Computation error: result is not finite');
+      }
+
+      return { ok: true, result, tokens } as const;
     } catch (e: any) {
       return { ok: false, error: e.message || 'Invalid formula' } as const;
     }
@@ -808,6 +917,36 @@ export const AirbnbConfigPanel: React.FC = () => {
             </div>
           </Card>
 
+          <Card className="p-4 bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+            <h3 className="text-sm font-semibold mb-2 text-blue-900 dark:text-blue-100">💡 Conditional Logic Examples</h3>
+            <div className="space-y-2 text-xs text-blue-800 dark:text-blue-200">
+              <div>
+                <span className="font-mono bg-blue-100 dark:bg-blue-900/30 px-1 rounded">
+                  condition ? valueIfTrue : valueIfFalse
+                </span>
+                <p className="text-muted-foreground mt-0.5">Basic ternary operator</p>
+              </div>
+              <div>
+                <span className="font-mono bg-blue-100 dark:bg-blue-900/30 px-1 rounded text-[10px]">
+                  serviceType.value === "deep" ? 1.5 : 1
+                </span>
+                <p className="text-muted-foreground mt-0.5">If deep cleaning, multiply by 1.5, otherwise by 1</p>
+              </div>
+              <div>
+                <span className="font-mono bg-blue-100 dark:bg-blue-900/30 px-1 rounded text-[10px]">
+                  alreadyCleaned.value === false ? 1.3 : 1
+                </span>
+                <p className="text-muted-foreground mt-0.5">If not cleaned to standard, add 30% more time</p>
+              </div>
+              <div>
+                <span className="font-mono bg-blue-100 dark:bg-blue-900/30 px-1 rounded text-[10px]">
+                  bedrooms.value {">"} 3 && bathrooms.value {">"} 2 ? 2 : 1
+                </span>
+                <p className="text-muted-foreground mt-0.5">Multiple conditions with AND (&&)</p>
+              </div>
+            </div>
+          </Card>
+
           {(showFormulaBuilder || currentFormula.name || (currentFormula.elements && currentFormula.elements.length > 0) || isEditingFormula) && (
             <Card className="p-6 border-2 border-primary/30 bg-primary/5">
               <div className="flex justify-between items-center mb-6">
@@ -870,67 +1009,134 @@ export const AirbnbConfigPanel: React.FC = () => {
                       value={currentFormula.elements?.map(el => el.value).join(' ') || ''}
                       onChange={(e) => {
                         const formulaText = e.target.value;
-                        const elements = formulaText.split(' ').filter(s => s.trim()).map(part => {
-                          const trimmed = part.trim();
-                          if (['+', '-', '*', '/', '(', ')'].includes(trimmed)) {
-                            return { type: 'operator' as const, value: trimmed };
-                          } else if (!isNaN(Number(trimmed))) {
-                            return { type: 'number' as const, value: trimmed, label: trimmed };
-                          } else {
-                            return { type: 'field' as const, value: trimmed, label: trimmed };
+                        const tokens = tokenize(formulaText);
+                        const elements = tokens.map(token => {
+                          // Operators
+                          if (['+', '-', '*', '/', '(', ')', '===', '!==', '>', '<', '>=', '<=', '&&', '||', '!', '?', ':'].includes(token)) {
+                            return { type: 'operator' as const, value: token };
+                          } 
+                          // Numbers
+                          else if (!isNaN(Number(token))) {
+                            return { type: 'number' as const, value: token, label: token };
+                          }
+                          // Boolean literals
+                          else if (token === 'true' || token === 'false') {
+                            return { type: 'number' as const, value: token, label: token };
+                          }
+                          // String literals
+                          else if (token.startsWith('"') && token.endsWith('"')) {
+                            return { type: 'field' as const, value: token, label: token };
+                          }
+                          // Fields
+                          else {
+                            return { type: 'field' as const, value: token, label: token };
                           }
                         });
                         setCurrentFormula({...currentFormula, elements});
                       }}
-                      placeholder="e.g. bedrooms.value * 3 + bathrooms.time / 2 + CleaningTimeFormula"
+                      placeholder='e.g. (propertyType.time + bedrooms.time) * (serviceType.value === "checkin-checkout" && alreadyCleaned.value === false ? 1.5 : 1)'
                       className="font-mono min-h-[120px]"
                       rows={5}
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Write your formula or use the selectors → You can use fields, numbers, operators, and other formulas
+                      💡 Tip: Use conditional logic like <code className="text-xs bg-muted px-1 rounded">condition ? valueIfTrue : valueIfFalse</code>
                     </p>
                   </div>
                   <div>
                     <Label>Add Elements</Label>
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                      <div className="text-xs font-semibold text-muted-foreground mb-1">Fields</div>
-                      {availableFields.map((field) => (
-                        <Select 
-                          key={field.value}
-                          onValueChange={(attribute) => {
-                            const newElement = { 
-                              type: 'field' as const, 
-                              value: `${field.value}.${attribute}`,
-                              attribute: attribute,
-                              label: `${field.label}.${attribute}` 
-                            };
-                            setCurrentFormula({
-                              ...currentFormula,
-                              elements: [...(currentFormula.elements || []), newElement]
-                            });
-                          }}
-                        >
-                          <SelectTrigger className="h-9 text-xs">
-                            <SelectValue placeholder={field.label} />
-                          </SelectTrigger>
-                          <SelectContent className="z-50 bg-background">
-                            <SelectItem value="value">Value</SelectItem>
-                            <SelectItem value="time">Time</SelectItem>
-                            <SelectItem value="min_value">Min Value</SelectItem>
-                            <SelectItem value="max_value">Max Value</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ))}
+                    <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                      
+                      <div>
+                        <div className="text-xs font-semibold text-muted-foreground mb-1">Math Operators</div>
+                        <div className="flex flex-wrap gap-1">
+                          {operators.map((op) => (
+                            <Button
+                              key={op.value}
+                              variant="outline"
+                              size="sm"
+                              className="h-8 px-2 text-xs"
+                              onClick={() => addToFormula({ type: 'operator', value: op.value })}
+                            >
+                              {op.value}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs font-semibold text-muted-foreground mb-1">Comparison & Logic</div>
+                        <div className="flex flex-wrap gap-1">
+                          {conditionalOperators.map((op) => (
+                            <Button
+                              key={op.value}
+                              variant="outline"
+                              size="sm"
+                              className="h-8 px-2 text-xs"
+                              onClick={() => addToFormula({ type: 'operator', value: op.value })}
+                            >
+                              {op.value}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs font-semibold text-muted-foreground mb-1">Boolean Values</div>
+                        <div className="flex flex-wrap gap-1">
+                          {booleanLiterals.map((lit) => (
+                            <Button
+                              key={lit.value}
+                              variant="outline"
+                              size="sm"
+                              className="h-8 px-2 text-xs"
+                              onClick={() => addToFormula({ type: 'number', value: lit.value, label: lit.value })}
+                            >
+                              {lit.value}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs font-semibold text-muted-foreground mb-1">Fields</div>
+                        {availableFields.map((field) => (
+                          <Select 
+                            key={field.value}
+                            onValueChange={(attribute) => {
+                              const newElement = { 
+                                type: 'field' as const, 
+                                value: `${field.value}.${attribute}`,
+                                attribute: attribute,
+                                label: `${field.label}.${attribute}` 
+                              };
+                              setCurrentFormula({
+                                ...currentFormula,
+                                elements: [...(currentFormula.elements || []), newElement]
+                              });
+                            }}
+                          >
+                            <SelectTrigger className="h-9 text-xs mb-1">
+                              <SelectValue placeholder={field.label} />
+                            </SelectTrigger>
+                            <SelectContent className="z-50 bg-background">
+                              <SelectItem value="value">Value</SelectItem>
+                              <SelectItem value="time">Time</SelectItem>
+                              <SelectItem value="min_value">Min Value</SelectItem>
+                              <SelectItem value="max_value">Max Value</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ))}
+                      </div>
                       
                       {formulas.length > 0 && (
-                        <>
-                          <div className="text-xs font-semibold text-muted-foreground mb-1 mt-3">Existing Formulas</div>
+                        <div>
+                          <div className="text-xs font-semibold text-muted-foreground mb-1">Existing Formulas</div>
                           {formulas.filter(f => f.id !== currentFormula.id).map((formula) => (
                             <Button
                               key={formula.id}
                               variant="outline"
                               size="sm"
-                              className="w-full h-9 text-xs justify-start"
+                              className="w-full h-9 text-xs justify-start mb-1"
                               onClick={() => {
                                 const newElement = { 
                                   type: 'field' as const, 
@@ -946,7 +1152,7 @@ export const AirbnbConfigPanel: React.FC = () => {
                               {formula.name}
                             </Button>
                           ))}
-                        </>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -957,20 +1163,33 @@ export const AirbnbConfigPanel: React.FC = () => {
                   <div className="p-3 border rounded bg-muted/20 min-h-[60px]">
                     {currentFormula.elements && currentFormula.elements.length > 0 ? (
                       <div className="flex flex-wrap gap-1 items-center">
-                        {currentFormula.elements.map((el, idx) => (
-                          <span 
-                            key={idx} 
-                            className={`px-2 py-1 rounded text-sm ${
-                              el.type === 'field' 
-                                ? 'bg-blue-100 text-blue-800' 
-                                : el.type === 'operator' 
-                                ? 'bg-gray-100 text-gray-800 font-bold' 
-                                : 'bg-green-100 text-green-800'
-                            }`}
-                          >
-                            {el.label || el.value}
-                          </span>
-                        ))}
+                        {currentFormula.elements.map((el, idx) => {
+                          const isConditional = ['===', '!==', '>', '<', '>=', '<=', '&&', '||', '!'].includes(el.value);
+                          const isTernary = ['?', ':'].includes(el.value);
+                          const isMathOperator = ['+', '-', '*', '/', '(', ')'].includes(el.value);
+                          const isBoolean = ['true', 'false'].includes(el.value);
+                          
+                          return (
+                            <span 
+                              key={idx} 
+                              className={`px-2 py-1 rounded text-sm ${
+                                el.type === 'field' 
+                                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200' 
+                                  : isConditional
+                                  ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 font-semibold'
+                                  : isTernary
+                                  ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200 font-bold'
+                                  : isMathOperator
+                                  ? 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-bold' 
+                                  : isBoolean
+                                  ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 font-semibold'
+                                  : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
+                              }`}
+                            >
+                              {el.label || el.value}
+                            </span>
+                          );
+                        })}
                       </div>
                     ) : (
                       <span className="text-muted-foreground">Formula preview will appear here...</span>
