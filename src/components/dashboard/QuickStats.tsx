@@ -101,7 +101,7 @@ const QuickStats = () => {
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <Card className="border shadow-sm">
+      <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0 hover:shadow-[0_12px_40px_rgb(0,0,0,0.18)] hover:-translate-y-1 transition-all duration-200">
         <CardHeader className="flex flex-row items-center justify-between pb-2 p-4">
           <CardTitle className="text-sm font-medium text-gray-600">Upcoming</CardTitle>
           <Calendar className="h-4 w-4 text-blue-600" />
@@ -112,7 +112,7 @@ const QuickStats = () => {
         </CardContent>
       </Card>
 
-      <Card className="border shadow-sm">
+      <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0 hover:shadow-[0_12px_40px_rgb(0,0,0,0.18)] hover:-translate-y-1 transition-all duration-200">
         <CardHeader className="flex flex-row items-center justify-between pb-2 p-4">
           <CardTitle className="text-sm font-medium text-gray-600">Active Cleaners</CardTitle>
           <Users className="h-4 w-4 text-green-600" />
@@ -123,7 +123,7 @@ const QuickStats = () => {
         </CardContent>
       </Card>
 
-      <Card className="border shadow-sm">
+      <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0 hover:shadow-[0_12px_40px_rgb(0,0,0,0.18)] hover:-translate-y-1 transition-all duration-200">
         <CardHeader className="flex flex-row items-center justify-between pb-2 p-4">
           <CardTitle className="text-sm font-medium text-gray-600">Avg Value</CardTitle>
           <TrendingUp className="h-4 w-4 text-purple-600" />
@@ -134,7 +134,7 @@ const QuickStats = () => {
         </CardContent>
       </Card>
 
-      <Card className="border shadow-sm">
+      <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0 hover:shadow-[0_12px_40px_rgb(0,0,0,0.18)] hover:-translate-y-1 transition-all duration-200">
         <CardHeader className="flex flex-row items-center justify-between pb-2 p-4">
           <CardTitle className="text-sm font-medium text-gray-600">Completion</CardTitle>
           <Clock className="h-4 w-4 text-orange-600" />

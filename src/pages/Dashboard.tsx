@@ -76,7 +76,7 @@ const Dashboard = () => {
                 <DashboardStats />
                 
                 {/* Today's Bookings */}
-                <Card className="border shadow-sm">
+                <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0">
                   <CardHeader className="flex flex-row items-center justify-between pb-3">
                     <CardTitle className="text-xl font-semibold flex items-center gap-2">
                       <Calendar className="h-5 w-5" />
@@ -113,7 +113,7 @@ const Dashboard = () => {
                 {/* Activity and Stats Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Recent Activity */}
-                  <Card className="border shadow-sm">
+                  <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-xl font-semibold">Recent Activity</CardTitle>
                     </CardHeader>
@@ -123,7 +123,7 @@ const Dashboard = () => {
                   </Card>
 
                   {/* Performance Stats */}
-                  <Card className="border shadow-sm">
+                  <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-xl font-semibold">Performance</CardTitle>
                     </CardHeader>
