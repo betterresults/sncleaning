@@ -35,35 +35,36 @@ const AdminActivityLogs = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
-        <UnifiedSidebar 
-          navigationItems={adminNavigation}
+      <div className="min-h-screen flex flex-col w-full bg-gray-50">
+        <UnifiedHeader 
+          title=""
           user={user}
           userRole={userRole}
-          customerId={customerId}
-          cleanerId={cleanerId}
           onSignOut={handleSignOut}
         />
-        <SidebarInset className="flex-1">
-          <UnifiedHeader 
-            title=""
+        <div className="flex flex-1 w-full">
+          <UnifiedSidebar 
+            navigationItems={adminNavigation}
             user={user}
             userRole={userRole}
+            customerId={customerId}
+            cleanerId={cleanerId}
             onSignOut={handleSignOut}
           />
-          
-          <main className="flex-1 p-2 sm:p-4 space-y-3 sm:space-y-4 w-full overflow-x-hidden">
-            <div className="w-full px-1 sm:px-0 max-w-7xl mx-auto">
-              <div className="mb-6">
-                <h1 className="text-3xl font-bold text-[#185166]">Activity Logs</h1>
-                <p className="text-gray-600 mt-2">
-                  Monitor all user activities and system events
-                </p>
+          <SidebarInset className="flex-1">
+            <main className="flex-1 p-2 sm:p-4 space-y-3 sm:space-y-4 w-full overflow-x-hidden">
+              <div className="w-full px-1 sm:px-0 max-w-7xl mx-auto">
+                <div className="mb-6">
+                  <h1 className="text-3xl font-bold text-[#185166]">Activity Logs</h1>
+                  <p className="text-gray-600 mt-2">
+                    Monitor all user activities and system events
+                  </p>
+                </div>
+                <ActivityLogsView />
               </div>
-              <ActivityLogsView />
-            </div>
-          </main>
-        </SidebarInset>
+            </main>
+          </SidebarInset>
+        </div>
       </div>
     </SidebarProvider>
   );

@@ -83,80 +83,82 @@ const CleanerMessages = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
-        <UnifiedSidebar 
-          navigationItems={cleanerNavigation}
+      <div className="min-h-screen flex flex-col w-full bg-gray-50">
+        <UnifiedHeader 
+          title=""
           user={user}
+          userRole={userRole}
+          showBackToAdmin={userRole === 'admin'}
           onSignOut={handleSignOut}
         />
-        <SidebarInset className="flex-1">
-          <UnifiedHeader 
-            title=""
+        <div className="flex flex-1 w-full">
+          <UnifiedSidebar 
+            navigationItems={cleanerNavigation}
             user={user}
-            userRole={userRole}
-            showBackToAdmin={userRole === 'admin'}
+            onSignOut={handleSignOut}
           />
-          
-          <main className="flex-1 overflow-hidden">
-            <div className="h-full max-w-7xl mx-auto p-4">
-              {userRole === 'admin' && (
-                <div className="mb-4">
-                  <AdminCleanerSelector />
-                </div>
-              )}
-              
-              {effectiveCleanerId ? (
-                <div className="flex h-[calc(100vh-8rem)] bg-card border border-border rounded-lg overflow-hidden">
-                  {/* Contacts Sidebar */}
-                  <div className="w-80 border-r border-border">
-                    <CleanerContacts
-                      chats={chats}
-                      activeChat={activeChat}
-                      onSelectContact={handleSelectContact}
-                      onCreateChat={handleCreateChat}
-                      loading={chatLoading}
-                      cleanerId={effectiveCleanerId}
-                    />
+          <SidebarInset className="flex-1">
+            <main className="flex-1 overflow-hidden">
+              <div className="h-full max-w-7xl mx-auto p-4">
+                {userRole === 'admin' && (
+                  <div className="mb-4">
+                    <AdminCleanerSelector />
                   </div>
-                  
-                  {/* Chat Interface */}
-                  <div className="flex-1">
-                    {activeChat ? (
-                      <ChatInterface
-                        chat={activeChat}
-                        messages={messages}
-                        onSendMessage={handleSendMessage}
-                        sendingMessage={sendingMessage}
+                )}
+                
+                {effectiveCleanerId ? (
+                  <div className="flex h-[calc(100vh-8rem)] bg-card border border-border rounded-lg overflow-hidden">
+                    {/* Contacts Sidebar */}
+                    <div className="w-80 border-r border-border">
+                      <CleanerContacts
+                        chats={chats}
+                        activeChat={activeChat}
+                        onSelectContact={handleSelectContact}
+                        onCreateChat={handleCreateChat}
+                        loading={chatLoading}
+                        cleanerId={effectiveCleanerId}
                       />
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-center">
-                        <div>
-                          <h3 className="text-lg font-medium text-foreground mb-2">
-                            Select a conversation
-                          </h3>
-                          <p className="text-muted-foreground">
-                            Choose a chat from the sidebar to start messaging
-                          </p>
+                    </div>
+                    
+                    {/* Chat Interface */}
+                    <div className="flex-1">
+                      {activeChat ? (
+                        <ChatInterface
+                          chat={activeChat}
+                          messages={messages}
+                          onSendMessage={handleSendMessage}
+                          sendingMessage={sendingMessage}
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-full text-center">
+                          <div>
+                            <h3 className="text-lg font-medium text-foreground mb-2">
+                              Select a conversation
+                            </h3>
+                            <p className="text-muted-foreground">
+                              Choose a chat from the sidebar to start messaging
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-64 text-center">
-                  <div>
-                    <h3 className="text-lg font-medium text-foreground mb-2">
-                      No Cleaner Selected
-                    </h3>
-                    <p className="text-muted-foreground">
-                      {isAdminViewing ? 'Please select a cleaner to view messages' : 'Unable to load cleaner information'}
-                    </p>
+                ) : (
+                  <div className="flex items-center justify-center h-64 text-center">
+                    <div>
+                      <h3 className="text-lg font-medium text-foreground mb-2">
+                        No Cleaner Selected
+                      </h3>
+                      <p className="text-muted-foreground">
+                        {isAdminViewing ? 'Please select a cleaner to view messages' : 'Unable to load cleaner information'}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          </main>
-        </SidebarInset>
+                )}
+              </div>
+            </main>
+          </SidebarInset>
+        </div>
       </div>
     </SidebarProvider>
   );

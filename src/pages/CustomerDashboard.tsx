@@ -139,30 +139,30 @@ const CustomerDashboard = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
-        <UnifiedSidebar
-          navigationItems={getCustomerNavigation(hasLinenAccess)}
+      <div className="min-h-screen flex flex-col w-full bg-gray-50">
+        <UnifiedHeader 
+          title=""
           user={user}
           userRole={userRole}
-          customerId={customerId}
-          cleanerId={cleanerId}
+          showBackToAdmin={isAdminViewing}
           onSignOut={handleSignOut}
         />
-        <SidebarInset className="flex-1 flex flex-col w-full">
-          <UnifiedHeader 
-            title=""
+        <div className="flex flex-1 w-full">
+          <UnifiedSidebar
+            navigationItems={getCustomerNavigation(hasLinenAccess)}
             user={user}
             userRole={userRole}
-            showBackToAdmin={isAdminViewing}
+            customerId={customerId}
+            cleanerId={cleanerId}
+            onSignOut={handleSignOut}
           />
-          
-          <main className="flex-1 p-2 sm:p-4 lg:p-6 w-full overflow-x-hidden">
-            <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-6">
-              {isAdminViewing && <AdminCustomerSelector />}
-              
-              {/* Overdue Invoice Alert for Business Clients */}
-              {isBusinessClient && overdueInvoices.length > 0 && (
-                <Card className="border-2 border-red-200 bg-red-50/30 shadow-lg">
+          <SidebarInset className="flex-1 flex flex-col w-full">
+            <main className="flex-1 p-2 sm:p-4 lg:p-6 w-full overflow-x-hidden">
+              <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-6">
+                {isAdminViewing && <AdminCustomerSelector />}
+                
+                {isBusinessClient && overdueInvoices.length > 0 && (
+                  <Card className="border-2 border-red-200 bg-red-50/30 shadow-lg">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-red-800">
                       <AlertTriangle className="h-5 w-5" />

@@ -35,27 +35,29 @@ const CleanerAvailableBookingsPage = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
-        <UnifiedSidebar 
-          navigationItems={cleanerNavigation}
+      <div className="min-h-screen flex flex-col w-full bg-gray-50">
+        <UnifiedHeader 
+          title=""
           user={user}
+          userRole={userRole}
+          showBackToAdmin={userRole === 'admin'}
           onSignOut={handleSignOut}
         />
-        <SidebarInset className="flex-1">
-          <UnifiedHeader 
-            title=""
+        <div className="flex flex-1 w-full">
+          <UnifiedSidebar 
+            navigationItems={cleanerNavigation}
             user={user}
-            userRole={userRole}
-            showBackToAdmin={userRole === 'admin'}
+            onSignOut={handleSignOut}
           />
-          
-          <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
-            <div className="max-w-7xl mx-auto">
-              {userRole === 'admin' && <AdminCleanerSelector />}
-              <CleanerAvailableBookings />
-            </div>
-          </main>
-        </SidebarInset>
+          <SidebarInset className="flex-1">
+            <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
+              <div className="max-w-7xl mx-auto">
+                {userRole === 'admin' && <AdminCleanerSelector />}
+                <CleanerAvailableBookings />
+              </div>
+            </main>
+          </SidebarInset>
+        </div>
       </div>
     </SidebarProvider>
   );

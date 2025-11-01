@@ -31,51 +31,53 @@ const AdminChatManagement = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
-        <UnifiedSidebar 
-          navigationItems={adminNavigation}
+      <div className="min-h-screen flex flex-col w-full bg-gray-50">
+        <UnifiedHeader 
+          title=""
           user={user}
+          userRole={userRole}
           onSignOut={handleSignOut}
         />
-        <SidebarInset className="flex-1">
-          <UnifiedHeader 
-            title=""
+        <div className="flex flex-1 w-full">
+          <UnifiedSidebar 
+            navigationItems={adminNavigation}
             user={user}
-            userRole={userRole}
+            onSignOut={handleSignOut}
           />
-          
-          <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
-            <div className="max-w-7xl mx-auto">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-140px)]">
-                {/* Contacts List */}
-                <Card className="lg:col-span-1">
-                  <CardHeader>
-                    <CardTitle>WhatsApp Contacts</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="flex items-center justify-center h-64 text-muted-foreground">
-                      WhatsApp Contact List (Component needs props update)
-                    </div>
-                  </CardContent>
-                </Card>
+          <SidebarInset className="flex-1">
+            <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
+              <div className="max-w-7xl mx-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-140px)]">
+                  {/* Contacts List */}
+                  <Card className="lg:col-span-1">
+                    <CardHeader>
+                      <CardTitle>WhatsApp Contacts</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="flex items-center justify-center h-64 text-muted-foreground">
+                        WhatsApp Contact List (Component needs props update)
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                {/* Messages */}
-                <Card className="lg:col-span-2">
-                  <CardHeader>
-                    <CardTitle>
-                      {activeContact ? `Messages with ${activeContact.name}` : 'Select a contact'}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="flex items-center justify-center h-64 text-muted-foreground">
-                      {activeContact ? 'WhatsApp Message List (Component needs props update)' : 'Select a contact to view messages'}
-                    </div>
-                  </CardContent>
-                </Card>
+                  {/* Messages */}
+                  <Card className="lg:col-span-2">
+                    <CardHeader>
+                      <CardTitle>
+                        {activeContact ? `Messages with ${activeContact.name}` : 'Select a contact'}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="flex items-center justify-center h-64 text-muted-foreground">
+                        {activeContact ? 'WhatsApp Message List (Component needs props update)' : 'Select a contact to view messages'}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
-            </div>
-          </main>
-        </SidebarInset>
+            </main>
+          </SidebarInset>
+        </div>
       </div>
     </SidebarProvider>
   );

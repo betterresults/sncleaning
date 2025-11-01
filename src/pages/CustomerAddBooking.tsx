@@ -67,23 +67,24 @@ const CustomerAddBooking = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 to-blue-50">
-        <UnifiedSidebar 
-          navigationItems={getCustomerNavigation(hasLinenAccess)}
+      <div className="min-h-screen flex flex-col w-full bg-gradient-to-br from-slate-50 to-blue-50">
+        <UnifiedHeader 
+          title=""
           user={user}
+          userRole={userRole}
           onSignOut={handleSignOut}
         />
-        <SidebarInset className="flex-1">
-          <UnifiedHeader 
-            title=""
+        <div className="flex flex-1 w-full">
+          <UnifiedSidebar 
+            navigationItems={getCustomerNavigation(hasLinenAccess)}
             user={user}
-            userRole={userRole}
+            onSignOut={handleSignOut}
           />
-          
-          <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
-            <div className="max-w-7xl mx-auto">
-              {selectedService ? (
-                <div className="space-y-6">
+          <SidebarInset className="flex-1">
+            <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
+              <div className="max-w-7xl mx-auto">
+                {selectedService ? (
+                  <div className="space-y-6">
                   {selectedService !== 'airbnb-cleaning' && (
                     <Button
                       variant="outline"

@@ -33,30 +33,31 @@ const AdminPaymentManagement = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <UnifiedSidebar 
-          navigationItems={adminNavigation}
+      <div className="min-h-screen flex flex-col w-full bg-background">
+        <UnifiedHeader 
+          title=""
           user={user}
           userRole={userRole}
-          customerId={customerId}
-          cleanerId={cleanerId}
           onSignOut={handleSignOut}
         />
-        <SidebarInset className="flex-1">
-          <UnifiedHeader 
-            title=""
+        <div className="flex flex-1 w-full">
+          <UnifiedSidebar 
+            navigationItems={adminNavigation}
             user={user}
             userRole={userRole}
+            customerId={customerId}
+            cleanerId={cleanerId}
             onSignOut={handleSignOut}
           />
-          
-          <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
-            <div className="max-w-7xl mx-auto space-y-6">
-              <PaymentSystemTest />
-              <PaymentManagementDashboard />
-            </div>
-          </main>
-        </SidebarInset>
+          <SidebarInset className="flex-1">
+            <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
+              <div className="max-w-7xl mx-auto space-y-6">
+                <PaymentSystemTest />
+                <PaymentManagementDashboard />
+              </div>
+            </main>
+          </SidebarInset>
+        </div>
       </div>
     </SidebarProvider>
   );

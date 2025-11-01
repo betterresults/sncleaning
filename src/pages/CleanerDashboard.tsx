@@ -36,34 +36,36 @@ const CleanerDashboard = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50 overflow-x-hidden">
-        <UnifiedSidebar
-          navigationItems={cleanerNavigation}
+      <div className="min-h-screen flex flex-col w-full bg-gray-50 overflow-x-hidden">
+        <UnifiedHeader 
+          title=""
           user={user}
           userRole={userRole}
-          customerId={customerId}
-          cleanerId={cleanerId}
+          showBackToAdmin={userRole === 'admin'}
           onSignOut={handleSignOut}
         />
-        <SidebarInset className="flex-1 overflow-x-hidden max-w-full">
-          <UnifiedHeader 
-            title=""
+        <div className="flex flex-1 w-full">
+          <UnifiedSidebar
+            navigationItems={cleanerNavigation}
             user={user}
             userRole={userRole}
-            showBackToAdmin={userRole === 'admin'}
+            customerId={customerId}
+            cleanerId={cleanerId}
+            onSignOut={handleSignOut}
           />
-          
-          <main className="flex-1 w-full max-w-full overflow-x-hidden">
-            <div className="p-2 sm:p-4 space-y-3 sm:space-y-4 max-w-full">
-              {userRole === 'admin' && (
-                <div className="mb-3 sm:mb-4">
-                  <AdminCleanerSelector />
-                </div>
-              )}
-              <CleanerUpcomingBookings />
-            </div>
-          </main>
-        </SidebarInset>
+          <SidebarInset className="flex-1 overflow-x-hidden max-w-full">
+            <main className="flex-1 w-full max-w-full overflow-x-hidden">
+              <div className="p-2 sm:p-4 space-y-3 sm:space-y-4 max-w-full">
+                {userRole === 'admin' && (
+                  <div className="mb-3 sm:mb-4">
+                    <AdminCleanerSelector />
+                  </div>
+                )}
+                <CleanerUpcomingBookings />
+              </div>
+            </main>
+          </SidebarInset>
+        </div>
       </div>
     </SidebarProvider>
   );

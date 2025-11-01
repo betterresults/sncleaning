@@ -24,40 +24,41 @@ const CustomerLinenManagement = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
-        <UnifiedSidebar
-          navigationItems={getCustomerNavigation(hasLinenAccess)}
+      <div className="min-h-screen flex flex-col w-full bg-gray-50">
+        <UnifiedHeader 
+          title=""
           user={user}
           userRole={userRole}
-          customerId={customerId}
-          cleanerId={cleanerId}
           onSignOut={handleSignOut}
         />
-        <SidebarInset className="flex-1 flex flex-col w-full">
-          <UnifiedHeader 
-            title=""
+        <div className="flex flex-1 w-full">
+          <UnifiedSidebar
+            navigationItems={getCustomerNavigation(hasLinenAccess)}
             user={user}
             userRole={userRole}
+            customerId={customerId}
+            cleanerId={cleanerId}
+            onSignOut={handleSignOut}
           />
-          
-          <main className="flex-1 p-2 sm:p-4 lg:p-6 w-full overflow-x-hidden">
-            <div className="w-full max-w-7xl mx-auto">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="inventory">Inventory</TabsTrigger>
-                  <TabsTrigger value="orders">Orders</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="inventory" className="mt-0">
-                  <LinenInventoryView />
-                </TabsContent>
-                
-                <TabsContent value="orders" className="mt-0">
-                  <LinenOrdersView />
-                </TabsContent>
-              </Tabs>
-            </div>
-          </main>
+          <SidebarInset className="flex-1 flex flex-col w-full">
+            <main className="flex-1 p-2 sm:p-4 lg:p-6 w-full overflow-x-hidden">
+              <div className="w-full max-w-7xl mx-auto">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-6">
+                    <TabsTrigger value="inventory">Inventory</TabsTrigger>
+                    <TabsTrigger value="orders">Orders</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="inventory" className="mt-0">
+                    <LinenInventoryView />
+                  </TabsContent>
+                  
+                  <TabsContent value="orders" className="mt-0">
+                    <LinenOrdersView />
+                  </TabsContent>
+                </Tabs>
+              </div>
+            </main>
         </SidebarInset>
       </div>
     </SidebarProvider>

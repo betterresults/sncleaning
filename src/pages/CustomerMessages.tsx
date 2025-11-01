@@ -101,27 +101,28 @@ const CustomerMessages = () => {
 
   return (
     <SidebarProvider>
-      <div className="h-screen flex w-full bg-gray-50 overflow-hidden">
-        <UnifiedSidebar 
-          navigationItems={getCustomerNavigation(hasLinenAccess)}
+      <div className="h-screen flex flex-col w-full bg-gray-50 overflow-hidden">
+        <UnifiedHeader 
+          title=""
           user={user}
+          userRole={userRole}
+          showBackToAdmin={isAdminViewing}
           onSignOut={handleSignOut}
         />
-        <SidebarInset className="flex-1">
-          <UnifiedHeader 
-            title=""
+        <div className="flex flex-1 w-full">
+          <UnifiedSidebar 
+            navigationItems={getCustomerNavigation(hasLinenAccess)}
             user={user}
-            userRole={userRole}
-            showBackToAdmin={isAdminViewing}
+            onSignOut={handleSignOut}
           />
-          
-          <main className="flex-1 flex flex-col overflow-hidden">
-            {/* Admin Customer Selector */}
-            {isAdminViewing && (
-              <div className="p-4 border-b border-border bg-muted/30">
-                <AdminCustomerSelector />
-              </div>
-            )}
+          <SidebarInset className="flex-1">
+            <main className="flex-1 flex flex-col overflow-hidden">
+              {/* Admin Customer Selector */}
+              {isAdminViewing && (
+                <div className="p-4 border-b border-border bg-muted/30">
+                  <AdminCustomerSelector />
+                </div>
+              )}
 
             {!effectiveCustomerId && isAdminViewing ? (
               <div className="flex-1 flex items-center justify-center">
@@ -171,9 +172,10 @@ const CustomerMessages = () => {
                   )}
                 </div>
               </div>
-            )}
-          </main>
-        </SidebarInset>
+              )}
+            </main>
+          </SidebarInset>
+        </div>
       </div>
     </SidebarProvider>
   );

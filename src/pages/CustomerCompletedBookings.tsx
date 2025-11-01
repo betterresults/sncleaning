@@ -45,30 +45,32 @@ const CustomerCompletedBookings = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
-        <UnifiedSidebar
-          navigationItems={getCustomerNavigation(hasLinenAccess)}
+      <div className="min-h-screen flex flex-col w-full bg-gray-50">
+        <UnifiedHeader 
+          title=""
           user={user}
           userRole={userRole}
-          customerId={customerId}
-          cleanerId={cleanerId}
+          showBackToAdmin={userRole === 'admin'}
           onSignOut={handleSignOut}
         />
-        <SidebarInset className="flex-1 flex flex-col w-full">
-          <UnifiedHeader 
-            title=""
+        <div className="flex flex-1 w-full">
+          <UnifiedSidebar
+            navigationItems={getCustomerNavigation(hasLinenAccess)}
             user={user}
             userRole={userRole}
-            showBackToAdmin={userRole === 'admin'}
+            customerId={customerId}
+            cleanerId={cleanerId}
+            onSignOut={handleSignOut}
           />
-          
-          <main className="flex-1 p-2 sm:p-4 lg:p-6 w-full overflow-x-hidden">
-            <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-6">
-              {userRole === 'admin' && <AdminCustomerSelector />}
-              <CustomerPastBookings />
-            </div>
-          </main>
-        </SidebarInset>
+          <SidebarInset className="flex-1 flex flex-col w-full">
+            <main className="flex-1 p-2 sm:p-4 lg:p-6 w-full overflow-x-hidden">
+              <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-6">
+                {userRole === 'admin' && <AdminCustomerSelector />}
+                <CustomerPastBookings />
+              </div>
+            </main>
+          </SidebarInset>
+        </div>
       </div>
     </SidebarProvider>
   );

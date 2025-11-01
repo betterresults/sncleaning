@@ -15,31 +15,33 @@ const AdminNotificationManagement = () => {
   return (
     <AdminGuard>
       <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-background">
-          <UnifiedSidebar 
-            navigationItems={adminNavigation}
+        <div className="min-h-screen flex flex-col w-full bg-background">
+          <UnifiedHeader 
+            title=""
             user={user}
-            userRole={userRole}
             onSignOut={signOut}
+            userRole={userRole}
           />
-          <div className="flex-1 flex flex-col">
-            <UnifiedHeader 
-              title=""
+          <div className="flex flex-1 w-full">
+            <UnifiedSidebar 
+              navigationItems={adminNavigation}
               user={user}
-              onSignOut={signOut}
               userRole={userRole}
+              onSignOut={signOut}
             />
-            <main className="flex-1 overflow-auto">
-              <div className="container mx-auto p-6">
-                <div className="mb-6">
-                  <h1 className="text-3xl font-bold text-foreground">Email Notification Management</h1>
-                  <p className="text-muted-foreground mt-2">
-                    Configure and manage all email notifications in your system
-                  </p>
+            <div className="flex-1 flex flex-col">
+              <main className="flex-1 overflow-auto">
+                <div className="container mx-auto p-6">
+                  <div className="mb-6">
+                    <h1 className="text-3xl font-bold text-foreground">Email Notification Management</h1>
+                    <p className="text-muted-foreground mt-2">
+                      Configure and manage all email notifications in your system
+                    </p>
+                  </div>
+                  <NotificationManagementDashboard />
                 </div>
-                <NotificationManagementDashboard />
-              </div>
-            </main>
+              </main>
+            </div>
           </div>
         </div>
       </SidebarProvider>
