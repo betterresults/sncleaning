@@ -294,30 +294,109 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
           const bookingDate = booking.date_time ? format(new Date(booking.date_time), 'dd MMM') : 'N/A';
 
         return (
-          <Card 
+          <div
             key={booking.id} 
-            className="hover:shadow-md transition-shadow duration-150"
+            className="bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow duration-150 border-0"
           >
-            <CardContent className="p-4">
-              <div className="flex gap-4">
+            <div className="p-4">
+              <div className="flex flex-col md:flex-row gap-4 md:items-center">
                 {/* Time Box */}
                 <div className="flex-shrink-0">
-                  <div className="bg-primary/10 rounded-lg px-3 py-2 text-center min-w-[70px]">
-                    <div className="text-xs text-muted-foreground">{bookingDate}</div>
-                    <div className="text-sm font-semibold text-primary mt-1">{bookingTime}</div>
+                  <div className="bg-primary/10 rounded-xl px-4 py-3 text-center min-w-[90px]">
+                    <div className="text-xs text-muted-foreground font-medium">{bookingDate}</div>
+                    <div className="text-lg font-bold text-primary mt-1">{bookingTime}</div>
                   </div>
                 </div>
 
-                {/* Main Content */}
-                <div className="flex-1 min-w-0">
+                {/* Main Content - Mobile: Column, Desktop: Row */}
+                <div className="flex-1 min-w-0 flex flex-col md:flex-row md:items-center gap-3 md:gap-6">
                   {/* Customer Name */}
-                  <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="md:w-48 flex-shrink-0">
                     <h3 className="text-base font-semibold text-foreground">
                       {booking.first_name} {booking.last_name}
                     </h3>
+                    <p className="text-sm text-muted-foreground md:hidden">{booking.service_type}</p>
+                  </div>
+
+                  {/* Service Type - Desktop only */}
+                  <div className="hidden md:block md:w-40 flex-shrink-0">
+                    <p className="text-sm font-medium text-foreground">{booking.service_type}</p>
+                    <p className="text-xs text-muted-foreground">{booking.cleaning_type}</p>
+                  </div>
+
+                  {/* Address */}
+                  <div className="flex-1 min-w-0 md:block hidden">
+                    <p className="text-sm text-muted-foreground truncate">
+                      {booking.address}, {booking.postcode}
+                    </p>
+                  </div>
+
+                  {/* Mobile: Address and Tags */}
+                  <div className="md:hidden space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      {booking.address}, {booking.postcode}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="secondary" className="text-xs">
+                        {booking.cleaning_type}
+                      </Badge>
+                      
+                      {!isUnsigned ? (
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                            <User className="w-3 h-3 text-white" />
+                          </div>
+                          <span>{cleanerName}</span>
+                        </div>
+                      ) : (
+                        <Badge variant="destructive" className="text-xs">
+                          Unassigned
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Cleaner - Desktop only */}
+                  <div className="hidden md:flex md:w-36 flex-shrink-0 items-center gap-2">
+                    {!isUnsigned ? (
+                      <>
+                        <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+                          <User className="w-3 h-3 text-white" />
+                        </div>
+                        <span className="text-sm text-foreground truncate">{cleanerName}</span>
+                      </>
+                    ) : (
+                      <Badge variant="destructive" className="text-xs">
+                        Unassigned
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Payment Status */}
+                  <div className="md:w-24 flex-shrink-0">
+                    <PaymentStatusIndicator 
+                      status={booking.payment_status} 
+                      isClickable={true}
+                      onClick={() => handlePaymentAction(booking)}
+                      size="sm"
+                    />
+                  </div>
+
+                  {/* Cost */}
+                  <div className="md:w-28 flex-shrink-0 flex md:justify-end items-center">
+                    <div className="flex items-center gap-2 md:flex-col md:items-end md:gap-0">
+                      <span className="text-xs text-muted-foreground md:hidden">Booking Cost:</span>
+                      <span className="text-lg font-bold text-foreground">
+                        £{booking.total_cost?.toFixed(2) || '0.00'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="md:w-10 flex-shrink-0 absolute top-4 right-4 md:relative md:top-0 md:right-0">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0 -mt-1">
+                        <Button variant="ghost" className="h-8 w-8 p-0">
                           <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -359,53 +438,6 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-
-                  {/* Service Type */}
-                  <p className="text-sm text-muted-foreground mb-2">{booking.service_type}</p>
-
-                  {/* Address */}
-                  <p className="text-sm text-muted-foreground mb-3 truncate">
-                    {booking.address}, {booking.postcode}
-                  </p>
-
-                  {/* Tags and Info Row */}
-                  <div className="flex flex-wrap items-center gap-2 mb-3">
-                    <Badge variant="secondary" className="text-xs">
-                      {booking.cleaning_type}
-                    </Badge>
-                    
-                    {!isUnsigned && (
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-                          <User className="w-3 h-3 text-white" />
-                        </div>
-                        <span>{cleanerName}</span>
-                      </div>
-                    )}
-
-                    {isUnsigned && (
-                      <Badge variant="destructive" className="text-xs">
-                        Unassigned
-                      </Badge>
-                    )}
-
-                    <div className="ml-auto flex items-center gap-2">
-                      <PaymentStatusIndicator 
-                        status={booking.payment_status} 
-                        isClickable={true}
-                        onClick={() => handlePaymentAction(booking)}
-                        size="sm"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Cost */}
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <span className="text-sm text-muted-foreground">Booking Cost</span>
-                    <span className="text-lg font-semibold text-foreground">
-                      £{booking.total_cost?.toFixed(2) || '0.00'}
-                    </span>
-                  </div>
                 </div>
               </div>
 
@@ -416,8 +448,8 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
                   onSuccess={fetchData}
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         );
       })}
 
