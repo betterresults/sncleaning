@@ -166,6 +166,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       // Filter and combine data based on user type
       if (userType === 'customer') {
         // For customers: ONLY show customers from the customers table (business customers)
+        // DO NOT show auth users with admin or cleaner roles
         const businessCustomers = (data.businessCustomers || []).map(customer => {
           console.log('Processing business customer:', customer.id, customer.first_name, customer.last_name, 'type will be set to: business_customer');
           return {
@@ -206,18 +207,13 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         });
         
       } else if (userType === 'all') {
-        // For all: show everything
+        // For all: show only auth users (admin + cleaner + guest), DO NOT show business customers here
+        // This prevents duplication since business customers are shown in the "Customers" tab
         const allAuthUsers = (data.authUsers || []).map(user => ({
           ...user,
           type: 'auth_user'
         }));
-        const allBusinessCustomers = (data.businessCustomers || []).map(customer => ({
-          ...customer,
-          type: 'business_customer',
-          business_id: customer.id,
-          role: 'customer'
-        }));
-        processedUsers = [...allAuthUsers, ...allBusinessCustomers];
+        processedUsers = allAuthUsers;
         
       } else {
         // For admins/cleaners: only show auth users with matching roles
