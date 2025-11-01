@@ -77,6 +77,13 @@ export interface BookingData {
   totalHours?: number;
   hourlyRate: number;
   totalCost: number;
+  
+  // Admin/Customer specific fields
+  customerId?: number;
+  selectedCustomer?: any;
+  addressId?: string;
+  selectedAddress?: any;
+  paymentMethod?: string;
 }
 
 const steps = [
@@ -86,9 +93,10 @@ const steps = [
   { id: 4, title: 'Summary', key: 'payment', icon: <CreditCard className="w-4 h-4" /> },
 ];
 
-const BookingForm: React.FC = () => {
+const AirbnbBookingForm: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
+  const [isAdminMode, setIsAdminMode] = useState(false);
   const [bookingData, setBookingData] = useState<BookingData>({
     propertyType: '',
     bedrooms: '',
@@ -139,6 +147,23 @@ const BookingForm: React.FC = () => {
     hourlyRate: 25,
     totalCost: 0,
   });
+
+  // Check if user is admin
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: role } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .single();
+        
+        setIsAdminMode(role?.role === 'admin');
+      }
+    };
+    checkAdmin();
+  }, []);
 
   // Load Stripe on mount
   useEffect(() => {
@@ -221,6 +246,7 @@ const BookingForm: React.FC = () => {
               data={bookingData}
               onUpdate={updateBookingData}
               onBack={prevStep}
+              isAdminMode={isAdminMode}
             />
           </Elements>
         ) : (
@@ -290,4 +316,4 @@ const BookingForm: React.FC = () => {
   );
 };
 
-export default BookingForm;
+export default AirbnbBookingForm;

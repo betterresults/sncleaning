@@ -4,7 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { BookingData } from '../BookingForm';
+import { BookingData } from '../AirbnbBookingForm';
 import { CalendarDays, Clock, Mic, AlertTriangle } from 'lucide-react';
 import { useAirbnbFieldConfigs } from '@/hooks/useAirbnbFieldConfigs';
 import { SelectionCard } from '@/components/ui/selection-card';

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
-import { BookingData } from '../BookingForm';
+import { BookingData } from '../AirbnbBookingForm';
 import { Truck, Shirt, Plus, Minus, Package, Info } from 'lucide-react';
 import { useAirbnbFieldConfigs } from '@/hooks/useAirbnbFieldConfigs';
 import { useLinenProducts } from '@/hooks/useLinenProducts';

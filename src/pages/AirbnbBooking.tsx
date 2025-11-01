@@ -1,7 +1,7 @@
-import BookingForm from '../../sn-cleaning-booking-forms-main/src/components/booking/BookingForm';
+import AirbnbBookingForm from '../../sn-cleaning-booking-forms-main/src/components/booking/AirbnbBookingForm';
 
 const AirbnbBooking = () => {
-  return <BookingForm />;
+  return <AirbnbBookingForm />;
 };
 
 export default AirbnbBooking;

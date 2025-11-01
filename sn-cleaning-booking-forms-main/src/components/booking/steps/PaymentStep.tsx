@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '../../../../phone-input';
-import { BookingData } from '../BookingForm';
+import { BookingData } from '../AirbnbBookingForm';
 import { CreditCard, Shield, Loader2, AlertTriangle } from 'lucide-react';
 import { useAirbnbBookingSubmit } from '@/hooks/useAirbnbBookingSubmit';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -10,6 +10,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import CustomerSelector from '@/components/booking/CustomerSelector';
+import AddressSelector from '@/components/booking/AddressSelector';
+import { usePaymentMethodCheck } from '@/hooks/usePaymentMethodCheck';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 // Simple auth check without using AuthContext
 const useSimpleAuth = () => {
@@ -61,9 +66,10 @@ interface PaymentStepProps {
   data: BookingData;
   onUpdate: (updates: Partial<BookingData>) => void;
   onBack: () => void;
+  isAdminMode?: boolean;
 }
 
-const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => {
+const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack, isAdminMode = false }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, customerId, paymentMethods, loading: loadingPaymentMethods } = useSimpleAuth();
@@ -75,12 +81,39 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
   const stripe = useStripe();
   const elements = useElements();
   const [cardComplete, setCardComplete] = useState(false);
+  const [companyPaymentMethods, setCompanyPaymentMethods] = useState<string[]>([]);
+  
+  // Use admin-selected customerId or logged-in customerId
+  const effectiveCustomerId = isAdminMode ? data.customerId : customerId;
+  const { hasPaymentMethods, loading: checkingPaymentMethods } = usePaymentMethodCheck(effectiveCustomerId || null);
   
   // Admin testing mode - skip payment if URL has ?adminTest=true
   const adminTestMode = searchParams.get('adminTest') === 'true';
+  
+  // Fetch company payment methods from settings (for admin mode)
+  useEffect(() => {
+    if (isAdminMode) {
+      const fetchCompanyPaymentMethods = async () => {
+        const { data: settings } = await supabase
+          .from('company_settings')
+          .select('setting_value')
+          .eq('setting_category', 'payment')
+          .eq('setting_key', 'methods')
+          .single();
+        
+        if (settings?.setting_value) {
+          const methods = Array.isArray(settings.setting_value) 
+            ? (settings.setting_value as string[])
+            : [];
+          setCompanyPaymentMethods(methods);
+        }
+      };
+      fetchCompanyPaymentMethods();
+    }
+  }, [isAdminMode]);
 
-  // Get default payment method if available (only for customers)
-  const defaultPaymentMethod = customerId && paymentMethods.length > 0 
+  // Get default payment method if available (only for logged-in customers or admin-selected)
+  const defaultPaymentMethod = effectiveCustomerId && paymentMethods.length > 0 
     ? (paymentMethods.find((pm: any) => pm.is_default) || paymentMethods[0])
     : null;
 
@@ -512,11 +545,152 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
         </div>
       )}
 
+      {/* ADMIN MODE: Customer & Address Selection */}
+      {isAdminMode && (
+        <div className="space-y-6">
+          <h3 className="text-2xl font-bold text-[#185166] mb-4">
+            Select Customer
+          </h3>
+          
+          <CustomerSelector 
+            onCustomerSelect={(customer) => {
+              if (customer) {
+                onUpdate({ 
+                  customerId: customer.id,
+                  selectedCustomer: customer,
+                  firstName: customer.first_name,
+                  lastName: customer.last_name,
+                  email: customer.email,
+                  phone: customer.phone
+                });
+              } else {
+                onUpdate({ 
+                  customerId: undefined,
+                  selectedCustomer: undefined,
+                  addressId: undefined,
+                  selectedAddress: undefined
+                });
+              }
+            }}
+          />
+          
+          {data.customerId && (
+            <>
+              <h3 className="text-2xl font-bold text-[#185166] mt-8 mb-4">
+                Select Address
+              </h3>
+              
+              <AddressSelector 
+                customerId={data.customerId}
+                onAddressSelect={(address) => {
+                  if (address) {
+                    onUpdate({ 
+                      addressId: address.id,
+                      selectedAddress: address,
+                      street: address.address,
+                      postcode: address.postcode,
+                      houseNumber: '',
+                      city: ''
+                    });
+                  } else {
+                    onUpdate({ 
+                      addressId: undefined,
+                      selectedAddress: undefined 
+                    });
+                  }
+                }}
+              />
+            </>
+          )}
+          
+          {data.customerId && !checkingPaymentMethods && !hasPaymentMethods && (
+            <>
+              <h3 className="text-2xl font-bold text-[#185166] mt-8 mb-4">
+                Payment Method
+              </h3>
+              
+              <div className="space-y-4">
+                <Label>Select Payment Method</Label>
+                <Select
+                  value={data.paymentMethod || ''}
+                  onValueChange={(value) => onUpdate({ paymentMethod: value })}
+                >
+                  <SelectTrigger className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white">
+                    <SelectValue placeholder="Choose payment method..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companyPaymentMethods.map((method) => (
+                      <SelectItem key={method} value={method}>
+                        {method}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <p className="text-sm text-gray-600">
+                  No saved payment methods found. Please select payment method.
+                </p>
+              </div>
+            </>
+          )}
+          
+          {data.customerId && !checkingPaymentMethods && hasPaymentMethods && (
+            <div className="rounded-2xl border-2 border-green-200 bg-green-50 p-6 mt-6">
+              <div className="flex items-center gap-3">
+                <Shield className="h-6 w-6 text-green-600 flex-shrink-0" />
+                <div>
+                  <h4 className="font-bold text-green-900">Saved Payment Method</h4>
+                  <p className="text-sm text-green-700">
+                    Customer has saved payment methods in Stripe
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Your Details Section */}
-      <div className="space-y-6">
-        <h3 className="text-2xl font-bold text-[#185166] mb-4">
-          Your Details
-        </h3>
+      <div className="space-y-6">{isAdminMode && data.customerId ? (
+          // Admin mode with customer selected - show read-only fields
+          <>
+            <h3 className="text-2xl font-bold text-[#185166] mb-4">
+              Customer Details
+            </h3>
+            <div className="grid grid-cols-2 gap-4 opacity-60 pointer-events-none">
+              <Input
+                placeholder="First Name"
+                value={data.firstName || ''}
+                readOnly
+                className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-gray-50 px-6 font-medium"
+              />
+              <Input
+                placeholder="Last Name"
+                value={data.lastName || ''}
+                readOnly
+                className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-gray-50 px-6 font-medium"
+              />
+            </div>
+            <Input
+              type="email"
+              placeholder="Email Address"
+              value={data.email || ''}
+              readOnly
+              className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-gray-50 px-6 font-medium"
+            />
+            <PhoneInput
+              value={data.phone || ''}
+              onChange={() => {}}
+              placeholder="Phone number"
+              className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-gray-50 px-6 font-medium opacity-60 pointer-events-none"
+            />
+          </>
+        ) : (
+          // Normal mode or guest mode - editable fields
+          <>
+            <h3 className="text-2xl font-bold text-[#185166] mb-4">
+              Your Details
+            </h3>
         
         <div className="grid grid-cols-2 gap-4">
           <Input
@@ -564,10 +738,35 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
             <p className="text-xs text-red-600 font-medium mt-1">{phoneError}</p>
           )}
         </div>
+        </>
+        )}
       </div>
 
       {/* Booking Address Section */}
-      <div className="space-y-6">
+      {isAdminMode && data.addressId ? (
+        // Admin mode with address selected - show read-only
+        <div className="space-y-6">
+          <h3 className="text-2xl font-bold text-[#185166] mb-4">
+            Selected Address
+          </h3>
+          <div className="opacity-60 pointer-events-none space-y-4">
+            <Input
+              placeholder="Street Address"
+              value={data.street || ''}
+              readOnly
+              className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-gray-50 px-6 font-medium"
+            />
+            <Input
+              placeholder="Postcode"
+              value={data.postcode || ''}
+              readOnly
+              className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-gray-50 px-6 font-medium"
+            />
+          </div>
+        </div>
+      ) : (
+        // Normal editing mode
+        <div className="space-y-6">
         <h3 className="text-2xl font-bold text-[#185166] mb-4">
           Booking Address
         </h3>
@@ -594,7 +793,8 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
             className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
           />
         </div>
-      </div>
+        </div>
+      )}
 
       {/* Payment Method Section - Skip in admin test mode */}
       {!adminTestMode && (
@@ -688,20 +888,9 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-            
-            <div className="flex items-center justify-center gap-6 text-xs text-gray-400 pt-2">
-              <div className="flex items-center gap-2">
-                <Shield className="h-3 w-3" />
-                <span>256-bit SSL encryption</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Shield className="h-3 w-3" />
-                <span>PCI DSS compliant</span>
-              </div>
+              )}
             </div>
-          </div>
+          )}
         </div>
       )}
 
