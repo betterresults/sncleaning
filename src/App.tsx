@@ -26,13 +26,11 @@ import CustomerCompletedBookings from "./pages/CustomerCompletedBookings";
 import CustomerSettings from "./pages/CustomerSettings";
 import CustomerAddBooking from "./pages/CustomerAddBooking";
 import CustomerPhotos from "./pages/CustomerPhotos";
-import CustomerAirbnbForm from "./pages/CustomerAirbnbForm";
 import CustomerLinenManagement from './pages/CustomerLinenManagement';
 import CreateCustomerAccounts from "./pages/CreateCustomerAccounts";
 import AirbnbBooking from "./pages/AirbnbBooking";
 import BookingConfirmation from "./pages/BookingConfirmation";
 import AdminAddBooking from "./pages/AdminAddBooking";
-import AdminAirbnbBooking from "./pages/AdminAirbnbBooking";
 import CleanerSettings from './pages/CleanerSettings';
 import CleanerChecklists from './pages/CleanerChecklists';
 import CleanerChecklist from './pages/CleanerChecklist';
@@ -99,9 +97,9 @@ const App = () => (
                 <Route path="/customer-settings" element={<CustomerSettings />} />
                  <Route path="/customer-add-booking" element={<CustomerAddBooking />} />
           <Route path="/customer-linen-management" element={<CustomerLinenManagement />} />
-                 <Route path="/customer/airbnb-form" element={<CustomerAirbnbForm />} />
+                 <Route path="/customer/airbnb-form" element={<AirbnbBooking />} />
                <Route path="/admin-add-booking" element={<AdminAddBooking />} />
-               <Route path="/admin/airbnb" element={<AdminAirbnbBooking />} />
+               <Route path="/admin/airbnb" element={<AirbnbBooking />} />
                <Route path="/photos/:folderName" element={<CustomerPhotos />} />
                <Route path="/create-customer-accounts" element={<CreateCustomerAccounts />} />
                 <Route path="/recurring-bookings" element={<RecurringBookings />} />
