@@ -726,7 +726,7 @@ const BulkEditBookings = () => {
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-full p-0 z-50 bg-popover border shadow-lg">
+                          <PopoverContent className="w-full p-0 z-50 bg-popover border shadow-lg max-h-80 overflow-auto">
                             <Command>
                               <CommandInput placeholder="Search field to update..." />
                               <CommandList>
