@@ -4,6 +4,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BookingData } from './BookingForm';
 import { Home, Clock, Calendar, PoundSterling, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface BookingSummaryProps {
   data: BookingData;
@@ -11,6 +13,21 @@ interface BookingSummaryProps {
 
 const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Fetch linen products from database
+  const { data: linenProducts = [] } = useQuery({
+    queryKey: ['linen-products'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('linen_products')
+        .select('*')
+        .eq('is_active', true)
+        .order('name', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const getPropertyDescription = () => {
     if (!data.propertyType || !data.bedrooms) return '';
@@ -218,12 +235,10 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
     // Linen packages cost
     if (data.linenPackages) {
       Object.entries(data.linenPackages).forEach(([packageId, quantity]) => {
-        const packagePrices = {
-          single: 19.95, double: 23.95, king: 25.75, superking: 26.75,
-          bathmat: 2.80, bathsheet: 3.10, bathrobe: 6.50, teatowel: 1.30
-        };
-        const price = packagePrices[packageId as keyof typeof packagePrices] || 0;
-        total += price * quantity;
+        const product = linenProducts.find((p: any) => p.id === packageId);
+        if (product && quantity > 0) {
+          total += product.price * quantity;
+        }
       });
     }
     
@@ -329,25 +344,16 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
       {/* Linen packages */}
       {data.linenPackages && Object.entries(data.linenPackages).map(([packageId, quantity]) => {
         if (quantity === 0) return null;
-        const packagePrices = { 
-          single: 19.95, double: 23.95, king: 25.75, superking: 26.75,
-          bathmat: 2.80, bathsheet: 3.10, bathrobe: 6.50, teatowel: 1.30 
-        };
-        const price = packagePrices[packageId as keyof typeof packagePrices] || 0;
-        const packageLabels = {
-          single: 'Single Bed Set', double: 'Double Bed Set', 
-          king: 'King Bed Set', superking: 'Super King Bed Set',
-          bathmat: 'Bath Mat', bathsheet: 'Bath Sheet', 
-          bathrobe: 'Bath Robe', teatowel: 'Tea Towel'
-        };
-        const label = packageLabels[packageId as keyof typeof packageLabels] || packageId;
+        const product = linenProducts.find((p: any) => p.id === packageId);
+        if (!product) return null;
+        
         return (
           <div key={packageId} className="flex justify-between items-center pl-4">
             <span className="text-muted-foreground">
-              {label} ({quantity})
+              {product.name} ({quantity})
             </span>
             <span className="text-foreground font-semibold">
-              £{(price * quantity).toFixed(2)}
+              £{(product.price * quantity).toFixed(2)}
             </span>
           </div>
         );
