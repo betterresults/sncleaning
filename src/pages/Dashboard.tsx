@@ -8,6 +8,7 @@ import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { adminNavigation } from '@/lib/navigationItems';
 import DashboardStats from '@/components/admin/DashboardStats';
 import TodayBookingsCards from '@/components/dashboard/TodayBookingsCards';
+import RecentActivity from '@/components/dashboard/RecentActivity';
 import { Calendar, Plus } from 'lucide-react';
 import AdminGuard from '@/components/AdminGuard';
 import { useNavigate } from 'react-router-dom';
@@ -36,7 +37,19 @@ const Dashboard = () => {
     };
   };
 
+  // Calculate date range for next 7 days (excluding today)
+  const getNext7DaysRange = () => {
+    const now = new Date();
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const next7Days = new Date(tomorrow.getTime() + 7 * 24 * 60 * 60 * 1000);
+    return {
+      dateFrom: tomorrow.toISOString(),
+      dateTo: next7Days.toISOString()
+    };
+  };
+
   const todayRange = getTodayRange();
+  const next7DaysRange = getNext7DaysRange();
 
   // This dashboard is ADMIN-ONLY - wrap everything in AdminGuard
   return (
@@ -76,11 +89,36 @@ const Dashboard = () => {
                       New Booking
                     </Button>
                   </CardHeader>
-                <CardContent className="p-4 sm:p-6 pt-0">
-                  <TodayBookingsCards 
-                    dashboardDateFilter={todayRange}
-                  />
-                </CardContent>
+                  <CardContent className="p-4 sm:p-6 pt-0">
+                    <TodayBookingsCards 
+                      dashboardDateFilter={todayRange}
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Next 7 Days Bookings */}
+                <Card className="border shadow-sm">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      Next 7 Days
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 sm:p-6 pt-0">
+                    <TodayBookingsCards 
+                      dashboardDateFilter={next7DaysRange}
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Recent Activity */}
+                <Card className="border shadow-sm">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-xl font-semibold">Recent Activity</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 sm:p-6 pt-0">
+                    <RecentActivity />
+                  </CardContent>
                 </Card>
               </main>
             </SidebarInset>

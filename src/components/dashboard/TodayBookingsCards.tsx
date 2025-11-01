@@ -280,7 +280,7 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
   if (bookings.length === 0) {
     return (
       <div className="p-8 text-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-        <p className="text-gray-600 text-lg">No bookings for today</p>
+        <p className="text-gray-600 text-lg">Няма букинги за този период</p>
       </div>
     );
   }
