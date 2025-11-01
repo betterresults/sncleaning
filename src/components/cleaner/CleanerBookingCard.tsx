@@ -79,10 +79,10 @@ const CleanerBookingCard = ({
               hour12: true 
             })}</span>
           </div>
-          {(booking.total_hours || booking.hours_required) && (
+          {booking.total_hours && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <Clock className="h-4 w-4 text-orange-500 flex-shrink-0" />
-              <span className="font-medium">{booking.total_hours || booking.hours_required}h</span>
+              <span className="font-medium">{booking.total_hours}h</span>
             </div>
           )}
         </div>

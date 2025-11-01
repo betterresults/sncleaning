@@ -174,13 +174,13 @@ const ViewBookingDialog: React.FC<ViewBookingDialogProps> = ({
                   <div className="font-medium">{booking.cleaning_type || 'Standard Cleaning'}</div>
                 </div>
                 
-                {booking.hours_required && (
+                {booking.total_hours && (
                   <div className="space-y-1">
                     <div className="text-sm font-medium text-gray-500 flex items-center gap-1">
                       <Timer className="h-3 w-3" />
                       Duration
                     </div>
-                    <div className="font-medium">{booking.hours_required} hours</div>
+                    <div className="font-medium">{booking.total_hours} hours</div>
                   </div>
                 )}
 
