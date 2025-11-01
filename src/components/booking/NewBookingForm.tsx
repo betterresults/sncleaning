@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { CalendarDays, User, MapPin, Clock, Banknote, Home, Calendar as CalendarIcon, Key, Plus } from 'lucide-react';
+import { CalendarDays, User, MapPin, Clock, Banknote, Home, Calendar as CalendarIcon, Key, Plus, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import CustomerSelector from './CustomerSelector';
 import CleanerSelector from './CleanerSelector';
@@ -694,8 +694,22 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
   console.log('NewBookingForm: About to render component');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
-      <form onSubmit={handleSubmit} className="max-w-6xl mx-auto space-y-8">
+    <>
+      {/* Loading Overlay */}
+      {loading && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg shadow-2xl p-8 flex flex-col items-center gap-4">
+            <Loader2 className="h-12 w-12 text-blue-600 animate-spin" />
+            <div className="text-center">
+              <p className="text-xl font-semibold text-gray-800">Processing booking...</p>
+              <p className="text-sm text-gray-600 mt-2">Please wait, this may take a few seconds</p>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+        <form onSubmit={handleSubmit} className="max-w-6xl mx-auto space-y-8">
 
         {/* Customer Selection - Only show for admin view */}
         {!isCustomerView && (
@@ -1416,6 +1430,7 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
         </div>
       </form>
     </div>
+    </>
   );
 };
 
