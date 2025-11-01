@@ -313,7 +313,7 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
             key={booking.id} 
             className="bg-card rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.18)] hover:-translate-y-1 transition-all duration-200 border-0 overflow-hidden"
           >
-            <div className="flex flex-col md:flex-row md:items-center relative">
+            <div className="flex flex-col md:flex-row md:items-center">
               {/* Time Box - Integrated into card with no border */}
               <div className="flex-shrink-0 bg-primary/10">
                 <div className="px-4 py-5 text-center min-w-[90px]">
@@ -323,8 +323,8 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
               </div>
 
               {/* Main Content */}
-              <div className="flex-1 md:py-5 md:px-5">
-                <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+              <div className="flex-1 py-5 px-5">
+                <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6 relative">
                   {/* Customer Name - Large, Bold */}
                   <div className="md:min-w-[180px] md:max-w-[200px] flex-shrink-0">
                     <h3 className="text-lg font-bold text-foreground leading-tight">
@@ -390,7 +390,7 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
                   </div>
 
                   {/* Actions */}
-                  <div className="absolute top-4 right-4 md:relative md:top-0 md:right-0 md:flex-shrink-0">
+                  <div className="absolute top-2 right-2 md:relative md:top-0 md:right-0 md:flex-shrink-0">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-accent">
