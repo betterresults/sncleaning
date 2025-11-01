@@ -12,6 +12,7 @@ import { CalendarDays, User, MapPin, Clock, Banknote, Home, Calendar as Calendar
 import { useToast } from '@/hooks/use-toast';
 import CustomerSelector from './CustomerSelector';
 import CleanerSelector from './CleanerSelector';
+import AddressSelector from './AddressSelector';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
@@ -21,6 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import LinenManagementSelector from './LinenManagementSelector';
 import { LinenUsageItem } from '@/hooks/useLinenProducts';
 import { useServiceTypes, useCleaningTypes, usePaymentMethods, getServiceTypeBadgeColor, getServiceTypeLabel, getCleaningTypeLabel } from '@/hooks/useCompanySettings';
+import { usePaymentMethodCheck } from '@/hooks/usePaymentMethodCheck';
 
 interface NewBookingFormProps {
   onBookingCreated: () => void;
@@ -53,6 +55,10 @@ interface BookingData {
   selectedPeriod: string;
   address: string;
   postcode: string;
+  
+  // Address selection
+  addressId: string | null;
+  selectedAddress: any | null;
   
   // Service details
   serviceType: string;
@@ -116,6 +122,8 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
     selectedPeriod: 'AM',
     address: '',
     postcode: '',
+    addressId: null,
+    selectedAddress: null,
     serviceType: '',
     cleaningSubType: '',
     totalHours: 0,
@@ -147,10 +155,13 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
   const [newPropertyAccess, setNewPropertyAccess] = useState({ label: '', value: '', icon: '' });
   const navigate = useNavigate();
   
+  // Check if customer has payment methods (for admin mode)
+  const { hasPaymentMethods, loading: loadingPaymentMethods } = usePaymentMethodCheck(formData.customerId);
+  
   // Fetch service and cleaning types from company settings
   const { data: serviceTypesFromSettings, isLoading: loadingServiceTypes } = useServiceTypes();
   const { data: cleaningTypesFromSettings, isLoading: loadingCleaningTypes } = useCleaningTypes();
-  const { data: paymentMethodsFromSettings, isLoading: loadingPaymentMethods } = usePaymentMethods();
+  const { data: paymentMethodsFromSettings, isLoading: loadingPaymentMethodsSettings } = usePaymentMethods();
   
   console.log('NewBookingForm: State initialized, formData:', formData);
 
@@ -289,7 +300,11 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
         firstName: customer.first_name || '',
         lastName: customer.last_name || '',
         email: customer.email || '',
-        phoneNumber: customer.phone || ''
+        phoneNumber: customer.phone || '',
+        addressId: null,
+        selectedAddress: null,
+        address: '',
+        postcode: ''
       }));
     } else {
       setFormData(prev => ({
@@ -298,9 +313,34 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
         firstName: '',
         lastName: '',
         email: '',
-        phoneNumber: ''
+        phoneNumber: '',
+        addressId: null,
+        selectedAddress: null,
+        address: '',
+        postcode: ''
       }));
     }
+  };
+
+  const handleAddressSelect = (address: any | null) => {
+    if (!address) {
+      setFormData(prev => ({
+        ...prev,
+        addressId: null,
+        selectedAddress: null,
+        address: '',
+        postcode: '',
+      }));
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      addressId: address.id,
+      selectedAddress: address,
+      address: address.address,
+      postcode: address.postcode,
+    }));
   };
 
   const handleCleanerSelect = (cleaner: any) => {
@@ -723,6 +763,32 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
             <CardContent className="space-y-6 p-6">
               <CustomerSelector onCustomerSelect={handleCustomerSelect} />
               
+              {/* Address Selection - Show when customer is selected */}
+              {formData.customerId && (
+                <AddressSelector 
+                  customerId={formData.customerId}
+                  onAddressSelect={handleAddressSelect}
+                />
+              )}
+              
+              {/* Show selected address info */}
+              {formData.selectedAddress && (
+                <Card className="border-blue-200 bg-blue-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-5 w-5 text-blue-600" />
+                      <div>
+                        <p className="font-medium">{formData.selectedAddress.address}</p>
+                        <p className="text-sm text-gray-600">{formData.selectedAddress.postcode}</p>
+                        {formData.selectedAddress.deatails && (
+                          <p className="text-xs text-gray-500 mt-1">{formData.selectedAddress.deatails}</p>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="firstName" className="text-sm font-semibold text-gray-700">First Name *</Label>
@@ -791,6 +857,32 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
                 <p className="text-gray-600">{preselectedCustomer.email}</p>
                 <p className="text-gray-600">{preselectedCustomer.phone}</p>
               </div>
+              
+              {/* Address Selection for Customer View */}
+              <div className="mt-4">
+                <AddressSelector 
+                  customerId={preselectedCustomer.id}
+                  onAddressSelect={handleAddressSelect}
+                />
+              </div>
+              
+              {/* Show selected address info */}
+              {formData.selectedAddress && (
+                <Card className="border-blue-200 bg-blue-50 mt-4">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-5 w-5 text-blue-600" />
+                      <div>
+                        <p className="font-medium">{formData.selectedAddress.address}</p>
+                        <p className="text-sm text-gray-600">{formData.selectedAddress.postcode}</p>
+                        {formData.selectedAddress.deatails && (
+                          <p className="text-xs text-gray-500 mt-1">{formData.selectedAddress.deatails}</p>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </CardContent>
           </Card>
         )}
@@ -1251,25 +1343,47 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
                   required={!requiresHours}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="paymentMethod" className="text-sm font-semibold text-gray-700">Payment Method</Label>
-                <Select value={formData.paymentMethod} onValueChange={(value) => handleInputChange('paymentMethod', value)}>
-                  <SelectTrigger className="border-2 border-gray-200 focus:border-indigo-500">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {paymentMethods.length === 0 ? (
-                      <SelectItem value="none" disabled>No payment methods configured</SelectItem>
-                    ) : (
-                      paymentMethods.map((method) => (
-                        <SelectItem key={method} value={method}>
-                          {method}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
+              
+              {/* Payment Method - Show dropdown for admin when customer has no payment methods */}
+              {!isCustomerView && formData.customerId && !hasPaymentMethods && (
+                <div className="space-y-2">
+                  <Label htmlFor="paymentMethod" className="text-sm font-semibold text-gray-700">
+                    Payment Method *
+                  </Label>
+                  <Select value={formData.paymentMethod} onValueChange={(value) => handleInputChange('paymentMethod', value)}>
+                    <SelectTrigger className="border-2 border-gray-200 focus:border-indigo-500">
+                      <SelectValue placeholder="Select payment method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {paymentMethods.length === 0 ? (
+                        <SelectItem value="none" disabled>No payment methods configured</SelectItem>
+                      ) : (
+                        paymentMethods.map((method) => (
+                          <SelectItem key={method} value={method}>
+                            {method}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-orange-600">
+                    Customer has no saved payment methods. Select payment method manually.
+                  </p>
+                </div>
+              )}
+              
+              {/* Show info message when customer has payment methods */}
+              {!isCustomerView && formData.customerId && hasPaymentMethods && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-gray-700">Payment Method</Label>
+                  <div className="p-4 bg-green-50 border-2 border-green-200 rounded-lg">
+                    <p className="text-sm text-green-700">
+                      ✓ Customer has saved payment methods. Payment will be processed via Stripe.
+                    </p>
+                  </div>
+                </div>
+              )}
+              
               <div className="space-y-2">
                 <Label htmlFor="paymentStatus" className="text-sm font-semibold text-gray-700">Payment Status</Label>
                 <Select value={formData.paymentStatus} onValueChange={(value) => handleInputChange('paymentStatus', value)}>

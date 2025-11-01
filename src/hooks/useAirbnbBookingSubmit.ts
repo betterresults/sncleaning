@@ -15,6 +15,9 @@ interface BookingSubmission {
   postcode: string;
   city: string;
   
+  // Address selection (for admin/customer mode)
+  addressId?: string | null;
+  
   // Property details (ALL go to property_details JSON)
   propertyType: string;
   bedrooms: string;
@@ -228,6 +231,38 @@ export const useAirbnbBookingSubmit = () => {
         customerId = newCustomer.id;
       }
 
+      // Step 1.5: Handle address - use addressId if provided, otherwise create new
+      let addressForBooking = `${bookingData.houseNumber} ${bookingData.street}${bookingData.city ? ', ' + bookingData.city : ''}`;
+      let postcodeForBooking = bookingData.postcode;
+      
+      if (bookingData.addressId) {
+        // Use existing address from selection
+        const { data: addressData, error: addressError } = await supabase
+          .from('addresses')
+          .select('address, postcode')
+          .eq('id', bookingData.addressId)
+          .single();
+        
+        if (addressData && !addressError) {
+          addressForBooking = addressData.address;
+          postcodeForBooking = addressData.postcode;
+        }
+      } else if (!bookingData.addressId && customerId) {
+        // Public booking - create new address for this customer
+        try {
+          await supabase
+            .from('addresses')
+            .insert({
+              customer_id: customerId,
+              address: addressForBooking,
+              postcode: postcodeForBooking,
+              is_default: false
+            });
+        } catch (addressError) {
+          console.log('Note: Could not create address record, but will continue with booking:', addressError);
+        }
+      }
+
       // Step 2: Create booking
       console.log('[useAirbnbBookingSubmit] Creating booking datetime from:', {
         selectedDate: bookingData.selectedDate,
@@ -315,8 +350,8 @@ export const useAirbnbBookingSubmit = () => {
         phone_number: bookingData.phone,
         
         // Address
-        address: `${bookingData.houseNumber} ${bookingData.street}${bookingData.city ? ', ' + bookingData.city : ''}`,
-        postcode: bookingData.postcode,
+        address: addressForBooking,
+        postcode: postcodeForBooking,
         
         // Property details (JSON with ALL property info)
         property_details: buildPropertyDetails(bookingData),
