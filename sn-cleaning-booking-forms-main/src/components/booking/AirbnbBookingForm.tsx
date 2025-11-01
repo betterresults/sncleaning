@@ -10,6 +10,7 @@ import { Home, Brush, Calendar, User, CreditCard, Package2 } from 'lucide-react'
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useLocation } from 'react-router-dom';
 
 export interface BookingData {
   // Property details
@@ -100,6 +101,7 @@ const steps = [
 ];
 
 const AirbnbBookingForm: React.FC = () => {
+  const location = useLocation();
   const [currentStep, setCurrentStep] = useState(1);
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [isAdminMode, setIsAdminMode] = useState(false);
@@ -154,9 +156,17 @@ const AirbnbBookingForm: React.FC = () => {
     totalCost: 0,
   });
 
-  // Check if user is admin
+  // Check if user is admin AND on admin route
   useEffect(() => {
     const checkAdmin = async () => {
+      // Only enable admin mode if on /admin/ route
+      const isAdminRoute = location.pathname.includes('/admin/');
+      
+      if (!isAdminRoute) {
+        setIsAdminMode(false);
+        return;
+      }
+      
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         const { data: role } = await supabase
@@ -165,11 +175,13 @@ const AirbnbBookingForm: React.FC = () => {
           .eq('user_id', session.user.id)
           .single();
         
-        setIsAdminMode(role?.role === 'admin');
+        setIsAdminMode(role?.role === 'admin' && isAdminRoute);
+      } else {
+        setIsAdminMode(false);
       }
     };
     checkAdmin();
-  }, []);
+  }, [location.pathname]);
 
   // Load Stripe on mount
   useEffect(() => {
