@@ -239,13 +239,15 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack, isAdm
         setProcessing(true);
         
         const result = await submitBooking({
-          // Customer details
+          // Admin/Customer details
+          customerId: data.customerId, // Pass admin-selected customer ID
           firstName: data.firstName,
           lastName: data.lastName,
           email: data.email,
           phone: data.phone,
           
           // Property address
+          addressId: data.addressId, // Pass admin-selected address ID
           houseNumber: data.houseNumber,
           street: data.street,
           postcode: data.postcode,
@@ -329,10 +331,14 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack, isAdm
 
       // Prepare booking data
       const bookingPayload = {
+        // Admin/Customer details
+        customerId: data.customerId, // Pass admin-selected customer ID
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
         phone: data.phone,
+        // Property address
+        addressId: data.addressId, // Pass admin-selected address ID
         houseNumber: data.houseNumber,
         street: data.street,
         postcode: data.postcode,
@@ -651,7 +657,8 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack, isAdm
       )}
 
       {/* Your Details Section */}
-      <div className="space-y-6">{isAdminMode && data.customerId ? (
+      <div className="space-y-6">
+        {isAdminMode && data.customerId ? (
           // Admin mode with customer selected - show read-only fields
           <>
             <h3 className="text-2xl font-bold text-[#185166] mb-4">
@@ -691,54 +698,54 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack, isAdm
             <h3 className="text-2xl font-bold text-[#185166] mb-4">
               Your Details
             </h3>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <Input
-            placeholder="First Name"
-            value={data.firstName || ''}
-            onChange={(e) => onUpdate({ firstName: e.target.value })}
-            className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
-          />
-          <Input
-            placeholder="Last Name"
-            value={data.lastName || ''}
-            onChange={(e) => onUpdate({ lastName: e.target.value })}
-            className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
-          />
-        </div>
-        
-        <div>
-          <Input
-            type="email"
-            placeholder="Email Address"
-            value={data.email || ''}
-            onChange={(e) => {
-              onUpdate({ email: e.target.value });
-              setEmailError('');
-            }}
-            onBlur={(e) => validateEmail(e.target.value)}
-            className={`h-16 text-lg rounded-2xl border-2 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400 ${emailError ? 'border-red-500' : 'border-gray-200'}`}
-          />
-          {emailError && (
-            <p className="text-xs text-red-600 font-medium mt-1">{emailError}</p>
-          )}
-        </div>
-        
-        <div>
-          <PhoneInput
-            value={data.phone || ''}
-            onChange={(value) => {
-              onUpdate({ phone: value });
-              setPhoneError('');
-            }}
-            placeholder="Phone number"
-            className={`h-16 text-lg rounded-2xl border-2 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400 ${phoneError ? 'border-red-500' : 'border-gray-200'}`}
-          />
-          {phoneError && (
-            <p className="text-xs text-red-600 font-medium mt-1">{phoneError}</p>
-          )}
-        </div>
-        </>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                placeholder="First Name"
+                value={data.firstName || ''}
+                onChange={(e) => onUpdate({ firstName: e.target.value })}
+                className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
+              />
+              <Input
+                placeholder="Last Name"
+                value={data.lastName || ''}
+                onChange={(e) => onUpdate({ lastName: e.target.value })}
+                className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
+              />
+            </div>
+            
+            <div>
+              <Input
+                type="email"
+                placeholder="Email Address"
+                value={data.email || ''}
+                onChange={(e) => {
+                  onUpdate({ email: e.target.value });
+                  setEmailError('');
+                }}
+                onBlur={(e) => validateEmail(e.target.value)}
+                className={`h-16 text-lg rounded-2xl border-2 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400 ${emailError ? 'border-red-500' : 'border-gray-200'}`}
+              />
+              {emailError && (
+                <p className="text-xs text-red-600 font-medium mt-1">{emailError}</p>
+              )}
+            </div>
+            
+            <div>
+              <PhoneInput
+                value={data.phone || ''}
+                onChange={(value) => {
+                  onUpdate({ phone: value });
+                  setPhoneError('');
+                }}
+                placeholder="Phone number"
+                className={`h-16 text-lg rounded-2xl border-2 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400 ${phoneError ? 'border-red-500' : 'border-gray-200'}`}
+              />
+              {phoneError && (
+                <p className="text-xs text-red-600 font-medium mt-1">{phoneError}</p>
+              )}
+            </div>
+          </>
         )}
       </div>
 
@@ -767,32 +774,32 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack, isAdm
       ) : (
         // Normal editing mode
         <div className="space-y-6">
-        <h3 className="text-2xl font-bold text-[#185166] mb-4">
-          Booking Address
-        </h3>
-        
-        <Input
-          placeholder="Street Address"
-          value={data.street || ''}
-          onChange={(e) => onUpdate({ street: e.target.value })}
-          className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
-        />
-        
-        <div className="grid grid-cols-2 gap-4">
+          <h3 className="text-2xl font-bold text-[#185166] mb-4">
+            Booking Address
+          </h3>
+          
           <Input
-            placeholder="Postcode"
-            value={data.postcode || ''}
-            onChange={(e) => onUpdate({ postcode: e.target.value })}
+            placeholder="Street Address"
+            value={data.street || ''}
+            onChange={(e) => onUpdate({ street: e.target.value })}
             className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
           />
           
-          <Input
-            placeholder="City"
-            value={data.city || ''}
-            onChange={(e) => onUpdate({ city: e.target.value })}
-            className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
-          />
-        </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              placeholder="Postcode"
+              value={data.postcode || ''}
+              onChange={(e) => onUpdate({ postcode: e.target.value })}
+              className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
+            />
+            
+            <Input
+              placeholder="City"
+              value={data.city || ''}
+              onChange={(e) => onUpdate({ city: e.target.value })}
+              className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
+            />
+          </div>
         </div>
       )}
 
@@ -888,9 +895,9 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack, isAdm
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

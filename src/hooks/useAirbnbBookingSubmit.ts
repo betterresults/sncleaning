@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface BookingSubmission {
   // Customer details
+  customerId?: number; // Admin-provided customer ID
   firstName: string;
   lastName: string;
   email: string;
@@ -201,34 +202,40 @@ export const useAirbnbBookingSubmit = () => {
       // Step 1: Check if customer exists or create new one
       let customerId: number;
       
-      const { data: existingCustomer } = await supabase
-        .from('customers')
-        .select('id')
-        .eq('email', bookingData.email)
-        .single();
-
-      if (existingCustomer) {
-        customerId = existingCustomer.id;
+      // If customerId is provided (admin mode), use it directly
+      if (bookingData.customerId) {
+        customerId = bookingData.customerId;
       } else {
-        // Create new customer
-        const { data: newCustomer, error: customerError } = await supabase
+        // Check if customer exists by email
+        const { data: existingCustomer } = await supabase
           .from('customers')
-          .insert({
-            first_name: bookingData.firstName,
-            last_name: bookingData.lastName,
-            full_name: `${bookingData.firstName} ${bookingData.lastName}`,
-            email: bookingData.email,
-            phone: bookingData.phone,
-            client_status: 'New'
-          })
           .select('id')
+          .eq('email', bookingData.email)
           .single();
 
-        if (customerError || !newCustomer) {
-          console.error('Create customer failed:', customerError);
-          throw new Error(customerError?.message || 'Failed to create customer');
+        if (existingCustomer) {
+          customerId = existingCustomer.id;
+        } else {
+          // Create new customer
+          const { data: newCustomer, error: customerError } = await supabase
+            .from('customers')
+            .insert({
+              first_name: bookingData.firstName,
+              last_name: bookingData.lastName,
+              full_name: `${bookingData.firstName} ${bookingData.lastName}`,
+              email: bookingData.email,
+              phone: bookingData.phone,
+              client_status: 'New'
+            })
+            .select('id')
+            .single();
+
+          if (customerError || !newCustomer) {
+            console.error('Create customer failed:', customerError);
+            throw new Error(customerError?.message || 'Failed to create customer');
+          }
+          customerId = newCustomer.id;
         }
-        customerId = newCustomer.id;
       }
 
       // Step 1.5: Handle address - use addressId if provided, otherwise create new
@@ -236,7 +243,7 @@ export const useAirbnbBookingSubmit = () => {
       let postcodeForBooking = bookingData.postcode;
       
       if (bookingData.addressId) {
-        // Use existing address from selection
+        // Use existing address from selection (admin/customer mode)
         const { data: addressData, error: addressError } = await supabase
           .from('addresses')
           .select('address, postcode')
@@ -247,8 +254,8 @@ export const useAirbnbBookingSubmit = () => {
           addressForBooking = addressData.address;
           postcodeForBooking = addressData.postcode;
         }
-      } else if (!bookingData.addressId && customerId) {
-        // Public booking - create new address for this customer
+      } else if (customerId && !bookingData.customerId) {
+        // Public booking - create new address for this customer (skip if admin provided customerId)
         try {
           await supabase
             .from('addresses')
