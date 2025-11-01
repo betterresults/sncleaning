@@ -12,11 +12,15 @@ serve(async (req) => {
   }
 
   try {
-    // Get Stripe publishable key from environment
-    const publishableKey = Deno.env.get('STRIPE_PUBLISHABLE_KEY');
+    // Get Stripe publishable key from environment (support multiple common names)
+    const publishableKey =
+      Deno.env.get('STRIPE_PUBLISHABLE_KEY') ||
+      Deno.env.get('STRIPE_PUBLIC_KEY') ||
+      Deno.env.get('STRIPE_PUBLISHABLE') ||
+      Deno.env.get('STRIPE_PK');
     
     if (!publishableKey) {
-      throw new Error('Stripe publishable key not configured');
+      throw new Error('Stripe publishable key not configured. Expected one of: STRIPE_PUBLISHABLE_KEY, STRIPE_PUBLIC_KEY, STRIPE_PUBLISHABLE, STRIPE_PK');
     }
 
     return new Response(
