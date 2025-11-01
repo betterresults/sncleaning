@@ -134,30 +134,75 @@ export function UpcomingBookingsFilters({ filters, onFiltersChange, cleaners }: 
                 ? `From ${format(new Date(filters.dateFrom), 'dd/MM/yy')}`
                 : filters.dateTo
                 ? `Until ${format(new Date(filters.dateTo), 'dd/MM/yy')}`
-                : 'Select date range'
+                : 'Date Range'
               }
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-4 bg-white shadow-lg rounded-xl" align="start">
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">From Date</label>
-                <CalendarComponent
-                  mode="single"
-                  selected={filters.dateFrom ? new Date(filters.dateFrom) : undefined}
-                  onSelect={handleDateFromChange}
-                  className="p-3 pointer-events-auto rounded-lg"
-                />
+          <PopoverContent className="w-auto p-4 bg-white shadow-lg rounded-xl z-50" align="start">
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                {/* From Date Button */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "justify-start text-left font-normal w-[180px]",
+                        !filters.dateFrom && "text-muted-foreground"
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {filters.dateFrom ? format(new Date(filters.dateFrom), 'dd MMM yyyy') : 'From Date'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-white shadow-lg rounded-xl z-[60]" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={filters.dateFrom ? new Date(filters.dateFrom) : undefined}
+                      onSelect={handleDateFromChange}
+                      className="p-3 pointer-events-auto rounded-lg"
+                    />
+                  </PopoverContent>
+                </Popover>
+
+                {/* To Date Button */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "justify-start text-left font-normal w-[180px]",
+                        !filters.dateTo && "text-muted-foreground"
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {filters.dateTo ? format(new Date(filters.dateTo), 'dd MMM yyyy') : 'To Date'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-white shadow-lg rounded-xl z-[60]" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={filters.dateTo ? new Date(filters.dateTo) : undefined}
+                      onSelect={handleDateToChange}
+                      className="p-3 pointer-events-auto rounded-lg"
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">To Date</label>
-                <CalendarComponent
-                  mode="single"
-                  selected={filters.dateTo ? new Date(filters.dateTo) : undefined}
-                  onSelect={handleDateToChange}
-                  className="p-3 pointer-events-auto rounded-lg"
-                />
-              </div>
+              
+              {/* Optional: Clear dates button */}
+              {(filters.dateFrom || filters.dateTo) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    onFiltersChange({ ...filters, dateFrom: '', dateTo: '' });
+                  }}
+                  className="w-full text-muted-foreground hover:text-foreground"
+                >
+                  Clear dates
+                </Button>
+              )}
             </div>
           </PopoverContent>
         </Popover>
