@@ -17,50 +17,40 @@ interface PhoneInputProps {
 export const PhoneInput: React.FC<PhoneInputProps> = ({
   value,
   onChange,
-  placeholder = "+44 ___ ___ ____",
+  placeholder = "7123 456 789",
   className = ""
 }) => {
-  const [displayValue, setDisplayValue] = useState(value || '');
+  const [displayValue, setDisplayValue] = useState(() => {
+    // Initialize with digits only (no +44 shown)
+    if (!value) return '';
+    if (value.startsWith('+44')) return value.substring(3);
+    return value;
+  });
   const [error, setError] = useState<string>('');
 
   const formatPhoneNumber = (input: string) => {
-    // Always keep +44 prefix
-    if (!input || input.length === 0) {
-      return '+44';
-    }
-
-    // Remove all non-digit characters except +
-    let cleaned = input.replace(/[^\d+]/g, '');
+    // Remove all non-digit characters
+    let cleaned = input.replace(/\D/g, '');
     
-    // Make sure it starts with +44
-    if (!cleaned.startsWith('+44')) {
-      // If user is typing digits, add +44 prefix
-      const digitsOnly = cleaned.replace(/\D/g, '');
-      cleaned = '+44' + digitsOnly;
-    }
+    // Remove any leading zeros
+    cleaned = cleaned.replace(/^0+/, '');
     
-    // Remove any zeros immediately after +44 (user might type 0 out of habit)
-    cleaned = cleaned.replace(/^\+44(0+)/, '+44');
+    // Limit to exactly 10 digits
+    cleaned = cleaned.substring(0, 10);
     
-    // Get just the digits after +44
-    const digitsAfter44 = cleaned.substring(3);
-    
-    // Limit to exactly 10 digits after +44
-    const limitedDigits = digitsAfter44.substring(0, 10);
-    
-    // Return +44 plus the limited digits
-    return '+44' + limitedDigits;
+    return cleaned;
   };
 
-  const validatePhone = (phone: string) => {
-    if (!phone || phone === '+44') {
+  const validatePhone = (digits: string) => {
+    if (!digits || digits.length === 0) {
       setError('');
       return;
     }
 
-    const result = ukPhoneSchema.safeParse(phone);
-    if (!result.success) {
-      setError('Phone must be +44 followed by 10 digits');
+    const fullPhone = '+44' + digits;
+    const result = ukPhoneSchema.safeParse(fullPhone);
+    if (!result.success && digits.length > 0) {
+      setError('Phone must be 10 digits');
     } else {
       setError('');
     }
@@ -69,16 +59,9 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhoneNumber(e.target.value);
     setDisplayValue(formatted);
-    onChange(formatted);
+    const fullPhone = '+44' + formatted;
+    onChange(fullPhone);
     validatePhone(formatted);
-  };
-
-  const handleFocus = () => {
-    if (!displayValue) {
-      const starter = '+44';
-      setDisplayValue(starter);
-      onChange(starter);
-    }
   };
 
   const handleBlur = () => {
@@ -92,7 +75,6 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
         placeholder={placeholder}
         value={displayValue}
         onChange={handleChange}
-        onFocus={handleFocus}
         onBlur={handleBlur}
         className={`${className} ${error ? 'border-red-500 focus:border-red-500' : ''}`}
       />

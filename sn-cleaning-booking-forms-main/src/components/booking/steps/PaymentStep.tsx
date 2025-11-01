@@ -450,26 +450,36 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
               }
             </p>
             
-            <div className="rounded-2xl border-2 border-gray-200 bg-white p-6 transition-all duration-200 focus-within:border-[#185166]">
-              <CardElement
-                options={{
-                  style: {
-                    base: {
-                      fontSize: '16px',
-                      color: '#1e293b',
-                      fontFamily: 'system-ui, -apple-system, sans-serif',
-                      fontWeight: '500',
-                      '::placeholder': {
-                        color: '#9ca3af',
+            {!stripe || !elements ? (
+              <div className="rounded-2xl border-2 border-gray-200 bg-white p-6">
+                <div className="flex items-center justify-center gap-2 text-gray-500">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Loading payment system...</span>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl border-2 border-gray-200 bg-white p-6 min-h-[60px] transition-all duration-200 focus-within:border-[#185166]">
+                <CardElement
+                  options={{
+                    style: {
+                      base: {
+                        fontSize: '18px',
+                        color: '#1e293b',
+                        fontFamily: 'system-ui, -apple-system, sans-serif',
+                        fontWeight: '500',
+                        lineHeight: '24px',
+                        '::placeholder': {
+                          color: '#9ca3af',
+                        },
+                      },
+                      invalid: {
+                        color: '#dc2626',
                       },
                     },
-                    invalid: {
-                      color: '#dc2626',
-                    },
-                  },
-                }}
-              />
-            </div>
+                  }}
+                />
+              </div>
+            )}
             
             <div className="flex items-center justify-start gap-6 text-sm text-gray-500 pt-2">
               <div className="flex items-center gap-2">
