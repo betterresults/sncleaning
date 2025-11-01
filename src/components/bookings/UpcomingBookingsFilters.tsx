@@ -105,134 +105,147 @@ export function UpcomingBookingsFilters({ filters, onFiltersChange, cleaners }: 
                           (filters.bookingStatus && filters.bookingStatus !== 'all');
 
   return (
-    <div className="bg-white p-4 rounded-xl border shadow-sm">
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-        {/* Search Bar */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+    <div className="bg-white p-2 sm:p-4 rounded-xl border shadow-sm">
+      <div className="flex flex-col gap-2">
+        {/* Search Bar - Full width on all screens */}
+        <div className="relative w-full">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
           <Input
             placeholder="Search by customer name, email, phone, or address..."
             value={filters.searchTerm}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="pl-10 h-11 text-base rounded-lg"
+            className="pl-9 sm:pl-10 h-9 sm:h-11 text-sm sm:text-base rounded-lg"
           />
         </div>
 
-        {/* Date Range Filter */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "h-11 rounded-lg whitespace-nowrap",
-                (filters.dateFrom || filters.dateTo) && "border-primary bg-primary/5"
-              )}
+        {/* Date Range + Advanced Filters on same row */}
+        <div className="flex items-center gap-2">
+          {/* Date Range Filter */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "h-9 sm:h-11 rounded-lg whitespace-nowrap flex-1 text-xs sm:text-sm",
+                  (filters.dateFrom || filters.dateTo) && "border-primary bg-primary/5"
+                )}
+              >
+                <Calendar className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="truncate">
+                  {filters.dateFrom && filters.dateTo 
+                    ? `${format(new Date(filters.dateFrom), 'dd/MM/yy')} - ${format(new Date(filters.dateTo), 'dd/MM/yy')}`
+                    : filters.dateFrom
+                    ? `From ${format(new Date(filters.dateFrom), 'dd/MM/yy')}`
+                    : filters.dateTo
+                    ? `Until ${format(new Date(filters.dateTo), 'dd/MM/yy')}`
+                    : 'Date Range'
+                  }
+                </span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent 
+              className="w-[calc(100vw-2rem)] sm:w-auto p-3 sm:p-6 bg-white shadow-lg rounded-xl z-50" 
+              align="center"
+              sideOffset={5}
             >
-              <Calendar className="mr-2 h-4 w-4" />
-              {filters.dateFrom && filters.dateTo 
-                ? `${format(new Date(filters.dateFrom), 'dd/MM/yy')} - ${format(new Date(filters.dateTo), 'dd/MM/yy')}`
-                : filters.dateFrom
-                ? `From ${format(new Date(filters.dateFrom), 'dd/MM/yy')}`
-                : filters.dateTo
-                ? `Until ${format(new Date(filters.dateTo), 'dd/MM/yy')}`
-                : 'Date Range'
-              }
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-6 bg-white shadow-lg rounded-xl z-50" align="start">
-            <div className="space-y-4">
-              {/* Tab buttons for From/To Date */}
-              <div className="flex gap-3 border-b pb-3">
-                <Button
-                  variant={activeDateTab === 'from' ? 'default' : 'outline'}
-                  size="default"
-                  onClick={() => setActiveDateTab('from')}
-                  className="flex-1 h-11"
-                >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  {filters.dateFrom ? format(new Date(filters.dateFrom), 'dd MMM yyyy') : 'From Date'}
-                </Button>
-                <Button
-                  variant={activeDateTab === 'to' ? 'default' : 'outline'}
-                  size="default"
-                  onClick={() => setActiveDateTab('to')}
-                  className="flex-1 h-11"
-                >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  {filters.dateTo ? format(new Date(filters.dateTo), 'dd MMM yyyy') : 'To Date'}
-                </Button>
-              </div>
+              <div className="space-y-3 sm:space-y-4">
+                {/* Tab buttons for From/To Date */}
+                <div className="flex gap-2 sm:gap-3 border-b pb-2 sm:pb-3">
+                  <Button
+                    variant={activeDateTab === 'from' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setActiveDateTab('from')}
+                    className="flex-1 h-9 sm:h-11 text-xs sm:text-sm"
+                  >
+                    <Calendar className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="truncate">
+                      {filters.dateFrom ? format(new Date(filters.dateFrom), 'dd MMM') : 'From Date'}
+                    </span>
+                  </Button>
+                  <Button
+                    variant={activeDateTab === 'to' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setActiveDateTab('to')}
+                    className="flex-1 h-9 sm:h-11 text-xs sm:text-sm"
+                  >
+                    <Calendar className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="truncate">
+                      {filters.dateTo ? format(new Date(filters.dateTo), 'dd MMM') : 'To Date'}
+                    </span>
+                  </Button>
+                </div>
 
-              {/* Calendar display - shows based on active tab */}
-              {activeDateTab === 'from' && (
-                <CalendarComponent
-                  mode="single"
-                  selected={filters.dateFrom ? new Date(filters.dateFrom) : undefined}
-                  onSelect={handleDateFromChange}
-                  className="pointer-events-auto rounded-lg [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_table]:w-full [&_td]:p-2 [&_button]:h-10 [&_button]:w-10"
-                />
-              )}
-              
-              {activeDateTab === 'to' && (
-                <CalendarComponent
-                  mode="single"
-                  selected={filters.dateTo ? new Date(filters.dateTo) : undefined}
-                  onSelect={handleDateToChange}
-                  className="pointer-events-auto rounded-lg [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_table]:w-full [&_td]:p-2 [&_button]:h-10 [&_button]:w-10"
-                />
-              )}
-              
-              {/* Clear dates button */}
-              {(filters.dateFrom || filters.dateTo) && (
-                <Button
-                  variant="ghost"
-                  size="default"
-                  onClick={() => {
-                    onFiltersChange({ ...filters, dateFrom: '', dateTo: '' });
-                    setActiveDateTab('from');
-                  }}
-                  className="w-full text-muted-foreground hover:text-foreground h-10"
-                >
-                  <X className="mr-2 h-4 w-4" />
-                  Clear dates
-                </Button>
-              )}
-            </div>
-          </PopoverContent>
-        </Popover>
-
-        {/* Advanced Filters Button */}
-        <Popover open={showAdvancedFilters} onOpenChange={setShowAdvancedFilters}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "h-11 rounded-lg whitespace-nowrap",
-                showAdvancedFilters && "border-primary bg-primary/5"
-              )}
-            >
-              <Filter className="mr-2 h-4 w-4" />
-              Advanced Filters
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-80 bg-white shadow-lg rounded-xl z-50" align="start">
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Filter by</label>
-                <Select value={filterType} onValueChange={(value: any) => setFilterType(value)}>
-                  <SelectTrigger className="rounded-lg">
-                    <SelectValue placeholder="Select filter type" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white shadow-lg rounded-lg z-[100]">
-                    <SelectItem value="cleaner">Cleaner</SelectItem>
-                    <SelectItem value="paymentMethod">Payment Method</SelectItem>
-                    <SelectItem value="paymentStatus">Payment Status</SelectItem>
-                    <SelectItem value="serviceType">Service Type</SelectItem>
-                    <SelectItem value="cleaningType">Cleaning Type</SelectItem>
-                    <SelectItem value="bookingStatus">Booking Status</SelectItem>
-                  </SelectContent>
-                </Select>
+                {/* Calendar display - shows based on active tab */}
+                {activeDateTab === 'from' && (
+                  <CalendarComponent
+                    mode="single"
+                    selected={filters.dateFrom ? new Date(filters.dateFrom) : undefined}
+                    onSelect={handleDateFromChange}
+                    className="pointer-events-auto rounded-lg [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_table]:w-full [&_td]:p-1 sm:[&_td]:p-2 [&_button]:h-8 [&_button]:w-8 sm:[&_button]:h-10 sm:[&_button]:w-10"
+                  />
+                )}
+                
+                {activeDateTab === 'to' && (
+                  <CalendarComponent
+                    mode="single"
+                    selected={filters.dateTo ? new Date(filters.dateTo) : undefined}
+                    onSelect={handleDateToChange}
+                    className="pointer-events-auto rounded-lg [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_table]:w-full [&_td]:p-1 sm:[&_td]:p-2 [&_button]:h-8 [&_button]:w-8 sm:[&_button]:h-10 sm:[&_button]:w-10"
+                  />
+                )}
+                
+                {/* Clear dates button */}
+                {(filters.dateFrom || filters.dateTo) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      onFiltersChange({ ...filters, dateFrom: '', dateTo: '' });
+                      setActiveDateTab('from');
+                    }}
+                    className="w-full text-muted-foreground hover:text-foreground h-8 sm:h-10 text-xs sm:text-sm"
+                  >
+                    <X className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                    Clear dates
+                  </Button>
+                )}
               </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Advanced Filters Button */}
+          <Popover open={showAdvancedFilters} onOpenChange={setShowAdvancedFilters}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "h-9 sm:h-11 rounded-lg whitespace-nowrap flex-1 text-xs sm:text-sm",
+                  showAdvancedFilters && "border-primary bg-primary/5"
+                )}
+              >
+                <Filter className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Advanced Filters</span>
+                <span className="sm:hidden">Filters</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 bg-white shadow-lg rounded-xl z-50" align="start">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Filter by</label>
+                  <Select value={filterType} onValueChange={(value: any) => setFilterType(value)}>
+                    <SelectTrigger className="rounded-lg">
+                      <SelectValue placeholder="Select filter type" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white shadow-lg rounded-lg z-[100]">
+                      <SelectItem value="cleaner">Cleaner</SelectItem>
+                      <SelectItem value="paymentMethod">Payment Method</SelectItem>
+                      <SelectItem value="paymentStatus">Payment Status</SelectItem>
+                      <SelectItem value="serviceType">Service Type</SelectItem>
+                      <SelectItem value="cleaningType">Cleaning Type</SelectItem>
+                      <SelectItem value="bookingStatus">Booking Status</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
               {filterType === 'cleaner' && (
                 <div>
@@ -347,18 +360,19 @@ export function UpcomingBookingsFilters({ filters, onFiltersChange, cleaners }: 
             </div>
           </PopoverContent>
         </Popover>
+      </div>
 
-        {/* Clear Filters */}
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            onClick={clearFilters}
-            className="h-11 rounded-lg text-gray-600 hover:text-gray-900"
-          >
-            <X className="mr-2 h-4 w-4" />
-            Clear all
-          </Button>
-        )}
+      {/* Clear Filters - Full width row */}
+      {hasActiveFilters && (
+        <Button
+          variant="ghost"
+          onClick={clearFilters}
+          className="h-9 sm:h-11 rounded-lg text-gray-600 hover:text-gray-900 w-full text-xs sm:text-sm"
+        >
+          <X className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+          Clear all
+        </Button>
+      )}
       </div>
     </div>
   );
