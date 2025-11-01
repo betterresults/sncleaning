@@ -13,6 +13,7 @@ import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import CustomerSelector from '@/components/booking/CustomerSelector';
 import AddressSelector from '@/components/booking/AddressSelector';
 import { usePaymentMethodCheck } from '@/hooks/usePaymentMethodCheck';
+import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 
@@ -83,35 +84,36 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack, isAdm
   const [cardComplete, setCardComplete] = useState(false);
   const [companyPaymentMethods, setCompanyPaymentMethods] = useState<string[]>([]);
   
-  // Use admin-selected customerId or logged-in customerId
-  const effectiveCustomerId = isAdminMode ? data.customerId : customerId;
-  const { hasPaymentMethods, loading: checkingPaymentMethods } = usePaymentMethodCheck(effectiveCustomerId || null);
+// Use admin-selected customerId or logged-in/selected customerId
+const { selectedCustomerId } = useAdminCustomer();
+const effectiveCustomerId = isAdminMode ? data.customerId : (customerId || selectedCustomerId || null);
+const { hasPaymentMethods, loading: checkingPaymentMethods } = usePaymentMethodCheck(effectiveCustomerId || null);
   
-  // Admin testing mode - skip payment if URL has ?adminTest=true
-  const adminTestMode = searchParams.get('adminTest') === 'true';
-  
-  // Auto-fill logged-in customer data on mount
-  useEffect(() => {
-    if (!isAdminMode && customerId && user && !data.firstName && !data.email) {
-      const fetchCustomerData = async () => {
-        const { data: customerData } = await supabase
-          .from('customers')
-          .select('first_name, last_name, email, phone')
-          .eq('id', customerId)
-          .single();
-        
-        if (customerData) {
-          onUpdate({
-            firstName: customerData.first_name || '',
-            lastName: customerData.last_name || '',
-            email: customerData.email || '',
-            phone: customerData.phone || ''
-          });
-        }
-      };
-      fetchCustomerData();
-    }
-  }, [customerId, user, isAdminMode]);
+// Admin testing mode - skip payment if URL has ?adminTest=true
+const adminTestMode = searchParams.get('adminTest') === 'true';
+
+// Auto-fill logged-in or selected customer data on mount
+useEffect(() => {
+  if (!isAdminMode && effectiveCustomerId && (!data.firstName || !data.email || !data.phone)) {
+    const fetchCustomerData = async () => {
+      const { data: customerData } = await supabase
+        .from('customers')
+        .select('first_name, last_name, email, phone')
+        .eq('id', effectiveCustomerId)
+        .single();
+      
+      if (customerData) {
+        onUpdate({
+          firstName: customerData.first_name || '',
+          lastName: customerData.last_name || '',
+          email: customerData.email || '',
+          phone: customerData.phone || ''
+        });
+      }
+    };
+    fetchCustomerData();
+  }
+}, [effectiveCustomerId, isAdminMode]);
   
   // Fetch company payment methods from settings (for admin mode)
   useEffect(() => {
@@ -751,6 +753,38 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack, isAdm
                 });
               } else {
                 onUpdate({ 
+                  addressId: undefined,
+                  selectedAddress: undefined,
+                  street: '',
+                  postcode: '',
+                  city: ''
+                });
+              }
+            }}
+          />
+        </div>
+      )}
+
+      {/* CUSTOMER MODE: Address Selection */}
+      {!isAdminMode && effectiveCustomerId && (
+        <div className="space-y-6">
+          <h3 className="text-2xl font-bold text-[#185166] mb-4">
+            Select Address
+          </h3>
+          <AddressSelector
+            customerId={effectiveCustomerId}
+            onAddressSelect={(address) => {
+              if (address) {
+                onUpdate({
+                  addressId: address.id,
+                  selectedAddress: address,
+                  street: address.address,
+                  postcode: address.postcode,
+                  houseNumber: '',
+                  city: ''
+                });
+              } else {
+                onUpdate({
                   addressId: undefined,
                   selectedAddress: undefined,
                   street: '',
