@@ -412,19 +412,24 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
           throw new Error(pmError?.message || 'Failed to create payment method');
         }
 
-        // Attach payment method to customer
-        const { data: attachResult, error: attachError } = await supabase.functions.invoke(
-          'stripe-attach-payment-method',
+        // Verify & attach payment method using existing backend flow
+        const verifyAmount = isUrgentBooking ? 0 : 100; // £1 verification for non-urgent
+        const totalAmount = Math.round((data.totalCost || 0) * 100);
+
+        const { data: verifyResult, error: verifyError } = await supabase.functions.invoke(
+          'stripe-verify-payment-method',
           {
             body: {
-              payment_method_id: paymentMethod.id,
-              customer_id: result.customerId,
+              customerId: result.customerId,
+              paymentMethodId: paymentMethod.id,
+              verifyAmountInPence: verifyAmount,
+              totalAmountInPence: totalAmount,
             }
           }
         );
 
-        if (attachError || !attachResult?.success) {
-          throw new Error('Failed to save payment method');
+        if (verifyError || verifyResult?.success === false) {
+          throw new Error(verifyResult?.error || 'Failed to verify card');
         }
 
         // For urgent bookings, charge immediately
@@ -612,7 +617,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
                 </p>
               </div>
             ) : (
-              // No saved payment method - show CardElement
+              // No saved payment method - show CardElement directly
               <div className="rounded-2xl border-2 border-gray-200 bg-white p-8">
                 <div className="space-y-6">
                   <div className="flex items-center gap-3">
@@ -620,11 +625,11 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
                       <CreditCard className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <p className="text-lg font-bold text-gray-900">Card Details</p>
+                      <p className="text-lg font-bold text-gray-900">Enter Card Details</p>
                       <p className="text-sm text-gray-600">
                         {isUrgentBooking 
-                          ? `Enter your card to pay £${data.totalCost.toFixed(2)}`
-                          : "Add your payment method. No charge will be made now."
+                          ? `Enter your card details to pay £${data.totalCost.toFixed(2)}`
+                          : "Enter your card details. No charge will be made now."
                         }
                       </p>
                     </div>
