@@ -6,6 +6,7 @@ export interface FormulaElement {
   type: 'field' | 'operator' | 'number';
   value: string;
   label?: string;
+  attribute?: string;
 }
 
 export interface PricingFormula {
@@ -57,10 +58,10 @@ export const useCreatePricingFormula = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['airbnb-pricing-formulas'] });
-      toast.success('Успешно добавихте формула');
+      toast.success('Formula added successfully');
     },
     onError: (error: any) => {
-      toast.error('Грешка при добавяне: ' + error.message);
+      toast.error('Error adding formula: ' + error.message);
     },
   });
 };
@@ -87,10 +88,10 @@ export const useUpdatePricingFormula = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['airbnb-pricing-formulas'] });
-      toast.success('Успешно обновихте формулата');
+      toast.success('Formula updated successfully');
     },
     onError: (error: any) => {
-      toast.error('Грешка при обновяване: ' + error.message);
+      toast.error('Error updating formula: ' + error.message);
     },
   });
 };
@@ -109,10 +110,10 @@ export const useDeletePricingFormula = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['airbnb-pricing-formulas'] });
-      toast.success('Успешно изтрихте формулата');
+      toast.success('Formula deleted successfully');
     },
     onError: (error: any) => {
-      toast.error('Грешка при изтриване: ' + error.message);
+      toast.error('Error deleting formula: ' + error.message);
     },
   });
 };

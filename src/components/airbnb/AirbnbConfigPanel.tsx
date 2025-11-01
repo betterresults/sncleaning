@@ -706,8 +706,8 @@ export const AirbnbConfigPanel: React.FC = () => {
         <TabsContent value="formulas" className="space-y-6">
           <Card className="p-6 bg-primary/5 border-primary/20">
             <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2">Създай нова формула</h2>
-              <p className="text-muted-foreground mb-4">Изгради калкулации за системата</p>
+              <h2 className="text-2xl font-bold mb-2">Create New Formula</h2>
+              <p className="text-muted-foreground mb-4">Build calculations for the system</p>
               <Button 
                 onClick={() => {
                   setCurrentFormula({ name: '', description: '', elements: [], result_type: 'cost' });
@@ -717,7 +717,7 @@ export const AirbnbConfigPanel: React.FC = () => {
                 size="lg"
               >
                 <Plus className="h-5 w-5 mr-2" />
-                Започни изграждане
+                Start Building
               </Button>
             </div>
           </Card>
@@ -726,9 +726,9 @@ export const AirbnbConfigPanel: React.FC = () => {
             <Card className="p-6 border-2 border-primary/30 bg-primary/5">
               <div className="flex justify-between items-center mb-6">
                 <div>
-                  <h2 className="text-2xl font-semibold text-primary">Конструктор на формули</h2>
+                  <h2 className="text-2xl font-semibold text-primary">Formula Builder</h2>
                   <p className="text-muted-foreground">
-                    {isEditingFormula ? 'Редактиране' : 'Създаване'}
+                    {isEditingFormula ? 'Editing' : 'Creating'}
                   </p>
                 </div>
                 <Button 
@@ -739,29 +739,29 @@ export const AirbnbConfigPanel: React.FC = () => {
                     setShowFormulaBuilder(false);
                   }}
                 >
-                  Отказ
+                  Cancel
                 </Button>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <Label>Име на формулата</Label>
+                  <Label>Formula Name</Label>
                   <Input
                     value={currentFormula.name}
                     onChange={(e) => setCurrentFormula({...currentFormula, name: e.target.value})}
-                    placeholder="напр. Базова цена"
+                    placeholder="e.g. Base Price"
                   />
                 </div>
                 <div>
-                  <Label>Описание</Label>
+                  <Label>Description</Label>
                   <Input
                     value={currentFormula.description || ''}
                     onChange={(e) => setCurrentFormula({...currentFormula, description: e.target.value})}
-                    placeholder="Какво изчислява формулата?"
+                    placeholder="What does the formula calculate?"
                   />
                 </div>
                 <div>
-                  <Label>Тип резултат</Label>
+                  <Label>Result Type</Label>
                   <Select 
                     value={currentFormula.result_type} 
                     onValueChange={(v: any) => setCurrentFormula({...currentFormula, result_type: v})}
@@ -770,15 +770,15 @@ export const AirbnbConfigPanel: React.FC = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="cost">Цена (£)</SelectItem>
-                      <SelectItem value="time">Време (часове)</SelectItem>
-                      <SelectItem value="percentage">Процент (%)</SelectItem>
+                      <SelectItem value="cost">Cost (£)</SelectItem>
+                      <SelectItem value="time">Time (minutes)</SelectItem>
+                      <SelectItem value="percentage">Percentage (%)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
-                  <Label>Елементи</Label>
+                  <Label>Elements</Label>
                   <div className="flex flex-wrap gap-2 p-3 border rounded min-h-[60px] bg-background">
                     {currentFormula.elements?.map((el, idx) => (
                       <div key={idx} className="flex items-center gap-1 bg-primary/10 px-2 py-1 rounded">
@@ -796,24 +796,37 @@ export const AirbnbConfigPanel: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <Label>Добави поле</Label>
-                    <div className="flex flex-wrap gap-2">
+                    <Label>Add Field</Label>
+                    <div className="flex flex-col gap-2">
                       {availableFields.map((field) => (
-                        <Button
+                        <Select 
                           key={field.value}
-                          variant="outline"
-                          size="sm"
-                          onClick={() => addToFormula({ type: 'field', value: field.value, label: field.label })}
+                          onValueChange={(attribute) => {
+                            addToFormula({ 
+                              type: 'field', 
+                              value: field.value, 
+                              attribute: attribute,
+                              label: `${field.label}.${attribute}` 
+                            });
+                          }}
                         >
-                          {field.label}
-                        </Button>
+                          <SelectTrigger className="h-9">
+                            <SelectValue placeholder={field.label} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="value">Value</SelectItem>
+                            <SelectItem value="time">Time</SelectItem>
+                            <SelectItem value="min_value">Min Value</SelectItem>
+                            <SelectItem value="max_value">Max Value</SelectItem>
+                          </SelectContent>
+                        </Select>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <Label>Добави оператор</Label>
+                    <Label>Add Operator</Label>
                     <div className="flex flex-wrap gap-2">
                       {operators.map((op) => (
                         <Button
@@ -827,10 +840,36 @@ export const AirbnbConfigPanel: React.FC = () => {
                       ))}
                     </div>
                   </div>
+                  <div>
+                    <Label>Add Number</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        step="0.1"
+                        placeholder="e.g. 3"
+                        id="numberInput"
+                        className="h-9"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const input = document.getElementById('numberInput') as HTMLInputElement;
+                          const value = input.value;
+                          if (value) {
+                            addToFormula({ type: 'number', value: value, label: value });
+                            input.value = '';
+                          }
+                        }}
+                      >
+                        Add
+                      </Button>
+                    </div>
+                  </div>
                 </div>
 
                 <Button onClick={saveFormula} className="w-full">
-                  Запази формулата
+                  Save Formula
                 </Button>
               </div>
             </Card>
