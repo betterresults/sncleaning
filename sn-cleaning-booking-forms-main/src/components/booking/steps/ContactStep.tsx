@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -6,6 +6,10 @@ import { PhoneInput } from '@/components/ui/phone-input';
 import { SelectionCard } from '@/components/ui/selection-card';
 import { BookingData } from '../BookingForm';
 import { User, Key, Lock, PackageOpen } from 'lucide-react';
+import { z } from 'zod';
+
+// Email validation schema
+const emailSchema = z.string().email('Please enter a valid email address');
 
 interface ContactStepProps {
   data: BookingData;
@@ -15,6 +19,8 @@ interface ContactStepProps {
 }
 
 const ContactStep: React.FC<ContactStepProps> = ({ data, onUpdate, onNext, onBack }) => {
+  const [emailError, setEmailError] = useState('');
+
   const accessOptions = [
     { value: 'meet', label: "I'll meet you", icon: User },
     { value: 'collect-keys', label: 'Collect keys', icon: Key },
@@ -22,7 +28,23 @@ const ContactStep: React.FC<ContactStepProps> = ({ data, onUpdate, onNext, onBac
     { value: 'other', label: 'Other', icon: PackageOpen }
   ];
 
-  const canContinue = (data.firstName || data.lastName) && data.phone && data.email && data.postcode && data.propertyAccess;
+  const validateEmail = (email: string) => {
+    if (!email) {
+      setEmailError('');
+      return;
+    }
+    const result = emailSchema.safeParse(email);
+    if (!result.success) {
+      setEmailError('Please enter a valid email address');
+    } else {
+      setEmailError('');
+    }
+  };
+
+  const isPhoneValid = data.phone && data.phone.length === 13 && data.phone.startsWith('+44');
+  const isEmailValid = data.email && !emailError;
+
+  const canContinue = (data.firstName || data.lastName) && isPhoneValid && isEmailValid && data.postcode && data.propertyAccess;
 
   return (
     <div className="space-y-4">
@@ -76,10 +98,17 @@ const ContactStep: React.FC<ContactStepProps> = ({ data, onUpdate, onNext, onBac
               type="email"
               placeholder="Email address"
               value={data.email}
-              onChange={(e) => onUpdate({ email: e.target.value })}
-              className="border-0 bg-transparent text-lg md:text-xl font-bold text-foreground placeholder:text-muted-foreground focus:ring-0"
+              onChange={(e) => {
+                onUpdate({ email: e.target.value });
+                validateEmail(e.target.value);
+              }}
+              onBlur={(e) => validateEmail(e.target.value)}
+              className={`border-0 bg-transparent text-lg md:text-xl font-bold text-foreground placeholder:text-muted-foreground focus:ring-0 ${emailError ? 'border-b-2 border-red-500' : ''}`}
             />
           </div>
+          {emailError && (
+            <p className="text-xs text-red-600 font-medium mt-1">{emailError}</p>
+          )}
         </div>
       </div>
 

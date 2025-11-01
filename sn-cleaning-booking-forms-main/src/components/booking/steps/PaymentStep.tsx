@@ -8,6 +8,11 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { z } from 'zod';
+
+// Validation schemas
+const emailSchema = z.string().email('Please enter a valid email address');
+const ukPhoneSchema = z.string().regex(/^\+44\d{10}$/, 'UK phone must be +44 followed by 10 digits');
 
 interface PaymentStepProps {
   data: BookingData;
@@ -23,6 +28,8 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
   const { submitBooking, loading: submitting } = useAirbnbBookingSubmit();
   const [processing, setProcessing] = useState(false);
   const [searchParams] = useSearchParams();
+  const [emailError, setEmailError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
   
   // Admin testing mode - skip payment if URL has ?adminTest=true
   const adminTestMode = searchParams.get('adminTest') === 'true';
@@ -38,7 +45,48 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
     return hoursUntilBooking <= 72;
   }, [data.selectedDate, data.selectedTime]);
 
+  const validateEmail = (email: string) => {
+    if (!email) {
+      setEmailError('Email is required');
+      return false;
+    }
+    const result = emailSchema.safeParse(email);
+    if (!result.success) {
+      setEmailError('Please enter a valid email address');
+      return false;
+    }
+    setEmailError('');
+    return true;
+  };
+
+  const validatePhone = (phone: string) => {
+    if (!phone) {
+      setPhoneError('Phone is required');
+      return false;
+    }
+    const result = ukPhoneSchema.safeParse(phone);
+    if (!result.success) {
+      setPhoneError('Phone must be +44 followed by 10 digits');
+      return false;
+    }
+    setPhoneError('');
+    return true;
+  };
+
   const handleSubmit = async () => {
+    // Validate before submission
+    const isEmailValid = validateEmail(data.email);
+    const isPhoneValid = validatePhone(data.phone);
+
+    if (!isEmailValid || !isPhoneValid) {
+      toast({
+        title: "Validation Error",
+        description: "Please check your email and phone number",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Admin test mode - skip payment completely
     if (adminTestMode) {
       try {
@@ -321,21 +369,40 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
           />
         </div>
         
-        <Input
-          type="email"
-          placeholder="Email Address"
-          value={data.email || ''}
-          onChange={(e) => onUpdate({ email: e.target.value })}
-          className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
-        />
+        <div>
+          <Input
+            type="email"
+            placeholder="Email Address"
+            value={data.email || ''}
+            onChange={(e) => {
+              onUpdate({ email: e.target.value });
+              setEmailError('');
+            }}
+            onBlur={(e) => validateEmail(e.target.value)}
+            className={`h-16 text-lg rounded-2xl border-2 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400 ${emailError ? 'border-red-500' : 'border-gray-200'}`}
+          />
+          {emailError && (
+            <p className="text-xs text-red-600 font-medium mt-1">{emailError}</p>
+          )}
+        </div>
         
-        <Input
-          type="tel"
-          placeholder="Phone Number"
-          value={data.phone || ''}
-          onChange={(e) => onUpdate({ phone: e.target.value })}
-          className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
-        />
+        <div>
+          <Input
+            type="tel"
+            placeholder="Phone Number (+44)"
+            value={data.phone || ''}
+            onChange={(e) => {
+              const formatted = e.target.value.startsWith('+44') ? e.target.value : '+44' + e.target.value.replace(/^\+/, '');
+              onUpdate({ phone: formatted });
+              setPhoneError('');
+            }}
+            onBlur={(e) => validatePhone(e.target.value)}
+            className={`h-16 text-lg rounded-2xl border-2 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400 ${phoneError ? 'border-red-500' : 'border-gray-200'}`}
+          />
+          {phoneError && (
+            <p className="text-xs text-red-600 font-medium mt-1">{phoneError}</p>
+          )}
+        </div>
       </div>
 
       {/* Booking Address Section */}

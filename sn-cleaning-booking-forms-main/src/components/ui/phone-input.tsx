@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Phone } from 'lucide-react';
+import { z } from 'zod';
+
+// UK Phone validation: +44 followed by 10 digits
+const ukPhoneSchema = z.string()
+  .regex(/^\+44\d{10}$/, 'UK phone must be +44 followed by 10 digits');
 
 interface PhoneInputProps {
   value: string;
@@ -16,6 +21,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   className = ""
 }) => {
   const [displayValue, setDisplayValue] = useState(value || '');
+  const [error, setError] = useState<string>('');
 
   const formatPhoneNumber = (input: string) => {
     // Remove all non-digit characters except +
@@ -46,10 +52,25 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
     return cleaned;
   };
 
+  const validatePhone = (phone: string) => {
+    if (!phone || phone === '+44') {
+      setError('');
+      return;
+    }
+
+    const result = ukPhoneSchema.safeParse(phone);
+    if (!result.success) {
+      setError('Phone must be +44 followed by 10 digits');
+    } else {
+      setError('');
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhoneNumber(e.target.value);
     setDisplayValue(formatted);
     onChange(formatted);
+    validatePhone(formatted);
   };
 
   const handleFocus = () => {
@@ -60,14 +81,24 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
     }
   };
 
+  const handleBlur = () => {
+    validatePhone(displayValue);
+  };
+
   return (
-    <Input
-      type="tel"
-      placeholder={placeholder}
-      value={displayValue}
-      onChange={handleChange}
-      onFocus={handleFocus}
-      className={className}
-    />
+    <div className="space-y-1">
+      <Input
+        type="tel"
+        placeholder={placeholder}
+        value={displayValue}
+        onChange={handleChange}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        className={`${className} ${error ? 'border-red-500 focus:border-red-500' : ''}`}
+      />
+      {error && (
+        <p className="text-xs text-red-600 font-medium">{error}</p>
+      )}
+    </div>
   );
 };
