@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import CreateCustomerDialog from "@/components/booking/CreateCustomerDialog";
 import CreateCleanerDialog from "@/components/booking/CreateCleanerDialog";
+import { useServiceTypes, useCleaningTypes } from "@/hooks/useCompanySettings";
 
 interface Customer {
   id: number;
@@ -65,6 +66,10 @@ export default function AddRecurringBooking() {
   const [selectedMinute, setSelectedMinute] = useState('00');
   const [selectedPeriod, setSelectedPeriod] = useState('AM');
   const [selectedTime, setSelectedTime] = useState('09:00 AM');
+  
+  // Fetch dynamic service types and cleaning types
+  const { data: serviceTypes } = useServiceTypes();
+  const { data: cleaningTypes } = useCleaningTypes();
 
   const [formData, setFormData] = useState({
     client: '',
@@ -617,11 +622,11 @@ export default function AddRecurringBooking() {
                     <SelectValue placeholder="Select service type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Standard Cleaning">Standard Cleaning</SelectItem>
-                    <SelectItem value="Deep Cleaning">Deep Cleaning</SelectItem>
-                    <SelectItem value="End of Tenancy">End of Tenancy</SelectItem>
-                    <SelectItem value="Office Cleaning">Office Cleaning</SelectItem>
-                    <SelectItem value="Post Construction">Post Construction</SelectItem>
+                    {serviceTypes?.map((type) => (
+                      <SelectItem key={type.key} value={type.key}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

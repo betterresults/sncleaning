@@ -11,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus } from "lucide-react";
 import CreateCustomerDialog from "@/components/booking/CreateCustomerDialog";
 import CreateCleanerDialog from "@/components/booking/CreateCleanerDialog";
+import { useServiceTypes, useCleaningTypes } from "@/hooks/useCompanySettings";
 
 interface Customer {
   id: number;
@@ -57,6 +58,10 @@ export default function EditRecurringBooking() {
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [showCreateCustomer, setShowCreateCustomer] = useState(false);
   const [showCreateCleaner, setShowCreateCleaner] = useState(false);
+  
+  // Fetch dynamic service types and cleaning types
+  const { data: serviceTypes } = useServiceTypes();
+  const { data: cleaningTypes } = useCleaningTypes();
 
   const [formData, setFormData] = useState({
     client: '',
@@ -369,11 +374,11 @@ export default function EditRecurringBooking() {
                     <SelectValue placeholder="Select service type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Standard Cleaning">Standard Cleaning</SelectItem>
-                    <SelectItem value="Deep Cleaning">Deep Cleaning</SelectItem>
-                    <SelectItem value="End of Tenancy">End of Tenancy</SelectItem>
-                    <SelectItem value="Office Cleaning">Office Cleaning</SelectItem>
-                    <SelectItem value="Post Construction">Post Construction</SelectItem>
+                    {serviceTypes?.map((type) => (
+                      <SelectItem key={type.key} value={type.key}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

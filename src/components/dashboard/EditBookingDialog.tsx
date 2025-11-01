@@ -17,6 +17,7 @@ import { User, Calendar, MapPin, CreditCard, UserCheck, Clock, Home, Phone, Mail
 import { EmailNotificationConfirmDialog } from '@/components/notifications/EmailNotificationConfirmDialog';
 import { useBookingEmailPrompt } from '@/hooks/useBookingEmailPrompt';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useServiceTypes, useCleaningTypes } from '@/hooks/useCompanySettings';
 
 interface EditBookingDialogProps {
   booking: any;
@@ -38,6 +39,11 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
   const [loading, setLoading] = useState(false);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [isSameDayCleaning, setIsSameDayCleaning] = useState(false);
+  
+  // Fetch dynamic service types and cleaning types
+  const { data: serviceTypes } = useServiceTypes();
+  const { data: cleaningTypes } = useCleaningTypes();
+  
   const {
     showConfirmDialog,
     setShowConfirmDialog,
@@ -458,10 +464,11 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Standard Cleaning">Standard Cleaning</SelectItem>
-                          <SelectItem value="Deep Cleaning">Deep Cleaning</SelectItem>
-                          <SelectItem value="End of Tenancy">End of Tenancy</SelectItem>
-                          <SelectItem value="Office Cleaning">Office Cleaning</SelectItem>
+                          {serviceTypes?.map((type) => (
+                            <SelectItem key={type.key} value={type.key}>
+                              {type.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -472,12 +479,15 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Domestic">Domestic</SelectItem>
-                          <SelectItem value="Commercial">Commercial</SelectItem>
-                          <SelectItem value="Air BnB">Air BnB</SelectItem>
+                          {cleaningTypes?.map((type) => (
+                            <SelectItem key={type.key} value={type.key}>
+                              {type.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
+                    
                     
                     {/* Same Day Cleaning Option for Airbnb */}
                     {formData.cleaningType === 'Air BnB' && (
