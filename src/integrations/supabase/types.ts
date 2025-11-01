@@ -249,6 +249,7 @@ export type Database = {
           phone_number: string | null
           postcode: string | null
           property_details: string | null
+          recommended_hours: number | null
           record_message: string | null
           recurring_group_id: string | null
           remaining_days: string | null
@@ -321,6 +322,7 @@ export type Database = {
           phone_number?: string | null
           postcode?: string | null
           property_details?: string | null
+          recommended_hours?: number | null
           record_message?: string | null
           recurring_group_id?: string | null
           remaining_days?: string | null
@@ -393,6 +395,7 @@ export type Database = {
           phone_number?: string | null
           postcode?: string | null
           property_details?: string | null
+          recommended_hours?: number | null
           record_message?: string | null
           recurring_group_id?: string | null
           remaining_days?: string | null
@@ -1510,6 +1513,7 @@ export type Database = {
           photos: string | null
           postcode: string | null
           property_details: string | null
+          recommended_hours: number | null
           record_message: string | null
           result_page: string | null
           same_day: string | null
@@ -1574,6 +1578,7 @@ export type Database = {
           photos?: string | null
           postcode?: string | null
           property_details?: string | null
+          recommended_hours?: number | null
           record_message?: string | null
           result_page?: string | null
           same_day?: string | null
@@ -1638,6 +1643,7 @@ export type Database = {
           photos?: string | null
           postcode?: string | null
           property_details?: string | null
+          recommended_hours?: number | null
           record_message?: string | null
           result_page?: string | null
           same_day?: string | null
@@ -2056,6 +2062,13 @@ export type Database = {
         Returns: boolean
       }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
+      fix_missing_total_hours: {
+        Args: never
+        Returns: {
+          bookings_updated: number
+          past_bookings_updated: number
+        }[]
+      }
       generate_recurring_bookings: { Args: never; Returns: undefined }
       get_current_user_role: { Args: never; Returns: string }
       get_user_role: { Args: { user_uuid: string }; Returns: string }
