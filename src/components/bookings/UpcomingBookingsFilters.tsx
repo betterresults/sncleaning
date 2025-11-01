@@ -105,7 +105,7 @@ export function UpcomingBookingsFilters({ filters, onFiltersChange, cleaners }: 
                           (filters.bookingStatus && filters.bookingStatus !== 'all');
 
   return (
-    <div className="bg-white p-3 sm:p-5 rounded-xl shadow-sm">
+    <div className="bg-white p-3 sm:p-5 rounded-xl shadow-sm border-0">
       <div className="flex flex-col gap-2">
         {/* Search Bar - Full width on all screens */}
         <div className="relative w-full">
