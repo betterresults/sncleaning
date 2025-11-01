@@ -13,6 +13,7 @@ import { z } from 'zod';
 // Simple auth check without using AuthContext
 const useSimpleAuth = () => {
   const [user, setUser] = useState<any>(null);
+  const [customerId, setCustomerId] = useState<number | null>(null);
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -22,12 +23,25 @@ const useSimpleAuth = () => {
       setUser(session?.user || null);
       
       if (session?.user) {
-        // Fetch payment methods
-        const { data } = await supabase
-          .from('customer_payment_methods')
-          .select('*')
-          .order('created_at', { ascending: false });
-        setPaymentMethods(data || []);
+        // Check if user has a customer profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('customer_id')
+          .eq('user_id', session.user.id)
+          .single();
+        
+        const customerIdValue = profile?.customer_id;
+        setCustomerId(customerIdValue);
+        
+        // Only fetch payment methods if user is a customer
+        if (customerIdValue) {
+          const { data } = await supabase
+            .from('customer_payment_methods')
+            .select('*')
+            .eq('customer_id', customerIdValue)
+            .order('created_at', { ascending: false });
+          setPaymentMethods(data || []);
+        }
       }
       setLoading(false);
     };
@@ -35,7 +49,7 @@ const useSimpleAuth = () => {
     checkAuth();
   }, []);
 
-  return { user, paymentMethods, loading };
+  return { user, customerId, paymentMethods, loading };
 };
 
 // Validation schemas
@@ -51,7 +65,7 @@ interface PaymentStepProps {
 const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, paymentMethods, loading: loadingPaymentMethods } = useSimpleAuth();
+  const { user, customerId, paymentMethods, loading: loadingPaymentMethods } = useSimpleAuth();
   const { submitBooking, loading: submitting } = useAirbnbBookingSubmit();
   const [processing, setProcessing] = useState(false);
   const [searchParams] = useSearchParams();
@@ -61,8 +75,10 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
   // Admin testing mode - skip payment if URL has ?adminTest=true
   const adminTestMode = searchParams.get('adminTest') === 'true';
 
-  // Get default payment method if available
-  const defaultPaymentMethod = paymentMethods.find((pm: any) => pm.is_default) || paymentMethods[0];
+  // Get default payment method if available (only for customers)
+  const defaultPaymentMethod = customerId && paymentMethods.length > 0 
+    ? (paymentMethods.find((pm: any) => pm.is_default) || paymentMethods[0])
+    : null;
 
   // Calculate if booking is urgent (within 72 hours)
   const isUrgentBooking = useMemo(() => {
@@ -318,8 +334,8 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
         additionalDetails: data
       };
 
-      // If user has saved payment method
-      if (user && defaultPaymentMethod) {
+      // If user is a customer with saved payment method
+      if (customerId && defaultPaymentMethod) {
         // Submit booking first
         const result = await submitBooking(bookingPayload, true);
 
@@ -516,30 +532,41 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
           </h3>
           
           <div className="space-y-4">
-            {user && defaultPaymentMethod ? (
-              // User has saved payment method
-              <div className="rounded-2xl border-2 border-gray-200 bg-white p-6">
-                <div className="flex items-center gap-3">
-                  <CreditCard className="h-6 w-6 text-[#185166]" />
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      {defaultPaymentMethod.card_brand.toUpperCase()} •••• {defaultPaymentMethod.card_last4}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Expires {defaultPaymentMethod.card_exp_month}/{defaultPaymentMethod.card_exp_year}
-                    </p>
+            {customerId && defaultPaymentMethod ? (
+              // Customer has saved payment method
+              <div className="space-y-4">
+                <div className="rounded-2xl border-2 border-gray-200 bg-white p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <CreditCard className="h-6 w-6 text-[#185166]" />
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {defaultPaymentMethod.card_brand.toUpperCase()} •••• {defaultPaymentMethod.card_last4}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Expires {defaultPaymentMethod.card_exp_month}/{defaultPaymentMethod.card_exp_year}
+                        </p>
+                      </div>
+                    </div>
                   </div>
+                  <p className="text-sm text-gray-600 mt-4">
+                    {isUrgentBooking 
+                      ? `£${data.totalCost.toFixed(2)} will be charged to this card.`
+                      : 'No payment will be collected now. Your card will be charged later.'
+                    }
+                  </p>
                 </div>
-                <p className="text-sm text-gray-600 mt-4">
-                  {isUrgentBooking 
-                    ? `£${data.totalCost.toFixed(2)} will be charged to this card.`
-                    : 'No payment will be collected now. Your card will be charged later.'
-                  }
+                <p className="text-sm text-gray-500 text-center">
+                  or add a different card during checkout
                 </p>
               </div>
             ) : (
               // No saved payment method - will redirect to Stripe
               <div className="rounded-2xl border-2 border-gray-200 bg-white p-6">
+                <div className="flex items-center gap-3 mb-3">
+                  <CreditCard className="h-6 w-6 text-[#185166]" />
+                  <p className="font-medium text-gray-900">Add Payment Method</p>
+                </div>
                 <p className="text-base text-gray-600">
                   {isUrgentBooking 
                     ? `Payment of £${data.totalCost.toFixed(2)} will be collected securely through Stripe.`
@@ -582,12 +609,12 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
             </>
           ) : adminTestMode ? (
             'Create Test Booking (No Payment)'
-          ) : user && defaultPaymentMethod && isUrgentBooking ? (
+          ) : customerId && defaultPaymentMethod && isUrgentBooking ? (
             `Pay £${data.totalCost.toFixed(2)} & Confirm`
-          ) : user && defaultPaymentMethod ? (
+          ) : customerId && defaultPaymentMethod ? (
             'Complete Booking'
           ) : (
-            'Continue to Payment'
+            'Continue to Secure Payment'
           )}
         </Button>
       </div>
