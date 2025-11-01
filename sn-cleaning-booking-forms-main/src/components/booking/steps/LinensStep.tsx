@@ -271,56 +271,55 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
       {/* Extra Hours for Linen Handling */}
       {(data.linensHandling === 'wash-hang' || data.linensHandling === 'wash-dry' || data.needsIroning) && (
         <div>
-          <div className="bg-muted/10 border border-border rounded-lg p-4">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div className="flex-1">
-                <h4 className="text-base font-medium text-foreground mb-2">Recommended Extra Time</h4>
-                <p className="text-sm text-muted-foreground">
-                  {data.needsIroning 
-                    ? 'We recommend 1.5 hours total for washing and ironing linens.'
-                    : (data.linensHandling === 'wash-hang' || data.linensHandling === 'wash-dry')
-                    ? 'We recommend 30 minutes extra for washing linens.'
-                    : ''
-                  } You can adjust based on your needs.
-                </p>
-              </div>
+          <div className="bg-muted/10 border border-border rounded-lg p-4 space-y-3">
+            {/* Title and controls on same line */}
+            <div className="flex items-center justify-between gap-4">
+              <h4 className="text-base font-medium text-foreground">Recommended Extra Time</h4>
               
-              <div className="w-full flex justify-center lg:justify-end lg:ml-6">
-                <div className="flex items-center bg-card border border-border rounded-2xl p-2 w-full max-w-xs">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-10 w-10 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
-                    onClick={() => {
-                      const newHours = roundToNearestHalf(Math.max((data.extraHours || 0) - 0.5, 0));
-                      onUpdate({ extraHours: newHours });
-                    }}
-                    disabled={(data.extraHours || 0) <= 0}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <div className="flex-1 text-center mx-4">
-                    <div className="text-xl font-bold text-foreground">
-                      {(data.extraHours || 0) % 1 === 0 
-                        ? (data.extraHours || 0).toString() 
-                        : (data.extraHours || 0).toFixed(1)} hours
-                    </div>
+              <div className="flex items-center bg-card border border-border rounded-2xl p-2 min-w-[200px]">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-10 w-10 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
+                  onClick={() => {
+                    const newHours = roundToNearestHalf(Math.max((data.extraHours || 0) - 0.5, 0));
+                    onUpdate({ extraHours: newHours });
+                  }}
+                  disabled={(data.extraHours || 0) <= 0}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <div className="flex-1 text-center mx-4">
+                  <div className="text-xl font-bold text-foreground">
+                    {(data.extraHours || 0) % 1 === 0 
+                      ? (data.extraHours || 0).toString() 
+                      : (data.extraHours || 0).toFixed(1)} hours
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-10 w-10 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
-                    onClick={() => {
-                      const newHours = roundToNearestHalf((data.extraHours || 0) + 0.5);
-                      onUpdate({ extraHours: newHours });
-                    }}
-                    disabled={(data.extraHours || 0) >= 5}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-10 w-10 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
+                  onClick={() => {
+                    const newHours = roundToNearestHalf((data.extraHours || 0) + 0.5);
+                    onUpdate({ extraHours: newHours });
+                  }}
+                  disabled={(data.extraHours || 0) >= 5}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
               </div>
             </div>
+            
+            {/* Additional info below */}
+            <p className="text-sm text-muted-foreground">
+              {data.needsIroning 
+                ? 'We recommend 1.5 hours total for washing and ironing linens.'
+                : (data.linensHandling === 'wash-hang' || data.linensHandling === 'wash-dry')
+                ? 'We recommend 30 minutes extra for washing linens.'
+                : ''
+              } You can adjust based on your needs.
+            </p>
           </div>
         </div>
       )}

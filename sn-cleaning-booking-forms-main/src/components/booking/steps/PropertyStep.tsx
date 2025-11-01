@@ -14,17 +14,21 @@ interface PropertyStepProps {
 
 const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) => {
   // Fetch all dynamic configurations from database
-  const { data: propertyTypeConfigs = [] } = useAirbnbFieldConfigs('Property Type', true);
-  const { data: bedroomConfigs = [] } = useAirbnbFieldConfigs('Bedrooms', true);
-  const { data: bathroomConfigs = [] } = useAirbnbFieldConfigs('Bathrooms', true);
-  const { data: additionalRoomsConfigs = [] } = useAirbnbFieldConfigs('Additional Rooms', true);
-  const { data: propertyFeatureConfigs = [] } = useAirbnbFieldConfigs('Property Features', true);
-  const { data: serviceTypeConfigs = [] } = useAirbnbFieldConfigs('Service Type', true);
-  const { data: cleaningHistoryConfigs = [] } = useAirbnbFieldConfigs('Cleaning History', true);
-  const { data: ovenCleaningConfigs = [] } = useAirbnbFieldConfigs('Oven Cleaning', true);
-  const { data: ovenTypeConfigs = [] } = useAirbnbFieldConfigs('Oven Type', true);
-  const { data: cleaningSuppliesConfigs = [] } = useAirbnbFieldConfigs('Cleaning Supplies', true);
-  const { data: equipmentArrangementConfigs = [] } = useAirbnbFieldConfigs('Equipment Arrangement', true);
+  const { data: propertyTypeConfigs = [], isLoading: isLoadingPropertyTypes } = useAirbnbFieldConfigs('Property Type', true);
+  const { data: bedroomConfigs = [], isLoading: isLoadingBedrooms } = useAirbnbFieldConfigs('Bedrooms', true);
+  const { data: bathroomConfigs = [], isLoading: isLoadingBathrooms } = useAirbnbFieldConfigs('Bathrooms', true);
+  const { data: additionalRoomsConfigs = [], isLoading: isLoadingAdditionalRooms } = useAirbnbFieldConfigs('Additional Rooms', true);
+  const { data: propertyFeatureConfigs = [], isLoading: isLoadingFeatures } = useAirbnbFieldConfigs('Property Features', true);
+  const { data: serviceTypeConfigs = [], isLoading: isLoadingServiceTypes } = useAirbnbFieldConfigs('Service Type', true);
+  const { data: cleaningHistoryConfigs = [], isLoading: isLoadingHistory } = useAirbnbFieldConfigs('Cleaning History', true);
+  const { data: ovenCleaningConfigs = [], isLoading: isLoadingOvenCleaning } = useAirbnbFieldConfigs('Oven Cleaning', true);
+  const { data: ovenTypeConfigs = [], isLoading: isLoadingOvenTypes } = useAirbnbFieldConfigs('Oven Type', true);
+  const { data: cleaningSuppliesConfigs = [], isLoading: isLoadingSupplies } = useAirbnbFieldConfigs('Cleaning Supplies', true);
+  const { data: equipmentArrangementConfigs = [], isLoading: isLoadingEquipment } = useAirbnbFieldConfigs('Equipment Arrangement', true);
+
+  const isLoadingConfigs = isLoadingPropertyTypes || isLoadingBedrooms || isLoadingBathrooms || 
+    isLoadingAdditionalRooms || isLoadingFeatures || isLoadingServiceTypes || isLoadingHistory || 
+    isLoadingOvenCleaning || isLoadingOvenTypes || isLoadingSupplies || isLoadingEquipment;
 
   // Helper function to render icon (Lucide or emoji)
   const renderIcon = (iconName: string | null, className: string = "h-6 w-6") => {
@@ -179,6 +183,17 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
   return (
     <div className="space-y-6">
+      {isLoadingConfigs && (
+        <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-muted rounded w-1/3"></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="h-16 bg-muted rounded-2xl"></div>
+              <div className="h-16 bg-muted rounded-2xl"></div>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="relative z-10 p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
         <h2 className="text-2xl font-bold text-[#185166] mb-4">
           Property Details
