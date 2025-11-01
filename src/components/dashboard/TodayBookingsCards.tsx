@@ -359,7 +359,7 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
 
               {/* Customer Name */}
               <div className="py-4">
-                <h3 className="text-lg font-bold text-foreground leading-tight lowercase">
+                <h3 className="text-lg font-bold text-foreground leading-tight">
                   {booking.first_name} {booking.last_name}
                 </h3>
                 <div className="flex items-center gap-2 mt-2">
@@ -549,7 +549,7 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
                   
                   {/* Customer Name */}
                   <div>
-                    <h3 className="text-base font-bold text-foreground lowercase">
+                    <h3 className="text-base font-bold text-foreground">
                       {booking.first_name} {booking.last_name}
                     </h3>
                     <div className="flex items-center gap-2 mt-1">
