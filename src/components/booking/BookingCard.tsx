@@ -81,14 +81,19 @@ const BookingCard = <T extends BaseBooking>({
           : 'border-border/60 bg-white hover:shadow-primary/5'
     }`}>
       
-      {/* Header with Cleaning Type and Cost */}
+      {/* Header with Service Type, Cleaning Type and Cost */}
       <div className="flex items-start justify-between mb-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <h3 className="text-xl font-bold text-[#185166] tracking-tight">
-              {booking.cleaning_type ? getServiceTypeLabel(booking.cleaning_type) : getServiceTypeLabel(booking.service_type)}
+              {getServiceTypeLabel(booking.service_type)}
             </h3>
           </div>
+          {booking.cleaning_type && (
+            <p className="text-sm text-gray-600 font-medium">
+              {getServiceTypeLabel(booking.cleaning_type)}
+            </p>
+          )}
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-500 font-medium">Booking #{booking.id}</span>
             {booking.same_day && (

@@ -222,16 +222,6 @@ useEffect(() => {
             if (chargeError || !chargeResult?.success) {
               throw new Error(chargeResult?.error || 'Payment failed');
             }
-
-            toast({
-              title: "Payment Successful",
-              description: `£${data.totalCost.toFixed(2)} has been charged.`
-            });
-          } else {
-            toast({
-              title: "Card Added",
-              description: "Your payment method has been saved successfully."
-            });
           }
 
           // Navigate to confirmation
@@ -443,16 +433,6 @@ useEffect(() => {
           if (chargeError || !chargeResult?.success) {
             throw new Error(chargeResult?.error || 'Payment failed');
           }
-
-          toast({
-            title: "Payment Successful",
-            description: `£${data.totalCost.toFixed(2)} has been charged.`
-          });
-        } else {
-          toast({
-            title: "Booking Confirmed",
-            description: "Your booking has been confirmed. Payment will be processed later."
-          });
         }
 
         navigate('/booking-confirmation', { state: { bookingId: result.bookingId } });
@@ -549,11 +529,6 @@ useEffect(() => {
             console.error('[PaymentStep] Payment charge failed:', { chargeError, chargeResult });
             throw new Error(chargeResult?.error || 'Payment failed');
           }
-
-          toast({
-            title: "Payment Successful",
-            description: `£${data.totalCost.toFixed(2)} has been charged.`
-          });
         }
 
         console.log('[PaymentStep] Navigating to confirmation...');
@@ -987,7 +962,7 @@ useEffect(() => {
                     <p className="text-sm text-gray-700">
                       {isUrgentBooking 
                         ? `💳 £${data.totalCost.toFixed(2)} will be charged to the saved card immediately.`
-                        : '✅ Your card is saved. Payment will be processed 3 days before the cleaning date.'
+                        : '✅ Your card is saved. Payment hold will be placed 24 hours before service and charged after completion.'
                       }
                     </p>
                   </div>
