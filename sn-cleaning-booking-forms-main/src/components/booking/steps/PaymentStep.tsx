@@ -551,7 +551,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack, isAdm
         </div>
       )}
 
-      {/* ADMIN MODE: Customer & Address Selection */}
+      {/* ADMIN MODE: Customer Selection */}
       {isAdminMode && (
         <div className="space-y-6">
           <h3 className="text-2xl font-bold text-[#185166] mb-4">
@@ -573,238 +573,242 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack, isAdm
                 onUpdate({ 
                   customerId: undefined,
                   selectedCustomer: undefined,
+                  firstName: '',
+                  lastName: '',
+                  email: '',
+                  phone: '',
                   addressId: undefined,
                   selectedAddress: undefined
                 });
               }
             }}
           />
-          
-          {data.customerId && (
-            <>
-              <h3 className="text-2xl font-bold text-[#185166] mt-8 mb-4">
-                Select Address
-              </h3>
-              
-              <AddressSelector 
-                customerId={data.customerId}
-                onAddressSelect={(address) => {
-                  if (address) {
-                    onUpdate({ 
-                      addressId: address.id,
-                      selectedAddress: address,
-                      street: address.address,
-                      postcode: address.postcode,
-                      houseNumber: '',
-                      city: ''
-                    });
-                  } else {
-                    onUpdate({ 
-                      addressId: undefined,
-                      selectedAddress: undefined 
-                    });
-                  }
-                }}
-              />
-            </>
-          )}
-          
-          {data.customerId && !checkingPaymentMethods && !hasPaymentMethods && (
-            <>
-              <h3 className="text-2xl font-bold text-[#185166] mt-8 mb-4">
-                Payment Method
-              </h3>
-              
-              <div className="space-y-4">
-                <Label>Select Payment Method</Label>
-                <Select
-                  value={data.paymentMethod || ''}
-                  onValueChange={(value) => onUpdate({ paymentMethod: value })}
-                >
-                  <SelectTrigger className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white">
-                    <SelectValue placeholder="Choose payment method..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {companyPaymentMethods.map((method) => (
-                      <SelectItem key={method} value={method}>
-                        {method}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                
-                <p className="text-sm text-gray-600">
-                  No saved payment methods found. Please select payment method.
-                </p>
-              </div>
-            </>
-          )}
-          
-          {data.customerId && !checkingPaymentMethods && hasPaymentMethods && (
-            <div className="rounded-2xl border-2 border-green-200 bg-green-50 p-6 mt-6">
-              <div className="flex items-center gap-3">
-                <Shield className="h-6 w-6 text-green-600 flex-shrink-0" />
-                <div>
-                  <h4 className="font-bold text-green-900">Saved Payment Method</h4>
-                  <p className="text-sm text-green-700">
-                    Customer has saved payment methods in Stripe
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
-      {/* Your Details Section */}
-      <div className="space-y-6">
-        {isAdminMode && data.customerId ? (
-          // Admin mode with customer selected - show read-only fields
-          <>
-            <h3 className="text-2xl font-bold text-[#185166] mb-4">
-              Customer Details
-            </h3>
-            <div className="grid grid-cols-2 gap-4 opacity-60 pointer-events-none">
-              <Input
-                placeholder="First Name"
-                value={data.firstName || ''}
-                readOnly
-                className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-gray-50 px-6 font-medium"
-              />
-              <Input
-                placeholder="Last Name"
-                value={data.lastName || ''}
-                readOnly
-                className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-gray-50 px-6 font-medium"
-              />
-            </div>
+      {/* Customer Details - Always show if not guest, editable after selection */}
+      {(isAdminMode || user) && (
+        <div className="space-y-6">
+          <h3 className="text-2xl font-bold text-[#185166] mb-4">
+            {isAdminMode ? 'Customer Details' : 'Your Details'}
+          </h3>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              placeholder="First Name"
+              value={data.firstName || ''}
+              onChange={(e) => onUpdate({ firstName: e.target.value })}
+              className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
+            />
+            <Input
+              placeholder="Last Name"
+              value={data.lastName || ''}
+              onChange={(e) => onUpdate({ lastName: e.target.value })}
+              className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
+            />
+          </div>
+          
+          <div>
             <Input
               type="email"
               placeholder="Email Address"
               value={data.email || ''}
-              readOnly
-              className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-gray-50 px-6 font-medium"
+              onChange={(e) => {
+                onUpdate({ email: e.target.value });
+                setEmailError('');
+              }}
+              onBlur={(e) => validateEmail(e.target.value)}
+              className={`h-16 text-lg rounded-2xl border-2 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400 ${emailError ? 'border-red-500' : 'border-gray-200'}`}
             />
+            {emailError && (
+              <p className="text-xs text-red-600 font-medium mt-1">{emailError}</p>
+            )}
+          </div>
+          
+          <div>
             <PhoneInput
               value={data.phone || ''}
-              onChange={() => {}}
+              onChange={(value) => {
+                onUpdate({ phone: value });
+                setPhoneError('');
+              }}
               placeholder="Phone number"
-              className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-gray-50 px-6 font-medium opacity-60 pointer-events-none"
+              className={`h-16 text-lg rounded-2xl border-2 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400 ${phoneError ? 'border-red-500' : 'border-gray-200'}`}
             />
-          </>
-        ) : (
-          // Normal mode or guest mode - editable fields
-          <>
-            <h3 className="text-2xl font-bold text-[#185166] mb-4">
-              Your Details
-            </h3>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                placeholder="First Name"
-                value={data.firstName || ''}
-                onChange={(e) => onUpdate({ firstName: e.target.value })}
-                className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
-              />
-              <Input
-                placeholder="Last Name"
-                value={data.lastName || ''}
-                onChange={(e) => onUpdate({ lastName: e.target.value })}
-                className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
-              />
-            </div>
-            
-            <div>
-              <Input
-                type="email"
-                placeholder="Email Address"
-                value={data.email || ''}
-                onChange={(e) => {
-                  onUpdate({ email: e.target.value });
-                  setEmailError('');
-                }}
-                onBlur={(e) => validateEmail(e.target.value)}
-                className={`h-16 text-lg rounded-2xl border-2 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400 ${emailError ? 'border-red-500' : 'border-gray-200'}`}
-              />
-              {emailError && (
-                <p className="text-xs text-red-600 font-medium mt-1">{emailError}</p>
-              )}
-            </div>
-            
-            <div>
-              <PhoneInput
-                value={data.phone || ''}
-                onChange={(value) => {
-                  onUpdate({ phone: value });
-                  setPhoneError('');
-                }}
-                placeholder="Phone number"
-                className={`h-16 text-lg rounded-2xl border-2 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400 ${phoneError ? 'border-red-500' : 'border-gray-200'}`}
-              />
-              {phoneError && (
-                <p className="text-xs text-red-600 font-medium mt-1">{phoneError}</p>
-              )}
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Booking Address Section */}
-      {isAdminMode && data.addressId ? (
-        // Admin mode with address selected - show read-only
-        <div className="space-y-6">
-          <h3 className="text-2xl font-bold text-[#185166] mb-4">
-            Selected Address
-          </h3>
-          <div className="opacity-60 pointer-events-none space-y-4">
-            <Input
-              placeholder="Street Address"
-              value={data.street || ''}
-              readOnly
-              className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-gray-50 px-6 font-medium"
-            />
-            <Input
-              placeholder="Postcode"
-              value={data.postcode || ''}
-              readOnly
-              className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-gray-50 px-6 font-medium"
-            />
+            {phoneError && (
+              <p className="text-xs text-red-600 font-medium mt-1">{phoneError}</p>
+            )}
           </div>
         </div>
-      ) : (
-        // Normal editing mode
+      )}
+      
+      {/* Guest Mode - show customer details */}
+      {!isAdminMode && !user && (
         <div className="space-y-6">
           <h3 className="text-2xl font-bold text-[#185166] mb-4">
-            Booking Address
+            Your Details
           </h3>
-          
-          <Input
-            placeholder="Street Address"
-            value={data.street || ''}
-            onChange={(e) => onUpdate({ street: e.target.value })}
-            className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
-          />
           
           <div className="grid grid-cols-2 gap-4">
             <Input
-              placeholder="Postcode"
-              value={data.postcode || ''}
-              onChange={(e) => onUpdate({ postcode: e.target.value })}
+              placeholder="First Name"
+              value={data.firstName || ''}
+              onChange={(e) => onUpdate({ firstName: e.target.value })}
               className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
             />
-            
             <Input
-              placeholder="City"
-              value={data.city || ''}
-              onChange={(e) => onUpdate({ city: e.target.value })}
+              placeholder="Last Name"
+              value={data.lastName || ''}
+              onChange={(e) => onUpdate({ lastName: e.target.value })}
               className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
             />
+          </div>
+          
+          <div>
+            <Input
+              type="email"
+              placeholder="Email Address"
+              value={data.email || ''}
+              onChange={(e) => {
+                onUpdate({ email: e.target.value });
+                setEmailError('');
+              }}
+              onBlur={(e) => validateEmail(e.target.value)}
+              className={`h-16 text-lg rounded-2xl border-2 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400 ${emailError ? 'border-red-500' : 'border-gray-200'}`}
+            />
+            {emailError && (
+              <p className="text-xs text-red-600 font-medium mt-1">{emailError}</p>
+            )}
+          </div>
+          
+          <div>
+            <PhoneInput
+              value={data.phone || ''}
+              onChange={(value) => {
+                onUpdate({ phone: value });
+                setPhoneError('');
+              }}
+              placeholder="Phone number"
+              className={`h-16 text-lg rounded-2xl border-2 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400 ${phoneError ? 'border-red-500' : 'border-gray-200'}`}
+            />
+            {phoneError && (
+              <p className="text-xs text-red-600 font-medium mt-1">{phoneError}</p>
+            )}
           </div>
         </div>
       )}
 
-      {/* Payment Method Section - Skip in admin test mode */}
-      {!adminTestMode && (
+      {/* ADMIN MODE: Address Selection */}
+      {isAdminMode && data.customerId && (
+        <div className="space-y-6">
+          <h3 className="text-2xl font-bold text-[#185166] mb-4">
+            Select Address
+          </h3>
+          
+          <AddressSelector 
+            customerId={data.customerId}
+            onAddressSelect={(address) => {
+              if (address) {
+                onUpdate({ 
+                  addressId: address.id,
+                  selectedAddress: address,
+                  street: address.address,
+                  postcode: address.postcode,
+                  houseNumber: '',
+                  city: ''
+                });
+              } else {
+                onUpdate({ 
+                  addressId: undefined,
+                  selectedAddress: undefined,
+                  street: '',
+                  postcode: '',
+                  city: ''
+                });
+              }
+            }}
+          />
+        </div>
+      )}
+
+      {/* Booking Address - Always show, editable */}
+      <div className="space-y-6">
+        <h3 className="text-2xl font-bold text-[#185166] mb-4">
+          Booking Address
+        </h3>
+        
+        <Input
+          placeholder="Street Address"
+          value={data.street || ''}
+          onChange={(e) => onUpdate({ street: e.target.value })}
+          className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
+        />
+        
+        <div className="grid grid-cols-2 gap-4">
+          <Input
+            placeholder="Postcode"
+            value={data.postcode || ''}
+            onChange={(e) => onUpdate({ postcode: e.target.value })}
+            className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
+          />
+          
+          <Input
+            placeholder="City"
+            value={data.city || ''}
+            onChange={(e) => onUpdate({ city: e.target.value })}
+            className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
+          />
+        </div>
+      </div>
+
+      {/* ADMIN MODE: Payment Method Selection (only if no Stripe) */}
+      {isAdminMode && data.customerId && !checkingPaymentMethods && !hasPaymentMethods && (
+        <div className="space-y-6">
+          <h3 className="text-2xl font-bold text-[#185166] mb-4">
+            Payment Method
+          </h3>
+          
+          <div className="space-y-4">
+            <Select
+              value={data.paymentMethod || ''}
+              onValueChange={(value) => onUpdate({ paymentMethod: value })}
+            >
+              <SelectTrigger className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white">
+                <SelectValue placeholder="Choose payment method..." />
+              </SelectTrigger>
+              <SelectContent className="bg-white z-50">
+                {companyPaymentMethods.map((method) => (
+                  <SelectItem key={method} value={method}>
+                    {method}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <p className="text-sm text-gray-600">
+              Customer has no saved payment methods. Please select payment method.
+            </p>
+          </div>
+        </div>
+      )}
+      
+      {/* ADMIN MODE: Show Stripe card info (if exists) */}
+      {isAdminMode && data.customerId && !checkingPaymentMethods && hasPaymentMethods && (
+        <div className="rounded-2xl border-2 border-green-200 bg-green-50 p-6">
+          <div className="flex items-center gap-3">
+            <Shield className="h-6 w-6 text-green-600 flex-shrink-0" />
+            <div>
+              <h4 className="font-bold text-green-900">Saved Payment Method</h4>
+              <p className="text-sm text-green-700">
+                Customer has saved payment methods in Stripe. Payment will be processed automatically.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Method Section - For logged-in customers and guests (skip in admin test mode) */}
+      {!adminTestMode && !isAdminMode && (
         <div className="space-y-6">
           <h3 className="text-2xl font-bold text-[#185166] mb-4">
             Payment Details
