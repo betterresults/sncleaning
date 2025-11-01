@@ -140,11 +140,6 @@ const Auth = () => {
         });
 
         if (error) throw error;
-
-        toast({
-          title: 'Success',
-          description: 'Logged in successfully!',
-        });
       } else {
         // SECURITY: Public signups can ONLY create guest accounts (customers)
         // Admin accounts can ONLY be created by existing admins through the admin panel
