@@ -45,6 +45,7 @@ interface Booking {
   linen_management?: boolean;
   additional_details?: string;
   frequently?: string;
+  booking_status?: string;
   cleaners?: {
     id: number;
     first_name: string;
@@ -68,6 +69,11 @@ interface Filters {
   dateFrom: string;
   dateTo: string;
   cleanerId: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  serviceType: string;
+  cleaningType: string;
+  bookingStatus: string;
 }
 
 interface TodayBookingsCardsProps {
@@ -89,6 +95,11 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
     dateFrom: '',
     dateTo: '',
     cleanerId: 'all',
+    paymentMethod: 'all',
+    paymentStatus: 'all',
+    serviceType: 'all',
+    cleaningType: 'all',
+    bookingStatus: 'all'
   });
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<Booking | null>(null);
@@ -213,6 +224,41 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
     if (filters.cleanerId && filters.cleanerId !== 'all') {
       filtered = filtered.filter(booking => 
         booking.cleaner === parseInt(filters.cleanerId)
+      );
+    }
+
+    // Apply payment method filter
+    if (filters.paymentMethod && filters.paymentMethod !== 'all') {
+      filtered = filtered.filter(booking => 
+        booking.payment_method === filters.paymentMethod
+      );
+    }
+
+    // Apply payment status filter
+    if (filters.paymentStatus && filters.paymentStatus !== 'all') {
+      filtered = filtered.filter(booking => 
+        booking.payment_status === filters.paymentStatus
+      );
+    }
+
+    // Apply service type filter
+    if (filters.serviceType && filters.serviceType !== 'all') {
+      filtered = filtered.filter(booking => 
+        booking.service_type === filters.serviceType
+      );
+    }
+
+    // Apply cleaning type filter
+    if (filters.cleaningType && filters.cleaningType !== 'all') {
+      filtered = filtered.filter(booking => 
+        booking.cleaning_type === filters.cleaningType
+      );
+    }
+
+    // Apply booking status filter
+    if (filters.bookingStatus && filters.bookingStatus !== 'all') {
+      filtered = filtered.filter(booking => 
+        booking.booking_status === filters.bookingStatus
       );
     }
 

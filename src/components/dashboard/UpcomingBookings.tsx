@@ -84,6 +84,11 @@ interface Filters {
   dateFrom: string;
   dateTo: string;
   cleanerId: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  serviceType: string;
+  cleaningType: string;
+  bookingStatus: string;
 }
 
 interface UpcomingBookingsProps {
@@ -109,6 +114,11 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
     dateFrom: '',
     dateTo: '',
     cleanerId: 'all',
+    paymentMethod: 'all',
+    paymentStatus: 'all',
+    serviceType: 'all',
+    cleaningType: 'all',
+    bookingStatus: 'all'
   });
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<Booking | null>(null);
@@ -262,6 +272,11 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
       dateFrom: '',
       dateTo: '',
       cleanerId: 'all',
+      paymentMethod: 'all',
+      paymentStatus: 'all',
+      serviceType: 'all',
+      cleaningType: 'all',
+      bookingStatus: 'all'
     });
   };
 
