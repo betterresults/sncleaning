@@ -229,9 +229,32 @@ export const useAirbnbBookingSubmit = () => {
       }
 
       // Step 2: Create booking
-      const bookingDateTime = bookingData.selectedDate 
-        ? new Date(`${bookingData.selectedDate.toISOString().split('T')[0]}T${bookingData.selectedTime}:00`)
-        : null;
+      let bookingDateTime = null;
+      if (bookingData.selectedDate && bookingData.selectedTime) {
+        try {
+          // Handle both Date objects and string dates
+          const dateObj = bookingData.selectedDate instanceof Date 
+            ? bookingData.selectedDate 
+            : new Date(bookingData.selectedDate);
+          
+          // Validate the date
+          if (!isNaN(dateObj.getTime())) {
+            const dateStr = dateObj.toISOString().split('T')[0];
+            bookingDateTime = new Date(`${dateStr}T${bookingData.selectedTime}:00`);
+            
+            // Validate the final datetime
+            if (isNaN(bookingDateTime.getTime())) {
+              console.error('Invalid datetime created:', { dateStr, time: bookingData.selectedTime });
+              bookingDateTime = null;
+            }
+          } else {
+            console.error('Invalid date object:', bookingData.selectedDate);
+          }
+        } catch (error) {
+          console.error('Error creating booking datetime:', error);
+          bookingDateTime = null;
+        }
+      }
 
       const totalHours = (bookingData.totalHours || bookingData.estimatedHours || 0) + 
                          (bookingData.extraHours || 0) + 
