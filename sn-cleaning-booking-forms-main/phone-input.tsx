@@ -52,11 +52,15 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
     onChange(formatted);
   };
 
-  const handleFocus = () => {
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     if (!displayValue) {
       const starter = '+44';
       setDisplayValue(starter);
       onChange(starter);
+      // Position cursor at the end
+      setTimeout(() => {
+        e.target.setSelectionRange(starter.length, starter.length);
+      }, 0);
     }
   };
 

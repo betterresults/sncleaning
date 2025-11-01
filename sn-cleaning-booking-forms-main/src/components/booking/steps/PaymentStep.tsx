@@ -1,13 +1,15 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { BookingData } from '../BookingForm';
 import { CreditCard, Shield, Loader2, AlertTriangle } from 'lucide-react';
 import { useAirbnbBookingSubmit } from '@/hooks/useAirbnbBookingSubmit';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { z } from 'zod';
 
 // Validation schemas
@@ -21,10 +23,10 @@ interface PaymentStepProps {
 }
 
 const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => {
-  const stripe = useStripe();
-  const elements = useElements();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { paymentMethods, loading: loadingPaymentMethods } = usePaymentMethods();
   const { submitBooking, loading: submitting } = useAirbnbBookingSubmit();
   const [processing, setProcessing] = useState(false);
   const [searchParams] = useSearchParams();
@@ -33,6 +35,9 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
   
   // Admin testing mode - skip payment if URL has ?adminTest=true
   const adminTestMode = searchParams.get('adminTest') === 'true';
+
+  // Get default payment method if available
+  const defaultPaymentMethod = paymentMethods.find(pm => pm.is_default) || paymentMethods[0];
 
   // Calculate if booking is urgent (within 72 hours)
   const isUrgentBooking = useMemo(() => {
@@ -72,6 +77,69 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
     setPhoneError('');
     return true;
   };
+
+  // Handle return from Stripe Checkout
+  useEffect(() => {
+    const paymentSetup = searchParams.get('payment_setup');
+    const bookingId = searchParams.get('bookingId');
+    const urgent = searchParams.get('urgent');
+
+    if (paymentSetup === 'success' && bookingId) {
+      const handlePaymentReturn = async () => {
+        try {
+          setProcessing(true);
+
+          // If urgent booking, charge immediately
+          if (urgent === '1') {
+            const { data: chargeResult, error: chargeError } = await supabase.functions.invoke(
+              'system-payment-action',
+              {
+                body: {
+                  bookingId: parseInt(bookingId),
+                  action: 'charge'
+                }
+              }
+            );
+
+            if (chargeError || !chargeResult?.success) {
+              throw new Error(chargeResult?.error || 'Payment failed');
+            }
+
+            toast({
+              title: "Payment Successful",
+              description: `£${data.totalCost.toFixed(2)} has been charged.`
+            });
+          } else {
+            toast({
+              title: "Card Added",
+              description: "Your payment method has been saved successfully."
+            });
+          }
+
+          // Navigate to confirmation
+          navigate(`/booking-confirmation?bookingId=${bookingId}`, { replace: true });
+        } catch (error: any) {
+          console.error('Payment return error:', error);
+          toast({
+            title: "Payment Error",
+            description: error.message || "Failed to process payment",
+            variant: "destructive"
+          });
+          setProcessing(false);
+        }
+      };
+
+      handlePaymentReturn();
+    } else if (paymentSetup === 'cancelled') {
+      toast({
+        title: "Payment Cancelled",
+        description: "You cancelled the payment setup. Please try again.",
+        variant: "destructive"
+      });
+      // Clear the URL params
+      navigate(window.location.pathname, { replace: true });
+    }
+  }, [searchParams]);
 
   const handleSubmit = async () => {
     // Validate before submission
@@ -175,50 +243,20 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
       }
     }
 
-    // Normal payment flow
-    if (!stripe || !elements) {
-      return;
-    }
-
+    // Normal payment flow - use existing payment system
     try {
       setProcessing(true);
 
-      // Create new payment method from CardElement
-      const cardElement = elements.getElement(CardElement);
-      if (!cardElement) {
-        throw new Error('Card element not found');
-      }
-
-      const { error, paymentMethod } = await stripe.createPaymentMethod({
-        type: 'card',
-        card: cardElement,
-        billing_details: {
-          name: `${data.firstName} ${data.lastName}`,
-          email: data.email,
-        },
-      });
-
-      if (error || !paymentMethod) {
-        throw new Error(error?.message || 'Failed to create payment method');
-      }
-
-      const paymentMethodId = paymentMethod.id;
-
-      // Submit booking with skipPaymentAuth=true
-      const result = await submitBooking({
-        // Customer details
+      // Prepare booking data
+      const bookingPayload = {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
         phone: data.phone,
-        
-        // Property address
         houseNumber: data.houseNumber,
         street: data.street,
         postcode: data.postcode,
         city: data.city,
-        
-        // Property details
         propertyType: data.propertyType,
         bedrooms: data.bedrooms,
         bathrooms: data.bathrooms,
@@ -226,8 +264,6 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
         numberOfFloors: data.numberOfFloors,
         additionalRooms: data.additionalRooms,
         propertyFeatures: data.propertyFeatures,
-        
-        // Service details
         serviceType: data.serviceType,
         alreadyCleaned: data.alreadyCleaned,
         needsOvenCleaning: data.needsOvenCleaning,
@@ -235,87 +271,96 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
         cleaningProducts: data.cleaningProducts,
         equipmentArrangement: data.equipmentArrangement,
         equipmentStorageConfirmed: data.equipmentStorageConfirmed,
-        
-        // Linens
         linensHandling: data.linensHandling,
         needsIroning: data.needsIroning,
         ironingHours: data.ironingHours,
         linenPackages: data.linenPackages,
         extraHours: data.extraHours,
-        
-        // Schedule
         selectedDate: data.selectedDate,
         selectedTime: data.selectedTime,
         flexibility: data.flexibility,
         sameDayTurnaround: data.sameDayTurnaround,
         shortNoticeCharge: data.shortNoticeCharge,
-        
-        // Access
         propertyAccess: data.propertyAccess,
         accessNotes: data.accessNotes,
-        
-        // Costs
         totalCost: data.totalCost,
         estimatedHours: data.estimatedHours,
         totalHours: data.totalHours,
         hourlyRate: data.hourlyRate,
-        
-        // Notes
         notes: data.notes,
         additionalDetails: data
-      }, true);
+      };
 
-      if (!result.success || !result.customerId || !result.bookingId) {
-        throw new Error('Failed to create booking');
-      }
+      // If user has saved payment method
+      if (user && defaultPaymentMethod) {
+        // Submit booking first
+        const result = await submitBooking(bookingPayload, true);
 
-      // Step 1: Verify payment method and attach to customer
-      const verifyAmountInPence = isUrgentBooking ? 0 : 100;
-      const { data: verifyResult, error: verifyError } = await supabase.functions.invoke(
-        'stripe-verify-payment-method',
-        {
-          body: {
-            customerId: result.customerId,
-            paymentMethodId,
-            verifyAmountInPence,
-            totalAmountInPence: Math.round(data.totalCost * 100)
-          }
+        if (!result.success || !result.bookingId) {
+          throw new Error('Failed to create booking');
         }
-      );
 
-      if (verifyError || !verifyResult?.success) {
-        throw new Error(verifyResult?.error || 'Card verification failed');
-      }
+        // For urgent bookings, charge immediately
+        if (isUrgentBooking) {
+          const { data: chargeResult, error: chargeError } = await supabase.functions.invoke(
+            'system-payment-action',
+            {
+              body: {
+                bookingId: result.bookingId,
+                action: 'charge'
+              }
+            }
+          );
 
-      // Step 2: For urgent bookings, charge immediately
-      if (isUrgentBooking) {
-        const { data: chargeResult, error: chargeError } = await supabase.functions.invoke(
-          'system-payment-action',
+          if (chargeError || !chargeResult?.success) {
+            throw new Error(chargeResult?.error || 'Payment failed');
+          }
+
+          toast({
+            title: "Payment Successful",
+            description: `£${data.totalCost.toFixed(2)} has been charged.`
+          });
+        } else {
+          toast({
+            title: "Booking Confirmed",
+            description: "Your booking has been confirmed. Payment will be processed later."
+          });
+        }
+
+        navigate('/booking-confirmation', { state: { bookingId: result.bookingId } });
+      } else {
+        // No saved payment method - submit booking first, then redirect to Stripe
+        const result = await submitBooking(bookingPayload, true);
+
+        if (!result.success || !result.customerId || !result.bookingId) {
+          throw new Error('Failed to create booking');
+        }
+
+        // Call stripe-collect-payment-method
+        const returnUrl = `${window.location.origin}/airbnb?payment_setup=success&bookingId=${result.bookingId}&urgent=${isUrgentBooking ? '1' : '0'}`;
+        const cancelUrl = `${window.location.origin}/airbnb?payment_setup=cancelled`;
+
+        const { data: collectResult, error: collectError } = await supabase.functions.invoke(
+          'stripe-collect-payment-method',
           {
             body: {
-              bookingId: result.bookingId,
-              action: 'charge',
-              paymentMethodId
+              customer_id: result.customerId,
+              customer_email: data.email,
+              customer_name: `${data.firstName} ${data.lastName}`,
+              return_url: returnUrl,
+              cancel_url: cancelUrl,
+              collect_only: true
             }
           }
         );
 
-        if (chargeError || !chargeResult?.success) {
-          throw new Error(chargeResult?.error || 'Payment failed');
+        if (collectError || !collectResult?.checkout_url) {
+          throw new Error(collectResult?.error || 'Failed to setup payment');
         }
 
-        toast({
-          title: "Payment Successful",
-          description: `£${data.totalCost.toFixed(2)} has been charged to your card.`
-        });
-      } else {
-        toast({
-          title: "Card Verified",
-          description: "Your card has been verified. No payment collected now."
-        });
+        // Redirect to Stripe Checkout
+        window.location.href = collectResult.checkout_url;
       }
-
-      navigate('/booking-confirmation', { state: { bookingId: result.bookingId } });
       
     } catch (error: any) {
       console.error('Payment error:', error);
@@ -387,16 +432,13 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
         </div>
         
         <div>
-          <Input
-            type="tel"
-            placeholder="Phone Number (+44)"
+          <PhoneInput
             value={data.phone || ''}
-            onChange={(e) => {
-              const formatted = e.target.value.startsWith('+44') ? e.target.value : '+44' + e.target.value.replace(/^\+/, '');
-              onUpdate({ phone: formatted });
+            onChange={(value) => {
+              onUpdate({ phone: value });
               setPhoneError('');
             }}
-            onBlur={(e) => validatePhone(e.target.value)}
+            placeholder="Phone number"
             className={`h-16 text-lg rounded-2xl border-2 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400 ${phoneError ? 'border-red-500' : 'border-gray-200'}`}
           />
           {phoneError && (
@@ -443,41 +485,36 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
           </h3>
           
           <div className="space-y-4">
-            <p className="text-base text-gray-600">
-              {isUrgentBooking 
-                ? `Payment will be collected now - £${data.totalCost.toFixed(2)}`
-                : 'We will verify your card with a £1 temporary hold (immediately released). No payment will be collected now.'
-              }
-            </p>
-            
-            {!stripe || !elements ? (
+            {user && defaultPaymentMethod ? (
+              // User has saved payment method
               <div className="rounded-2xl border-2 border-gray-200 bg-white p-6">
-                <div className="flex items-center justify-center gap-2 text-gray-500">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  <span>Loading payment system...</span>
+                <div className="flex items-center gap-3">
+                  <CreditCard className="h-6 w-6 text-[#185166]" />
+                  <div>
+                    <p className="font-medium text-gray-900">
+                      {defaultPaymentMethod.card_brand.toUpperCase()} •••• {defaultPaymentMethod.card_last4}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Expires {defaultPaymentMethod.card_exp_month}/{defaultPaymentMethod.card_exp_year}
+                    </p>
+                  </div>
                 </div>
+                <p className="text-sm text-gray-600 mt-4">
+                  {isUrgentBooking 
+                    ? `£${data.totalCost.toFixed(2)} will be charged to this card.`
+                    : 'No payment will be collected now. Your card will be charged later.'
+                  }
+                </p>
               </div>
             ) : (
-              <div className="rounded-2xl border-2 border-gray-200 bg-white p-6 min-h-[60px] transition-all duration-200 focus-within:border-[#185166]">
-                <CardElement
-                  options={{
-                    style: {
-                      base: {
-                        fontSize: '18px',
-                        color: '#1e293b',
-                        fontFamily: 'system-ui, -apple-system, sans-serif',
-                        fontWeight: '500',
-                        lineHeight: '24px',
-                        '::placeholder': {
-                          color: '#9ca3af',
-                        },
-                      },
-                      invalid: {
-                        color: '#dc2626',
-                      },
-                    },
-                  }}
-                />
+              // No saved payment method - will redirect to Stripe
+              <div className="rounded-2xl border-2 border-gray-200 bg-white p-6">
+                <p className="text-base text-gray-600">
+                  {isUrgentBooking 
+                    ? `Payment of £${data.totalCost.toFixed(2)} will be collected securely through Stripe.`
+                    : 'You will be redirected to securely add your payment method. No payment will be collected now.'
+                  }
+                </p>
               </div>
             )}
             
@@ -505,7 +542,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
           size="lg"
           className="px-12"
           onClick={handleSubmit}
-          disabled={!stripe || processing || submitting || !canContinue || (adminTestMode ? false : !stripe)}
+          disabled={processing || submitting || !canContinue}
         >
           {(processing || submitting) ? (
             <>
@@ -514,10 +551,12 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
             </>
           ) : adminTestMode ? (
             'Create Test Booking (No Payment)'
-          ) : isUrgentBooking ? (
+          ) : user && defaultPaymentMethod && isUrgentBooking ? (
             `Pay £${data.totalCost.toFixed(2)} & Confirm`
+          ) : user && defaultPaymentMethod ? (
+            'Complete Booking'
           ) : (
-            `Verify Card & Confirm Booking`
+            'Continue to Payment'
           )}
         </Button>
       </div>
