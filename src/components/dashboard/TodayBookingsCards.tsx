@@ -5,7 +5,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Edit, Trash2, Copy, X, UserPlus, DollarSign, Repeat, MoreHorizontal, Clock, MapPin, User, Mail, Phone, Send } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import { InvoilessPaymentDialog } from '@/components/payments/InvoilessPaymentDialog';
@@ -67,6 +66,7 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<Booking | null>(null);
   const [assignCleanerOpen, setAssignCleanerOpen] = useState(false);
@@ -139,6 +139,7 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
 
   useEffect(() => {
     fetchData();
+    setCurrentPage(1); // Reset to page 1 when filter changes
   }, [dashboardDateFilter]);
 
   const handleEdit = (bookingId: number) => {
@@ -290,20 +291,22 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
     );
   }
 
-  // Split bookings: first 10 as cards, rest in table
-  const cardsBookings = bookings.slice(0, 10);
-  const tableBookings = bookings.slice(10);
+  // Pagination: 10 bookings per page
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(bookings.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const displayedBookings = bookings.slice(startIndex, endIndex);
 
   return (
-    <div className="space-y-6">
-      {/* Cards View - First 10 bookings */}
-      <div className="space-y-4">
-        {cardsBookings.map((booking) => {
-          const isUnsigned = !booking.cleaner;
-          const cleanerName = getCleanerName(booking);
-          const bookingTime = booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'N/A';
-          const bookingDate = booking.date_time ? format(new Date(booking.date_time), 'dd MMM') : 'N/A';
-          const serviceBadgeColor = serviceTypes ? getBadgeColor(booking.service_type, serviceTypes) : 'bg-gray-500 text-white';
+    <div className="space-y-4">
+      {/* Cards View - Current page bookings */}
+      {displayedBookings.map((booking) => {
+        const isUnsigned = !booking.cleaner;
+        const cleanerName = getCleanerName(booking);
+        const bookingTime = booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'N/A';
+        const bookingDate = booking.date_time ? format(new Date(booking.date_time), 'dd MMM') : 'N/A';
+        const serviceBadgeColor = serviceTypes ? getBadgeColor(booking.service_type, serviceTypes) : 'bg-gray-500 text-white';
 
         return (
           <div
@@ -320,7 +323,7 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
               </div>
 
               {/* Main Content */}
-              <div className="flex-1 p-4 md:py-5 md:px-5">
+              <div className="flex-1 md:py-5 md:px-5">
                 <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
                   {/* Customer Name - Large, Bold */}
                   <div className="md:min-w-[180px] md:max-w-[200px] flex-shrink-0">
@@ -446,120 +449,35 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
           </div>
         );
       })}
-      </div>
 
-      {/* Table View - Remaining bookings after first 10 */}
-      {tableBookings.length > 0 && (
-        <div className="mt-8">
-          <h3 className="text-lg font-semibold mb-4">Remaining Bookings ({tableBookings.length})</h3>
-          <div className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0 overflow-hidden bg-card">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date & Time</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Address</TableHead>
-                  <TableHead>Service</TableHead>
-                  <TableHead>Cleaner</TableHead>
-                  <TableHead>Cost</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {tableBookings.map((booking) => {
-                  const isUnsigned = !booking.cleaner;
-                  const cleanerName = getCleanerName(booking);
-                  const bookingTime = booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'N/A';
-                  const bookingDate = booking.date_time ? format(new Date(booking.date_time), 'dd MMM yyyy') : 'N/A';
-                  const serviceBadgeColor = serviceTypes ? getBadgeColor(booking.service_type, serviceTypes) : 'bg-gray-500 text-white';
-
-                  return (
-                    <TableRow key={booking.id}>
-                      <TableCell className="font-medium">
-                        <div>{bookingDate}</div>
-                        <div className="text-sm text-muted-foreground">{bookingTime}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium">{booking.first_name} {booking.last_name}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="max-w-[200px]">
-                          <div className="font-medium truncate">{booking.address}</div>
-                          <div className="text-sm text-muted-foreground">{booking.postcode}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={`${serviceBadgeColor} text-xs`}>
-                          {booking.service_type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {!isUnsigned ? (
-                          <div className="text-sm">{cleanerName}</div>
-                        ) : (
-                          <Badge variant="destructive" className="text-xs">Unassigned</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="font-bold">£{booking.total_cost?.toFixed(2) || '0.00'}</TableCell>
-                      <TableCell>
-                        <PaymentStatusIndicator 
-                          status={booking.payment_status} 
-                          isClickable={true}
-                          onClick={() => handlePaymentAction(booking)}
-                          size="sm"
-                        />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48 z-50 bg-popover">
-                            <DropdownMenuItem onClick={() => handleEdit(booking.id)}>
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDuplicate(booking)}>
-                              <Copy className="w-4 h-4 mr-2" />
-                              Duplicate
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleAssignCleaner(booking.id)}>
-                              <UserPlus className="w-4 h-4 mr-2" />
-                              Assign Cleaner
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleMakeRecurring(booking)}>
-                              <Repeat className="w-4 h-4 mr-2" />
-                              Make Recurring
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleSendEmail(booking)}>
-                              <Send className="w-4 h-4 mr-2" />
-                              Send Email
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handlePaymentAction(booking)}>
-                              <DollarSign className="w-4 h-4 mr-2" />
-                              {booking.payment_method === 'Invoiless' ? 'Manage Invoice' : 'Manage Payment'}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleCancel(booking.id)} className="text-orange-600">
-                              <X className="w-4 h-4 mr-2" />
-                              Cancel
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDelete(booking.id)} className="text-red-600">
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-6 px-4">
+          <div className="text-sm text-muted-foreground">
+            Showing {startIndex + 1}-{Math.min(endIndex, bookings.length)} of {bookings.length} bookings
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </Button>
+            <div className="flex items-center gap-2 px-4">
+              <span className="text-sm font-medium">
+                Page {currentPage} of {totalPages}
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </Button>
           </div>
         </div>
       )}
