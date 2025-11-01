@@ -231,6 +231,91 @@ export const AirbnbConfigPanel: React.FC = () => {
     { value: ')', label: 'Close )' }
   ];
 
+  // Simple, safe evaluator for + - * / and parentheses.
+  const isOperator = (t: string) => ['+', '-', '*', '/'].includes(t);
+  const precedence: Record<string, number> = { '+': 1, '-': 1, '*': 2, '/': 2 };
+
+  const toRPN = (tokens: string[]) => {
+    const output: string[] = [];
+    const stack: string[] = [];
+    for (const tok of tokens) {
+      if (isOperator(tok)) {
+        while (stack.length && isOperator(stack[stack.length - 1]) && precedence[stack[stack.length - 1]] >= precedence[tok]) {
+          output.push(stack.pop() as string);
+        }
+        stack.push(tok);
+      } else if (tok === '(') {
+        stack.push(tok);
+      } else if (tok === ')') {
+        while (stack.length && stack[stack.length - 1] !== '(') {
+          output.push(stack.pop() as string);
+        }
+        stack.pop();
+      } else {
+        // number or field placeholder already converted to a number string
+        output.push(tok);
+      }
+    }
+    while (stack.length) output.push(stack.pop() as string);
+    return output;
+  };
+
+  const evalRPN = (rpn: string[]) => {
+    const st: number[] = [];
+    for (const t of rpn) {
+      if (isOperator(t)) {
+        const b = st.pop();
+        const a = st.pop();
+        if (a === undefined || b === undefined) throw new Error('Malformed expression');
+        switch (t) {
+          case '+': st.push(a + b); break;
+          case '-': st.push(a - b); break;
+          case '*': st.push(a * b); break;
+          case '/': st.push(b === 0 ? NaN : a / b); break;
+        }
+      } else {
+        st.push(parseFloat(t));
+      }
+    }
+    if (st.length !== 1) throw new Error('Malformed expression');
+    return st[0];
+  };
+
+  const safeEvaluate = (elements: FormulaElement[]) => {
+    try {
+      const raw = elements.map(el => (el.value || '').trim()).filter(Boolean);
+      if (raw.length === 0) return { ok: false, error: 'Empty formula' } as const;
+
+      // Basic validation and placeholder substitution for fields -> '1'
+      const allowed = /^[a-zA-Z0-9_\.()+\-*/]+$/;
+      const tokens: string[] = raw.map(tok => {
+        if (['(', ')', '+', '-', '*', '/'].includes(tok)) return tok;
+        if (!isNaN(Number(tok))) return String(Number(tok));
+        // treat anything else (field identifiers) as 1 for sample evaluation
+        if (!allowed.test(tok)) throw new Error(`Invalid token: ${tok}`);
+        return '1';
+      });
+
+      // Parentheses balance check
+      let bal = 0;
+      for (const t of tokens) {
+        if (t === '(') bal++;
+        else if (t === ')') bal--;
+        if (bal < 0) throw new Error('Parentheses are not balanced');
+      }
+      if (bal !== 0) throw new Error('Parentheses are not balanced');
+
+      const rpn = toRPN(tokens);
+      const result = evalRPN(rpn);
+      if (!isFinite(result)) throw new Error('Computation error');
+      return { ok: true, result } as const;
+    } catch (e: any) {
+      return { ok: false, error: e.message || 'Invalid formula' } as const;
+    }
+  };
+
+  const formulaText = (currentFormula.elements || []).map(el => el.value).join(' ');
+  const evaluation = React.useMemo(() => safeEvaluate(currentFormula.elements || []), [currentFormula.elements]);
   const addToFormula = (element: FormulaElement) => {
     setCurrentFormula({
       ...currentFormula,
@@ -778,93 +863,66 @@ export const AirbnbConfigPanel: React.FC = () => {
                 </div>
 
                 <div>
-                  <Label>Elements</Label>
-                  <div className="flex flex-wrap gap-2 p-3 border rounded min-h-[60px] bg-background">
-                    {currentFormula.elements?.map((el, idx) => (
-                      <div key={idx} className="flex items-center gap-1 bg-primary/10 px-2 py-1 rounded">
-                        <span>{el.label || el.value}</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-5 w-5 p-0"
-                          onClick={() => removeFromFormula(idx)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                  <Label>Formula</Label>
+                  <Input
+                    value={currentFormula.elements?.map(el => el.value).join(' ') || ''}
+                    onChange={(e) => {
+                      const formulaText = e.target.value;
+                      // Convert the string into elements for now - simple parsing
+                      const elements = formulaText.split(' ').filter(s => s.trim()).map(part => {
+                        const trimmed = part.trim();
+                        if (['+', '-', '*', '/', '(', ')'].includes(trimmed)) {
+                          return { type: 'operator' as const, value: trimmed };
+                        } else if (!isNaN(Number(trimmed))) {
+                          return { type: 'number' as const, value: trimmed, label: trimmed };
+                        } else {
+                          return { type: 'field' as const, value: trimmed, label: trimmed };
+                        }
+                      });
+                      setCurrentFormula({...currentFormula, elements});
+                    }}
+                    placeholder="e.g. bedrooms.value * 3 + bathrooms.time / 2"
+                    className="font-mono"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Write your formula using field names, operators (+, -, *, /, (, )), and numbers
+                  </p>
+                </div>
+
+                <div>
+                  <Label>Formula Preview</Label>
+                  <div className="p-3 border rounded bg-muted/20 min-h-[60px]">
+                    {currentFormula.elements && currentFormula.elements.length > 0 ? (
+                      <div className="flex flex-wrap gap-1 items-center">
+                        {currentFormula.elements.map((el, idx) => (
+                          <span 
+                            key={idx} 
+                            className={`px-2 py-1 rounded text-sm ${
+                              el.type === 'field' 
+                                ? 'bg-blue-100 text-blue-800' 
+                                : el.type === 'operator' 
+                                ? 'bg-gray-100 text-gray-800 font-bold' 
+                                : 'bg-green-100 text-green-800'
+                            }`}
+                          >
+                            {el.label || el.value}
+                          </span>
+                        ))}
                       </div>
-                    ))}
+                    ) : (
+                      <span className="text-muted-foreground">Formula preview will appear here...</span>
+                    )}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label>Add Field</Label>
-                    <div className="flex flex-col gap-2">
-                      {availableFields.map((field) => (
-                        <Select 
-                          key={field.value}
-                          onValueChange={(attribute) => {
-                            addToFormula({ 
-                              type: 'field', 
-                              value: field.value, 
-                              attribute: attribute,
-                              label: `${field.label}.${attribute}` 
-                            });
-                          }}
-                        >
-                          <SelectTrigger className="h-9">
-                            <SelectValue placeholder={field.label} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="value">Value</SelectItem>
-                            <SelectItem value="time">Time</SelectItem>
-                            <SelectItem value="min_value">Min Value</SelectItem>
-                            <SelectItem value="max_value">Max Value</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Add Operator</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {operators.map((op) => (
-                        <Button
-                          key={op.value}
-                          variant="outline"
-                          size="sm"
-                          onClick={() => addToFormula({ type: 'operator', value: op.value })}
-                        >
-                          {op.label}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Add Number</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        type="number"
-                        step="0.1"
-                        placeholder="e.g. 3"
-                        id="numberInput"
-                        className="h-9"
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const input = document.getElementById('numberInput') as HTMLInputElement;
-                          const value = input.value;
-                          if (value) {
-                            addToFormula({ type: 'number', value: value, label: value });
-                            input.value = '';
-                          }
-                        }}
-                      >
-                        Add
-                      </Button>
-                    </div>
+                <div>
+                  <Label>Validation</Label>
+                  <div className="p-3 border rounded bg-background">
+                    {evaluation.ok ? (
+                      <span className="text-sm">Looks valid. Sample result with demo data: <strong>{Number((evaluation as any).result).toFixed(2)}</strong></span>
+                    ) : (
+                      <span className="text-sm text-destructive">{(evaluation as any).error}</span>
+                    )}
                   </div>
                 </div>
 
