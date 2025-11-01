@@ -3,7 +3,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import BookingForm from '../../sn-cleaning-booking-forms-main/src/components/booking/BookingForm';
 
 // Stripe Publishable Key - safe to use in frontend (public key)
-const stripePromise = loadStripe('pk_live_51QMZh8P9b6TDZfxjy5mjZcNXMDqjjQKi8D0VhHZBQUcQ8DPZQc9w0g8N4gzZGU9PtzTbYCKR0zX9Fa1I5IFOmTLB00rDzCR0rI');
+const stripePromise = loadStripe('pk_live_FU0wNMP1VPb4fdiK0k8vNvwd000JFB4unW');
 
 const AirbnbBooking = () => {
   return (
