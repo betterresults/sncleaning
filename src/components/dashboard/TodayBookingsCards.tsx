@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Edit, Trash2, Copy, X, UserPlus, DollarSign, Repeat, MoreHorizontal, Clock, MapPin, User, Mail, Phone, Banknote, Send } from 'lucide-react';
+import { Edit, Trash2, Copy, X, UserPlus, DollarSign, Repeat, MoreHorizontal, Clock, MapPin, User, Mail, Phone, Send } from 'lucide-react';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import { InvoilessPaymentDialog } from '@/components/payments/InvoilessPaymentDialog';
@@ -311,11 +311,11 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
         return (
           <div
             key={booking.id} 
-            className="bg-card rounded-3xl shadow-sm hover:shadow-md transition-all duration-200 border border-border/50 overflow-hidden"
+            className="bg-card rounded-3xl shadow-sm hover:shadow-md transition-all duration-200 border-0 overflow-hidden"
           >
             <div className="flex flex-col md:flex-row md:items-center relative">
-              {/* Time Box - Integrated into card */}
-              <div className="flex-shrink-0 bg-primary/10 md:rounded-l-3xl">
+              {/* Time Box - Integrated into card with no border */}
+              <div className="flex-shrink-0 bg-primary/10">
                 <div className="px-4 py-5 text-center min-w-[90px]">
                   <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{bookingDate}</div>
                   <div className="text-2xl font-bold text-primary mt-1">{bookingTime}</div>
@@ -323,64 +323,67 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
               </div>
 
               {/* Main Content */}
-              <div className="flex-1 min-w-0 p-4 md:py-5 md:px-5">
-                <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-6">
-                  {/* Customer Info with Address */}
-                  <div className="md:min-w-[200px] md:max-w-[220px] flex-shrink-0">
-                    <h3 className="text-base font-semibold text-foreground leading-tight mb-1.5">
+              <div className="flex-1 p-4 md:py-5 md:px-5">
+                <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+                  {/* Customer Name - Large, Bold */}
+                  <div className="md:min-w-[180px] md:max-w-[200px] flex-shrink-0">
+                    <h3 className="text-lg font-bold text-foreground leading-tight">
                       {booking.first_name} {booking.last_name}
                     </h3>
-                    <div className="flex items-start gap-1.5 text-sm text-muted-foreground">
-                      <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                  </div>
+
+                  {/* Address - Desktop Full Line */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start gap-1.5 text-base text-foreground">
+                      <MapPin className="w-4 h-4 mt-1 flex-shrink-0" />
                       <div className="leading-tight">
-                        <div className="line-clamp-1">{booking.address}</div>
-                        <div className="text-xs">{booking.postcode}</div>
+                        <div className="font-medium">{booking.address}</div>
+                        <div className="text-sm text-muted-foreground">{booking.postcode}</div>
                       </div>
                     </div>
                   </div>
 
                   {/* Service Type Badge */}
                   <div className="md:min-w-[140px] md:max-w-[160px] flex-shrink-0">
-                    <Badge className={`${serviceBadgeColor} text-xs font-medium px-2.5 py-1 rounded-full`}>
+                    <Badge className={`${serviceBadgeColor} text-sm font-medium px-3 py-1.5 rounded-full`}>
                       {booking.service_type}
                     </Badge>
-                    <p className="text-xs text-muted-foreground mt-1">{booking.cleaning_type}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{booking.cleaning_type}</p>
                   </div>
 
-                  {/* Cleaner Info */}
+                  {/* Cleaner Info - Same styling as customer name */}
                   <div className="md:min-w-[160px] md:max-w-[180px] flex-shrink-0">
                     {!isUnsigned ? (
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-green-500/90 flex items-center justify-center flex-shrink-0">
-                            <User className="w-3.5 h-3.5 text-white" />
+                          <div className="w-7 h-7 rounded-full bg-green-500/90 flex items-center justify-center flex-shrink-0">
+                            <User className="w-4 h-4 text-white" />
                           </div>
-                          <span className="text-sm text-foreground font-medium truncate">{cleanerName}</span>
+                          <span className="text-base font-bold text-foreground truncate">{cleanerName}</span>
                         </div>
                         {booking.cleaner_pay && (
-                          <p className="text-xs text-muted-foreground pl-8">
-                            Pay: £{booking.cleaner_pay.toFixed(2)}
+                          <p className="text-base font-bold text-foreground pl-9">
+                            £{booking.cleaner_pay.toFixed(2)}
                           </p>
                         )}
                       </div>
                     ) : (
-                      <Badge variant="destructive" className="text-xs font-medium">
+                      <Badge variant="destructive" className="text-sm font-medium px-3 py-1.5">
                         Unassigned
                       </Badge>
                     )}
                   </div>
 
-                  {/* Payment & Cost */}
-                  <div className="flex items-center gap-3 ml-auto">
+                  {/* Payment Status and Cost - Same styling */}
+                  <div className="flex items-center gap-4 ml-auto">
                     <PaymentStatusIndicator 
                       status={booking.payment_status} 
                       isClickable={true}
                       onClick={() => handlePaymentAction(booking)}
-                      size="sm"
+                      size="md"
                     />
-                    <div className="flex items-center gap-1.5">
-                      <Banknote className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-xl font-bold text-foreground">
+                    <div className="text-right">
+                      <span className="text-2xl font-bold text-foreground">
                         £{booking.total_cost?.toFixed(2) || '0.00'}
                       </span>
                     </div>

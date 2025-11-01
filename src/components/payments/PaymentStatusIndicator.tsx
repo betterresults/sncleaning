@@ -42,21 +42,21 @@ const PaymentStatusIndicator = ({ status, onClick, size = 'md', isClickable = fa
         return {
           label: 'Unpaid',
           className: 'bg-gray-500 hover:bg-gray-600',
-          icon: AlertCircle,
+          icon: DollarSign,
           color: 'text-white'
         };
       case 'collecting':
         return {
           label: 'Collecting',
           className: 'bg-yellow-500 hover:bg-yellow-600',
-          icon: AlertCircle,
+          icon: DollarSign,
           color: 'text-white'
         };
       case 'pending':
         return {
           label: 'Pending',
           className: 'bg-gray-500 hover:bg-gray-600',
-          icon: Clock,
+          icon: DollarSign,
           color: 'text-white'
         };
       case 'processing':
