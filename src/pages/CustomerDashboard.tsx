@@ -150,7 +150,7 @@ const CustomerDashboard = () => {
         />
         <SidebarInset className="flex-1 flex flex-col w-full">
           <UnifiedHeader 
-            title="Customer Dashboard 🏠"
+            title=""
             user={user}
             userRole={userRole}
             showBackToAdmin={isAdminViewing}

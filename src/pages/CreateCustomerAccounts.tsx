@@ -33,7 +33,7 @@ const CreateCustomerAccounts = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="Create Customer Accounts ➕"
+            title=""
             user={user}
             userRole={userRole}
           />

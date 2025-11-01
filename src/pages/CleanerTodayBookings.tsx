@@ -48,7 +48,7 @@ const CleanerTodayBookings = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="Today's Work 📍"
+            title=""
             user={user}
             userRole={userRole}
             showBackToAdmin={isAdminViewing}

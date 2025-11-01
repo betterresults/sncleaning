@@ -33,7 +33,7 @@ const CustomerAirbnbForm = () => {
         />
         <SidebarInset className="flex-1 flex flex-col">
           <UnifiedHeader 
-            title="Airbnb Cleaning Booking 🏠"
+            title=""
             user={user}
             userRole={userRole}
           />

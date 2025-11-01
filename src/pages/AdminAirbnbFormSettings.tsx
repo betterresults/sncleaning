@@ -35,7 +35,7 @@ const AdminAirbnbFormSettings = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="Airbnb Form Settings ⚙️"
+            title=""
             user={user}
             userRole={userRole}
             onSignOut={handleSignOut}

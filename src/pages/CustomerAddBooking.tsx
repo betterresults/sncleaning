@@ -75,7 +75,7 @@ const CustomerAddBooking = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title={selectedService ? "Book Your Service ➕" : "Select a Service 🛎️"}
+            title=""
             user={user}
             userRole={userRole}
           />

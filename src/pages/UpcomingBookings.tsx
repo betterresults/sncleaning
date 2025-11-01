@@ -49,7 +49,7 @@ const UpcomingBookingsPage = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="Upcoming Bookings 📅"
+            title=""
             user={user}
             userRole={userRole}
           />

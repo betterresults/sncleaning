@@ -46,7 +46,7 @@ const AdminActivityLogs = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="Activity Logs 📊"
+            title=""
             user={user}
             userRole={userRole}
             onSignOut={handleSignOut}

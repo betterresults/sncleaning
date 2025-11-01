@@ -29,7 +29,7 @@ const UsersAdmins = () => {
           />
           <SidebarInset className="flex-1">
             <UnifiedHeader 
-              title="Admin Users 👑"
+              title=""
               user={user}
               userRole={userRole}
             />

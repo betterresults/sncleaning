@@ -28,7 +28,7 @@ const AdminLinenManagement = () => {
         />
         <div className="flex-1 flex flex-col overflow-hidden">
           <UnifiedHeader 
-            title="Linen Management"
+            title=""
             user={user}
             userRole={userRole}
             onSignOut={signOut}

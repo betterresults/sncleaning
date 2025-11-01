@@ -125,7 +125,7 @@ const CustomerSettings = () => {
         />
         <SidebarInset className="flex-1 overflow-x-hidden max-w-full">
           <UnifiedHeader 
-            title="Settings ⚙️"
+            title=""
             user={user}
             userRole={userRole}
           />

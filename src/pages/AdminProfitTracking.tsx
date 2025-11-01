@@ -43,7 +43,7 @@ const AdminProfitTracking = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="Profit Tracking 📊"
+            title=""
             user={user}
             userRole={userRole}
             onSignOut={handleSignOut}

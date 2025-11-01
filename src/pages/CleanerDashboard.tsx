@@ -47,7 +47,7 @@ const CleanerDashboard = () => {
         />
         <SidebarInset className="flex-1 overflow-x-hidden max-w-full">
           <UnifiedHeader 
-            title="My Bookings 📅"
+            title=""
             user={user}
             userRole={userRole}
             showBackToAdmin={userRole === 'admin'}

@@ -35,7 +35,7 @@ const AdminPricingFormulas = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="Pricing Formulas 📋"
+            title=""
             user={user}
             userRole={userRole}
             onSignOut={handleSignOut}

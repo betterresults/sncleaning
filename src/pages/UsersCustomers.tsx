@@ -32,7 +32,7 @@ const UsersCustomers = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="Customer Users 👥"
+            title=""
             user={user}
             userRole={userRole}
           />

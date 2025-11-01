@@ -32,7 +32,7 @@ const PastBookings = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="Past Bookings 📋"
+            title=""
             user={user}
             userRole={userRole}
           />

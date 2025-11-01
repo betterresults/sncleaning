@@ -40,7 +40,7 @@ const AdminAddBooking = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="Add New Booking 📅"
+            title=""
             user={user}
             userRole={userRole}
             onSignOut={handleSignOut}

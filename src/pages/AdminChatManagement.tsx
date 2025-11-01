@@ -39,7 +39,7 @@ const AdminChatManagement = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="Chat Management 💬"
+            title=""
             user={user}
             userRole={userRole}
           />

@@ -35,7 +35,7 @@ const AdminCompanySettings = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="Company Settings ⚙️"
+            title=""
             user={user}
             userRole={userRole}
             onSignOut={handleSignOut}

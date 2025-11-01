@@ -43,7 +43,7 @@ const AdminCustomerPayments = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="Customer Payments 💳"
+            title=""
             user={user}
             userRole={userRole}
             onSignOut={handleSignOut}

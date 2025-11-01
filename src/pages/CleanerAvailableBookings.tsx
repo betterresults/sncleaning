@@ -43,7 +43,7 @@ const CleanerAvailableBookingsPage = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="Available Bookings 💼"
+            title=""
             user={user}
             userRole={userRole}
             showBackToAdmin={userRole === 'admin'}

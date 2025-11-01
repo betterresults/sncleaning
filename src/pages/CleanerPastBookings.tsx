@@ -43,7 +43,7 @@ const CleanerPastBookingsPage = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="Completed Bookings ✅"
+            title=""
             user={user}
             userRole={userRole}
             showBackToAdmin={userRole === 'admin'}

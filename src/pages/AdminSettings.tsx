@@ -110,7 +110,7 @@ const AdminSettings = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="Admin Settings ⚙️"
+            title=""
             user={user}
             userRole={userRole}
             onSignOut={handleSignOut}

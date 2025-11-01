@@ -32,7 +32,7 @@ const UsersCleaners = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="Cleaner Users 🧹"
+            title=""
             user={user}
             userRole={userRole}
           />

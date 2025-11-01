@@ -109,7 +109,7 @@ const CustomerMessages = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="Messages 💬"
+            title=""
             user={user}
             userRole={userRole}
             showBackToAdmin={isAdminViewing}

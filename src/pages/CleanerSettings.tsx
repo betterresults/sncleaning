@@ -110,7 +110,7 @@ const CleanerSettings = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="Settings ⚙️"
+            title=""
             user={user}
             userRole={userRole}
           />

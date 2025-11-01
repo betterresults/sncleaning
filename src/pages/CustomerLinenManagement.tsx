@@ -35,7 +35,7 @@ const CustomerLinenManagement = () => {
         />
         <SidebarInset className="flex-1 flex flex-col w-full">
           <UnifiedHeader 
-            title="Linen Management 🏷️"
+            title=""
             user={user}
             userRole={userRole}
           />

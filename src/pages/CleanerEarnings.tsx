@@ -43,7 +43,7 @@ const CleanerEarningsPage = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="My Earnings 💰"
+            title=""
             user={user}
             userRole={userRole}
             showBackToAdmin={userRole === 'admin'}

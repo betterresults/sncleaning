@@ -45,7 +45,7 @@ const CleanerChecklists = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="Cleaning Checklists 📋"
+            title=""
             user={user}
             userRole={userRole}
             showBackToAdmin={isAdminViewing}

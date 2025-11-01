@@ -43,7 +43,7 @@ const AdminStripePayments = () => {
         />
         <SidebarInset className="flex-1">
           <UnifiedHeader 
-            title="Stripe Payments Dashboard"
+            title=""
             user={user}
             userRole={userRole}
             onSignOut={handleSignOut}

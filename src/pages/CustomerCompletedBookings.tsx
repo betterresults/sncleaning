@@ -56,7 +56,7 @@ const CustomerCompletedBookings = () => {
         />
         <SidebarInset className="flex-1 flex flex-col w-full">
           <UnifiedHeader 
-            title="Completed Bookings 📋"
+            title=""
             user={user}
             userRole={userRole}
             showBackToAdmin={userRole === 'admin'}

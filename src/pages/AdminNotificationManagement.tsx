@@ -24,7 +24,7 @@ const AdminNotificationManagement = () => {
           />
           <div className="flex-1 flex flex-col">
             <UnifiedHeader 
-              title="Email Notification Management"
+              title=""
               user={user}
               onSignOut={signOut}
               userRole={userRole}
