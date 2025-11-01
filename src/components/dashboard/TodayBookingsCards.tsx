@@ -351,7 +351,7 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
                 <Badge className={`${serviceBadgeColor} text-sm font-medium px-3 py-1.5 rounded-full`}>
                   {booking.service_type.charAt(0).toUpperCase() + booking.service_type.slice(1)}
                 </Badge>
-                <p className="text-sm text-muted-foreground mt-1 capitalize">{booking.cleaning_type}</p>
+                <p className="font-medium mt-1 capitalize">{booking.cleaning_type}</p>
               </div>
 
               {/* Cleaner Info */}
@@ -365,13 +365,8 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
                       <span className="font-medium truncate">{cleanerName}</span>
                     </div>
                     {booking.cleaner_pay && (
-                      <p className="text-sm text-gray-400 pl-9">
+                      <p className="font-medium pl-9">
                         £{booking.cleaner_pay.toFixed(2)}
-                      </p>
-                    )}
-                    {booking.payment_method && (
-                      <p className="text-sm text-gray-400 pl-9 capitalize">
-                        {booking.payment_method}
                       </p>
                     )}
                   </div>
