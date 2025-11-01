@@ -1,16 +1,42 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PhoneInput } from '@/components/ui/phone-input';
+import { PhoneInput } from '../../ui/phone-input';
 import { BookingData } from '../BookingForm';
 import { CreditCard, Shield, Loader2, AlertTriangle } from 'lucide-react';
 import { useAirbnbBookingSubmit } from '@/hooks/useAirbnbBookingSubmit';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
-import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { z } from 'zod';
+
+// Simple auth check without using AuthContext
+const useSimpleAuth = () => {
+  const [user, setUser] = useState<any>(null);
+  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user || null);
+      
+      if (session?.user) {
+        // Fetch payment methods
+        const { data } = await supabase
+          .from('customer_payment_methods')
+          .select('*')
+          .order('created_at', { ascending: false });
+        setPaymentMethods(data || []);
+      }
+      setLoading(false);
+    };
+    
+    checkAuth();
+  }, []);
+
+  return { user, paymentMethods, loading };
+};
 
 // Validation schemas
 const emailSchema = z.string().email('Please enter a valid email address');
@@ -25,8 +51,7 @@ interface PaymentStepProps {
 const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
-  const { paymentMethods, loading: loadingPaymentMethods } = usePaymentMethods();
+  const { user, paymentMethods, loading: loadingPaymentMethods } = useSimpleAuth();
   const { submitBooking, loading: submitting } = useAirbnbBookingSubmit();
   const [processing, setProcessing] = useState(false);
   const [searchParams] = useSearchParams();
@@ -37,7 +62,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack }) => 
   const adminTestMode = searchParams.get('adminTest') === 'true';
 
   // Get default payment method if available
-  const defaultPaymentMethod = paymentMethods.find(pm => pm.is_default) || paymentMethods[0];
+  const defaultPaymentMethod = paymentMethods.find((pm: any) => pm.is_default) || paymentMethods[0];
 
   // Calculate if booking is urgent (within 72 hours)
   const isUrgentBooking = useMemo(() => {
