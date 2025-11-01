@@ -18,7 +18,7 @@ import AssignCleanerDialog from './AssignCleanerDialog';
 import DuplicateBookingDialog from './DuplicateBookingDialog';
 import ConvertToRecurringDialog from './ConvertToRecurringDialog';
 import ManualEmailDialog from './ManualEmailDialog';
-import { useServiceTypes, getServiceTypeBadgeColor as getBadgeColor } from '@/hooks/useCompanySettings';
+import { useServiceTypes, useCleaningTypes, getServiceTypeBadgeColor as getBadgeColor } from '@/hooks/useCompanySettings';
 
 interface Booking {
   id: number;
@@ -87,9 +87,29 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
   const [selectedBookingForInvoiless, setSelectedBookingForInvoiless] = useState<Booking | null>(null);
   const { toast } = useToast();
   
-  // Fetch service types for badge colors
+  // Fetch service/cleaning types for labels and badge colors
   const { data: serviceTypes } = useServiceTypes();
+  const { data: cleaningTypes } = useCleaningTypes();
 
+  const humanize = (val?: string | null) => {
+    if (!val) return '';
+    return val
+      .split('_')
+      .map(w => (w ? w.charAt(0).toUpperCase() + w.slice(1) : w))
+      .join(' ');
+  };
+
+  const getServiceTypeLabel = (key?: string | null) => {
+    if (!key) return '';
+    const found = serviceTypes?.find(st => st.key === key);
+    return found?.label ?? humanize(key);
+  };
+
+  const getCleaningTypeLabel = (key?: string | null) => {
+    if (!key) return '';
+    const found = cleaningTypes?.find(ct => ct.key === key);
+    return found?.label ?? humanize(key);
+  };
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -313,6 +333,8 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
         const bookingTime = booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'N/A';
         const bookingDate = booking.date_time ? format(new Date(booking.date_time), 'dd MMM') : 'N/A';
         const serviceBadgeColor = serviceTypes ? getBadgeColor(booking.service_type, serviceTypes) : 'bg-gray-500 text-white';
+        const serviceLabel = getServiceTypeLabel(booking.service_type);
+        const cleaningLabel = getCleaningTypeLabel(booking.cleaning_type);
 
         return (
           <div
@@ -349,9 +371,9 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
               {/* Service Type Badge */}
               <div className="py-4">
                 <Badge className={`${serviceBadgeColor} text-sm font-medium px-3 py-1.5 rounded-full`}>
-                  {booking.service_type.charAt(0).toUpperCase() + booking.service_type.slice(1)}
+                  {serviceLabel}
                 </Badge>
-                <p className="font-medium mt-1 capitalize">{booking.cleaning_type}</p>
+                <p className="text-sm font-medium text-muted-foreground mt-1">{cleaningLabel}</p>
               </div>
 
               {/* Cleaner Info */}
@@ -365,7 +387,7 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
                       <span className="font-medium truncate">{cleanerName}</span>
                     </div>
                     {booking.cleaner_pay && (
-                      <p className="font-medium pl-9">
+                      <p className="text-sm font-medium text-muted-foreground pl-9">
                         £{booking.cleaner_pay.toFixed(2)}
                       </p>
                     )}
@@ -385,7 +407,7 @@ const TodayBookingsCards = ({ dashboardDateFilter }: TodayBookingsCardsProps) =>
                   onClick={() => handlePaymentAction(booking)}
                   size="md"
                 />
-                <span className="text-lg font-bold" style={{ color: '#18A5A5' }}>
+                <span className="text-2xl font-bold" style={{ color: '#18A5A5' }}>
                   £{booking.total_cost?.toFixed(2) || '0.00'}
                 </span>
               </div>
