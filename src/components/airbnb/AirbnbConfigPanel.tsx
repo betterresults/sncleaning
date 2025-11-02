@@ -137,6 +137,40 @@ export const AirbnbConfigPanel: React.FC = () => {
     setShowAddDialog(false);
   };
 
+  // Quick add helper to create the standard Bed Sizes category and options
+  const quickAddBedSizes = () => {
+    const category = 'Bed Sizes';
+    const existing = groupedConfigs[category] || [];
+    const existingOptions = new Set(existing.map((c) => c.option));
+    const items = [
+      { option: 'single', label: 'Single size bed' },
+      { option: 'double', label: 'Double size bed' },
+      { option: 'king', label: 'King size bed' },
+      { option: 'super-king', label: 'Super King size bed' },
+    ];
+
+    const categoryOrder = configs.find((c) => c.category === category)?.category_order ?? 999;
+
+    items.forEach((item, idx) => {
+      if (!existingOptions.has(item.option)) {
+        createConfig.mutate({
+          category,
+          option: item.option,
+          label: item.label,
+          value: 0,
+          value_type: 'none',
+          time: 0,
+          icon: null,
+          min_value: null,
+          max_value: null,
+          is_visible: true,
+          display_order: existing.length + idx + 1,
+          category_order: categoryOrder,
+        } as any);
+      }
+    });
+  };
+
   const renderIcon = (iconName: string | null) => {
     if (!iconName) return null;
     
@@ -716,6 +750,30 @@ export const AirbnbConfigPanel: React.FC = () => {
                 </div>
               </DialogContent>
             </Dialog>
+
+            {/* Top actions */}
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setAddingToCategory(null);
+                  setSelectedCategory('');
+                  setShowAddDialog(true);
+                }}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add New Field
+              </Button>
+              <Button
+                size="sm"
+                variant="default"
+                onClick={quickAddBedSizes}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Quick Add: Bed Sizes
+              </Button>
+            </div>
 
           <div className="space-y-4">
             {categories.map((category) => (
