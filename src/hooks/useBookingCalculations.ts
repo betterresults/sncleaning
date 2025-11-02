@@ -345,12 +345,19 @@ export const useBookingCalculations = (bookingData: BookingData) => {
 
     // Calculate total cost (pass all calculated values as context)
     let totalCost = cleaningCost + shortNoticeCharge;
-    if (totalCostFormula) {
+    if (totalCostFormula && Array.isArray(totalCostFormula.elements) && totalCostFormula.elements.length > 0) {
       const context = {
         cleaningcost: cleaningCost,
         shortnoticecharge: shortNoticeCharge,
       };
-      totalCost = evaluateFormula(totalCostFormula.elements, context);
+      const evaluated = evaluateFormula(totalCostFormula.elements, context);
+      // Only override when evaluation produced a meaningful value.
+      // If a misconfigured/empty formula returns 0 but cleaningCost > 0, keep the fallback.
+      if (Number.isFinite(evaluated)) {
+        if (!(evaluated === 0 && cleaningCost > 0)) {
+          totalCost = evaluated;
+        }
+      }
     }
 
     // Round to 2 decimal places

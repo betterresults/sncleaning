@@ -706,12 +706,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
           <div className="p-4 bg-primary/5 rounded-lg">
             <h2 className="text-xl font-bold text-[#185166] mb-2">Estimated Cleaning Time</h2>
             <p className="text-sm text-muted-foreground mb-3">Recommended hours based on your property</p>
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-2xl font-bold text-primary">
-                  {Math.max(recommendedHours || 2, 2)} hours
-                </p>
-              </div>
+            <div className="flex items-center justify-center">
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
