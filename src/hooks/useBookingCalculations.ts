@@ -51,6 +51,7 @@ export const useBookingCalculations = (bookingData: BookingData) => {
       linenhandling: 'Linen Handling',
       linenshandling: 'Linen Handling',
       timeflexibility: 'Time Flexibility',
+      additionalrooms: 'Additional Rooms',
     };
 
     // Debug collectors
@@ -164,8 +165,14 @@ export const useBookingCalculations = (bookingData: BookingData) => {
         
         const config = allConfigs.find((cfg: any) => {
           if (cfg.category !== categoryName) return false;
-          const dataValueNorm = String(fieldValue).trim().toLowerCase();
-          const cfgOptionNorm = String(cfg.option).trim().toLowerCase();
+          const dataValueNorm = String(fieldValue)
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '');
+          const cfgOptionNorm = String(cfg.option)
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '');
           return cfgOptionNorm === dataValueNorm;
         });
 
@@ -229,6 +236,30 @@ export const useBookingCalculations = (bookingData: BookingData) => {
     // Helper function to get time value in hours
     const getFieldTime = (fieldName: string): number => {
       const normalizedFieldName = fieldName.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+      // Special-case: sum additional rooms time
+      if (normalizedFieldName === 'additionalrooms' && bookingData.additionalRooms) {
+        const keyToOption: Record<string, string> = {
+          toilets: 'Extra Toilet',
+          studyrooms: 'Study Room',
+          utilityrooms: 'Utility Room',
+          otherrooms: 'Other Room',
+        };
+        let minutes = 0;
+        for (const [key, count] of Object.entries(bookingData.additionalRooms)) {
+          const qty = Number(count) || 0;
+          if (!qty) continue;
+          const optionLabel = keyToOption[key.toLowerCase()] || key;
+          const cfg = allConfigs.find((c: any) =>
+            String(c.category || '').toLowerCase() === 'additional rooms' &&
+            String(c.option).toLowerCase().replace(/[^a-z0-9]/g, '') === String(optionLabel).toLowerCase().replace(/[^a-z0-9]/g, '')
+          );
+          if (cfg && typeof cfg.time === 'number') {
+            minutes += (cfg.time as number) * qty;
+          }
+        }
+        return minutes;
+      }
       
       const fieldMapping: Record<string, any> = {
         propertytype: bookingData.propertyType,
@@ -280,9 +311,11 @@ export const useBookingCalculations = (bookingData: BookingData) => {
       
       const config = allConfigs.find((cfg: any) => {
         const cfgCategory = cfg.category?.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const cfgOption = String(cfg.option).toLowerCase();
-        const dataValue = String(fieldValue).toLowerCase();
-        return cfgCategory === normalizedFieldName && cfgOption === dataValue;
+        const cfgOptionNorm = String(cfg.option).toLowerCase().replace(/[^a-z0-9]/g, '');
+        let dataValue = fieldValue;
+        if (typeof dataValue === 'boolean') dataValue = dataValue ? 'yes' : 'no';
+        const dataValueNorm = String(dataValue).toLowerCase().replace(/[^a-z0-9]/g, '');
+        return cfgCategory === normalizedFieldName && cfgOptionNorm === dataValueNorm;
       });
 
       if (config && typeof config.time === 'number') {
