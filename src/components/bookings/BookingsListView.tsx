@@ -472,6 +472,7 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
         const cleanerName = getCleanerName(booking);
         const bookingTime = booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'N/A';
         const bookingDate = booking.date_time ? format(new Date(booking.date_time), 'dd MMM') : 'N/A';
+        const bookingWeekday = booking.date_time ? format(new Date(booking.date_time), 'EEE') : '';
         const serviceBadgeColor = serviceTypes ? getBadgeColor(booking.service_type, serviceTypes) : 'bg-gray-500 text-white';
         const serviceLabel = getServiceTypeLabel(booking.service_type);
         const cleaningLabel = getCleaningTypeLabel(booking.cleaning_type);
@@ -486,7 +487,7 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
               {/* Time Box */}
               <div className="bg-primary/10 h-full flex items-center justify-center">
                 <div className="text-center py-4">
-                  <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{bookingDate}</div>
+                  <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{bookingWeekday ? `${bookingWeekday} · ${bookingDate}` : bookingDate}</div>
                   <div className="text-2xl font-bold text-primary mt-1">{bookingTime}</div>
                   {booking.total_hours && (
                     <div className="text-sm font-semibold text-muted-foreground mt-1">
@@ -676,7 +677,7 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
                   {/* Time Box - Compact */}
                   <div className="bg-primary/10 rounded-xl px-3 py-2 min-w-[70px]">
                     <div className="text-center">
-                      <div className="text-xs text-muted-foreground font-medium">{bookingDate}</div>
+                      <div className="text-xs text-muted-foreground font-medium">{bookingWeekday ? `${bookingWeekday} · ${bookingDate}` : bookingDate}</div>
                       <div className="text-lg font-bold text-primary">{bookingTime}</div>
                       {booking.total_hours && (
                         <div className="text-xs font-semibold text-muted-foreground">
