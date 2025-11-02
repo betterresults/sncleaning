@@ -866,28 +866,37 @@ export const AirbnbConfigPanel: React.FC = () => {
                       </div>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <div className="p-4 space-y-2 border-t">
-                        <div className="grid grid-cols-13 gap-2 text-xs font-semibold text-muted-foreground pb-2 border-b">
-                          <div className="col-span-2">Label</div>
-                          <div className="col-span-1">Min</div>
-                          <div className="col-span-1">Max</div>
-                          <div className="col-span-1">Icon</div>
-                          <div className="col-span-1">Default</div>
-                          <div className="col-span-2">Value</div>
-                          <div className="col-span-1">Type</div>
-                          <div className="col-span-2">Time (min)</div>
-                          <div className="col-span-1">Actions</div>
+                      <div className="p-4 space-y-3 border-t">
+                        {/* Table Header */}
+                        <div className="bg-muted/50 rounded-lg p-3">
+                          <div className="grid grid-cols-[2fr,80px,80px,60px,100px,100px,80px,100px,60px] gap-3 text-xs font-semibold">
+                            <div>Option Label</div>
+                            <div className="text-center">Min</div>
+                            <div className="text-center">Max</div>
+                            <div className="text-center">Icon</div>
+                            <div className="text-center">Value</div>
+                            <div className="text-center">Type</div>
+                            <div className="text-center">Time (min)</div>
+                            <div className="text-center">Default?</div>
+                            <div className="text-center">Del</div>
+                          </div>
                         </div>
+                        
+                        {/* Table Rows */}
                         {(groupedConfigs[category] || []).sort((a, b) => (a.display_order || 0) - (b.display_order || 0)).map((config) => (
-                          <div key={config.id} className="grid grid-cols-13 gap-2 items-center p-2 border rounded hover:bg-muted/30 transition-colors">
-                            <div className="col-span-2">
+                          <div key={config.id} className="grid grid-cols-[2fr,80px,80px,60px,100px,100px,80px,100px,60px] gap-3 items-center p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                            {/* Option Label */}
+                            <div>
                               <Input
                                 value={getCurrentValue(config.id, 'label', config.label || config.option)}
                                 onChange={(e) => handleLocalChange(config.id, 'label', e.target.value)}
-                                className="h-8 text-sm"
+                                className="h-9 text-sm"
+                                placeholder="Option name"
                               />
                             </div>
-                            <div className="col-span-1">
+                            
+                            {/* Min Value */}
+                            <div>
                               <Input
                                 type="number"
                                 value={(() => {
@@ -898,11 +907,13 @@ export const AirbnbConfigPanel: React.FC = () => {
                                   const val = e.target.value;
                                   handleLocalChange(config.id, 'min_value', val === '' ? null : Number(val));
                                 }}
-                                className="h-8 text-sm"
-                                placeholder="Min"
+                                className="h-9 text-sm text-center"
+                                placeholder="0"
                               />
                             </div>
-                            <div className="col-span-1">
+                            
+                            {/* Max Value */}
+                            <div>
                               <Input
                                 type="number"
                                 value={(() => {
@@ -913,23 +924,25 @@ export const AirbnbConfigPanel: React.FC = () => {
                                   const val = e.target.value;
                                   handleLocalChange(config.id, 'max_value', val === '' ? null : Number(val));
                                 }}
-                                className="h-8 text-sm"
-                                placeholder="Max"
+                                className="h-9 text-sm text-center"
+                                placeholder="10"
                               />
                             </div>
-                            <div className="col-span-1 flex justify-center">
+                            
+                            {/* Icon */}
+                            <div className="flex justify-center">
                               <Dialog open={editingIcon === config.id} onOpenChange={(open) => !open && setEditingIcon(null)}>
                                 <DialogTrigger asChild>
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="h-8 w-8 p-0"
+                                    className="h-9 w-9 p-0"
                                     onClick={() => {
                                       setEditingIcon(config.id);
                                       setCustomIconUrl(config.icon || '');
                                     }}
                                   >
-                                    {renderIcon(config.icon) || <Upload className="h-4 w-4" />}
+                                    {renderIcon(config.icon) || <Upload className="h-3 w-3" />}
                                   </Button>
                                 </DialogTrigger>
                                 <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -1019,7 +1032,53 @@ export const AirbnbConfigPanel: React.FC = () => {
                                 </DialogContent>
                               </Dialog>
                             </div>
-                            <div className="col-span-1 flex justify-center">
+                            
+                            {/* Value */}
+                            <div>
+                              <Input
+                                type="number"
+                                step="0.5"
+                                value={getCurrentValue(config.id, 'value', config.value)}
+                                onChange={(e) => handleLocalChange(config.id, 'value', Number(e.target.value))}
+                                onFocus={(e) => e.target.select()}
+                                className="h-9 text-sm text-center"
+                                placeholder="0"
+                              />
+                            </div>
+                            
+                            {/* Type */}
+                            <div>
+                              <Select 
+                                value={getCurrentValue(config.id, 'value_type', config.value_type)} 
+                                onValueChange={(v) => handleLocalChange(config.id, 'value_type', v)}
+                              >
+                                <SelectTrigger className="h-9 text-sm">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">-</SelectItem>
+                                  <SelectItem value="fixed">£</SelectItem>
+                                  <SelectItem value="percentage">%</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            {/* Time */}
+                            <div>
+                              <Input
+                                type="number"
+                                step="1"
+                                value={getCurrentValue(config.id, 'time', config.time) || 0}
+                                onChange={(e) => handleLocalChange(config.id, 'time', Number(e.target.value))}
+                                onFocus={(e) => e.target.select()}
+                                className="h-9 text-sm text-center"
+                                placeholder="0"
+                                title={config.min_value !== null && config.max_value !== null ? `Per unit above min (${config.min_value})` : undefined}
+                              />
+                            </div>
+                            
+                            {/* Default Switch */}
+                            <div className="flex flex-col items-center justify-center gap-1">
                               <Switch
                                 checked={getCurrentValue(config.id, 'is_default', (config as any).is_default) || false}
                                 onCheckedChange={(checked) => {
@@ -1034,60 +1093,21 @@ export const AirbnbConfigPanel: React.FC = () => {
                                     });
                                   }
                                 }}
-                                title="Set as default value when field is not filled"
+                                title="If enabled, this value will be used when the user doesn't select anything"
                               />
+                              {getCurrentValue(config.id, 'is_default', (config as any).is_default) && (
+                                <span className="text-[10px] font-medium text-primary">Default</span>
+                              )}
                             </div>
-                            <div className="col-span-2">
-                              <Input
-                                type="number"
-                                step="0.5"
-                                value={getCurrentValue(config.id, 'value', config.value)}
-                                onChange={(e) => handleLocalChange(config.id, 'value', Number(e.target.value))}
-                                onFocus={(e) => e.target.select()}
-                                className="h-8 text-sm"
-                              />
-                            </div>
-                            <div className="col-span-1">
-                              <Select 
-                                value={getCurrentValue(config.id, 'value_type', config.value_type)} 
-                                onValueChange={(v) => handleLocalChange(config.id, 'value_type', v)}
-                              >
-                                <SelectTrigger className="h-8 text-xs">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">-</SelectItem>
-                                  <SelectItem value="fixed">£</SelectItem>
-                                  <SelectItem value="percentage">%</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="col-span-2">
-                              <div className="space-y-1">
-                                <Input
-                                  type="number"
-                                  step="1"
-                                  value={getCurrentValue(config.id, 'time', config.time) || 0}
-                                  onChange={(e) => handleLocalChange(config.id, 'time', Number(e.target.value))}
-                                  onFocus={(e) => e.target.select()}
-                                  className="h-8 text-sm"
-                                  placeholder="0"
-                                  title={config.min_value !== null && config.max_value !== null ? `Per unit above min (${config.min_value})` : undefined}
-                                />
-                                {config.min_value !== null && config.max_value !== null && (
-                                  <p className="text-[10px] text-muted-foreground">
-                                    × (value - {config.min_value})
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                            <div className="col-span-1 flex justify-end">
+                            
+                            {/* Delete Button */}
+                            <div className="flex justify-center">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0"
+                                className="h-9 w-9 p-0 hover:bg-destructive/10"
                                 onClick={() => {
-                                  if (confirm('Are you sure you want to delete this field?')) {
+                                  if (confirm('Delete this field?')) {
                                     deleteConfig.mutate(config.id);
                                   }
                                 }}
