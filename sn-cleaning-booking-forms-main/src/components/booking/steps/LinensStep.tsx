@@ -206,16 +206,10 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
     onUpdate({ linenPackages: updatedPackages });
   };
 
-  const updateWashDryBedSize = (sizeId: string, quantity: number) => {
-    const current = data.washDryBedSizes || {};
+  const updateBedSize = (sizeId: string, quantity: number) => {
+    const current = data.bedSizes || {};
     const updated = { ...current, [sizeId]: Math.max(0, quantity) };
-    onUpdate({ washDryBedSizes: updated });
-  };
-
-  const updateIroningBedSize = (sizeId: string, quantity: number) => {
-    const current = data.ironingBedSizes || {};
-    const updated = { ...current, [sizeId]: Math.max(0, quantity) };
-    onUpdate({ ironingBedSizes: updated });
+    onUpdate({ bedSizes: updated });
   };
 
   // Use dynamic bed sizes or fallback to hardcoded
@@ -225,20 +219,17 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
         name: config.label,
       }))
     : [
-        { id: 'single', name: 'Single' },
-        { id: 'double', name: 'Double' },
-        { id: 'king', name: 'King' },
-        { id: 'super-king', name: 'Super King' },
+        { id: 'single', name: 'Single size bed' },
+        { id: 'double', name: 'Double size bed' },
+        { id: 'king', name: 'King size bed' },
+        { id: 'super-king', name: 'Super King size bed' },
       ];
 
-  // Only show bed sizes for "wash and tumble dry" (not hang dry - they don't care about timing)
-  const showWashDryBedSizes = data.linensHandling === 'wash-dry';
-  
-  // Only show ironing bed sizes if:
-  // 1. Ironing is selected AND
-  // 2. They chose "wash and hang dry" (because we didn't ask for bed sizes yet)
-  // If they chose "wash and tumble dry", we already have the bed sizes
-  const showIroningBedSizes = data.needsIroning === true && data.linensHandling === 'wash-hang';
+  // Show bed sizes section when:
+  // 1. "wash and tumble dry" is selected (to know drying time), OR
+  // 2. Ironing is selected with "wash and hang dry" (to know ironing time)
+  const showBedSizes = data.linensHandling === 'wash-dry' || 
+                       (data.needsIroning === true && data.linensHandling === 'wash-hang');
 
   return (
     <div className="space-y-4">
@@ -271,15 +262,15 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
         </div>
       </div>
 
-      {/* Wash/Dry Bed Sizes Selection - Only for wash and tumble dry */}
-      {showWashDryBedSizes && (
+      {/* Bed Sizes Selection - Shown for wash and tumble dry OR ironing with wash and hang dry */}
+      {showBedSizes && (
         <div className="mt-6">
           <h3 className="text-xl font-bold text-[#185166] mb-4">
-            Select bed sizes to wash and tumble dry
+            Select bed sizes
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {bedSizes.map((size) => {
-              const quantity = data.washDryBedSizes?.[size.id] || 0;
+              const quantity = data.bedSizes?.[size.id] || 0;
               const isSelected = quantity > 0;
               
               return (
@@ -294,7 +285,7 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
                   <button
                     onClick={() => {
                       if (!isSelected) {
-                        updateWashDryBedSize(size.id, 1);
+                        updateBedSize(size.id, 1);
                       }
                     }}
                     className="w-full h-full"
@@ -323,7 +314,7 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
                               className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                updateWashDryBedSize(size.id, quantity - 1);
+                                updateBedSize(size.id, quantity - 1);
                               }}
                             >
                               <Minus className="h-3 w-3" />
@@ -337,7 +328,7 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
                               className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                updateWashDryBedSize(size.id, quantity + 1);
+                                updateBedSize(size.id, quantity + 1);
                               }}
                             >
                               <Plus className="h-3 w-3" />
@@ -386,88 +377,6 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
         </div>
       )}
 
-      {/* Ironing Bed Sizes Selection - Only for wash and hang dry when ironing is selected */}
-      {showIroningBedSizes && (
-        <div className="mt-6">
-          <h3 className="text-xl font-bold text-[#185166] mb-4">
-            Select bed sizes to iron
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {bedSizes.map((size) => {
-              const quantity = data.ironingBedSizes?.[size.id] || 0;
-              const isSelected = quantity > 0;
-              
-              return (
-                <div
-                  key={size.id}
-                  className={`group relative rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
-                    isSelected
-                      ? 'border-primary bg-primary/5 shadow-xl h-40'
-                      : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg h-32'
-                  }`}
-                >
-                  <button
-                    onClick={() => {
-                      if (!isSelected) {
-                        updateIroningBedSize(size.id, 1);
-                      }
-                    }}
-                    className="w-full h-full"
-                  >
-                    {!isSelected ? (
-                      <div className="flex flex-col items-center justify-center h-full p-3">
-                        <div className="text-2xl mb-2">👕</div>
-                        <span className="text-sm font-bold text-foreground text-center leading-tight">
-                          {size.name}
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col h-full">
-                        <div className="flex-1 flex flex-col items-center justify-center p-2">
-                          <div className="text-xl mb-1">👕</div>
-                          <span className="text-xs font-bold text-primary mb-1 text-center leading-tight">
-                            {size.name}
-                          </span>
-                        </div>
-                        <div className="h-px bg-border mx-3"></div>
-                        <div className="p-3">
-                          <div className="flex items-center justify-center">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                updateIroningBedSize(size.id, quantity - 1);
-                              }}
-                            >
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <div className="flex-1 text-center mx-2">
-                              <div className="text-lg font-bold text-primary">{quantity}</div>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                updateIroningBedSize(size.id, quantity + 1);
-                              }}
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Extra Hours for Linen Handling - Only show when ironing is selected */}
       {data.needsIroning === true && (

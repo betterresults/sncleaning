@@ -49,8 +49,7 @@ export interface BookingData {
   needsIroning: boolean | null;
   ironingHours: number;
   linenPackages: Record<string, number>;
-  washDryBedSizes: Record<string, number>;
-  ironingBedSizes: Record<string, number>;
+  bedSizes: Record<string, number>;
   extraHours: number;
   
   // Schedule
@@ -135,8 +134,7 @@ const AirbnbBookingForm: React.FC = () => {
     needsIroning: null,
     ironingHours: 0,
     linenPackages: {},
-    washDryBedSizes: {},
-    ironingBedSizes: {},
+    bedSizes: {},
     extraHours: 0,
     selectedDate: null,
     selectedTime: '',
