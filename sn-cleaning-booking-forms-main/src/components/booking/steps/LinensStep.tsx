@@ -262,6 +262,38 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
         </div>
       </div>
 
+      {/* Ironing Switch */}
+      {showIroning && (
+        <div className="mt-6">
+          <h2 className="text-xl font-bold text-[#185166] mb-4">
+            Select ironing option <span className="text-destructive">*</span>
+          </h2>
+          <div className="grid grid-cols-2 gap-4">
+            {(ironingConfigs.length > 0 ? ironingConfigs : [
+              { option: 'yes_iron_linens', label: 'Yes, iron linens' },
+              { option: 'no_ironing_needed', label: 'No ironing needed' }
+            ]).map((option: any, index: number) => {
+              const isYes = option.option.includes('yes') || index === 0;
+              const isSelected = data.needsIroning === isYes;
+              return (
+                <button
+                  key={option.option}
+                  onClick={() => onUpdate({ needsIroning: isYes })}
+                  className={`p-4 rounded-lg border-2 transition-all duration-200 text-center ${
+                    isSelected
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-border bg-card hover:border-primary/50 text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Shirt className={`h-6 w-6 mx-auto mb-2 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <span className="text-sm font-medium">{option.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Bed Sizes Selection - Shown for wash and tumble dry OR ironing with wash and hang dry */}
       {showBedSizes && (
         <div className="mt-6">
@@ -339,38 +371,6 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
                     )}
                   </button>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Ironing Switch */}
-      {showIroning && (
-        <div className="mt-6">
-          <h2 className="text-xl font-bold text-[#185166] mb-4">
-            Select ironing option <span className="text-destructive">*</span>
-          </h2>
-          <div className="grid grid-cols-2 gap-4">
-            {(ironingConfigs.length > 0 ? ironingConfigs : [
-              { option: 'yes_iron_linens', label: 'Yes, iron linens' },
-              { option: 'no_ironing_needed', label: 'No ironing needed' }
-            ]).map((option: any, index: number) => {
-              const isYes = option.option.includes('yes') || index === 0;
-              const isSelected = data.needsIroning === isYes;
-              return (
-                <button
-                  key={option.option}
-                  onClick={() => onUpdate({ needsIroning: isYes })}
-                  className={`p-4 rounded-lg border-2 transition-all duration-200 text-center ${
-                    isSelected
-                      ? 'border-primary bg-primary/5 text-primary'
-                      : 'border-border bg-card hover:border-primary/50 text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <Shirt className={`h-6 w-6 mx-auto mb-2 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
-                  <span className="text-sm font-medium">{option.label}</span>
-                </button>
               );
             })}
           </div>
