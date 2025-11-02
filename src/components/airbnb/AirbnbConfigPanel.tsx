@@ -566,20 +566,41 @@ export const AirbnbConfigPanel: React.FC = () => {
       const fieldObjects: Record<string, any> = {};
       allFieldNames.forEach(fieldName => {
         const testVal = testValues[fieldName];
-        // Always use .value property for numeric value
+        const af = availableFields.find(f => f.value === fieldName);
+        const categoryName = af?.dbCategory;
+
+        // Helper: resolve category default from DB defaults + configs
+        const resolveCategoryDefault = () => {
+          if (!categoryName) return { value: 0, time: 0 };
+          const def = categoryDefaults.find(d => d.category === categoryName);
+          if (!def || !def.default_value) return { value: 0, time: 0 };
+          // Try option match first
+          const cfg = configs.find(c => c.category === categoryName && String(c.option).toLowerCase() === String(def.default_value).toLowerCase());
+          if (cfg) return { value: Number(cfg.value) || 0, time: Number(cfg.time) || 0 };
+          // Fallbacks: boolean-like and numeric
+          const dv = String(def.default_value).trim().toLowerCase();
+          if (dv === 'yes' || dv === 'true') return { value: 1, time: 0 };
+          if (dv === 'no' || dv === 'false') return { value: 0, time: 0 };
+          const parsed = parseFloat(String(def.default_value));
+          return Number.isFinite(parsed) ? { value: parsed, time: 0 } : { value: 0, time: 0 };
+        };
+
+        const defaults = resolveCategoryDefault();
+
+        // Value
         const rawVal = testVal?.value;
         const numVal = typeof rawVal === 'number' ? rawVal : Number(rawVal as any);
+        const coercedValue = Number.isFinite(numVal) ? numVal : defaults.value;
 
-        // Coerce to number, default to 0
-        const coercedValue = Number.isFinite(numVal) ? numVal : 0;
-
-        const timeVal = typeof testVal?.time === 'number' && isFinite(testVal.time)
+        // Time
+        const timeNum = typeof testVal?.time === 'number' && isFinite(testVal.time)
           ? testVal.time
-          : Number(testVal?.time) || 0;
+          : Number(testVal?.time);
+        const coercedTime = Number.isFinite(timeNum) ? timeNum : defaults.time;
 
         fieldObjects[fieldName] = {
           value: coercedValue,
-          time: timeVal,
+          time: coercedTime,
           min_value: testVal?.min_value ?? 0,
           max_value: testVal?.max_value ?? 0
         };
