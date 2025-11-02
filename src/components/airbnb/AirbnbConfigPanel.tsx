@@ -1392,6 +1392,113 @@ export const AirbnbConfigPanel: React.FC = () => {
                         const dbCategory = field?.dbCategory || fieldName;
                         const fieldConfigs = configs.filter(c => c.category === dbCategory);
                         
+                        // Check if this field should support multi-select (e.g., Bed Sizes)
+                        const isMultiSelectField = fieldConfigs.length > 2 && 
+                          (dbCategory.toLowerCase().includes('bed') || 
+                           dbCategory.toLowerCase().includes('size') ||
+                           dbCategory.toLowerCase().includes('linen'));
+                        
+                        if (isMultiSelectField) {
+                          // Multi-select with quantities
+                          const selectedItems = testValues[fieldName]?.items || [];
+                          
+                          return (
+                            <div key={fieldName} className="space-y-2 md:col-span-2">
+                              <Label className="text-sm font-semibold">{field?.label || fieldName} <span className="text-xs text-muted-foreground font-normal">(опционално - избери и посочи количество)</span></Label>
+                              <div className="border rounded-lg p-3 space-y-2 bg-background">
+                                {fieldConfigs.map(config => {
+                                  const item = selectedItems.find((i: any) => i.id === config.id);
+                                  const isSelected = !!item;
+                                  const quantity = item?.quantity || 1;
+                                  
+                                  return (
+                                    <div key={config.id} className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded">
+                                      <input
+                                        type="checkbox"
+                                        checked={isSelected}
+                                        onChange={(e) => {
+                                          setTestValues(prev => {
+                                            const currentItems = prev[fieldName]?.items || [];
+                                            let newItems;
+                                            
+                                            if (e.target.checked) {
+                                              newItems = [...currentItems, {
+                                                id: config.id,
+                                                quantity: 1,
+                                                value: config.value,
+                                                time: config.time,
+                                                label: config.label
+                                              }];
+                                            } else {
+                                              newItems = currentItems.filter((i: any) => i.id !== config.id);
+                                            }
+                                            
+                                            // Calculate totals
+                                            const totalValue = newItems.reduce((sum: number, i: any) => sum + (i.value * i.quantity), 0);
+                                            const totalTime = newItems.reduce((sum: number, i: any) => sum + (i.time * i.quantity), 0);
+                                            
+                                            return {
+                                              ...prev,
+                                              [fieldName]: {
+                                                items: newItems,
+                                                value: totalValue,
+                                                time: totalTime
+                                              }
+                                            };
+                                          });
+                                        }}
+                                        className="h-4 w-4 rounded border-gray-300"
+                                      />
+                                      <label className="flex-1 text-sm cursor-pointer">{config.label}</label>
+                                      {isSelected && (
+                                        <>
+                                          <input
+                                            type="number"
+                                            min="1"
+                                            value={quantity}
+                                            onChange={(e) => {
+                                              const newQty = Math.max(1, parseInt(e.target.value) || 1);
+                                              setTestValues(prev => {
+                                                const currentItems = prev[fieldName]?.items || [];
+                                                const newItems = currentItems.map((i: any) =>
+                                                  i.id === config.id ? { ...i, quantity: newQty } : i
+                                                );
+                                                
+                                                const totalValue = newItems.reduce((sum: number, i: any) => sum + (i.value * i.quantity), 0);
+                                                const totalTime = newItems.reduce((sum: number, i: any) => sum + (i.time * i.quantity), 0);
+                                                
+                                                return {
+                                                  ...prev,
+                                                  [fieldName]: {
+                                                    items: newItems,
+                                                    value: totalValue,
+                                                    time: totalTime
+                                                  }
+                                                };
+                                              });
+                                            }}
+                                            className="w-16 px-2 py-1 text-sm border rounded"
+                                          />
+                                          <span className="text-xs text-muted-foreground">
+                                            = {(config.value * quantity).toFixed(1)}
+                                          </span>
+                                        </>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                                {selectedItems.length > 0 && (
+                                  <div className="pt-2 mt-2 border-t text-xs text-muted-foreground space-y-0.5">
+                                    <div>Total Value: {testValues[fieldName]?.value?.toFixed(1) || 0}</div>
+                                    <div>Total Time: {testValues[fieldName]?.time || 0} min</div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        }
+                        
+                        // Single select (original logic)
                         return (
                           <div key={fieldName} className="space-y-2">
                             <Label className="text-sm font-semibold">{field?.label || fieldName} <span className="text-xs text-muted-foreground font-normal">(опционално)</span></Label>
@@ -1412,8 +1519,8 @@ export const AirbnbConfigPanel: React.FC = () => {
                                       ...prev,
                                       [fieldName]: {
                                         selectedOption: optionId,
-                                        value: selectedConfig.value, // numeric value if needed elsewhere
-                                        option: selectedConfig.option, // keep option key for string comparisons
+                                        value: selectedConfig.value,
+                                        option: selectedConfig.option,
                                         time: selectedConfig.time,
                                         min_value: selectedConfig.min_value,
                                         max_value: selectedConfig.max_value
