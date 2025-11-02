@@ -443,11 +443,16 @@ export const AirbnbConfigPanel: React.FC = () => {
   // Evaluate formula with test values
   const evaluateWithTestValues = () => {
     try {
-      const formulaString = (currentFormula.elements || []).map(el => el.value).join(' ');
+      // Filter out empty elements and join with spaces
+      const formulaString = (currentFormula.elements || [])
+        .filter(el => el.value && el.value.trim() !== '')
+        .map(el => el.value.trim())
+        .join(' ')
+        .replace(/;/g, ''); // Remove any semicolons
+      
       if (!formulaString) return null;
 
       // Build proper objects with value and time properties for each field
-      // Get all field names from availableFields
       const allFieldNames = availableFields.map(f => f.value);
       
       const fieldObjects: Record<string, any> = {};
@@ -465,12 +470,18 @@ export const AirbnbConfigPanel: React.FC = () => {
       const paramNames = Object.keys(fieldObjects);
       const paramValues = Object.values(fieldObjects);
       
+      console.log('Evaluating formula:', formulaString);
+      console.log('With field values:', fieldObjects);
+      
       const func = new Function(...paramNames, `return ${formulaString};`);
       const result = func(...paramValues);
+      
+      console.log('Formula result:', result);
       
       return typeof result === 'number' && isFinite(result) ? result : null;
     } catch (e) {
       console.error('Formula evaluation error:', e);
+      console.error('Formula string was:', (currentFormula.elements || []).map(el => el.value).join(' '));
       return null;
     }
   };
