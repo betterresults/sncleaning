@@ -195,27 +195,31 @@ export default function RecurringBookings() {
   if (loading) {
     return (
       <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-gray-50">
-          <UnifiedSidebar 
-            navigationItems={adminNavigation}
+        <div className="min-h-screen flex flex-col w-full bg-gray-50">
+          <UnifiedHeader 
+            title=""
             user={user}
+            userRole={userRole}
             onSignOut={handleSignOut}
           />
-          <SidebarInset className="flex-1">
-            <UnifiedHeader 
-              title="Recurring Bookings 🔄"
+          <div className="flex flex-1 w-full">
+            <UnifiedSidebar 
+              navigationItems={adminNavigation}
               user={user}
               userRole={userRole}
+              onSignOut={handleSignOut}
             />
-            <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
-              <div className="flex items-center justify-center min-h-[400px]">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p className="text-muted-foreground">Loading recurring services...</p>
+            <SidebarInset className="flex-1 flex flex-col p-0 m-0 overflow-x-hidden">
+              <main className="flex-1 bg-gray-50 m-0 px-4 md:px-6 py-4 md:py-6 space-y-6 w-full">
+                <div className="flex items-center justify-center min-h-[400px]">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Loading recurring services...</p>
+                  </div>
                 </div>
-              </div>
-            </main>
-          </SidebarInset>
+              </main>
+            </SidebarInset>
+          </div>
         </div>
       </SidebarProvider>
     );
@@ -223,19 +227,22 @@ export default function RecurringBookings() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-50">
-        <UnifiedSidebar 
-          navigationItems={adminNavigation}
+      <div className="min-h-screen flex flex-col w-full bg-gray-50">
+        <UnifiedHeader 
+          title=""
           user={user}
+          userRole={userRole}
           onSignOut={handleSignOut}
         />
-        <SidebarInset className="flex-1">
-          <UnifiedHeader 
-            title="Recurring Bookings 🔄"
+        <div className="flex flex-1 w-full">
+          <UnifiedSidebar 
+            navigationItems={adminNavigation}
             user={user}
             userRole={userRole}
+            onSignOut={handleSignOut}
           />
-          <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
+          <SidebarInset className="flex-1 flex flex-col p-0 m-0 overflow-x-hidden">
+            <main className="flex-1 bg-gray-50 m-0 px-4 md:px-6 py-4 md:py-6 space-y-6 w-full">
             <div className="max-w-7xl mx-auto space-y-6">
               <div className="flex justify-between items-center mb-8">
         <div>
@@ -425,11 +432,12 @@ export default function RecurringBookings() {
               </CardContent>
             </Card>
           ))}
-              </div>
-            )}
+        </div>
+      )}
             </div>
           </main>
-        </SidebarInset>
+          </SidebarInset>
+        </div>
       </div>
     </SidebarProvider>
   );
