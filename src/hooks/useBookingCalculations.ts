@@ -126,7 +126,7 @@ export const useBookingCalculations = (bookingData: BookingData) => {
       });
 
       if (config && typeof config.time === 'number') {
-        return config.time / 60; // Convert minutes to hours
+        return config.time; // Return minutes; formulas handle conversion to hours
       }
 
       return 0;
