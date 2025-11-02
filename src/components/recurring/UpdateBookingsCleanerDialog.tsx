@@ -44,7 +44,15 @@ export default function UpdateBookingsCleanerDialog({
   const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
+    console.log('📋 UpdateBookingsCleanerDialog effect:', {
+      open,
+      oldCleanerId,
+      newCleanerId,
+      recurringServiceId
+    });
+    
     if (open && oldCleanerId && newCleanerId !== oldCleanerId) {
+      console.log('🔍 Fetching affected bookings...');
       fetchAffectedBookings();
     }
   }, [open, oldCleanerId, newCleanerId, recurringServiceId]);
@@ -59,15 +67,24 @@ export default function UpdateBookingsCleanerDialog({
         .eq('id', parseInt(recurringServiceId))
         .single();
 
+      console.log('📦 Recurring service data:', recurringService);
+
       if (recurringError) throw recurringError;
 
       if (!recurringService?.recurring_group_id) {
+        console.log('⚠️ No recurring_group_id found');
         setAffectedBookings([]);
         return;
       }
 
       // Find upcoming bookings from this recurring group with the old cleaner
       const now = new Date().toISOString();
+      console.log('🔎 Looking for bookings with:', {
+        recurring_group_id: recurringService.recurring_group_id,
+        oldCleanerId: oldCleanerId,
+        date_gte: now
+      });
+
       const { data: bookings, error: bookingsError } = await supabase
         .from('bookings')
         .select(`
@@ -82,6 +99,8 @@ export default function UpdateBookingsCleanerDialog({
         .gte('date_time', now)
         .order('date_time', { ascending: true });
 
+      console.log('📚 Found bookings:', bookings);
+
       if (bookingsError) throw bookingsError;
 
       const formatted = bookings?.map((booking: any) => ({
@@ -91,6 +110,7 @@ export default function UpdateBookingsCleanerDialog({
         cleaner_name: `${booking.cleaners.first_name} ${booking.cleaners.last_name}`,
       })) || [];
 
+      console.log('✨ Formatted affected bookings:', formatted);
       setAffectedBookings(formatted);
     } catch (error) {
       console.error('Error fetching affected bookings:', error);
