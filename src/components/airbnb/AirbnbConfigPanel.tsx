@@ -447,14 +447,18 @@ export const AirbnbConfigPanel: React.FC = () => {
       if (!formulaString) return null;
 
       // Build proper objects with value and time properties for each field
+      // Get all field names from availableFields
+      const allFieldNames = availableFields.map(f => f.value);
+      
       const fieldObjects: Record<string, any> = {};
-      Object.keys(testValues).forEach(fieldName => {
+      allFieldNames.forEach(fieldName => {
         const testVal = testValues[fieldName];
+        // Use default values if field is not selected
         fieldObjects[fieldName] = {
-          value: testVal.value,
-          time: testVal.time || 0,
-          min_value: testVal.min_value || 0,
-          max_value: testVal.max_value || 0
+          value: testVal?.value ?? 0,
+          time: testVal?.time ?? 0,
+          min_value: testVal?.min_value ?? 0,
+          max_value: testVal?.max_value ?? 0
         };
       });
       
@@ -1255,7 +1259,7 @@ export const AirbnbConfigPanel: React.FC = () => {
                       🧪 Test Your Formula
                     </h3>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Select values for each field to see how the formula calculates
+                      Избери стойности за полетата, които искаш да тестваш. Неизбраните полета автоматично ще имат стойност 0.
                     </p>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -1267,29 +1271,41 @@ export const AirbnbConfigPanel: React.FC = () => {
                         
                         return (
                           <div key={fieldName} className="space-y-2">
-                            <Label className="text-sm font-semibold">{field?.label || fieldName}</Label>
+                            <Label className="text-sm font-semibold">{field?.label || fieldName} <span className="text-xs text-muted-foreground font-normal">(опционално)</span></Label>
                             <Select
                               value={testValues[fieldName]?.selectedOption || ''}
                               onValueChange={(optionId) => {
-                                const selectedConfig = fieldConfigs.find(c => c.id === optionId);
-                                if (selectedConfig) {
-                                  setTestValues(prev => ({
-                                    ...prev,
-                                    [fieldName]: {
-                                      selectedOption: optionId,
-                                      value: selectedConfig.option,
-                                      time: selectedConfig.time,
-                                      min_value: selectedConfig.min_value,
-                                      max_value: selectedConfig.max_value
-                                    }
-                                  }));
+                                if (optionId === 'none') {
+                                  // Clear the value if "none" is selected
+                                  setTestValues(prev => {
+                                    const newValues = { ...prev };
+                                    delete newValues[fieldName];
+                                    return newValues;
+                                  });
+                                } else {
+                                  const selectedConfig = fieldConfigs.find(c => c.id === optionId);
+                                  if (selectedConfig) {
+                                    setTestValues(prev => ({
+                                      ...prev,
+                                      [fieldName]: {
+                                        selectedOption: optionId,
+                                        value: selectedConfig.option,
+                                        time: selectedConfig.time,
+                                        min_value: selectedConfig.min_value,
+                                        max_value: selectedConfig.max_value
+                                      }
+                                    }));
+                                  }
                                 }
                               }}
                             >
                               <SelectTrigger className="bg-background">
-                                <SelectValue placeholder={`Select ${field?.label || fieldName}`} />
+                                <SelectValue placeholder={`Избери или остави празно (= 0)`} />
                               </SelectTrigger>
                               <SelectContent className="z-50 bg-background">
+                                <SelectItem value="none">
+                                  <span className="text-muted-foreground">Няма избрана стойност (ще се използва 0)</span>
+                                </SelectItem>
                                 {fieldConfigs.map(config => (
                                   <SelectItem key={config.id} value={config.id}>
                                     {config.label}
