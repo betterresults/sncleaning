@@ -21,6 +21,7 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
   // Fetch dynamic configs from Supabase
   const { data: linenHandlingConfigs = [] } = useAirbnbFieldConfigs('Linen Handling', true);
   const { data: ironingConfigs = [] } = useAirbnbFieldConfigs('Ironing', true);
+  const { data: bedSizeConfigs = [] } = useAirbnbFieldConfigs('Bed Sizes', true);
   const { products: linenProductsFromDB = [] } = useLinenProducts();
   
   // Fallback to hardcoded options if no configs exist
@@ -205,6 +206,34 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
     onUpdate({ linenPackages: updatedPackages });
   };
 
+  const updateWashDryBedSize = (sizeId: string, quantity: number) => {
+    const current = data.washDryBedSizes || {};
+    const updated = { ...current, [sizeId]: Math.max(0, quantity) };
+    onUpdate({ washDryBedSizes: updated });
+  };
+
+  const updateIroningBedSize = (sizeId: string, quantity: number) => {
+    const current = data.ironingBedSizes || {};
+    const updated = { ...current, [sizeId]: Math.max(0, quantity) };
+    onUpdate({ ironingBedSizes: updated });
+  };
+
+  // Use dynamic bed sizes or fallback to hardcoded
+  const bedSizes = bedSizeConfigs.length > 0
+    ? bedSizeConfigs.map((config: any) => ({
+        id: config.option,
+        name: config.label,
+      }))
+    : [
+        { id: 'single', name: 'Single' },
+        { id: 'double', name: 'Double' },
+        { id: 'queen', name: 'Queen' },
+        { id: 'king', name: 'King' },
+        { id: 'super-king', name: 'Super King' },
+      ];
+
+  const showWashDryBedSizes = data.linensHandling === 'wash-hang' || data.linensHandling === 'wash-dry';
+
   return (
     <div className="space-y-4">
       <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
@@ -236,6 +265,87 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
         </div>
       </div>
 
+      {/* Wash/Dry Bed Sizes Selection */}
+      {showWashDryBedSizes && (
+        <div className="mt-6">
+          <h3 className="text-xl font-bold text-[#185166] mb-4">
+            Select bed sizes to wash and dry
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {bedSizes.map((size) => {
+              const quantity = data.washDryBedSizes?.[size.id] || 0;
+              const isSelected = quantity > 0;
+              
+              return (
+                <div
+                  key={size.id}
+                  className={`rounded-xl border-2 transition-all duration-300 ${
+                    isSelected
+                      ? 'border-primary bg-primary/5 shadow-lg h-32'
+                      : 'border-border bg-card hover:border-primary/50 hover:shadow-md h-28'
+                  }`}
+                >
+                  <button
+                    onClick={() => {
+                      if (!isSelected) {
+                        updateWashDryBedSize(size.id, 1);
+                      }
+                    }}
+                    className="w-full h-full"
+                  >
+                    {!isSelected ? (
+                      <div className="flex flex-col items-center justify-center h-full p-3">
+                        <span className="text-sm font-bold text-foreground text-center">
+                          {size.name}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col h-full">
+                        <div className="flex-1 flex items-center justify-center p-2">
+                          <span className="text-sm font-bold text-primary text-center">
+                            {size.name}
+                          </span>
+                        </div>
+                        <div className="h-px bg-border mx-3"></div>
+                        <div className="p-3">
+                          <div className="flex items-center justify-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateWashDryBedSize(size.id, quantity - 1);
+                              }}
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <div className="flex-1 text-center mx-2">
+                              <div className="text-lg font-bold text-primary">{quantity}</div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateWashDryBedSize(size.id, quantity + 1);
+                              }}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Ironing Switch */}
       {showIroning && (
         <div className="mt-6">
@@ -262,6 +372,87 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
                   <Shirt className={`h-6 w-6 mx-auto mb-2 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
                   <span className="text-sm font-medium">{option.label}</span>
                 </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Ironing Bed Sizes Selection */}
+      {showIroning && data.needsIroning === true && (
+        <div className="mt-6">
+          <h3 className="text-xl font-bold text-[#185166] mb-4">
+            Select bed sizes to iron
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {bedSizes.map((size) => {
+              const quantity = data.ironingBedSizes?.[size.id] || 0;
+              const isSelected = quantity > 0;
+              
+              return (
+                <div
+                  key={size.id}
+                  className={`rounded-xl border-2 transition-all duration-300 ${
+                    isSelected
+                      ? 'border-primary bg-primary/5 shadow-lg h-32'
+                      : 'border-border bg-card hover:border-primary/50 hover:shadow-md h-28'
+                  }`}
+                >
+                  <button
+                    onClick={() => {
+                      if (!isSelected) {
+                        updateIroningBedSize(size.id, 1);
+                      }
+                    }}
+                    className="w-full h-full"
+                  >
+                    {!isSelected ? (
+                      <div className="flex flex-col items-center justify-center h-full p-3">
+                        <span className="text-sm font-bold text-foreground text-center">
+                          {size.name}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col h-full">
+                        <div className="flex-1 flex items-center justify-center p-2">
+                          <span className="text-sm font-bold text-primary text-center">
+                            {size.name}
+                          </span>
+                        </div>
+                        <div className="h-px bg-border mx-3"></div>
+                        <div className="p-3">
+                          <div className="flex items-center justify-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateIroningBedSize(size.id, quantity - 1);
+                              }}
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <div className="flex-1 text-center mx-2">
+                              <div className="text-lg font-bold text-primary">{quantity}</div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateIroningBedSize(size.id, quantity + 1);
+                              }}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </button>
+                </div>
               );
             })}
           </div>
