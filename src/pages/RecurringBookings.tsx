@@ -12,18 +12,7 @@ import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { adminNavigation } from '@/lib/navigationItems';
 import { PostponeDialog } from '@/components/recurringBookings/PostponeDialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 interface RecurringService {
   id: number;
   customer: number;
@@ -44,13 +33,15 @@ interface RecurringService {
   postponed: boolean;
   resume_date?: string;
 }
-
 export default function RecurringBookings() {
   const [recurringServices, setRecurringServices] = useState<RecurringService[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { user, userRole, signOut } = useAuth();
-
+  const {
+    user,
+    userRole,
+    signOut
+  } = useAuth();
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -58,25 +49,22 @@ export default function RecurringBookings() {
       console.error('Error signing out:', error);
     }
   };
-
   if (!user || userRole !== 'admin') {
     return <Navigate to="/auth" replace />;
   }
-
   useEffect(() => {
     fetchRecurringServices();
   }, []);
-
   const fetchRecurringServices = async () => {
     try {
       // First, get the recurring services
-      const { data: services, error: servicesError } = await supabase
-        .from('recurring_services')
-        .select('*')
-        .order('start_date', { ascending: false });
-
+      const {
+        data: services,
+        error: servicesError
+      } = await supabase.from('recurring_services').select('*').order('start_date', {
+        ascending: false
+      });
       if (servicesError) throw servicesError;
-
       if (!services || services.length === 0) {
         setRecurringServices([]);
         return;
@@ -88,22 +76,19 @@ export default function RecurringBookings() {
       const addressIds = [...new Set(services.map(s => s.address).filter(Boolean))];
 
       // Fetch customers
-      const { data: customers } = await supabase
-        .from('customers')
-        .select('id, first_name, last_name')
-        .in('id', customerIds);
+      const {
+        data: customers
+      } = await supabase.from('customers').select('id, first_name, last_name').in('id', customerIds);
 
       // Fetch cleaners
-      const { data: cleaners } = await supabase
-        .from('cleaners')
-        .select('id, first_name, last_name')
-        .in('id', cleanerIds);
+      const {
+        data: cleaners
+      } = await supabase.from('cleaners').select('id, first_name, last_name').in('id', cleanerIds);
 
       // Fetch addresses
-      const { data: addresses } = await supabase
-        .from('addresses')
-        .select('id, address, postcode')
-        .in('id', addressIds);
+      const {
+        data: addresses
+      } = await supabase.from('addresses').select('id, address, postcode').in('id', addressIds);
 
       // Create lookup maps
       const customersMap = new Map(customers?.map(c => [c.id, c]) || []);
@@ -133,7 +118,6 @@ export default function RecurringBookings() {
         if (address) {
           address_text = address.address;
         }
-
         return {
           ...service,
           customer_name,
@@ -141,44 +125,38 @@ export default function RecurringBookings() {
           address: address_text
         };
       });
-
       setRecurringServices(servicesWithNames);
     } catch (error) {
       console.error('Error fetching recurring services:', error);
       toast({
         title: "Error",
         description: "Failed to load recurring services",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   };
-
   const handleDelete = async (id: number) => {
     try {
-      const { error } = await supabase
-        .from('recurring_services')
-        .delete()
-        .eq('id', id);
-
+      const {
+        error
+      } = await supabase.from('recurring_services').delete().eq('id', id);
       if (error) throw error;
-
       setRecurringServices(prev => prev.filter(service => service.id !== id));
       toast({
         title: "Success",
-        description: "Recurring service deleted successfully",
+        description: "Recurring service deleted successfully"
       });
     } catch (error) {
       console.error('Error deleting recurring service:', error);
       toast({
         title: "Error",
         description: "Failed to delete recurring service",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
-
   const getFrequencyBadgeColor = (frequency: string) => {
     switch (frequency?.toLowerCase()) {
       case 'weekly':
@@ -191,24 +169,12 @@ export default function RecurringBookings() {
         return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
     }
   };
-
   if (loading) {
-    return (
-      <SidebarProvider>
+    return <SidebarProvider>
         <div className="min-h-screen flex flex-col w-full bg-gray-50">
-          <UnifiedHeader 
-            title=""
-            user={user}
-            userRole={userRole}
-            onSignOut={handleSignOut}
-          />
+          <UnifiedHeader title="" user={user} userRole={userRole} onSignOut={handleSignOut} />
           <div className="flex flex-1 w-full">
-            <UnifiedSidebar 
-              navigationItems={adminNavigation}
-              user={user}
-              userRole={userRole}
-              onSignOut={handleSignOut}
-            />
+            <UnifiedSidebar navigationItems={adminNavigation} user={user} userRole={userRole} onSignOut={handleSignOut} />
             <SidebarInset className="flex-1 flex flex-col p-0 m-0 overflow-x-hidden">
               <main className="flex-1 bg-gray-50 m-0 px-4 md:px-6 py-4 md:py-6 space-y-6 w-full">
                 <div className="flex items-center justify-center min-h-[400px]">
@@ -221,47 +187,30 @@ export default function RecurringBookings() {
             </SidebarInset>
           </div>
         </div>
-      </SidebarProvider>
-    );
+      </SidebarProvider>;
   }
-
-  return (
-    <SidebarProvider>
+  return <SidebarProvider>
       <div className="min-h-screen flex flex-col w-full bg-gray-50">
-        <UnifiedHeader 
-          title=""
-          user={user}
-          userRole={userRole}
-          onSignOut={handleSignOut}
-        />
+        <UnifiedHeader title="" user={user} userRole={userRole} onSignOut={handleSignOut} />
         <div className="flex flex-1 w-full">
-          <UnifiedSidebar 
-            navigationItems={adminNavigation}
-            user={user}
-            userRole={userRole}
-            onSignOut={handleSignOut}
-          />
+          <UnifiedSidebar navigationItems={adminNavigation} user={user} userRole={userRole} onSignOut={handleSignOut} />
           <SidebarInset className="flex-1 flex flex-col p-0 m-0 overflow-x-hidden">
             <main className="flex-1 bg-gray-50 m-0 px-4 md:px-6 py-4 md:py-6 space-y-6 w-full">
             <div className="max-w-7xl mx-auto space-y-6">
               <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Recurring Bookings</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+                  </h1>
           <p className="text-muted-foreground">
-            Manage recurring cleaning services and schedules
-          </p>
+                  </p>
         </div>
-        <Button 
-          onClick={() => navigate('/recurring-bookings/add')}
-          className="flex items-center gap-2"
-        >
+        <Button onClick={() => navigate('/recurring-bookings/add')} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
           Add Recurring Booking
         </Button>
       </div>
 
-      {recurringServices.length === 0 ? (
-        <Card>
+      {recurringServices.length === 0 ? <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No recurring bookings found</h3>
@@ -273,30 +222,18 @@ export default function RecurringBookings() {
               Add Recurring Booking
             </Button>
           </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-6">
-          {recurringServices.map((service) => (
-            <Card 
-              key={service.id} 
-              className={`hover:shadow-md transition-shadow ${
-                service.postponed 
-                  ? 'border-orange-200 bg-orange-50/50 shadow-sm' 
-                  : 'hover:shadow-md'
-              }`}
-            >
+        </Card> : <div className="grid gap-6">
+          {recurringServices.map(service => <Card key={service.id} className={`hover:shadow-md transition-shadow ${service.postponed ? 'border-orange-200 bg-orange-50/50 shadow-sm' : 'hover:shadow-md'}`}>
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div className="space-y-2">
                     <CardTitle className="flex items-center gap-2">
                       <User className="h-5 w-5" />
                       {service.customer_name}
-                      {service.postponed && (
-                        <Badge variant="outline" className="ml-2 border-orange-300 text-orange-700 bg-orange-100">
+                      {service.postponed && <Badge variant="outline" className="ml-2 border-orange-300 text-orange-700 bg-orange-100">
                           <Pause className="h-3 w-3 mr-1" />
                           Postponed
-                        </Badge>
-                      )}
+                        </Badge>}
                     </CardTitle>
                     <CardDescription className="flex items-center gap-2">
                       <MapPin className="h-4 w-4" />
@@ -304,24 +241,12 @@ export default function RecurringBookings() {
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
-                    <PostponeDialog
-                      serviceId={service.id}
-                      isPostponed={service.postponed}
-                      onUpdate={fetchRecurringServices}
-                    >
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className={service.postponed ? "text-green-600 hover:text-green-700" : "text-orange-600 hover:text-orange-700"}
-                      >
+                    <PostponeDialog serviceId={service.id} isPostponed={service.postponed} onUpdate={fetchRecurringServices}>
+                      <Button variant="outline" size="sm" className={service.postponed ? "text-green-600 hover:text-green-700" : "text-orange-600 hover:text-orange-700"}>
                         {service.postponed ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
                       </Button>
                     </PostponeDialog>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate(`/recurring-bookings/edit/${service.id}`)}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/recurring-bookings/edit/${service.id}`)}>
                       <Edit className="h-4 w-4" />
                     </Button>
                     <AlertDialog>
@@ -376,18 +301,14 @@ export default function RecurringBookings() {
                         <p className="text-sm font-medium text-muted-foreground">Start Time</p>
                         <p className="font-medium">{service.start_time}</p>
                       </div>
-                      {service.days_of_the_week && (
-                        <div className="md:col-span-2">
+                      {service.days_of_the_week && <div className="md:col-span-2">
                           <p className="text-sm font-medium text-muted-foreground">Days of Week</p>
                           <p className="font-medium">{service.days_of_the_week.split(', ').map(day => day.charAt(0).toUpperCase() + day.slice(1)).join(', ')}</p>
-                        </div>
-                      )}
-                      {service.postponed && service.resume_date && (
-                        <div>
+                        </div>}
+                      {service.postponed && service.resume_date && <div>
                           <p className="text-sm font-medium text-muted-foreground">Resume Date</p>
                           <p className="font-medium text-orange-700">{new Date(service.resume_date).toLocaleDateString()}</p>
-                        </div>
-                      )}
+                        </div>}
                     </div>
                   </div>
 
@@ -430,15 +351,12 @@ export default function RecurringBookings() {
                   </div>
                 </div>
               </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+            </Card>)}
+        </div>}
             </div>
           </main>
           </SidebarInset>
         </div>
       </div>
-    </SidebarProvider>
-  );
+    </SidebarProvider>;
 }
