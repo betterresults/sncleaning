@@ -396,6 +396,8 @@ export const AirbnbConfigPanel: React.FC = () => {
         if (/^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/.test(token)) {
           const parts = token.split('.');
           const fieldName = parts[0];
+          // Skip built-ins like Math
+          if (fieldName === 'Math') return;
           // Add field to sampleData if it doesn't exist yet
           if (!sampleData[fieldName]) {
             sampleData[fieldName] = { 
