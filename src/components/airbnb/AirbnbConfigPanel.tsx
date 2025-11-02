@@ -254,7 +254,7 @@ export const AirbnbConfigPanel: React.FC = () => {
     { value: 'bathrooms', label: 'Bathrooms', dbCategory: 'Bathrooms' },
     { value: 'additionalRooms', label: 'Additional Rooms', dbCategory: 'Additional Rooms' },
     { value: 'serviceType', label: 'Service Type', dbCategory: 'Service Type' },
-    { value: 'airbnbStandard', label: 'Airbnb Standard', dbCategory: 'Property Features' },
+    { value: 'propertyFeatures', label: 'Property Features', dbCategory: 'Property Features' },
     { value: 'alreadyCleaned', label: 'Already Cleaned', dbCategory: 'Cleaning History' },
     { value: 'ovenCleaning', label: 'Oven Cleaning', dbCategory: 'Oven Cleaning' },
     { value: 'cleaningProducts', label: 'Cleaning Products', dbCategory: 'Cleaning Supplies' },
