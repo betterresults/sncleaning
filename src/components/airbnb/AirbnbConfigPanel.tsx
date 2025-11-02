@@ -509,9 +509,23 @@ export const AirbnbConfigPanel: React.FC = () => {
   // Extract formula references (elements that are not in availableFields)
   const extractFormulaReferences = (elements: FormulaElement[]): string[] => {
     const formulaRefs = new Set<string>();
-    elements.forEach(el => {
+    const functionNames = new Set(['ABC', 'Math', 'abs', 'floor', 'ceil', 'round', 'min', 'max', 'sqrt', 'pow']);
+    
+    elements.forEach((el, index) => {
       if (el.type === 'field' && el.value) {
         const fieldName = el.value.split('.')[0];
+        
+        // Skip if it's a known function name
+        if (functionNames.has(fieldName)) {
+          return;
+        }
+        
+        // Check if next element is '.' or '(' - indicates it's a function call
+        const nextEl = elements[index + 1];
+        if (nextEl && (nextEl.value === '.' || nextEl.value === '(')) {
+          return;
+        }
+        
         // If it's not in availableFields and looks like an identifier, it's a formula reference
         if (!availableFields.some(f => f.value === fieldName) && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(fieldName)) {
           formulaRefs.add(fieldName);
