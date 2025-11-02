@@ -12,6 +12,7 @@ import { ArrowLeft, Plus } from "lucide-react";
 import CreateCustomerDialog from "@/components/booking/CreateCustomerDialog";
 import CreateCleanerDialog from "@/components/booking/CreateCleanerDialog";
 import { useServiceTypes, useCleaningTypes } from "@/hooks/useCompanySettings";
+import UpdateBookingsCleanerDialog from "@/components/recurring/UpdateBookingsCleanerDialog";
 
 interface Customer {
   id: number;
@@ -58,6 +59,9 @@ export default function EditRecurringBooking() {
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [showCreateCustomer, setShowCreateCustomer] = useState(false);
   const [showCreateCleaner, setShowCreateCleaner] = useState(false);
+  const [originalCleanerId, setOriginalCleanerId] = useState<string | null>(null);
+  const [showUpdateBookingsDialog, setShowUpdateBookingsDialog] = useState(false);
+  const [pendingCleanerId, setPendingCleanerId] = useState<string>('');
   
   // Fetch dynamic service types and cleaning types
   const { data: serviceTypes } = useServiceTypes();
@@ -113,6 +117,10 @@ export default function EditRecurringBooking() {
       if (data) {
         const startTimeRaw = (data.start_time as unknown as string) || '';
         const startTime = typeof startTimeRaw === 'string' ? startTimeRaw.substring(0,5) : '';
+        
+        // Store original cleaner for comparison
+        setOriginalCleanerId(data.cleaner?.toString() || null);
+        
         setFormData({
           client: data.customer?.toString() || '',
           address: data.address || '',
@@ -218,12 +226,29 @@ export default function EditRecurringBooking() {
   };
 
   const handleCleanerChange = (cleanerId: string) => {
-    const cleaner = cleaners.find(c => c.id === parseInt(cleanerId));
+    // Check if cleaner has changed from original
+    if (originalCleanerId && cleanerId !== originalCleanerId && cleanerId) {
+      setPendingCleanerId(cleanerId);
+      setShowUpdateBookingsDialog(true);
+    } else {
+      // No change or clearing cleaner, just update normally
+      const cleaner = cleaners.find(c => c.id === parseInt(cleanerId));
+      setFormData(prev => ({
+        ...prev,
+        cleaner: cleanerId,
+        cleaner_rate: cleaner?.hourly_rate?.toString() || prev.cleaner_rate,
+      }));
+    }
+  };
+
+  const handleConfirmCleanerChange = () => {
+    const cleaner = cleaners.find(c => c.id === parseInt(pendingCleanerId));
     setFormData(prev => ({
       ...prev,
-      cleaner: cleanerId,
+      cleaner: pendingCleanerId,
       cleaner_rate: cleaner?.hourly_rate?.toString() || prev.cleaner_rate,
     }));
+    setPendingCleanerId('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -624,6 +649,16 @@ export default function EditRecurringBooking() {
           Create Cleaner
         </Button>
       </CreateCleanerDialog>
+
+      <UpdateBookingsCleanerDialog
+        open={showUpdateBookingsDialog}
+        onOpenChange={setShowUpdateBookingsDialog}
+        recurringServiceId={id!}
+        oldCleanerId={originalCleanerId}
+        newCleanerId={pendingCleanerId}
+        newCleanerName={cleaners.find(c => c.id === parseInt(pendingCleanerId))?.first_name + ' ' + cleaners.find(c => c.id === parseInt(pendingCleanerId))?.last_name || ''}
+        onConfirm={handleConfirmCleanerChange}
+      />
     </div>
   );
 }
