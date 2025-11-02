@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useBookingCalculations } from '@/hooks/useBookingCalculations';
 
 interface BookingSummaryProps {
   data: BookingData;
@@ -18,6 +19,9 @@ interface BookingSummaryProps {
 const BookingSummary: React.FC<BookingSummaryProps> = ({ data, isAdminMode = false, onUpdate }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditingPricing, setIsEditingPricing] = useState(false);
+
+  // Use formula-based calculations
+  const calculations = useBookingCalculations(data);
 
   // Fetch linen products from database
   const { data: linenProducts = [] } = useQuery({
@@ -81,35 +85,19 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data, isAdminMode = fal
     return linensTypes[data.linensHandling as keyof typeof linensTypes] || '';
   };
 
-  const calculateShortNoticeCharge = () => {
-    if (!data.selectedDate) return { charge: 0, notice: '', hoursUntil: 0 };
+  // Get short notice info for display
+  const getShortNoticeInfo = () => {
+    if (!data.selectedDate || calculations.shortNoticeCharge === 0) {
+      return { charge: 0, notice: '', hoursUntil: 0 };
+    }
     
     const now = new Date();
     const cleaningDate = new Date(data.selectedDate);
-
-    // Check if it's today (same-day booking)
+    
     const isToday = cleaningDate.getDate() === now.getDate() &&
       cleaningDate.getMonth() === now.getMonth() &&
       cleaningDate.getFullYear() === now.getFullYear();
 
-    if (isToday) {
-      // For same-day bookings, if no specific time, assume earliest available (now + 2h)
-      if (data.selectedTime) {
-        const timeStr = data.selectedTime.replace(/[AP]M/, '').trim();
-        const [hours, minutes] = timeStr.split(':').map(Number);
-        let adjustedHours = hours;
-        if (data.selectedTime.includes('PM') && hours !== 12) adjustedHours += 12;
-        if (data.selectedTime.includes('AM') && hours === 12) adjustedHours = 0;
-        cleaningDate.setHours(adjustedHours, minutes || 0, 0, 0);
-      } else {
-        const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-        cleaningDate.setHours(twoHoursFromNow.getHours(), twoHoursFromNow.getMinutes(), 0, 0);
-      }
-      const hoursUntilCleaning = (cleaningDate.getTime() - now.getTime()) / (1000 * 60 * 60);
-      return { charge: 50, notice: 'Same day booking (within 12 hours)', hoursUntil: hoursUntilCleaning };
-    }
-
-    // Not same-day: compute hours until cleaning based on selected time or default
     if (data.selectedTime) {
       const timeStr = data.selectedTime.replace(/[AP]M/, '').trim();
       const [hours, minutes] = timeStr.split(':').map(Number);
@@ -122,122 +110,52 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data, isAdminMode = fal
     }
 
     const hoursUntilCleaning = (cleaningDate.getTime() - now.getTime()) / (1000 * 60 * 60);
-    if (hoursUntilCleaning < 0) return { charge: 0, notice: '', hoursUntil: hoursUntilCleaning };
-    if (hoursUntilCleaning <= 24) return { charge: 30, notice: 'Short notice booking (within 24 hours)', hoursUntil: hoursUntilCleaning };
-    if (hoursUntilCleaning <= 48) return { charge: 15, notice: 'Short notice booking (within 48 hours)', hoursUntil: hoursUntilCleaning };
-    return { charge: 0, notice: '', hoursUntil: hoursUntilCleaning };
+    
+    if (isToday) {
+      return { 
+        charge: calculations.shortNoticeCharge, 
+        notice: 'Same day booking (within 12 hours)', 
+        hoursUntil: hoursUntilCleaning 
+      };
+    }
+    if (hoursUntilCleaning <= 24) {
+      return { 
+        charge: calculations.shortNoticeCharge, 
+        notice: 'Short notice booking (within 24 hours)', 
+        hoursUntil: hoursUntilCleaning 
+      };
+    }
+    if (hoursUntilCleaning <= 48) {
+      return { 
+        charge: calculations.shortNoticeCharge, 
+        notice: 'Short notice booking (within 48 hours)', 
+        hoursUntil: hoursUntilCleaning 
+      };
+    }
+    
+    return { charge: calculations.shortNoticeCharge, notice: '', hoursUntil: hoursUntilCleaning };
   };
 
-  const calculateHourlyRate = () => {
-    let rate = 25; // Base rate
-    
-    // Service type pricing
-    const serviceRates = {
-      'checkin-checkout': 0,
-      'midstay': 0,
-      'light': -3,
-      'deep': 5
-    };
-    rate += serviceRates[data.serviceType as keyof typeof serviceRates] || 0;
-    
-    // Cleaning products pricing
-    if (data.cleaningProducts === 'products') {
-      rate += 2; // Bring cleaning products
-    }
-    
-    // Equipment pricing - only add to hourly rate for specific conditions
-    if (data.cleaningProducts === 'equipment') {
-      // If ongoing arrangement, no extra hourly charge
-      if (data.equipmentArrangement === 'ongoing') {
-        rate += 5; // Ongoing arrangement adds £5/hour
-      } else if (data.equipmentArrangement === 'oneoff' || data.serviceType === 'deep') {
-        // One-off charge handled separately, not per hour
-      } else {
-        // Default behavior: add per hour charge for regular cleaning
-        const isStandardCleaning = data.alreadyCleaned !== false && 
-          ['checkin-checkout', 'midstay', 'light'].includes(data.serviceType);
-        if (isStandardCleaning) {
-          rate += 5; // Per hour equipment cost for regular cleaning only
-        }
-      }
-    }
-    
-    // Airbnb standard (affects rate for check-in/checkout)
-    if (data.serviceType === 'checkin-checkout' && data.alreadyCleaned === false) {
-      rate += 5; // Deep cleaning surcharge
-    }
-    
-    return rate;
+  // Calculate linen packages cost
+  const calculateLinenCost = () => {
+    if (!data.linenPackages) return 0;
+    return Object.entries(data.linenPackages).reduce((total, [packageId, quantity]) => {
+      const product = linenProducts.find((p: any) => p.id === packageId);
+      return total + (product && quantity > 0 ? product.price * quantity : 0);
+    }, 0);
   };
 
-  const calculateEquipmentCost = () => {
-    if (data.cleaningProducts !== 'equipment') return 0;
-    
-    if (data.serviceType === 'deep' || data.equipmentArrangement === 'oneoff') {
-      return 30; // One-off cost
-    }
-    
-    if (data.equipmentArrangement === 'ongoing') {
-      return 0; // No extra charge for ongoing arrangements
-    }
-    
-    // Default behavior for equipment without arrangement specified
-    const requiresOneOffCost = data.alreadyCleaned === false || 
-      !['checkin-checkout', 'midstay', 'light'].includes(data.serviceType);
-    if (requiresOneOffCost) {
-      return 30; // One-off cost
-    } else {
-      return (data.estimatedHours || 0) * 5; // Per hour cost
-    }
-  };
-
-  const calculateOvenCost = () => {
-    if (!data.needsOvenCleaning || !data.ovenType) return 0;
-    
-    const ovenCosts = {
-      single: 25,
-      double: 35,
-      range: 45,
-      convection: 30
-    };
-    
-    return ovenCosts[data.ovenType as keyof typeof ovenCosts] || 0;
-  };
-
+  // Calculate total with admin overrides
   const calculateTotal = () => {
     // If admin has set a total cost override, use that
     if (isAdminMode && data.adminTotalCostOverride !== undefined && data.adminTotalCostOverride !== null) {
       return data.adminTotalCostOverride;
     }
     
-    let total = 0;
-    const hourlyRate = data.adminHourlyRateOverride !== undefined ? data.adminHourlyRateOverride : calculateHourlyRate();
+    let total = calculations.totalCost;
     
-    // Cleaning service cost
-    if (data.estimatedHours) {
-      const cleaningHours = data.estimatedHours + (data.extraHours || 0);
-      total += cleaningHours * hourlyRate;
-    }
-    
-    // Equipment cost (separate from hourly rate)
-    total += calculateEquipmentCost();
-    
-    // Oven cleaning cost
-    total += calculateOvenCost();
-    
-    // Short notice charges
-    const shortNotice = calculateShortNoticeCharge();
-    total += shortNotice.charge;
-    
-    // Linen packages cost
-    if (data.linenPackages) {
-      Object.entries(data.linenPackages).forEach(([packageId, quantity]) => {
-        const product = linenProducts.find((p: any) => p.id === packageId);
-        if (product && quantity > 0) {
-          total += product.price * quantity;
-        }
-      });
-    }
+    // Add linen packages cost
+    total += calculateLinenCost();
     
     const subtotal = total;
     
@@ -249,23 +167,25 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data, isAdminMode = fal
       total -= data.adminDiscountAmount;
     }
     
-    return Math.max(0, total); // Ensure total is never negative
+    return Math.max(0, total);
   };
 
-  const shortNoticeInfo = calculateShortNoticeCharge();
+  const shortNoticeInfo = getShortNoticeInfo();
   const hasShortNoticeCharge = shortNoticeInfo.charge > 0;
   
-  const effectiveHourlyRate = data.adminHourlyRateOverride !== undefined ? data.adminHourlyRateOverride : calculateHourlyRate();
+  const effectiveHourlyRate = data.adminHourlyRateOverride !== undefined 
+    ? data.adminHourlyRateOverride 
+    : calculations.hourlyRate;
 
   const renderSummaryContent = () => (
     <div className="space-y-3">
       {/* Service Section */}
-      {getServiceDescription() && data.estimatedHours && data.estimatedHours > 0 && (
+      {getServiceDescription() && calculations.totalHours && calculations.totalHours > 0 && (
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">{getServiceDescription()}</span>
             <span className="text-foreground font-semibold whitespace-nowrap">
-              {(data.estimatedHours + (data.extraHours || 0))}h × £{effectiveHourlyRate.toFixed(2)}/hr
+              {calculations.totalHours}h × £{effectiveHourlyRate.toFixed(2)}/hr
             </span>
           </div>
         </div>
@@ -297,14 +217,14 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data, isAdminMode = fal
       )}
 
       {/* Equipment */}
-      {data.cleaningProducts === 'equipment' && calculateEquipmentCost() > 0 && (
+      {data.cleaningProducts === 'equipment' && (
         <div className="space-y-3 mt-3">
           <div className="flex justify-between items-center pl-4">
             <span className="text-muted-foreground">
               Equipment {data.equipmentArrangement === 'oneoff' ? 'delivery' : ''}
             </span>
             <span className="text-foreground font-semibold">
-              £{calculateEquipmentCost().toFixed(2)}
+              Included
             </span>
           </div>
         </div>
@@ -318,7 +238,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data, isAdminMode = fal
               {data.ovenType ? `${data.ovenType.charAt(0).toUpperCase() + data.ovenType.slice(1)} oven cleaning` : 'Oven cleaning'}
             </span>
             <span className="text-foreground font-semibold">
-              £{calculateOvenCost().toFixed(2)}
+              Included
             </span>
           </div>
         </div>
@@ -384,23 +304,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data, isAdminMode = fal
           <span>Discount ({data.adminDiscountPercentage}%)</span>
           <span className="font-semibold">
             -£{(() => {
-              let subtotal = 0;
-              const hourlyRate = data.adminHourlyRateOverride !== undefined ? data.adminHourlyRateOverride : calculateHourlyRate();
-              if (data.estimatedHours) {
-                const cleaningHours = data.estimatedHours + (data.extraHours || 0);
-                subtotal += cleaningHours * hourlyRate;
-              }
-              subtotal += calculateEquipmentCost();
-              subtotal += calculateOvenCost();
-              subtotal += shortNoticeInfo.charge;
-              if (data.linenPackages) {
-                Object.entries(data.linenPackages).forEach(([packageId, quantity]) => {
-                  const product = linenProducts.find((p: any) => p.id === packageId);
-                  if (product && quantity > 0) {
-                    subtotal += product.price * quantity;
-                  }
-                });
-              }
+              const subtotal = calculations.totalCost + calculateLinenCost();
               return ((subtotal * data.adminDiscountPercentage!) / 100).toFixed(2);
             })()}
           </span>
@@ -451,7 +355,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data, isAdminMode = fal
                 <Input
                   type="number"
                   step="0.01"
-                  placeholder={`Default: £${calculateHourlyRate().toFixed(2)}`}
+                  placeholder={`Default: £${effectiveHourlyRate.toFixed(2)}`}
                   value={data.adminHourlyRateOverride ?? ''}
                   onChange={(e) => onUpdate({ 
                     adminHourlyRateOverride: e.target.value ? parseFloat(e.target.value) : undefined 

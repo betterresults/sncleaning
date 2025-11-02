@@ -5,6 +5,7 @@ import { BookingData } from '../AirbnbBookingForm';
 import { Home, Building, Plus, Minus, CheckCircle, Droplets, Wrench, X, BookOpen, Zap, Bed } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { useAirbnbFieldConfigs } from '@/hooks/useAirbnbFieldConfigs';
+import { useBookingCalculations } from '@/hooks/useBookingCalculations';
 
 interface PropertyStepProps {
   data: BookingData;
@@ -113,52 +114,9 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
     }
   };
 
-  const roundToNearestHalf = (hours: number) => {
-    return Math.round(hours * 2) / 2; // Round to nearest 0.5
-  };
-
-  const calculateRecommendedHours = () => {
-    let totalHours = 0;
-    
-    // Property type base hours (from dynamic config if available)
-    const selectedPropertyType = propertyTypeConfigs.find((cfg: any) => cfg.option === data.propertyType);
-    if (selectedPropertyType && typeof selectedPropertyType.time === 'number') {
-      totalHours += Math.max(0, selectedPropertyType.time) / 60; // time is in minutes
-    } else {
-      const propertyTypeHours = { flat: 2, house: 3 } as const;
-      totalHours += (propertyTypeHours as any)[data.propertyType] || 0;
-    }
-    
-    // Bedrooms
-    const bedroomHours = { studio: 0.5, '1': 0.5, '2': 1, '3': 1.5, '4': 2, '5': 2.5, '6+': 3 };
-    totalHours += bedroomHours[data.bedrooms as keyof typeof bedroomHours] || 0;
-    
-    // Bathrooms
-    totalHours += parseInt(data.bathrooms || '0') * 0.5;
-    
-    // Additional rooms
-    const additionalRoomsTotal = Object.values(data.additionalRooms || {}).reduce((sum, count) => sum + count, 0);
-    totalHours += additionalRoomsTotal * 0.5;
-    
-    // Oven cleaning
-    if (data.needsOvenCleaning) {
-      const ovenHours = { single: 0.5, double: 1, range: 1.5, convection: 1 };
-      totalHours += ovenHours[data.ovenType as keyof typeof ovenHours] || 0.5;
-    }
-    
-    // Linen handling
-    const linenHours = { 'customer-handles': 0, 'wash-hang': 0.5, 'wash-dry': 0.5, 'order-linens': 0 };
-    totalHours += linenHours[data.linensHandling as keyof typeof linenHours] || 0;
-    
-    // Deep cleaning multiplier
-    if (data.serviceType === 'deep' || data.alreadyCleaned === false) {
-      totalHours *= 1.3;
-    }
-    
-    return roundToNearestHalf(Math.max(totalHours, 2)); // Minimum 2 hours, rounded to nearest 0.5
-  };
-
-  const recommendedHours = calculateRecommendedHours();
+  // Use formula-based calculations
+  const calculations = useBookingCalculations(data);
+  const recommendedHours = calculations.baseTime;
   
   const canContinue = data.propertyType && data.bedrooms && data.bathrooms && data.serviceType && 
     (data.cleaningProducts !== 'equipment' || 
@@ -184,7 +142,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
   // Update recommended hours in booking data
   React.useEffect(() => {
     if (data.propertyType && data.bedrooms && data.bathrooms && data.serviceType && !data.estimatedHours) {
-      onUpdate({ estimatedHours: roundToNearestHalf(recommendedHours) });
+      onUpdate({ estimatedHours: recommendedHours });
     }
   }, [recommendedHours, data.propertyType, data.bedrooms, data.bathrooms, data.serviceType, data.estimatedHours, onUpdate]);
 

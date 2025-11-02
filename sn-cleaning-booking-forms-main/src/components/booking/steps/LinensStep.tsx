@@ -7,6 +7,7 @@ import { BookingData } from '../AirbnbBookingForm';
 import { Truck, Shirt, Plus, Minus, Package, Info } from 'lucide-react';
 import { useAirbnbFieldConfigs } from '@/hooks/useAirbnbFieldConfigs';
 import { useLinenProducts } from '@/hooks/useLinenProducts';
+import { useBookingCalculations } from '@/hooks/useBookingCalculations';
 
 interface LinensStepProps {
   data: BookingData;
@@ -39,17 +40,9 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
         { value: 'order-linens', label: 'Order linens from us', icon: Package }
       ];
 
-  const getRecommendedExtraHours = () => {
-    // If ironing is selected, it includes washing time (1.5 hours total)
-    if (data.needsIroning) {
-      return 1.5; // 1.5 hours total for washing + ironing
-    }
-    // If only washing (no ironing), add 0.5 hours
-    if (data.linensHandling === 'wash-hang' || data.linensHandling === 'wash-dry') {
-      return 0.5; // 30 minutes for washing only
-    }
-    return 0;
-  };
+  // Use formula-based calculations
+  const calculations = useBookingCalculations(data);
+  const recommendedExtraHours = calculations.additionalTime;
 
   const roundToNearestHalf = (hours: number) => {
     return Math.round(hours * 2) / 2;
@@ -57,12 +50,11 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
 
   // Auto-adjust extra hours based on linen handling selection (only when initially set)
   React.useEffect(() => {
-    const recommendedHours = getRecommendedExtraHours();
-    // Only auto-adjust if extraHours is not set yet (undefined/0) or when switching linen handling options
-    if ((!data.extraHours || data.extraHours === 0) && recommendedHours > 0) {
-      onUpdate({ extraHours: recommendedHours });
+    // Only auto-adjust if ironingHours is not set yet (undefined/0) or when switching linen handling options
+    if ((!data.ironingHours || data.ironingHours === 0) && recommendedExtraHours > 0) {
+      onUpdate({ ironingHours: recommendedExtraHours });
     }
-  }, [data.linensHandling, data.needsIroning, onUpdate]);
+  }, [data.linensHandling, data.needsIroning, recommendedExtraHours, onUpdate]);
 
   // Clear linen packages when switching away from "order linens from us"
   const handleLinenSelection = (value: string) => {
