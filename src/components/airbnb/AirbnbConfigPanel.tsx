@@ -1324,7 +1324,7 @@ export const AirbnbConfigPanel: React.FC = () => {
                       })}
                     </div>
 
-                    {testResult !== null && Object.keys(testValues).length === usedFields.length && (
+                    {testResult !== null && (
                       <div className="p-4 bg-background border-2 border-green-300 dark:border-green-700 rounded-lg">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-semibold">Formula Result:</span>
@@ -1338,9 +1338,9 @@ export const AirbnbConfigPanel: React.FC = () => {
                       </div>
                     )}
 
-                    {Object.keys(testValues).length < usedFields.length && (
+                    {testResult === null && currentFormula.elements.length > 0 && (
                       <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded text-sm text-amber-800 dark:text-amber-200">
-                        ⚠️ Select values for all fields to see the result
+                        ℹ️ Избери стойности за да видиш резултата (неизбраните полета = 0)
                       </div>
                     )}
                   </Card>
