@@ -165,6 +165,13 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
      (data.equipmentArrangement !== null && 
       (data.equipmentArrangement !== 'ongoing' || data.equipmentStorageConfirmed)));
 
+  // Reset alreadyCleaned when serviceType is not checkin-checkout
+  React.useEffect(() => {
+    if (data.serviceType && data.serviceType !== 'checkin-checkout' && data.alreadyCleaned !== null && data.alreadyCleaned !== undefined) {
+      onUpdate({ alreadyCleaned: null });
+    }
+  }, [data.serviceType, onUpdate]);
+
   // Auto-select cleaning products for deep cleaning or uncleaned properties
   React.useEffect(() => {
     if (data.serviceType === 'deep' || data.alreadyCleaned === false) {
