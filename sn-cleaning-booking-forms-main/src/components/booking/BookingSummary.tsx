@@ -413,15 +413,27 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data, isAdminMode = fal
                     {calculations.baseTime === 0 && ' ⚠️'}
                   </span>
                 </div>
+                {calculations.debug?.dryTime !== undefined && calculations.debug.dryTime > 0 && (
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span className="pl-2">+ Dry Time:</span>
+                    <span className="font-mono">{calculations.debug.dryTime.toFixed(2)}h</span>
+                  </div>
+                )}
+                {calculations.debug?.ironTime !== undefined && calculations.debug.ironTime > 0 && (
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span className="pl-2">+ Iron Time:</span>
+                    <span className="font-mono">{calculations.debug.ironTime.toFixed(2)}h</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span>Additional Time:</span>
                   <span className="font-mono">{calculations.additionalTime?.toFixed(2) || '0'}h</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between font-semibold border-t pt-1">
                   <span>Total Hours:</span>
                   <span className="font-mono">{calculations.totalHours?.toFixed(2) || '0'}h</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between mt-2">
                   <span>Hourly Rate:</span>
                   <span className="font-mono">£{calculations.hourlyRate?.toFixed(2) || '0'}</span>
                 </div>
@@ -433,7 +445,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data, isAdminMode = fal
                   <span>Short Notice:</span>
                   <span className="font-mono">£{calculations.shortNoticeCharge?.toFixed(2) || '0'}</span>
                 </div>
-                <div className="flex justify-between font-semibold">
+                <div className="flex justify-between font-semibold border-t pt-1">
                   <span>Total Cost:</span>
                   <span className="font-mono">£{calculations.totalCost?.toFixed(2) || '0'}</span>
                 </div>

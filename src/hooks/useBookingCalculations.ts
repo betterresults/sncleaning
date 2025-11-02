@@ -299,17 +299,42 @@ export const useBookingCalculations = (bookingData: BookingData) => {
       try {
         for (const element of elements) {
           if (element.type === 'field') {
-            const rawName = String(element.value || '').toLowerCase();
-            // Formula references (e.g., totalhours)
-            if (rawName in context) {
+            const rawName = String(element.value || '');
+            const rawNameLower = rawName.toLowerCase();
+            
+            // Check if it's a Math function (Math.ceil, Math.abs, etc.)
+            if (rawName.startsWith('Math.')) {
+              expression += rawName;
+              lastType = 'operator'; // Treat as operator so next element can be (
+              continue;
+            }
+            
+            // Check if it's a math function without Math prefix
+            if (['ceil', 'floor', 'round', 'abs', 'max', 'min'].includes(rawNameLower)) {
+              expression += `Math.${rawNameLower}`;
+              lastType = 'operator';
+              continue;
+            }
+            
+            // Formula references from context (e.g., basetime, drytime, additionaltime)
+            // Normalize context keys to match various formats
+            const contextKey = rawNameLower.replace(/[^a-z0-9]/g, '');
+            const contextMatch = Object.keys(context).find(k => 
+              k.toLowerCase().replace(/[^a-z0-9]/g, '') === contextKey
+            );
+            
+            if (contextMatch) {
               if (lastType === 'value' || lastType === 'close') expression += ' * ';
-              expression += `(${context[rawName].toString()})`;
+              expression += `(${context[contextMatch].toString()})`;
               lastType = 'value';
               continue;
             }
-            // Value vs time
-            const useTime = String(element.attribute || '').toLowerCase() === 'time' || rawName.includes('.time');
+            
+            // Field references with dot notation (e.g., propertyType.time, bedrooms.value)
+            const useTime = rawName.includes('.time');
+            const useValue = rawName.includes('.value') || (!rawName.includes('.time') && !rawName.includes('.'));
             const actualFieldName = rawName.replace('.value', '').replace('.time', '');
+            
             const val = useTime ? getFieldTime(actualFieldName) : getFieldValue(actualFieldName);
             if (lastType === 'value' || lastType === 'close') expression += ' * ';
             expression += `(${val.toString()})`;
@@ -335,6 +360,7 @@ export const useBookingCalculations = (bookingData: BookingData) => {
         }
 
         console.debug('[Formula] Expression:', expression);
+        console.debug('[Formula] Context:', context);
         const result = Function('"use strict"; return (' + expression + ')')();
         const numeric = typeof result === 'number' && isFinite(result) ? result : 0;
         // Collect debug info
@@ -388,7 +414,7 @@ export const useBookingCalculations = (bookingData: BookingData) => {
 
     // Find formulas by name (case-insensitive, whitespace-insensitive)
     const findFormula = (target: string) => {
-      const norm = (s: string) => String(s || '').trim().toLowerCase().replace(/\s+/g, '');
+      const norm = (s: string) => String(s || '').trim().toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
       const want = norm(target);
       return formulas.find((f: any) => norm(f.name) === want);
     };
@@ -418,10 +444,36 @@ export const useBookingCalculations = (bookingData: BookingData) => {
       console.debug('[Pricing] Using user override for base time:', baseTime);
     }
 
-    // Calculate additional time
+    // Calculate dry time (if exists)
+    const dryTimeFormula = findFormula('Dry time') || findFormula('Drytime');
+    let dryTime = 0;
+    if (dryTimeFormula && Array.isArray(dryTimeFormula.elements) && dryTimeFormula.elements.length > 0) {
+      dryTime = evaluateFormula(dryTimeFormula.elements, { basetime: baseTime }, 'Dry time');
+      console.debug('[Pricing] Dry time calculated:', dryTime);
+    }
+    
+    // Calculate iron time (if exists)
+    const ironTimeFormula = findFormula('Iron Time') || findFormula('Irontime');
+    let ironTime = 0;
+    if (ironTimeFormula && Array.isArray(ironTimeFormula.elements) && ironTimeFormula.elements.length > 0) {
+      ironTime = evaluateFormula(ironTimeFormula.elements, { basetime: baseTime, drytime: dryTime }, 'Iron time');
+      console.debug('[Pricing] Iron time calculated:', ironTime);
+    }
+
+    // Calculate additional time with proper context
     let additionalTime = 0;
     if (additionalTimeFormula) {
-      additionalTime = evaluateFormula(additionalTimeFormula.elements, {}, 'Additional Time');
+      additionalTime = evaluateFormula(
+        additionalTimeFormula.elements, 
+        { 
+          basetime: baseTime, 
+          drytime: dryTime, 
+          irontime: ironTime,
+          additionaltime: 0 // Prevent circular reference
+        }, 
+        'Additional time'
+      );
+      console.debug('[Pricing] Additional time calculated:', additionalTime);
     }
 
     // Allow user override of additional time (ironingHours)
@@ -435,6 +487,8 @@ export const useBookingCalculations = (bookingData: BookingData) => {
       const context = {
         basetime: baseTime,
         additionaltime: additionalTime,
+        drytime: dryTime,
+        irontime: ironTime
       };
       totalHours = evaluateFormula(totalHoursFormula.elements, context, 'Total Hours');
     }
@@ -482,6 +536,8 @@ export const useBookingCalculations = (bookingData: BookingData) => {
         formulas: formulaLogs,
         shortNotice: shortNoticeDebug,
         inputs: bookingData,
+        dryTime: roundTo2(dryTime),
+        ironTime: roundTo2(ironTime),
       },
     };
   }, [bookingData, formulas, allConfigs, categoryDefaults]);
