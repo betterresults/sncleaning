@@ -166,13 +166,6 @@ export default function UpdateBookingsCleanerDialog({
     }
   };
 
-  // If no affected bookings, just close and proceed
-  if (!loading && affectedBookings.length === 0) {
-    if (open) {
-      onConfirm();
-    }
-    return null;
-  }
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -184,6 +177,11 @@ export default function UpdateBookingsCleanerDialog({
               <div className="py-4 text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
                 <p>Checking for affected bookings...</p>
+              </div>
+            ) : affectedBookings.length === 0 ? (
+              <div className="py-2">
+                <p className="mb-2">No upcoming bookings with a different cleaner were found for this recurring service.</p>
+                <p>Do you want to continue and save the recurring booking only?</p>
               </div>
             ) : (
               <>
@@ -219,11 +217,17 @@ export default function UpdateBookingsCleanerDialog({
                 onCancel();
               }}
             >
-              No, Keep Current Cleaners
+              Cancel
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleUpdateBookings} disabled={updating}>
-              {updating ? 'Updating...' : 'Yes, Update All Bookings'}
-            </AlertDialogAction>
+            {affectedBookings.length === 0 ? (
+              <AlertDialogAction onClick={() => { onOpenChange(false); onConfirm(); }}>
+                Continue
+              </AlertDialogAction>
+            ) : (
+              <AlertDialogAction onClick={handleUpdateBookings} disabled={updating}>
+                {updating ? 'Updating...' : 'Yes, Update All Bookings'}
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         )}
       </AlertDialogContent>
