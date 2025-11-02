@@ -44,15 +44,7 @@ export default function UpdateBookingsCleanerDialog({
   const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
-    console.log('📋 UpdateBookingsCleanerDialog effect:', {
-      open,
-      oldCleanerId,
-      newCleanerId,
-      recurringServiceId
-    });
-    
     if (open && oldCleanerId && newCleanerId !== oldCleanerId) {
-      console.log('🔍 Fetching affected bookings...');
       fetchAffectedBookings();
     }
   }, [open, oldCleanerId, newCleanerId, recurringServiceId]);
@@ -67,50 +59,54 @@ export default function UpdateBookingsCleanerDialog({
         .eq('id', parseInt(recurringServiceId))
         .single();
 
-      console.log('📦 Recurring service data:', recurringService);
-
       if (recurringError) throw recurringError;
 
       if (!recurringService?.recurring_group_id) {
-        console.log('⚠️ No recurring_group_id found');
         setAffectedBookings([]);
+        setLoading(false);
         return;
       }
 
-      // Find upcoming bookings from this recurring group with the old cleaner
+      // Find ALL upcoming bookings from this recurring group
       const now = new Date().toISOString();
-      console.log('🔎 Looking for bookings with:', {
-        recurring_group_id: recurringService.recurring_group_id,
-        oldCleanerId: oldCleanerId,
-        date_gte: now
-      });
-
-      const { data: bookings, error: bookingsError } = await supabase
+      const { data: allBookings, error: allBookingsError } = await supabase
         .from('bookings')
-        .select(`
-          id,
-          date_time,
-          address,
-          cleaner,
-          cleaners!inner(first_name, last_name)
-        `)
+        .select('id, date_time, address, cleaner')
         .eq('recurring_group_id', recurringService.recurring_group_id)
-        .eq('cleaner', parseInt(oldCleanerId!))
         .gte('date_time', now)
         .order('date_time', { ascending: true });
 
-      console.log('📚 Found bookings:', bookings);
+      if (allBookingsError) throw allBookingsError;
 
-      if (bookingsError) throw bookingsError;
+      // Filter bookings that have a cleaner different from the new one
+      const bookingsWithDifferentCleaner = allBookings?.filter(
+        (booking: any) => booking.cleaner && booking.cleaner !== parseInt(newCleanerId)
+      ) || [];
 
-      const formatted = bookings?.map((booking: any) => ({
+      if (bookingsWithDifferentCleaner.length === 0) {
+        setAffectedBookings([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get cleaner details for these bookings
+      const cleanerIds = [...new Set(bookingsWithDifferentCleaner.map((b: any) => b.cleaner))];
+      const { data: cleaners, error: cleanersError } = await supabase
+        .from('cleaners')
+        .select('id, first_name, last_name')
+        .in('id', cleanerIds);
+
+      if (cleanersError) throw cleanersError;
+
+      const cleanerMap = new Map(cleaners?.map(c => [c.id, `${c.first_name} ${c.last_name}`]));
+
+      const formatted = bookingsWithDifferentCleaner.map((booking: any) => ({
         id: booking.id,
         date_time: booking.date_time,
         address: booking.address,
-        cleaner_name: `${booking.cleaners.first_name} ${booking.cleaners.last_name}`,
-      })) || [];
+        cleaner_name: cleanerMap.get(booking.cleaner) || 'Unknown',
+      }));
 
-      console.log('✨ Formatted affected bookings:', formatted);
       setAffectedBookings(formatted);
     } catch (error) {
       console.error('Error fetching affected bookings:', error);

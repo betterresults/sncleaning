@@ -226,19 +226,11 @@ export default function EditRecurringBooking() {
   };
 
   const handleCleanerChange = (cleanerId: string) => {
-    console.log('🔄 Cleaner change detected:', {
-      originalCleanerId,
-      newCleanerId: cleanerId,
-      recurringServiceId: id
-    });
-    
     // Check if cleaner has changed from original
     if (originalCleanerId && cleanerId !== originalCleanerId && cleanerId) {
-      console.log('✅ Showing update bookings dialog');
       setPendingCleanerId(cleanerId);
       setShowUpdateBookingsDialog(true);
     } else {
-      console.log('⏩ No cleaner change, updating normally');
       // No change or clearing cleaner, just update normally
       const cleaner = cleaners.find(c => c.id === parseInt(cleanerId));
       setFormData(prev => ({
