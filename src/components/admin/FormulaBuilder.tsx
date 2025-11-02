@@ -37,9 +37,9 @@ const OPERATORS = [
 
 const FormulaBuilder: React.FC<FormulaBuilderProps> = ({ onSave, initialFormula }) => {
   const { toast } = useToast();
-  const { data: fieldConfigs } = useAirbnbFieldConfigs();
+  const { data: fieldConfigs } = useAirbnbFieldConfigs(undefined, true);
 
-  // Dynamically build available fields from database + standard fields
+  // Dynamically build available fields from database + standard fields (use categories, not individual options)
   const AVAILABLE_FIELDS = useMemo(() => {
     const standardFields = [
       { value: 'total_hours', label: 'Total Hours' },
@@ -47,12 +47,27 @@ const FormulaBuilder: React.FC<FormulaBuilderProps> = ({ onSave, initialFormula 
       { value: 'base_hourly_rate', label: 'Base Hourly Rate' },
     ];
 
-    const dynamicFields = (fieldConfigs || []).map(config => ({
-      value: config.option,
-      label: config.label,
-    }));
+    const slugify = (str: string) =>
+      str
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '_')
+        .replace(/[^a-z0-9_]/g, '');
 
-    return [...standardFields, ...dynamicFields];
+    // Build unique list of categories so fields like "Bed Sizes" appear once
+    const categories = new Map<string, { value: string; label: string }>();
+
+    (fieldConfigs || []).forEach((cfg) => {
+      if (!cfg?.category) return;
+      if (!categories.has(cfg.category)) {
+        categories.set(cfg.category, {
+          value: slugify(cfg.category), // safe token for formulas
+          label: cfg.category,
+        });
+      }
+    });
+
+    return [...standardFields, ...Array.from(categories.values())];
   }, [fieldConfigs]);
   const [baseFormula, setBaseFormula] = useState(initialFormula?.baseFormula || 'total_hours * base_hourly_rate');
   const [conditions, setConditions] = useState<ConditionRule[]>(initialFormula?.conditions || []);
