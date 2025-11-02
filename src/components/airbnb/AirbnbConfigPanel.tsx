@@ -456,12 +456,25 @@ export const AirbnbConfigPanel: React.FC = () => {
       const allFieldNames = availableFields.map(f => f.value);
       
       const fieldObjects: Record<string, any> = {};
+      const multiplierDefaults = new Set(['serviceType']);
       allFieldNames.forEach(fieldName => {
         const testVal = testValues[fieldName];
-        // Use default values if field is not selected
+        const rawVal = testVal?.value;
+        const numVal = typeof rawVal === 'number' ? rawVal : Number(rawVal);
+        const defaultVal = multiplierDefaults.has(fieldName) ? 1 : 0;
+
+        const coercedValue = Number.isFinite(numVal)
+          ? numVal
+          : (typeof rawVal === 'string' && /^(yes|true)$/i.test(rawVal) ? 1
+            : (typeof rawVal === 'string' && /^(no|false)$/i.test(rawVal) ? 0 : defaultVal));
+
+        const timeVal = typeof testVal?.time === 'number' && isFinite(testVal.time)
+          ? testVal.time
+          : Number(testVal?.time) || 0;
+
         fieldObjects[fieldName] = {
-          value: testVal?.value ?? 0,
-          time: testVal?.time ?? 0,
+          value: coercedValue,
+          time: timeVal,
           min_value: testVal?.min_value ?? 0,
           max_value: testVal?.max_value ?? 0
         };
@@ -1300,7 +1313,7 @@ export const AirbnbConfigPanel: React.FC = () => {
                                       ...prev,
                                       [fieldName]: {
                                         selectedOption: optionId,
-                                        value: selectedConfig.option,
+                                        value: selectedConfig.value, // use numeric value for calculations
                                         time: selectedConfig.time,
                                         min_value: selectedConfig.min_value,
                                         max_value: selectedConfig.max_value
