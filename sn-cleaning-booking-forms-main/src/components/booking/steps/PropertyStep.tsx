@@ -707,33 +707,33 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
             <h2 className="text-xl font-bold text-[#185166] mb-2">Estimated Cleaning Time</h2>
             <p className="text-sm text-muted-foreground mb-3">Recommended hours based on your property</p>
             <div className="flex items-center justify-center">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center bg-card border border-border rounded-2xl p-2 w-full sm:w-auto sm:min-w-[200px]">
                 <Button
-                  variant="outline"
-                  size="icon"
+                  variant="ghost"
+                  size="sm"
+                  className="h-10 w-10 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary flex-shrink-0"
                   onClick={() => {
-                    const currentHours = data.estimatedHours ?? Math.max(recommendedHours || 2, 2);
-                    const newHours = Math.max(2, Math.round((currentHours - 0.5) * 2) / 2);
+                    const base = data.estimatedHours ?? (recommendedHours && recommendedHours > 0 ? recommendedHours : 2);
+                    const newHours = Math.max(2, Math.round((base - 0.5) * 2) / 2);
                     onUpdate({ estimatedHours: newHours });
                   }}
-                  className="h-10 w-10"
                 >
                   <Minus className="h-4 w-4" />
                 </Button>
-                <div className="min-w-[60px] text-center">
-                  <span className="text-xl font-semibold">
-                    {data.estimatedHours ?? Math.max(recommendedHours || 2, 2)}
-                  </span>
+                <div className="flex-1 text-center mx-2 sm:mx-4">
+                  <div className="text-lg sm:text-xl font-bold text-foreground whitespace-nowrap">
+                    {(data.estimatedHours ?? (recommendedHours && recommendedHours > 0 ? recommendedHours : 2))} hours
+                  </div>
                 </div>
                 <Button
-                  variant="outline"
-                  size="icon"
+                  variant="ghost"
+                  size="sm"
+                  className="h-10 w-10 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary flex-shrink-0"
                   onClick={() => {
-                    const currentHours = data.estimatedHours ?? Math.max(recommendedHours || 2, 2);
-                    const newHours = Math.round((currentHours + 0.5) * 2) / 2;
+                    const base = data.estimatedHours ?? (recommendedHours && recommendedHours > 0 ? recommendedHours : 2);
+                    const newHours = Math.round((base + 0.5) * 2) / 2;
                     onUpdate({ estimatedHours: newHours });
                   }}
-                  className="h-10 w-10"
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
