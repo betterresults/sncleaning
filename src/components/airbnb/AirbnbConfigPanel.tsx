@@ -446,15 +446,27 @@ export const AirbnbConfigPanel: React.FC = () => {
       const formulaString = (currentFormula.elements || []).map(el => el.value).join(' ');
       if (!formulaString) return null;
 
-      const tokens = tokenize(formulaString);
-      const paramNames = Object.keys(testValues);
-      const paramValues = Object.values(testValues);
+      // Build proper objects with value and time properties for each field
+      const fieldObjects: Record<string, any> = {};
+      Object.keys(testValues).forEach(fieldName => {
+        const testVal = testValues[fieldName];
+        fieldObjects[fieldName] = {
+          value: testVal.value,
+          time: testVal.time || 0,
+          min_value: testVal.min_value || 0,
+          max_value: testVal.max_value || 0
+        };
+      });
+      
+      const paramNames = Object.keys(fieldObjects);
+      const paramValues = Object.values(fieldObjects);
       
       const func = new Function(...paramNames, `return ${formulaString};`);
       const result = func(...paramValues);
       
       return typeof result === 'number' && isFinite(result) ? result : null;
     } catch (e) {
+      console.error('Formula evaluation error:', e);
       return null;
     }
   };
