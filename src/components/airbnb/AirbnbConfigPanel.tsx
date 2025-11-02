@@ -413,8 +413,9 @@ export const AirbnbConfigPanel: React.FC = () => {
       const paramNames = Object.keys(sampleData);
       const paramValues = Object.values(sampleData);
       
-      const func = new Function(...paramNames, `return ${formulaString};`);
-      const result = func(...paramValues);
+      // Add Math object to the function context
+      const func = new Function('Math', ...paramNames, `return ${formulaString};`);
+      const result = func(Math, ...paramValues);
       
       if (typeof result === 'number' && !isFinite(result)) {
         throw new Error('Computation error: result is not finite');
@@ -494,8 +495,9 @@ export const AirbnbConfigPanel: React.FC = () => {
       console.log('Evaluating formula:', formulaString);
       console.log('With field values:', fieldObjects);
       
-      const func = new Function(...paramNames, `return ${formulaString};`);
-      const result = func(...paramValues);
+      // Add Math object to the function context
+      const func = new Function('Math', ...paramNames, `return ${formulaString};`);
+      const result = func(Math, ...paramValues);
       
       console.log('Formula result:', result);
       
