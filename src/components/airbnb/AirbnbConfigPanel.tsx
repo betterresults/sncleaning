@@ -362,6 +362,7 @@ export const AirbnbConfigPanel: React.FC = () => {
       if (!formulaString) return { ok: false, error: 'Empty formula' } as const;
 
       const tokens = tokenize(formulaString);
+      console.log('Formula tokens:', tokens);
       if (tokens.length === 0) return { ok: false, error: 'Empty formula' } as const;
 
       // Validation: check for valid tokens
@@ -394,8 +395,15 @@ export const AirbnbConfigPanel: React.FC = () => {
       tokens.forEach(token => {
         if (/^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/.test(token)) {
           const parts = token.split('.');
-          if (parts.length === 1) {
-            sampleData[parts[0]] = { value: 'test', time: 1 };
+          const fieldName = parts[0];
+          // Add field to sampleData if it doesn't exist yet
+          if (!sampleData[fieldName]) {
+            sampleData[fieldName] = { 
+              value: fieldName === 'serviceType' ? 'checkin-checkout' : 1, 
+              time: 60, 
+              min_value: 0, 
+              max_value: 100 
+            };
           }
         }
       });
