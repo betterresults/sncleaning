@@ -696,41 +696,43 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       {/* Recommended Hours - Show after basic selections are made */}
       {data.propertyType && data.bedrooms && data.bathrooms && data.serviceType && (
         <div className="relative z-[4] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-          <h2 className="text-xl font-bold text-[#185166] mb-4">Estimated Cleaning Time</h2>
-          <div className="flex items-center bg-card border border-border rounded-2xl p-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
-              onClick={() => {
-                const current = data.estimatedHours || recommendedHours;
-                const newValue = Math.max(2, current - 0.5);
-                onUpdate({ estimatedHours: newValue });
-              }}
-            >
-              <Minus className="h-5 w-5" />
-            </Button>
-            <div className="flex-1 text-center">
-              <div className="text-lg font-semibold text-slate-600">
-                {data.estimatedHours || recommendedHours} hours
-              </div>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div className="flex-1">
+              <h2 className="text-xl font-bold text-[#185166]">Estimated Cleaning Time</h2>
+              <p className="text-xs text-muted-foreground mt-1">This is an estimate based on your selections. You can adjust it.</p>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
-              onClick={() => {
-                const current = data.estimatedHours || recommendedHours;
-                const newValue = current + 0.5;
-                onUpdate({ estimatedHours: newValue });
-              }}
-            >
-              <Plus className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center bg-card border border-border rounded-2xl p-2 w-full sm:w-auto">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
+                onClick={() => {
+                  const current = data.estimatedHours || recommendedHours;
+                  const newValue = Math.max(2, current - 0.5);
+                  onUpdate({ estimatedHours: newValue });
+                }}
+              >
+                <Minus className="h-5 w-5" />
+              </Button>
+              <div className="flex-1 text-center min-w-[80px]">
+                <div className="text-lg font-semibold text-slate-600">
+                  {data.estimatedHours || recommendedHours} hours
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
+                onClick={() => {
+                  const current = data.estimatedHours || recommendedHours;
+                  const newValue = current + 0.5;
+                  onUpdate({ estimatedHours: newValue });
+                }}
+              >
+                <Plus className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Adjust based on property condition. Final price updates automatically.
-          </p>
         </div>
       )}
 

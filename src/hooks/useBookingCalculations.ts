@@ -223,35 +223,46 @@ export const useBookingCalculations = (bookingData: BookingData) => {
       if (!elements || elements.length === 0) return 0;
 
       let expression = '';
+      let lastType: 'start' | 'value' | 'close' | 'operator' = 'start';
       try {
         for (const element of elements) {
           if (element.type === 'field') {
-            const fieldName = element.value.toLowerCase();
-            
-            // Check if this is a formula reference (like TotalHours, CleaningCost, etc.)
-            if (fieldName in context) {
-              expression += `(${context[fieldName].toString()})`;
+            const rawName = String(element.value || '').toLowerCase();
+            // Formula references (e.g., totalhours)
+            if (rawName in context) {
+              if (lastType === 'value' || lastType === 'close') expression += ' * ';
+              expression += `(${context[rawName].toString()})`;
+              lastType = 'value';
               continue;
             }
-            
-            // Determine if we should use value or time
-            const useTime = element.attribute === 'time' || fieldName.includes('.time');
-            const actualFieldName = fieldName.replace('.value', '').replace('.time', '');
-            
-            const val = useTime 
-              ? getFieldTime(actualFieldName) 
-              : getFieldValue(actualFieldName);
+            // Value vs time
+            const useTime = String(element.attribute || '').toLowerCase() === 'time' || rawName.includes('.time');
+            const actualFieldName = rawName.replace('.value', '').replace('.time', '');
+            const val = useTime ? getFieldTime(actualFieldName) : getFieldValue(actualFieldName);
+            if (lastType === 'value' || lastType === 'close') expression += ' * ';
             expression += `(${val.toString()})`;
-          } else if (element.type === 'operator') {
-            expression += ` ${element.value} `;
+            lastType = 'value';
           } else if (element.type === 'number') {
-            expression += element.value;
+            if (lastType === 'value' || lastType === 'close') expression += ' * ';
+            expression += String(element.value);
+            lastType = 'value';
+          } else if (element.type === 'operator') {
+            const op = String(element.value).trim();
+            if (op === '(') {
+              if (lastType === 'value' || lastType === 'close') expression += ' * ';
+              expression += '(';
+              lastType = 'operator';
+            } else if (op === ')') {
+              expression += ')';
+              lastType = 'close';
+            } else {
+              expression += ` ${op} `;
+              lastType = 'operator';
+            }
           }
         }
 
         console.debug('[Formula] Expression:', expression);
-        
-        // Safely evaluate the expression
         const result = Function('"use strict"; return (' + expression + ')')();
         return typeof result === 'number' && isFinite(result) ? result : 0;
       } catch (error) {
