@@ -1249,7 +1249,8 @@ export const AirbnbConfigPanel: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       {usedFields.map(fieldName => {
                         const field = availableFields.find(f => f.value === fieldName);
-                        const fieldConfigs = groupedConfigs[fieldName] || [];
+                        // Find configs where category matches the fieldName
+                        const fieldConfigs = configs.filter(c => c.category === fieldName);
                         
                         return (
                           <div key={fieldName} className="space-y-2">
@@ -1275,7 +1276,7 @@ export const AirbnbConfigPanel: React.FC = () => {
                               <SelectTrigger className="bg-background">
                                 <SelectValue placeholder={`Select ${field?.label || fieldName}`} />
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent className="z-50 bg-background">
                                 {fieldConfigs.map(config => (
                                   <SelectItem key={config.id} value={config.id}>
                                     {config.label}
