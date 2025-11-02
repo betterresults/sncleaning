@@ -365,18 +365,53 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data, isAdminMode = fal
                   <div key={formula.id} className="p-2 bg-background rounded border">
                     <div className="font-medium">{formula.name}</div>
                     <div className="text-muted-foreground text-xs">{formula.description}</div>
-                    <div className="text-xs mt-1">Result: {formula.result_type}</div>
+                    <div className="text-xs mt-1">
+                      <span className="font-semibold">Result Type:</span> {formula.result_type}
+                    </div>
+                    <div className="text-xs">
+                      <span className="font-semibold">Elements:</span> {formula.elements?.length || 0} items
+                    </div>
+                    {formula.elements && formula.elements.length > 0 && (
+                      <div className="text-xs mt-1 p-1 bg-muted rounded font-mono">
+                        {JSON.stringify(formula.elements).substring(0, 100)}...
+                      </div>
+                    )}
                   </div>
                 ))
               ) : (
-                <div className="text-muted-foreground text-xs">No formulas found in database</div>
+                <div className="text-muted-foreground text-xs bg-yellow-100 p-2 rounded">
+                  ⚠️ No formulas found in database. Go to Admin → Pricing Formulas to create them.
+                </div>
               )}
+              
+              <div className="font-semibold text-sm mt-3">Current Booking Data</div>
+              <div className="space-y-1 mb-2 p-2 bg-background rounded">
+                <div className="flex justify-between text-xs">
+                  <span>Property:</span>
+                  <span className="font-mono">{data.propertyType || 'none'}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span>Bedrooms:</span>
+                  <span className="font-mono">{data.bedrooms || 'none'}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span>Bathrooms:</span>
+                  <span className="font-mono">{data.bathrooms || 'none'}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span>Service:</span>
+                  <span className="font-mono">{data.serviceType || 'none'}</span>
+                </div>
+              </div>
               
               <div className="font-semibold text-sm mt-3">Calculated Values</div>
               <div className="space-y-1">
                 <div className="flex justify-between">
                   <span>Base Time:</span>
-                  <span className="font-mono">{calculations.baseTime?.toFixed(2) || '0'}h</span>
+                  <span className={`font-mono ${calculations.baseTime === 0 ? 'text-red-600' : ''}`}>
+                    {calculations.baseTime?.toFixed(2) || '0'}h
+                    {calculations.baseTime === 0 && ' ⚠️'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Additional Time:</span>
