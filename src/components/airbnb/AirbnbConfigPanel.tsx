@@ -15,6 +15,7 @@ import {
   useDeleteFieldConfig,
   FieldConfig 
 } from '@/hooks/useAirbnbFieldConfigs';
+import { useAirbnbCategoryDefaults, useUpsertCategoryDefault } from '@/hooks/useAirbnbCategoryDefaults';
 import {
   useAirbnbPricingFormulas,
   useCreatePricingFormula,
@@ -49,6 +50,8 @@ export const AirbnbConfigPanel: React.FC = () => {
   const { data: configs = [], isLoading: configsLoading } = useAirbnbFieldConfigs();
   const { data: categories = [], isLoading: categoriesLoading } = useAllAirbnbCategories();
   const { data: formulas = [], isLoading: formulasLoading } = useAirbnbPricingFormulas();
+  const { data: categoryDefaults = [] } = useAirbnbCategoryDefaults();
+  const upsertCategoryDefault = useUpsertCategoryDefault();
   
   const createConfig = useCreateFieldConfig();
   const updateConfig = useUpdateFieldConfig();
@@ -867,9 +870,30 @@ export const AirbnbConfigPanel: React.FC = () => {
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                       <div className="p-4 space-y-3 border-t">
+                        {/* Category Default Value */}
+                        <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 flex items-center gap-3">
+                          <Label className="font-semibold text-sm whitespace-nowrap">
+                            Default Value (if not selected):
+                          </Label>
+                          <Input
+                            value={categoryDefaults.find(d => d.category === category)?.default_value || ''}
+                            onChange={(e) => {
+                              upsertCategoryDefault.mutate({
+                                category,
+                                default_value: e.target.value || null
+                              });
+                            }}
+                            placeholder="Enter default value or leave empty"
+                            className="max-w-xs"
+                          />
+                          <span className="text-xs text-muted-foreground">
+                            This value will be used when user doesn't select any option
+                          </span>
+                        </div>
+                        
                         {/* Table Header */}
                         <div className="bg-muted/50 rounded-lg p-3">
-                          <div className="grid grid-cols-[2fr,80px,80px,60px,100px,100px,80px,100px,60px] gap-3 text-xs font-semibold">
+                          <div className="grid grid-cols-[2fr,80px,80px,60px,100px,100px,80px,60px] gap-3 text-xs font-semibold">
                             <div>Option Label</div>
                             <div className="text-center">Min</div>
                             <div className="text-center">Max</div>
@@ -877,14 +901,13 @@ export const AirbnbConfigPanel: React.FC = () => {
                             <div className="text-center">Value</div>
                             <div className="text-center">Type</div>
                             <div className="text-center">Time (min)</div>
-                            <div className="text-center">Default?</div>
                             <div className="text-center">Del</div>
                           </div>
                         </div>
                         
                         {/* Table Rows */}
                         {(groupedConfigs[category] || []).sort((a, b) => (a.display_order || 0) - (b.display_order || 0)).map((config) => (
-                          <div key={config.id} className="grid grid-cols-[2fr,80px,80px,60px,100px,100px,80px,100px,60px] gap-3 items-center p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                          <div key={config.id} className="grid grid-cols-[2fr,80px,80px,60px,100px,100px,80px,60px] gap-3 items-center p-3 border rounded-lg hover:bg-muted/30 transition-colors">
                             {/* Option Label */}
                             <div>
                               <Input
@@ -1075,29 +1098,6 @@ export const AirbnbConfigPanel: React.FC = () => {
                                 placeholder="0"
                                 title={config.min_value !== null && config.max_value !== null ? `Per unit above min (${config.min_value})` : undefined}
                               />
-                            </div>
-                            
-                            {/* Default Switch */}
-                            <div className="flex flex-col items-center justify-center gap-1">
-                              <Switch
-                                checked={getCurrentValue(config.id, 'is_default', (config as any).is_default) || false}
-                                onCheckedChange={(checked) => {
-                                  handleLocalChange(config.id, 'is_default', checked);
-                                  // If setting as default, unset other defaults in this category
-                                  if (checked) {
-                                    const otherConfigs = groupedConfigs[category]?.filter(c => c.id !== config.id) || [];
-                                    otherConfigs.forEach(otherConfig => {
-                                      if ((otherConfig as any).is_default) {
-                                        handleLocalChange(otherConfig.id, 'is_default', false);
-                                      }
-                                    });
-                                  }
-                                }}
-                                title="If enabled, this value will be used when the user doesn't select anything"
-                              />
-                              {getCurrentValue(config.id, 'is_default', (config as any).is_default) && (
-                                <span className="text-[10px] font-medium text-primary">Default</span>
-                              )}
                             </div>
                             
                             {/* Delete Button */}

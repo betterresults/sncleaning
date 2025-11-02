@@ -100,6 +100,30 @@ export type Database = {
           },
         ]
       }
+      airbnb_category_defaults: {
+        Row: {
+          category: string
+          created_at: string | null
+          default_value: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          default_value?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          default_value?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       airbnb_field_configs: {
         Row: {
           category: string
@@ -109,7 +133,6 @@ export type Database = {
           icon: string | null
           id: string
           is_active: boolean | null
-          is_default: boolean | null
           is_visible: boolean | null
           label: string | null
           max_value: number | null
@@ -128,7 +151,6 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean | null
-          is_default?: boolean | null
           is_visible?: boolean | null
           label?: string | null
           max_value?: number | null
@@ -147,7 +169,6 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean | null
-          is_default?: boolean | null
           is_visible?: boolean | null
           label?: string | null
           max_value?: number | null

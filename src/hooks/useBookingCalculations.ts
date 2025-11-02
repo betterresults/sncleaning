@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useAirbnbPricingFormulas } from './useAirbnbPricingFormulas';
 import { useAirbnbFieldConfigs } from './useAirbnbFieldConfigs';
+import { useAirbnbCategoryDefaults } from './useAirbnbCategoryDefaults';
 
 interface BookingData {
   propertyType: string;
@@ -30,6 +31,7 @@ interface BookingData {
 export const useBookingCalculations = (bookingData: BookingData) => {
   const { data: formulas = [] } = useAirbnbPricingFormulas();
   const { data: allConfigs = [] } = useAirbnbFieldConfigs();
+  const { data: categoryDefaults = [] } = useAirbnbCategoryDefaults();
 
   const calculations = useMemo(() => {
     // Helper function to get field value
@@ -73,16 +75,31 @@ export const useBookingCalculations = (bookingData: BookingData) => {
         return Number(config.value) || 0;
       }
 
-      // If no match found and field value is empty/null, look for default config
+      // If no match found and field value is empty/null, look for category default
       if (!fieldValue || fieldValue === '' || fieldValue === null || fieldValue === undefined) {
-        const defaultConfig = allConfigs.find((cfg: any) => {
+        // Find the category for this field
+        const categoryConfig = allConfigs.find((cfg: any) => {
           const cfgCategory = cfg.category?.toLowerCase().replace(/[^a-z0-9]/g, '');
-          return cfgCategory === normalizedFieldName && cfg.is_default === true;
+          return cfgCategory === normalizedFieldName;
         });
         
-        if (defaultConfig) {
-          console.debug('[Pricing] Using default value for', fieldName, ':', defaultConfig.value);
-          return Number(defaultConfig.value) || 0;
+        if (categoryConfig) {
+          const categoryDefault = categoryDefaults.find(
+            (def: any) => def.category === categoryConfig.category
+          );
+          
+          if (categoryDefault && categoryDefault.default_value) {
+            // Try to find a config with this default value
+            const defaultConfig = allConfigs.find((cfg: any) => {
+              return cfg.category === categoryConfig.category && 
+                     String(cfg.option).toLowerCase() === categoryDefault.default_value.toLowerCase();
+            });
+            
+            if (defaultConfig) {
+              console.debug('[Pricing] Using category default for', fieldName, ':', defaultConfig.value);
+              return Number(defaultConfig.value) || 0;
+            }
+          }
         }
       }
 
@@ -142,16 +159,31 @@ export const useBookingCalculations = (bookingData: BookingData) => {
         return config.time; // Return minutes; formulas handle conversion to hours
       }
 
-      // If no match found and field value is empty/null, look for default config
+      // If no match found and field value is empty/null, look for category default
       if (!fieldValue || fieldValue === '' || fieldValue === null || fieldValue === undefined) {
-        const defaultConfig = allConfigs.find((cfg: any) => {
+        // Find the category for this field
+        const categoryConfig = allConfigs.find((cfg: any) => {
           const cfgCategory = cfg.category?.toLowerCase().replace(/[^a-z0-9]/g, '');
-          return cfgCategory === normalizedFieldName && cfg.is_default === true;
+          return cfgCategory === normalizedFieldName;
         });
         
-        if (defaultConfig && typeof defaultConfig.time === 'number') {
-          console.debug('[Pricing] Using default time for', fieldName, ':', defaultConfig.time);
-          return defaultConfig.time;
+        if (categoryConfig) {
+          const categoryDefault = categoryDefaults.find(
+            (def: any) => def.category === categoryConfig.category
+          );
+          
+          if (categoryDefault && categoryDefault.default_value) {
+            // Try to find a config with this default value
+            const defaultConfig = allConfigs.find((cfg: any) => {
+              return cfg.category === categoryConfig.category && 
+                     String(cfg.option).toLowerCase() === categoryDefault.default_value.toLowerCase();
+            });
+            
+            if (defaultConfig && typeof defaultConfig.time === 'number') {
+              console.debug('[Pricing] Using category default time for', fieldName, ':', defaultConfig.time);
+              return defaultConfig.time;
+            }
+          }
         }
       }
 
