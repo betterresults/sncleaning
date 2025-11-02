@@ -145,19 +145,34 @@ export const useBookingCalculations = (bookingData: BookingData) => {
         return Number(config.value) || 0;
       }
 
-      // Check additional rooms
-      if (bookingData.additionalRooms && normalizedFieldName in bookingData.additionalRooms) {
-        return Number(bookingData.additionalRooms[normalizedFieldName]) || 0;
+      // Check additional rooms (match by normalized key)
+      if (bookingData.additionalRooms) {
+        const arKey = Object.keys(bookingData.additionalRooms).find(
+          (k) => k.toLowerCase().replace(/[^a-z0-9]/g, '') === normalizedFieldName
+        );
+        if (arKey) {
+          return Number((bookingData.additionalRooms as any)[arKey]) || 0;
+        }
       }
 
-      // Check bed sizes
-      if (bookingData.bedSizes && normalizedFieldName in bookingData.bedSizes) {
-        return Number(bookingData.bedSizes[normalizedFieldName]) || 0;
+      // Check bed sizes (match by normalized key)
+      if (bookingData.bedSizes) {
+        const bsKey = Object.keys(bookingData.bedSizes).find(
+          (k) => k.toLowerCase().replace(/[^a-z0-9]/g, '') === normalizedFieldName
+        );
+        if (bsKey) {
+          return Number((bookingData.bedSizes as any)[bsKey]) || 0;
+        }
       }
 
-      // Check property features
-      if (bookingData.propertyFeatures && normalizedFieldName in bookingData.propertyFeatures) {
-        return bookingData.propertyFeatures[normalizedFieldName] ? 1 : 0;
+      // Check property features (match by normalized key)
+      if (bookingData.propertyFeatures) {
+        const pfKey = Object.keys(bookingData.propertyFeatures).find(
+          (k) => k.toLowerCase().replace(/[^a-z0-9]/g, '') === normalizedFieldName
+        );
+        if (pfKey) {
+          return (bookingData.propertyFeatures as any)[pfKey] ? 1 : 0;
+        }
       }
 
       // Try to parse as number
@@ -338,7 +353,11 @@ export const useBookingCalculations = (bookingData: BookingData) => {
       return formulas.find((f: any) => norm(f.name) === want);
     };
 
-    const baseTimeFormula = findFormula('Base time') || findFormula('Base Time');
+    const baseTimeFormula =
+      findFormula('Base time') ||
+      findFormula('Base Time') ||
+      formulas.find((f: any) => String(f.result_type || '').trim().toLowerCase() === 'base_time') ||
+      formulas.find((f: any) => String(f.name || '').toLowerCase().includes('base') && String(f.name || '').toLowerCase().includes('time'));
     const additionalTimeFormula = findFormula('Additional Time');
     const totalHoursFormula = findFormula('Total Hours');
     const cleaningCostFormula = findFormula('Cleaning Cost');
