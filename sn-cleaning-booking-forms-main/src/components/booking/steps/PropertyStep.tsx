@@ -141,7 +141,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
   // Update recommended hours in booking data
   React.useEffect(() => {
-    if (data.propertyType && data.bedrooms && data.bathrooms && data.serviceType && !data.estimatedHours) {
+    if (data.propertyType && data.bedrooms && data.bathrooms && data.serviceType && (data.estimatedHours == null || data.estimatedHours <= 0)) {
       onUpdate({ estimatedHours: recommendedHours });
     }
   }, [recommendedHours, data.propertyType, data.bedrooms, data.bathrooms, data.serviceType, data.estimatedHours, onUpdate]);
@@ -704,16 +704,17 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       {data.propertyType && data.bedrooms && data.bathrooms && data.serviceType && (
         <div className="relative z-[4] p-6 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
           <div className="p-4 bg-primary/5 rounded-lg">
-            <h2 className="text-xl font-bold text-[#185166] mb-2">Estimated Cleaning Time</h2>
-            <p className="text-sm text-muted-foreground mb-3">Recommended hours based on your property</p>
-            <div className="flex items-center justify-center">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <h2 className="text-xl font-bold text-[#185166]">Estimated Cleaning Time</h2>
               <div className="flex items-center bg-card border border-border rounded-2xl p-2 w-full sm:w-auto sm:min-w-[200px]">
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-10 w-10 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary flex-shrink-0"
                   onClick={() => {
-                    const base = data.estimatedHours ?? (recommendedHours && recommendedHours > 0 ? recommendedHours : 2);
+                    const base = (data.estimatedHours != null && data.estimatedHours > 0)
+                      ? data.estimatedHours
+                      : Math.max((recommendedHours || 0), 2);
                     const newHours = Math.max(2, Math.round((base - 0.5) * 2) / 2);
                     onUpdate({ estimatedHours: newHours });
                   }}
@@ -722,7 +723,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                 </Button>
                 <div className="flex-1 text-center mx-2 sm:mx-4">
                   <div className="text-lg sm:text-xl font-bold text-foreground whitespace-nowrap">
-                    {(data.estimatedHours ?? (recommendedHours && recommendedHours > 0 ? recommendedHours : 2))} hours
+                    {((data.estimatedHours != null && data.estimatedHours > 0) ? data.estimatedHours : Math.max((recommendedHours || 0), 2))} hours
                   </div>
                 </div>
                 <Button
@@ -730,7 +731,9 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                   size="sm"
                   className="h-10 w-10 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary flex-shrink-0"
                   onClick={() => {
-                    const base = data.estimatedHours ?? (recommendedHours && recommendedHours > 0 ? recommendedHours : 2);
+                    const base = (data.estimatedHours != null && data.estimatedHours > 0)
+                      ? data.estimatedHours
+                      : Math.max((recommendedHours || 0), 2);
                     const newHours = Math.round((base + 0.5) * 2) / 2;
                     onUpdate({ estimatedHours: newHours });
                   }}
@@ -739,8 +742,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                 </Button>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-3">
-              You can adjust the hours if needed. The final price will be calculated based on your selection.
+            <p className="text-sm text-muted-foreground mt-2">
+              Recommended hours based on your property. You can adjust the hours; the final price updates automatically.
             </p>
           </div>
         </div>

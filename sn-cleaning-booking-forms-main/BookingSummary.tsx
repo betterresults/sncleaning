@@ -236,7 +236,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
   const renderSummaryContent = () => (
     <div className="space-y-3">
       {/* Service Section */}
-      {getServiceDescription() && data.estimatedHours && data.estimatedHours > 0 && (
+      {getServiceDescription() && ((data.estimatedHours ?? 0) > 0) && (
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">{getServiceDescription()}</span>
@@ -394,7 +394,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
               </div>
               <h3 className="text-lg font-semibold text-foreground">Booking Summary</h3>
             </div>
-            {data.estimatedHours && data.estimatedHours > 0 && (
+            {((data.estimatedHours ?? 0) > 0) && (
               <p className="text-lg font-bold text-primary mr-8">£{calculateTotal().toFixed(2)}</p>
             )}
           </div>
@@ -433,7 +433,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
         {renderSummaryContent()}
 
         {/* Total Cost - Separate Footer */}
-        {data.estimatedHours && data.estimatedHours > 0 && (
+        {((data.estimatedHours ?? 0) > 0) && (
           <div className="border-t border-border pt-3 mt-3">
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
               <div className="flex justify-between items-center">
