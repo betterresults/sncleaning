@@ -341,70 +341,72 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data, isAdminMode = fal
 
       {renderSummaryContent()}
 
-      {/* Admin Formula Debug */}
-      {isAdminMode && (
-        <div className="pt-4 mt-4 border-t">
-          <Collapsible open={showFormulas} onOpenChange={setShowFormulas}>
-            <CollapsibleTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full flex items-center justify-between mb-3"
-              >
-                <span className="flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4" />
-                  Formula Calculations
-                </span>
-                {showFormulas ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-2 mb-3 p-3 bg-muted/50 rounded-lg text-xs">
-              <div className="space-y-2">
-                <div className="font-semibold text-sm">Active Formulas ({formulas.length})</div>
-                {formulas.map((formula: any) => (
+      {/* Formula Debug Section - Show in development */}
+      <div className="pt-4 mt-4 border-t">
+        <Collapsible open={showFormulas} onOpenChange={setShowFormulas}>
+          <CollapsibleTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full flex items-center justify-between mb-3"
+            >
+              <span className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                Formula Calculations
+              </span>
+              {showFormulas ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-2 mb-3 p-3 bg-muted/50 rounded-lg text-xs">
+            <div className="space-y-2">
+              <div className="font-semibold text-sm">Active Formulas ({formulas.length})</div>
+              {formulas.length > 0 ? (
+                formulas.map((formula: any) => (
                   <div key={formula.id} className="p-2 bg-background rounded border">
                     <div className="font-medium">{formula.name}</div>
-                    <div className="text-muted-foreground">{formula.description}</div>
-                    <div className="text-xs mt-1">Result Type: {formula.result_type}</div>
+                    <div className="text-muted-foreground text-xs">{formula.description}</div>
+                    <div className="text-xs mt-1">Result: {formula.result_type}</div>
                   </div>
-                ))}
-                
-                <div className="font-semibold text-sm mt-3">Calculated Values</div>
-                <div className="space-y-1">
-                  <div className="flex justify-between">
-                    <span>Base Time:</span>
-                    <span className="font-mono">{calculations.baseTime?.toFixed(2) || '0'}h</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Additional Time:</span>
-                    <span className="font-mono">{calculations.additionalTime?.toFixed(2) || '0'}h</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Total Hours:</span>
-                    <span className="font-mono">{calculations.totalHours?.toFixed(2) || '0'}h</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Hourly Rate:</span>
-                    <span className="font-mono">£{calculations.hourlyRate?.toFixed(2) || '0'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Cleaning Cost:</span>
-                    <span className="font-mono">£{calculations.cleaningCost?.toFixed(2) || '0'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Short Notice:</span>
-                    <span className="font-mono">£{calculations.shortNoticeCharge?.toFixed(2) || '0'}</span>
-                  </div>
-                  <div className="flex justify-between font-semibold">
-                    <span>Total Cost:</span>
-                    <span className="font-mono">£{calculations.totalCost?.toFixed(2) || '0'}</span>
-                  </div>
+                ))
+              ) : (
+                <div className="text-muted-foreground text-xs">No formulas found in database</div>
+              )}
+              
+              <div className="font-semibold text-sm mt-3">Calculated Values</div>
+              <div className="space-y-1">
+                <div className="flex justify-between">
+                  <span>Base Time:</span>
+                  <span className="font-mono">{calculations.baseTime?.toFixed(2) || '0'}h</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Additional Time:</span>
+                  <span className="font-mono">{calculations.additionalTime?.toFixed(2) || '0'}h</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Total Hours:</span>
+                  <span className="font-mono">{calculations.totalHours?.toFixed(2) || '0'}h</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Hourly Rate:</span>
+                  <span className="font-mono">£{calculations.hourlyRate?.toFixed(2) || '0'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Cleaning Cost:</span>
+                  <span className="font-mono">£{calculations.cleaningCost?.toFixed(2) || '0'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Short Notice:</span>
+                  <span className="font-mono">£{calculations.shortNoticeCharge?.toFixed(2) || '0'}</span>
+                </div>
+                <div className="flex justify-between font-semibold">
+                  <span>Total Cost:</span>
+                  <span className="font-mono">£{calculations.totalCost?.toFixed(2) || '0'}</span>
                 </div>
               </div>
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
-      )}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      </div>
 
       {/* Admin Pricing Controls */}
       {isAdminMode && onUpdate && (
