@@ -85,6 +85,16 @@ export const useBookingCalculations = (bookingData: BookingData) => {
 
       // Check if it's a direct field
       const fieldValue = fieldMapping[normalizedFieldName];
+
+      // Special-case: when serviceType is not checkin-checkout, treat alreadyCleaned as 1 by default
+      if (
+        normalizedFieldName === 'alreadycleaned' &&
+        (fieldValue === '' || fieldValue === null || fieldValue === undefined)
+      ) {
+        if (bookingData.serviceType && bookingData.serviceType !== 'checkin-checkout') {
+          return 1;
+        }
+      }
       
       // If field value is empty/null, try to use category default FIRST
       if (fieldValue === '' || fieldValue === null || fieldValue === undefined) {
@@ -123,9 +133,12 @@ export const useBookingCalculations = (bookingData: BookingData) => {
       // Get the config for this field value (if field has a value)
       const config = allConfigs.find((cfg: any) => {
         const cfgCategory = cfg.category?.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const cfgOption = String(cfg.option).toLowerCase();
-        const dataValue = String(fieldValue).toLowerCase();
-        return cfgCategory === normalizedFieldName && cfgOption === dataValue;
+        if (cfgCategory !== normalizedFieldName) return false;
+        const dataValueNorm = String(fieldValue).trim().toLowerCase();
+        const cfgOptionNorm = String(cfg.option).trim().toLowerCase();
+        const cfgValueNorm = String(cfg.value).trim().toLowerCase();
+        // Match either by option text or by numeric/value match
+        return cfgOptionNorm === dataValueNorm || cfgValueNorm === dataValueNorm;
       });
 
       if (config) {
