@@ -1355,7 +1355,7 @@ export const AirbnbConfigPanel: React.FC = () => {
                           <span className="text-2xl font-bold text-green-600 dark:text-green-400">
                             {testResult.toFixed(2)}
                             {currentFormula.result_type === 'cost' && ' £'}
-                            {currentFormula.result_type === 'time' && ' min'}
+                            {currentFormula.result_type === 'time' && ' h'}
                             {currentFormula.result_type === 'percentage' && ' %'}
                           </span>
                         </div>
