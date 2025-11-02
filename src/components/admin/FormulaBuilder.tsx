@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { X, Plus, Calculator } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAirbnbFieldConfigs } from '@/hooks/useAirbnbFieldConfigs';
 
 interface FormulaBuilderProps {
   onSave: (formula: FormulaConfig) => void;
@@ -26,16 +27,6 @@ interface ConditionRule {
   multiplier: number;
 }
 
-const AVAILABLE_FIELDS = [
-  { value: 'total_hours', label: 'Total Hours' },
-  { value: 'total_cost', label: 'Total Cost' },
-  { value: 'base_hourly_rate', label: 'Base Hourly Rate' },
-  { value: 'property_size', label: 'Property Size' },
-  { value: 'guest_count', label: 'Guest Count' },
-  { value: 'has_clean_products', label: 'Clean Products Included' },
-  { value: 'has_equipment', label: 'Equipment Included' }
-];
-
 const OPERATORS = [
   { value: '>', label: 'Greater than' },
   { value: '<', label: 'Less than' },
@@ -46,6 +37,23 @@ const OPERATORS = [
 
 const FormulaBuilder: React.FC<FormulaBuilderProps> = ({ onSave, initialFormula }) => {
   const { toast } = useToast();
+  const { data: fieldConfigs } = useAirbnbFieldConfigs();
+
+  // Dynamically build available fields from database + standard fields
+  const AVAILABLE_FIELDS = useMemo(() => {
+    const standardFields = [
+      { value: 'total_hours', label: 'Total Hours' },
+      { value: 'total_cost', label: 'Total Cost' },
+      { value: 'base_hourly_rate', label: 'Base Hourly Rate' },
+    ];
+
+    const dynamicFields = (fieldConfigs || []).map(config => ({
+      value: config.option,
+      label: config.label,
+    }));
+
+    return [...standardFields, ...dynamicFields];
+  }, [fieldConfigs]);
   const [baseFormula, setBaseFormula] = useState(initialFormula?.baseFormula || 'total_hours * base_hourly_rate');
   const [conditions, setConditions] = useState<ConditionRule[]>(initialFormula?.conditions || []);
 
