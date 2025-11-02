@@ -470,14 +470,22 @@ export const AirbnbConfigPanel: React.FC = () => {
       const multiplierDefaults = new Set(['serviceType']);
       allFieldNames.forEach(fieldName => {
         const testVal = testValues[fieldName];
-        const rawVal = testVal?.value;
-        const numVal = typeof rawVal === 'number' ? rawVal : Number(rawVal);
+        const rawVal = fieldName === 'serviceType' 
+          ? (testVal?.option ?? testVal?.value)
+          : testVal?.value;
+        const numVal = typeof rawVal === 'number' ? rawVal : Number(rawVal as any);
         const defaultVal = multiplierDefaults.has(fieldName) ? 1 : 0;
 
-        const coercedValue = Number.isFinite(numVal)
-          ? numVal
-          : (typeof rawVal === 'string' && /^(yes|true)$/i.test(rawVal) ? 1
-            : (typeof rawVal === 'string' && /^(no|false)$/i.test(rawVal) ? 0 : defaultVal));
+        let coercedValue: any;
+        if (fieldName === 'serviceType') {
+          // Preserve string for comparisons like serviceType.value === "checkin-checkout"
+          coercedValue = typeof rawVal === 'string' ? rawVal : (Number.isFinite(numVal) ? numVal : defaultVal);
+        } else {
+          coercedValue = Number.isFinite(numVal)
+            ? numVal
+            : (typeof rawVal === 'string' && /^(yes|true)$/i.test(rawVal) ? 1
+              : (typeof rawVal === 'string' && /^(no|false)$/i.test(rawVal) ? 0 : defaultVal));
+        }
 
         const timeVal = typeof testVal?.time === 'number' && isFinite(testVal.time)
           ? testVal.time
@@ -1325,7 +1333,8 @@ export const AirbnbConfigPanel: React.FC = () => {
                                       ...prev,
                                       [fieldName]: {
                                         selectedOption: optionId,
-                                        value: selectedConfig.value, // use numeric value for calculations
+                                        value: selectedConfig.value, // numeric value if needed elsewhere
+                                        option: selectedConfig.option, // keep option key for string comparisons
                                         time: selectedConfig.time,
                                         min_value: selectedConfig.min_value,
                                         max_value: selectedConfig.max_value
