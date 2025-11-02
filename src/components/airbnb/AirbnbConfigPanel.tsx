@@ -87,6 +87,7 @@ export const AirbnbConfigPanel: React.FC = () => {
   });
   const [isEditingFormula, setIsEditingFormula] = useState(false);
   const [showFormulaBuilder, setShowFormulaBuilder] = useState(false);
+  const [testValues, setTestValues] = useState<Record<string, any>>({});
 
   const groupedConfigs = configs.reduce((acc, config) => {
     if (!acc[config.category]) {
@@ -419,6 +420,50 @@ export const AirbnbConfigPanel: React.FC = () => {
 
   const formulaText = (currentFormula.elements || []).map(el => el.value).join(' ');
   const evaluation = React.useMemo(() => safeEvaluate(currentFormula.elements || []), [currentFormula.elements]);
+  
+  // Extract field names used in the formula
+  const extractFieldsFromFormula = (elements: FormulaElement[]): string[] => {
+    const fields = new Set<string>();
+    elements.forEach(el => {
+      if (el.type === 'field' && el.value) {
+        const fieldName = el.value.split('.')[0];
+        if (availableFields.some(f => f.value === fieldName)) {
+          fields.add(fieldName);
+        }
+      }
+    });
+    return Array.from(fields);
+  };
+
+  const usedFields = React.useMemo(() => 
+    extractFieldsFromFormula(currentFormula.elements || []), 
+    [currentFormula.elements]
+  );
+
+  // Evaluate formula with test values
+  const evaluateWithTestValues = () => {
+    try {
+      const formulaString = (currentFormula.elements || []).map(el => el.value).join(' ');
+      if (!formulaString) return null;
+
+      const tokens = tokenize(formulaString);
+      const paramNames = Object.keys(testValues);
+      const paramValues = Object.values(testValues);
+      
+      const func = new Function(...paramNames, `return ${formulaString};`);
+      const result = func(...paramValues);
+      
+      return typeof result === 'number' && isFinite(result) ? result : null;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const testResult = React.useMemo(() => 
+    evaluateWithTestValues(), 
+    [currentFormula.elements, testValues]
+  );
+
   const addToFormula = (element: FormulaElement) => {
     setCurrentFormula({
       ...currentFormula,
@@ -1191,11 +1236,91 @@ export const AirbnbConfigPanel: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Formula Tester */}
+                {usedFields.length > 0 && (
+                  <Card className="p-4 border-2 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20">
+                    <h3 className="text-lg font-semibold mb-4 text-green-900 dark:text-green-100">
+                      🧪 Test Your Formula
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Select values for each field to see how the formula calculates
+                    </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      {usedFields.map(fieldName => {
+                        const field = availableFields.find(f => f.value === fieldName);
+                        const fieldConfigs = groupedConfigs[fieldName] || [];
+                        
+                        return (
+                          <div key={fieldName} className="space-y-2">
+                            <Label className="text-sm font-semibold">{field?.label || fieldName}</Label>
+                            <Select
+                              value={testValues[fieldName]?.selectedOption || ''}
+                              onValueChange={(optionId) => {
+                                const selectedConfig = fieldConfigs.find(c => c.id === optionId);
+                                if (selectedConfig) {
+                                  setTestValues(prev => ({
+                                    ...prev,
+                                    [fieldName]: {
+                                      selectedOption: optionId,
+                                      value: selectedConfig.option,
+                                      time: selectedConfig.time,
+                                      min_value: selectedConfig.min_value,
+                                      max_value: selectedConfig.max_value
+                                    }
+                                  }));
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="bg-background">
+                                <SelectValue placeholder={`Select ${field?.label || fieldName}`} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {fieldConfigs.map(config => (
+                                  <SelectItem key={config.id} value={config.id}>
+                                    {config.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {testValues[fieldName] && (
+                              <div className="text-xs text-muted-foreground space-y-0.5 pl-2">
+                                <div>Value: {testValues[fieldName].value}</div>
+                                <div>Time: {testValues[fieldName].time} min</div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {testResult !== null && Object.keys(testValues).length === usedFields.length && (
+                      <div className="p-4 bg-background border-2 border-green-300 dark:border-green-700 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-semibold">Formula Result:</span>
+                          <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+                            {testResult.toFixed(2)}
+                            {currentFormula.result_type === 'cost' && ' £'}
+                            {currentFormula.result_type === 'time' && ' min'}
+                            {currentFormula.result_type === 'percentage' && ' %'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {Object.keys(testValues).length < usedFields.length && (
+                      <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded text-sm text-amber-800 dark:text-amber-200">
+                        ⚠️ Select values for all fields to see the result
+                      </div>
+                    )}
+                  </Card>
+                )}
+
                 <div>
                   <Label>Validation</Label>
                   <div className="p-3 border rounded bg-background">
                     {evaluation.ok ? (
-                      <span className="text-sm">Looks valid. Sample result with demo data: <strong>{Number((evaluation as any).result).toFixed(2)}</strong></span>
+                      <span className="text-sm text-green-600 dark:text-green-400">✓ Formula syntax is valid</span>
                     ) : (
                       <span className="text-sm text-destructive">{(evaluation as any).error}</span>
                     )}
