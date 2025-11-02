@@ -467,7 +467,7 @@ export const AirbnbConfigPanel: React.FC = () => {
       const allFieldNames = availableFields.map(f => f.value);
       
       const fieldObjects: Record<string, any> = {};
-      const multiplierDefaults = new Set(['serviceType']);
+      const multiplierDefaults = new Set(['serviceType', 'alreadyCleaned']);
       allFieldNames.forEach(fieldName => {
         const testVal = testValues[fieldName];
         const rawVal = fieldName === 'serviceType' 
