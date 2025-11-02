@@ -28,6 +28,7 @@ interface UpdateBookingsCleanerDialogProps {
   newCleanerId: string;
   newCleanerName: string;
   onConfirm: () => void;
+  onCancel: () => void;
 }
 
 export default function UpdateBookingsCleanerDialog({
@@ -38,6 +39,7 @@ export default function UpdateBookingsCleanerDialog({
   newCleanerId,
   newCleanerName,
   onConfirm,
+  onCancel,
 }: UpdateBookingsCleanerDialogProps) {
   const [loading, setLoading] = useState(false);
   const [affectedBookings, setAffectedBookings] = useState<AffectedBooking[]>([]);
@@ -164,10 +166,9 @@ export default function UpdateBookingsCleanerDialog({
     }
   };
 
-  // If no affected bookings, just close
+  // If no affected bookings, just close and proceed
   if (!loading && affectedBookings.length === 0) {
     if (open) {
-      onOpenChange(false);
       onConfirm();
     }
     return null;
@@ -211,7 +212,13 @@ export default function UpdateBookingsCleanerDialog({
         </AlertDialogHeader>
         {!loading && (
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={updating}>
+            <AlertDialogCancel 
+              disabled={updating}
+              onClick={() => {
+                onOpenChange(false);
+                onCancel();
+              }}
+            >
               No, Keep Current Cleaners
             </AlertDialogCancel>
             <AlertDialogAction onClick={handleUpdateBookings} disabled={updating}>

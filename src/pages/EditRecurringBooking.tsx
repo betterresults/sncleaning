@@ -227,46 +227,31 @@ export default function EditRecurringBooking() {
   };
 
   const handleCleanerChange = (cleanerId: string) => {
-    // Check if cleaner has changed from original
-    if (originalCleanerId && cleanerId !== originalCleanerId && cleanerId) {
-      setPendingCleanerId(cleanerId);
-      setShowUpdateBookingsDialog(true);
-    } else {
-      // No change or clearing cleaner, just update normally
-      const cleaner = cleaners.find(c => c.id === parseInt(cleanerId));
-      setFormData(prev => ({
-        ...prev,
-        cleaner: cleanerId,
-        cleaner_rate: cleaner?.hourly_rate?.toString() || prev.cleaner_rate,
-      }));
-    }
+    const cleaner = cleaners.find(c => c.id === parseInt(cleanerId));
+    setFormData(prev => ({
+      ...prev,
+      cleaner: cleanerId,
+      cleaner_rate: cleaner?.hourly_rate?.toString() || prev.cleaner_rate,
+    }));
   };
 
   const handleConfirmCleanerChange = async () => {
-    const cleaner = cleaners.find(c => c.id === parseInt(pendingCleanerId));
-    setFormData(prev => ({
-      ...prev,
-      cleaner: pendingCleanerId,
-      cleaner_rate: cleaner?.hourly_rate?.toString() || prev.cleaner_rate,
-    }));
-
-    // If this confirmation came during submit, continue saving with overrides
+    // Update bookings happened in the dialog already
+    // Now continue with the form submission
     if (pendingSubmit) {
-      await performUpdate({ cleanerId: pendingCleanerId, cleanerRate: cleaner?.hourly_rate?.toString() });
+      await performUpdate();
     }
-
-    setOriginalCleanerId(pendingCleanerId);
     setPendingCleanerId('');
   };
 
-  const performUpdate = async (override?: { cleanerId?: string; cleanerRate?: string }) => {
+  const performUpdate = async () => {
     setLoading(true);
     try {
       const submitData = {
         customer: parseInt(formData.client),
         address: formData.address,
-        cleaner: (override?.cleanerId ?? formData.cleaner) ? parseInt(override?.cleanerId ?? formData.cleaner) : null,
-        cleaner_rate: (override?.cleanerRate ?? formData.cleaner_rate) ? parseFloat(override?.cleanerRate ?? formData.cleaner_rate) : null,
+        cleaner: formData.cleaner ? parseInt(formData.cleaner) : null,
+        cleaner_rate: formData.cleaner_rate ? parseFloat(formData.cleaner_rate) : null,
         cleaning_type: formData.cleaning_type,
         frequently: formData.frequently,
         days_of_the_week: formData.days_of_the_week || null,
@@ -680,6 +665,7 @@ export default function EditRecurringBooking() {
         newCleanerId={pendingCleanerId}
         newCleanerName={cleaners.find(c => c.id === parseInt(pendingCleanerId))?.first_name + ' ' + cleaners.find(c => c.id === parseInt(pendingCleanerId))?.last_name || ''}
         onConfirm={handleConfirmCleanerChange}
+        onCancel={() => setPendingSubmit(false)}
       />
     </div>
   );
