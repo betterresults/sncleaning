@@ -102,6 +102,16 @@ export const useBookingCalculations = (bookingData: BookingData) => {
               console.debug('[Pricing] Using category default for', fieldName, '(', categoryName, '):', defaultConfig.value);
               return Number(defaultConfig.value) || 0;
             }
+
+            // Fallback: numeric or boolean-like defaults
+            const dv = String(categoryDefault.default_value).trim().toLowerCase();
+            if (dv === 'yes' || dv === 'true') return 1;
+            if (dv === 'no' || dv === 'false') return 0;
+            const parsed = parseFloat(String(categoryDefault.default_value));
+            if (!isNaN(parsed)) {
+              console.debug('[Pricing] Using numeric category default for', fieldName, '(', categoryName, '):', parsed);
+              return parsed;
+            }
           }
         }
       }
@@ -176,12 +186,19 @@ export const useBookingCalculations = (bookingData: BookingData) => {
             // Try to find a config with this default value
             const defaultConfig = allConfigs.find((cfg: any) => {
               return cfg.category === categoryName && 
-                     String(cfg.option).toLowerCase() === categoryDefault.default_value.toLowerCase();
+                     String(cfg.option).toLowerCase() === String(categoryDefault.default_value).toLowerCase();
             });
             
             if (defaultConfig && typeof defaultConfig.time === 'number') {
               console.debug('[Pricing] Using category default time for', fieldName, '(', categoryName, '):', defaultConfig.time);
               return defaultConfig.time;
+            }
+
+            // Fallback: numeric default interpreted as minutes
+            const parsed = parseFloat(String(categoryDefault.default_value));
+            if (!isNaN(parsed)) {
+              console.debug('[Pricing] Using numeric category default time for', fieldName, '(', categoryName, '):', parsed);
+              return parsed;
             }
           }
         }
@@ -348,7 +365,7 @@ export const useBookingCalculations = (bookingData: BookingData) => {
       totalCost: roundTo2(totalCost),
       hourlyRate: totalHours > 0 ? roundTo2(cleaningCost / totalHours) : 0,
     };
-  }, [bookingData, formulas, allConfigs]);
+  }, [bookingData, formulas, allConfigs, categoryDefaults]);
 
   return calculations;
 };
