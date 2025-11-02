@@ -70,6 +70,7 @@ const CleanerBookingCard = ({
           <div className="flex items-center gap-2 text-muted-foreground min-w-0 flex-1">
             <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
             <span className="font-medium truncate">{new Date(booking.date_time).toLocaleDateString('en-GB', { 
+              weekday: 'short',
               day: 'numeric', 
               month: 'short', 
               year: 'numeric' 
