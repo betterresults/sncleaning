@@ -263,7 +263,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data, isAdminMode = fal
       }).filter(Boolean)}
 
       {/* Linens */}
-      {getLinensDescription() && data.linensHandling !== 'customer-handles' && (
+      {data.linensHandling && data.linensHandling !== 'customer-handles' && getLinensDescription() && (
         <div className="flex justify-between items-center">
           <span className="text-muted-foreground">Linens</span>
           <span className="text-foreground font-medium">{getLinensDescription()}</span>

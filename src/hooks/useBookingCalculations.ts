@@ -22,6 +22,7 @@ interface BookingData {
   bedSizes?: Record<string, number>;
   selectedDate?: Date | null;
   selectedTime?: string;
+  flexibility?: string;
   sameDayTurnaround?: boolean;
   estimatedHours?: number | null;
 }
@@ -43,13 +44,17 @@ export const useBookingCalculations = (bookingData: BookingData) => {
         toilets: bookingData.toilets,
         servicetype: bookingData.serviceType,
         alreadycleaned: bookingData.alreadyCleaned,
+        ovencleaning: bookingData.needsOvenCleaning,
         oventype: bookingData.ovenType,
         cleaningproducts: bookingData.cleaningProducts,
+        cleaningsupplies: bookingData.cleaningProducts,
         equipmentarrangement: bookingData.equipmentArrangement,
         linenshandling: bookingData.linensHandling,
         needsironing: bookingData.needsIroning,
         ironinghours: bookingData.ironingHours || 0,
+        sameday: bookingData.sameDayTurnaround,
         samedayturnaround: bookingData.sameDayTurnaround,
+        timeflexibility: bookingData.flexibility,
         numberoffloors: bookingData.numberOfFloors || 0,
       };
 
@@ -128,7 +133,7 @@ export const useBookingCalculations = (bookingData: BookingData) => {
     };
 
     // Helper function to evaluate formula
-    const evaluateFormula = (elements: any[]): number => {
+    const evaluateFormula = (elements: any[], context: Record<string, number> = {}): number => {
       if (!elements || elements.length === 0) return 0;
 
       try {
@@ -136,11 +141,21 @@ export const useBookingCalculations = (bookingData: BookingData) => {
         
         for (const element of elements) {
           if (element.type === 'field') {
+            const fieldName = element.value.toLowerCase();
+            
+            // Check if this is a formula reference (like TotalHours, CleaningCost, etc.)
+            if (fieldName in context) {
+              expression += context[fieldName].toString();
+              continue;
+            }
+            
             // Determine if we should use value or time
-            const useTime = element.attribute === 'time';
+            const useTime = element.attribute === 'time' || fieldName.includes('.time');
+            const actualFieldName = fieldName.replace('.value', '').replace('.time', '');
+            
             const val = useTime 
-              ? getFieldTime(element.value) 
-              : getFieldValue(element.value);
+              ? getFieldTime(actualFieldName) 
+              : getFieldValue(actualFieldName);
             expression += val.toString();
           } else if (element.type === 'operator') {
             expression += element.value;
@@ -186,11 +201,11 @@ export const useBookingCalculations = (bookingData: BookingData) => {
     };
 
     // Find formulas by name
-    const baseTimeFormula = formulas.find((f: any) => f.name === 'Base Time');
+    const baseTimeFormula = formulas.find((f: any) => f.name === 'Base time');
     const additionalTimeFormula = formulas.find((f: any) => f.name === 'Additional Time');
     const totalHoursFormula = formulas.find((f: any) => f.name === 'Total Hours');
     const cleaningCostFormula = formulas.find((f: any) => f.name === 'Cleaning Cost');
-    const totalCostFormula = formulas.find((f: any) => f.name === 'Total Cost');
+    const totalCostFormula = formulas.find((f: any) => f.name === 'Total cost');
 
     // Calculate base time
     let baseTime = 0;
@@ -214,29 +229,39 @@ export const useBookingCalculations = (bookingData: BookingData) => {
       additionalTime = bookingData.ironingHours;
     }
 
-    // Calculate total hours
+    // Calculate total hours (pass calculated values as context)
     let totalHours = baseTime + additionalTime;
     if (totalHoursFormula) {
-      // If there's a formula, use it but pass baseTime and additionalTime as context
-      totalHours = evaluateFormula(totalHoursFormula.elements);
+      const context = {
+        basetime: baseTime,
+        additionaltime: additionalTime,
+      };
+      totalHours = evaluateFormula(totalHoursFormula.elements, context);
     }
 
     // Ensure minimum 2 hours
     totalHours = Math.max(totalHours, 2);
 
-    // Calculate cleaning cost
+    // Calculate cleaning cost (pass totalHours as context)
     let cleaningCost = 0;
     if (cleaningCostFormula) {
-      cleaningCost = evaluateFormula(cleaningCostFormula.elements);
+      const context = {
+        totalhours: totalHours,
+      };
+      cleaningCost = evaluateFormula(cleaningCostFormula.elements, context);
     }
 
     // Calculate short notice charge
     const shortNoticeCharge = calculateShortNoticeCharge();
 
-    // Calculate total cost
+    // Calculate total cost (pass all calculated values as context)
     let totalCost = cleaningCost + shortNoticeCharge;
     if (totalCostFormula) {
-      totalCost = evaluateFormula(totalCostFormula.elements);
+      const context = {
+        cleaningcost: cleaningCost,
+        shortnoticecharge: shortNoticeCharge,
+      };
+      totalCost = evaluateFormula(totalCostFormula.elements, context);
     }
 
     // Round to 2 decimal places

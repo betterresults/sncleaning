@@ -700,6 +700,53 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
         </div>
       )}
 
+      {/* Recommended Hours - Show after service type is selected */}
+      {data.serviceType && data.bedrooms && data.bathrooms && recommendedHours > 0 && (
+        <div className="relative z-[4] p-6 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+          <h2 className="text-xl font-bold text-[#185166] mb-4">
+            Estimated Cleaning Time
+          </h2>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-primary/5 rounded-lg">
+              <div className="flex-1">
+                <p className="text-sm text-muted-foreground mb-1">Recommended hours based on your property</p>
+                <p className="text-2xl font-bold text-primary">{recommendedHours} hours</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    const newHours = Math.max(1, (data.estimatedHours || recommendedHours) - 0.5);
+                    onUpdate({ estimatedHours: newHours });
+                  }}
+                  className="h-10 w-10"
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <div className="min-w-[60px] text-center">
+                  <span className="text-xl font-semibold">{data.estimatedHours || recommendedHours}</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    const newHours = (data.estimatedHours || recommendedHours) + 0.5;
+                    onUpdate({ estimatedHours: newHours });
+                  }}
+                  className="h-10 w-10"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              You can adjust the hours if needed. The final price will be calculated based on your selection.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Equipment Arrangement - Dynamic */}
       {data.cleaningProducts === 'equipment' && equipmentArrangementConfigs.length > 0 && (
         <div className="relative z-[3] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
