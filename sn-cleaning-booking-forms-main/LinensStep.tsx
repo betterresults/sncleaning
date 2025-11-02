@@ -5,6 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
 import { BookingData } from '../BookingForm';
 import { Truck, Shirt, Plus, Minus, Package, Info } from 'lucide-react';
+import { useAirbnbFieldConfigs } from '@/hooks/useAirbnbFieldConfigs';
 
 interface LinensStepProps {
   data: BookingData;
@@ -15,6 +16,8 @@ interface LinensStepProps {
 
 const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack }) => {
   const [showInfo, setShowInfo] = React.useState<string | null>(null);
+  const { data: bedSizes = [], isLoading: bedSizesLoading } = useAirbnbFieldConfigs('Bed Sizes', true);
+  
   const linensOptions = [
     {
       value: 'customer-handles',
@@ -193,6 +196,18 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
     onUpdate({ linenPackages: updatedPackages });
   };
 
+  const updateWashDryBedSize = (bedSizeId: string, quantity: number) => {
+    const current = data.washDryBedSizes || {};
+    const updated = { ...current, [bedSizeId]: Math.max(0, quantity) };
+    onUpdate({ washDryBedSizes: updated });
+  };
+
+  const updateIroningBedSize = (bedSizeId: string, quantity: number) => {
+    const current = data.ironingBedSizes || {};
+    const updated = { ...current, [bedSizeId]: Math.max(0, quantity) };
+    onUpdate({ ironingBedSizes: updated });
+  };
+
   return (
     <div className="space-y-8">
       <div>
@@ -225,6 +240,75 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
         </div>
       </div>
 
+      {/* Wash & Dry Bed Sizes */}
+      {(data.linensHandling === 'wash-hang' || data.linensHandling === 'wash-dry') && (
+        <div>
+          <label className="block text-lg font-semibold text-foreground mb-4">
+            Select bed sizes to wash {data.linensHandling === 'wash-dry' ? 'and dry' : ''} <span className="text-destructive">*</span>
+          </label>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {bedSizes.map((bedSize) => {
+              const quantity = data.washDryBedSizes?.[bedSize.id] || 0;
+              const isSelected = quantity > 0;
+              
+              return (
+                <div
+                  key={bedSize.id}
+                  className={`rounded-2xl border-2 transition-all duration-300 ${
+                    isSelected
+                      ? 'border-primary bg-primary/5 shadow-xl h-32'
+                      : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg h-24'
+                  }`}
+                >
+                  {!isSelected ? (
+                    <button
+                      onClick={() => updateWashDryBedSize(bedSize.id, 1)}
+                      className="w-full h-full flex flex-col items-center justify-center p-3"
+                    >
+                      <span className="text-sm font-bold text-foreground text-center">
+                        {bedSize.label || bedSize.option}
+                      </span>
+                    </button>
+                  ) : (
+                    <div className="flex flex-col h-full">
+                      <div className="flex-1 flex items-center justify-center p-2">
+                        <span className="text-xs font-bold text-primary text-center">
+                          {bedSize.label || bedSize.option}
+                        </span>
+                      </div>
+                      <div className="h-px bg-border mx-3"></div>
+                      <div className="p-3">
+                        <div className="flex items-center justify-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
+                            onClick={() => updateWashDryBedSize(bedSize.id, quantity - 1)}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <div className="flex-1 text-center mx-2">
+                            <div className="text-lg font-bold text-primary">{quantity}</div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
+                            onClick={() => updateWashDryBedSize(bedSize.id, quantity + 1)}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Ironing Switch */}
       {showIroning && (
         <div>
@@ -254,6 +338,75 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
               <Shirt className={`h-6 w-6 mx-auto mb-2 ${data.needsIroning === false ? 'text-primary' : 'text-muted-foreground'}`} />
               <span className="text-sm font-medium">No ironing needed</span>
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Ironing Bed Sizes */}
+      {data.needsIroning === true && (
+        <div>
+          <label className="block text-lg font-semibold text-foreground mb-4">
+            Select bed sizes to iron <span className="text-destructive">*</span>
+          </label>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {bedSizes.map((bedSize) => {
+              const quantity = data.ironingBedSizes?.[bedSize.id] || 0;
+              const isSelected = quantity > 0;
+              
+              return (
+                <div
+                  key={bedSize.id}
+                  className={`rounded-2xl border-2 transition-all duration-300 ${
+                    isSelected
+                      ? 'border-primary bg-primary/5 shadow-xl h-32'
+                      : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg h-24'
+                  }`}
+                >
+                  {!isSelected ? (
+                    <button
+                      onClick={() => updateIroningBedSize(bedSize.id, 1)}
+                      className="w-full h-full flex flex-col items-center justify-center p-3"
+                    >
+                      <span className="text-sm font-bold text-foreground text-center">
+                        {bedSize.label || bedSize.option}
+                      </span>
+                    </button>
+                  ) : (
+                    <div className="flex flex-col h-full">
+                      <div className="flex-1 flex items-center justify-center p-2">
+                        <span className="text-xs font-bold text-primary text-center">
+                          {bedSize.label || bedSize.option}
+                        </span>
+                      </div>
+                      <div className="h-px bg-border mx-3"></div>
+                      <div className="p-3">
+                        <div className="flex items-center justify-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
+                            onClick={() => updateIroningBedSize(bedSize.id, quantity - 1)}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <div className="flex-1 text-center mx-2">
+                            <div className="text-lg font-bold text-primary">{quantity}</div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
+                            onClick={() => updateIroningBedSize(bedSize.id, quantity + 1)}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
