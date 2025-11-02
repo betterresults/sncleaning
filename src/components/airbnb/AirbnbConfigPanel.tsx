@@ -1416,11 +1416,12 @@ export const AirbnbConfigPanel: React.FC = () => {
                                   const quantity = item?.quantity || 1;
                                   
                                   return (
-                                    <div key={config.id} className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded">
+                                     <div key={config.id} className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded">
                                       <input
                                         type="checkbox"
                                         checked={isSelected}
                                         onChange={(e) => {
+                                          console.log('Config data:', config); // Debug
                                           setTestValues(prev => {
                                             const currentItems = prev[fieldName]?.items || [];
                                             let newItems;
@@ -1441,6 +1442,9 @@ export const AirbnbConfigPanel: React.FC = () => {
                                             const totalValue = newItems.reduce((sum: number, i: any) => sum + (i.value * i.quantity), 0);
                                             const totalTime = newItems.reduce((sum: number, i: any) => sum + (i.time * i.quantity), 0);
                                             
+                                            console.log('Items:', newItems); // Debug
+                                            console.log('Total time:', totalTime, 'Total value:', totalValue); // Debug
+                                            
                                             return {
                                               ...prev,
                                               [fieldName]: {
@@ -1453,7 +1457,12 @@ export const AirbnbConfigPanel: React.FC = () => {
                                         }}
                                         className="h-4 w-4 rounded border-gray-300"
                                       />
-                                      <label className="flex-1 text-sm cursor-pointer">{config.label}</label>
+                                      <label className="flex-1 text-sm cursor-pointer">
+                                        {config.label}
+                                        <span className="text-xs text-muted-foreground ml-2">
+                                          (value: {config.value}, time: {config.time} min)
+                                        </span>
+                                      </label>
                                       {isSelected && (
                                         <>
                                           <input
