@@ -382,15 +382,15 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
       {data.needsIroning === true && (
         <div className="mt-6">
           <div className="bg-muted/10 border border-border rounded-lg p-4 space-y-3">
-            {/* Title and controls on same line */}
-            <div className="flex items-center justify-between gap-4">
+            {/* Title and controls - responsive layout */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <h4 className="text-base font-medium text-foreground">Recommended Extra Time</h4>
               
-              <div className="flex items-center bg-card border border-border rounded-2xl p-2 min-w-[200px]">
+              <div className="flex items-center bg-card border border-border rounded-2xl p-2 w-full sm:w-auto sm:min-w-[200px]">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-10 w-10 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
+                  className="h-10 w-10 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary flex-shrink-0"
                   onClick={() => {
                     const newHours = roundToNearestHalf(Math.max((data.extraHours || 0) - 0.5, 0));
                     onUpdate({ extraHours: newHours });
@@ -399,8 +399,8 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
                 >
                   <Minus className="h-4 w-4" />
                 </Button>
-                <div className="flex-1 text-center mx-4">
-                  <div className="text-xl font-bold text-foreground">
+                <div className="flex-1 text-center mx-2 sm:mx-4">
+                  <div className="text-lg sm:text-xl font-bold text-foreground whitespace-nowrap">
                     {(data.extraHours || 0) % 1 === 0 
                       ? (data.extraHours || 0).toString() 
                       : (data.extraHours || 0).toFixed(1)} hours
@@ -409,7 +409,7 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-10 w-10 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
+                  className="h-10 w-10 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary flex-shrink-0"
                   onClick={() => {
                     const newHours = roundToNearestHalf((data.extraHours || 0) + 0.5);
                     onUpdate({ extraHours: newHours });
