@@ -561,20 +561,14 @@ export const AirbnbConfigPanel: React.FC = () => {
       const allFieldNames = availableFields.map(f => f.value);
       
       const fieldObjects: Record<string, any> = {};
-      const multiplierDefaults = new Set(['serviceType', 'alreadyCleaned']);
       allFieldNames.forEach(fieldName => {
         const testVal = testValues[fieldName];
-        const rawVal = multiplierDefaults.has(fieldName)
-          ? (testVal?.option ?? testVal?.value)
-          : testVal?.value;
+        // Always use .value property for numeric value
+        const rawVal = testVal?.value;
         const numVal = typeof rawVal === 'number' ? rawVal : Number(rawVal as any);
-        const defaultVal = multiplierDefaults.has(fieldName) ? 1 : 0;
 
-        // For multiplier fields, always get the numeric value from the selected option
-        const coercedValue = Number.isFinite(numVal)
-          ? numVal
-          : (typeof rawVal === 'string' && /^(yes|true)$/i.test(rawVal) ? 1
-            : (typeof rawVal === 'string' && /^(no|false)$/i.test(rawVal) ? 0 : defaultVal));
+        // Coerce to number, default to 0
+        const coercedValue = Number.isFinite(numVal) ? numVal : 0;
 
         const timeVal = typeof testVal?.time === 'number' && isFinite(testVal.time)
           ? testVal.time
