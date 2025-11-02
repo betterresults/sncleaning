@@ -1277,6 +1277,10 @@ export const AirbnbConfigPanel: React.FC = () => {
 
                       <div>
                         <div className="text-xs font-semibold text-muted-foreground mb-1">Fields</div>
+                        <p className="text-xs text-muted-foreground mb-2 p-2 bg-muted/50 rounded">
+                          💡 <strong>.value</strong> = numeric value (e.g., cost, count)<br/>
+                          💡 <strong>.time</strong> = time in <strong>minutes</strong> (divide by 60 for hours)
+                        </p>
                         {availableFields.map((field) => (
                           <Select 
                             key={field.value}
@@ -1298,7 +1302,7 @@ export const AirbnbConfigPanel: React.FC = () => {
                             </SelectTrigger>
                             <SelectContent className="z-50 bg-background">
                               <SelectItem value="value">Value</SelectItem>
-                              <SelectItem value="time">Time</SelectItem>
+                              <SelectItem value="time">Time (minutes)</SelectItem>
                               <SelectItem value="min_value">Min Value</SelectItem>
                               <SelectItem value="max_value">Max Value</SelectItem>
                             </SelectContent>
@@ -1556,7 +1560,7 @@ export const AirbnbConfigPanel: React.FC = () => {
                     </div>
 
                     {testResult !== null && (
-                      <div className="p-4 bg-background border-2 border-green-300 dark:border-green-700 rounded-lg">
+                      <div className="p-4 bg-background border-2 border-green-300 dark:border-green-700 rounded-lg space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-semibold">Formula Result:</span>
                           <span className="text-2xl font-bold text-green-600 dark:text-green-400">
@@ -1566,6 +1570,13 @@ export const AirbnbConfigPanel: React.FC = () => {
                             {currentFormula.result_type === 'percentage' && ' %'}
                           </span>
                         </div>
+                        {currentFormula.result_type === 'time' && (
+                          <div className="text-xs text-muted-foreground border-t pt-2">
+                            💡 Note: .time returns <strong>minutes</strong>. For hours use: <code className="bg-muted px-1 rounded">fieldName.time / 60</code>
+                            <br />
+                            (e.g., {testResult.toFixed(1)} min = {(testResult / 60).toFixed(2)} hours)
+                          </div>
+                        )}
                       </div>
                     )}
 
