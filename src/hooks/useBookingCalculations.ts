@@ -318,12 +318,18 @@ export const useBookingCalculations = (bookingData: BookingData) => {
       return 0;
     };
 
-    // Find formulas by name
-    const baseTimeFormula = formulas.find((f: any) => f.name === 'Base time');
-    const additionalTimeFormula = formulas.find((f: any) => f.name === 'Additional Time');
-    const totalHoursFormula = formulas.find((f: any) => f.name === 'Total Hours');
-    const cleaningCostFormula = formulas.find((f: any) => f.name === 'Cleaning Cost');
-    const totalCostFormula = formulas.find((f: any) => f.name === 'Total cost');
+    // Find formulas by name (case-insensitive, whitespace-insensitive)
+    const findFormula = (target: string) => {
+      const norm = (s: string) => String(s || '').trim().toLowerCase().replace(/\s+/g, '');
+      const want = norm(target);
+      return formulas.find((f: any) => norm(f.name) === want);
+    };
+
+    const baseTimeFormula = findFormula('Base time') || findFormula('Base Time');
+    const additionalTimeFormula = findFormula('Additional Time');
+    const totalHoursFormula = findFormula('Total Hours');
+    const cleaningCostFormula = findFormula('Cleaning Cost');
+    const totalCostFormula = findFormula('Total cost') || findFormula('Total Cost');
 
     // Calculate base time from formula
     let baseTime = 0;
