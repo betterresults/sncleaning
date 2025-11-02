@@ -173,7 +173,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
       {data.selectedDate && (
         <div className="space-y-4">
           <div>
-            <h2 className="text-2xl font-bold text-foreground mb-4">
+            <h2 className="text-2xl font-bold text-slate-700 mb-4">
               {data.selectedDate.toLocaleDateString('en-US', {
                 weekday: 'long',
                 month: 'long',
@@ -185,7 +185,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
           {/* Time Flexibility Toggle - Only show if no time selected */}
           {!data.selectedTime && (
             <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-              <label className="text-xl font-bold text-foreground">
+              <label className="text-xl font-bold text-slate-700">
                 I am flexible with the start time
               </label>
               <Switch
@@ -219,7 +219,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
           {/* Same Day Turnaround - Only show for check-in/checkout when time is selected */}
           {data.selectedTime && data.serviceType === 'checkin-checkout' && (
             <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-              <label className="text-xl font-bold text-foreground">
+              <label className="text-xl font-bold text-slate-700">
                 Is this a same day turnaround?
               </label>
               <Switch
@@ -234,7 +234,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
           {/* Additional Notes - Only show if flexible */}
           {isFlexible && (
             <div>
-              <label className="block text-2xl font-bold text-foreground mb-2">
+              <label className="block text-2xl font-bold text-slate-700 mb-2">
                 Additional timing preferences
               </label>
               <Textarea
@@ -285,7 +285,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
 
       {/* Property Access Section */}
       <div className="mt-8 p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-        <h2 className="text-2xl font-bold text-foreground mb-4">
+        <h2 className="text-2xl font-bold text-slate-700 mb-4">
           How will we access the property?
         </h2>
         
@@ -304,8 +304,8 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
                   data.propertyAccess === 'meet' ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
                 }`} />
               </div>
-              <span className={`text-xl font-bold transition-colors ${
-                data.propertyAccess === 'meet' ? 'text-primary' : 'text-foreground group-hover:text-primary'
+              <span className={`text-sm font-semibold transition-colors ${
+                data.propertyAccess === 'meet' ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
               }`}>Meet at property</span>
             </div>
           </button>
@@ -326,8 +326,8 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                 </svg>
               </div>
-              <span className={`text-xl font-bold transition-colors ${
-                data.propertyAccess === 'collect' ? 'text-primary' : 'text-foreground group-hover:text-primary'
+              <span className={`text-sm font-semibold transition-colors ${
+                data.propertyAccess === 'collect' ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
               }`}>Collect keys</span>
             </div>
           </button>
@@ -348,8 +348,8 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
-              <span className={`text-xl font-bold transition-colors ${
-                data.propertyAccess === 'keybox' ? 'text-primary' : 'text-foreground group-hover:text-primary'
+              <span className={`text-sm font-semibold transition-colors ${
+                data.propertyAccess === 'keybox' ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
               }`}>Keybox</span>
             </div>
           </button>
@@ -370,8 +370,8 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
               </div>
-              <span className={`text-xl font-bold transition-colors ${
-                data.propertyAccess === 'other' ? 'text-primary' : 'text-foreground group-hover:text-primary'
+              <span className={`text-sm font-semibold transition-colors ${
+                data.propertyAccess === 'other' ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
               }`}>Other</span>
             </div>
           </button>
@@ -380,7 +380,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
         {/* Conditional fields based on selection */}
         {data.propertyAccess === 'collect' && (
           <div className="mb-4">
-            <label className="block text-2xl font-bold text-foreground mb-2">
+            <label className="block text-2xl font-bold text-slate-700 mb-2">
               Key collection details
             </label>
             <Textarea
@@ -394,7 +394,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
 
         {data.propertyAccess === 'keybox' && (
           <div className="mb-4">
-            <label className="block text-2xl font-bold text-foreground mb-2">
+            <label className="block text-2xl font-bold text-slate-700 mb-2">
               Keybox access details
             </label>
             <Textarea
@@ -408,7 +408,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
 
         {data.propertyAccess === 'other' && (
           <div className="mb-4">
-            <label className="block text-2xl font-bold text-foreground mb-2">
+            <label className="block text-2xl font-bold text-slate-700 mb-2">
               Access details
             </label>
             <Textarea
@@ -422,7 +422,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
 
         {/* Additional booking details - always visible */}
         <div className="mt-6">
-          <label className="block text-2xl font-bold text-foreground mb-2">
+          <label className="block text-2xl font-bold text-slate-700 mb-2">
             Additional booking details (optional)
           </label>
           <Textarea

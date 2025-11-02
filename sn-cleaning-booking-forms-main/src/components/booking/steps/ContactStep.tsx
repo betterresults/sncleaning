@@ -127,7 +127,7 @@ const ContactStep: React.FC<ContactStepProps> = ({ data, onUpdate, onNext, onBac
 
       {/* Property Access */}
       <div>
-        <h2 className="text-2xl font-bold text-foreground mb-4">
+        <h2 className="text-2xl font-bold text-slate-700 mb-4">
           Property Access
         </h2>
         <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">

@@ -156,7 +156,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
         </div>
       )}
       <div className="relative z-10 p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-        <h2 className="text-2xl font-bold text-foreground mb-4">
+        <h2 className="text-2xl font-bold text-slate-700 mb-4">
           Property Details
         </h2>
         <div className="grid grid-cols-2 gap-4">
@@ -185,8 +185,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                     isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
                   }`} />
                 )}
-                <span className={`text-xl font-bold transition-colors ${
-                  isSelected ? 'text-primary' : 'text-foreground group-hover:text-primary'
+                <span className={`text-sm font-semibold transition-colors ${
+                  isSelected ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
                 }`}>{opt.label}</span>
               </button>
             );
@@ -196,7 +196,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Size of the property */}
       <div className="relative z-[9] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-        <h2 className="text-2xl font-bold text-foreground mb-4">
+        <h2 className="text-2xl font-bold text-slate-700 mb-4">
           Size of the property
         </h2>
         
@@ -216,7 +216,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                   <Minus className="h-5 w-5" />
                 </Button>
                 <div className="flex-1 text-center">
-                <div className="text-lg font-semibold text-slate-600">
+                <div className="text-sm font-semibold text-slate-700">
                     {data.bedrooms ? getBedroomLabel(data.bedrooms) : 'Bedrooms'}
                   </div>
                 </div>
@@ -247,7 +247,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                   <Minus className="h-5 w-5" />
                 </Button>
                 <div className="flex-1 text-center">
-                  <div className="text-lg font-semibold text-slate-600">
+                  <div className="text-sm font-semibold text-slate-700">
                     {data.bathrooms ? `${data.bathrooms} Bathroom${data.bathrooms !== '1' && data.bathrooms !== '6+' && parseInt(data.bathrooms) > 1 ? 's' : data.bathrooms === '6+' ? 's' : ''}` : 'Bathrooms'}
                   </div>
                 </div>
@@ -269,7 +269,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       {/* Additional Rooms - Dynamic Icons */}
       {data.bedrooms && !['studio', '1'].includes(data.bedrooms) && additionalRoomsConfigs.length > 0 && (
         <div className="p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
-          <h2 className="text-2xl font-bold text-foreground mb-4">
+          <h2 className="text-2xl font-bold text-slate-700 mb-4">
             Additional rooms
           </h2>
           
@@ -303,7 +303,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                       {IconComponent && (
                         <IconComponent className="h-6 w-6 mb-2 text-muted-foreground group-hover:text-primary transition-all duration-500" />
                       )}
-                      <span className="text-xl font-bold text-foreground group-hover:text-primary">
+                      <span className="text-sm font-semibold text-slate-700 group-hover:text-primary">
                         {room.label}
                       </span>
                     </div>
@@ -370,7 +370,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Property Features */}
       <div className="relative z-[8] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-        <h2 className="text-2xl font-bold text-foreground mb-4">
+        <h2 className="text-2xl font-bold text-slate-700 mb-4">
           Property Features
         </h2>
         
@@ -416,8 +416,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                       isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
                     }`} />
                   )}
-                  <span className={`text-xl font-bold transition-colors ${
-                    isSelected ? 'text-primary' : 'text-foreground group-hover:text-primary'
+                  <span className={`text-sm font-semibold transition-colors ${
+                    isSelected ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
                   }`}>{feature.label}</span>
                 </div>
               </button>
@@ -487,8 +487,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full">
                     {IconComponent && <IconComponent className="h-6 w-6 mb-2 text-muted-foreground group-hover:text-primary transition-all duration-500" />}
-                    <span className={`text-xl font-bold transition-colors ${
-                      data.numberOfFloors > 0 ? 'text-primary' : 'text-foreground group-hover:text-primary'
+                    <span className={`text-sm font-semibold transition-colors ${
+                      data.numberOfFloors > 0 ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
                     }`}>{floorsConfig.label}</span>
                   </div>
                 )}
@@ -500,7 +500,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Service Type - Dynamic */}
       <div className="relative z-[7] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-        <h2 className="text-2xl font-bold text-foreground mb-4">
+        <h2 className="text-2xl font-bold text-slate-700 mb-4">
           Choose your service
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -520,8 +520,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                     data.serviceType === service.option ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
                   }`)}
                 </div>
-                <span className={`text-xl font-bold transition-colors ${
-                  data.serviceType === service.option ? 'text-primary' : 'text-foreground group-hover:text-primary'
+                <span className={`text-sm font-semibold transition-colors ${
+                  data.serviceType === service.option ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
                 }`}>{service.label}</span>
               </div>
             </button>
@@ -532,7 +532,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       {/* Property Already Cleaned - Dynamic */}
       {data.serviceType === 'checkin-checkout' && cleaningHistoryConfigs.length > 0 && (
         <div className="relative z-[6] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-          <h2 className="text-2xl font-bold text-foreground mb-4">
+          <h2 className="text-2xl font-bold text-slate-700 mb-4">
             Has the property been cleaned to Airbnb standard already?
           </h2>
           <div className="grid grid-cols-2 gap-4">
@@ -559,8 +559,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                         isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
                       }`} />
                     )}
-                    <span className={`text-xl font-bold transition-colors ${
-                      isSelected ? 'text-primary' : 'text-foreground group-hover:text-primary'
+                    <span className={`text-sm font-semibold transition-colors ${
+                      isSelected ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
                     }`}>{option.label}</span>
                   </div>
                 </button>
@@ -573,7 +573,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       {/* Oven Cleaning - Dynamic */}
       {(data.serviceType === 'deep' || data.alreadyCleaned === false) && ovenCleaningConfigs.length > 0 && (
         <div className="relative z-[5] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-          <h2 className="text-2xl font-bold text-foreground mb-4">
+          <h2 className="text-2xl font-bold text-slate-700 mb-4">
             Do you require oven cleaning?
           </h2>
           <div className="grid grid-cols-2 gap-4 mb-4">
@@ -601,8 +601,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                         isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
                       }`} />
                     )}
-                    <span className={`text-xl font-bold transition-colors ${
-                      isSelected ? 'text-primary' : 'text-foreground group-hover:text-primary'
+                    <span className={`text-sm font-semibold transition-colors ${
+                      isSelected ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
                     }`}>{option.label}</span>
                   </div>
                 </button>
@@ -613,7 +613,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
           {/* Oven Type Selection - Dynamic */}
           {data.needsOvenCleaning === true && ovenTypeConfigs.length > 0 && (
             <div>
-              <h2 className="text-2xl font-bold text-foreground mb-4">
+              <h2 className="text-2xl font-bold text-slate-700 mb-4">
                 Select oven type
               </h2>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -637,8 +637,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                             isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
                           }`} />
                         )}
-                        <span className={`text-xl font-bold transition-colors ${
-                          isSelected ? 'text-primary' : 'text-foreground group-hover:text-primary'
+                        <span className={`text-sm font-semibold transition-colors ${
+                          isSelected ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
                         }`}>{oven.label}</span>
                       </div>
                     </button>
@@ -653,7 +653,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       {/* Cleaning Supplies - Dynamic */}
       {cleaningSuppliesConfigs.length > 0 && (
         <div className="relative z-[4] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-          <h2 className="text-2xl font-bold text-foreground mb-4">
+          <h2 className="text-2xl font-bold text-slate-700 mb-4">
             Cleaning supplies
           </h2>
           
@@ -681,8 +681,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                     }`}>
                       {renderIcon(supply.icon, 'h-8 w-8')}
                     </div>
-                    <span className={`text-xl font-bold transition-colors ${
-                      isSelected ? 'text-primary' : 'text-foreground group-hover:text-primary'
+                    <span className={`text-sm font-semibold transition-colors ${
+                      isSelected ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
                     }`}>{supply.label}</span>
                     {isDisabled && (
                       <div className="absolute inset-0 bg-muted/80 rounded-2xl flex items-center justify-center">
@@ -702,7 +702,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
         <div className="relative z-[4] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div className="flex-1">
-              <h2 className="text-2xl font-bold text-foreground">Estimated Cleaning Time</h2>
+              <h2 className="text-2xl font-bold text-slate-700">Estimated Cleaning Time</h2>
               <p className="text-xs text-muted-foreground mt-1">This is an estimate based on your selections. You can adjust it.</p>
             </div>
             <div className="flex items-center bg-card border border-border rounded-2xl p-2 w-full sm:w-2/5 sm:max-w-[320px]">
@@ -743,7 +743,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       {/* Equipment Arrangement - Dynamic */}
       {data.cleaningProducts === 'equipment' && equipmentArrangementConfigs.length > 0 && (
         <div className="relative z-[3] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-          <h2 className="text-2xl font-bold text-foreground mb-2">
+          <h2 className="text-2xl font-bold text-slate-700 mb-2">
             Equipment arrangement
           </h2>
           <p className="text-sm text-muted-foreground mb-4">
@@ -769,8 +769,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                   }`}>
                     {renderIcon(arrangement.icon, 'h-6 w-6')}
                   </div>
-                  <span className={`text-xl font-bold transition-colors ${
-                    isSelected ? 'text-primary' : 'text-foreground group-hover:text-primary'
+                  <span className={`text-sm font-semibold transition-colors ${
+                    isSelected ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
                   }`}>{arrangement.label}</span>
                 </button>
               );
@@ -783,7 +783,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                 For ongoing equipment, please confirm there is a dedicated space at the property to store vacuum, mop and supplies between visits.
               </p>
               <div className="flex items-center justify-between">
-                <span className="text-xl font-bold">Dedicated space to store equipment on site</span>
+                <span className="text-sm font-semibold">Dedicated space to store equipment on site</span>
                 <Switch
                   checked={!!data.equipmentStorageConfirmed}
                   onCheckedChange={(checked) => onUpdate({ equipmentStorageConfirmed: checked })}

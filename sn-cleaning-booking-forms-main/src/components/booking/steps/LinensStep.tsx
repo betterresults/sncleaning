@@ -247,7 +247,7 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
                 }`}
               >
                 <Icon className={`h-6 w-6 mx-auto mb-2 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
-                  <span className="text-xl font-bold">{option.label}</span>
+                  <span className="text-sm font-semibold">{option.label}</span>
               </button>
             );
           })}
@@ -257,7 +257,7 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
       {/* Ironing Switch */}
       {showIroning && (
         <div className="mt-6">
-          <h2 className="text-2xl font-bold text-foreground mb-4">
+          <h2 className="text-2xl font-bold text-slate-700 mb-4">
             Select ironing option <span className="text-destructive">*</span>
           </h2>
           <div className="grid grid-cols-2 gap-4">
@@ -278,7 +278,7 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
                   }`}
                 >
                   <Shirt className={`h-6 w-6 mx-auto mb-2 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
-                  <span className="text-xl font-bold">{option.label}</span>
+                  <span className="text-sm font-semibold">{option.label}</span>
                 </button>
               );
             })}
@@ -289,7 +289,7 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
       {/* Bed Sizes Selection - Shown for wash and tumble dry OR ironing with wash and hang dry */}
       {showBedSizes && (
         <div className="mt-6">
-          <h3 className="text-2xl font-bold text-foreground mb-4">
+          <h3 className="text-2xl font-bold text-slate-700 mb-4">
             Select bed sizes
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -317,7 +317,7 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
                     {!isSelected ? (
                       <div className="flex flex-col items-center justify-center h-full p-3">
                         <div className="text-2xl mb-2">🛏️</div>
-                        <span className="text-xl font-bold text-foreground text-center leading-tight">
+                        <span className="text-sm font-semibold text-slate-700 text-center leading-tight">
                           {size.name}
                         </span>
                       </div>
@@ -431,7 +431,7 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
       {showDelivery && (
         <div className="border-2 border-dashed border-primary/30 rounded-lg p-6">
           <div className="mb-6">
-            <h3 className="text-2xl font-bold text-foreground mb-2">Select Linen Packages</h3>
+            <h3 className="text-2xl font-bold text-slate-700 mb-2">Select Linen Packages</h3>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
               <p className="text-sm font-medium text-blue-800">
                 <strong>Delivery Confirmation Required:</strong> Linen delivery for the day of cleaning needs to be confirmed first. We'll contact you to arrange the best delivery time.
@@ -520,7 +520,7 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
                     {!isSelected ? (
                       <div className="flex flex-col items-center justify-center h-full p-3">
                         <div className="text-2xl mb-2">{linen.icon}</div>
-                        <span className="text-xl font-bold text-foreground text-center leading-tight">
+                        <span className="text-sm font-semibold text-slate-700 text-center leading-tight">
                           {linen.name}
                         </span>
                         <span className="text-xs text-muted-foreground mt-1">
