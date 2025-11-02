@@ -211,18 +211,18 @@ export const AirbnbConfigPanel: React.FC = () => {
 
   // Formula builder functions
   const availableFields = [
-    { value: 'propertyType', label: 'Property Type' },
-    { value: 'bedrooms', label: 'Bedrooms' },
-    { value: 'bathrooms', label: 'Bathrooms' },
-    { value: 'additionalRooms', label: 'Additional Rooms' },
-    { value: 'serviceType', label: 'Service Type' },
-    { value: 'airbnbStandard', label: 'Airbnb Standard' },
-    { value: 'alreadyCleaned', label: 'Already Cleaned' },
-    { value: 'ovenCleaning', label: 'Oven Cleaning' },
-    { value: 'cleaningProducts', label: 'Cleaning Products' },
-    { value: 'linenHandling', label: 'Linen Handling' },
-    { value: 'scheduling', label: 'Scheduling' },
-    { value: 'timeFlexibility', label: 'Time Flexibility' }
+    { value: 'propertyType', label: 'Property Type', dbCategory: 'Property Type' },
+    { value: 'bedrooms', label: 'Bedrooms', dbCategory: 'Bedrooms' },
+    { value: 'bathrooms', label: 'Bathrooms', dbCategory: 'Bathrooms' },
+    { value: 'additionalRooms', label: 'Additional Rooms', dbCategory: 'Additional Rooms' },
+    { value: 'serviceType', label: 'Service Type', dbCategory: 'Service Type' },
+    { value: 'airbnbStandard', label: 'Airbnb Standard', dbCategory: 'Property Features' },
+    { value: 'alreadyCleaned', label: 'Already Cleaned', dbCategory: 'Cleaning History' },
+    { value: 'ovenCleaning', label: 'Oven Cleaning', dbCategory: 'Oven Cleaning' },
+    { value: 'cleaningProducts', label: 'Cleaning Products', dbCategory: 'Cleaning Supplies' },
+    { value: 'linenHandling', label: 'Linen Handling', dbCategory: 'Linen Handling' },
+    { value: 'scheduling', label: 'Scheduling', dbCategory: 'Equipment Arrangement' },
+    { value: 'timeFlexibility', label: 'Time Flexibility', dbCategory: 'Time Flexibility' }
   ];
 
   const operators = [
@@ -1249,16 +1249,13 @@ export const AirbnbConfigPanel: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       {usedFields.map(fieldName => {
                         const field = availableFields.find(f => f.value === fieldName);
-                        // Find configs where category matches the fieldName
-                        const fieldConfigs = configs.filter(c => c.category === fieldName);
-                        
-                        console.log('Field name:', fieldName);
-                        console.log('Available categories:', [...new Set(configs.map(c => c.category))]);
-                        console.log('Found configs:', fieldConfigs.length);
+                        // Use the dbCategory to find configs
+                        const dbCategory = field?.dbCategory || fieldName;
+                        const fieldConfigs = configs.filter(c => c.category === dbCategory);
                         
                         return (
                           <div key={fieldName} className="space-y-2">
-                            <Label className="text-sm font-semibold">{field?.label || fieldName} ({fieldConfigs.length} options)</Label>
+                            <Label className="text-sm font-semibold">{field?.label || fieldName}</Label>
                             <Select
                               value={testValues[fieldName]?.selectedOption || ''}
                               onValueChange={(optionId) => {
