@@ -180,7 +180,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data, isAdminMode = fal
   const renderSummaryContent = () => (
     <div className="space-y-3">
       {/* Service Section */}
-      {getServiceDescription() && calculations.totalHours && calculations.totalHours > 0 && (
+      {getServiceDescription() && (calculations.totalHours ?? 0) > 0 && (
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">{getServiceDescription()}</span>

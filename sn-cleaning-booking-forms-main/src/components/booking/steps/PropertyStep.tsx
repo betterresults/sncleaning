@@ -578,8 +578,9 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
           </h2>
           <div className="grid grid-cols-2 gap-4 mb-4">
             {ovenCleaningConfigs.map((option: any) => {
-              const isSelected = (option.option === 'yes' && data.needsOvenCleaning === true) || 
-                               (option.option === 'no' && data.needsOvenCleaning === false);
+              const opt = String(option.option || '').toLowerCase();
+              const isSelected = (opt === 'yes' && data.needsOvenCleaning === true) || 
+                               (opt === 'no' && data.needsOvenCleaning === false);
               const IconComponent = (LucideIcons as any)[option.icon];
               
               return (
@@ -591,7 +592,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                       : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
                   }`}
                   onClick={() => onUpdate({ 
-                    needsOvenCleaning: isSelected ? null : (option.option === 'yes' ? true : false)
+                    needsOvenCleaning: isSelected ? null : (opt === 'yes'),
                   })}
                 >
                   <div className="flex items-center justify-center gap-2 h-full">
@@ -704,7 +705,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
               <h2 className="text-xl font-bold text-[#185166]">Estimated Cleaning Time</h2>
               <p className="text-xs text-muted-foreground mt-1">This is an estimate based on your selections. You can adjust it.</p>
             </div>
-            <div className="flex items-center bg-card border border-border rounded-2xl p-2 w-full sm:w-2/5">
+            <div className="flex items-center bg-card border border-border rounded-2xl p-2 w-full sm:w-2/5 sm:max-w-[320px]">
               <Button
                 variant="ghost"
                 size="sm"
