@@ -1353,7 +1353,7 @@ export const AirbnbConfigPanel: React.FC = () => {
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-semibold">Formula Result:</span>
                           <span className="text-2xl font-bold text-green-600 dark:text-green-400">
-                            {testResult.toFixed(2)}
+                            {testResult % 1 === 0 ? testResult.toFixed(0) : testResult.toFixed(1)}
                             {currentFormula.result_type === 'cost' && ' £'}
                             {currentFormula.result_type === 'time' && ' h'}
                             {currentFormula.result_type === 'percentage' && ' %'}
