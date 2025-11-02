@@ -236,11 +236,13 @@ export const useBookingCalculations = (bookingData: BookingData) => {
         bathrooms: bookingData.bathrooms,
         servicetype: bookingData.serviceType,
         alreadycleaned: bookingData.alreadyCleaned,
+        ovencleaning: bookingData.needsOvenCleaning,
         oventype: bookingData.ovenType,
         cleaningproducts: bookingData.cleaningProducts,
         equipmentarrangement: bookingData.equipmentArrangement,
         linenshandling: bookingData.linensHandling,
         needsironing: bookingData.needsIroning,
+        additionalrooms: bookingData.additionalRooms,
       };
 
       const fieldValue = fieldMapping[normalizedFieldName];
@@ -475,6 +477,14 @@ export const useBookingCalculations = (bookingData: BookingData) => {
       );
       console.debug('[Pricing] Additional time calculated:', additionalTime);
     }
+
+    // If linens-related inputs are not provided yet, additional time should be 0
+    if ((dryTime === 0 && ironTime === 0) || !bookingData.linensHandling) {
+      additionalTime = 0;
+    }
+
+    // Clamp to non-negative
+    if (additionalTime < 0) additionalTime = 0;
 
     // Allow user override of additional time (ironingHours)
     if (bookingData.ironingHours) {
