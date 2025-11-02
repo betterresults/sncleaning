@@ -142,6 +142,13 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
     }
   }, [data.serviceType, data.alreadyCleaned, data.cleaningProducts]);
 
+  // Update estimatedHours when recommendedHours (baseTime) changes
+  React.useEffect(() => {
+    if (recommendedHours > 0 && data.estimatedHours === null) {
+      onUpdate({ estimatedHours: recommendedHours });
+    }
+  }, [recommendedHours, data.estimatedHours]);
+
   return (
     <div className="space-y-6">
       {isLoadingConfigs && (
