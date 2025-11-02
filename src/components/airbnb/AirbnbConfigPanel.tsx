@@ -1252,9 +1252,13 @@ export const AirbnbConfigPanel: React.FC = () => {
                         // Find configs where category matches the fieldName
                         const fieldConfigs = configs.filter(c => c.category === fieldName);
                         
+                        console.log('Field name:', fieldName);
+                        console.log('Available categories:', [...new Set(configs.map(c => c.category))]);
+                        console.log('Found configs:', fieldConfigs.length);
+                        
                         return (
                           <div key={fieldName} className="space-y-2">
-                            <Label className="text-sm font-semibold">{field?.label || fieldName}</Label>
+                            <Label className="text-sm font-semibold">{field?.label || fieldName} ({fieldConfigs.length} options)</Label>
                             <Select
                               value={testValues[fieldName]?.selectedOption || ''}
                               onValueChange={(optionId) => {
