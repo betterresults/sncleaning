@@ -700,8 +700,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
         </div>
       )}
 
-      {/* Recommended Hours - Show after service type is selected */}
-      {data.serviceType && data.bedrooms && data.bathrooms && recommendedHours > 0 && (
+      {/* Recommended Hours - Show after basic selections are made */}
+      {data.propertyType && data.bedrooms && data.bathrooms && data.serviceType && (
         <div className="relative z-[4] p-6 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
           <h2 className="text-xl font-bold text-[#185166] mb-4">
             Estimated Cleaning Time
@@ -710,14 +710,17 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
             <div className="flex items-center justify-between p-4 bg-primary/5 rounded-lg">
               <div className="flex-1">
                 <p className="text-sm text-muted-foreground mb-1">Recommended hours based on your property</p>
-                <p className="text-2xl font-bold text-primary">{recommendedHours} hours</p>
+                <p className="text-2xl font-bold text-primary">
+                  {Math.max(recommendedHours || 2, 2)} hours
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={() => {
-                    const newHours = Math.max(1, (data.estimatedHours || recommendedHours) - 0.5);
+                    const currentHours = data.estimatedHours || Math.max(recommendedHours || 2, 2);
+                    const newHours = Math.max(1, currentHours - 0.5);
                     onUpdate({ estimatedHours: newHours });
                   }}
                   className="h-10 w-10"
@@ -725,13 +728,16 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                   <Minus className="h-4 w-4" />
                 </Button>
                 <div className="min-w-[60px] text-center">
-                  <span className="text-xl font-semibold">{data.estimatedHours || recommendedHours}</span>
+                  <span className="text-xl font-semibold">
+                    {data.estimatedHours || Math.max(recommendedHours || 2, 2)}
+                  </span>
                 </div>
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={() => {
-                    const newHours = (data.estimatedHours || recommendedHours) + 0.5;
+                    const currentHours = data.estimatedHours || Math.max(recommendedHours || 2, 2);
+                    const newHours = currentHours + 0.5;
                     onUpdate({ estimatedHours: newHours });
                   }}
                   className="h-10 w-10"
