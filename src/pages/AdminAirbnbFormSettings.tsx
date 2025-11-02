@@ -8,7 +8,7 @@ import { adminNavigation } from '@/lib/navigationItems';
 import { AirbnbConfigPanel } from '@/components/airbnb/AirbnbConfigPanel';
 
 const AdminAirbnbFormSettings = () => {
-  const { user, userRole, customerId, cleanerId, signOut } = useAuth();
+  const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
 
   const handleSignOut = async () => {
     try {
@@ -17,6 +17,10 @@ const AdminAirbnbFormSettings = () => {
       console.error('Error signing out:', error);
     }
   };
+
+  if (loading) {
+    return null;
+  }
 
   if (!user || userRole !== 'admin') {
     return <Navigate to="/auth" replace />;
