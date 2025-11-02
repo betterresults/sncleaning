@@ -227,12 +227,18 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
     : [
         { id: 'single', name: 'Single' },
         { id: 'double', name: 'Double' },
-        { id: 'queen', name: 'Queen' },
         { id: 'king', name: 'King' },
         { id: 'super-king', name: 'Super King' },
       ];
 
-  const showWashDryBedSizes = data.linensHandling === 'wash-hang' || data.linensHandling === 'wash-dry';
+  // Only show bed sizes for "wash and tumble dry" (not hang dry - they don't care about timing)
+  const showWashDryBedSizes = data.linensHandling === 'wash-dry';
+  
+  // Only show ironing bed sizes if:
+  // 1. Ironing is selected AND
+  // 2. They chose "wash and hang dry" (because we didn't ask for bed sizes yet)
+  // If they chose "wash and tumble dry", we already have the bed sizes
+  const showIroningBedSizes = data.needsIroning === true && data.linensHandling === 'wash-hang';
 
   return (
     <div className="space-y-4">
@@ -265,13 +271,13 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
         </div>
       </div>
 
-      {/* Wash/Dry Bed Sizes Selection */}
+      {/* Wash/Dry Bed Sizes Selection - Only for wash and tumble dry */}
       {showWashDryBedSizes && (
         <div className="mt-6">
           <h3 className="text-xl font-bold text-[#185166] mb-4">
-            Select bed sizes to wash and dry
+            Select bed sizes to wash and tumble dry
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {bedSizes.map((size) => {
               const quantity = data.washDryBedSizes?.[size.id] || 0;
               const isSelected = quantity > 0;
@@ -279,10 +285,10 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
               return (
                 <div
                   key={size.id}
-                  className={`rounded-xl border-2 transition-all duration-300 ${
+                  className={`group relative rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
                     isSelected
-                      ? 'border-primary bg-primary/5 shadow-lg h-32'
-                      : 'border-border bg-card hover:border-primary/50 hover:shadow-md h-28'
+                      ? 'border-primary bg-primary/5 shadow-xl h-40'
+                      : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg h-32'
                   }`}
                 >
                   <button
@@ -295,14 +301,16 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
                   >
                     {!isSelected ? (
                       <div className="flex flex-col items-center justify-center h-full p-3">
-                        <span className="text-sm font-bold text-foreground text-center">
+                        <div className="text-2xl mb-2">🛏️</div>
+                        <span className="text-sm font-bold text-foreground text-center leading-tight">
                           {size.name}
                         </span>
                       </div>
                     ) : (
                       <div className="flex flex-col h-full">
-                        <div className="flex-1 flex items-center justify-center p-2">
-                          <span className="text-sm font-bold text-primary text-center">
+                        <div className="flex-1 flex flex-col items-center justify-center p-2">
+                          <div className="text-xl mb-1">🛏️</div>
+                          <span className="text-xs font-bold text-primary mb-1 text-center leading-tight">
                             {size.name}
                           </span>
                         </div>
@@ -378,13 +386,13 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
         </div>
       )}
 
-      {/* Ironing Bed Sizes Selection */}
-      {showIroning && data.needsIroning === true && (
+      {/* Ironing Bed Sizes Selection - Only for wash and hang dry when ironing is selected */}
+      {showIroningBedSizes && (
         <div className="mt-6">
           <h3 className="text-xl font-bold text-[#185166] mb-4">
             Select bed sizes to iron
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {bedSizes.map((size) => {
               const quantity = data.ironingBedSizes?.[size.id] || 0;
               const isSelected = quantity > 0;
@@ -392,10 +400,10 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
               return (
                 <div
                   key={size.id}
-                  className={`rounded-xl border-2 transition-all duration-300 ${
+                  className={`group relative rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
                     isSelected
-                      ? 'border-primary bg-primary/5 shadow-lg h-32'
-                      : 'border-border bg-card hover:border-primary/50 hover:shadow-md h-28'
+                      ? 'border-primary bg-primary/5 shadow-xl h-40'
+                      : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg h-32'
                   }`}
                 >
                   <button
@@ -408,14 +416,16 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
                   >
                     {!isSelected ? (
                       <div className="flex flex-col items-center justify-center h-full p-3">
-                        <span className="text-sm font-bold text-foreground text-center">
+                        <div className="text-2xl mb-2">👕</div>
+                        <span className="text-sm font-bold text-foreground text-center leading-tight">
                           {size.name}
                         </span>
                       </div>
                     ) : (
                       <div className="flex flex-col h-full">
-                        <div className="flex-1 flex items-center justify-center p-2">
-                          <span className="text-sm font-bold text-primary text-center">
+                        <div className="flex-1 flex flex-col items-center justify-center p-2">
+                          <div className="text-xl mb-1">👕</div>
+                          <span className="text-xs font-bold text-primary mb-1 text-center leading-tight">
                             {size.name}
                           </span>
                         </div>
