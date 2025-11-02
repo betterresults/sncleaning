@@ -61,7 +61,9 @@ export const useBookingCalculations = (bookingData: BookingData) => {
     const getFieldValue = (fieldName: string): number => {
       const normalizedFieldName = fieldName.toLowerCase().replace(/[^a-z0-9]/g, '');
       
-      // Map field names to booking data
+      console.debug('[Pricing] getFieldValue called for:', fieldName);
+      
+      // Map field names to booking data values
       const fieldMapping: Record<string, any> = {
         propertytype: bookingData.propertyType,
         bedrooms: bookingData.bedrooms,
@@ -69,6 +71,7 @@ export const useBookingCalculations = (bookingData: BookingData) => {
         toilets: bookingData.toilets,
         servicetype: bookingData.serviceType,
         alreadycleaned: bookingData.alreadyCleaned,
+        cleaninghistory: bookingData.alreadyCleaned,
         ovencleaning: bookingData.needsOvenCleaning,
         oventype: bookingData.ovenType,
         cleaningproducts: bookingData.cleaningProducts,
@@ -83,8 +86,10 @@ export const useBookingCalculations = (bookingData: BookingData) => {
         numberoffloors: bookingData.numberOfFloors || 0,
       };
 
-      // Check if it's a direct field
-      const fieldValue = fieldMapping[normalizedFieldName];
+      // Get the value from booking data for this field
+      let fieldValue = fieldMapping[normalizedFieldName];
+
+      console.debug('[Pricing]   - normalized:', normalizedFieldName, '-> value:', fieldValue);
 
       // Special-case: when serviceType is not checkin-checkout, treat alreadyCleaned as 1 by default
       if (
@@ -92,13 +97,29 @@ export const useBookingCalculations = (bookingData: BookingData) => {
         (fieldValue === '' || fieldValue === null || fieldValue === undefined)
       ) {
         if (bookingData.serviceType && bookingData.serviceType !== 'checkin-checkout') {
+          console.debug('[Pricing]   - defaulting alreadyCleaned to 1 (non-checkin service)');
           return 1;
         }
+      }
+      
+      // If we have a direct numeric value, return it
+      if (typeof fieldValue === 'number') {
+        console.debug('[Pricing]   - returning direct numeric value:', fieldValue);
+        return fieldValue;
+      }
+      
+      // If it's a boolean, convert to 1/0
+      if (typeof fieldValue === 'boolean') {
+        const val = fieldValue ? 1 : 0;
+        console.debug('[Pricing]   - returning boolean as number:', val);
+        return val;
       }
       
       // If field value is empty/null, try to use category default FIRST
       if (fieldValue === '' || fieldValue === null || fieldValue === undefined) {
         const categoryName = fieldToCategoryMap[normalizedFieldName];
+        
+        console.debug('[Pricing]   - field empty, looking for category default:', categoryName);
         
         if (categoryName) {
           const categoryDefault = categoryDefaults.find(
@@ -106,6 +127,7 @@ export const useBookingCalculations = (bookingData: BookingData) => {
           );
           
           if (categoryDefault && categoryDefault.default_value) {
+            console.debug('[Pricing]   - found category default:', categoryDefault.default_value);
             // Try to find a config with this default value
             const defaultConfig = allConfigs.find((cfg: any) => {
               return cfg.category === categoryName && 
@@ -113,7 +135,7 @@ export const useBookingCalculations = (bookingData: BookingData) => {
             });
             
             if (defaultConfig) {
-              console.debug('[Pricing] Using category default for', fieldName, '(', categoryName, '):', defaultConfig.value);
+              console.debug('[Pricing]   - using config value from default:', defaultConfig.value);
               return Number(defaultConfig.value) || 0;
             }
 
@@ -123,26 +145,36 @@ export const useBookingCalculations = (bookingData: BookingData) => {
             if (dv === 'no' || dv === 'false') return 0;
             const parsed = parseFloat(String(categoryDefault.default_value));
             if (!isNaN(parsed)) {
-              console.debug('[Pricing] Using numeric category default for', fieldName, '(', categoryName, '):', parsed);
+              console.debug('[Pricing]   - using parsed default value:', parsed);
               return parsed;
             }
           }
         }
+        
+        // No default found, check nested objects
+        console.debug('[Pricing]   - no default found, checking nested objects');
       }
       
-      // Get the config for this field value (if field has a value)
-      const config = allConfigs.find((cfg: any) => {
-        const cfgCategory = cfg.category?.toLowerCase().replace(/[^a-z0-9]/g, '');
-        if (cfgCategory !== normalizedFieldName) return false;
-        const dataValueNorm = String(fieldValue).trim().toLowerCase();
-        const cfgOptionNorm = String(cfg.option).trim().toLowerCase();
-        const cfgValueNorm = String(cfg.value).trim().toLowerCase();
-        // Match either by option text or by numeric/value match
-        return cfgOptionNorm === dataValueNorm || cfgValueNorm === dataValueNorm;
-      });
+      // Now try to find the config for this field's VALUE
+      // The category name is the original field name (with proper casing)
+      const categoryName = fieldToCategoryMap[normalizedFieldName];
+      
+      if (categoryName && fieldValue) {
+        console.debug('[Pricing]   - looking for config: category =', categoryName, ', option =', fieldValue);
+        
+        const config = allConfigs.find((cfg: any) => {
+          if (cfg.category !== categoryName) return false;
+          const dataValueNorm = String(fieldValue).trim().toLowerCase();
+          const cfgOptionNorm = String(cfg.option).trim().toLowerCase();
+          return cfgOptionNorm === dataValueNorm;
+        });
 
-      if (config) {
-        return Number(config.value) || 0;
+        if (config) {
+          console.debug('[Pricing]   - found config value:', config.value);
+          return Number(config.value) || 0;
+        } else {
+          console.debug('[Pricing]   - no config found for this value');
+        }
       }
 
       // Check additional rooms (match by normalized key)
@@ -151,7 +183,9 @@ export const useBookingCalculations = (bookingData: BookingData) => {
           (k) => k.toLowerCase().replace(/[^a-z0-9]/g, '') === normalizedFieldName
         );
         if (arKey) {
-          return Number((bookingData.additionalRooms as any)[arKey]) || 0;
+          const val = Number((bookingData.additionalRooms as any)[arKey]) || 0;
+          console.debug('[Pricing]   - found in additionalRooms:', val);
+          return val;
         }
       }
 
@@ -161,7 +195,9 @@ export const useBookingCalculations = (bookingData: BookingData) => {
           (k) => k.toLowerCase().replace(/[^a-z0-9]/g, '') === normalizedFieldName
         );
         if (bsKey) {
-          return Number((bookingData.bedSizes as any)[bsKey]) || 0;
+          const val = Number((bookingData.bedSizes as any)[bsKey]) || 0;
+          console.debug('[Pricing]   - found in bedSizes:', val);
+          return val;
         }
       }
 
@@ -171,18 +207,22 @@ export const useBookingCalculations = (bookingData: BookingData) => {
           (k) => k.toLowerCase().replace(/[^a-z0-9]/g, '') === normalizedFieldName
         );
         if (pfKey) {
-          return (bookingData.propertyFeatures as any)[pfKey] ? 1 : 0;
+          const val = (bookingData.propertyFeatures as any)[pfKey] ? 1 : 0;
+          console.debug('[Pricing]   - found in propertyFeatures:', val);
+          return val;
         }
       }
 
       // Try to parse as number
-      if (typeof fieldValue === 'number') return fieldValue;
       if (typeof fieldValue === 'string') {
         const parsed = parseFloat(fieldValue);
-        if (!isNaN(parsed)) return parsed;
+        if (!isNaN(parsed)) {
+          console.debug('[Pricing]   - parsed string as number:', parsed);
+          return parsed;
+        }
       }
-      if (typeof fieldValue === 'boolean') return fieldValue ? 1 : 0;
 
+      console.debug('[Pricing]   - returning default 0');
       return 0;
     };
 
