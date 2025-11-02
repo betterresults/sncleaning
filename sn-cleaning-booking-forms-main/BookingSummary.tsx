@@ -236,12 +236,12 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
   const renderSummaryContent = () => (
     <div className="space-y-3">
       {/* Service Section */}
-      {getServiceDescription() && ((data.estimatedHours ?? 0) > 0) && (
+      {getServiceDescription() && calculations.totalHours > 0 && (
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">{getServiceDescription()}</span>
             <span className="text-foreground font-semibold whitespace-nowrap">
-              {(data.estimatedHours + (data.extraHours || 0))}h × £{calculateHourlyRate().toFixed(2)}/hr
+              {calculations.totalHours}h × £{calculations.hourlyRate.toFixed(2)}/hr
             </span>
           </div>
           <div className="border-t border-border/30"></div>
@@ -394,8 +394,8 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
               </div>
               <h3 className="text-lg font-semibold text-foreground">Booking Summary</h3>
             </div>
-            {((data.estimatedHours ?? 0) > 0) && (
-              <p className="text-lg font-bold text-primary mr-8">£{calculateTotal().toFixed(2)}</p>
+            {calculations.totalHours > 0 && (
+              <p className="text-lg font-bold text-primary mr-8">£{calculations.totalCost.toFixed(2)}</p>
             )}
           </div>
         </Button>
@@ -405,7 +405,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
             {renderSummaryContent()}
             
             {/* Total Cost for Mobile */}
-            {data.estimatedHours && data.estimatedHours > 0 && (
+            {calculations.totalHours > 0 && (
               <div className="border-t border-border pt-3 mt-4">
                 <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
                   <div className="flex justify-between items-center">
@@ -433,12 +433,12 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
         {renderSummaryContent()}
 
         {/* Total Cost - Separate Footer */}
-        {((data.estimatedHours ?? 0) > 0) && (
+        {calculations.totalHours > 0 && (
           <div className="border-t border-border pt-3 mt-3">
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
               <div className="flex justify-between items-center">
                 <span className="text-xl font-semibold text-foreground">Total Cost</span>
-                <span className="text-3xl font-bold text-primary">£{calculateTotal().toFixed(2)}</span>
+                <span className="text-3xl font-bold text-primary">£{calculations.totalCost.toFixed(2)}</span>
               </div>
             </div>
           </div>

@@ -114,9 +114,9 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
     }
   };
 
-  // Use formula-based calculations
+  // Use formula-based calculations - ONLY for display, don't update bookingData.estimatedHours here
   const calculations = useBookingCalculations(data);
-  const recommendedHours = calculations.baseTime;
+  const recommendedHours = calculations.baseTime || 2;
   
   const canContinue = data.propertyType && data.bedrooms && data.bathrooms && data.serviceType && 
     (data.cleaningProducts !== 'equipment' || 
@@ -128,7 +128,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
     if (data.serviceType && data.serviceType !== 'checkin-checkout' && data.alreadyCleaned !== null && data.alreadyCleaned !== undefined) {
       onUpdate({ alreadyCleaned: null });
     }
-  }, [data.serviceType, onUpdate]);
+  }, [data.serviceType]);
 
   // Auto-select cleaning products for deep cleaning or uncleaned properties
   React.useEffect(() => {
@@ -137,14 +137,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
         onUpdate({ cleaningProducts: 'products' });
       }
     }
-  }, [data.serviceType, data.alreadyCleaned, data.cleaningProducts, onUpdate]);
-
-  // Update recommended hours in booking data
-  React.useEffect(() => {
-    if (data.propertyType && data.bedrooms && data.bathrooms && data.serviceType && (data.estimatedHours == null || data.estimatedHours <= 0)) {
-      onUpdate({ estimatedHours: recommendedHours });
-    }
-  }, [recommendedHours, data.propertyType, data.bedrooms, data.bathrooms, data.serviceType, data.estimatedHours, onUpdate]);
+  }, [data.serviceType, data.alreadyCleaned, data.cleaningProducts]);
 
   return (
     <div className="space-y-6">
@@ -702,50 +695,42 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Recommended Hours - Show after basic selections are made */}
       {data.propertyType && data.bedrooms && data.bathrooms && data.serviceType && (
-        <div className="relative z-[4] p-6 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-          <div className="p-4 bg-primary/5 rounded-lg">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <h2 className="text-xl font-bold text-[#185166]">Estimated Cleaning Time</h2>
-              <div className="flex items-center bg-card border border-border rounded-2xl p-2 w-full sm:w-auto sm:min-w-[200px]">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-10 w-10 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary flex-shrink-0"
-                  onClick={() => {
-                    const base = (data.estimatedHours != null && data.estimatedHours > 0)
-                      ? data.estimatedHours
-                      : Math.max((recommendedHours || 0), 2);
-                    const newHours = Math.max(2, Math.round((base - 0.5) * 2) / 2);
-                    onUpdate({ estimatedHours: newHours });
-                  }}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <div className="flex-1 text-center mx-2 sm:mx-4">
-                  <div className="text-lg sm:text-xl font-bold text-foreground whitespace-nowrap">
-                    {((data.estimatedHours != null && data.estimatedHours > 0) ? data.estimatedHours : Math.max((recommendedHours || 0), 2))} hours
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-10 w-10 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary flex-shrink-0"
-                  onClick={() => {
-                    const base = (data.estimatedHours != null && data.estimatedHours > 0)
-                      ? data.estimatedHours
-                      : Math.max((recommendedHours || 0), 2);
-                    const newHours = Math.round((base + 0.5) * 2) / 2;
-                    onUpdate({ estimatedHours: newHours });
-                  }}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
+        <div className="relative z-[4] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+          <h2 className="text-xl font-bold text-[#185166] mb-4">Estimated Cleaning Time</h2>
+          <div className="flex items-center bg-card border border-border rounded-2xl p-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
+              onClick={() => {
+                const current = data.estimatedHours || recommendedHours;
+                const newValue = Math.max(2, current - 0.5);
+                onUpdate({ estimatedHours: newValue });
+              }}
+            >
+              <Minus className="h-5 w-5" />
+            </Button>
+            <div className="flex-1 text-center">
+              <div className="text-lg font-semibold text-slate-600">
+                {data.estimatedHours || recommendedHours} hours
               </div>
             </div>
-            <p className="text-sm text-muted-foreground mt-2">
-              Recommended hours based on your property. You can adjust the hours; the final price updates automatically.
-            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
+              onClick={() => {
+                const current = data.estimatedHours || recommendedHours;
+                const newValue = current + 0.5;
+                onUpdate({ estimatedHours: newValue });
+              }}
+            >
+              <Plus className="h-5 w-5" />
+            </Button>
           </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Adjust based on property condition. Final price updates automatically.
+          </p>
         </div>
       )}
 

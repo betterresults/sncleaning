@@ -222,16 +222,15 @@ export const useBookingCalculations = (bookingData: BookingData) => {
     const evaluateFormula = (elements: any[], context: Record<string, number> = {}): number => {
       if (!elements || elements.length === 0) return 0;
 
+      let expression = '';
       try {
-        let expression = '';
-        
         for (const element of elements) {
           if (element.type === 'field') {
             const fieldName = element.value.toLowerCase();
             
             // Check if this is a formula reference (like TotalHours, CleaningCost, etc.)
             if (fieldName in context) {
-              expression += context[fieldName].toString();
+              expression += `(${context[fieldName].toString()})`;
               continue;
             }
             
@@ -242,19 +241,21 @@ export const useBookingCalculations = (bookingData: BookingData) => {
             const val = useTime 
               ? getFieldTime(actualFieldName) 
               : getFieldValue(actualFieldName);
-            expression += val.toString();
+            expression += `(${val.toString()})`;
           } else if (element.type === 'operator') {
-            expression += element.value;
+            expression += ` ${element.value} `;
           } else if (element.type === 'number') {
             expression += element.value;
           }
         }
 
+        console.debug('[Formula] Expression:', expression);
+        
         // Safely evaluate the expression
         const result = Function('"use strict"; return (' + expression + ')')();
         return typeof result === 'number' && isFinite(result) ? result : 0;
       } catch (error) {
-        console.error('Error evaluating formula:', error);
+        console.error('Error evaluating formula:', error, 'Expression:', expression);
         return 0;
       }
     };
@@ -293,18 +294,20 @@ export const useBookingCalculations = (bookingData: BookingData) => {
     const cleaningCostFormula = formulas.find((f: any) => f.name === 'Cleaning Cost');
     const totalCostFormula = formulas.find((f: any) => f.name === 'Total cost');
 
-    // Calculate base time
-    let baseTime = 0;
-    if (baseTimeFormula) {
-      baseTime = evaluateFormula(baseTimeFormula.elements);
-      console.debug('[Pricing] Base time result:', baseTime, { elements: baseTimeFormula.elements });
+    // Calculate base time from formula
+    let baseTime = 2; // Default minimum
+    if (baseTimeFormula && baseTimeFormula.elements && baseTimeFormula.elements.length > 0) {
+      const calculated = evaluateFormula(baseTimeFormula.elements);
+      baseTime = Math.max(2, calculated); // Ensure minimum 2 hours
+      console.debug('[Pricing] Base time calculated:', baseTime, 'from formula');
     } else {
-      console.warn('[Pricing] Base time formula not found');
+      console.warn('[Pricing] Base time formula not found or empty');
     }
 
-    // Allow user override of base time
-    if (bookingData.estimatedHours) {
+    // Use user override if explicitly set
+    if (bookingData.estimatedHours && bookingData.estimatedHours > 0) {
       baseTime = bookingData.estimatedHours;
+      console.debug('[Pricing] Using user override for base time:', baseTime);
     }
 
     // Calculate additional time
