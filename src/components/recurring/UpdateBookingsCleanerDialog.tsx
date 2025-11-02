@@ -9,6 +9,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -44,6 +46,7 @@ export default function UpdateBookingsCleanerDialog({
   const [loading, setLoading] = useState(false);
   const [affectedBookings, setAffectedBookings] = useState<AffectedBooking[]>([]);
   const [updating, setUpdating] = useState(false);
+  const [selectedBookingIds, setSelectedBookingIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     if (open && oldCleanerId && newCleanerId !== oldCleanerId) {
@@ -110,6 +113,8 @@ export default function UpdateBookingsCleanerDialog({
       }));
 
       setAffectedBookings(formatted);
+      // Select all bookings by default
+      setSelectedBookingIds(new Set(formatted.map(b => b.id)));
     } catch (error) {
       console.error('Error fetching affected bookings:', error);
       toast({
@@ -123,6 +128,15 @@ export default function UpdateBookingsCleanerDialog({
   };
 
   const handleUpdateBookings = async () => {
+    if (selectedBookingIds.size === 0) {
+      toast({
+        title: 'No bookings selected',
+        description: 'Please select at least one booking to update',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setUpdating(true);
     try {
       // Get the new cleaner's rate to update cleaner_rate in bookings
@@ -134,8 +148,8 @@ export default function UpdateBookingsCleanerDialog({
 
       if (cleanerError) throw cleanerError;
 
-      // Update all affected bookings
-      const bookingIds = affectedBookings.map(b => b.id);
+      // Update only selected bookings
+      const bookingIds = Array.from(selectedBookingIds);
       
       const { error: updateError } = await supabase
         .from('bookings')
@@ -149,7 +163,7 @@ export default function UpdateBookingsCleanerDialog({
 
       toast({
         title: 'Success',
-        description: `Updated ${affectedBookings.length} upcoming booking${affectedBookings.length > 1 ? 's' : ''} with the new cleaner`,
+        description: `Updated ${selectedBookingIds.size} booking${selectedBookingIds.size > 1 ? 's' : ''} with the new cleaner`,
       });
 
       onOpenChange(false);
@@ -163,6 +177,26 @@ export default function UpdateBookingsCleanerDialog({
       });
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const toggleBookingSelection = (bookingId: number) => {
+    setSelectedBookingIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(bookingId)) {
+        newSet.delete(bookingId);
+      } else {
+        newSet.add(bookingId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedBookingIds.size === affectedBookings.length) {
+      setSelectedBookingIds(new Set());
+    } else {
+      setSelectedBookingIds(new Set(affectedBookings.map(b => b.id)));
     }
   };
 
@@ -187,18 +221,38 @@ export default function UpdateBookingsCleanerDialog({
               <>
                 <p className="mb-4">
                   Found {affectedBookings.length} upcoming booking{affectedBookings.length > 1 ? 's' : ''} 
-                  {' '}with a different cleaner. Would you like to update {affectedBookings.length > 1 ? 'them' : 'it'} to <strong>{newCleanerName}</strong>?
+                  {' '}with a different cleaner. Select which ones to update to <strong>{newCleanerName}</strong>:
                 </p>
+                <div className="mb-3 flex items-center gap-2">
+                  <Checkbox 
+                    id="select-all"
+                    checked={selectedBookingIds.size === affectedBookings.length && affectedBookings.length > 0}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                  <Label htmlFor="select-all" className="font-medium cursor-pointer">
+                    Select All ({selectedBookingIds.size}/{affectedBookings.length} selected)
+                  </Label>
+                </div>
                 <div className="bg-muted p-4 rounded-md max-h-60 overflow-y-auto">
                   <div className="space-y-2">
                     {affectedBookings.map((booking) => (
                       <div key={booking.id} className="text-sm border-b border-border pb-2 last:border-0">
-                        <div className="font-medium">
-                          {format(new Date(booking.date_time), 'PPP p')}
-                        </div>
-                        <div className="text-muted-foreground">{booking.address}</div>
-                        <div className="text-xs text-muted-foreground">
-                          Current cleaner: {booking.cleaner_name}
+                        <div className="flex items-start gap-2">
+                          <Checkbox 
+                            id={`booking-${booking.id}`}
+                            checked={selectedBookingIds.has(booking.id)}
+                            onCheckedChange={() => toggleBookingSelection(booking.id)}
+                            className="mt-1"
+                          />
+                          <Label htmlFor={`booking-${booking.id}`} className="flex-1 cursor-pointer">
+                            <div className="font-medium">
+                              {format(new Date(booking.date_time), 'PPP p')}
+                            </div>
+                            <div className="text-muted-foreground">{booking.address}</div>
+                            <div className="text-xs text-muted-foreground">
+                              Current cleaner: {booking.cleaner_name}
+                            </div>
+                          </Label>
                         </div>
                       </div>
                     ))}
@@ -224,8 +278,8 @@ export default function UpdateBookingsCleanerDialog({
                 Continue
               </AlertDialogAction>
             ) : (
-              <AlertDialogAction onClick={handleUpdateBookings} disabled={updating}>
-                {updating ? 'Updating...' : 'Yes, Update All Bookings'}
+              <AlertDialogAction onClick={handleUpdateBookings} disabled={updating || selectedBookingIds.size === 0}>
+                {updating ? 'Updating...' : `Update ${selectedBookingIds.size} Booking${selectedBookingIds.size !== 1 ? 's' : ''}`}
               </AlertDialogAction>
             )}
           </AlertDialogFooter>
