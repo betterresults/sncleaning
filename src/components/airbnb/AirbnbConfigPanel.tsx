@@ -244,7 +244,8 @@ export const AirbnbConfigPanel: React.FC = () => {
 
 
   // Formula builder functions
-  const availableFields = [
+  // Base fields kept for backward compatibility with existing formulas
+  const baseAvailableFields = [
     { value: 'propertyType', label: 'Property Type', dbCategory: 'Property Type' },
     { value: 'bedrooms', label: 'Bedrooms', dbCategory: 'Bedrooms' },
     { value: 'bathrooms', label: 'Bathrooms', dbCategory: 'Bathrooms' },
@@ -258,6 +259,31 @@ export const AirbnbConfigPanel: React.FC = () => {
     { value: 'scheduling', label: 'Scheduling', dbCategory: 'Equipment Arrangement' },
     { value: 'timeFlexibility', label: 'Time Flexibility', dbCategory: 'Time Flexibility' }
   ];
+
+  // Add dynamic categories (e.g., Bed Sizes) from DB, visible ones only
+  const availableFields = React.useMemo(() => {
+    const toToken = (str: string) =>
+      str
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')
+        .split(/\s+/)
+        .map((w, i) => (i === 0 ? w : w.charAt(0).toUpperCase() + w.slice(1)))
+        .join('');
+
+    const existingDbCategories = new Set(baseAvailableFields.map(f => f.dbCategory));
+    const visibleCategories = new Set(
+      (configs || [])
+        .filter(c => c.is_active && (c.is_visible ?? true))
+        .map(c => c.category)
+    );
+
+    const dynamicFields = Array.from(visibleCategories)
+      .filter(cat => !existingDbCategories.has(cat))
+      .map(cat => ({ value: toToken(cat), label: cat, dbCategory: cat }));
+
+    return [...baseAvailableFields, ...dynamicFields];
+  }, [configs]);
 
   const operators = [
     { value: '+', label: 'Add (+)' },
