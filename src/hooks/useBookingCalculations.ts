@@ -211,6 +211,9 @@ export const useBookingCalculations = (bookingData: BookingData) => {
     let baseTime = 0;
     if (baseTimeFormula) {
       baseTime = evaluateFormula(baseTimeFormula.elements);
+      console.debug('[Pricing] Base time result:', baseTime, { elements: baseTimeFormula.elements });
+    } else {
+      console.warn('[Pricing] Base time formula not found');
     }
 
     // Allow user override of base time

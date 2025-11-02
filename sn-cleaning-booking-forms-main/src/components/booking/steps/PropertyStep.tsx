@@ -703,13 +703,11 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       {/* Recommended Hours - Show after basic selections are made */}
       {data.propertyType && data.bedrooms && data.bathrooms && data.serviceType && (
         <div className="relative z-[4] p-6 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-          <h2 className="text-xl font-bold text-[#185166] mb-4">
-            Estimated Cleaning Time
-          </h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-primary/5 rounded-lg">
+          <div className="p-4 bg-primary/5 rounded-lg">
+            <h2 className="text-xl font-bold text-[#185166] mb-2">Estimated Cleaning Time</h2>
+            <p className="text-sm text-muted-foreground mb-3">Recommended hours based on your property</p>
+            <div className="flex items-center justify-between">
               <div className="flex-1">
-                <p className="text-sm text-muted-foreground mb-1">Recommended hours based on your property</p>
                 <p className="text-2xl font-bold text-primary">
                   {Math.max(recommendedHours || 2, 2)} hours
                 </p>
@@ -719,8 +717,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                   variant="outline"
                   size="icon"
                   onClick={() => {
-                    const currentHours = data.estimatedHours || Math.max(recommendedHours || 2, 2);
-                    const newHours = Math.max(1, currentHours - 0.5);
+                    const currentHours = data.estimatedHours ?? Math.max(recommendedHours || 2, 2);
+                    const newHours = Math.max(2, Math.round((currentHours - 0.5) * 2) / 2);
                     onUpdate({ estimatedHours: newHours });
                   }}
                   className="h-10 w-10"
@@ -729,15 +727,15 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                 </Button>
                 <div className="min-w-[60px] text-center">
                   <span className="text-xl font-semibold">
-                    {data.estimatedHours || Math.max(recommendedHours || 2, 2)}
+                    {data.estimatedHours ?? Math.max(recommendedHours || 2, 2)}
                   </span>
                 </div>
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={() => {
-                    const currentHours = data.estimatedHours || Math.max(recommendedHours || 2, 2);
-                    const newHours = currentHours + 0.5;
+                    const currentHours = data.estimatedHours ?? Math.max(recommendedHours || 2, 2);
+                    const newHours = Math.round((currentHours + 0.5) * 2) / 2;
                     onUpdate({ estimatedHours: newHours });
                   }}
                   className="h-10 w-10"
@@ -746,7 +744,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                 </Button>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground mt-3">
               You can adjust the hours if needed. The final price will be calculated based on your selection.
             </p>
           </div>
