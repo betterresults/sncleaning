@@ -701,7 +701,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
               <h2 className="text-xl font-bold text-[#185166]">Estimated Cleaning Time</h2>
               <p className="text-xs text-muted-foreground mt-1">This is an estimate based on your selections. You can adjust it.</p>
             </div>
-            <div className="flex items-center bg-card border border-border rounded-2xl p-2 w-full sm:w-auto">
+            <div className="flex items-center bg-card border border-border rounded-2xl p-2 w-full sm:w-[40%]">
               <Button
                 variant="ghost"
                 size="sm"
