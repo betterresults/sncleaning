@@ -6,6 +6,7 @@ import { Home, Building, Plus, Minus, CheckCircle, Droplets, Wrench, X, BookOpen
 import * as LucideIcons from 'lucide-react';
 import { useAirbnbFieldConfigs } from '@/hooks/useAirbnbFieldConfigs';
 import { useBookingCalculations } from '@/hooks/useBookingCalculations';
+import { useSearchParams } from 'react-router-dom';
 
 interface PropertyStepProps {
   data: BookingData;
@@ -117,6 +118,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
   // Use formula-based calculations - ONLY for display, don't update bookingData.estimatedHours here
   const calculations = useBookingCalculations(data);
   const recommendedHours = calculations.baseTime;
+  const [searchParams] = useSearchParams();
+  const showDebug = searchParams.get('debug') === '1';
   
   const canContinue = data.propertyType && data.bedrooms && data.bathrooms && data.serviceType && 
     (data.cleaningProducts !== 'equipment' || 
@@ -798,6 +801,16 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
               </p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Debug Panel - visible only with ?debug=1 */}
+      {showDebug && (
+        <div className="mt-4 p-3 rounded-md border border-dashed text-xs font-mono overflow-x-auto bg-white">
+          <details open>
+            <summary className="cursor-pointer font-semibold">Booking Calculations Debug</summary>
+            <pre className="whitespace-pre-wrap">{JSON.stringify(calculations, null, 2)}</pre>
+          </details>
         </div>
       )}
 

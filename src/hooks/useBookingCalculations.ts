@@ -53,6 +53,10 @@ export const useBookingCalculations = (bookingData: BookingData) => {
       timeflexibility: 'Time Flexibility',
     };
 
+    // Debug collectors
+    const formulaLogs: any[] = [];
+    let shortNoticeDebug: any = {};
+
     // Helper function to get field value
     const getFieldValue = (fieldName: string): number => {
       const normalizedFieldName = fieldName.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -219,7 +223,7 @@ export const useBookingCalculations = (bookingData: BookingData) => {
     };
 
     // Helper function to evaluate formula
-    const evaluateFormula = (elements: any[], context: Record<string, number> = {}): number => {
+    const evaluateFormula = (elements: any[], context: Record<string, number> = {}, label?: string): number => {
       if (!elements || elements.length === 0) return 0;
 
       let expression = '';
@@ -264,16 +268,24 @@ export const useBookingCalculations = (bookingData: BookingData) => {
 
         console.debug('[Formula] Expression:', expression);
         const result = Function('"use strict"; return (' + expression + ')')();
-        return typeof result === 'number' && isFinite(result) ? result : 0;
+        const numeric = typeof result === 'number' && isFinite(result) ? result : 0;
+        // Collect debug info
+        formulaLogs.push({ label: label || 'unnamed', expression, result: numeric, context: { ...context } });
+        return numeric;
       } catch (error) {
         console.error('Error evaluating formula:', error, 'Expression:', expression);
+        // Even on error, push what we have
+        formulaLogs.push({ label: label || 'unnamed', expression, result: 0, context: { ...context }, error: String(error) });
         return 0;
       }
     };
 
     // Calculate short notice charge
     const calculateShortNoticeCharge = (): number => {
-      if (!bookingData.selectedDate || !bookingData.selectedTime) return 0;
+      if (!bookingData.selectedDate || !bookingData.selectedTime) {
+        shortNoticeDebug = { reason: 'missing_date_or_time' };
+        return 0;
+      }
 
       const now = new Date();
       const bookingDateTime = new Date(bookingData.selectedDate);
@@ -283,14 +295,22 @@ export const useBookingCalculations = (bookingData: BookingData) => {
       const hoursUntilBooking = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
 
       // Get time flexibility configs for short notice charges
-      const timeFlexConfigs = allConfigs.filter((cfg: any) => 
-        cfg.category?.toLowerCase() === 'time flexibility'
-      ).sort((a: any, b: any) => (b.min_value || 0) - (a.min_value || 0));
+      const timeFlexConfigs = allConfigs
+        .filter((cfg: any) => cfg.category?.toLowerCase() === 'time flexibility')
+        .sort((a: any, b: any) => (b.min_value || 0) - (a.min_value || 0));
+
+      shortNoticeDebug = {
+        hoursUntilBooking,
+        selectedDate: bookingData.selectedDate,
+        selectedTime: bookingData.selectedTime,
+        candidates: timeFlexConfigs.map((c: any) => ({ min: c.min_value, max: c.max_value, value: c.value }))
+      };
 
       for (const config of timeFlexConfigs) {
         const minHours = config.min_value || 0;
         const maxHours = config.max_value || Infinity;
         if (hoursUntilBooking >= minHours && hoursUntilBooking < maxHours) {
+          shortNoticeDebug.matched = { min: minHours, max: maxHours, value: config.value };
           return config.value || 0;
         }
       }
@@ -308,7 +328,7 @@ export const useBookingCalculations = (bookingData: BookingData) => {
     // Calculate base time from formula
     let baseTime = 0;
     if (baseTimeFormula && Array.isArray(baseTimeFormula.elements) && baseTimeFormula.elements.length > 0) {
-      baseTime = evaluateFormula(baseTimeFormula.elements);
+      baseTime = evaluateFormula(baseTimeFormula.elements, {}, 'Base time');
       console.debug('[Pricing] Base time calculated:', baseTime, 'from formula');
     } else {
       console.warn('[Pricing] Base time formula not found or empty');
@@ -323,7 +343,7 @@ export const useBookingCalculations = (bookingData: BookingData) => {
     // Calculate additional time
     let additionalTime = 0;
     if (additionalTimeFormula) {
-      additionalTime = evaluateFormula(additionalTimeFormula.elements);
+      additionalTime = evaluateFormula(additionalTimeFormula.elements, {}, 'Additional Time');
     }
 
     // Allow user override of additional time (ironingHours)
@@ -338,7 +358,7 @@ export const useBookingCalculations = (bookingData: BookingData) => {
         basetime: baseTime,
         additionaltime: additionalTime,
       };
-      totalHours = evaluateFormula(totalHoursFormula.elements, context);
+      totalHours = evaluateFormula(totalHoursFormula.elements, context, 'Total Hours');
     }
     // Calculate cleaning cost (pass totalHours as context)
     let cleaningCost = 0;
@@ -346,7 +366,7 @@ export const useBookingCalculations = (bookingData: BookingData) => {
       const context = {
         totalhours: totalHours,
       };
-      cleaningCost = evaluateFormula(cleaningCostFormula.elements, context);
+      cleaningCost = evaluateFormula(cleaningCostFormula.elements, context, 'Cleaning Cost');
     }
 
     // Calculate short notice charge
@@ -359,7 +379,7 @@ export const useBookingCalculations = (bookingData: BookingData) => {
         cleaningcost: cleaningCost,
         shortnoticecharge: shortNoticeCharge,
       };
-      const evaluated = evaluateFormula(totalCostFormula.elements, context);
+      const evaluated = evaluateFormula(totalCostFormula.elements, context, 'Total cost');
       // Only override when evaluation produced a meaningful value.
       // If a misconfigured/empty formula returns 0 but cleaningCost > 0, keep the fallback.
       if (Number.isFinite(evaluated)) {
@@ -380,6 +400,11 @@ export const useBookingCalculations = (bookingData: BookingData) => {
       shortNoticeCharge: roundTo2(shortNoticeCharge),
       totalCost: roundTo2(totalCost),
       hourlyRate: totalHours > 0 ? roundTo2(cleaningCost / totalHours) : 0,
+      debug: {
+        formulas: formulaLogs,
+        shortNotice: shortNoticeDebug,
+        inputs: bookingData,
+      },
     };
   }, [bookingData, formulas, allConfigs, categoryDefaults]);
 
