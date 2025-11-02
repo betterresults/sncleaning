@@ -306,17 +306,16 @@ export const useBookingCalculations = (bookingData: BookingData) => {
     const totalCostFormula = formulas.find((f: any) => f.name === 'Total cost');
 
     // Calculate base time from formula
-    let baseTime = 2; // Default minimum
-    if (baseTimeFormula && baseTimeFormula.elements && baseTimeFormula.elements.length > 0) {
-      const calculated = evaluateFormula(baseTimeFormula.elements);
-      baseTime = Math.max(2, calculated); // Ensure minimum 2 hours
+    let baseTime = 0;
+    if (baseTimeFormula && Array.isArray(baseTimeFormula.elements) && baseTimeFormula.elements.length > 0) {
+      baseTime = evaluateFormula(baseTimeFormula.elements);
       console.debug('[Pricing] Base time calculated:', baseTime, 'from formula');
     } else {
       console.warn('[Pricing] Base time formula not found or empty');
     }
 
-    // Use user override if explicitly set
-    if (bookingData.estimatedHours && bookingData.estimatedHours > 0) {
+    // Use user override if explicitly set (allow 0 as valid if user sets it)
+    if (bookingData.estimatedHours !== null && bookingData.estimatedHours !== undefined) {
       baseTime = bookingData.estimatedHours;
       console.debug('[Pricing] Using user override for base time:', baseTime);
     }
@@ -341,10 +340,6 @@ export const useBookingCalculations = (bookingData: BookingData) => {
       };
       totalHours = evaluateFormula(totalHoursFormula.elements, context);
     }
-
-    // Ensure minimum 2 hours
-    totalHours = Math.max(totalHours, 2);
-
     // Calculate cleaning cost (pass totalHours as context)
     let cleaningCost = 0;
     if (cleaningCostFormula) {

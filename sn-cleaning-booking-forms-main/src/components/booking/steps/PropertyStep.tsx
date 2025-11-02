@@ -116,7 +116,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
   // Use formula-based calculations - ONLY for display, don't update bookingData.estimatedHours here
   const calculations = useBookingCalculations(data);
-  const recommendedHours = calculations.baseTime || 2;
+  const recommendedHours = calculations.baseTime;
   
   const canContinue = data.propertyType && data.bedrooms && data.bathrooms && data.serviceType && 
     (data.cleaningProducts !== 'equipment' || 
@@ -706,9 +706,9 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                 variant="ghost"
                 size="sm"
               className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary flex-shrink-0"
-                onClick={() => {
-                  const current = data.estimatedHours || recommendedHours;
-                  const newValue = Math.max(2, current - 0.5);
+              onClick={() => {
+                  const current = (data.estimatedHours ?? recommendedHours);
+                  const newValue = Math.max(0, current - 0.5);
                   onUpdate({ estimatedHours: newValue });
                 }}
               >
@@ -716,16 +716,16 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
               </Button>
               <div className="flex-1 text-center min-w-[80px]">
                 <div className="text-lg font-semibold text-slate-600">
-                  {data.estimatedHours || recommendedHours} hours
+                  {(data.estimatedHours ?? recommendedHours)} hours
                 </div>
               </div>
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
-                onClick={() => {
-                  const current = data.estimatedHours || recommendedHours;
-                  const newValue = current + 0.5;
+              onClick={() => {
+                  const current = (data.estimatedHours ?? recommendedHours);
+                  const newValue = Math.max(0, current + 0.5);
                   onUpdate({ estimatedHours: newValue });
                 }}
               >
