@@ -701,11 +701,11 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
               <h2 className="text-xl font-bold text-[#185166]">Estimated Cleaning Time</h2>
               <p className="text-xs text-muted-foreground mt-1">This is an estimate based on your selections. You can adjust it.</p>
             </div>
-            <div className="flex items-center bg-card border border-border rounded-2xl p-2 w-full sm:w-[40%]">
+            <div className="flex items-center bg-card border border-border rounded-2xl p-2 w-full sm:w-2/5">
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
+              className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary flex-shrink-0"
                 onClick={() => {
                   const current = data.estimatedHours || recommendedHours;
                   const newValue = Math.max(2, current - 0.5);

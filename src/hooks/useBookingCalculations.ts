@@ -83,7 +83,7 @@ export const useBookingCalculations = (bookingData: BookingData) => {
       const fieldValue = fieldMapping[normalizedFieldName];
       
       // If field value is empty/null, try to use category default FIRST
-      if (!fieldValue || fieldValue === '' || fieldValue === null || fieldValue === undefined || fieldValue === false) {
+      if (fieldValue === '' || fieldValue === null || fieldValue === undefined) {
         const categoryName = fieldToCategoryMap[normalizedFieldName];
         
         if (categoryName) {
@@ -174,7 +174,7 @@ export const useBookingCalculations = (bookingData: BookingData) => {
       const fieldValue = fieldMapping[normalizedFieldName];
       
       // If field value is empty/null, try to use category default FIRST
-      if (!fieldValue || fieldValue === '' || fieldValue === null || fieldValue === undefined || fieldValue === false) {
+      if (fieldValue === '' || fieldValue === null || fieldValue === undefined) {
         const categoryName = fieldToCategoryMap[normalizedFieldName];
         
         if (categoryName) {
