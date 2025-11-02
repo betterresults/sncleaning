@@ -549,13 +549,23 @@ export const AirbnbConfigPanel: React.FC = () => {
   const evaluateWithTestValues = () => {
     try {
       // Filter out empty elements and join with spaces
-      const formulaString = (currentFormula.elements || [])
+      let formulaString = (currentFormula.elements || [])
         .filter(el => el.value && el.value.trim() !== '')
         .map(el => el.value.trim())
         .join(' ')
         .replace(/;/g, ''); // Remove any semicolons
       
       if (!formulaString) return null;
+
+      // Replace custom function names with JavaScript Math equivalents
+      formulaString = formulaString.replace(/ABC\s*\./g, 'Math.abs');
+      formulaString = formulaString.replace(/\bfloor\s*\./g, 'Math.floor');
+      formulaString = formulaString.replace(/\bceil\s*\./g, 'Math.ceil');
+      formulaString = formulaString.replace(/\bround\s*\./g, 'Math.round');
+      formulaString = formulaString.replace(/\bmin\s*\./g, 'Math.min');
+      formulaString = formulaString.replace(/\bmax\s*\./g, 'Math.max');
+      formulaString = formulaString.replace(/\bsqrt\s*\./g, 'Math.sqrt');
+      formulaString = formulaString.replace(/\bpow\s*\./g, 'Math.pow');
 
       // Build proper objects with value and time properties for each field
       const allFieldNames = availableFields.map(f => f.value);
