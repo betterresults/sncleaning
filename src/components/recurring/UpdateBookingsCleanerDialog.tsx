@@ -57,7 +57,7 @@ export default function UpdateBookingsCleanerDialog({
         .from('recurring_services')
         .select('recurring_group_id')
         .eq('id', parseInt(recurringServiceId))
-        .single();
+        .maybeSingle();
 
       if (recurringError) throw recurringError;
 

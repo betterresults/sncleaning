@@ -62,6 +62,7 @@ export default function EditRecurringBooking() {
   const [originalCleanerId, setOriginalCleanerId] = useState<string | null>(null);
   const [showUpdateBookingsDialog, setShowUpdateBookingsDialog] = useState(false);
   const [pendingCleanerId, setPendingCleanerId] = useState<string>('');
+  const [pendingSubmit, setPendingSubmit] = useState(false);
   
   // Fetch dynamic service types and cleaning types
   const { data: serviceTypes } = useServiceTypes();
@@ -241,26 +242,31 @@ export default function EditRecurringBooking() {
     }
   };
 
-  const handleConfirmCleanerChange = () => {
+  const handleConfirmCleanerChange = async () => {
     const cleaner = cleaners.find(c => c.id === parseInt(pendingCleanerId));
     setFormData(prev => ({
       ...prev,
       cleaner: pendingCleanerId,
       cleaner_rate: cleaner?.hourly_rate?.toString() || prev.cleaner_rate,
     }));
+
+    // If this confirmation came during submit, continue saving with overrides
+    if (pendingSubmit) {
+      await performUpdate({ cleanerId: pendingCleanerId, cleanerRate: cleaner?.hourly_rate?.toString() });
+    }
+
+    setOriginalCleanerId(pendingCleanerId);
     setPendingCleanerId('');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const performUpdate = async (override?: { cleanerId?: string; cleanerRate?: string }) => {
     setLoading(true);
-
     try {
       const submitData = {
         customer: parseInt(formData.client),
         address: formData.address,
-        cleaner: formData.cleaner ? parseInt(formData.cleaner) : null,
-        cleaner_rate: formData.cleaner_rate ? parseFloat(formData.cleaner_rate) : null,
+        cleaner: (override?.cleanerId ?? formData.cleaner) ? parseInt(override?.cleanerId ?? formData.cleaner) : null,
+        cleaner_rate: (override?.cleanerRate ?? formData.cleaner_rate) ? parseFloat(override?.cleanerRate ?? formData.cleaner_rate) : null,
         cleaning_type: formData.cleaning_type,
         frequently: formData.frequently,
         days_of_the_week: formData.days_of_the_week || null,
@@ -295,7 +301,23 @@ export default function EditRecurringBooking() {
       });
     } finally {
       setLoading(false);
+      setPendingSubmit(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // If cleaner changed, show dialog first, then continue on confirm
+    if (originalCleanerId && formData.cleaner && formData.cleaner !== originalCleanerId) {
+      setPendingSubmit(true);
+      setPendingCleanerId(formData.cleaner);
+      setShowUpdateBookingsDialog(true);
+      return;
+    }
+
+    // No cleaner change, proceed directly
+    await performUpdate();
   };
 
   if (initialLoading) {
