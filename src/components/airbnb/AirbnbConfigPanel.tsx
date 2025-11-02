@@ -506,8 +506,28 @@ export const AirbnbConfigPanel: React.FC = () => {
     return Array.from(fields);
   };
 
+  // Extract formula references (elements that are not in availableFields)
+  const extractFormulaReferences = (elements: FormulaElement[]): string[] => {
+    const formulaRefs = new Set<string>();
+    elements.forEach(el => {
+      if (el.type === 'field' && el.value) {
+        const fieldName = el.value.split('.')[0];
+        // If it's not in availableFields and looks like an identifier, it's a formula reference
+        if (!availableFields.some(f => f.value === fieldName) && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(fieldName)) {
+          formulaRefs.add(fieldName);
+        }
+      }
+    });
+    return Array.from(formulaRefs);
+  };
+
   const usedFields = React.useMemo(() => 
     extractFieldsFromFormula(currentFormula.elements || []), 
+    [currentFormula.elements]
+  );
+
+  const usedFormulaRefs = React.useMemo(() => 
+    extractFormulaReferences(currentFormula.elements || []), 
     [currentFormula.elements]
   );
 
@@ -552,6 +572,14 @@ export const AirbnbConfigPanel: React.FC = () => {
           min_value: testVal?.min_value ?? 0,
           max_value: testVal?.max_value ?? 0
         };
+      });
+      
+      // Add formula references as simple numeric values
+      const formulaRefs = extractFormulaReferences(currentFormula.elements || []);
+      formulaRefs.forEach(refName => {
+        const testVal = testValues[refName];
+        const numVal = typeof testVal === 'number' ? testVal : Number(testVal) || 0;
+        fieldObjects[refName] = numVal;
       });
       
       const paramNames = Object.keys(fieldObjects);
@@ -1380,7 +1408,7 @@ export const AirbnbConfigPanel: React.FC = () => {
                 </div>
 
                 {/* Formula Tester */}
-                {usedFields.length > 0 && (
+                {(usedFields.length > 0 || usedFormulaRefs.length > 0) && (
                   <Card className="p-4 border-2 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20">
                     <h3 className="text-lg font-semibold mb-4 text-green-900 dark:text-green-100">
                       🧪 Test Your Formula
@@ -1390,6 +1418,31 @@ export const AirbnbConfigPanel: React.FC = () => {
                     </p>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      {/* Formula References - shown first */}
+                      {usedFormulaRefs.map(refName => (
+                        <div key={`formula-ref-${refName}`} className="space-y-2">
+                          <Label className="text-sm font-semibold">
+                            {refName}
+                            <span className="text-xs text-purple-600 dark:text-purple-400 ml-2">(formula reference)</span>
+                          </Label>
+                          <Input
+                            type="number"
+                            step="any"
+                            value={testValues[refName] || 0}
+                            onChange={(e) => {
+                              const val = parseFloat(e.target.value) || 0;
+                              setTestValues(prev => ({
+                                ...prev,
+                                [refName]: val
+                              }));
+                            }}
+                            placeholder="Enter test value..."
+                            className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800"
+                          />
+                        </div>
+                      ))}
+                      
+                      {/* Regular Fields */}
                       {usedFields.map(fieldName => {
                         const field = availableFields.find(f => f.value === fieldName);
                         // Use the dbCategory to find configs
