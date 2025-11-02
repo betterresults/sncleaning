@@ -867,19 +867,19 @@ export const AirbnbConfigPanel: React.FC = () => {
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                       <div className="p-4 space-y-2 border-t">
-                        <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground pb-2 border-b">
+                        <div className="grid grid-cols-13 gap-2 text-xs font-semibold text-muted-foreground pb-2 border-b">
                           <div className="col-span-2">Label</div>
                           <div className="col-span-1">Min</div>
                           <div className="col-span-1">Max</div>
                           <div className="col-span-1">Icon</div>
-                          <div className="col-span-1"></div>
+                          <div className="col-span-1">Default</div>
                           <div className="col-span-2">Value</div>
                           <div className="col-span-1">Type</div>
                           <div className="col-span-2">Time (min)</div>
                           <div className="col-span-1">Actions</div>
                         </div>
                         {(groupedConfigs[category] || []).sort((a, b) => (a.display_order || 0) - (b.display_order || 0)).map((config) => (
-                          <div key={config.id} className="grid grid-cols-12 gap-2 items-center p-2 border rounded hover:bg-muted/30 transition-colors">
+                          <div key={config.id} className="grid grid-cols-13 gap-2 items-center p-2 border rounded hover:bg-muted/30 transition-colors">
                             <div className="col-span-2">
                               <Input
                                 value={getCurrentValue(config.id, 'label', config.label || config.option)}
@@ -1019,7 +1019,24 @@ export const AirbnbConfigPanel: React.FC = () => {
                                 </DialogContent>
                               </Dialog>
                             </div>
-                            <div className="col-span-1 border-r-2 border-muted"></div>
+                            <div className="col-span-1 flex justify-center">
+                              <Switch
+                                checked={getCurrentValue(config.id, 'is_default', (config as any).is_default) || false}
+                                onCheckedChange={(checked) => {
+                                  handleLocalChange(config.id, 'is_default', checked);
+                                  // If setting as default, unset other defaults in this category
+                                  if (checked) {
+                                    const otherConfigs = groupedConfigs[category]?.filter(c => c.id !== config.id) || [];
+                                    otherConfigs.forEach(otherConfig => {
+                                      if ((otherConfig as any).is_default) {
+                                        handleLocalChange(otherConfig.id, 'is_default', false);
+                                      }
+                                    });
+                                  }
+                                }}
+                                title="Set as default value when field is not filled"
+                              />
+                            </div>
                             <div className="col-span-2">
                               <Input
                                 type="number"

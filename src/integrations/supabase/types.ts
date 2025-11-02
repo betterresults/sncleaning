@@ -109,6 +109,7 @@ export type Database = {
           icon: string | null
           id: string
           is_active: boolean | null
+          is_default: boolean | null
           is_visible: boolean | null
           label: string | null
           max_value: number | null
@@ -127,6 +128,7 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean | null
+          is_default?: boolean | null
           is_visible?: boolean | null
           label?: string | null
           max_value?: number | null
@@ -145,6 +147,7 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean | null
+          is_default?: boolean | null
           is_visible?: boolean | null
           label?: string | null
           max_value?: number | null

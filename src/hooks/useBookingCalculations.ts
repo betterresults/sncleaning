@@ -73,6 +73,19 @@ export const useBookingCalculations = (bookingData: BookingData) => {
         return Number(config.value) || 0;
       }
 
+      // If no match found and field value is empty/null, look for default config
+      if (!fieldValue || fieldValue === '' || fieldValue === null || fieldValue === undefined) {
+        const defaultConfig = allConfigs.find((cfg: any) => {
+          const cfgCategory = cfg.category?.toLowerCase().replace(/[^a-z0-9]/g, '');
+          return cfgCategory === normalizedFieldName && cfg.is_default === true;
+        });
+        
+        if (defaultConfig) {
+          console.debug('[Pricing] Using default value for', fieldName, ':', defaultConfig.value);
+          return Number(defaultConfig.value) || 0;
+        }
+      }
+
       // Check additional rooms
       if (bookingData.additionalRooms && normalizedFieldName in bookingData.additionalRooms) {
         return Number(bookingData.additionalRooms[normalizedFieldName]) || 0;
@@ -127,6 +140,19 @@ export const useBookingCalculations = (bookingData: BookingData) => {
 
       if (config && typeof config.time === 'number') {
         return config.time; // Return minutes; formulas handle conversion to hours
+      }
+
+      // If no match found and field value is empty/null, look for default config
+      if (!fieldValue || fieldValue === '' || fieldValue === null || fieldValue === undefined) {
+        const defaultConfig = allConfigs.find((cfg: any) => {
+          const cfgCategory = cfg.category?.toLowerCase().replace(/[^a-z0-9]/g, '');
+          return cfgCategory === normalizedFieldName && cfg.is_default === true;
+        });
+        
+        if (defaultConfig && typeof defaultConfig.time === 'number') {
+          console.debug('[Pricing] Using default time for', fieldName, ':', defaultConfig.time);
+          return defaultConfig.time;
+        }
       }
 
       return 0;
