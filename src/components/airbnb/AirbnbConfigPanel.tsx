@@ -7,6 +7,23 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Trash2, Eye, EyeOff, GripVertical, Upload } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { 
   useAirbnbFieldConfigs,
   useAllAirbnbCategories,
@@ -45,6 +62,281 @@ import {
 } from '@/components/ui/collapsible';
 import { ChevronDown } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+
+// Sortable Field Row Component
+interface SortableFieldRowProps {
+  config: FieldConfig;
+  renderIcon: (iconName: string | null) => React.ReactNode;
+  getCurrentValue: (configId: string, field: string, defaultValue: any) => any;
+  handleLocalChange: (id: string, field: string, value: any) => void;
+  editingIcon: string | null;
+  setEditingIcon: (id: string | null) => void;
+  customIconUrl: string;
+  setCustomIconUrl: (url: string) => void;
+  iconMode: 'lucide' | 'url';
+  setIconMode: (mode: 'lucide' | 'url') => void;
+  iconSearchQuery: string;
+  setIconSearchQuery: (query: string) => void;
+  handleUpdateConfig: (id: string, updates: Partial<FieldConfig>) => void;
+  deleteConfig: any;
+}
+
+const SortableFieldRow: React.FC<SortableFieldRowProps> = ({
+  config,
+  renderIcon,
+  getCurrentValue,
+  handleLocalChange,
+  editingIcon,
+  setEditingIcon,
+  customIconUrl,
+  setCustomIconUrl,
+  iconMode,
+  setIconMode,
+  iconSearchQuery,
+  setIconSearchQuery,
+  handleUpdateConfig,
+  deleteConfig,
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: config.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="grid grid-cols-[40px,2fr,80px,80px,60px,100px,100px,80px,60px] gap-3 items-center p-3 border rounded-lg hover:bg-muted/30 transition-colors"
+    >
+      {/* Drag Handle */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="flex justify-center cursor-grab active:cursor-grabbing"
+      >
+        <GripVertical className="h-5 w-5 text-muted-foreground" />
+      </div>
+
+      {/* Option Label */}
+      <div>
+        <Input
+          value={getCurrentValue(config.id, 'label', config.label || config.option)}
+          onChange={(e) => handleLocalChange(config.id, 'label', e.target.value)}
+          className="h-9 text-sm"
+          placeholder="Option name"
+        />
+      </div>
+      
+      {/* Min Value */}
+      <div>
+        <Input
+          type="number"
+          value={(() => {
+            const val = getCurrentValue(config.id, 'min_value', (config as any).min_value);
+            return val !== null && val !== undefined ? Number(val) : '';
+          })()}
+          onChange={(e) => {
+            const val = e.target.value;
+            handleLocalChange(config.id, 'min_value', val === '' ? null : Number(val));
+          }}
+          className="h-9 text-sm text-center"
+          placeholder="0"
+        />
+      </div>
+      
+      {/* Max Value */}
+      <div>
+        <Input
+          type="number"
+          value={(() => {
+            const val = getCurrentValue(config.id, 'max_value', config.max_value);
+            return val !== null && val !== undefined ? Number(val) : '';
+          })()}
+          onChange={(e) => {
+            const val = e.target.value;
+            handleLocalChange(config.id, 'max_value', val === '' ? null : Number(val));
+          }}
+          className="h-9 text-sm text-center"
+          placeholder="10"
+        />
+      </div>
+      
+      {/* Icon */}
+      <div className="flex justify-center">
+        <Dialog open={editingIcon === config.id} onOpenChange={(open) => !open && setEditingIcon(null)}>
+          <DialogTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 w-9 p-0"
+              onClick={() => {
+                setEditingIcon(config.id);
+                setCustomIconUrl(config.icon || '');
+              }}
+            >
+              {renderIcon(config.icon) || <Upload className="h-3 w-3" />}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Set Icon</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Tabs value={iconMode} onValueChange={(v: any) => setIconMode(v)}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="lucide">Lucide Icons</TabsTrigger>
+                  <TabsTrigger value="url">Custom URL</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="lucide" className="space-y-4">
+                  <div>
+                    <Label>Search Icons</Label>
+                    <Input
+                      value={iconSearchQuery}
+                      onChange={(e) => setIconSearchQuery(e.target.value)}
+                      placeholder="Search by name..."
+                      className="mb-4"
+                    />
+                  </div>
+                  <div className="grid grid-cols-6 gap-2 max-h-[400px] overflow-y-auto border rounded p-2">
+                    {Object.keys(LucideIcons)
+                      .filter(name => 
+                        name !== 'createLucideIcon' && 
+                        name !== 'default' &&
+                        !name.startsWith('Lucide') &&
+                        name.toLowerCase().includes(iconSearchQuery.toLowerCase())
+                      )
+                      .slice(0, 100)
+                      .map(iconName => {
+                        const IconComponent = (LucideIcons as any)[iconName];
+                        return (
+                          <button
+                            key={iconName}
+                            onClick={() => setCustomIconUrl(iconName)}
+                            className={`flex flex-col items-center justify-center p-2 border rounded hover:bg-muted transition-colors ${customIconUrl === iconName ? 'bg-primary text-primary-foreground' : ''}`}
+                            title={iconName}
+                          >
+                            <IconComponent className="h-6 w-6" />
+                            <span className="text-[8px] mt-1 truncate w-full text-center">{iconName}</span>
+                          </button>
+                        );
+                      })}
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="url" className="space-y-4">
+                  <div>
+                    <Label>Image URL</Label>
+                    <Input
+                      value={customIconUrl}
+                      onChange={(e) => setCustomIconUrl(e.target.value)}
+                      placeholder="https://example.com/icon.png"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Enter a direct URL to an image file
+                    </p>
+                  </div>
+                  <div className="flex justify-center p-8 border rounded bg-muted/20">
+                    {customIconUrl && (customIconUrl.startsWith('http://') || customIconUrl.startsWith('https://')) ? (
+                      <img src={customIconUrl} alt="Preview" className="max-h-16 max-w-16 object-contain" />
+                    ) : (
+                      <span className="text-muted-foreground">Preview</span>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
+              
+              <div className="flex justify-center p-4 border rounded">
+                {renderIcon(customIconUrl) || <span className="text-muted-foreground">Icon preview</span>}
+              </div>
+              
+              <Button
+                onClick={() => {
+                  handleUpdateConfig(config.id, { icon: customIconUrl });
+                  setEditingIcon(null);
+                  setIconSearchQuery('');
+                }}
+                className="w-full"
+              >
+                Save Icon
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+      
+      {/* Value */}
+      <div>
+        <Input
+          type="number"
+          step="0.5"
+          value={getCurrentValue(config.id, 'value', config.value)}
+          onChange={(e) => handleLocalChange(config.id, 'value', Number(e.target.value))}
+          onFocus={(e) => e.target.select()}
+          className="h-9 text-sm text-center"
+          placeholder="0"
+        />
+      </div>
+      
+      {/* Type */}
+      <div>
+        <Select 
+          value={getCurrentValue(config.id, 'value_type', config.value_type)} 
+          onValueChange={(v) => handleLocalChange(config.id, 'value_type', v)}
+        >
+          <SelectTrigger className="h-9 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">-</SelectItem>
+            <SelectItem value="fixed">£</SelectItem>
+            <SelectItem value="percentage">%</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      {/* Time */}
+      <div>
+        <Input
+          type="number"
+          step="1"
+          value={getCurrentValue(config.id, 'time', config.time) || 0}
+          onChange={(e) => handleLocalChange(config.id, 'time', Number(e.target.value))}
+          onFocus={(e) => e.target.select()}
+          className="h-9 text-sm text-center"
+          placeholder="0"
+          title={config.min_value !== null && config.max_value !== null ? `Per unit above min (${config.min_value})` : undefined}
+        />
+      </div>
+      
+      {/* Delete Button */}
+      <div className="flex justify-center">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-9 w-9 p-0 hover:bg-destructive/10"
+          onClick={() => {
+            if (confirm('Delete this field?')) {
+              deleteConfig.mutate(config.id);
+            }
+          }}
+        >
+          <Trash2 className="h-4 w-4 text-destructive" />
+        </Button>
+      </div>
+    </div>
+  );
+};
 
 export const AirbnbConfigPanel: React.FC = () => {
   const { data: configs = [], isLoading: configsLoading } = useAirbnbFieldConfigs();
@@ -91,6 +383,17 @@ export const AirbnbConfigPanel: React.FC = () => {
   const [isEditingFormula, setIsEditingFormula] = useState(false);
   const [showFormulaBuilder, setShowFormulaBuilder] = useState(false);
   const [testValues, setTestValues] = useState<Record<string, any>>({});
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Filter out "Oven Type" category
+  const filteredCategories = categories.filter(cat => cat !== 'Oven Type');
 
   const groupedConfigs = configs.reduce((acc, config) => {
     if (!acc[config.category]) {
@@ -243,6 +546,25 @@ export const AirbnbConfigPanel: React.FC = () => {
   const hasCategoryChanges = (category: string) => {
     const fieldsInCategory = groupedConfigs[category] || [];
     return fieldsInCategory.some(config => localChanges[config.id]);
+  };
+
+  const handleDragEnd = (event: DragEndEvent, category: string) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const items = (groupedConfigs[category] || []).sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+      const oldIndex = items.findIndex(item => item.id === active.id);
+      const newIndex = items.findIndex(item => item.id === over.id);
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newItems = arrayMove(items, oldIndex, newIndex);
+        
+        // Update display_order for all items
+        newItems.forEach((item, index) => {
+          handleUpdateConfig(item.id, { display_order: index + 1 });
+        });
+      }
+    }
   };
 
 
@@ -713,7 +1035,7 @@ export const AirbnbConfigPanel: React.FC = () => {
                           <SelectValue placeholder="Select existing..." />
                         </SelectTrigger>
                         <SelectContent>
-                          {categories.map((cat) => (
+                          {filteredCategories.map((cat) => (
                             <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                           ))}
                         </SelectContent>
@@ -862,7 +1184,7 @@ export const AirbnbConfigPanel: React.FC = () => {
             </div>
 
           <div className="space-y-4">
-            {categories.map((category) => (
+            {filteredCategories.map((category) => (
                 <Collapsible
                   key={category}
                   open={openCategories[category]}
@@ -914,7 +1236,8 @@ export const AirbnbConfigPanel: React.FC = () => {
                         
                         {/* Table Header */}
                         <div className="bg-muted/50 rounded-lg p-3">
-                          <div className="grid grid-cols-[2fr,80px,80px,60px,100px,100px,80px,60px] gap-3 text-xs font-semibold">
+                          <div className="grid grid-cols-[40px,2fr,80px,80px,60px,100px,100px,80px,60px] gap-3 text-xs font-semibold">
+                            <div></div>
                             <div>Option Label</div>
                             <div className="text-center">Min</div>
                             <div className="text-center">Max</div>
@@ -926,218 +1249,37 @@ export const AirbnbConfigPanel: React.FC = () => {
                           </div>
                         </div>
                         
-                        {/* Table Rows */}
-                        {(groupedConfigs[category] || []).sort((a, b) => (a.display_order || 0) - (b.display_order || 0)).map((config) => (
-                          <div key={config.id} className="grid grid-cols-[2fr,80px,80px,60px,100px,100px,80px,60px] gap-3 items-center p-3 border rounded-lg hover:bg-muted/30 transition-colors">
-                            {/* Option Label */}
-                            <div>
-                              <Input
-                                value={getCurrentValue(config.id, 'label', config.label || config.option)}
-                                onChange={(e) => handleLocalChange(config.id, 'label', e.target.value)}
-                                className="h-9 text-sm"
-                                placeholder="Option name"
+                        {/* Table Rows with Drag and Drop */}
+                        <DndContext
+                          sensors={sensors}
+                          collisionDetection={closestCenter}
+                          onDragEnd={(event) => handleDragEnd(event, category)}
+                        >
+                          <SortableContext
+                            items={(groupedConfigs[category] || []).sort((a, b) => (a.display_order || 0) - (b.display_order || 0)).map(c => c.id)}
+                            strategy={verticalListSortingStrategy}
+                          >
+                            {(groupedConfigs[category] || []).sort((a, b) => (a.display_order || 0) - (b.display_order || 0)).map((config) => (
+                              <SortableFieldRow
+                                key={config.id}
+                                config={config}
+                                renderIcon={renderIcon}
+                                getCurrentValue={getCurrentValue}
+                                handleLocalChange={handleLocalChange}
+                                editingIcon={editingIcon}
+                                setEditingIcon={setEditingIcon}
+                                customIconUrl={customIconUrl}
+                                setCustomIconUrl={setCustomIconUrl}
+                                iconMode={iconMode}
+                                setIconMode={setIconMode}
+                                iconSearchQuery={iconSearchQuery}
+                                setIconSearchQuery={setIconSearchQuery}
+                                handleUpdateConfig={handleUpdateConfig}
+                                deleteConfig={deleteConfig}
                               />
-                            </div>
-                            
-                            {/* Min Value */}
-                            <div>
-                              <Input
-                                type="number"
-                                value={(() => {
-                                  const val = getCurrentValue(config.id, 'min_value', (config as any).min_value);
-                                  return val !== null && val !== undefined ? Number(val) : '';
-                                })()}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  handleLocalChange(config.id, 'min_value', val === '' ? null : Number(val));
-                                }}
-                                className="h-9 text-sm text-center"
-                                placeholder="0"
-                              />
-                            </div>
-                            
-                            {/* Max Value */}
-                            <div>
-                              <Input
-                                type="number"
-                                value={(() => {
-                                  const val = getCurrentValue(config.id, 'max_value', config.max_value);
-                                  return val !== null && val !== undefined ? Number(val) : '';
-                                })()}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  handleLocalChange(config.id, 'max_value', val === '' ? null : Number(val));
-                                }}
-                                className="h-9 text-sm text-center"
-                                placeholder="10"
-                              />
-                            </div>
-                            
-                            {/* Icon */}
-                            <div className="flex justify-center">
-                              <Dialog open={editingIcon === config.id} onOpenChange={(open) => !open && setEditingIcon(null)}>
-                                <DialogTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-9 w-9 p-0"
-                                    onClick={() => {
-                                      setEditingIcon(config.id);
-                                      setCustomIconUrl(config.icon || '');
-                                    }}
-                                  >
-                                    {renderIcon(config.icon) || <Upload className="h-3 w-3" />}
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                                  <DialogHeader>
-                                    <DialogTitle>Set Icon</DialogTitle>
-                                  </DialogHeader>
-                                  <div className="space-y-4">
-                                    <Tabs value={iconMode} onValueChange={(v: any) => setIconMode(v)}>
-                                      <TabsList className="grid w-full grid-cols-2">
-                                        <TabsTrigger value="lucide">Lucide Icons</TabsTrigger>
-                                        <TabsTrigger value="url">Custom URL</TabsTrigger>
-                                      </TabsList>
-                                      
-                                      <TabsContent value="lucide" className="space-y-4">
-                                        <div>
-                                          <Label>Search Icons</Label>
-                                          <Input
-                                            value={iconSearchQuery}
-                                            onChange={(e) => setIconSearchQuery(e.target.value)}
-                                            placeholder="Search by name..."
-                                            className="mb-4"
-                                          />
-                                        </div>
-                                        <div className="grid grid-cols-6 gap-2 max-h-[400px] overflow-y-auto border rounded p-2">
-                                          {Object.keys(LucideIcons)
-                                            .filter(name => 
-                                              name !== 'createLucideIcon' && 
-                                              name !== 'default' &&
-                                              !name.startsWith('Lucide') &&
-                                              name.toLowerCase().includes(iconSearchQuery.toLowerCase())
-                                            )
-                                            .slice(0, 100)
-                                            .map(iconName => {
-                                              const IconComponent = (LucideIcons as any)[iconName];
-                                              return (
-                                                <button
-                                                  key={iconName}
-                                                  onClick={() => setCustomIconUrl(iconName)}
-                                                  className={`flex flex-col items-center justify-center p-2 border rounded hover:bg-muted transition-colors ${customIconUrl === iconName ? 'bg-primary text-primary-foreground' : ''}`}
-                                                  title={iconName}
-                                                >
-                                                  <IconComponent className="h-6 w-6" />
-                                                  <span className="text-[8px] mt-1 truncate w-full text-center">{iconName}</span>
-                                                </button>
-                                              );
-                                            })}
-                                        </div>
-                                      </TabsContent>
-                                      
-                                      <TabsContent value="url" className="space-y-4">
-                                        <div>
-                                          <Label>Image URL</Label>
-                                          <Input
-                                            value={customIconUrl}
-                                            onChange={(e) => setCustomIconUrl(e.target.value)}
-                                            placeholder="https://example.com/icon.png"
-                                          />
-                                          <p className="text-xs text-muted-foreground mt-1">
-                                            Enter a direct URL to an image file
-                                          </p>
-                                        </div>
-                                        <div className="flex justify-center p-8 border rounded bg-muted/20">
-                                          {customIconUrl && (customIconUrl.startsWith('http://') || customIconUrl.startsWith('https://')) ? (
-                                            <img src={customIconUrl} alt="Preview" className="max-h-16 max-w-16 object-contain" />
-                                          ) : (
-                                            <span className="text-muted-foreground">Preview</span>
-                                          )}
-                                        </div>
-                                      </TabsContent>
-                                    </Tabs>
-                                    
-                                    <div className="flex justify-center p-4 border rounded">
-                                      {renderIcon(customIconUrl) || <span className="text-muted-foreground">Icon preview</span>}
-                                    </div>
-                                    
-                                    <Button
-                                      onClick={() => {
-                                        handleUpdateConfig(config.id, { icon: customIconUrl });
-                                        setEditingIcon(null);
-                                        setIconSearchQuery('');
-                                      }}
-                                      className="w-full"
-                                    >
-                                      Save Icon
-                                    </Button>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
-                            </div>
-                            
-                            {/* Value */}
-                            <div>
-                              <Input
-                                type="number"
-                                step="0.5"
-                                value={getCurrentValue(config.id, 'value', config.value)}
-                                onChange={(e) => handleLocalChange(config.id, 'value', Number(e.target.value))}
-                                onFocus={(e) => e.target.select()}
-                                className="h-9 text-sm text-center"
-                                placeholder="0"
-                              />
-                            </div>
-                            
-                            {/* Type */}
-                            <div>
-                              <Select 
-                                value={getCurrentValue(config.id, 'value_type', config.value_type)} 
-                                onValueChange={(v) => handleLocalChange(config.id, 'value_type', v)}
-                              >
-                                <SelectTrigger className="h-9 text-sm">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">-</SelectItem>
-                                  <SelectItem value="fixed">£</SelectItem>
-                                  <SelectItem value="percentage">%</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            
-                            {/* Time */}
-                            <div>
-                              <Input
-                                type="number"
-                                step="1"
-                                value={getCurrentValue(config.id, 'time', config.time) || 0}
-                                onChange={(e) => handleLocalChange(config.id, 'time', Number(e.target.value))}
-                                onFocus={(e) => e.target.select()}
-                                className="h-9 text-sm text-center"
-                                placeholder="0"
-                                title={config.min_value !== null && config.max_value !== null ? `Per unit above min (${config.min_value})` : undefined}
-                              />
-                            </div>
-                            
-                            {/* Delete Button */}
-                            <div className="flex justify-center">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-9 w-9 p-0 hover:bg-destructive/10"
-                                onClick={() => {
-                                  if (confirm('Delete this field?')) {
-                                    deleteConfig.mutate(config.id);
-                                  }
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
+                            ))}
+                          </SortableContext>
+                        </DndContext>
                         <div className="pt-2 flex gap-2">
                           <Button
                             variant="outline"
