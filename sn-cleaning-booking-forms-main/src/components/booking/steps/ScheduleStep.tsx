@@ -130,6 +130,13 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
   const shortNoticeInfo = calculateShortNoticeCharge();
   const hasShortNoticeCharge = shortNoticeInfo.charge > 0;
   
+  // Update parent with short notice charge whenever it changes
+  React.useEffect(() => {
+    if (shortNoticeInfo.charge !== data.shortNoticeCharge) {
+      onUpdate({ shortNoticeCharge: shortNoticeInfo.charge });
+    }
+  }, [shortNoticeInfo.charge, data.shortNoticeCharge, onUpdate]);
+  
   // Validation: check if access notes are required based on selection
   const requiresAccessNotes = ['collect', 'keybox', 'other'].includes(data.propertyAccess);
   const hasRequiredAccessNotes = !requiresAccessNotes || (data.accessNotes && data.accessNotes.trim() !== '');

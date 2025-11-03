@@ -24,6 +24,7 @@ interface BookingData {
   sameDayTurnaround?: boolean;
   estimatedHours?: number | null;
   estimatedAdditionalHours?: number | null;
+  shortNoticeCharge?: number;
 }
 
 export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
@@ -288,34 +289,8 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     // CLEANING COST
     const cleaningCost = totalHours * hourlyRate;
 
-    // SHORT NOTICE CHARGE
-    const calculateShortNoticeCharge = (): number => {
-      if (!bookingData.selectedDate || !bookingData.selectedTime) {
-        return 0;
-      }
-
-      const now = new Date();
-      const bookingDateTime = new Date(bookingData.selectedDate);
-      const [hours, minutes] = bookingData.selectedTime.split(':').map(Number);
-      bookingDateTime.setHours(hours, minutes, 0, 0);
-
-      const hoursUntilBooking = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
-
-      // Get time flexibility charge
-      let shortNoticeCharge = 0;
-      
-      if (hoursUntilBooking <= 12) {
-        shortNoticeCharge = getConfigValue('time flexibility', 'within-12-hours');
-      } else if (hoursUntilBooking <= 24) {
-        shortNoticeCharge = getConfigValue('time flexibility', 'within-24-hours');
-      } else if (hoursUntilBooking <= 48) {
-        shortNoticeCharge = getConfigValue('time flexibility', 'within-48-hours');
-      }
-
-      return shortNoticeCharge;
-    };
-
-    const shortNoticeCharge = calculateShortNoticeCharge();
+    // SHORT NOTICE CHARGE - Use the value already calculated and passed from ScheduleStep
+    const shortNoticeCharge = bookingData.shortNoticeCharge || 0;
 
     // TOTAL COST
     const totalCost = cleaningCost + shortNoticeCharge + equipmentOneTimeCost;
