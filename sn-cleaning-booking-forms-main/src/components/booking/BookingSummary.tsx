@@ -489,7 +489,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
         </div>}
 
       {/* Total Cost */}
-      {data.estimatedHours && data.estimatedHours > 0 && <div className="pt-4 mt-4">
+      {calculations.totalHours && calculations.totalHours > 0 && <div className="pt-4 mt-4">
           <div className="bg-primary/5 rounded-lg p-4">
             <div className="flex justify-between items-center">
               <span className="text-xl font-semibold text-foreground">Total Cost</span>
