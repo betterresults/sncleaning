@@ -137,8 +137,20 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     // TOTAL HOURS
     const totalHours = baseTime + additionalTime;
 
-    // HOURLY RATE (base rate £35 as default)
-    const hourlyRate = 35;
+    // HOURLY RATE CALCULATION
+    // Formula: sameday.value + serviceType.value + cleaningProducts.value + (equipmentArrangement.value < 10 ? equipmentArrangement.value : 0)
+    const sameDayValue = bookingData.sameDayTurnaround 
+      ? getConfigValue('time flexibility', 'same-day-turnaround')
+      : 0;
+
+    const serviceTypeValue = getConfigValue('service type', bookingData.serviceType);
+    const cleaningProductsValue = getConfigValue('cleaning products', bookingData.cleaningProducts);
+
+    const equipmentValue = bookingData.equipmentArrangement 
+      ? getConfigValue('equipment arrangement', bookingData.equipmentArrangement)
+      : 0;
+
+    const hourlyRate = sameDayValue + serviceTypeValue + cleaningProductsValue + (equipmentValue < 10 ? equipmentValue : 0);
 
     // CLEANING COST
     const cleaningCost = totalHours * hourlyRate;
@@ -199,6 +211,13 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
         additionalRoomsTime,
         bedSizesValue,
         bedSizesTime,
+        hourlyRateBreakdown: {
+          sameDayValue,
+          serviceTypeValue,
+          cleaningProductsValue,
+          equipmentValue,
+          hourlyRate,
+        }
       }
     };
   }, [bookingData, allConfigs]);
