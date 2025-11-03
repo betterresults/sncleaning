@@ -32,23 +32,55 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
   const calculations = useMemo(() => {
     // Helper to get time value from configs
     const getConfigTime = (category: string, option: string): number => {
-      const normalizedOption = String(option).toLowerCase().replace(/[^a-z0-9]/g, '');
-      const config = allConfigs.find((cfg: any) => {
-        const cfgCategory = String(cfg.category || '').toLowerCase();
-        const cfgOption = String(cfg.option || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-        return cfgCategory === category.toLowerCase() && cfgOption === normalizedOption;
-      });
+      const normalizedCategory = String(category || '').toLowerCase();
+      const normalizedOption = String(option ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const digitsInOption = normalizedOption.replace(/[^0-9]/g, '');
+
+      const candidates = allConfigs.filter((cfg: any) => String(cfg.category || '').toLowerCase() === normalizedCategory);
+
+      // 1) Exact normalized match
+      let config = candidates.find((cfg: any) => String(cfg.option || '').toLowerCase().replace(/[^a-z0-9]/g, '') === normalizedOption);
+      if (config) return config?.time || 0;
+
+      // 2) Numeric-aware match (e.g., "3" matches "3 bedrooms")
+      if (digitsInOption) {
+        config = candidates.find((cfg: any) => {
+          const opt = String(cfg.option || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          const digits = opt.replace(/[^0-9]/g, '');
+          return digits === digitsInOption || opt.startsWith(digitsInOption) || opt.endsWith(digitsInOption);
+        });
+        if (config) return config?.time || 0;
+      }
+
+      // 3) Substring fallback
+      config = candidates.find((cfg: any) => String(cfg.option || '').toLowerCase().replace(/[^a-z0-9]/g, '').includes(normalizedOption));
       return config?.time || 0;
     };
 
     // Helper to get value from configs
     const getConfigValue = (category: string, option: string): number => {
-      const normalizedOption = String(option).toLowerCase().replace(/[^a-z0-9]/g, '');
-      const config = allConfigs.find((cfg: any) => {
-        const cfgCategory = String(cfg.category || '').toLowerCase();
-        const cfgOption = String(cfg.option || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-        return cfgCategory === category.toLowerCase() && cfgOption === normalizedOption;
-      });
+      const normalizedCategory = String(category || '').toLowerCase();
+      const normalizedOption = String(option ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const digitsInOption = normalizedOption.replace(/[^0-9]/g, '');
+
+      const candidates = allConfigs.filter((cfg: any) => String(cfg.category || '').toLowerCase() === normalizedCategory);
+
+      // 1) Exact normalized match
+      let config = candidates.find((cfg: any) => String(cfg.option || '').toLowerCase().replace(/[^a-z0-9]/g, '') === normalizedOption);
+      if (config) return config?.value || 0;
+
+      // 2) Numeric-aware match (e.g., "3" matches "3 bedrooms")
+      if (digitsInOption) {
+        config = candidates.find((cfg: any) => {
+          const opt = String(cfg.option || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          const digits = opt.replace(/[^0-9]/g, '');
+          return digits === digitsInOption || opt.startsWith(digitsInOption) || opt.endsWith(digitsInOption);
+        });
+        if (config) return config?.value || 0;
+      }
+
+      // 3) Substring fallback
+      config = candidates.find((cfg: any) => String(cfg.option || '').toLowerCase().replace(/[^a-z0-9]/g, '').includes(normalizedOption));
       return config?.value || 0;
     };
 
@@ -273,7 +305,7 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
         }
       }
     };
-  }, [bookingData, allConfigs]);
+  }, [JSON.stringify(bookingData), allConfigs]);
 
   return calculations;
 };
