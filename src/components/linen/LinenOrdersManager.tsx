@@ -375,6 +375,41 @@ export const LinenOrdersManager = () => {
     return formData.items.reduce((total, item) => total + (item.quantity * item.unit_price), 0);
   };
 
+  const getAdminCost = () => {
+    let adminCost = 0;
+    
+    // Supplier costs
+    formData.items.forEach(item => {
+      const product = products.find(p => p.id === item.product_id);
+      if (product) {
+        adminCost += item.quantity * (product.supplier_cost || 0);
+      }
+    });
+
+    // Delivery charge
+    if (formData.includeDelivery) {
+      adminCost += 18;
+    }
+
+    // Packaging charge (only for pack items)
+    if (formData.includePackaging) {
+      const packItemsCount = formData.items.reduce((count, item) => {
+        const product = products.find(p => p.id === item.product_id);
+        if (product && product.type === 'pack') {
+          return count + item.quantity;
+        }
+        return count;
+      }, 0);
+      adminCost += packItemsCount * 1.20;
+    }
+
+    return adminCost;
+  };
+
+  const getProfit = () => {
+    return getTotalCost() - getAdminCost();
+  };
+
   const handleSubmit = () => {
     if (!formData.customer_id || !formData.address_id) {
       toast({ title: "Please select customer and address", variant: "destructive" });
@@ -613,9 +648,20 @@ export const LinenOrdersManager = () => {
                       </div>
                     ))}
                     
-                    <div className="flex justify-end pt-2 border-t">
-                      <div className="text-lg font-bold">
-                        Total: £{getTotalCost().toFixed(2)}
+                    <div className="pt-3 border-t space-y-2">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Customer Total:</span>
+                        <span className="text-lg font-bold text-green-600">£{getTotalCost().toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Admin Cost:</span>
+                        <span className="text-lg font-bold text-red-600">£{getAdminCost().toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm pt-2 border-t">
+                        <span className="font-medium">Profit:</span>
+                        <span className={`text-lg font-bold ${getProfit() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          £{getProfit().toFixed(2)}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -636,7 +682,7 @@ export const LinenOrdersManager = () => {
 
               {/* Additional Charges */}
               <div className="space-y-3 p-4 border rounded-lg bg-muted/50">
-                <h4 className="font-medium text-sm">Additional Charges</h4>
+                <h4 className="font-medium text-sm">Admin Charges (Not charged to customer)</h4>
                 
                 {/* Delivery Charge */}
                 <div className="flex items-center justify-between">
@@ -644,7 +690,7 @@ export const LinenOrdersManager = () => {
                     <Truck className="h-4 w-4 text-muted-foreground" />
                     <div>
                       <Label htmlFor="delivery" className="text-sm font-normal">Include Delivery</Label>
-                      <p className="text-xs text-muted-foreground">£18.00 delivery charge</p>
+                      <p className="text-xs text-muted-foreground">+£18.00 to admin cost</p>
                     </div>
                   </div>
                   <Switch
@@ -660,7 +706,7 @@ export const LinenOrdersManager = () => {
                     <PackageCheck className="h-4 w-4 text-muted-foreground" />
                     <div>
                       <Label htmlFor="packaging" className="text-sm font-normal">Individual Packaging</Label>
-                      <p className="text-xs text-muted-foreground">£1.20 per pack item</p>
+                      <p className="text-xs text-muted-foreground">+£1.20 per pack item to admin cost</p>
                     </div>
                   </div>
                   <Switch
@@ -669,6 +715,40 @@ export const LinenOrdersManager = () => {
                     onCheckedChange={(checked) => setFormData(prev => ({ ...prev, includePackaging: checked }))}
                   />
                 </div>
+
+                {/* Cost Breakdown */}
+                {formData.items.length > 0 && (
+                  <div className="pt-3 mt-3 border-t space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Supplier Cost:</span>
+                      <span>£{formData.items.reduce((total, item) => {
+                        const product = products.find(p => p.id === item.product_id);
+                        return total + (product ? item.quantity * (product.supplier_cost || 0) : 0);
+                      }, 0).toFixed(2)}</span>
+                    </div>
+                    {formData.includeDelivery && (
+                      <div className="flex justify-between text-orange-600">
+                        <span>+ Delivery:</span>
+                        <span>£18.00</span>
+                      </div>
+                    )}
+                    {formData.includePackaging && formData.items.some(item => {
+                      const product = products.find(p => p.id === item.product_id);
+                      return product?.type === 'pack';
+                    }) && (
+                      <div className="flex justify-between text-orange-600">
+                        <span>+ Packaging ({formData.items.reduce((count, item) => {
+                          const product = products.find(p => p.id === item.product_id);
+                          return product?.type === 'pack' ? count + item.quantity : count;
+                        }, 0)} packs):</span>
+                        <span>£{(formData.items.reduce((count, item) => {
+                          const product = products.find(p => p.id === item.product_id);
+                          return product?.type === 'pack' ? count + item.quantity : count;
+                        }, 0) * 1.20).toFixed(2)}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
