@@ -134,11 +134,21 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     }
 
     // BASE TIME CALCULATION
-    // Formula: Math.ceil(((propertyType.time + bedrooms.time + bathrooms.time + additionalRooms.time + propertyFeatures.time + ovenCleaning.time) * (serviceType.time * alreadyCleaned.value)) / 30) / 2
-    const baseTime = Math.ceil(
-      ((propertyTypeTime + bedroomsTime + bathroomsTime + additionalRoomsTime + propertyFeaturesTime + ovenCleaningTime) 
-      * (serviceTypeTime * alreadyCleanedValue)) / 30
-    ) / 2;
+    // Minutes sum from all relevant fields (in minutes)
+    const minutesSum = propertyTypeTime + bedroomsTime + bathroomsTime + additionalRoomsTime + propertyFeaturesTime + ovenCleaningTime;
+
+    // Determine service multiplier (time)
+    // Deep-clean override: if check-in/check-out and NOT up to Airbnb standard -> treat as deep
+    let serviceMultiplier = serviceTypeTime;
+    let deepOverrideApplied = false;
+    if (bookingData.serviceType === 'checkin-checkout' && bookingData.alreadyCleaned === false) {
+      const deepMult = getConfigTime('service type', 'deep') || 1.5;
+      serviceMultiplier = deepMult;
+      deepOverrideApplied = true;
+    }
+
+    // Final base time in hours, rounded up to the nearest 0.5h
+    const baseTime = Math.ceil((minutesSum * (serviceMultiplier * alreadyCleanedValue)) / 30) / 2;
 
     // DRY TIME CALCULATION
     // Formula: Math.ceil((bedSizes.value) / 30) / 2
@@ -286,10 +296,13 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
         additionalTime,
         calculatedTotalHours,
         userEstimatedHours: bookingData.estimatedHours,
+        minutesSum,
         propertyTypeTime,
         bedroomsTime,
         bathroomsTime,
         serviceTypeTime,
+        serviceMultiplier,
+        deepOverrideApplied,
         alreadyCleanedValue,
         ovenCleaningTime,
         additionalRoomsTime,
