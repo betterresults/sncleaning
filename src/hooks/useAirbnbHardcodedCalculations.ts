@@ -157,11 +157,12 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     }
 
     // TOTAL HOURS
-    // User override takes priority over calculated hours
+    // User override takes priority only if it differs from calculated hours
     const calculatedTotalHours = baseTime + additionalTime;
-    const totalHours = bookingData.estimatedHours !== null && bookingData.estimatedHours !== undefined
-      ? bookingData.estimatedHours
-      : calculatedTotalHours;
+    const isUserOverride = bookingData.estimatedHours !== null 
+      && bookingData.estimatedHours !== undefined 
+      && Math.abs((bookingData.estimatedHours as number) - calculatedTotalHours) > 0.001;
+    const totalHours = isUserOverride ? (bookingData.estimatedHours as number) : calculatedTotalHours;
 
     // HOURLY RATE CALCULATION
     // Formula: sameday.value + serviceType.value + cleaningProducts.value + (equipmentArrangement.value < 10 ? equipmentArrangement.value : 0)
@@ -245,7 +246,7 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
       cleaningCost,
       shortNoticeCharge,
       totalCost,
-      isUserOverride: bookingData.estimatedHours !== null && bookingData.estimatedHours !== undefined,
+      isUserOverride,
       debug: {
         dryTime,
         ironTime,
