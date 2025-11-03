@@ -11,7 +11,6 @@ interface BookingData {
   numberOfFloors?: number;
   serviceType: string;
   alreadyCleaned: boolean | null;
-  needsOvenCleaning: boolean | null;
   ovenType: string;
   cleaningProducts: string | { needed: boolean; equipment: boolean } | null;
   equipmentArrangement: string | null;
@@ -97,8 +96,8 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
       alreadyCleanedValue = 1.5; // Not cleaned to standard = 1.5x multiplier
     }
 
-    // Oven cleaning time - only when user said yes AND a specific type is chosen
-    const ovenCleaningTime = (bookingData.needsOvenCleaning === true && bookingData.ovenType)
+    // Oven cleaning time - only when a specific type is chosen (and not 'dontneed' or similar)
+    const ovenCleaningTime = (bookingData.ovenType && bookingData.ovenType !== 'dontneed' && bookingData.ovenType !== '')
       ? getConfigTime('oven cleaning', bookingData.ovenType)
       : 0;
 

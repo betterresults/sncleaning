@@ -12,7 +12,7 @@ interface BookingSidebarProps {
     toilets?: string;
     serviceType?: string;
     linensHandling?: string;
-    needsOvenCleaning?: boolean | null;
+    ovenType?: string;
     estimatedHours?: number | null;
     extraHours?: number;
     hourlyRate?: number;
@@ -129,9 +129,9 @@ export function BookingSidebar({ formData }: BookingSidebarProps) {
                 </Badge>
               </div>
               
-              {formData.needsOvenCleaning && (
+              {formData.ovenType && formData.ovenType !== 'dontneed' && formData.ovenType !== '' && (
                 <div className="text-sm text-muted-foreground">
-                  + Oven Cleaning
+                  + Oven Cleaning ({formData.ovenType})
                 </div>
               )}
             </div>

@@ -38,8 +38,7 @@ export interface BookingData {
   // Service details
   serviceType: 'checkin-checkout' | 'midstay' | 'light' | 'deep' | '';
   alreadyCleaned: boolean | null;
-  needsOvenCleaning: boolean | null;
-  ovenType: 'single' | 'double' | 'range' | 'convection' | '';
+  ovenType: string;
   cleaningProducts: 'no' | 'products' | 'equipment' | '';
   equipmentArrangement: 'oneoff' | 'ongoing' | null;
   equipmentStorageConfirmed: boolean;
@@ -125,7 +124,6 @@ const AirbnbBookingForm: React.FC = () => {
     numberOfFloors: 0,
     serviceType: '',
     alreadyCleaned: null,
-    needsOvenCleaning: null,
     ovenType: '',
     cleaningProducts: '',
     equipmentArrangement: null,

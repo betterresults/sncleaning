@@ -172,7 +172,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
   };
 
   const calculateOvenCost = () => {
-    if (!data.needsOvenCleaning || !data.ovenType) return 0;
+    if (!data.ovenType || data.ovenType === 'dontneed' || data.ovenType === '') return 0;
     
     const ovenCosts = {
       single: 25,
@@ -292,11 +292,11 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
       )}
 
       {/* Oven Cleaning Section */}
-      {data.needsOvenCleaning && (
+      {data.ovenType && data.ovenType !== 'dontneed' && data.ovenType !== '' && (
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">
-              {data.ovenType ? `${data.ovenType.charAt(0).toUpperCase() + data.ovenType.slice(1)} oven cleaning` : 'Oven cleaning'}
+              {data.ovenType.charAt(0).toUpperCase() + data.ovenType.slice(1)} oven cleaning
             </span>
             <span className="text-foreground font-semibold">
               £{calculateOvenCost().toFixed(2)}

@@ -36,7 +36,6 @@ interface BookingSubmission {
   // Service details
   serviceType: string; // cleaning_type in DB (checkin-checkout, midstay, light, deep)
   alreadyCleaned?: boolean | null;
-  needsOvenCleaning?: boolean | null;
   ovenType?: string;
   cleaningProducts?: string; // 'no' | 'products' | 'equipment' from form
   equipmentArrangement?: string | null;
@@ -108,7 +107,7 @@ const buildAdditionalDetails = (data: BookingSubmission) => {
   }
   
   // Oven cleaning
-  if (data.needsOvenCleaning) {
+  if (data.ovenType && data.ovenType !== 'dontneed' && data.ovenType !== '') {
     details.ovenCleaning = {
       needed: true,
       type: data.ovenType
@@ -402,7 +401,7 @@ export const useAirbnbBookingSubmit = () => {
         bookingInsert.first_cleaning = 'Yes';
       }
 
-      if (bookingData.needsOvenCleaning && bookingData.ovenType) {
+      if (bookingData.ovenType && bookingData.ovenType !== 'dontneed' && bookingData.ovenType !== '') {
         bookingInsert.oven_size = bookingData.ovenType;
       }
 

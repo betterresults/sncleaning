@@ -295,7 +295,6 @@ useEffect(() => {
           // Service details
           serviceType: data.serviceType,
           alreadyCleaned: data.alreadyCleaned,
-          needsOvenCleaning: data.needsOvenCleaning,
           ovenType: data.ovenType,
           cleaningProducts: data.cleaningProducts,
           equipmentArrangement: data.equipmentArrangement,
@@ -382,7 +381,6 @@ useEffect(() => {
         propertyFeatures: data.propertyFeatures,
         serviceType: data.serviceType,
         alreadyCleaned: data.alreadyCleaned,
-        needsOvenCleaning: data.needsOvenCleaning,
         ovenType: data.ovenType,
         cleaningProducts: data.cleaningProducts,
         equipmentArrangement: data.equipmentArrangement,

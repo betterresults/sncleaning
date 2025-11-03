@@ -24,13 +24,12 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
   const { data: serviceTypeConfigs = [], isLoading: isLoadingServiceTypes } = useAirbnbFieldConfigs('Service Type', true);
   const { data: cleaningHistoryConfigs = [], isLoading: isLoadingHistory } = useAirbnbFieldConfigs('Cleaning History', true);
   const { data: ovenCleaningConfigs = [], isLoading: isLoadingOvenCleaning } = useAirbnbFieldConfigs('Oven Cleaning', true);
-  const { data: ovenTypeConfigs = [], isLoading: isLoadingOvenTypes } = useAirbnbFieldConfigs('Oven Type', true);
   const { data: cleaningSuppliesConfigs = [], isLoading: isLoadingSupplies } = useAirbnbFieldConfigs('Cleaning Supplies', true);
   const { data: equipmentArrangementConfigs = [], isLoading: isLoadingEquipment } = useAirbnbFieldConfigs('Equipment Arrangement', true);
 
   const isLoadingConfigs = isLoadingPropertyTypes || isLoadingBedrooms || isLoadingBathrooms || 
     isLoadingAdditionalRooms || isLoadingFeatures || isLoadingServiceTypes || isLoadingHistory || 
-    isLoadingOvenCleaning || isLoadingOvenTypes || isLoadingSupplies || isLoadingEquipment;
+    isLoadingOvenCleaning || isLoadingSupplies || isLoadingEquipment;
 
   // Helper function to render icon (Lucide or emoji)
   const renderIcon = (iconName: string | null, className: string = "h-6 w-6") => {
@@ -585,83 +584,41 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
         </div>
       )}
 
-      {/* Oven Cleaning - Dynamic */}
-      {(data.serviceType === 'deep' || data.alreadyCleaned === false) && ovenTypeConfigs.length > 0 && (
+      {/* Oven Cleaning - Combined */}
+      {(data.serviceType === 'deep' || data.alreadyCleaned === false) && ovenCleaningConfigs.length > 0 && (
         <div className="relative z-[5] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
           <h2 className="text-2xl font-bold text-slate-700 mb-4">
             Do you require oven cleaning?
           </h2>
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            {ovenTypeConfigs.map((option: any) => {
-              const opt = String(option.option || '').toLowerCase();
-              const isSelected = (opt === 'yes' && data.needsOvenCleaning === true) || 
-                               (opt === 'no' && data.needsOvenCleaning === false);
-              const IconComponent = (LucideIcons as any)[option.icon];
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {ovenCleaningConfigs.map((oven: any) => {
+              const isSelected = data.ovenType === oven.option;
+              const IconComponent = (LucideIcons as any)[oven.icon];
               
               return (
                 <button
-                  key={option.option}
-                  className={`group relative h-16 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+                  key={oven.option}
+                  className={`group relative h-20 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
                     isSelected
                       ? 'border-primary bg-primary/5 shadow-xl'
                       : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
                   }`}
-                  onClick={() => onUpdate({ 
-                    needsOvenCleaning: isSelected ? null : (opt === 'yes'),
-                  })}
+                  onClick={() => onUpdate({ ovenType: isSelected ? '' : oven.option as any })}
                 >
-                  <div className="flex items-center justify-center gap-2 h-full">
+                  <div className="flex flex-col items-center justify-center h-full">
                     {IconComponent && (
-                      <IconComponent className={`h-5 w-5 transition-all duration-500 ${
+                      <IconComponent className={`h-6 w-6 mb-1 transition-all duration-500 ${
                         isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
                       }`} />
                     )}
                     <span className={`text-sm font-semibold transition-colors ${
                       isSelected ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
-                    }`}>{option.label}</span>
+                    }`}>{oven.label}</span>
                   </div>
                 </button>
               );
             })}
           </div>
-
-          {/* Oven Type Selection - Dynamic */}
-          {data.needsOvenCleaning === true && ovenCleaningConfigs.length > 0 && (
-            <div>
-              <h2 className="text-2xl font-bold text-slate-700 mb-4">
-                Select oven type
-              </h2>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {ovenCleaningConfigs.map((oven: any) => {
-                  const isSelected = data.ovenType === oven.option;
-                  const IconComponent = (LucideIcons as any)[oven.icon];
-                  
-                  return (
-                    <button
-                      key={oven.option}
-                      className={`group relative h-20 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
-                        isSelected
-                          ? 'border-primary bg-primary/5 shadow-xl'
-                          : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
-                      }`}
-                      onClick={() => onUpdate({ ovenType: isSelected ? '' : oven.option as any })}
-                    >
-                      <div className="flex flex-col items-center justify-center h-full">
-                        {IconComponent && (
-                          <IconComponent className={`h-6 w-6 mb-1 transition-all duration-500 ${
-                            isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
-                          }`} />
-                        )}
-                        <span className={`text-sm font-semibold transition-colors ${
-                          isSelected ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
-                        }`}>{oven.label}</span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
       )}
 
