@@ -166,7 +166,8 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     }
 
     // DRY TIME CALCULATION
-    // Formula: Math.ceil((bedSizes.value) / 30) / 2
+    // Formula: Math.ceil((bedSizes.value) / 90) / 2
+    // Changed from /30 to /90 to get realistic drying times (1h per double bed instead of 3h)
     let bedSizesValue = 0;
     if (bookingData.bedSizes) {
       for (const [size, count] of Object.entries(bookingData.bedSizes)) {
@@ -178,7 +179,7 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     }
     const shouldCalculateDryTime = bookingData.linensHandling === 'wash-hang' || bookingData.linensHandling === 'wash-dry';
     const dryTime = shouldCalculateDryTime
-      ? Math.ceil(bedSizesValue / 30) / 2
+      ? Math.ceil(bedSizesValue / 90) / 2
       : 0;
 
     // IRON TIME CALCULATION
@@ -313,15 +314,20 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     const totalCost = cleaningCost + shortNoticeCharge + equipmentOneTimeCost;
 
     // LINEN HANDLING DISPLAY-ONLY CALC (no impact on totals)
+    // Display the same additionalTime that is actually added to totalHours
     const linenHandlingOption = bookingData.linensHandling || '';
     const hasLinenHandling = linenHandlingOption === 'wash-hang' || linenHandlingOption === 'wash-dry';
     const linenHandlingTime1 = hasLinenHandling ? getConfigTime('linen handling', linenHandlingOption) : 0;
     const linenHandlingTime2 = hasLinenHandling ? getConfigTime('linens handling', linenHandlingOption) : 0;
     const linenHandlingTime = Math.max(linenHandlingTime1, linenHandlingTime2, 0);
-    const linenHandlingDryTime = hasLinenHandling ? linenHandlingTime + bedSizesValue : 0;
-    const linenHandlingIronTime = hasLinenHandling && bookingData.needsIroning ? linenHandlingTime + bedSizesTime : 0;
-    const linenHandlingExtraFromDry = Math.max(0, linenHandlingDryTime - baseTime);
-    const linenHandlingAdditionalHours = Math.max(linenHandlingExtraFromDry, linenHandlingIronTime);
+    
+    // Calculate dryTime in hours for display purposes
+    const linenHandlingDryHours = hasLinenHandling ? dryTime : 0;
+    const linenHandlingIronHours = hasLinenHandling && bookingData.needsIroning ? ironTime : 0;
+    const linenHandlingExtraFromDryHours = Math.max(0, linenHandlingDryHours - baseTime);
+    
+    // Show the actual additional hours that are added to totalHours (already in hours)
+    const linenHandlingAdditionalHours = additionalTime;
 
     return {
       baseTime,
@@ -362,10 +368,12 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
         bedSizesTime,
         linenHandling: {
           linenHandlingTime,
-          linenHandlingDryTime,
-          linenHandlingIronTime,
-          linenHandlingExtraFromDry,
+          linenHandlingDryHours,
+          linenHandlingIronHours,
+          linenHandlingExtraFromDryHours,
           linenHandlingAdditionalHours,
+          bedSizesValue,
+          bedSizesTime,
         },
         hourlyRateBreakdown: {
           sameDayValue,
