@@ -33,7 +33,7 @@ serve(async (req) => {
   try {
     logStep("Starting payment amount adjustment");
 
-    const { bookingId, newAmount, reason } = body;
+    const { bookingId, newAmount, reason, action = 'adjust' } = body;
     
     if (!bookingId || !newAmount) {
       throw new Error('Missing required fields: bookingId and newAmount');
@@ -75,15 +75,128 @@ serve(async (req) => {
       invoiceId: booking.invoice_id 
     });
 
-    // Calculate the difference amount - only authorize the additional amount needed
+    // Calculate the difference amount
     const currentAmount = booking.total_cost || 0;
     const differenceAmount = newAmount - currentAmount;
     
-    if (differenceAmount <= 0) {
+    logStep("Amount calculation", {
+      currentAmount,
+      newAmount,
+      differenceAmount,
+      action
+    });
+
+    // For adjustment, validate that new amount is greater than current
+    if (action === 'adjust' && differenceAmount <= 0) {
       throw new Error('New amount must be greater than current amount. Current: £' + currentAmount + ', New: £' + newAmount);
     }
 
-    // Check if we already have an additional authorization for this booking
+    // For reauthorization, validate that amount is different
+    if (action === 'reauthorize' && differenceAmount === 0) {
+      throw new Error('New amount must be different from current amount');
+    }
+
+    // Handle reauthorization action - cancel old and create new
+    if (action === 'reauthorize') {
+      logStep('Reauthorization requested');
+      
+      // Cancel the existing authorization if it exists
+      if (booking.invoice_id) {
+        try {
+          logStep('Canceling existing authorization', { paymentIntentId: booking.invoice_id });
+          await stripe.paymentIntents.cancel(booking.invoice_id);
+          logStep('Existing authorization canceled successfully');
+        } catch (cancelError) {
+          logStep('Error canceling authorization', { error: cancelError.message });
+          // Continue even if cancel fails - the old authorization might have expired
+        }
+      }
+
+      // Get customer's payment method
+      const { data: paymentMethods, error: pmError } = await supabase
+        .from('customer_payment_methods')
+        .select('stripe_payment_method_id, stripe_customer_id')
+        .eq('customer_id', booking.customer)
+        .eq('is_default', true)
+        .limit(1)
+        .single();
+
+      if (pmError || !paymentMethods) {
+        logStep('No default payment method found for reauthorization');
+        throw new Error('No default payment method found. Please add a payment method first.');
+      }
+
+      const paymentMethodId = paymentMethods.stripe_payment_method_id;
+      const amountInCents = Math.round(newAmount * 100);
+
+      logStep('Creating new authorization', { 
+        amount: amountInCents, 
+        paymentMethodId 
+      });
+
+      // Create new authorization for full amount
+      const newPaymentIntent = await stripe.paymentIntents.create({
+        amount: amountInCents,
+        currency: 'gbp',
+        payment_method: paymentMethodId,
+        customer: paymentMethods.stripe_customer_id,
+        capture_method: 'manual',
+        confirm: true,
+        description: `Reauthorization for Booking #${bookingId} - ${reason}`,
+        metadata: {
+          booking_id: bookingId.toString(),
+          customer_id: booking.customer?.toString() || '',
+          original_amount: currentAmount.toString(),
+          new_amount: newAmount.toString(),
+          action: 'reauthorize',
+          reason: reason || 'Amount adjustment'
+        }
+      });
+
+      logStep('New authorization created', { 
+        paymentIntentId: newPaymentIntent.id,
+        status: newPaymentIntent.status 
+      });
+
+      // Update booking with new payment intent and amount
+      const { error: updateError } = await supabase
+        .from('bookings')
+        .update({
+          total_cost: newAmount,
+          invoice_id: newPaymentIntent.id,
+          payment_status: 'authorized',
+          additional_details: (booking.additional_details || '') + 
+            `\n\nReauthorization: Old authorization (${booking.invoice_id}) canceled, new authorization (${newPaymentIntent.id}) created for £${newAmount}. ${reason ? 'Reason: ' + reason : ''}`
+        })
+        .eq('id', bookingId);
+
+      if (updateError) {
+        logStep('Failed to update booking', { error: updateError });
+        throw new Error(`Failed to update booking: ${updateError.message}`);
+      }
+
+      logStep('Booking updated successfully with new authorization');
+
+      return new Response(JSON.stringify({
+        success: true,
+        message: `Authorization updated successfully. New amount: £${newAmount}`,
+        data: {
+          bookingId,
+          originalAmount: currentAmount,
+          newAmount,
+          paymentIntentId: newPaymentIntent.id,
+          oldPaymentIntentId: booking.invoice_id,
+          action: 'reauthorize',
+          status: newPaymentIntent.status,
+          reason
+        }
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
+    }
+
+    // Check if we already have an additional authorization for this booking (for 'adjust' action)
     const existingAdjustments = (booking.additional_details || '').includes('Additional payment authorized');
     if (existingAdjustments) {
       logStep("Additional authorization already exists", { bookingId, additionalDetails: booking.additional_details });

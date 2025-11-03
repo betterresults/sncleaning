@@ -15,13 +15,14 @@ interface AdjustPaymentParams {
   bookingId: number;
   newAmount: number;
   reason: string;
+  action?: 'adjust' | 'reauthorize';
 }
 
 export const usePaymentAdjustment = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
-  const adjustPaymentAmount = async ({ bookingId, newAmount, reason }: AdjustPaymentParams) => {
+  const adjustPaymentAmount = async ({ bookingId, newAmount, reason, action = 'adjust' }: AdjustPaymentParams) => {
     try {
       setLoading(true);
       
@@ -29,7 +30,8 @@ export const usePaymentAdjustment = () => {
         body: {
           bookingId,
           newAmount,
-          reason
+          reason,
+          action
         }
       });
 
@@ -41,9 +43,13 @@ export const usePaymentAdjustment = () => {
         throw new Error(data.error || 'Failed to adjust payment amount');
       }
 
+      const actionText = action === 'reauthorize' 
+        ? 'Authorization cancelled and new authorization created'
+        : 'Additional amount authorized';
+      
       toast({
         title: "Payment Adjusted Successfully",
-        description: `Payment amount updated to £${newAmount}`,
+        description: `${actionText} - New total: £${newAmount}`,
       });
 
       return data;

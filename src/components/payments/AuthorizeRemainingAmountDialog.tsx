@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { CreditCard, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { usePaymentAdjustment } from "@/hooks/usePaymentAdjustment";
 
 interface Booking {
   id: number;
@@ -21,9 +23,10 @@ interface AuthorizeRemainingAmountDialogProps {
 
 export function AuthorizeRemainingAmountDialog({ booking, onSuccess }: AuthorizeRemainingAmountDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [currentlyAuthorized, setCurrentlyAuthorized] = useState<string>('');
+  const [adjustmentAction, setAdjustmentAction] = useState<'adjust' | 'reauthorize'>('reauthorize');
   const { toast } = useToast();
+  const { adjustPaymentAmount, loading: isLoading } = usePaymentAdjustment();
 
   // Calculate remaining amount from user input or additional_details
   const getAuthorizedAmounts = () => {
@@ -69,56 +72,44 @@ export function AuthorizeRemainingAmountDialog({ booking, onSuccess }: Authorize
   );
 
   const handleAuthorizeRemaining = async () => {
-    const amountToAuthorize = remainingAmount > 0 ? remainingAmount : totalAmount;
+    const { remainingAmount, totalAmount, authorizedAmount } = getAuthorizedAmounts();
     
-    if (amountToAuthorize <= 0) {
+    if (adjustmentAction === 'adjust' && remainingAmount <= 0) {
       toast({
-        title: "Error",
-        description: "No amount to authorize",
+        title: "No amount to authorize",
+        description: "The booking is fully authorized",
         variant: "destructive",
       });
       return;
     }
 
-    setIsLoading(true);
     try {
-      console.log('Authorizing amount:', {
+      const reasonText = adjustmentAction === 'reauthorize'
+        ? `Reauthorize booking - Cancel old authorization (£${authorizedAmount.toFixed(2)}) and create new (£${totalAmount.toFixed(2)})`
+        : `Authorize additional amount of £${remainingAmount.toFixed(2)}`;
+
+      await adjustPaymentAmount({
         bookingId: booking.id,
-        amountToAuthorize,
-        currentlyAuthorized: authorizedAmount,
-        reason: `${hasPartialInfo ? 'Completing authorization' : 'Authorizing'}: Additional £${amountToAuthorize} ${hasPartialInfo ? `to reach full £${totalAmount}` : ''}`
+        newAmount: totalAmount,
+        reason: reasonText,
+        action: adjustmentAction
       });
 
-      const { data, error } = await supabase.functions.invoke('stripe-adjust-payment-amount', {
-        body: {
-          bookingId: booking.id,
-          newAmount: hasPartialInfo ? totalAmount : amountToAuthorize, 
-          reason: `${hasPartialInfo ? 'Completing authorization' : 'Authorizing'}: Additional £${amountToAuthorize} ${hasPartialInfo ? `to reach full £${totalAmount}` : ''}`
-        }
-      });
-
-      if (error || !data?.success) {
-        const errorMessage = data?.error || error?.message || 'Failed to authorize remaining amount';
-        console.error('Authorization error:', { error, data });
-        throw new Error(errorMessage);
-      }
+      const successMessage = adjustmentAction === 'reauthorize'
+        ? `Old authorization cancelled, new authorization created for £${totalAmount.toFixed(2)}`
+        : `Authorized additional £${remainingAmount.toFixed(2)}`;
 
       toast({
         title: "Success",
-        description: `Successfully authorized £${amountToAuthorize}${hasPartialInfo ? `. Total authorized: £${totalAmount}` : ''}`,
+        description: successMessage,
       });
 
       setIsOpen(false);
-      onSuccess?.();
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
-      console.error('Error authorizing remaining amount:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : 'Failed to authorize remaining amount',
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+      console.error('Error adjusting payment:', error);
     }
   };
 
@@ -134,106 +125,156 @@ export function AuthorizeRemainingAmountDialog({ booking, onSuccess }: Authorize
           Authorize Remaining £{remainingAmount.toFixed(2)}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
-            Authorize Remaining Amount
+            Adjust Payment Authorization
           </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-            <div className="flex items-start gap-2">
-              <AlertTriangle className="h-5 w-5 text-orange-500 mt-0.5" />
-              <div>
-                <h4 className="font-medium text-orange-800">
-                  {hasPartialInfo ? 'Partial Authorization Detected' : 'Check Authorization Amount'}
-                </h4>
-                <p className="text-sm text-orange-700 mt-1">
-                  {hasPartialInfo 
-                    ? 'This booking has only partial payment authorization. Complete the full authorization to process the booking.'
-                    : 'Please verify if the full amount is authorized. If only partial, use this to authorize the remaining amount.'
-                  }
-                </p>
-              </div>
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium">Booking Details</h3>
+            <div className="text-sm space-y-1">
+              <p><span className="text-muted-foreground">Customer:</span> {booking.first_name} {booking.last_name}</p>
+              <p><span className="text-muted-foreground">Current Total:</span> £{totalAmount.toFixed(2)}</p>
             </div>
           </div>
 
           <div className="space-y-2">
-            <h4 className="font-medium">Authorization Details:</h4>
-            <div className="bg-gray-50 p-3 rounded space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span>Customer:</span>
-                <span className="font-medium">{booking.first_name} {booking.last_name}</span>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Currently Authorized Amount:</label>
-                <div className="flex items-center space-x-2">
-                  <span className="text-lg">£</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max={totalAmount}
-                    value={currentlyAuthorized}
-                    onChange={(e) => setCurrentlyAuthorized(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter amount already authorized"
-                  />
+            <Label htmlFor="currentAuth">Currently Authorized Amount (£)</Label>
+            <Input
+              id="currentAuth"
+              type="number"
+              step="0.01"
+              min="0"
+              value={currentlyAuthorized}
+              onChange={(e) => setCurrentlyAuthorized(e.target.value)}
+              placeholder="Enter currently authorized amount"
+            />
+            <p className="text-xs text-muted-foreground">
+              Check Stripe dashboard to verify the currently authorized amount
+            </p>
+          </div>
+
+          {remainingAmount !== 0 && currentlyAuthorized && (
+            <>
+              <div className="space-y-3">
+                <Label>Payment Adjustment Method</Label>
+                <div className="space-y-2">
+                  <div 
+                    className={`border rounded-lg p-3 cursor-pointer transition-colors ${
+                      adjustmentAction === 'reauthorize' 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                    onClick={() => setAdjustmentAction('reauthorize')}
+                  >
+                    <div className="flex items-start gap-2">
+                      <input
+                        type="radio"
+                        checked={adjustmentAction === 'reauthorize'}
+                        onChange={() => setAdjustmentAction('reauthorize')}
+                        className="mt-1"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">Cancel & Reauthorize (Recommended)</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Cancel existing authorization and create new one for £{totalAmount.toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div 
+                    className={`border rounded-lg p-3 cursor-pointer transition-colors ${
+                      adjustmentAction === 'adjust' 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                    onClick={() => setAdjustmentAction('adjust')}
+                  >
+                    <div className="flex items-start gap-2">
+                      <input
+                        type="radio"
+                        checked={adjustmentAction === 'adjust'}
+                        onChange={() => setAdjustmentAction('adjust')}
+                        className="mt-1"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">Add Additional Authorization</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Keep existing authorization and add new one for difference (£{Math.abs(remainingAmount).toFixed(2)})
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-500">Enter the amount you've verified is already authorized in Stripe</p>
               </div>
-              
-              <div className="flex justify-between">
-                <span>Amount to Authorize:</span>
-                <span className="text-orange-600 font-medium">
-                  £{Math.max(0, remainingAmount).toFixed(2)}
-                </span>
+
+              <div className="rounded-lg border p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Currently Authorized:</span>
+                  <span className="font-medium">£{authorizedAmount.toFixed(2)}</span>
+                </div>
+                {adjustmentAction === 'reauthorize' ? (
+                  <>
+                    <div className="flex justify-between text-sm text-orange-600">
+                      <span>Will Cancel:</span>
+                      <span className="font-medium">-£{authorizedAmount.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>New Authorization:</span>
+                      <span className="font-medium">+£{totalAmount.toFixed(2)}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {remainingAmount > 0 ? 'Additional to Authorize:' : 'Overauthorized by:'}
+                    </span>
+                    <span className={`font-medium ${remainingAmount > 0 ? 'text-primary' : 'text-orange-600'}`}>
+                      £{Math.abs(remainingAmount).toFixed(2)}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm font-semibold pt-2 border-t">
+                  <span>Final Total:</span>
+                  <span>£{totalAmount.toFixed(2)}</span>
+                </div>
               </div>
-              <hr className="my-2" />
-              <div className="flex justify-between font-medium">
-                <span>Total Amount:</span>
-                <span>£{totalAmount.toFixed(2)}</span>
-              </div>
-            </div>
-            
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
-              <p className="text-blue-800 font-medium mb-1">💡 How to verify current authorization:</p>
-              <p className="text-blue-700 text-xs">
-                1. Check your Stripe Dashboard → Payments<br/>
-                2. Search for customer "{booking.first_name} {booking.last_name}"<br/>
-                3. Look for today's payment intent and note the authorized amount<br/>
-                4. Enter that amount above, then authorize the remaining amount
+            </>
+          )}
+
+          {remainingAmount === 0 && currentlyAuthorized && (
+            <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+              <p className="text-sm text-green-800">
+                ✓ This booking is fully authorized
               </p>
             </div>
-          </div>
-
-          <p className="text-sm text-gray-600">
-            This will create an additional authorization for £{Math.max(0, remainingAmount).toFixed(2)}.
-            {remainingAmount <= 0 && ' Note: No remaining amount to authorize based on your input.'}
-          </p>
-
-          <div className="flex gap-2 pt-4">
-            <Button
-              variant="outline"
-              onClick={() => setIsOpen(false)}
-              disabled={isLoading}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAuthorizeRemaining}
-              disabled={isLoading || remainingAmount <= 0}
-              className="flex-1 gap-2"
-            >
-              <CreditCard className="h-4 w-4" />
-              {isLoading ? 'Authorizing...' : `Authorize £${Math.max(0, remainingAmount).toFixed(2)}`}
-            </Button>
-          </div>
+          )}
         </div>
+        
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setIsOpen(false)}
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAuthorizeRemaining}
+            disabled={isLoading || (adjustmentAction === 'adjust' && remainingAmount <= 0)}
+          >
+            {isLoading ? "Processing..." : 
+              adjustmentAction === 'reauthorize' 
+                ? `Reauthorize for £${totalAmount.toFixed(2)}`
+                : `Authorize £${Math.abs(remainingAmount).toFixed(2)}`
+            }
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
