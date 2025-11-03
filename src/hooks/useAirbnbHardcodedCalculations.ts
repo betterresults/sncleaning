@@ -309,8 +309,30 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
 
     const shortNoticeCharge = calculateShortNoticeCharge();
 
-    // TOTAL COST
-    const totalCost = cleaningCost + shortNoticeCharge + equipmentOneTimeCost;
+    // LINEN HANDLING COST (ADDITIONAL CHARGE)
+    // Calculate dry time: linen handling time + bed sizes value
+    let linenHandlingDryTime = 0;
+    if (bookingData.linensHandling && bookingData.linensHandling !== 'customer-handles') {
+      const linenHandlingTime = getConfigTime('linen handling', bookingData.linensHandling);
+      linenHandlingDryTime = linenHandlingTime + bedSizesValue;
+    }
+
+    // Calculate iron time: linen handling time + bed sizes time (only if ironing is needed)
+    let linenHandlingIronTime = 0;
+    if (bookingData.needsIroning && bookingData.linensHandling && bookingData.linensHandling !== 'customer-handles') {
+      const linenHandlingTime = getConfigTime('linen handling', bookingData.linensHandling);
+      linenHandlingIronTime = linenHandlingTime + bedSizesTime;
+    }
+
+    // Additional linen handling time = max(dry remainder, iron time)
+    const linenHandlingDryRemainder = Math.max(0, linenHandlingDryTime - baseTime);
+    const linenHandlingAdditionalTime = Math.max(linenHandlingDryRemainder, linenHandlingIronTime);
+    
+    // Linen handling cost
+    const linenHandlingCost = linenHandlingAdditionalTime * hourlyRate;
+
+    // TOTAL COST (including linen handling cost)
+    const totalCost = cleaningCost + shortNoticeCharge + equipmentOneTimeCost + linenHandlingCost;
 
     return {
       baseTime,
@@ -323,6 +345,8 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
       cleaningCost,
       shortNoticeCharge,
       equipmentOneTimeCost,
+      linenHandlingCost,
+      linenHandlingAdditionalTime,
       totalCost,
       isUserOverride,
       debug: {
@@ -348,6 +372,13 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
         featuresBreakdown,
         bedSizesValue,
         bedSizesTime,
+        linenHandlingBreakdown: {
+          linenHandlingDryTime,
+          linenHandlingIronTime,
+          linenHandlingDryRemainder,
+          linenHandlingAdditionalTime,
+          linenHandlingCost,
+        },
         hourlyRateBreakdown: {
           sameDayValue,
           serviceTypeValue,
