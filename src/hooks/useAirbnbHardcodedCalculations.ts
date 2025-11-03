@@ -147,8 +147,24 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
       deepOverrideApplied = true;
     }
 
-    // Final base time in hours, rounded up to the nearest 0.5h
-    const baseTime = Math.ceil((minutesSum * (serviceMultiplier * alreadyCleanedValue)) / 30) / 2;
+    // Calculate total minutes with multipliers
+    const totalMinutes = minutesSum * serviceMultiplier * alreadyCleanedValue;
+    
+    // Convert to hours with custom rounding logic:
+    // 0-14 minutes → round down to whole hour
+    // 15-44 minutes → add 0.5 hour
+    // 45+ minutes → round up to next whole hour
+    const hours = Math.floor(totalMinutes / 60);
+    const remainingMinutes = totalMinutes % 60;
+    
+    let baseTime: number;
+    if (remainingMinutes < 15) {
+      baseTime = hours;
+    } else if (remainingMinutes <= 44) {
+      baseTime = hours + 0.5;
+    } else {
+      baseTime = hours + 1;
+    }
 
     // DRY TIME CALCULATION
     // Formula: Math.ceil((bedSizes.value) / 30) / 2
