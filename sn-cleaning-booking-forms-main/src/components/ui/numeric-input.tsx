@@ -32,7 +32,7 @@ export const NumericInput: React.FC<NumericInputProps> = ({
       >
         <Minus className="h-5 w-5" />
       </Button>
-      <div className="flex-1 text-center">
+      <div className="flex-1 text-center px-6">
         <div className="text-2xl font-bold text-foreground">
           {label}
         </div>
