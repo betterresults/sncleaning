@@ -84,12 +84,12 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
       return config?.value || 0;
     };
 
-    // Get all required field times and values
-    const propertyTypeTime = getConfigTime('property type', bookingData.propertyType);
-    const bedroomsTime = getConfigTime('bedrooms', bookingData.bedrooms);
-    const bathroomsTime = getConfigTime('bathrooms', bookingData.bathrooms);
-    const serviceTypeTime = getConfigTime('service type', bookingData.serviceType);
-    const serviceTypeValue = getConfigValue('service type', bookingData.serviceType);
+    // Get all required field times and values - only if fields are not empty
+    const propertyTypeTime = bookingData.propertyType ? getConfigTime('property type', bookingData.propertyType) : 0;
+    const bedroomsTime = bookingData.bedrooms ? getConfigTime('bedrooms', bookingData.bedrooms) : 0;
+    const bathroomsTime = bookingData.bathrooms ? getConfigTime('bathrooms', bookingData.bathrooms) : 0;
+    const serviceTypeTime = bookingData.serviceType ? getConfigTime('service type', bookingData.serviceType) : 0;
+    const serviceTypeValue = bookingData.serviceType ? getConfigValue('service type', bookingData.serviceType) : 0;
     
     // Already cleaned value
     let alreadyCleanedValue = 1; // Default
@@ -231,7 +231,7 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     
     // Check if cleaning products are needed - handle both string and object format
     let cleaningProductsValue = 0;
-    if (bookingData.cleaningProducts) {
+    if (bookingData.cleaningProducts && bookingData.cleaningProducts !== '') {
       if (typeof bookingData.cleaningProducts === 'string') {
         cleaningProductsValue = getConfigValue('cleaning products', bookingData.cleaningProducts);
       } else if (typeof bookingData.cleaningProducts === 'object' && 'needed' in bookingData.cleaningProducts) {
