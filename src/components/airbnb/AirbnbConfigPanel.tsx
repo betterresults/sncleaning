@@ -116,7 +116,7 @@ const SortableFieldRow: React.FC<SortableFieldRowProps> = ({
     <div
       ref={setNodeRef}
       style={style}
-      className="grid grid-cols-[40px,2fr,80px,80px,60px,100px,100px,80px,60px] gap-3 items-center p-3 border rounded-lg hover:bg-muted/30 transition-colors"
+      className="grid grid-cols-[40px,3fr,60px,60px,60px,100px,100px,80px,60px] gap-3 items-center p-3 border rounded-lg hover:bg-muted/30 transition-colors"
     >
       {/* Drag Handle */}
       <div
@@ -1236,7 +1236,7 @@ export const AirbnbConfigPanel: React.FC = () => {
                         
                         {/* Table Header */}
                         <div className="bg-muted/50 rounded-lg p-3">
-                          <div className="grid grid-cols-[40px,2fr,80px,80px,60px,100px,100px,80px,60px] gap-3 text-xs font-semibold">
+                          <div className="grid grid-cols-[40px,3fr,60px,60px,60px,100px,100px,80px,60px] gap-3 text-xs font-semibold">
                             <div></div>
                             <div>Option Label</div>
                             <div className="text-center">Min</div>
