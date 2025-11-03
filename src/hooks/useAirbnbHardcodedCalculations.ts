@@ -165,8 +165,12 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
       baseTime = hours + 1;
     }
 
-    // DRY TIME CALCULATION
-    // Formula: Math.ceil((bedSizes.value) / 30) / 2
+    // Get linen handling time (used for both drying and ironing)
+    const linenHandlingTime = bookingData.linensHandling 
+      ? getConfigTime('linen handling', bookingData.linensHandling)
+      : 0;
+
+    // Calculate bed sizes value (for drying)
     let bedSizesValue = 0;
     if (bookingData.bedSizes) {
       for (const [size, count] of Object.entries(bookingData.bedSizes)) {
@@ -176,15 +180,10 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
         bedSizesValue += sizeValue * qty;
       }
     }
-    const shouldCalculateDryTime = bookingData.linensHandling === 'wash-hang' || bookingData.linensHandling === 'wash-dry';
-    const dryTime = shouldCalculateDryTime
-      ? Math.ceil(bedSizesValue / 30) / 2
-      : 0;
 
-    // IRON TIME CALCULATION
-    // Formula: Math.ceil((bedSizes.time) / 30) / 2
+    // Calculate bed sizes time (for ironing)
     let bedSizesTime = 0;
-    if (bookingData.bedSizes && bookingData.needsIroning) {
+    if (bookingData.bedSizes) {
       for (const [size, count] of Object.entries(bookingData.bedSizes)) {
         const qty = Number(count) || 0;
         if (!qty) continue;
@@ -192,26 +191,21 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
         bedSizesTime += sizeTime * qty;
       }
     }
-    const shouldCalculateIronTime = bookingData.needsIroning && (bookingData.linensHandling === 'wash-hang' || bookingData.linensHandling === 'wash-dry');
-    const ironTime = shouldCalculateIronTime
-      ? Math.ceil(bedSizesTime / 30) / 2
+
+    // DRY TIME CALCULATION
+    // Formula: linen handling time + bed sizes value
+    const dryTime = linenHandlingTime + bedSizesValue;
+
+    // IRON TIME CALCULATION  
+    // Formula: linen handling time + bed sizes time
+    const ironTime = bookingData.needsIroning 
+      ? linenHandlingTime + bedSizesTime
       : 0;
 
     // ADDITIONAL TIME CALCULATION
-    // Only applies to wash-hang and wash-dry options
-    // Formula: If ironTime > waitingTime, then additionalTime = ironTime - waitingTime
-    let additionalTime = 0;
-    const shouldCalculateAdditionalTime = bookingData.linensHandling === 'wash-hang' || bookingData.linensHandling === 'wash-dry';
-    
-    if (shouldCalculateAdditionalTime) {
-      // Waiting time = how much longer drying takes compared to base cleaning
-      const waitingTime = Math.max(0, dryTime - baseTime);
-      
-      // If ironing takes longer than waiting time, add the extra ironing time
-      if (ironTime > waitingTime) {
-        additionalTime = ironTime - waitingTime;
-      }
-    }
+    // Formula: Max of (dryTime - baseTime) and ironTime
+    const dryRemainder = Math.max(0, dryTime - baseTime);
+    const additionalTime = Math.max(dryRemainder, ironTime);
 
     // TOTAL HOURS
     // User override takes priority only if it differs from calculated hours
