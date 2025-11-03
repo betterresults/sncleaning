@@ -142,6 +142,14 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
     }
   }, [data.serviceType, data.alreadyCleaned, data.cleaningProducts]);
 
+  // Reset estimatedHours to null when key property fields change (so it recalculates)
+  React.useEffect(() => {
+    // Only reset if user has manually changed estimatedHours AND core fields changed
+    if (data.estimatedHours !== null) {
+      onUpdate({ estimatedHours: null });
+    }
+  }, [data.propertyType, data.bedrooms, data.bathrooms, data.serviceType]);
+
   // Update estimatedHours when recommendedHours (baseTime) changes
   React.useEffect(() => {
     if (recommendedHours > 0 && data.estimatedHours === null) {
