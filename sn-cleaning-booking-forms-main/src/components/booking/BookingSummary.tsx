@@ -273,11 +273,20 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
           </div>;
     }).filter(Boolean)}
 
-      {/* Linens */}
-      {data.linensHandling && data.linensHandling !== 'customer-handles' && getLinensDescription() && <div className="flex justify-between items-center">
-          <span className="text-muted-foreground">Linens</span>
-          <span className="text-foreground font-medium">{getLinensDescription()}</span>
-        </div>}
+      {data.linensHandling && data.linensHandling !== 'customer-handles' && getLinensDescription() && (
+        <>
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground">Linens</span>
+            <span className="text-foreground font-medium">{getLinensDescription()}</span>
+          </div>
+          {calculations.linenHandlingAdditionalHours > 0 && (
+            <div className="flex justify-between items-center pl-4">
+              <span className="text-muted-foreground">Linen handling (extra hours)</span>
+              <span className="text-foreground font-semibold">{calculations.linenHandlingAdditionalHours.toFixed(2)}h</span>
+            </div>
+          )}
+        </>
+      )}
 
       {/* Linen packages */}
       {data.linenPackages && Object.entries(data.linenPackages).map(([packageId, quantity]) => {
