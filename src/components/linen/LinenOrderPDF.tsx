@@ -10,37 +10,40 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9fafb',
   },
   header: {
-    backgroundColor: '#1fa89f',
+    backgroundColor: '#1a2332',
     padding: 30,
     marginBottom: 0,
   },
-  headerGradient: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  headerContent: {
+    flexDirection: 'column',
     alignItems: 'center',
   },
   logo: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#ffffff',
-    marginBottom: 8,
+    marginBottom: 15,
     letterSpacing: 1,
+    textAlign: 'center',
   },
-  companyInfo: {
+  contactRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 20,
+  },
+  contactItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  contactIcon: {
+    fontSize: 10,
+    color: '#1fa89f',
+  },
+  contactText: {
     fontSize: 9,
     color: '#ffffff',
-    lineHeight: 1.6,
-    opacity: 0.95,
-  },
-  orderIdBadge: {
-    backgroundColor: '#ffffff',
-    padding: '8 16',
-    borderRadius: 8,
-  },
-  orderIdText: {
-    fontSize: 11,
-    color: '#1fa89f',
-    fontWeight: 'bold',
   },
   contentWrapper: {
     padding: 30,
@@ -127,10 +130,10 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   totalSection: {
-    marginTop: 20,
+    marginTop: 0,
     backgroundColor: '#1fa89f',
-    padding: 20,
-    borderRadius: 8,
+    padding: 15,
+    borderTop: '2 solid #1fa89f',
   },
   totalRow: {
     flexDirection: 'row',
@@ -138,14 +141,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   totalLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#ffffff',
     fontWeight: 'bold',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   totalValue: {
-    fontSize: 24,
+    fontSize: 18,
     color: '#ffffff',
     fontWeight: 'bold',
   },
@@ -220,17 +223,17 @@ export const LinenOrderPDF: React.FC<LinenOrderPDFProps> = ({ order, customer, a
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerGradient}>
-            <View>
-              <Text style={styles.logo}>SN CLEANING SERVICES</Text>
-              <Text style={styles.companyInfo}>
-                Professional Cleaning & Linen Services{'\n'}
-                info@sncleaningservices.co.uk{'\n'}
-                +44 203 835 5033
-              </Text>
-            </View>
-            <View style={styles.orderIdBadge}>
-              <Text style={styles.orderIdText}>#{order.id.slice(-8).toUpperCase()}</Text>
+          <View style={styles.headerContent}>
+            <Text style={styles.logo}>SN CLEANING SERVICES</Text>
+            <View style={styles.contactRow}>
+              <View style={styles.contactItem}>
+                <Text style={styles.contactIcon}>✉</Text>
+                <Text style={styles.contactText}>info@sncleaningservices.co.uk</Text>
+              </View>
+              <View style={styles.contactItem}>
+                <Text style={styles.contactIcon}>☎</Text>
+                <Text style={styles.contactText}>+44 203 835 5033</Text>
+              </View>
             </View>
           </View>
         </View>
@@ -243,6 +246,10 @@ export const LinenOrderPDF: React.FC<LinenOrderPDFProps> = ({ order, customer, a
           <View style={styles.infoGrid}>
             <View style={styles.infoCard}>
               <Text style={styles.sectionTitle}>Order Details</Text>
+              <View style={styles.row}>
+                <Text style={styles.label}>Order Number:</Text>
+                <Text style={styles.value}>#{order.id.slice(-8).toUpperCase()}</Text>
+              </View>
               <View style={styles.row}>
                 <Text style={styles.label}>Order Date:</Text>
                 <Text style={styles.value}>{format(new Date(order.order_date), 'dd MMMM yyyy')}</Text>
@@ -321,16 +328,16 @@ export const LinenOrderPDF: React.FC<LinenOrderPDFProps> = ({ order, customer, a
                   <Text style={styles.tableCol4}>£{item.subtotal.toFixed(2)}</Text>
                 </View>
               ))}
-            </View>
-          </View>
-
-          {/* Total Section */}
-          <View style={styles.totalSection}>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Total Amount</Text>
-              <Text style={styles.totalValue}>
-                £{order.total_cost.toFixed(2)}
-              </Text>
+              
+              {/* Total Section inside table */}
+              <View style={styles.totalSection}>
+                <View style={styles.totalRow}>
+                  <Text style={styles.totalLabel}>Total Amount</Text>
+                  <Text style={styles.totalValue}>
+                    £{order.total_cost.toFixed(2)}
+                  </Text>
+                </View>
+              </View>
             </View>
           </View>
 
