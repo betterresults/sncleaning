@@ -88,8 +88,8 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     const propertyTypeTime = bookingData.propertyType ? getConfigTime('property type', bookingData.propertyType) : 0;
     const bedroomsTime = bookingData.bedrooms ? getConfigTime('bedrooms', bookingData.bedrooms) : 0;
     const bathroomsTime = bookingData.bathrooms ? getConfigTime('bathrooms', bookingData.bathrooms) : 0;
-    const serviceTypeTime = bookingData.serviceType ? getConfigTime('service type', bookingData.serviceType) : 1;
-    const serviceTypeValue = bookingData.serviceType ? getConfigValue('service type', bookingData.serviceType) : 1;
+    const serviceTypeTime = bookingData.serviceType ? getConfigTime('service type', bookingData.serviceType) : 0;
+    const serviceTypeValue = bookingData.serviceType ? getConfigValue('service type', bookingData.serviceType) : 0;
     
     // Already cleaned value - only for check-in/check-out
     let alreadyCleanedValue = 1; // Default
@@ -99,7 +99,7 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
 
     // Oven cleaning time - only when user said yes AND a specific type is chosen
     const ovenCleaningTime = (bookingData.needsOvenCleaning === true && bookingData.ovenType)
-      ? getConfigTime('oven type', bookingData.ovenType)
+      ? getConfigTime('oven cleaning', bookingData.ovenType)
       : 0;
 
     // Additional rooms time - sum of each selected room count * its time
@@ -317,6 +317,7 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
         bathroomsTime,
         serviceTypeTime,
         serviceTypeValue,
+        missingServiceType: !bookingData.serviceType,
         alreadyCleanedValue,
         ovenCleaningTime,
         additionalRoomsTime,
