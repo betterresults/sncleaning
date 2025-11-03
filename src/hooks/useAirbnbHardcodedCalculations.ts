@@ -23,6 +23,7 @@ interface BookingData {
   flexibility?: string;
   sameDayTurnaround?: boolean;
   estimatedHours?: number | null;
+  estimatedAdditionalHours?: number | null;
 }
 
 export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
@@ -213,12 +214,20 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     }
 
     // TOTAL HOURS
-    // User override takes priority only if it differs from calculated hours
-    const calculatedTotalHours = baseTime + additionalTime;
-    const isUserOverride = bookingData.estimatedHours !== null 
+    // User override for base time
+    const isUserOverrideBase = bookingData.estimatedHours !== null 
       && bookingData.estimatedHours !== undefined 
-      && Math.abs((bookingData.estimatedHours as number) - calculatedTotalHours) > 0.001;
-    const totalHours = isUserOverride ? (bookingData.estimatedHours as number) : calculatedTotalHours;
+      && Math.abs((bookingData.estimatedHours as number) - baseTime) > 0.001;
+    const finalBaseTime = isUserOverrideBase ? (bookingData.estimatedHours as number) : baseTime;
+
+    // User override for additional time
+    const isUserOverrideAdditional = bookingData.estimatedAdditionalHours !== null 
+      && bookingData.estimatedAdditionalHours !== undefined 
+      && Math.abs((bookingData.estimatedAdditionalHours as number) - additionalTime) > 0.001;
+    const finalAdditionalTime = isUserOverrideAdditional ? (bookingData.estimatedAdditionalHours as number) : additionalTime;
+
+    const calculatedTotalHours = baseTime + additionalTime;
+    const totalHours = finalBaseTime + finalAdditionalTime;
 
     // HOURLY RATE CALCULATION
     // Formula: sameday.value + serviceType.value + cleaningProducts.value + (equipmentArrangement.value < 10 ? equipmentArrangement.value : 0)
@@ -328,11 +337,11 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     const linenHandlingAdditionalHours = additionalTime;
 
     return {
-      baseTime,
+      baseTime: finalBaseTime,
       dryTime,
       ironTime,
-      additionalTime,
-      linenHandlingAdditionalHours,
+      additionalTime: finalAdditionalTime,
+      linenHandlingAdditionalHours: finalAdditionalTime,
       totalHours,
       calculatedTotalHours,
       hourlyRate,
@@ -340,14 +349,17 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
       shortNoticeCharge,
       equipmentOneTimeCost,
       totalCost,
-      isUserOverride,
+      isUserOverride: isUserOverrideBase || isUserOverrideAdditional,
       debug: {
         dryTime,
         ironTime,
         baseTime,
         additionalTime,
         calculatedTotalHours,
+        finalBaseTime,
+        finalAdditionalTime,
         userEstimatedHours: bookingData.estimatedHours,
+        userEstimatedAdditionalHours: bookingData.estimatedAdditionalHours,
         minutesSum,
         totalMinutes,
         propertyTypeTime,

@@ -75,6 +75,7 @@ export interface BookingData {
   
   // Calculations
   estimatedHours: number | null;
+  estimatedAdditionalHours?: number | null;
   totalHours?: number;
   hourlyRate: number;
   totalCost: number;
@@ -152,6 +153,7 @@ const AirbnbBookingForm: React.FC = () => {
     propertyAccess: '',
     accessNotes: '',
     estimatedHours: null, // Start with null instead of 0
+    estimatedAdditionalHours: null,
     hourlyRate: 25,
     totalCost: 0,
   });

@@ -42,19 +42,25 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
 
   // Use hardcoded calculations
   const calculations = useAirbnbHardcodedCalculations(data);
-  const recommendedExtraHours = calculations.additionalTime;
+  const recommendedAdditionalHours = calculations.additionalTime;
 
   const roundToNearestHalf = (hours: number) => {
     return Math.round(hours * 2) / 2;
   };
 
-  // Auto-adjust extra hours based on linen handling selection (only when initially set)
+  // Auto-set estimatedAdditionalHours when recommendedAdditionalHours changes
   React.useEffect(() => {
-    // Only auto-adjust if ironingHours is not set yet (undefined/0) or when switching linen handling options
-    if ((!data.ironingHours || data.ironingHours === 0) && recommendedExtraHours > 0) {
-      onUpdate({ ironingHours: recommendedExtraHours });
+    if (recommendedAdditionalHours > 0 && data.estimatedAdditionalHours === null) {
+      onUpdate({ estimatedAdditionalHours: recommendedAdditionalHours });
     }
-  }, [data.linensHandling, data.needsIroning, recommendedExtraHours, onUpdate]);
+  }, [recommendedAdditionalHours, data.estimatedAdditionalHours]);
+
+  // Reset estimatedAdditionalHours when linen handling changes
+  React.useEffect(() => {
+    if (data.estimatedAdditionalHours !== null) {
+      onUpdate({ estimatedAdditionalHours: null });
+    }
+  }, [data.linensHandling, data.needsIroning]);
 
   // Clear linen packages when switching away from "order linens from us"
   const handleLinenSelection = (value: string) => {
@@ -370,11 +376,55 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
       )}
 
 
-      {/* Extra Hours for Linen Handling - Only show when ironing is selected */}
-      {data.needsIroning === true && (
+      {/* Estimated Additional Time - Show when linen handling requires extra time */}
+      {(data.linensHandling === 'wash-hang' || data.linensHandling === 'wash-dry') && (
+        <div className="mt-6">
+          <div className="relative z-[4] p-4 rounded-2xl border-2 border-primary/30 shadow-[0_12px_32px_rgba(0,0,0,0.2)] bg-gradient-to-br from-white to-primary/5 transition-all duration-300 hover:shadow-[0_16px_40px_rgba(0,0,0,0.25)] hover:border-primary/50">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold text-slate-700">Estimated Additional Time</h2>
+                <p className="text-xs text-muted-foreground mt-1">Extra time for linen handling. You can adjust it.</p>
+              </div>
+              <div className="flex items-center bg-card border border-border rounded-2xl p-2 w-full sm:w-auto sm:max-w-[280px]">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-11 w-11 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary flex-shrink-0"
+                  onClick={() => {
+                    const current = (data.estimatedAdditionalHours ?? recommendedAdditionalHours);
+                    const newValue = Math.max(0, current - 0.5);
+                    onUpdate({ estimatedAdditionalHours: newValue });
+                  }}
+                >
+                  <Minus className="h-5 w-5" />
+                </Button>
+                <div className="flex-1 text-center min-w-[90px]">
+                  <div className="text-lg font-bold text-slate-600" style={{ paddingLeft: '7px', paddingRight: '7px' }}>
+                    {(data.estimatedAdditionalHours ?? recommendedAdditionalHours)}h
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-11 w-11 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
+                  onClick={() => {
+                    const current = (data.estimatedAdditionalHours ?? recommendedAdditionalHours);
+                    const newValue = Math.max(0, current + 0.5);
+                    onUpdate({ estimatedAdditionalHours: newValue });
+                  }}
+                >
+                  <Plus className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Old Extra Hours (kept for backward compatibility but hidden) */}
+      {false && data.needsIroning === true && (
         <div className="mt-6">
           <div className="bg-muted/10 border border-border rounded-lg p-4 space-y-3">
-            {/* Title and controls - responsive layout */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <h4 className="text-base font-medium text-foreground">Recommended Extra Time</h4>
               
@@ -413,7 +463,6 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
               </div>
             </div>
             
-            {/* Additional info below */}
             <p className="text-sm text-muted-foreground">
               {data.needsIroning 
                 ? 'We recommend 1.5 hours total for washing and ironing linens.'
