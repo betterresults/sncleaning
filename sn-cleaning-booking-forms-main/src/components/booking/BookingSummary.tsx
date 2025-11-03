@@ -308,87 +308,104 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
       <div className="pt-4 mt-4 border-t">
         <Collapsible open={showFormulas} onOpenChange={setShowFormulas}>
           <CollapsibleTrigger asChild>
-            
+            <Button variant="ghost" size="sm" className="w-full justify-center">
+              {showFormulas ? 'Hide Time Debug' : 'Show Time Debug'}
+            </Button>
           </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-2 mb-3 p-3 bg-muted/50 rounded-lg text-xs">
-            <div className="space-y-2">
-              <div className="font-semibold text-sm">Active Formulas ({formulas.length})</div>
-              {formulas.length > 0 ? formulas.map((formula: any) => <div key={formula.id} className="p-2 bg-background rounded border">
-                    <div className="font-medium">{formula.name}</div>
-                    <div className="text-muted-foreground text-xs">{formula.description}</div>
-                    <div className="text-xs mt-1">
-                      <span className="font-semibold">Result Type:</span> {formula.result_type}
-                    </div>
-                    <div className="text-xs">
-                      <span className="font-semibold">Elements:</span> {formula.elements?.length || 0} items
-                    </div>
-                    {formula.elements && formula.elements.length > 0 && <div className="text-xs mt-1 p-1 bg-muted rounded font-mono">
-                        {JSON.stringify(formula.elements).substring(0, 100)}...
-                      </div>}
-                  </div>) : <div className="text-muted-foreground text-xs bg-yellow-100 p-2 rounded">
-                  ⚠️ No formulas found in database. Go to Admin → Pricing Formulas to create them.
-                </div>}
-              
-              <div className="font-semibold text-sm mt-3">Current Booking Data</div>
-              <div className="space-y-1 mb-2 p-2 bg-background rounded">
-                <div className="flex justify-between text-xs">
-                  <span>Property:</span>
-                  <span className="font-mono">{data.propertyType || 'none'}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span>Bedrooms:</span>
-                  <span className="font-mono">{data.bedrooms || 'none'}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span>Bathrooms:</span>
-                  <span className="font-mono">{data.bathrooms || 'none'}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span>Service:</span>
-                  <span className="font-mono">{data.serviceType || 'none'}</span>
-                </div>
+          <CollapsibleContent className="space-y-3 mb-3 p-3 bg-muted/50 rounded-lg text-xs">
+            {/* Current Selections */}
+            <div>
+              <div className="font-semibold text-sm mb-2">Current Selections</div>
+              <div className="grid grid-cols-2 gap-y-1">
+                <span>Property</span><span className="font-mono text-right">{data.propertyType || 'none'}</span>
+                <span>Bedrooms</span><span className="font-mono text-right">{data.bedrooms || 'none'}</span>
+                <span>Bathrooms</span><span className="font-mono text-right">{data.bathrooms || 'none'}</span>
+                <span>Service Type</span><span className="font-mono text-right">{data.serviceType || 'none'}</span>
+                <span>Oven</span><span className="font-mono text-right">{data.needsOvenCleaning ? (data.ovenType || 'yes') : 'no'}</span>
               </div>
-              
-              <div className="font-semibold text-sm mt-3">Calculated Values</div>
+            </div>
+
+            {/* Time Breakdown (minutes) */}
+            <div>
+              <div className="font-semibold text-sm mb-2">Time Breakdown (minutes)</div>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span>Base Time:</span>
-                  <span className={`font-mono ${calculations.baseTime === 0 ? 'text-red-600' : ''}`}>
-                    {calculations.baseTime?.toFixed(2) || '0'}h
-                    {calculations.baseTime === 0 && ' ⚠️'}
-                  </span>
-                </div>
-                {calculations.debug?.dryTime !== undefined && calculations.debug.dryTime > 0 && <div className="flex justify-between text-xs text-muted-foreground">
-                    <span className="pl-2">+ Dry Time:</span>
-                    <span className="font-mono">{calculations.debug.dryTime.toFixed(2)}h</span>
-                  </div>}
-                {calculations.debug?.ironTime !== undefined && calculations.debug.ironTime > 0 && <div className="flex justify-between text-xs text-muted-foreground">
-                    <span className="pl-2">+ Iron Time:</span>
-                    <span className="font-mono">{calculations.debug.ironTime.toFixed(2)}h</span>
-                  </div>}
-                <div className="flex justify-between">
-                  <span>Additional Time:</span>
-                  <span className="font-mono">{calculations.additionalTime?.toFixed(2) || '0'}h</span>
-                </div>
-                <div className="flex justify-between font-semibold border-t pt-1">
-                  <span>Total Hours:</span>
-                  <span className="font-mono">{calculations.totalHours?.toFixed(2) || '0'}h</span>
-                </div>
-                <div className="flex justify-between mt-2">
-                  <span>Hourly Rate:</span>
-                  <span className="font-mono">£{calculations.hourlyRate?.toFixed(2) || '0'}</span>
+                  <span>Property Type</span>
+                  <span className="font-mono">{calculations.debug?.propertyTypeTime ?? 0}m</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Cleaning Cost:</span>
-                  <span className="font-mono">£{calculations.cleaningCost?.toFixed(2) || '0'}</span>
+                  <span>Bedrooms</span>
+                  <span className="font-mono">{calculations.debug?.bedroomsTime ?? 0}m</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Short Notice:</span>
-                  <span className="font-mono">£{calculations.shortNoticeCharge?.toFixed(2) || '0'}</span>
+                  <span>Bathrooms</span>
+                  <span className="font-mono">{calculations.debug?.bathroomsTime ?? 0}m</span>
                 </div>
-                <div className="flex justify-between font-semibold border-t pt-1">
-                  <span>Total Cost:</span>
-                  <span className="font-mono">£{calculations.totalCost?.toFixed(2) || '0'}</span>
+
+                {/* Additional Rooms */}
+                <div className="pt-1">
+                  <div className="flex justify-between font-medium">
+                    <span>Additional Rooms</span>
+                    <span className="font-mono">{calculations.debug?.additionalRoomsTime ?? 0}m</span>
+                  </div>
+                  {calculations.debug?.additionalRoomsBreakdown && (
+                    <div className="pl-2 mt-1 space-y-1">
+                      {Object.entries(calculations.debug.additionalRoomsBreakdown).map(([k, v]: any) => (
+                        <div key={k} className="flex justify-between">
+                          <span className="text-muted-foreground">{k} × {v.qty} @ {v.timePerUnit}m</span>
+                          <span className="font-mono">{v.total}m</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Property Features */}
+                <div className="pt-1">
+                  <div className="flex justify-between font-medium">
+                    <span>Property Features</span>
+                    <span className="font-mono">{calculations.debug?.propertyFeaturesTime ?? 0}m</span>
+                  </div>
+                  {calculations.debug?.featuresBreakdown && (
+                    <div className="pl-2 mt-1 space-y-1">
+                      {Object.entries(calculations.debug.featuresBreakdown).map(([k, v]: any) => (
+                        <div key={k} className="flex justify-between">
+                          <span className="text-muted-foreground">{k}</span>
+                          <span className="font-mono">{v}m</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Oven */}
+                <div className="flex justify-between">
+                  <span>Oven Cleaning</span>
+                  <span className="font-mono">{calculations.debug?.ovenCleaningTime ?? 0}m</span>
+                </div>
+
+                {/* Multipliers */}
+                <div className="flex justify-between pt-1">
+                  <span>Service Type Multiplier</span>
+                  <span className="font-mono">{calculations.debug?.serviceTypeTime ?? 0}{calculations.debug?.missingServiceType ? ' (missing)' : ''}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Already Cleaned Multiplier</span>
+                  <span className="font-mono">{calculations.debug?.alreadyCleanedValue ?? 1}×</span>
+                </div>
+
+                {/* Sums */}
+                <div className="flex justify-between border-t pt-1 mt-1">
+                  <span>Minutes Sum</span>
+                  <span className="font-mono">{calculations.debug?.minutesSum ?? 0}m</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Total Minutes (after multipliers)</span>
+                  <span className="font-mono">{calculations.debug?.totalMinutes ?? 0}m</span>
+                </div>
+                <div className="flex justify-between font-semibold">
+                  <span>Rounded Base Time</span>
+                  <span className="font-mono">{(calculations.debug?.baseTime ?? calculations.baseTime)?.toFixed(2)}h</span>
                 </div>
               </div>
             </div>
