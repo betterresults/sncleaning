@@ -253,7 +253,29 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
       }
     }
 
-    const hourlyRate = sameDayValue + serviceTypeValue + cleaningProductsValue + (equipmentValue < 10 ? equipmentValue : 0);
+    // Get all equipment arrangement values to determine which is ongoing vs one-time
+    const equipmentConfigs = allConfigs.filter((cfg: any) => 
+      String(cfg.category || '').toLowerCase() === 'equipment arrangement'
+    );
+    const equipmentValues = equipmentConfigs.map((cfg: any) => cfg?.value || 0).sort((a, b) => a - b);
+    const smallerEquipmentValue = equipmentValues[0] || 0;
+    const largerEquipmentValue = equipmentValues[1] || 0;
+
+    // Determine if current equipment is ongoing (smaller) or one-time (larger)
+    let equipmentHourlyAddition = 0;
+    let equipmentOneTimeCost = 0;
+    
+    if (equipmentValue > 0) {
+      if (equipmentValue <= smallerEquipmentValue || (equipmentValue < largerEquipmentValue && Math.abs(equipmentValue - smallerEquipmentValue) < Math.abs(equipmentValue - largerEquipmentValue))) {
+        // This is the smaller value = ongoing (add to hourly rate)
+        equipmentHourlyAddition = equipmentValue;
+      } else {
+        // This is the larger value = one-time (add to total cost)
+        equipmentOneTimeCost = equipmentValue;
+      }
+    }
+
+    const hourlyRate = sameDayValue + serviceTypeValue + cleaningProductsValue + equipmentHourlyAddition;
 
     // CLEANING COST
     const cleaningCost = totalHours * hourlyRate;
@@ -288,7 +310,7 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     const shortNoticeCharge = calculateShortNoticeCharge();
 
     // TOTAL COST
-    const totalCost = cleaningCost + shortNoticeCharge;
+    const totalCost = cleaningCost + shortNoticeCharge + equipmentOneTimeCost;
 
     return {
       baseTime,
@@ -300,6 +322,7 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
       hourlyRate,
       cleaningCost,
       shortNoticeCharge,
+      equipmentOneTimeCost,
       totalCost,
       isUserOverride,
       debug: {
@@ -329,7 +352,8 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
           sameDayValue,
           serviceTypeValue,
           cleaningProductsValue,
-          equipmentValue,
+          equipmentHourlyAddition,
+          equipmentOneTimeCost,
           hourlyRate,
         }
       }

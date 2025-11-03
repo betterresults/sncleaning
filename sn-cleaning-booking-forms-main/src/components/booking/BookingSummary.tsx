@@ -182,6 +182,36 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
           </div>
         </div>}
 
+      {/* Hourly Rate Breakdown */}
+      {calculations.debug?.hourlyRateBreakdown && <div className="space-y-2 mt-3 pl-4 border-l-2 border-muted">
+          <div className="text-sm font-medium text-muted-foreground mb-2">Hourly Rate Breakdown</div>
+          
+          {calculations.debug.hourlyRateBreakdown.serviceTypeValue > 0 && <div className="flex justify-between items-center text-sm">
+              <span className="text-muted-foreground">Base rate</span>
+              <span className="text-foreground">£{calculations.debug.hourlyRateBreakdown.serviceTypeValue.toFixed(2)}</span>
+            </div>}
+          
+          {calculations.debug.hourlyRateBreakdown.cleaningProductsValue > 0 && <div className="flex justify-between items-center text-sm">
+              <span className="text-muted-foreground">Cleaning products</span>
+              <span className="text-foreground">+£{calculations.debug.hourlyRateBreakdown.cleaningProductsValue.toFixed(2)}</span>
+            </div>}
+          
+          {calculations.debug.hourlyRateBreakdown.equipmentHourlyAddition > 0 && <div className="flex justify-between items-center text-sm">
+              <span className="text-muted-foreground">Equipment (ongoing)</span>
+              <span className="text-foreground">+£{calculations.debug.hourlyRateBreakdown.equipmentHourlyAddition.toFixed(2)}</span>
+            </div>}
+          
+          {calculations.debug.hourlyRateBreakdown.sameDayValue > 0 && <div className="flex justify-between items-center text-sm">
+              <span className="text-muted-foreground">Same-day surcharge</span>
+              <span className="text-foreground">+£{calculations.debug.hourlyRateBreakdown.sameDayValue.toFixed(2)}</span>
+            </div>}
+          
+          <div className="flex justify-between items-center text-sm font-semibold pt-1 border-t">
+            <span className="text-foreground">Total hourly rate</span>
+            <span className="text-foreground">£{effectiveHourlyRate.toFixed(2)}</span>
+          </div>
+        </div>}
+
       {/* Schedule Section */}
       {data.selectedDate && <div className="space-y-3 mt-3">
           <div className="flex justify-between items-center">
@@ -203,14 +233,12 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
             </div>}
         </div>}
 
-      {/* Equipment */}
-      {data.cleaningProducts === 'equipment' && <div className="space-y-3 mt-3">
-          <div className="flex justify-between items-center pl-4">
-            <span className="text-muted-foreground">
-              Equipment {data.equipmentArrangement === 'oneoff' ? 'delivery' : ''}
-            </span>
+      {/* Equipment One-Time Cost */}
+      {calculations.equipmentOneTimeCost > 0 && <div className="space-y-3 mt-3">
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground">Equipment delivery (one-time)</span>
             <span className="text-foreground font-semibold">
-              Included
+              £{calculations.equipmentOneTimeCost.toFixed(2)}
             </span>
           </div>
         </div>}
