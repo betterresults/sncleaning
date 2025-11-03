@@ -201,12 +201,25 @@ const AirbnbBookingForm: React.FC = () => {
 
   const updateBookingData = (updates: Partial<BookingData>) => {
     setBookingData(prev => {
+      // Detect fields that affect time calculations
+      const timeAffectingKeys: (keyof BookingData)[] = [
+        'propertyType', 'bedrooms', 'bathrooms', 'toilets', 'additionalRooms', 'propertyFeatures',
+        'numberOfFloors', 'serviceType', 'alreadyCleaned', 'ovenType', 'linensHandling',
+        'needsIroning', 'ironingHours', 'bedSizes'
+      ];
+      const affectsTime = Object.keys(updates).some(k => timeAffectingKeys.includes(k as keyof BookingData));
+
       const newData = { ...prev, ...updates };
+
+      // If a time-affecting field changed and user didn't explicitly set estimatedHours now, reset it
+      if (affectsTime && updates.estimatedHours === undefined) {
+        newData.estimatedHours = null;
+      }
       
-      // Recalculate costs when relevant data changes
-      if (updates.estimatedHours !== undefined || updates.extraHours !== undefined) {
-        const estimatedHours = updates.estimatedHours ?? newData.estimatedHours ?? 0;
-        const extraHours = updates.extraHours ?? newData.extraHours;
+      // Recalculate costs when relevant data changes explicitly
+      if ('estimatedHours' in updates || 'extraHours' in updates) {
+        const estimatedHours = newData.estimatedHours ?? 0;
+        const extraHours = newData.extraHours ?? 0;
         const totalHours = estimatedHours + extraHours;
         newData.totalCost = totalHours * newData.hourlyRate;
       }
