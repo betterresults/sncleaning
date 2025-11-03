@@ -1191,10 +1191,12 @@ export type Database = {
           admin_cost: number | null
           created_at: string
           customer_id: number
+          delivery_charge: number | null
           delivery_date: string | null
           id: string
           notes: string | null
           order_date: string
+          packaging_charge: number | null
           payment_method: string | null
           payment_status: string | null
           pickup_date: string | null
@@ -1207,10 +1209,12 @@ export type Database = {
           admin_cost?: number | null
           created_at?: string
           customer_id: number
+          delivery_charge?: number | null
           delivery_date?: string | null
           id?: string
           notes?: string | null
           order_date?: string
+          packaging_charge?: number | null
           payment_method?: string | null
           payment_status?: string | null
           pickup_date?: string | null
@@ -1223,10 +1227,12 @@ export type Database = {
           admin_cost?: number | null
           created_at?: string
           customer_id?: number
+          delivery_charge?: number | null
           delivery_date?: string | null
           id?: string
           notes?: string | null
           order_date?: string
+          packaging_charge?: number | null
           payment_method?: string | null
           payment_status?: string | null
           pickup_date?: string | null

@@ -12,6 +12,9 @@ interface LinenOrder {
   payment_status: string;
   payment_method?: string;
   total_cost: number;
+  admin_cost: number;
+  delivery_charge?: number;
+  packaging_charge?: number;
   notes?: string;
   linen_order_items: {
     id: string;
@@ -60,6 +63,9 @@ export const useCustomerLinenOrders = () => {
           payment_status,
           payment_method,
           total_cost,
+          admin_cost,
+          delivery_charge,
+          packaging_charge,
           notes,
           linen_order_items (
             id,

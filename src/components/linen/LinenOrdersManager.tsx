@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, ShoppingCart, Edit, Eye, Calendar, Package, CreditCard, MapPin, User, Banknote, Trash2, Copy } from "lucide-react";
+import { Plus, ShoppingCart, Edit, Eye, Calendar, Package, CreditCard, MapPin, User, Banknote, Trash2, Copy, Truck, PackageCheck } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { EditOrderDialog } from "./EditOrderDialog";
@@ -73,6 +74,8 @@ interface OrderFormData {
   delivery_date: string;
   notes: string;
   items: OrderItem[];
+  includeDelivery: boolean;
+  includePackaging: boolean;
 }
 
 export const LinenOrdersManager = () => {
@@ -87,7 +90,9 @@ export const LinenOrdersManager = () => {
     address_id: "",
     delivery_date: "",
     notes: "",
-    items: []
+    items: [],
+    includeDelivery: false,
+    includePackaging: false
   });
 
   const { toast } = useToast();
@@ -213,6 +218,28 @@ export const LinenOrdersManager = () => {
         }
       }
 
+      // Calculate additional charges
+      let deliveryCharge = 0;
+      let packagingCharge = 0;
+
+      if (orderData.includeDelivery) {
+        deliveryCharge = 18;
+        adminCost += deliveryCharge;
+      }
+
+      if (orderData.includePackaging) {
+        // Count pack items
+        const packItemsCount = orderData.items.reduce((count, item) => {
+          const product = products.find(p => p.id === item.product_id);
+          if (product && product.type === 'pack') {
+            return count + item.quantity;
+          }
+          return count;
+        }, 0);
+        packagingCharge = packItemsCount * 1.20;
+        adminCost += packagingCharge;
+      }
+
       // First create the order
       const { data: order, error: orderError } = await supabase
         .from('linen_orders')
@@ -223,6 +250,8 @@ export const LinenOrdersManager = () => {
           notes: orderData.notes,
           total_cost: totalCost,
           admin_cost: adminCost,
+          delivery_charge: deliveryCharge,
+          packaging_charge: packagingCharge,
           status: 'scheduled'
         }])
         .select()
@@ -248,11 +277,15 @@ export const LinenOrdersManager = () => {
 
       return order;
     },
-    onSuccess: () => {
+    onSuccess: (order) => {
       queryClient.invalidateQueries({ queryKey: ['linen-orders'] });
       setIsCreateDialogOpen(false);
+      const profit = order.total_cost - order.admin_cost;
+      toast({ 
+        title: "Order created successfully",
+        description: `Customer Total: £${order.total_cost.toFixed(2)} | Admin Cost: £${order.admin_cost.toFixed(2)} | Profit: £${profit.toFixed(2)}`
+      });
       resetForm();
-      toast({ title: "Order created successfully" });
     },
     onError: (error) => {
       toast({ title: "Error creating order", description: error.message, variant: "destructive" });
@@ -300,7 +333,9 @@ export const LinenOrdersManager = () => {
       address_id: "",
       delivery_date: "",
       notes: "",
-      items: []
+      items: [],
+      includeDelivery: false,
+      includePackaging: false
     });
     setSelectedCustomer("");
   };
@@ -597,6 +632,43 @@ export const LinenOrdersManager = () => {
                   placeholder="Order notes or special instructions..."
                   rows={2}
                 />
+              </div>
+
+              {/* Additional Charges */}
+              <div className="space-y-3 p-4 border rounded-lg bg-muted/50">
+                <h4 className="font-medium text-sm">Additional Charges</h4>
+                
+                {/* Delivery Charge */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Truck className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <Label htmlFor="delivery" className="text-sm font-normal">Include Delivery</Label>
+                      <p className="text-xs text-muted-foreground">£18.00 delivery charge</p>
+                    </div>
+                  </div>
+                  <Switch
+                    id="delivery"
+                    checked={formData.includeDelivery}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, includeDelivery: checked }))}
+                  />
+                </div>
+
+                {/* Packaging Charge */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <PackageCheck className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <Label htmlFor="packaging" className="text-sm font-normal">Individual Packaging</Label>
+                      <p className="text-xs text-muted-foreground">£1.20 per pack item</p>
+                    </div>
+                  </div>
+                  <Switch
+                    id="packaging"
+                    checked={formData.includePackaging}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, includePackaging: checked }))}
+                  />
+                </div>
               </div>
             </div>
 
