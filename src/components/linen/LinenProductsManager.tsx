@@ -358,8 +358,7 @@ export const LinenProductsManager = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[200px]">Name</TableHead>
-                  <TableHead className="w-[60px]">Type</TableHead>
+                  <TableHead className="w-[220px]">Name</TableHead>
                   <TableHead className="w-[110px]">Customer Price</TableHead>
                   <TableHead className="w-[110px]">Supplier Cost</TableHead>
                   <TableHead className="w-[90px]">Margin</TableHead>
@@ -377,15 +376,6 @@ export const LinenProductsManager = () => {
                   return (
                     <TableRow key={product.id} className="hover:bg-muted/50">
                       <TableCell className="font-medium">{product.name}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-center" title={product.type === 'pack' ? 'Pack' : 'Individual'}>
-                          {product.type === 'pack' ? (
-                            <Package className="h-5 w-5 text-primary" />
-                          ) : (
-                            <Box className="h-5 w-5 text-muted-foreground" />
-                          )}
-                        </div>
-                      </TableCell>
                       <TableCell className="text-green-600 font-semibold">£{product.price.toFixed(2)}</TableCell>
                       <TableCell className="text-red-600 font-semibold">£{(product.supplier_cost || 0).toFixed(2)}</TableCell>
                       <TableCell>
