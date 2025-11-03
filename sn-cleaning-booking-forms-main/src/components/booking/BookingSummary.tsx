@@ -307,7 +307,12 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
         </div>
       </div>
 
-      {renderSummaryContent()}
+      {/* Only show content if we have valid data */}
+      {(calculations.totalHours && calculations.totalHours > 0) ? renderSummaryContent() : (
+        <div className="text-center py-8 text-muted-foreground">
+          <span className="text-sm">Complete the form to see booking summary</span>
+        </div>
+      )}
 
       {/* Admin Pricing Controls */}
       {isAdminMode && onUpdate && <div className="pt-4 mt-4 border-t">
