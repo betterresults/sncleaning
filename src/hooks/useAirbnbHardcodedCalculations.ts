@@ -91,10 +91,10 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     const serviceTypeTime = bookingData.serviceType ? getConfigTime('service type', bookingData.serviceType) : 1;
     const serviceTypeValue = bookingData.serviceType ? getConfigValue('service type', bookingData.serviceType) : 0;
     
-    // Already cleaned value
+    // Already cleaned value - only for check-in/check-out
     let alreadyCleanedValue = 1; // Default
-    if (bookingData.serviceType === 'checkin-checkout' && bookingData.alreadyCleaned !== null) {
-      alreadyCleanedValue = getConfigValue('cleaning history', bookingData.alreadyCleaned ? 'yes' : 'no');
+    if (bookingData.serviceType === 'checkin-checkout' && bookingData.alreadyCleaned === false) {
+      alreadyCleanedValue = 1.5; // Not cleaned to standard = 1.5x multiplier
     }
 
     // Oven cleaning time
@@ -138,18 +138,9 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     // Minutes sum from all relevant fields (in minutes)
     const minutesSum = propertyTypeTime + bedroomsTime + bathroomsTime + additionalRoomsTime + propertyFeaturesTime + ovenCleaningTime;
 
-    // Determine service multiplier (VALUE, not time!)
-    // Deep-clean override: if check-in/check-out and NOT up to Airbnb standard -> treat as deep
-    let serviceMultiplier = serviceTypeValue || 1;
-    let deepOverrideApplied = false;
-    if (bookingData.serviceType === 'checkin-checkout' && bookingData.alreadyCleaned === false) {
-      const deepMult = getConfigValue('service type', 'deep') || 1.5;
-      serviceMultiplier = deepMult;
-      deepOverrideApplied = true;
-    }
-
     // Calculate total minutes with multipliers
-    const totalMinutes = minutesSum * serviceMultiplier * alreadyCleanedValue;
+    // Formula: (sum of all times) * service type value * already cleaned value
+    const totalMinutes = minutesSum * serviceTypeValue * alreadyCleanedValue;
     
     // Convert to hours with custom rounding logic:
     // 0-14 minutes → round down to whole hour
@@ -317,8 +308,6 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
         bathroomsTime,
         serviceTypeTime,
         serviceTypeValue,
-        serviceMultiplier,
-        deepOverrideApplied,
         alreadyCleanedValue,
         ovenCleaningTime,
         additionalRoomsTime,
