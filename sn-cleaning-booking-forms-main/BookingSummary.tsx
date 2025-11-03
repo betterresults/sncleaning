@@ -4,6 +4,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BookingData } from './BookingForm';
 import { Home, Clock, Calendar, PoundSterling, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAirbnbHardcodedCalculations } from '@/hooks/useAirbnbHardcodedCalculations';
 
 interface BookingSummaryProps {
   data: BookingData;
@@ -11,6 +12,7 @@ interface BookingSummaryProps {
 
 const BookingSummary: React.FC<BookingSummaryProps> = ({ data }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const calculations = useAirbnbHardcodedCalculations(data);
 
   const getPropertyDescription = () => {
     if (!data.propertyType || !data.bedrooms) return '';
