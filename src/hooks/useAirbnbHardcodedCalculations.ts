@@ -97,41 +97,49 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
       alreadyCleanedValue = 1.5; // Not cleaned to standard = 1.5x multiplier
     }
 
-    // Oven cleaning time
-    const ovenCleaningTime = bookingData.needsOvenCleaning 
-      ? getConfigTime('oven type', bookingData.ovenType || 'standard')
+    // Oven cleaning time - only when user said yes AND a specific type is chosen
+    const ovenCleaningTime = (bookingData.needsOvenCleaning === true && bookingData.ovenType)
+      ? getConfigTime('oven type', bookingData.ovenType)
       : 0;
 
-    // Additional rooms time
-    const keyToOption: Record<string, string> = {
-      toilets: 'Extra Toilet',
-      studyrooms: 'Study Room',
-      studyRooms: 'Study Room',
-      utilityrooms: 'Utility Room',
-      utilityRooms: 'Utility Room',
-      otherrooms: 'Other Room',
-      otherRooms: 'Other Room',
-    };
-    
+    // Additional rooms time - sum of each selected room count * its time
     let additionalRoomsTime = 0;
+    const additionalRoomsBreakdown: Record<string, { qty: number; timePerUnit: number; total: number }> = {};
     if (bookingData.additionalRooms) {
       for (const [key, count] of Object.entries(bookingData.additionalRooms)) {
         const qty = Number(count) || 0;
         if (!qty) continue;
-        const optionLabel = keyToOption[key] || key;
-        const roomTime = getConfigTime('additional rooms', optionLabel);
-        additionalRoomsTime += roomTime * qty;
+        const unitTime = getConfigTime('additional rooms', key);
+        additionalRoomsTime += unitTime * qty;
+        additionalRoomsBreakdown[key] = { qty, timePerUnit: unitTime, total: unitTime * qty };
       }
     }
 
     // Property features time
     let propertyFeaturesTime = 0;
-    if (bookingData.propertyFeatures) {
-      for (const [feature, isSelected] of Object.entries(bookingData.propertyFeatures)) {
-        if (!isSelected) continue;
-        const featureTime = getConfigTime('property features', feature);
-        propertyFeaturesTime += featureTime;
-      }
+    const featuresBreakdown: Record<string, number> = {};
+    const pf = bookingData.propertyFeatures || {};
+    // combined separateKitchen + livingRoom counts once as 'separateKitchenLivingRoom'
+    if (pf.separateKitchen || pf.livingRoom) {
+      const t = getConfigTime('property features', 'separateKitchenLivingRoom');
+      propertyFeaturesTime += t;
+      featuresBreakdown['separateKitchenLivingRoom'] = t;
+    }
+    // other boolean features
+    for (const [feature, isSelected] of Object.entries(pf)) {
+      if (!isSelected) continue;
+      if (feature === 'separateKitchen' || feature === 'livingRoom') continue;
+      const t = getConfigTime('property features', feature);
+      propertyFeaturesTime += t;
+      featuresBreakdown[feature] = (featuresBreakdown[feature] || 0) + t;
+    }
+    // number of floors (multiplier)
+    const floors = Number(bookingData.numberOfFloors) || 0;
+    if (floors > 0) {
+      const perFloor = getConfigTime('property features', 'numberOfFloors');
+      const ft = perFloor * floors;
+      propertyFeaturesTime += ft;
+      featuresBreakdown['numberOfFloors'] = ft;
     }
 
     // BASE TIME CALCULATION
@@ -139,9 +147,9 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     const minutesSum = propertyTypeTime + bedroomsTime + bathroomsTime + additionalRoomsTime + propertyFeaturesTime + ovenCleaningTime;
 
     // Calculate total minutes with multipliers
-    // Formula: (sum of all times) * service type value * already cleaned value
-    const totalMinutes = minutesSum * serviceTypeValue * alreadyCleanedValue;
-    
+    // Formula: (sum of all times) * service type time * already cleaned multiplier
+    const totalMinutes = minutesSum * serviceTypeTime * alreadyCleanedValue;
+
     // Convert to hours with custom rounding logic:
     // 0-14 minutes → round down to whole hour
     // 15-44 minutes → add 0.5 hour
@@ -303,6 +311,7 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
         calculatedTotalHours,
         userEstimatedHours: bookingData.estimatedHours,
         minutesSum,
+        totalMinutes,
         propertyTypeTime,
         bedroomsTime,
         bathroomsTime,
@@ -311,7 +320,9 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
         alreadyCleanedValue,
         ovenCleaningTime,
         additionalRoomsTime,
+        additionalRoomsBreakdown,
         propertyFeaturesTime,
+        featuresBreakdown,
         bedSizesValue,
         bedSizesTime,
         hourlyRateBreakdown: {
