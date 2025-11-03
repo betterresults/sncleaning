@@ -92,10 +92,74 @@ const handler = async (req: Request): Promise<Response> => {
       case 'payment_intent.succeeded': {
         console.log('Processing payment_intent.succeeded event');
         const paymentIntent = event.data.object;
-        
-        // Sync payment method if one was used for the payment
+
+        // 1) Sync payment method if one was used for the payment
         if (paymentIntent.payment_method && paymentIntent.customer) {
           await syncPaymentMethodToDatabase(stripe, supabaseAdmin, paymentIntent.customer, paymentIntent.payment_method);
+        }
+
+        // 2) Mark booking as paid when the successful PI matches invoice_id
+        try {
+          const piId: string = paymentIntent.id;
+          const amountCaptured = (paymentIntent.amount_received || paymentIntent.amount || 0) / 100;
+
+          // Try upcoming bookings
+          const { data: upcoming, error: upErr } = await supabaseAdmin
+            .from('bookings')
+            .select('id, total_cost, payment_status')
+            .eq('invoice_id', piId)
+            .single();
+
+          if (!upErr && upcoming?.id) {
+            console.log(`[stripe-webhook] Found upcoming booking ${upcoming.id} for PI ${piId}. Marking as paid.`);
+            await supabaseAdmin
+              .from('bookings')
+              .update({ 
+                payment_status: 'paid',
+                additional_details: `Payment captured via Stripe webhook: £${amountCaptured} (PI: ${piId})` 
+              })
+              .eq('id', upcoming.id);
+            break;
+          }
+
+          // Try past bookings
+          const { data: past, error: pastErr } = await supabaseAdmin
+            .from('past_bookings')
+            .select('id, total_cost, payment_status')
+            .eq('invoice_id', piId)
+            .single();
+
+          if (!pastErr && past?.id) {
+            console.log(`[stripe-webhook] Found past booking ${past.id} for PI ${piId}. Marking as paid.`);
+            await supabaseAdmin
+              .from('past_bookings')
+              .update({ 
+                payment_status: 'paid',
+                additional_details: `Payment captured via Stripe webhook: £${amountCaptured} (PI: ${piId})` 
+              })
+              .eq('id', past.id);
+            break;
+          }
+
+          // Optional: If not matched by invoice_id, try to find bookings where additional_details include the PI id
+          const { data: maybeBookings } = await supabaseAdmin
+            .from('bookings')
+            .select('id, additional_details')
+            .ilike('additional_details', `%${piId}%`);
+
+          if (maybeBookings && maybeBookings.length > 0) {
+            console.log(`[stripe-webhook] Found booking(s) by additional_details for PI ${piId}. Updating first match.`);
+            await supabaseAdmin
+              .from('bookings')
+              .update({ 
+                additional_details: (maybeBookings[0].additional_details || '') + `\nPayment captured (secondary PI): £${amountCaptured} (PI: ${piId})` 
+              })
+              .eq('id', maybeBookings[0].id);
+          } else {
+            console.log(`[stripe-webhook] No booking found matching PI ${piId}`);
+          }
+        } catch (updateErr) {
+          console.error('[stripe-webhook] Failed updating booking on payment_intent.succeeded:', updateErr);
         }
         break;
       }
