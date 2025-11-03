@@ -89,6 +89,7 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     const bedroomsTime = getConfigTime('bedrooms', bookingData.bedrooms);
     const bathroomsTime = getConfigTime('bathrooms', bookingData.bathrooms);
     const serviceTypeTime = getConfigTime('service type', bookingData.serviceType);
+    const serviceTypeValue = getConfigValue('service type', bookingData.serviceType);
     
     // Already cleaned value
     let alreadyCleanedValue = 1; // Default
@@ -137,12 +138,12 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     // Minutes sum from all relevant fields (in minutes)
     const minutesSum = propertyTypeTime + bedroomsTime + bathroomsTime + additionalRoomsTime + propertyFeaturesTime + ovenCleaningTime;
 
-    // Determine service multiplier (time)
+    // Determine service multiplier (VALUE, not time!)
     // Deep-clean override: if check-in/check-out and NOT up to Airbnb standard -> treat as deep
-    let serviceMultiplier = serviceTypeTime;
+    let serviceMultiplier = serviceTypeValue || 1;
     let deepOverrideApplied = false;
     if (bookingData.serviceType === 'checkin-checkout' && bookingData.alreadyCleaned === false) {
-      const deepMult = getConfigTime('service type', 'deep') || 1.5;
+      const deepMult = getConfigValue('service type', 'deep') || 1.5;
       serviceMultiplier = deepMult;
       deepOverrideApplied = true;
     }
@@ -227,8 +228,6 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     const sameDayValue = bookingData.sameDayTurnaround 
       ? getConfigValue('time flexibility', 'same-day-turnaround')
       : 0;
-
-    const serviceTypeValue = getConfigValue('service type', bookingData.serviceType);
     
     // Check if cleaning products are needed - handle both string and object format
     let cleaningProductsValue = 0;
@@ -317,6 +316,7 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
         bedroomsTime,
         bathroomsTime,
         serviceTypeTime,
+        serviceTypeValue,
         serviceMultiplier,
         deepOverrideApplied,
         alreadyCleanedValue,
