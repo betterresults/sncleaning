@@ -89,7 +89,7 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     const bedroomsTime = bookingData.bedrooms ? getConfigTime('bedrooms', bookingData.bedrooms) : 0;
     const bathroomsTime = bookingData.bathrooms ? getConfigTime('bathrooms', bookingData.bathrooms) : 0;
     const serviceTypeTime = bookingData.serviceType ? getConfigTime('service type', bookingData.serviceType) : 1;
-    const serviceTypeValue = bookingData.serviceType ? getConfigValue('service type', bookingData.serviceType) : 0;
+    const serviceTypeValue = bookingData.serviceType ? getConfigValue('service type', bookingData.serviceType) : 1;
     
     // Already cleaned value - only for check-in/check-out
     let alreadyCleanedValue = 1; // Default
