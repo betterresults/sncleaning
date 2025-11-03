@@ -10,7 +10,6 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAirbnbHardcodedCalculations } from '@/hooks/useAirbnbHardcodedCalculations';
 import { useAirbnbPricingFormulas } from '@/hooks/useAirbnbPricingFormulas';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 interface BookingSummaryProps {
   data: BookingData;
   isAdminMode?: boolean;
@@ -23,7 +22,6 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditingPricing, setIsEditingPricing] = useState(false);
-  const [showFormulas, setShowFormulas] = useState(false);
 
   // Use hardcoded calculations
   const calculations = useAirbnbHardcodedCalculations(data);
@@ -182,36 +180,6 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
           </div>
         </div>}
 
-      {/* Hourly Rate Breakdown */}
-      {calculations.debug?.hourlyRateBreakdown && <div className="space-y-2 mt-3 pl-4 border-l-2 border-muted">
-          <div className="text-sm font-medium text-muted-foreground mb-2">Hourly Rate Breakdown</div>
-          
-          {calculations.debug.hourlyRateBreakdown.serviceTypeValue > 0 && <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">Base rate</span>
-              <span className="text-foreground">£{calculations.debug.hourlyRateBreakdown.serviceTypeValue.toFixed(2)}</span>
-            </div>}
-          
-          {calculations.debug.hourlyRateBreakdown.cleaningProductsValue > 0 && <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">Cleaning products</span>
-              <span className="text-foreground">+£{calculations.debug.hourlyRateBreakdown.cleaningProductsValue.toFixed(2)}</span>
-            </div>}
-          
-          {calculations.debug.hourlyRateBreakdown.equipmentHourlyAddition > 0 && <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">Equipment (ongoing)</span>
-              <span className="text-foreground">+£{calculations.debug.hourlyRateBreakdown.equipmentHourlyAddition.toFixed(2)}</span>
-            </div>}
-          
-          {calculations.debug.hourlyRateBreakdown.sameDayValue > 0 && <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">Same-day surcharge</span>
-              <span className="text-foreground">+£{calculations.debug.hourlyRateBreakdown.sameDayValue.toFixed(2)}</span>
-            </div>}
-          
-          <div className="flex justify-between items-center text-sm font-semibold pt-1 border-t">
-            <span className="text-foreground">Total hourly rate</span>
-            <span className="text-foreground">£{effectiveHourlyRate.toFixed(2)}</span>
-          </div>
-        </div>}
-
       {/* Schedule Section */}
       {data.selectedDate && <div className="space-y-3 mt-3">
           <div className="flex justify-between items-center">
@@ -341,117 +309,8 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
 
       {renderSummaryContent()}
 
-      {/* Formula Debug Section - Show in development */}
-      <div className="pt-4 mt-4 border-t">
-        <Collapsible open={showFormulas} onOpenChange={setShowFormulas}>
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" size="sm" className="w-full justify-center">
-              {showFormulas ? 'Hide Time Debug' : 'Show Time Debug'}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-3 mb-3 p-3 bg-muted/50 rounded-lg text-xs">
-            {/* Current Selections */}
-            <div>
-              <div className="font-semibold text-sm mb-2">Current Selections</div>
-              <div className="grid grid-cols-2 gap-y-1">
-                <span>Property</span><span className="font-mono text-right">{data.propertyType || 'none'}</span>
-                <span>Bedrooms</span><span className="font-mono text-right">{data.bedrooms || 'none'}</span>
-                <span>Bathrooms</span><span className="font-mono text-right">{data.bathrooms || 'none'}</span>
-                <span>Service Type</span><span className="font-mono text-right">{data.serviceType || 'none'}</span>
-                <span>Oven</span><span className="font-mono text-right">{data.ovenType || 'none'}</span>
-              </div>
-            </div>
-
-            {/* Time Breakdown (minutes) */}
-            <div>
-              <div className="font-semibold text-sm mb-2">Time Breakdown (minutes)</div>
-              <div className="space-y-1">
-                <div className="flex justify-between">
-                  <span>Property Type</span>
-                  <span className="font-mono">{calculations.debug?.propertyTypeTime ?? 0}m</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Bedrooms</span>
-                  <span className="font-mono">{calculations.debug?.bedroomsTime ?? 0}m</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Bathrooms</span>
-                  <span className="font-mono">{calculations.debug?.bathroomsTime ?? 0}m</span>
-                </div>
-
-                {/* Additional Rooms */}
-                <div className="pt-1">
-                  <div className="flex justify-between font-medium">
-                    <span>Additional Rooms</span>
-                    <span className="font-mono">{calculations.debug?.additionalRoomsTime ?? 0}m</span>
-                  </div>
-                  {calculations.debug?.additionalRoomsBreakdown && (
-                    <div className="pl-2 mt-1 space-y-1">
-                      {Object.entries(calculations.debug.additionalRoomsBreakdown).map(([k, v]: any) => (
-                        <div key={k} className="flex justify-between">
-                          <span className="text-muted-foreground">{k} × {v.qty} @ {v.timePerUnit}m</span>
-                          <span className="font-mono">{v.total}m</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Property Features */}
-                <div className="pt-1">
-                  <div className="flex justify-between font-medium">
-                    <span>Property Features</span>
-                    <span className="font-mono">{calculations.debug?.propertyFeaturesTime ?? 0}m</span>
-                  </div>
-                  {calculations.debug?.featuresBreakdown && (
-                    <div className="pl-2 mt-1 space-y-1">
-                      {Object.entries(calculations.debug.featuresBreakdown).map(([k, v]: any) => (
-                        <div key={k} className="flex justify-between">
-                          <span className="text-muted-foreground">{k}</span>
-                          <span className="font-mono">{v}m</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Oven */}
-                <div className="flex justify-between">
-                  <span>Oven Cleaning</span>
-                  <span className="font-mono">{calculations.debug?.ovenCleaningTime ?? 0}m</span>
-                </div>
-
-                {/* Multipliers */}
-                <div className="flex justify-between pt-1">
-                  <span>Service Type Multiplier</span>
-                  <span className="font-mono">{calculations.debug?.serviceTypeTime ?? 0}{calculations.debug?.missingServiceType ? ' (missing)' : ''}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Already Cleaned Multiplier</span>
-                  <span className="font-mono">{calculations.debug?.alreadyCleanedValue ?? 1}×</span>
-                </div>
-
-                {/* Sums */}
-                <div className="flex justify-between border-t pt-1 mt-1">
-                  <span>Minutes Sum</span>
-                  <span className="font-mono">{calculations.debug?.minutesSum ?? 0}m</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Total Minutes (after multipliers)</span>
-                  <span className="font-mono">{calculations.debug?.totalMinutes ?? 0}m</span>
-                </div>
-                <div className="flex justify-between font-semibold">
-                  <span>Rounded Base Time</span>
-                  <span className="font-mono">{(calculations.debug?.baseTime ?? calculations.baseTime)?.toFixed(2)}h</span>
-                </div>
-              </div>
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
-      </div>
-
       {/* Admin Pricing Controls */}
-      {isAdminMode && onUpdate && <div className={isAdminMode && !showFormulas ? "pt-4 mt-4 border-t" : ""}>
+      {isAdminMode && onUpdate && <div className="pt-4 mt-4 border-t">
           <Button variant="outline" size="sm" onClick={() => setIsEditingPricing(!isEditingPricing)} className="w-full flex items-center justify-center gap-2 mb-3">
             <Edit2 className="w-4 h-4" />
             {isEditingPricing ? 'Hide' : 'Edit'} Pricing
