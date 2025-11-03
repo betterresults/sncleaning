@@ -9,9 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Edit, Trash2, Package, Copy } from "lucide-react";
+import { Plus, Edit, Trash2, Package, Copy, MoreVertical, Box } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface LinenProduct {
@@ -357,14 +358,14 @@ export const LinenProductsManager = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[180px]">Name</TableHead>
-                  <TableHead className="w-[120px]">Type</TableHead>
-                  <TableHead className="w-[120px]">Customer Price</TableHead>
-                  <TableHead className="w-[120px]">Supplier Cost</TableHead>
-                  <TableHead className="w-[100px]">Margin</TableHead>
-                  <TableHead className="w-[100px]">Status</TableHead>
-                  <TableHead className="w-[200px]">Items Included</TableHead>
-                  <TableHead className="w-[180px] text-right">Actions</TableHead>
+                  <TableHead className="w-[200px]">Name</TableHead>
+                  <TableHead className="w-[60px]">Type</TableHead>
+                  <TableHead className="w-[110px]">Customer Price</TableHead>
+                  <TableHead className="w-[110px]">Supplier Cost</TableHead>
+                  <TableHead className="w-[90px]">Margin</TableHead>
+                  <TableHead className="w-[90px]">Status</TableHead>
+                  <TableHead>Items Included</TableHead>
+                  <TableHead className="w-[60px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -377,9 +378,13 @@ export const LinenProductsManager = () => {
                     <TableRow key={product.id} className="hover:bg-muted/50">
                       <TableCell className="font-medium">{product.name}</TableCell>
                       <TableCell>
-                        <Badge variant={product.type === 'pack' ? 'default' : 'secondary'}>
-                          {product.type === 'pack' ? 'Pack' : 'Individual'}
-                        </Badge>
+                        <div className="flex items-center justify-center" title={product.type === 'pack' ? 'Pack' : 'Individual'}>
+                          {product.type === 'pack' ? (
+                            <Package className="h-5 w-5 text-primary" />
+                          ) : (
+                            <Box className="h-5 w-5 text-muted-foreground" />
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-green-600 font-semibold">£{product.price.toFixed(2)}</TableCell>
                       <TableCell className="text-red-600 font-semibold">£{(product.supplier_cost || 0).toFixed(2)}</TableCell>
@@ -391,46 +396,42 @@ export const LinenProductsManager = () => {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={product.is_active ? 'default' : 'secondary'}>
+                        <Badge variant={product.is_active ? 'default' : 'secondary'} className="text-xs">
                           {product.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="max-w-[200px]">
-                        <p className="truncate text-sm text-muted-foreground" title={product.items_included || 'No details'}>
+                      <TableCell>
+                        <p className="text-sm text-muted-foreground whitespace-normal leading-snug">
                           {product.items_included || 'No details'}
                         </p>
                       </TableCell>
                       <TableCell>
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openEditDialog(product)}
-                            className="h-8"
-                          >
-                            <Edit className="h-3.5 w-3.5 mr-1" />
-                            Edit
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDuplicate(product)}
-                            className="h-8"
-                          >
-                            <Copy className="h-3.5 w-3.5 mr-1" />
-                            Duplicate
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDelete(product.id)}
-                            disabled={deleteProductMutation.isPending}
-                            className="h-8 text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-3.5 w-3.5 mr-1" />
-                            Delete
-                          </Button>
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-40">
+                            <DropdownMenuItem onClick={() => openEditDialog(product)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDuplicate(product)}>
+                              <Copy className="h-4 w-4 mr-2" />
+                              Duplicate
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={() => handleDelete(product.id)}
+                              disabled={deleteProductMutation.isPending}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   );
