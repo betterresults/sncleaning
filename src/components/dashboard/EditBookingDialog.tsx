@@ -198,7 +198,8 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
             body: {
               bookingId: booking.id,
               newAmount: newCost,
-              reason: `Booking updated: Cost changed from £${originalCost} to £${newCost}`
+              reason: `Booking updated: Cost changed from £${originalCost} to £${newCost}`,
+              action: 'reauthorize'
             }
           });
 

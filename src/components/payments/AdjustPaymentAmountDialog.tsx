@@ -78,7 +78,8 @@ export const AdjustPaymentAmountDialog: React.FC<AdjustPaymentAmountDialogProps>
         body: {
           bookingId: booking.id,
           newAmount: parseFloat(newAmount),
-          reason: reason.trim()
+          reason: reason.trim(),
+          action: 'reauthorize'
         }
       });
 
