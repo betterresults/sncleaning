@@ -88,7 +88,7 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     const propertyTypeTime = bookingData.propertyType ? getConfigTime('property type', bookingData.propertyType) : 0;
     const bedroomsTime = bookingData.bedrooms ? getConfigTime('bedrooms', bookingData.bedrooms) : 0;
     const bathroomsTime = bookingData.bathrooms ? getConfigTime('bathrooms', bookingData.bathrooms) : 0;
-    const serviceTypeTime = bookingData.serviceType ? getConfigTime('service type', bookingData.serviceType) : 0;
+    const serviceTypeTime = bookingData.serviceType ? getConfigTime('service type', bookingData.serviceType) : 1;
     const serviceTypeValue = bookingData.serviceType ? getConfigValue('service type', bookingData.serviceType) : 0;
     
     // Already cleaned value
