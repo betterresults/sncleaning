@@ -11,7 +11,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#1a2332',
-    padding: 30,
+    padding: 15,
     marginBottom: 0,
   },
   headerContent: {
@@ -19,45 +19,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#ffffff',
-    marginBottom: 15,
+    marginBottom: 0,
     letterSpacing: 1,
     textAlign: 'center',
   },
-  contactRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 20,
-  },
-  contactItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  contactIcon: {
-    fontSize: 10,
-    color: '#1fa89f',
-  },
-  contactText: {
-    fontSize: 9,
-    color: '#ffffff',
-  },
   contentWrapper: {
-    padding: 30,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#1a2332',
+    padding: 20,
   },
   section: {
-    marginBottom: 20,
+    marginBottom: 15,
     backgroundColor: '#ffffff',
-    padding: 20,
+    padding: 15,
     borderRadius: 8,
     border: '1 solid #e5e7eb',
   },
@@ -71,8 +46,8 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: 'row',
-    marginBottom: 8,
-    paddingBottom: 8,
+    marginBottom: 6,
+    paddingBottom: 6,
     borderBottom: '1 solid #f3f4f6',
   },
   label: {
@@ -107,7 +82,7 @@ const styles = StyleSheet.create({
   },
   tableRow: {
     flexDirection: 'row',
-    padding: 12,
+    padding: 8,
     borderBottom: '1 solid #f3f4f6',
     backgroundColor: '#ffffff',
   },
@@ -153,16 +128,16 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   footer: {
-    marginTop: 30,
+    marginTop: 15,
     backgroundColor: '#1a2332',
-    padding: 20,
+    padding: 15,
     textAlign: 'center',
   },
   footerText: {
-    fontSize: 9,
+    fontSize: 8,
     color: '#ffffff',
     opacity: 0.9,
-    lineHeight: 1.6,
+    lineHeight: 1.4,
   },
   badge: {
     padding: '6 12',
@@ -195,7 +170,7 @@ const styles = StyleSheet.create({
   infoCard: {
     flex: 1,
     backgroundColor: '#ffffff',
-    padding: 20,
+    padding: 15,
     borderRadius: 8,
     border: '1 solid #e5e7eb',
   },
@@ -225,27 +200,14 @@ export const LinenOrderPDF: React.FC<LinenOrderPDFProps> = ({ order, customer, a
         <View style={styles.header}>
           <View style={styles.headerContent}>
             <Text style={styles.logo}>SN CLEANING SERVICES</Text>
-            <View style={styles.contactRow}>
-              <View style={styles.contactItem}>
-                <Text style={styles.contactIcon}>✉</Text>
-                <Text style={styles.contactText}>info@sncleaningservices.co.uk</Text>
-              </View>
-              <View style={styles.contactItem}>
-                <Text style={styles.contactIcon}>☎</Text>
-                <Text style={styles.contactText}>+44 203 835 5033</Text>
-              </View>
-            </View>
           </View>
         </View>
 
         <View style={styles.contentWrapper}>
-          {/* Title */}
-          <Text style={styles.title}>Linen Order Invoice</Text>
-
           {/* Order & Customer Info Grid */}
           <View style={styles.infoGrid}>
             <View style={styles.infoCard}>
-              <Text style={styles.sectionTitle}>Order Details</Text>
+              <Text style={styles.sectionTitle}>Linen Order Details</Text>
               <View style={styles.row}>
                 <Text style={styles.label}>Order Number:</Text>
                 <Text style={styles.value}>#{order.id.slice(-8).toUpperCase()}</Text>
