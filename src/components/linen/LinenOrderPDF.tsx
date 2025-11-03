@@ -128,7 +128,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   footer: {
-    marginTop: 15,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: '#1a2332',
     padding: 15,
     textAlign: 'center',
