@@ -586,13 +586,13 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       )}
 
       {/* Oven Cleaning - Dynamic */}
-      {(data.serviceType === 'deep' || data.alreadyCleaned === false) && ovenCleaningConfigs.length > 0 && (
+      {(data.serviceType === 'deep' || data.alreadyCleaned === false) && ovenTypeConfigs.length > 0 && (
         <div className="relative z-[5] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
           <h2 className="text-2xl font-bold text-slate-700 mb-4">
             Do you require oven cleaning?
           </h2>
           <div className="grid grid-cols-2 gap-4 mb-4">
-            {ovenCleaningConfigs.map((option: any) => {
+            {ovenTypeConfigs.map((option: any) => {
               const opt = String(option.option || '').toLowerCase();
               const isSelected = (opt === 'yes' && data.needsOvenCleaning === true) || 
                                (opt === 'no' && data.needsOvenCleaning === false);
@@ -626,13 +626,13 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
           </div>
 
           {/* Oven Type Selection - Dynamic */}
-          {data.needsOvenCleaning === true && ovenTypeConfigs.length > 0 && (
+          {data.needsOvenCleaning === true && ovenCleaningConfigs.length > 0 && (
             <div>
               <h2 className="text-2xl font-bold text-slate-700 mb-4">
                 Select oven type
               </h2>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {ovenTypeConfigs.map((oven: any) => {
+                {ovenCleaningConfigs.map((oven: any) => {
                   const isSelected = data.ovenType === oven.option;
                   const IconComponent = (LucideIcons as any)[oven.icon];
                   
