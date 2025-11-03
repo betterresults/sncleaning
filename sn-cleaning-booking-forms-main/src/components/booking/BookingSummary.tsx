@@ -309,8 +309,13 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
 
       {/* Only show content if we have valid data */}
       {(calculations.totalHours && calculations.totalHours > 0) ? renderSummaryContent() : (
-        <div className="text-center py-8 text-muted-foreground">
-          <span className="text-sm">Complete the form to see booking summary</span>
+        <div className="text-center py-12 text-muted-foreground">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
+              <Calendar className="w-8 h-8 text-muted-foreground/60" />
+            </div>
+            <p className="text-sm font-medium">Complete the form to see your booking summary</p>
+          </div>
         </div>
       )}
 
@@ -362,7 +367,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
         </div>}
 
       {/* Total Cost */}
-      {calculations.totalHours && calculations.totalHours > 0 && <div className="pt-4 mt-4">
+      {(calculations.totalHours > 0) && <div className="pt-4 mt-4">
           <div className="bg-primary/5 rounded-lg p-4">
             <div className="flex justify-between items-center">
               <span className="text-xl font-semibold text-foreground">Total Cost</span>
