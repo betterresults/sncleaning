@@ -91,10 +91,20 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
       }
     }
 
+    // Property features time
+    let propertyFeaturesTime = 0;
+    if (bookingData.propertyFeatures) {
+      for (const [feature, isSelected] of Object.entries(bookingData.propertyFeatures)) {
+        if (!isSelected) continue;
+        const featureTime = getConfigTime('property features', feature);
+        propertyFeaturesTime += featureTime;
+      }
+    }
+
     // BASE TIME CALCULATION
-    // Formula: Math.ceil(((propertyType.time + bedrooms.time + bathrooms.time + additionalRooms.time + ovenCleaning.time) * (serviceType.time * alreadyCleaned.value)) / 30) / 2
+    // Formula: Math.ceil(((propertyType.time + bedrooms.time + bathrooms.time + additionalRooms.time + propertyFeatures.time + ovenCleaning.time) * (serviceType.time * alreadyCleaned.value)) / 30) / 2
     const baseTime = Math.ceil(
-      ((propertyTypeTime + bedroomsTime + bathroomsTime + additionalRoomsTime + ovenCleaningTime) 
+      ((propertyTypeTime + bedroomsTime + bathroomsTime + additionalRoomsTime + propertyFeaturesTime + ovenCleaningTime) 
       * (serviceTypeTime * alreadyCleanedValue)) / 30
     ) / 2;
 
@@ -250,6 +260,7 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
         alreadyCleanedValue,
         ovenCleaningTime,
         additionalRoomsTime,
+        propertyFeaturesTime,
         bedSizesValue,
         bedSizesTime,
         hourlyRateBreakdown: {
