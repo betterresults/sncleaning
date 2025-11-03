@@ -21,6 +21,10 @@ export const NumericInput: React.FC<NumericInputProps> = ({
   canDecrement = true,
   canIncrement = true,
 }) => {
+  // Split label into number and unit (e.g., "3.5h" -> "3.5" and "h")
+  const numericPart = label.replace(/[^\d.]/g, '');
+  const unitPart = label.replace(/[\d.]/g, '');
+
   return (
     <div className="flex items-center bg-card border border-border rounded-2xl p-2 w-full">
       <Button
@@ -32,9 +36,10 @@ export const NumericInput: React.FC<NumericInputProps> = ({
       >
         <Minus className="h-5 w-5" />
       </Button>
-      <div className="flex-1 text-center px-6">
-        <div className="text-2xl font-bold text-foreground">
-          {label}
+      <div className="flex-1 text-center px-8">
+        <div className="flex items-baseline justify-center gap-1">
+          <span className="text-3xl font-bold text-foreground">{numericPart}</span>
+          <span className="text-lg font-semibold text-foreground/70">{unitPart}</span>
         </div>
       </div>
       <Button
