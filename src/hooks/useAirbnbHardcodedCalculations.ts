@@ -13,7 +13,7 @@ interface BookingData {
   alreadyCleaned: boolean | null;
   needsOvenCleaning: boolean | null;
   ovenType: string;
-  cleaningProducts: string;
+  cleaningProducts: string | { needed: boolean; equipment: boolean } | null;
   equipmentArrangement: string | null;
   linensHandling: string;
   needsIroning: boolean | null;
@@ -147,7 +147,11 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     }
 
     // TOTAL HOURS
-    const totalHours = baseTime + additionalTime;
+    // User override takes priority over calculated hours
+    const calculatedTotalHours = baseTime + additionalTime;
+    const totalHours = bookingData.estimatedHours !== null && bookingData.estimatedHours !== undefined
+      ? bookingData.estimatedHours
+      : calculatedTotalHours;
 
     // HOURLY RATE CALCULATION
     // Formula: sameday.value + serviceType.value + cleaningProducts.value + (equipmentArrangement.value < 10 ? equipmentArrangement.value : 0)
@@ -156,11 +160,32 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
       : 0;
 
     const serviceTypeValue = getConfigValue('service type', bookingData.serviceType);
-    const cleaningProductsValue = getConfigValue('cleaning products', bookingData.cleaningProducts);
+    
+    // Check if cleaning products are needed - handle both string and object format
+    let cleaningProductsValue = 0;
+    if (bookingData.cleaningProducts) {
+      if (typeof bookingData.cleaningProducts === 'string') {
+        cleaningProductsValue = getConfigValue('cleaning products', bookingData.cleaningProducts);
+      } else if (typeof bookingData.cleaningProducts === 'object' && 'needed' in bookingData.cleaningProducts) {
+        cleaningProductsValue = (bookingData.cleaningProducts as any).needed 
+          ? getConfigValue('cleaning products', 'bring-products')
+          : 0;
+      }
+    }
 
-    const equipmentValue = bookingData.equipmentArrangement 
-      ? getConfigValue('equipment arrangement', bookingData.equipmentArrangement)
-      : 0;
+    // Check if equipment is needed - handle both direct arrangement and nested object
+    let equipmentValue = 0;
+    if (bookingData.equipmentArrangement) {
+      equipmentValue = getConfigValue('equipment arrangement', bookingData.equipmentArrangement);
+    } else if (bookingData.cleaningProducts) {
+      // If equipment is in nested object, check the arrangement
+      const cleaningProducts = bookingData.cleaningProducts;
+      if (typeof cleaningProducts === 'object' && 'equipment' in cleaningProducts) {
+        if ((cleaningProducts as any).equipment && bookingData.equipmentArrangement) {
+          equipmentValue = getConfigValue('equipment arrangement', bookingData.equipmentArrangement);
+        }
+      }
+    }
 
     const hourlyRate = sameDayValue + serviceTypeValue + cleaningProductsValue + (equipmentValue < 10 ? equipmentValue : 0);
 
@@ -205,15 +230,19 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
       ironTime,
       additionalTime,
       totalHours,
+      calculatedTotalHours,
       hourlyRate,
       cleaningCost,
       shortNoticeCharge,
       totalCost,
+      isUserOverride: bookingData.estimatedHours !== null && bookingData.estimatedHours !== undefined,
       debug: {
         dryTime,
         ironTime,
         baseTime,
         additionalTime,
+        calculatedTotalHours,
+        userEstimatedHours: bookingData.estimatedHours,
         propertyTypeTime,
         bedroomsTime,
         bathroomsTime,
