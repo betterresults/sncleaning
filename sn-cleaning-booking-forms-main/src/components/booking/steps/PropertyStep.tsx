@@ -692,7 +692,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
               </Button>
               <div className="flex-1 text-center min-w-[90px]">
                 <div className="text-base font-semibold text-slate-600">
-                  {(data.estimatedHours ?? recommendedHours)} hours
+                  {(data.estimatedHours ?? recommendedHours)}h
                 </div>
               </div>
               <Button
