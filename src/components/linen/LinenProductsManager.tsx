@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Edit, Trash2, Package } from "lucide-react";
+import { Plus, Edit, Trash2, Package, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface LinenProduct {
@@ -181,6 +181,20 @@ export const LinenProductsManager = () => {
     }
   };
 
+  const handleDuplicate = (product: LinenProduct) => {
+    setFormData({
+      name: `${product.name} (Copy)`,
+      type: product.type,
+      price: product.price,
+      supplier_cost: product.supplier_cost || 0,
+      description: product.description || "",
+      items_included: product.items_included || "",
+      is_active: product.is_active
+    });
+    setEditingProduct(null);
+    setIsDialogOpen(true);
+  };
+
   if (isLoading) {
     return <div className="text-center py-8">Loading products...</div>;
   }
@@ -343,14 +357,14 @@ export const LinenProductsManager = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Customer Price</TableHead>
-                  <TableHead>Supplier Cost</TableHead>
-                  <TableHead>Margin</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Items Included</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
+                  <TableHead className="w-[180px]">Name</TableHead>
+                  <TableHead className="w-[120px]">Type</TableHead>
+                  <TableHead className="w-[120px]">Customer Price</TableHead>
+                  <TableHead className="w-[120px]">Supplier Cost</TableHead>
+                  <TableHead className="w-[100px]">Margin</TableHead>
+                  <TableHead className="w-[100px]">Status</TableHead>
+                  <TableHead className="w-[200px]">Items Included</TableHead>
+                  <TableHead className="w-[180px] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -360,18 +374,18 @@ export const LinenProductsManager = () => {
                     : 0;
                   
                   return (
-                    <TableRow key={product.id}>
+                    <TableRow key={product.id} className="hover:bg-muted/50">
                       <TableCell className="font-medium">{product.name}</TableCell>
                       <TableCell>
                         <Badge variant={product.type === 'pack' ? 'default' : 'secondary'}>
                           {product.type === 'pack' ? 'Pack' : 'Individual'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-green-600 font-medium">£{product.price.toFixed(2)}</TableCell>
-                      <TableCell className="text-red-600 font-medium">£{(product.supplier_cost || 0).toFixed(2)}</TableCell>
+                      <TableCell className="text-green-600 font-semibold">£{product.price.toFixed(2)}</TableCell>
+                      <TableCell className="text-red-600 font-semibold">£{(product.supplier_cost || 0).toFixed(2)}</TableCell>
                       <TableCell>
-                        <span className={`font-medium ${
-                          profitMargin >= 0 ? 'text-green-600' : 'text-red-600'
+                        <span className={`font-semibold ${
+                          profitMargin >= 20 ? 'text-green-600' : profitMargin >= 10 ? 'text-orange-500' : 'text-red-600'
                         }`}>
                           {profitMargin.toFixed(1)}%
                         </span>
@@ -381,27 +395,40 @@ export const LinenProductsManager = () => {
                           {product.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="max-w-xs">
-                        <p className="truncate text-sm text-muted-foreground">
+                      <TableCell className="max-w-[200px]">
+                        <p className="truncate text-sm text-muted-foreground" title={product.items_included || 'No details'}>
                           {product.items_included || 'No details'}
                         </p>
                       </TableCell>
                       <TableCell>
-                        <div className="flex space-x-1">
+                        <div className="flex justify-end gap-1">
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
                             onClick={() => openEditDialog(product)}
+                            className="h-8"
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-3.5 w-3.5 mr-1" />
+                            Edit
                           </Button>
                           <Button
-                            variant="ghost"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDuplicate(product)}
+                            className="h-8"
+                          >
+                            <Copy className="h-3.5 w-3.5 mr-1" />
+                            Duplicate
+                          </Button>
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => handleDelete(product.id)}
                             disabled={deleteProductMutation.isPending}
+                            className="h-8 text-destructive hover:text-destructive"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5 mr-1" />
+                            Delete
                           </Button>
                         </div>
                       </TableCell>
