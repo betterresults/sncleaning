@@ -109,7 +109,8 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
         bedSizesValue += sizeValue * qty;
       }
     }
-    const dryTime = bookingData.linensHandling && bookingData.linensHandling !== 'customer-handles'
+    const shouldCalculateDryTime = bookingData.linensHandling === 'wash-hang' || bookingData.linensHandling === 'wash-dry';
+    const dryTime = shouldCalculateDryTime
       ? Math.ceil(bedSizesValue / 30) / 2
       : 0;
 
@@ -124,15 +125,26 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
         bedSizesTime += sizeTime * qty;
       }
     }
-    const ironTime = bookingData.needsIroning 
+    const shouldCalculateIronTime = bookingData.needsIroning && (bookingData.linensHandling === 'wash-hang' || bookingData.linensHandling === 'wash-dry');
+    const ironTime = shouldCalculateIronTime
       ? Math.ceil(bedSizesTime / 30) / 2
       : 0;
 
     // ADDITIONAL TIME CALCULATION
-    // Formula: Math.abs((Drytime + IronTime) - Basetime) - ((Drytime - Basetime) < 0 ? 0 : (Drytime - Basetime))
-    const additionalTime = bookingData.linensHandling && bookingData.linensHandling !== 'customer-handles'
-      ? Math.abs((dryTime + ironTime) - baseTime) - ((dryTime - baseTime) < 0 ? 0 : (dryTime - baseTime))
-      : 0;
+    // Only applies to wash-hang and wash-dry options
+    // Formula: If ironTime > waitingTime, then additionalTime = ironTime - waitingTime
+    let additionalTime = 0;
+    const shouldCalculateAdditionalTime = bookingData.linensHandling === 'wash-hang' || bookingData.linensHandling === 'wash-dry';
+    
+    if (shouldCalculateAdditionalTime) {
+      // Waiting time = how much longer drying takes compared to base cleaning
+      const waitingTime = Math.max(0, dryTime - baseTime);
+      
+      // If ironing takes longer than waiting time, add the extra ironing time
+      if (ironTime > waitingTime) {
+        additionalTime = ironTime - waitingTime;
+      }
+    }
 
     // TOTAL HOURS
     const totalHours = baseTime + additionalTime;
