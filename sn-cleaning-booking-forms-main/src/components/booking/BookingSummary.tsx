@@ -449,9 +449,45 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data, isAdminMode = fal
                   <span>Total Cost:</span>
                   <span className="font-mono">£{calculations.totalCost?.toFixed(2) || '0'}</span>
                 </div>
+
+                {calculations?.debug && (
+                  <div className="mt-3">
+                    <div className="font-semibold text-sm">Live Formula Breakdown</div>
+                    <div className="text-xs mt-1 p-2 bg-background rounded font-mono space-y-1">
+                      <div>BaseTime = ceil(((PT+BR+BA+AR+OC) * (ST * AC)) / 30) / 2</div>
+                      <div>
+                        = ceil((( {calculations.debug.propertyTypeTime || 0} + {calculations.debug.bedroomsTime || 0} + {calculations.debug.bathroomsTime || 0} + {calculations.debug.additionalRoomsTime || 0} + {calculations.debug.ovenCleaningTime || 0} ) * ( {calculations.debug.serviceTypeTime || 0} * {calculations.debug.alreadyCleanedValue ?? 1} )) / 30) / 2
+                        = {calculations.baseTime?.toFixed(2)}h
+                      </div>
+                      <div>
+                        DryTime = {data.linensHandling && data.linensHandling !== 'customer-handles' ? (
+                          <>ceil(({calculations.debug.bedSizesValue || 0} / 30)) / 2 = {calculations.debug.dryTime?.toFixed(2)}h</>
+                        ) : (
+                          '0 (linens not selected)'
+                        )}
+                      </div>
+                      <div>
+                        IronTime = {data.needsIroning ? (
+                          <>ceil(({calculations.debug.bedSizesTime || 0} / 30)) / 2 = {calculations.debug.ironTime?.toFixed(2)}h</>
+                        ) : (
+                          '0 (no ironing)'
+                        )}
+                      </div>
+                      <div>
+                        AdditionalTime = {data.linensHandling && data.linensHandling !== 'customer-handles' ? (
+                          <>abs((Dry+Iron) - Base) - max(0, Dry - Base)
+                          = abs(({(calculations.debug?.dryTime || 0).toFixed(2)} + {(calculations.debug?.ironTime || 0).toFixed(2)} - {(calculations.baseTime || 0).toFixed(2)})) - {Math.max(0, (calculations.debug?.dryTime || 0) - (calculations.baseTime || 0)).toFixed(2)}
+                          = {calculations.additionalTime?.toFixed(2)}h</>
+                        ) : '0'}
+                      </div>
+                      <div>
+                        TotalHours = BaseTime + AdditionalTime = {calculations.baseTime?.toFixed(2) || '0'} + {calculations.additionalTime?.toFixed(2) || '0'} = {calculations.totalHours?.toFixed(2) || '0'}h
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          </CollapsibleContent>
+            </CollapsibleContent>
         </Collapsible>
       </div>
 
