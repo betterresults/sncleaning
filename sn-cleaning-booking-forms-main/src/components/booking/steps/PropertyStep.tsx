@@ -5,7 +5,7 @@ import { BookingData } from '../AirbnbBookingForm';
 import { Home, Building, Plus, Minus, CheckCircle, Droplets, Wrench, X, BookOpen, Zap, Bed } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { useAirbnbFieldConfigs } from '@/hooks/useAirbnbFieldConfigs';
-import { useBookingCalculations } from '@/hooks/useBookingCalculations';
+import { useAirbnbHardcodedCalculations } from '@/hooks/useAirbnbHardcodedCalculations';
 import { useSearchParams } from 'react-router-dom';
 
 interface PropertyStepProps {
@@ -115,8 +115,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
     }
   };
 
-  // Use formula-based calculations - ONLY for display, don't update bookingData.estimatedHours here
-  const calculations = useBookingCalculations(data);
+  // Use hardcoded calculations - ONLY for display, don't update bookingData.estimatedHours here
+  const calculations = useAirbnbHardcodedCalculations(data);
   const recommendedHours = calculations.baseTime;
   const [searchParams] = useSearchParams();
   const showDebug = searchParams.get('debug') === '1';

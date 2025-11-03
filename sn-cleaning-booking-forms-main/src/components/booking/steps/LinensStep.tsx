@@ -7,7 +7,7 @@ import { BookingData } from '../AirbnbBookingForm';
 import { Truck, Shirt, Plus, Minus, Package, Info } from 'lucide-react';
 import { useAirbnbFieldConfigs } from '@/hooks/useAirbnbFieldConfigs';
 import { useLinenProducts } from '@/hooks/useLinenProducts';
-import { useBookingCalculations } from '@/hooks/useBookingCalculations';
+import { useAirbnbHardcodedCalculations } from '@/hooks/useAirbnbHardcodedCalculations';
 
 interface LinensStepProps {
   data: BookingData;
@@ -40,8 +40,8 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
         { value: 'order-linens', label: 'Order linens from us', icon: Package }
       ];
 
-  // Use formula-based calculations
-  const calculations = useBookingCalculations(data);
+  // Use hardcoded calculations
+  const calculations = useAirbnbHardcodedCalculations(data);
   const recommendedExtraHours = calculations.additionalTime;
 
   const roundToNearestHalf = (hours: number) => {

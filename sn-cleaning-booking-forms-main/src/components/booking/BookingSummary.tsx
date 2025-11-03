@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useBookingCalculations } from '@/hooks/useBookingCalculations';
+import { useAirbnbHardcodedCalculations } from '@/hooks/useAirbnbHardcodedCalculations';
 import { useAirbnbPricingFormulas } from '@/hooks/useAirbnbPricingFormulas';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -23,8 +23,8 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data, isAdminMode = fal
   const [isEditingPricing, setIsEditingPricing] = useState(false);
   const [showFormulas, setShowFormulas] = useState(false);
 
-  // Use formula-based calculations
-  const calculations = useBookingCalculations(data);
+  // Use hardcoded calculations
+  const calculations = useAirbnbHardcodedCalculations(data);
   
   // Fetch formulas for admin view
   const { data: formulas = [] } = useAirbnbPricingFormulas();
