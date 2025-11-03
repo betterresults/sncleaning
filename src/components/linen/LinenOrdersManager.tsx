@@ -10,8 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, ShoppingCart, Edit, Eye, Calendar, Package, CreditCard, MapPin, User, Banknote, Trash2, Copy, Truck, PackageCheck } from "lucide-react";
+import { Plus, ShoppingCart, Edit, Eye, Calendar, Package, CreditCard, MapPin, User, Banknote, Trash2, Copy, Truck, PackageCheck, FileDown } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { pdf } from '@react-pdf/renderer';
+import { LinenOrderPDF } from './LinenOrderPDF';
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { EditOrderDialog } from "./EditOrderDialog";
@@ -479,6 +481,58 @@ export const LinenOrdersManager = () => {
     setIsPaymentDialogOpen(true);
   };
 
+  const downloadOrderPDF = async (order: any) => {
+    try {
+      // Fetch order items
+      const { data: orderItems, error: itemsError } = await supabase
+        .from('linen_order_items')
+        .select(`
+          *,
+          linen_products (
+            id,
+            name,
+            type,
+            price
+          )
+        `)
+        .eq('order_id', order.id);
+
+      if (itemsError) throw itemsError;
+
+      // Generate PDF
+      const blob = await pdf(
+        <LinenOrderPDF
+          order={order}
+          customer={order.customers}
+          address={order.addresses}
+          items={orderItems || []}
+        />
+      ).toBlob();
+
+      // Download PDF
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `linen-order-${order.id.slice(-8).toUpperCase()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({ 
+        title: "PDF Downloaded",
+        description: "Order invoice has been downloaded successfully"
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({ 
+        title: "Error generating PDF", 
+        description: error.message, 
+        variant: "destructive" 
+      });
+    }
+  };
+
   if (ordersLoading) {
     return <div className="text-center py-8">Loading orders...</div>;
   }
@@ -888,6 +942,15 @@ export const LinenOrdersManager = () => {
                     </div>
                   )}
                   <div className="flex items-center gap-1 pt-2 flex-wrap">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => downloadOrderPDF(order)}
+                    >
+                      <FileDown className="h-4 w-4 mr-1" />
+                      PDF
+                    </Button>
+
                     <Button 
                       variant="outline" 
                       size="sm"
