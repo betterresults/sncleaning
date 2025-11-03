@@ -39,6 +39,7 @@ interface LinenProduct {
   name: string;
   type: 'pack' | 'individual';
   price: number;
+  supplier_cost: number;
   description?: string;
   items_included?: string;
   is_active: boolean;
@@ -200,6 +201,18 @@ export const LinenOrdersManager = () => {
 
   const createOrderMutation = useMutation({
     mutationFn: async (orderData: OrderFormData) => {
+      // Calculate total_cost and admin_cost
+      let totalCost = 0;
+      let adminCost = 0;
+
+      for (const item of orderData.items) {
+        const product = products.find(p => p.id === item.product_id);
+        if (product) {
+          totalCost += item.quantity * item.unit_price;
+          adminCost += item.quantity * (product.supplier_cost || 0);
+        }
+      }
+
       // First create the order
       const { data: order, error: orderError } = await supabase
         .from('linen_orders')
@@ -208,6 +221,8 @@ export const LinenOrdersManager = () => {
           address_id: orderData.address_id,
           delivery_date: orderData.delivery_date || null,
           notes: orderData.notes,
+          total_cost: totalCost,
+          admin_cost: adminCost,
           status: 'scheduled'
         }])
         .select()

@@ -8,6 +8,7 @@ interface LinenProduct {
   type: string;
   description?: string;
   price: number;
+  supplier_cost: number;
 }
 
 interface LinenInventory {
@@ -67,7 +68,8 @@ export const useLinenProducts = (customerId?: number, addressId?: string) => {
             name,
             type,
             description,
-            price
+            price,
+            supplier_cost
           )
         `)
         .eq('customer_id', customerId)

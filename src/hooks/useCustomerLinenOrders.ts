@@ -110,21 +110,24 @@ export const useCustomerLinenOrders = () => {
 
       if (!profile?.customer_id) throw new Error('Customer profile not found');
 
-      // Calculate total cost and validate minimum
+      // Calculate total cost and admin cost, validate minimum
       let totalCost = 0;
+      let adminCost = 0;
       const enrichedItems = [];
 
       for (const item of orderData.items) {
         const { data: product } = await supabase
           .from('linen_products')
-          .select('price')
+          .select('price, supplier_cost')
           .eq('id', item.productId)
           .single();
 
         if (!product) throw new Error(`Product not found: ${item.productId}`);
 
         const itemCost = product.price * item.quantity;
+        const itemSupplierCost = (product.supplier_cost || 0) * item.quantity;
         totalCost += itemCost;
+        adminCost += itemSupplierCost;
         enrichedItems.push({
           ...item,
           unitPrice: product.price,
@@ -152,6 +155,7 @@ export const useCustomerLinenOrders = () => {
           pickup_date: orderData.pickupDate,
           notes: orderData.notes,
           total_cost: totalCost,
+          admin_cost: adminCost,
           status: 'scheduled',
           payment_status: 'unpaid'
         })

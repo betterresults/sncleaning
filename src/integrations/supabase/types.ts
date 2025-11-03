@@ -1245,6 +1245,7 @@ export type Database = {
           items_included: string | null
           name: string
           price: number
+          supplier_cost: number | null
           type: string
           updated_at: string
         }
@@ -1256,6 +1257,7 @@ export type Database = {
           items_included?: string | null
           name: string
           price?: number
+          supplier_cost?: number | null
           type: string
           updated_at?: string
         }
@@ -1267,6 +1269,7 @@ export type Database = {
           items_included?: string | null
           name?: string
           price?: number
+          supplier_cost?: number | null
           type?: string
           updated_at?: string
         }

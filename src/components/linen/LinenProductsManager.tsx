@@ -19,6 +19,7 @@ interface LinenProduct {
   name: string;
   type: 'pack' | 'individual';
   price: number;
+  supplier_cost: number;
   description?: string;
   items_included?: string;
   is_active: boolean;
@@ -30,6 +31,7 @@ interface ProductFormData {
   name: string;
   type: 'pack' | 'individual';
   price: number;
+  supplier_cost: number;
   description: string;
   items_included: string;
   is_active: boolean;
@@ -42,6 +44,7 @@ export const LinenProductsManager = () => {
     name: "",
     type: "individual",
     price: 0,
+    supplier_cost: 0,
     description: "",
     items_included: "",
     is_active: true
@@ -132,6 +135,7 @@ export const LinenProductsManager = () => {
       name: "",
       type: "individual",
       price: 0,
+      supplier_cost: 0,
       description: "",
       items_included: "",
       is_active: true
@@ -150,6 +154,7 @@ export const LinenProductsManager = () => {
       name: product.name,
       type: product.type,
       price: product.price,
+      supplier_cost: product.supplier_cost || 0,
       description: product.description || "",
       items_included: product.items_included || "",
       is_active: product.is_active
@@ -229,18 +234,47 @@ export const LinenProductsManager = () => {
                 </Select>
               </div>
 
-              <div>
-                <Label htmlFor="price">Price (£) *</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.price}
-                  onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
-                  placeholder="0.00"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="price">Customer Price (£) *</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.price}
+                    onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="supplier_cost">Supplier Cost (£) *</Label>
+                  <Input
+                    id="supplier_cost"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.supplier_cost}
+                    onChange={(e) => setFormData(prev => ({ ...prev, supplier_cost: parseFloat(e.target.value) || 0 }))}
+                    placeholder="0.00"
+                  />
+                </div>
               </div>
+
+              {formData.price > 0 && formData.supplier_cost > 0 && (
+                <div className="flex items-center justify-between text-sm p-3 bg-muted rounded-md">
+                  <span className="text-muted-foreground">Profit Margin:</span>
+                  <span className={`font-semibold ${
+                    ((formData.price - formData.supplier_cost) / formData.price * 100) >= 0 
+                      ? 'text-green-600' 
+                      : 'text-red-600'
+                  }`}>
+                    {((formData.price - formData.supplier_cost) / formData.price * 100).toFixed(1)}%
+                    {' '}(£{(formData.price - formData.supplier_cost).toFixed(2)})
+                  </span>
+                </div>
+              )}
 
               <div>
                 <Label htmlFor="description">Description</Label>
@@ -311,53 +345,69 @@ export const LinenProductsManager = () => {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead>Price</TableHead>
+                  <TableHead>Customer Price</TableHead>
+                  <TableHead>Supplier Cost</TableHead>
+                  <TableHead>Margin</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Items Included</TableHead>
                   <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {products.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell className="font-medium">{product.name}</TableCell>
-                    <TableCell>
-                      <Badge variant={product.type === 'pack' ? 'default' : 'secondary'}>
-                        {product.type === 'pack' ? 'Pack' : 'Individual'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>£{product.price.toFixed(2)}</TableCell>
-                    <TableCell>
-                      <Badge variant={product.is_active ? 'default' : 'secondary'}>
-                        {product.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="max-w-xs">
-                      <p className="truncate text-sm text-muted-foreground">
-                        {product.items_included || 'No details'}
-                      </p>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEditDialog(product)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(product.id)}
-                          disabled={deleteProductMutation.isPending}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {products.map((product) => {
+                  const profitMargin = product.price > 0 && product.supplier_cost > 0
+                    ? ((product.price - product.supplier_cost) / product.price * 100)
+                    : 0;
+                  
+                  return (
+                    <TableRow key={product.id}>
+                      <TableCell className="font-medium">{product.name}</TableCell>
+                      <TableCell>
+                        <Badge variant={product.type === 'pack' ? 'default' : 'secondary'}>
+                          {product.type === 'pack' ? 'Pack' : 'Individual'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-green-600 font-medium">£{product.price.toFixed(2)}</TableCell>
+                      <TableCell className="text-red-600 font-medium">£{(product.supplier_cost || 0).toFixed(2)}</TableCell>
+                      <TableCell>
+                        <span className={`font-medium ${
+                          profitMargin >= 0 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {profitMargin.toFixed(1)}%
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={product.is_active ? 'default' : 'secondary'}>
+                          {product.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="max-w-xs">
+                        <p className="truncate text-sm text-muted-foreground">
+                          {product.items_included || 'No details'}
+                        </p>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openEditDialog(product)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(product.id)}
+                            disabled={deleteProductMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>
