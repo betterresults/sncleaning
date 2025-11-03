@@ -1,72 +1,115 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { format } from 'date-fns';
 
 const styles = StyleSheet.create({
   page: {
-    padding: 40,
+    padding: 0,
     fontSize: 10,
     fontFamily: 'Helvetica',
+    backgroundColor: '#f9fafb',
   },
   header: {
-    marginBottom: 30,
-    borderBottom: '2 solid #000',
-    paddingBottom: 10,
+    backgroundColor: '#1fa89f',
+    padding: 30,
+    marginBottom: 0,
+  },
+  headerGradient: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   logo: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 5,
+    color: '#ffffff',
+    marginBottom: 8,
+    letterSpacing: 1,
   },
   companyInfo: {
     fontSize: 9,
-    color: '#666',
-    lineHeight: 1.4,
+    color: '#ffffff',
+    lineHeight: 1.6,
+    opacity: 0.95,
+  },
+  orderIdBadge: {
+    backgroundColor: '#ffffff',
+    padding: '8 16',
+    borderRadius: 8,
+  },
+  orderIdText: {
+    fontSize: 11,
+    color: '#1fa89f',
+    fontWeight: 'bold',
+  },
+  contentWrapper: {
+    padding: 30,
   },
   title: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginTop: 20,
-    marginBottom: 15,
+    marginBottom: 20,
+    color: '#1a2332',
   },
   section: {
-    marginBottom: 15,
+    marginBottom: 20,
+    backgroundColor: '#ffffff',
+    padding: 20,
+    borderRadius: 8,
+    border: '1 solid #e5e7eb',
   },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#333',
+    marginBottom: 12,
+    color: '#1fa89f',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   row: {
     flexDirection: 'row',
-    marginBottom: 5,
+    marginBottom: 8,
+    paddingBottom: 8,
+    borderBottom: '1 solid #f3f4f6',
   },
   label: {
     width: '40%',
+    fontSize: 10,
+    color: '#6b7280',
     fontWeight: 'bold',
-    color: '#555',
   },
   value: {
     width: '60%',
-    color: '#000',
+    fontSize: 10,
+    color: '#1f2937',
   },
   table: {
-    marginTop: 15,
-    marginBottom: 15,
+    marginTop: 0,
+    marginBottom: 0,
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    overflow: 'hidden',
+    border: '1 solid #e5e7eb',
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#f0f0f0',
-    padding: 8,
+    backgroundColor: '#1fa89f',
+    padding: 12,
     fontWeight: 'bold',
-    borderBottom: '1 solid #000',
+  },
+  tableHeaderText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   tableRow: {
     flexDirection: 'row',
-    padding: 8,
-    borderBottom: '1 solid #e0e0e0',
+    padding: 12,
+    borderBottom: '1 solid #f3f4f6',
+    backgroundColor: '#ffffff',
+  },
+  tableRowAlt: {
+    backgroundColor: '#f9fafb',
   },
   tableCol1: {
     width: '50%',
@@ -84,41 +127,44 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   totalSection: {
-    marginTop: 15,
-    paddingTop: 10,
-    borderTop: '2 solid #000',
+    marginTop: 20,
+    backgroundColor: '#1fa89f',
+    padding: 20,
+    borderRadius: 8,
   },
   totalRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginBottom: 5,
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   totalLabel: {
-    width: 150,
-    textAlign: 'right',
-    paddingRight: 20,
+    fontSize: 14,
+    color: '#ffffff',
     fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   totalValue: {
-    width: 100,
-    textAlign: 'right',
+    fontSize: 24,
+    color: '#ffffff',
     fontWeight: 'bold',
   },
   footer: {
-    position: 'absolute',
-    bottom: 30,
-    left: 40,
-    right: 40,
+    marginTop: 30,
+    backgroundColor: '#1a2332',
+    padding: 20,
     textAlign: 'center',
-    fontSize: 8,
-    color: '#999',
-    borderTop: '1 solid #e0e0e0',
-    paddingTop: 10,
+  },
+  footerText: {
+    fontSize: 9,
+    color: '#ffffff',
+    opacity: 0.9,
+    lineHeight: 1.6,
   },
   badge: {
-    padding: '4 8',
-    borderRadius: 3,
-    fontSize: 8,
+    padding: '6 12',
+    borderRadius: 20,
+    fontSize: 9,
     fontWeight: 'bold',
     textTransform: 'uppercase',
   },
@@ -137,6 +183,18 @@ const styles = StyleSheet.create({
   statusUnpaid: {
     backgroundColor: '#fee2e2',
     color: '#991b1b',
+  },
+  infoGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 15,
+  },
+  infoCard: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    padding: 20,
+    borderRadius: 8,
+    border: '1 solid #e5e7eb',
   },
 });
 
@@ -162,128 +220,134 @@ export const LinenOrderPDF: React.FC<LinenOrderPDFProps> = ({ order, customer, a
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.logo}>SN Cleaning Services</Text>
-          <Text style={styles.companyInfo}>
-            Professional Cleaning & Linen Services{'\n'}
-            Email: info@sncleaningservices.co.uk{'\n'}
-            Phone: +44 7592 085 129
-          </Text>
-        </View>
-
-        {/* Title */}
-        <Text style={styles.title}>Linen Order Invoice</Text>
-
-        {/* Order Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Order Information</Text>
-          <View style={styles.row}>
-            <Text style={styles.label}>Order ID:</Text>
-            <Text style={styles.value}>#{order.id.slice(-8).toUpperCase()}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Order Date:</Text>
-            <Text style={styles.value}>{format(new Date(order.order_date), 'dd/MM/yyyy')}</Text>
-          </View>
-          {order.delivery_date && (
-            <View style={styles.row}>
-              <Text style={styles.label}>Delivery Date:</Text>
-              <Text style={styles.value}>{format(new Date(order.delivery_date), 'dd/MM/yyyy')}</Text>
+          <View style={styles.headerGradient}>
+            <View>
+              <Text style={styles.logo}>SN CLEANING SERVICES</Text>
+              <Text style={styles.companyInfo}>
+                Professional Cleaning & Linen Services{'\n'}
+                info@sncleaningservices.co.uk{'\n'}
+                +44 203 835 5033
+              </Text>
             </View>
-          )}
-          <View style={styles.row}>
-            <Text style={styles.label}>Status:</Text>
-            <Text style={[styles.value, getStatusColor(order.status)]}>
-              {order.status.toUpperCase()}
-            </Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Payment Status:</Text>
-            <Text style={[styles.value, getStatusColor(order.payment_status)]}>
-              {order.payment_status.toUpperCase()}
-            </Text>
-          </View>
-        </View>
-
-        {/* Customer Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Customer Details</Text>
-          <View style={styles.row}>
-            <Text style={styles.label}>Name:</Text>
-            <Text style={styles.value}>
-              {customer.first_name} {customer.last_name}
-            </Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Email:</Text>
-            <Text style={styles.value}>{customer.email}</Text>
-          </View>
-          {customer.phone && (
-            <View style={styles.row}>
-              <Text style={styles.label}>Phone:</Text>
-              <Text style={styles.value}>{customer.phone}</Text>
+            <View style={styles.orderIdBadge}>
+              <Text style={styles.orderIdText}>#{order.id.slice(-8).toUpperCase()}</Text>
             </View>
-          )}
+          </View>
         </View>
 
-        {/* Delivery Address */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Delivery Address</Text>
-          <View style={styles.row}>
+        <View style={styles.contentWrapper}>
+          {/* Title */}
+          <Text style={styles.title}>Linen Order Invoice</Text>
+
+          {/* Order & Customer Info Grid */}
+          <View style={styles.infoGrid}>
+            <View style={styles.infoCard}>
+              <Text style={styles.sectionTitle}>Order Details</Text>
+              <View style={styles.row}>
+                <Text style={styles.label}>Order Date:</Text>
+                <Text style={styles.value}>{format(new Date(order.order_date), 'dd MMMM yyyy')}</Text>
+              </View>
+              {order.delivery_date && (
+                <View style={styles.row}>
+                  <Text style={styles.label}>Delivery Date:</Text>
+                  <Text style={styles.value}>{format(new Date(order.delivery_date), 'dd MMMM yyyy')}</Text>
+                </View>
+              )}
+              <View style={styles.row}>
+                <Text style={styles.label}>Status:</Text>
+                <View style={[styles.badge, getStatusColor(order.status)]}>
+                  <Text>{order.status.replace('_', ' ').toUpperCase()}</Text>
+                </View>
+              </View>
+              <View style={styles.row}>
+                <Text style={styles.label}>Payment:</Text>
+                <View style={[styles.badge, getStatusColor(order.payment_status)]}>
+                  <Text>{order.payment_status.toUpperCase()}</Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.infoCard}>
+              <Text style={styles.sectionTitle}>Customer</Text>
+              <View style={styles.row}>
+                <Text style={styles.label}>Name:</Text>
+                <Text style={styles.value}>
+                  {customer.first_name} {customer.last_name}
+                </Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={styles.label}>Email:</Text>
+                <Text style={styles.value}>{customer.email}</Text>
+              </View>
+              {customer.phone && (
+                <View style={styles.row}>
+                  <Text style={styles.label}>Phone:</Text>
+                  <Text style={styles.value}>{customer.phone}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* Delivery Address */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Delivery Address</Text>
             <Text style={styles.value}>
               {address.address}{'\n'}
               {address.postcode}
             </Text>
           </View>
-        </View>
 
-        {/* Order Items */}
-        <View style={styles.table}>
-          <Text style={styles.sectionTitle}>Order Items</Text>
-          
-          {/* Table Header */}
-          <View style={styles.tableHeader}>
-            <Text style={styles.tableCol1}>Product</Text>
-            <Text style={styles.tableCol2}>Qty</Text>
-            <Text style={styles.tableCol3}>Unit Price</Text>
-            <Text style={styles.tableCol4}>Subtotal</Text>
-          </View>
-
-          {/* Table Rows */}
-          {items.map((item, index) => (
-            <View key={index} style={styles.tableRow}>
-              <Text style={styles.tableCol1}>
-                {item.linen_products.name}
-              </Text>
-              <Text style={styles.tableCol2}>{item.quantity}</Text>
-              <Text style={styles.tableCol3}>£{item.unit_price.toFixed(2)}</Text>
-              <Text style={styles.tableCol4}>£{item.subtotal.toFixed(2)}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Total Section */}
-        <View style={styles.totalSection}>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total Amount:</Text>
-            <Text style={[styles.totalValue, { fontSize: 14, color: '#16a34a' }]}>
-              £{order.total_cost.toFixed(2)}
-            </Text>
-          </View>
-        </View>
-
-        {/* Notes */}
-        {order.notes && (
+          {/* Order Items */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Notes</Text>
-            <Text style={styles.value}>{order.notes}</Text>
+            <Text style={styles.sectionTitle}>Order Items</Text>
+            
+            <View style={styles.table}>
+              {/* Table Header */}
+              <View style={styles.tableHeader}>
+                <Text style={[styles.tableCol1, styles.tableHeaderText]}>Product</Text>
+                <Text style={[styles.tableCol2, styles.tableHeaderText]}>Qty</Text>
+                <Text style={[styles.tableCol3, styles.tableHeaderText]}>Unit Price</Text>
+                <Text style={[styles.tableCol4, styles.tableHeaderText]}>Subtotal</Text>
+              </View>
+
+              {/* Table Rows */}
+              {items.map((item, index) => (
+                <View key={index} style={[styles.tableRow, index % 2 === 1 && styles.tableRowAlt]}>
+                  <Text style={styles.tableCol1}>
+                    {item.linen_products.name}
+                  </Text>
+                  <Text style={styles.tableCol2}>{item.quantity}</Text>
+                  <Text style={styles.tableCol3}>£{item.unit_price.toFixed(2)}</Text>
+                  <Text style={styles.tableCol4}>£{item.subtotal.toFixed(2)}</Text>
+                </View>
+              ))}
+            </View>
           </View>
-        )}
+
+          {/* Total Section */}
+          <View style={styles.totalSection}>
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Total Amount</Text>
+              <Text style={styles.totalValue}>
+                £{order.total_cost.toFixed(2)}
+              </Text>
+            </View>
+          </View>
+
+          {/* Notes */}
+          {order.notes && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Notes</Text>
+              <Text style={styles.value}>{order.notes}</Text>
+            </View>
+          )}
+        </View>
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text>
-            Thank you for your business!{'\n'}
-            For any questions, please contact us at info@sncleaningservices.co.uk
+          <Text style={styles.footerText}>
+            Thank you for choosing SN Cleaning Services!{'\n'}
+            For any questions or support, please contact us at info@sncleaningservices.co.uk or +44 203 835 5033
           </Text>
         </View>
       </Page>
