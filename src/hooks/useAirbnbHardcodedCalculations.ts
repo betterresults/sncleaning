@@ -231,10 +231,10 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     let cleaningProductsValue = 0;
     if (bookingData.cleaningProducts && bookingData.cleaningProducts !== '') {
       if (typeof bookingData.cleaningProducts === 'string') {
-        cleaningProductsValue = getConfigValue('cleaning products', bookingData.cleaningProducts);
+        cleaningProductsValue = getConfigValue('cleaning supplies', bookingData.cleaningProducts);
       } else if (typeof bookingData.cleaningProducts === 'object' && 'needed' in bookingData.cleaningProducts) {
         cleaningProductsValue = (bookingData.cleaningProducts as any).needed 
-          ? getConfigValue('cleaning products', 'bring-products')
+          ? getConfigValue('cleaning supplies', 'products')
           : 0;
       }
     }
@@ -312,16 +312,6 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     // TOTAL COST
     const totalCost = cleaningCost + shortNoticeCharge + equipmentOneTimeCost;
 
-    // Debug: Log cleaning products data
-    console.log('DEBUG Cleaning Products:', {
-      raw: bookingData.cleaningProducts,
-      type: typeof bookingData.cleaningProducts,
-      value: cleaningProductsValue,
-      isString: typeof bookingData.cleaningProducts === 'string',
-      isObject: typeof bookingData.cleaningProducts === 'object',
-      hasNested: bookingData.cleaningProducts && typeof bookingData.cleaningProducts === 'object' && 'needed' in bookingData.cleaningProducts
-    });
-
     return {
       baseTime,
       dryTime,
@@ -358,11 +348,6 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
         featuresBreakdown,
         bedSizesValue,
         bedSizesTime,
-        cleaningProductsData: {
-          raw: bookingData.cleaningProducts,
-          type: typeof bookingData.cleaningProducts,
-          value: cleaningProductsValue
-        },
         hourlyRateBreakdown: {
           sameDayValue,
           serviceTypeValue,
