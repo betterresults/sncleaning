@@ -200,7 +200,7 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
 
     // ADDITIONAL TIME CALCULATION
     // Only applies to wash-hang and wash-dry options
-    // Formula: If ironTime > waitingTime, then additionalTime = ironTime - waitingTime
+    // Formula: waitingTime (for drying) + ironTime (happens after drying)
     let additionalTime = 0;
     const shouldCalculateAdditionalTime = bookingData.linensHandling === 'wash-hang' || bookingData.linensHandling === 'wash-dry';
     
@@ -208,10 +208,8 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
       // Waiting time = how much longer drying takes compared to base cleaning
       const waitingTime = Math.max(0, dryTime - baseTime);
       
-      // If ironing takes longer than waiting time, add the extra ironing time
-      if (ironTime > waitingTime) {
-        additionalTime = ironTime - waitingTime;
-      }
+      // Additional time = waiting for drying + ironing time (ironing happens AFTER drying)
+      additionalTime = waitingTime + ironTime;
     }
 
     // TOTAL HOURS
