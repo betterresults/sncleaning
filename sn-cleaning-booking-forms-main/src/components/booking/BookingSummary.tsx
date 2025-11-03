@@ -487,7 +487,8 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({ data, isAdminMode = fal
                   </div>
                 )}
               </div>
-            </CollapsibleContent>
+            </div>
+          </CollapsibleContent>
         </Collapsible>
       </div>
 
