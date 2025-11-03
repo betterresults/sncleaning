@@ -756,7 +756,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                 <Minus className="h-5 w-5" />
               </Button>
               <div className="flex-1 text-center min-w-[90px]">
-                <div className="text-base font-semibold text-slate-600 px-1">
+                <div className="text-lg font-bold text-slate-600" style={{ paddingLeft: '7px', paddingRight: '7px' }}>
                   {(data.estimatedHours ?? recommendedHours)}h
                 </div>
               </div>
