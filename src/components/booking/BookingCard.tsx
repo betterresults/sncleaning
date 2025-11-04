@@ -33,6 +33,7 @@ interface BookingCardProps<T extends BaseBooking> {
   onDuplicate?: (booking: T) => void;
   onReview?: (booking: T) => void;
   onSeePhotos?: (booking: T) => void;
+  onUploadPhotos?: (booking: T) => void;
   onPaymentAction?: (booking: T) => void;
   hasReview?: boolean;
   isOverdue?: boolean;
@@ -46,6 +47,7 @@ const BookingCard = <T extends BaseBooking>({
   onDuplicate,
   onReview,
   onSeePhotos,
+  onUploadPhotos,
   onPaymentAction,
   hasReview,
   isOverdue = false
@@ -274,6 +276,22 @@ const BookingCard = <T extends BaseBooking>({
                   >
                     <Camera className="h-4 w-4" />
                     <span className="ml-1 hidden sm:inline">Photos</span>
+                  </Button>
+                );
+              }
+              
+              // Add Upload Photos button if available (for admins)
+              if (onUploadPhotos) {
+                actions.push(
+                  <Button
+                    key="upload"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onUploadPhotos?.(booking)}
+                    className="bg-purple-50 hover:bg-purple-100 text-purple-600 hover:text-purple-700 border-purple-200 hover:border-purple-300 dark:bg-purple-950/20 dark:hover:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800/30"
+                  >
+                    <Camera className="h-4 w-4" />
+                    <span className="ml-1 hidden sm:inline">Upload</span>
                   </Button>
                 );
               }

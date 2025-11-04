@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import BookingCard from '@/components/booking/BookingCard';
 import CleaningPhotosViewDialog from './CleaningPhotosViewDialog';
+import PhotoManagementDialog from '@/components/dashboard/PhotoManagementDialog';
 import { AdjustPaymentAmountDialog } from '@/components/payments/AdjustPaymentAmountDialog';
 import { CollectPaymentMethodDialog } from '@/components/payments/CollectPaymentMethodDialog';
 import EditBookingDialog from './EditBookingDialog';
@@ -36,6 +37,7 @@ interface PastBooking {
   same_day?: string;
   invoice_id?: string;
   invoice_link?: string;
+  customer?: number;
   cleaner?: {
     id: number;
     first_name: string;
@@ -72,6 +74,8 @@ const CustomerPastBookings = () => {
   const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<PastBooking | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<PastBooking | null>(null);
+  const [uploadPhotosDialogOpen, setUploadPhotosDialogOpen] = useState(false);
+  const [selectedBookingForUpload, setSelectedBookingForUpload] = useState<PastBooking | null>(null);
   
   // Filter states
   const [timePeriod, setTimePeriod] = useState('all');
@@ -602,6 +606,11 @@ const CustomerPastBookings = () => {
     setEditDialogOpen(true);
   };
 
+  const handleUploadPhotos = (booking: PastBooking) => {
+    setSelectedBookingForUpload(booking);
+    setUploadPhotosDialogOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -1043,9 +1052,10 @@ const CustomerPastBookings = () => {
                        }}
                        type="completed"
                        onReview={(b) => handleReview(booking)}
-               onSeePhotos={booking.has_photos ? (b) => handleSeePhotos(booking) : undefined}
-               onPaymentAction={booking.payment_status?.toLowerCase().includes('paid') ? undefined : (b) => handlePaymentAction(booking)}
-               onEdit={(b) => handleEdit(booking)}
+                       onSeePhotos={booking.has_photos ? (b) => handleSeePhotos(booking) : undefined}
+                       onUploadPhotos={userRole === 'admin' ? (b) => handleUploadPhotos(booking) : undefined}
+                       onPaymentAction={booking.payment_status?.toLowerCase().includes('paid') ? undefined : (b) => handlePaymentAction(booking)}
+                       onEdit={(b) => handleEdit(booking)}
                        hasReview={reviews[booking.id] || false}
                        isOverdue={overdueInvoices.includes(booking)}
                      />
@@ -1402,6 +1412,22 @@ const CustomerPastBookings = () => {
           setSelectedBookingForEdit(null);
         }}
       />
+
+      {selectedBookingForUpload && (
+        <PhotoManagementDialog
+          open={uploadPhotosDialogOpen}
+          onOpenChange={setUploadPhotosDialogOpen}
+          booking={{
+            id: selectedBookingForUpload.id,
+            customer: selectedBookingForUpload.customer || activeCustomerId || 0,
+            cleaner: selectedBookingForUpload.cleaner_id || selectedBookingForUpload.cleaner?.id || 0,
+            postcode: selectedBookingForUpload.postcode,
+            date_time: selectedBookingForUpload.date_time,
+            first_name: selectedBookingForUpload.cleaner?.first_name,
+            last_name: selectedBookingForUpload.cleaner?.last_name
+          }}
+        />
+      )}
     </div>
   );
 };
