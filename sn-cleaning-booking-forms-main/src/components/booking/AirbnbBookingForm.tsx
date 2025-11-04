@@ -179,6 +179,7 @@ const AirbnbBookingForm: React.FC = () => {
         
         // If not on admin route (customer booking), always load customer profile
         if (!isAdminRoute) {
+          // First try to get customer from profiles table
           const { data: profile } = await supabase
             .from('profiles')
             .select('customer_id')
@@ -187,12 +188,38 @@ const AirbnbBookingForm: React.FC = () => {
           
           console.log('[AirbnbBookingForm] Loading customer profile:', profile);
           
-          if (profile?.customer_id) {
-            console.log('[AirbnbBookingForm] Setting customer ID:', profile.customer_id);
+          let customerId = profile?.customer_id;
+          
+          // If no customer_id in profile, try to find customer by email
+          if (!customerId) {
+            console.log('[AirbnbBookingForm] No customer_id in profile, searching by email:', session.user.email);
+            const { data: customer } = await supabase
+              .from('customers')
+              .select('id')
+              .eq('email', session.user.email)
+              .single();
+            
+            customerId = customer?.id;
+            console.log('[AirbnbBookingForm] Found customer by email:', customerId);
+            
+            // Update profile with customer_id if found
+            if (customerId) {
+              await supabase
+                .from('profiles')
+                .update({ customer_id: customerId })
+                .eq('user_id', session.user.id);
+              console.log('[AirbnbBookingForm] Updated profile with customer_id');
+            }
+          }
+          
+          if (customerId) {
+            console.log('[AirbnbBookingForm] Setting customer ID:', customerId);
             setBookingData(prev => ({
               ...prev,
-              customerId: profile.customer_id
+              customerId: customerId
             }));
+          } else {
+            console.warn('[AirbnbBookingForm] No customer found for user:', session.user.email);
           }
         }
       } else {
