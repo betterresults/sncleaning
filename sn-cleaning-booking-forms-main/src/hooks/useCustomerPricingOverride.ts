@@ -13,27 +13,28 @@ export const useCustomerPricingOverride = (
         console.log('[useCustomerPricingOverride] Missing customer or service type');
         return null;
       }
-
-      console.log('[useCustomerPricingOverride] Searching for override:', {
-        customerId,
+      const serviceKeys = Array.from(new Set([
         serviceType,
-        cleaningType
-      });
+        serviceType?.replace(/-/g, ' '),
+        serviceType?.replace(/-/g, '_')
+      ].filter(Boolean) as string[]));
 
       // First, try to find an exact match with the specific cleaning type
       if (cleaningType) {
-        const { data: exactMatch, error: exactError } = await supabase
+        const { data, error } = await supabase
           .from('customer_pricing_overrides')
           .select('*')
           .eq('customer_id', customerId)
-          .eq('service_type', serviceType)
+          .in('service_type', serviceKeys)
           .eq('cleaning_type', cleaningType)
-          .maybeSingle();
+          .order('updated_at', { ascending: false })
+          .limit(1);
 
-        if (exactError) {
-          console.error('[useCustomerPricingOverride] Error fetching exact match:', exactError);
+        if (error) {
+          console.error('[useCustomerPricingOverride] Error fetching exact match:', error);
         }
 
+        const exactMatch = Array.isArray(data) ? data[0] : null;
         if (exactMatch) {
           console.log('[useCustomerPricingOverride] Found exact match:', exactMatch);
           return exactMatch;
@@ -41,18 +42,20 @@ export const useCustomerPricingOverride = (
       }
 
       // If no exact match, look for a wildcard override (cleaning_type is NULL)
-      const { data: wildcardMatch, error: wildcardError } = await supabase
+      const { data, error } = await supabase
         .from('customer_pricing_overrides')
         .select('*')
         .eq('customer_id', customerId)
-        .eq('service_type', serviceType)
+        .in('service_type', serviceKeys)
         .is('cleaning_type', null)
-        .maybeSingle();
+        .order('updated_at', { ascending: false })
+        .limit(1);
 
-      if (wildcardError) {
-        console.error('[useCustomerPricingOverride] Error fetching wildcard match:', wildcardError);
+      if (error) {
+        console.error('[useCustomerPricingOverride] Error fetching wildcard match:', error);
       }
 
+      const wildcardMatch = Array.isArray(data) ? data[0] : null;
       if (wildcardMatch) {
         console.log('[useCustomerPricingOverride] Found wildcard match (applies to all):', wildcardMatch);
         return wildcardMatch;

@@ -204,7 +204,8 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
         <div className="flex justify-between items-center text-green-600">
           <span>
             Special Discount
-            {customerOverride.cleaning_type && ` (${customerOverride.cleaning_type})`}
+            {' '}
+            {customerOverride.cleaning_type ? `(${customerOverride.cleaning_type})` : '(All)'}
           </span>
           <span className="font-semibold">
             -£{Math.abs(customerOverride.override_rate * calculations.totalHours).toFixed(2)}
@@ -219,8 +220,8 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
       {data.customerId && (
         <div className="flex justify-between items-center text-xs text-muted-foreground border-t pt-2 mt-2">
           <span>
-            DEBUG: Customer #{data.customerId} | Service: {data.serviceType || 'none'} | 
-            Override: {customerOverride ? `£${customerOverride.override_rate}/hr` : 'none found'}
+            DEBUG: Customer #{data.customerId} | Service: airbnb-cleaning | Cleaning: {data.serviceType || 'All'} |
+            Override: {customerOverride ? `£${customerOverride.override_rate}/hr (${customerOverride.cleaning_type ?? 'All'})` : 'none found'}
           </span>
         </div>
       )}
