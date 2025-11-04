@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAirbnbHardcodedCalculations } from '@/hooks/useAirbnbHardcodedCalculations';
 import { useAirbnbPricingFormulas } from '@/hooks/useAirbnbPricingFormulas';
+import { useCustomerPricingOverride } from '@/hooks/useCustomerPricingOverride';
 interface BookingSummaryProps {
   data: BookingData;
   isAdminMode?: boolean;
@@ -31,6 +32,13 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
   const {
     data: formulas = []
   } = useAirbnbPricingFormulas();
+
+  // Fetch customer pricing override if customer is available
+  const { data: customerOverride } = useCustomerPricingOverride(
+    data.customerId || null,
+    'airbnb-cleaning',
+    data.serviceType || null
+  );
 
   // Fetch linen products from database
   const {
@@ -154,6 +162,12 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
     }
     let total = calculations.totalCost;
 
+    // Apply customer pricing override (discount/markup per hour)
+    if (customerOverride?.override_rate && calculations.totalHours) {
+      const overrideAmount = customerOverride.override_rate * calculations.totalHours;
+      total += overrideAmount; // Can be negative (discount) or positive (markup)
+    }
+
     // Add linen packages cost
     total += calculateLinenCost();
     const subtotal = total;
@@ -180,6 +194,22 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
             </span>
           </div>
         </div>}
+
+      {/* Customer Pricing Override */}
+      {customerOverride && customerOverride.override_rate !== 0 && calculations.totalHours > 0 && (
+        <div className={`flex justify-between items-center ${customerOverride.override_rate < 0 ? 'text-green-600' : 'text-orange-600'}`}>
+          <span>
+            Customer {customerOverride.override_rate < 0 ? 'Discount' : 'Adjustment'}
+            {customerOverride.cleaning_type && ` (${customerOverride.cleaning_type})`}
+          </span>
+          <span className="font-semibold">
+            {customerOverride.override_rate < 0 ? '-' : '+'}£{Math.abs(customerOverride.override_rate * calculations.totalHours).toFixed(2)}
+            <span className="text-xs text-muted-foreground ml-1">
+              ({calculations.totalHours}h × {customerOverride.override_rate < 0 ? '-' : '+'}£{Math.abs(customerOverride.override_rate)}/hr)
+            </span>
+          </span>
+        </div>
+      )}
 
       {/* Schedule Section */}
       {data.selectedDate && <div className="space-y-3 mt-3">

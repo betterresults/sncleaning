@@ -982,33 +982,33 @@ export type Database = {
       }
       customer_pricing_overrides: {
         Row: {
+          cleaning_type: string | null
           created_at: string
           customer_id: number
           id: string
           override_formula_config: Json | null
           override_rate: number | null
           service_type: string
-          sub_service_type: string | null
           updated_at: string
         }
         Insert: {
+          cleaning_type?: string | null
           created_at?: string
           customer_id: number
           id?: string
           override_formula_config?: Json | null
           override_rate?: number | null
           service_type: string
-          sub_service_type?: string | null
           updated_at?: string
         }
         Update: {
+          cleaning_type?: string | null
           created_at?: string
           customer_id?: number
           id?: string
           override_formula_config?: Json | null
           override_rate?: number | null
           service_type?: string
-          sub_service_type?: string | null
           updated_at?: string
         }
         Relationships: [

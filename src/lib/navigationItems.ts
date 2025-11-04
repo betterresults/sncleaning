@@ -219,6 +219,11 @@ export const adminNavigation = [
         icon: Calculator,
       },
       {
+        title: "Customer Pricing",
+        url: "/admin-customer-pricing",
+        icon: DollarSign,
+      },
+      {
         title: "Notification Management",
         url: "/admin-notification-management",
         icon: Bell,
