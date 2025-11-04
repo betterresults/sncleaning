@@ -632,44 +632,65 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
         </div>
       )}
 
-      {/* Oven Cleaning - Combined */}
-      {(data.serviceType === 'deep' || data.alreadyCleaned === false) && ovenCleaningConfigs.length > 0 && (
+      {/* Oven Cleaning - Always Visible with Switch */}
+      {ovenCleaningConfigs.length > 0 && (
         <div className="relative z-[5] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-          <h2 className="text-2xl font-bold text-slate-700 mb-2">
-            Oven Cleaning
-          </h2>
-          <p className="text-sm text-slate-600 mb-4">
-            Choose oven size if you require oven cleaning
-          </p>
-          <div className="grid grid-cols-3 gap-4">
-            {ovenCleaningConfigs.filter((oven: any) => oven.option !== 'not-required').map((oven: any) => {
-              const isSelected = data.ovenType === oven.option;
-              const IconComponent = (LucideIcons as any)[oven.icon];
-              
-              return (
-                <button
-                  key={oven.option}
-                  className={`group relative h-20 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
-                    isSelected
-                      ? 'border-primary bg-primary/5 shadow-xl'
-                      : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
-                  }`}
-                  onClick={() => onUpdate({ ovenType: isSelected ? '' : oven.option as any })}
-                >
-                  <div className="flex flex-col items-center justify-center h-full">
-                    {IconComponent && (
-                      <IconComponent className={`h-6 w-6 mb-1 transition-all duration-500 ${
-                        isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
-                      }`} />
-                    )}
-                    <span className={`text-base font-bold transition-colors ${
-                      isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'
-                    }`}>{oven.label}</span>
-                  </div>
-                </button>
-              );
-            })}
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-700">
+                Add professional oven cleaning
+              </h2>
+              <p className="text-sm text-slate-600 mt-1">
+                Include professional oven cleaning service
+              </p>
+            </div>
+            <Switch
+              checked={data.hasOvenCleaning}
+              onCheckedChange={(checked) => {
+                onUpdate({ 
+                  hasOvenCleaning: checked,
+                  ovenType: checked ? data.ovenType : '' // Reset oven type when disabled
+                });
+              }}
+            />
           </div>
+          
+          {data.hasOvenCleaning && (
+            <>
+              <p className="text-sm text-slate-600 mb-4">
+                Choose oven size
+              </p>
+              <div className="grid grid-cols-3 gap-4">
+                {ovenCleaningConfigs.filter((oven: any) => oven.option !== 'not-required').map((oven: any) => {
+                  const isSelected = data.ovenType === oven.option;
+                  const IconComponent = (LucideIcons as any)[oven.icon];
+                  
+                  return (
+                    <button
+                      key={oven.option}
+                      className={`group relative h-20 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+                        isSelected
+                          ? 'border-primary bg-primary/5 shadow-xl'
+                          : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                      }`}
+                      onClick={() => onUpdate({ ovenType: isSelected ? '' : oven.option as any })}
+                    >
+                      <div className="flex flex-col items-center justify-center h-full">
+                        {IconComponent && (
+                          <IconComponent className={`h-6 w-6 mb-1 transition-all duration-500 ${
+                            isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                          }`} />
+                        )}
+                        <span className={`text-base font-bold transition-colors ${
+                          isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'
+                        }`}>{oven.label}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
       )}
 

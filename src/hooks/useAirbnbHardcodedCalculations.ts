@@ -12,6 +12,7 @@ interface BookingData {
   numberOfFloors?: number;
   serviceType: string;
   alreadyCleaned: boolean | null;
+  hasOvenCleaning?: boolean;
   ovenType: string;
   cleaningProducts: string[]; // Array of cleaning products: ['no'], ['products'], ['equipment'], or ['products', 'equipment']
   equipmentArrangement: string | null;
@@ -103,8 +104,8 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
       alreadyCleanedCostValue = getConfigValue('already cleaned to airbnb standard', 'No'); // Add to hourly rate
     }
 
-    // Oven cleaning time - only when a specific type is chosen (and not 'dontneed' or similar)
-    const ovenCleaningTime = (bookingData.ovenType && bookingData.ovenType !== 'dontneed' && bookingData.ovenType !== '')
+    // Oven cleaning time - only when hasOvenCleaning is true AND a specific type is chosen
+    const ovenCleaningTime = (bookingData.hasOvenCleaning && bookingData.ovenType && bookingData.ovenType !== 'dontneed' && bookingData.ovenType !== '')
       ? getConfigTime('oven cleaning', bookingData.ovenType)
       : 0;
 
