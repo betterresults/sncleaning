@@ -7,6 +7,7 @@ import * as LucideIcons from 'lucide-react';
 import { useAirbnbFieldConfigs } from '@/hooks/useAirbnbFieldConfigs';
 import { useAirbnbHardcodedCalculations } from '@/hooks/useAirbnbHardcodedCalculations';
 import { useSearchParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PropertyStepProps {
   data: BookingData;
@@ -46,6 +47,35 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
     return <IconComponent className={className} />;
   };
 
+  // Build a public URL from Supabase storage path
+  const getIconUrl = (storagePath?: string | null): string | null => {
+    if (!storagePath) return null;
+    if (storagePath.startsWith('http')) return storagePath;
+    const [bucket, ...parts] = storagePath.split('/');
+    if (!bucket || parts.length === 0) return null;
+    const path = parts.join('/');
+    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+    return data?.publicUrl || null;
+  };
+
+  // Prefer uploaded icon from storage; fallback to Lucide/emoji name
+  const renderFeatureIcon = (feature: any, className: string = "h-6 w-6") => {
+    const url = getIconUrl(feature?.icon_storage_path);
+    const size = feature?.icon_size || 24;
+    if (url) {
+      return (
+        <img
+          src={url}
+          alt={feature?.label || 'feature icon'}
+          width={size}
+          height={size}
+          className={className}
+          loading="lazy"
+        />
+      );
+    }
+    return renderIcon(feature?.icon, className);
+  };
   const getBedroomLabel = (value: string) => {
     if (value === 'studio') return 'Studio';
     if (value === '6+') return '6+ Bedrooms';
@@ -426,7 +456,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                   <div className={`mb-2 transition-all duration-500 ${
                     isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
                   }`}>
-                    {renderIcon(feature.icon, `h-6 w-6 ${isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'}`)}
+                    {renderFeatureIcon(feature, `h-6 w-6 ${isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'}`)}
                   </div>
                   <span className={`text-sm font-semibold transition-colors ${
                     isSelected ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
