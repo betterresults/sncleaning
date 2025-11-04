@@ -11,30 +11,72 @@ interface CustomerPricingOverride {
   updated_at: string;
 }
 
-// Normalize incoming values to match DB tokens
+// Normalize and generate candidate variants for matching
 const normalizeServiceType = (input: string | null): string | null => {
   if (!input) return null;
-  const key = input.toLowerCase().replace(/\s+/g, '').replace(/_/g, '').replace(/-/g, '');
-  // Map known variants to canonical DB value
+  const key = input.toLowerCase();
   if (key.includes('airbnb')) return 'airbnb';
-  return input; // fallback to original
+  return key;
+};
+
+const buildServiceCandidates = (input: string | null): string[] => {
+  if (!input) return [];
+  const lc = input.toLowerCase();
+  const variants = new Set<string>([
+    lc,
+    lc.replace(/-/g, '_'),
+    lc.replace(/-/g, ' '),
+    lc.replace(/_/g, '-'),
+    lc.replace(/[_\s-]+/g, ''),
+  ]);
+  const normalized = normalizeServiceType(input);
+  if (normalized) variants.add(normalized);
+  // Known canonical keys
+  if (lc.includes('airbnb')) {
+    variants.add('airbnb');
+    variants.add('airbnb_cleaning');
+    variants.add('airbnb-cleaning');
+  }
+  return Array.from(variants);
 };
 
 const normalizeCleaningType = (input: string | null): string | null => {
   if (!input) return null;
-  switch (input) {
+  const lc = input.toLowerCase();
+  switch (lc) {
     case 'checkin-checkout':
+    case 'checkin_checkout':
+    case 'check_in_check_out':
       return 'check_in_check_out';
     case 'midstay':
+    case 'midstay_cleaning':
       return 'midstay_cleaning';
     case 'light':
+    case 'light_cleaning':
       return 'light_cleaning';
     case 'deep':
+    case 'deep_cleaning':
       return 'deep_cleaning';
     default:
-      // also try converting hyphens to underscores
-      return input.replace(/-/g, '_');
+      return lc.replace(/-/g, '_');
   }
+};
+
+const buildCleaningCandidates = (input: string | null): string[] => {
+  if (!input) return [];
+  const lc = input.toLowerCase();
+  const normalized = normalizeCleaningType(lc);
+  const variants = new Set<string>([
+    lc,
+    lc.replace(/-/g, '_'),
+    lc.replace(/_/g, '-'),
+  ]);
+  if (normalized) variants.add(normalized);
+  // Add special known canonical
+  if (lc.includes('check') && lc.includes('in') && lc.includes('out')) {
+    variants.add('check_in_check_out');
+  }
+  return Array.from(variants);
 };
 
 export const useCustomerPricingOverride = (
@@ -51,28 +93,35 @@ export const useCustomerPricingOverride = (
       const normalizedCleaning = normalizeCleaningType(cleaningType);
 
       // Try to find specific cleaning type override first
-      if (normalizedCleaning) {
+      if (cleaningType) {
+        const serviceKeys = buildServiceCandidates(serviceType);
+        const cleaningKeys = buildCleaningCandidates(cleaningType);
         const { data } = await supabase
           .from('customer_pricing_overrides')
           .select('*')
           .eq('customer_id', customerId)
-          .eq('service_type', normalizedService)
-          .eq('cleaning_type', normalizedCleaning)
-          .maybeSingle();
-          
-        if (data) return data as CustomerPricingOverride;
+          .in('service_type', serviceKeys)
+          .in('cleaning_type', cleaningKeys)
+          .order('updated_at', { ascending: false })
+          .limit(1);
+        const exact = Array.isArray(data) ? data[0] : null;
+        if (exact) return exact as CustomerPricingOverride;
       }
       
       // Fallback to general service type override (where cleaning_type is null)
-      const { data } = await supabase
-        .from('customer_pricing_overrides')
-        .select('*')
-        .eq('customer_id', customerId)
-        .eq('service_type', normalizedService)
-        .is('cleaning_type', null)
-        .maybeSingle();
-        
-      return data as CustomerPricingOverride | null;
+      {
+        const serviceKeys = buildServiceCandidates(serviceType);
+        const { data } = await supabase
+          .from('customer_pricing_overrides')
+          .select('*')
+          .eq('customer_id', customerId)
+          .in('service_type', serviceKeys)
+          .is('cleaning_type', null)
+          .order('updated_at', { ascending: false })
+          .limit(1);
+        const wildcard = Array.isArray(data) ? data[0] : null;
+        return (wildcard as CustomerPricingOverride) || null;
+      }
     },
     enabled: !!customerId && !!serviceType
   });

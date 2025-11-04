@@ -16,17 +16,33 @@ export const useCustomerPricingOverride = (
       const serviceKeys = Array.from(new Set([
         serviceType,
         serviceType?.replace(/-/g, ' '),
-        serviceType?.replace(/-/g, '_')
+        serviceType?.replace(/-/g, '_'),
+        serviceType?.replace(/_/g, '-'),
       ].filter(Boolean) as string[]));
+      if ((serviceType || '').toLowerCase().includes('airbnb')) {
+        serviceKeys.push('airbnb', 'airbnb-cleaning', 'airbnb_cleaning');
+      }
 
       // First, try to find an exact match with the specific cleaning type
       if (cleaningType) {
+        const cleaningKeys = Array.from(new Set([
+          cleaningType,
+          cleaningType?.toLowerCase(),
+          cleaningType?.replace(/-/g, '_'),
+          cleaningType?.replace(/_/g, '-'),
+        ].filter(Boolean) as string[]));
+        // Known canonical for check-in/out
+        const lc = (cleaningType || '').toLowerCase();
+        if (lc.includes('check') && lc.includes('in') && lc.includes('out')) {
+          cleaningKeys.push('check_in_check_out');
+        }
+
         const { data, error } = await supabase
           .from('customer_pricing_overrides')
           .select('*')
           .eq('customer_id', customerId)
           .in('service_type', serviceKeys)
-          .eq('cleaning_type', cleaningType)
+          .in('cleaning_type', cleaningKeys)
           .order('updated_at', { ascending: false })
           .limit(1);
 
