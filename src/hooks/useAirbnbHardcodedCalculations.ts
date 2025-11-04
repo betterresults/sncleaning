@@ -98,7 +98,7 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     // Already cleaned value - only for check-in/check-out
     let alreadyCleanedValue = 1; // Default
     if (bookingData.serviceType === 'checkin-checkout' && bookingData.alreadyCleaned === false) {
-      alreadyCleanedValue = 1.5; // Not cleaned to standard = 1.5x multiplier
+      alreadyCleanedValue = getConfigTime('already cleaned to airbnb standard', 'No'); // Use time from config
     }
 
     // Oven cleaning time - only when a specific type is chosen (and not 'dontneed' or similar)
