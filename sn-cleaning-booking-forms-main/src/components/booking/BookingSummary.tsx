@@ -293,8 +293,8 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
                     <Info className="w-4 h-4 text-muted-foreground cursor-pointer" />
                   </button>
                 </PopoverTrigger>
-                <PopoverContent>
-                  <p className="text-sm">{modifier.label}</p>
+                <PopoverContent className="w-auto max-w-xs">
+                  <p className="text-sm font-medium">{modifier.label}</p>
                 </PopoverContent>
               </Popover>
             </div>
@@ -317,8 +317,8 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
                     <Info className="w-4 h-4 cursor-pointer" />
                   </button>
                 </PopoverTrigger>
-                <PopoverContent>
-                  <p className="text-sm">{modifier.label}</p>
+                <PopoverContent className="w-auto max-w-xs">
+                  <p className="text-sm font-medium">{modifier.label}</p>
                 </PopoverContent>
               </Popover>
             </div>

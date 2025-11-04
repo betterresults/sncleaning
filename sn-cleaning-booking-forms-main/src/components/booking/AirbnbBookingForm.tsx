@@ -309,7 +309,7 @@ const AirbnbBookingForm: React.FC = () => {
                 const isCompleted = currentStep > stepNumber;
                 
                 return (
-                  <React.Fragment key={step.id}>
+                  <div key={step.id} className="flex items-center gap-1">
                     <button
                       onClick={() => (isCompleted || stepNumber <= currentStep) && setCurrentStep(stepNumber)}
                       disabled={!(isCompleted || stepNumber <= currentStep)}
@@ -338,7 +338,7 @@ const AirbnbBookingForm: React.FC = () => {
                         currentStep > stepNumber ? 'bg-primary' : 'bg-gray-200'
                       }`} />
                     )}
-                  </React.Fragment>
+                  </div>
                 );
               })}
             </div>
