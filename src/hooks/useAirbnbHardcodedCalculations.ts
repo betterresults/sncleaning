@@ -100,8 +100,8 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     let alreadyCleanedValue = 1; // Default
     let alreadyCleanedCostValue = 0; // Default for hourly rate addition
     if (bookingData.serviceType === 'checkin-checkout' && bookingData.alreadyCleaned === false) {
-      alreadyCleanedValue = getConfigTime('already cleaned to airbnb standard', 'No'); // Use time from config
-      alreadyCleanedCostValue = getConfigValue('already cleaned to airbnb standard', 'No'); // Add to hourly rate
+      alreadyCleanedValue = getConfigTime('cleaning history', 'No'); // Use time from config
+      alreadyCleanedCostValue = getConfigValue('cleaning history', 'No'); // Add to hourly rate
     }
 
     // Oven cleaning time - only when hasOvenCleaning is true AND a specific type is chosen
