@@ -248,8 +248,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                     isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
                   }`} />
                 )}
-                <span className={`text-sm font-semibold transition-colors ${
-                  isSelected ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
+                <span className={`text-base font-bold transition-colors ${
+                  isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'
                 }`}>{opt.label}</span>
               </button>
             );
@@ -279,7 +279,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                   <Minus className="h-5 w-5" />
                 </Button>
                 <div className="flex-1 text-center">
-                <div className="text-sm font-semibold text-slate-700">
+                <div className="text-base font-bold text-slate-500">
                     {data.bedrooms ? getBedroomLabel(data.bedrooms) : 'Bedrooms'}
                   </div>
                 </div>
@@ -310,7 +310,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                   <Minus className="h-5 w-5" />
                 </Button>
                 <div className="flex-1 text-center">
-                  <div className="text-sm font-semibold text-slate-700">
+                  <div className="text-base font-bold text-slate-500">
                     {data.bathrooms ? `${data.bathrooms} Bathroom${data.bathrooms !== '1' && data.bathrooms !== '6+' && parseInt(data.bathrooms) > 1 ? 's' : data.bathrooms === '6+' ? 's' : ''}` : 'Bathrooms'}
                   </div>
                 </div>
@@ -366,7 +366,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                       {IconComponent && (
                         <IconComponent className="h-6 w-6 mb-2 text-muted-foreground group-hover:text-primary transition-all duration-500" />
                       )}
-                      <span className="text-sm font-semibold text-slate-700 group-hover:text-primary">
+                      <span className="text-base font-bold text-slate-500 group-hover:text-primary">
                         {room.label}
                       </span>
                     </div>
