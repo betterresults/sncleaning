@@ -214,7 +214,7 @@ export const CustomerPricingOverrides = () => {
   };
 
   const getCleaningTypeName = (key: string | null) => {
-    if (!key) return '(All)';
+    if (!key) return 'All';
     const ct = (cleaningTypes as any[]).find((c: any) => c.key === key);
     return ct?.label || key;
   };
@@ -398,12 +398,9 @@ export const CustomerPricingOverrides = () => {
                   <TableCell className="font-medium">{getCustomerName(override)}</TableCell>
                   <TableCell>{getServiceTypeName(override.service_type)}</TableCell>
                   <TableCell>
-                    {override.service_type === 'airbnb-cleaning' 
+                    {serviceHasCleaningTypes(override.service_type)
                       ? getCleaningTypeName(override.cleaning_type)
-                      : override.cleaning_type 
-                        ? override.cleaning_type 
-                        : 'N/A'
-                    }
+                      : 'N/A'}
                   </TableCell>
                   <TableCell>
                     <span className={override.override_rate < 0 ? 'text-green-600 font-semibold' : 'text-orange-600 font-semibold'}>
