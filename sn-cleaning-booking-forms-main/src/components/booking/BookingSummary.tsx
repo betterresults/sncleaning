@@ -25,8 +25,6 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditingPricing, setIsEditingPricing] = useState(false);
 
-  console.log('[BookingSummary] Current customer ID:', data.customerId);
-
   // Use hardcoded calculations
   const calculations = useAirbnbHardcodedCalculations(data);
 
@@ -41,8 +39,6 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
     'airbnb-cleaning',
     data.serviceType || null
   );
-  
-  console.log('[BookingSummary] Customer override:', customerOverride);
 
   // Fetch linen products from database
   const {
@@ -201,27 +197,29 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
 
       {/* Customer Pricing Override - Only show discounts, hide additional charges */}
       {customerOverride && customerOverride.override_rate < 0 && calculations.totalHours > 0 && (
-        <div className="flex justify-between items-center text-green-600">
-          <span>
-            Special Discount
-            {' '}
-            {customerOverride.cleaning_type ? `(${customerOverride.cleaning_type})` : '(All)'}
-          </span>
-          <span className="font-semibold">
+        <div className="flex justify-between items-center mt-2 pt-2 border-t border-green-100">
+          <div className="flex items-center gap-2">
+            <span className="text-green-600 font-medium">Special Customer Discount</span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button type="button" aria-label="Discount details" className="focus:outline-none">
+                  <Info className="w-4 h-4 text-green-600 cursor-pointer" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto max-w-xs">
+                <p className="text-sm">
+                  <span className="font-medium">Special pricing:</span> -£{Math.abs(customerOverride.override_rate)}/hour
+                  {customerOverride.cleaning_type && (
+                    <span className="block text-muted-foreground mt-1">
+                      Applies to: {customerOverride.cleaning_type.replace(/-/g, ' ').replace(/_/g, ' ')}
+                    </span>
+                  )}
+                </p>
+              </PopoverContent>
+            </Popover>
+          </div>
+          <span className="text-green-600 font-semibold">
             -£{Math.abs(customerOverride.override_rate * calculations.totalHours).toFixed(2)}
-            <span className="text-xs text-muted-foreground ml-1">
-              ({calculations.totalHours}h × -£{Math.abs(customerOverride.override_rate)}/hr)
-            </span>
-          </span>
-        </div>
-      )}
-
-      {/* DEBUG: Customer Pricing Override Status - Remove after debugging */}
-      {data.customerId && (
-        <div className="flex justify-between items-center text-xs text-muted-foreground border-t pt-2 mt-2">
-          <span>
-            DEBUG: Customer #{data.customerId} | Service: airbnb-cleaning | Cleaning: {data.serviceType || 'All'} |
-            Override: {customerOverride ? `£${customerOverride.override_rate}/hr (${customerOverride.cleaning_type ?? 'All'})` : 'none found'}
           </span>
         </div>
       )}
