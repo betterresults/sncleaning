@@ -170,7 +170,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
   const showDebug = searchParams.get('debug') === '1';
   
   const canContinue = data.propertyType && data.bedrooms && data.bathrooms && data.serviceType && 
-    (data.cleaningProducts !== 'equipment' || 
+    (!data.cleaningProducts.includes('equipment') || 
      (data.equipmentArrangement !== null && 
       (data.equipmentArrangement !== 'ongoing' || data.equipmentStorageConfirmed)));
 
@@ -184,8 +184,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
   // Auto-select cleaning products for deep cleaning or uncleaned properties
   React.useEffect(() => {
     if (data.serviceType === 'deep' || data.alreadyCleaned === false) {
-      if (data.cleaningProducts === 'no' || !data.cleaningProducts) {
-        onUpdate({ cleaningProducts: 'products' });
+      if (data.cleaningProducts.includes('no') || data.cleaningProducts.length === 0) {
+        onUpdate({ cleaningProducts: ['products'] });
       }
     }
   }, [data.serviceType, data.alreadyCleaned, data.cleaningProducts]);
@@ -695,9 +695,9 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                 return true;
               })
               .map((supply: any) => {
-              const isSelected = data.cleaningProducts === supply.option;
               const isDeepCleaning = data.serviceType === 'deep' || data.alreadyCleaned === false;
-              const isLocked = isDeepCleaning && isSelected;
+              const isSelected = data.cleaningProducts.includes(supply.option);
+              const isLocked = isDeepCleaning && supply.option === 'products';
               
               return (
                 <button
@@ -711,14 +711,25 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                   } ${isLocked && 'cursor-not-allowed opacity-90'}`}
                   onClick={() => {
                     if (!isLocked) {
-                      // For 'no' option (equipment only), always set it and clear products
+                      // Handle 'no' as exclusive option
                       if (supply.option === 'no') {
-                        onUpdate({ cleaningProducts: 'no' });
+                        onUpdate({ cleaningProducts: ['no'] });
                       } else {
-                        // For other options, allow toggle
-                        onUpdate({ 
-                          cleaningProducts: isSelected ? '' : supply.option 
-                        });
+                        // Handle 'products' and 'equipment' as multi-select
+                        let newSelection = [...data.cleaningProducts];
+                        
+                        // Remove 'no' if present (switching from 'no' to products/equipment)
+                        newSelection = newSelection.filter(item => item !== 'no');
+                        
+                        if (isSelected) {
+                          // Deselect this option
+                          newSelection = newSelection.filter(item => item !== supply.option);
+                        } else {
+                          // Select this option
+                          newSelection.push(supply.option);
+                        }
+                        
+                        onUpdate({ cleaningProducts: newSelection });
                       }
                     }
                   }}
@@ -742,7 +753,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       )}
 
       {/* Equipment Arrangement - Dynamic */}
-      {data.cleaningProducts === 'equipment' && equipmentArrangementConfigs.length > 0 && (
+      {data.cleaningProducts.includes('equipment') && equipmentArrangementConfigs.length > 0 && (
         <div className="relative z-[3] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
           <h2 className="text-2xl font-bold text-slate-700 mb-2">
             Equipment arrangement

@@ -296,7 +296,7 @@ useEffect(() => {
           serviceType: data.serviceType,
           alreadyCleaned: data.alreadyCleaned,
           ovenType: data.ovenType,
-          cleaningProducts: data.cleaningProducts,
+          cleaningProducts: data.cleaningProducts.join(','),
           equipmentArrangement: data.equipmentArrangement,
           equipmentStorageConfirmed: data.equipmentStorageConfirmed,
           
@@ -382,7 +382,7 @@ useEffect(() => {
         serviceType: data.serviceType,
         alreadyCleaned: data.alreadyCleaned,
         ovenType: data.ovenType,
-        cleaningProducts: data.cleaningProducts,
+        cleaningProducts: data.cleaningProducts.join(','),
         equipmentArrangement: data.equipmentArrangement,
         equipmentStorageConfirmed: data.equipmentStorageConfirmed,
         linensHandling: data.linensHandling,

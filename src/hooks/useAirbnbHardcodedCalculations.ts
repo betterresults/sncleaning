@@ -13,7 +13,7 @@ interface BookingData {
   serviceType: string;
   alreadyCleaned: boolean | null;
   ovenType: string;
-  cleaningProducts: string | { needed: boolean; equipment: boolean } | null;
+  cleaningProducts: string[]; // Array of cleaning products: ['no'], ['products'], ['equipment'], or ['products', 'equipment']
   equipmentArrangement: string | null;
   linensHandling: string;
   needsIroning: boolean | null;
@@ -239,30 +239,25 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
       ? getConfigValue('time flexibility', 'same-day-turnaround')
       : 0;
     
-    // Check if cleaning products are needed - handle both string and object format
+    // Check if cleaning products are needed - handle array format
     let cleaningProductsValue = 0;
-    if (bookingData.cleaningProducts && bookingData.cleaningProducts !== '') {
-      if (typeof bookingData.cleaningProducts === 'string') {
-        cleaningProductsValue = getConfigValue('cleaning supplies', bookingData.cleaningProducts);
-      } else if (typeof bookingData.cleaningProducts === 'object' && 'needed' in bookingData.cleaningProducts) {
-        cleaningProductsValue = (bookingData.cleaningProducts as any).needed 
-          ? getConfigValue('cleaning supplies', 'products')
-          : 0;
+    if (bookingData.cleaningProducts && Array.isArray(bookingData.cleaningProducts) && bookingData.cleaningProducts.length > 0) {
+      // If 'products' is in the array, get its value
+      if (bookingData.cleaningProducts.includes('products')) {
+        cleaningProductsValue = getConfigValue('cleaning supplies', 'products');
       }
+      // Note: 'equipment' value is handled separately in equipmentArrangement
     }
 
-    // Check if equipment is needed - handle both direct arrangement and nested object
+    // Check if equipment is needed - handle array format
     let equipmentValue = 0;
-    if (bookingData.equipmentArrangement) {
-      equipmentValue = getConfigValue('equipment arrangement', bookingData.equipmentArrangement);
-    } else if (bookingData.cleaningProducts) {
-      // If equipment is in nested object, check the arrangement
-      const cleaningProducts = bookingData.cleaningProducts;
-      if (typeof cleaningProducts === 'object' && 'equipment' in cleaningProducts) {
-        if ((cleaningProducts as any).equipment && bookingData.equipmentArrangement) {
-          equipmentValue = getConfigValue('equipment arrangement', bookingData.equipmentArrangement);
-        }
+    if (bookingData.cleaningProducts && Array.isArray(bookingData.cleaningProducts) && bookingData.cleaningProducts.includes('equipment')) {
+      if (bookingData.equipmentArrangement) {
+        equipmentValue = getConfigValue('equipment arrangement', bookingData.equipmentArrangement);
       }
+    } else if (bookingData.equipmentArrangement) {
+      // Fallback: if equipment arrangement is specified, use it
+      equipmentValue = getConfigValue('equipment arrangement', bookingData.equipmentArrangement);
     }
 
     // Get all equipment arrangement values to determine which is ongoing vs one-time

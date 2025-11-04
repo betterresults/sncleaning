@@ -37,7 +37,7 @@ interface BookingSubmission {
   serviceType: string; // cleaning_type in DB (checkin-checkout, midstay, light, deep)
   alreadyCleaned?: boolean | null;
   ovenType?: string;
-  cleaningProducts?: string; // 'no' | 'products' | 'equipment' from form
+  cleaningProducts?: string; // Convert from array: 'no', 'products', 'equipment', 'products,equipment'
   equipmentArrangement?: string | null;
   equipmentStorageConfirmed?: boolean;
   

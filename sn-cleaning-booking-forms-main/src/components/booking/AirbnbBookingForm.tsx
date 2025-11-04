@@ -40,7 +40,7 @@ export interface BookingData {
   serviceType: 'checkin-checkout' | 'midstay' | 'light' | 'deep' | '';
   alreadyCleaned: boolean | null;
   ovenType: string;
-  cleaningProducts: 'no' | 'products' | 'equipment' | '';
+  cleaningProducts: string[]; // Array to support multi-select: ['no'] or ['products', 'equipment']
   equipmentArrangement: 'oneoff' | 'ongoing' | null;
   equipmentStorageConfirmed: boolean;
   
@@ -127,7 +127,7 @@ const AirbnbBookingForm: React.FC = () => {
     serviceType: '',
     alreadyCleaned: null,
     ovenType: '',
-    cleaningProducts: '',
+    cleaningProducts: [],
     equipmentArrangement: null,
     equipmentStorageConfirmed: false,
     linensHandling: '',
