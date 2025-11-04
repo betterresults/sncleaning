@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useAirbnbFieldConfigs } from './useAirbnbFieldConfigs';
+import { useSchedulingRules } from './useSchedulingRules';
 
 interface BookingData {
   propertyType: string;
@@ -29,6 +30,8 @@ interface BookingData {
 
 export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
   const { data: allConfigs = [] } = useAirbnbFieldConfigs();
+  const { data: dayPricingRules = [] } = useSchedulingRules('day_pricing', true);
+  const { data: timeSurchargeRules = [] } = useSchedulingRules('time_surcharge', true);
 
   const calculations = useMemo(() => {
     // Helper to get time value from configs
@@ -292,8 +295,78 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
     // SHORT NOTICE CHARGE - Use the value already calculated and passed from ScheduleStep
     const shortNoticeCharge = bookingData.shortNoticeCharge || 0;
 
-    // TOTAL COST
-    const totalCost = cleaningCost + shortNoticeCharge + equipmentOneTimeCost;
+    // CALCULATE SCHEDULING MODIFIERS (only on cleaning cost, not linens)
+    let additionalCharge = 0;
+    let discount = 0;
+    const modifierDetails: Array<{ type: string; label: string; amount: number }> = [];
+
+    // Day-specific pricing (e.g., weekends)
+    if (bookingData.selectedDate) {
+      const dayOfWeek = bookingData.selectedDate.getDay();
+      const dayRule = dayPricingRules.find(rule => rule.day_of_week === dayOfWeek);
+      
+      if (dayRule) {
+        const modifier = dayRule.modifier_type === 'percentage' 
+          ? (cleaningCost * dayRule.price_modifier) / 100
+          : dayRule.price_modifier;
+        
+        if (modifier > 0) {
+          additionalCharge += modifier;
+          modifierDetails.push({
+            type: 'additional',
+            label: dayRule.label || 'Day pricing',
+            amount: modifier
+          });
+        } else if (modifier < 0) {
+          discount += Math.abs(modifier);
+          modifierDetails.push({
+            type: 'discount',
+            label: dayRule.label || 'Day discount',
+            amount: Math.abs(modifier)
+          });
+        }
+      }
+    }
+
+    // Time-specific surcharges
+    if (bookingData.selectedTime) {
+      const [hours, minutes] = bookingData.selectedTime.split(':').map(Number);
+      const selectedTimeMinutes = hours * 60 + minutes;
+
+      timeSurchargeRules.forEach(rule => {
+        if (rule.start_time && rule.end_time) {
+          const [startHours, startMinutes] = rule.start_time.split(':').map(Number);
+          const [endHours, endMinutes] = rule.end_time.split(':').map(Number);
+          const startTimeMinutes = startHours * 60 + startMinutes;
+          const endTimeMinutes = endHours * 60 + endMinutes;
+
+          if (selectedTimeMinutes >= startTimeMinutes && selectedTimeMinutes < endTimeMinutes) {
+            const modifier = rule.modifier_type === 'percentage'
+              ? (cleaningCost * rule.price_modifier) / 100
+              : rule.price_modifier;
+
+            if (modifier > 0) {
+              additionalCharge += modifier;
+              modifierDetails.push({
+                type: 'additional',
+                label: rule.label || 'Time surcharge',
+                amount: modifier
+              });
+            } else if (modifier < 0) {
+              discount += Math.abs(modifier);
+              modifierDetails.push({
+                type: 'discount',
+                label: rule.label || 'Time discount',
+                amount: Math.abs(modifier)
+              });
+            }
+          }
+        }
+      });
+    }
+
+    // TOTAL COST (with modifiers)
+    const totalCost = cleaningCost + shortNoticeCharge + equipmentOneTimeCost + additionalCharge - discount;
 
     // LINEN HANDLING DISPLAY-ONLY CALC (no impact on totals)
     // Display the same additionalTime that is actually added to totalHours
@@ -323,6 +396,9 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
       cleaningCost,
       shortNoticeCharge,
       equipmentOneTimeCost,
+      additionalCharge,
+      discount,
+      modifierDetails,
       totalCost,
       isUserOverride: isUserOverrideBase || isUserOverrideAdditional,
       debug: {
@@ -370,7 +446,7 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
         }
       }
     };
-  }, [JSON.stringify(bookingData), allConfigs]);
+  }, [JSON.stringify(bookingData), allConfigs, dayPricingRules, timeSurchargeRules]);
 
   return calculations;
 };

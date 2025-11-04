@@ -279,6 +279,30 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
           </span>
         </div>}
       
+      {/* Additional Charges from Scheduling Rules */}
+      {calculations.modifierDetails && calculations.modifierDetails
+        .filter((m: any) => m.type === 'additional')
+        .map((modifier: any, idx: number) => (
+          <div key={`additional-${idx}`} className="flex justify-between items-center">
+            <span className="text-muted-foreground">{modifier.label}</span>
+            <span className="text-foreground font-semibold">
+              £{modifier.amount.toFixed(2)}
+            </span>
+          </div>
+        ))}
+      
+      {/* Discounts from Scheduling Rules */}
+      {calculations.modifierDetails && calculations.modifierDetails
+        .filter((m: any) => m.type === 'discount')
+        .map((modifier: any, idx: number) => (
+          <div key={`discount-${idx}`} className="flex justify-between items-center text-green-600">
+            <span>{modifier.label}</span>
+            <span className="font-semibold">
+              -£{modifier.amount.toFixed(2)}
+            </span>
+          </div>
+        ))}
+      
       {/* Admin Discount - Show only if set */}
       {isAdminMode && data.adminDiscountPercentage && data.adminDiscountPercentage > 0 && <div className="flex justify-between items-center text-red-600">
           <span>Discount ({data.adminDiscountPercentage}%)</span>
