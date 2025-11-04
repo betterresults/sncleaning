@@ -661,7 +661,7 @@ useEffect(() => {
         </div>
       )}
 
-      {/* Customer Details - Customer mode (collapsed by default, editable on demand) */}
+      {/* Customer Details - Customer mode (read-only) */}
       {!isAdminMode && user && (
         <div className="space-y-4">
           <h3 className="text-2xl font-bold text-[#185166] mb-2">Your Details</h3>
@@ -672,60 +672,8 @@ useEffect(() => {
                 <p className="text-sm text-gray-600">{data.email || '—'}</p>
                 <p className="text-sm text-gray-600">{data.phone || '—'}</p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => setEditDetails(!editDetails)}>
-                {editDetails ? 'Close' : 'Edit'}
-              </Button>
             </div>
           </div>
-
-          {editDetails && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  placeholder="First Name"
-                  value={data.firstName || ''}
-                  onChange={(e) => onUpdate({ firstName: e.target.value })}
-                  className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
-                />
-                <Input
-                  placeholder="Last Name"
-                  value={data.lastName || ''}
-                  onChange={(e) => onUpdate({ lastName: e.target.value })}
-                  className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
-                />
-              </div>
-              <div>
-                <Input
-                  type="email"
-                  placeholder="Email Address"
-                  value={data.email || ''}
-                  onChange={(e) => {
-                    onUpdate({ email: e.target.value });
-                    setEmailError('');
-                  }}
-                  onBlur={(e) => validateEmail(e.target.value)}
-                  className={`h-16 text-lg rounded-2xl border-2 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400 ${emailError ? 'border-red-500' : 'border-gray-200'}`}
-                />
-                {emailError && (
-                  <p className="text-xs text-red-600 font-medium mt-1">{emailError}</p>
-                )}
-              </div>
-              <div>
-                <PhoneInput
-                  value={data.phone || ''}
-                  onChange={(value) => {
-                    onUpdate({ phone: value });
-                    setPhoneError('');
-                  }}
-                  placeholder="Phone number"
-                  className={`h-16 text-lg rounded-2xl border-2 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400 ${phoneError ? 'border-red-500' : 'border-gray-200'}`}
-                />
-                {phoneError && (
-                  <p className="text-xs text-red-600 font-medium mt-1">{phoneError}</p>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       )}
       
@@ -850,35 +798,37 @@ useEffect(() => {
         </div>
       )}
 
-      {/* Booking Address - Always show, editable */}
-      <div className="space-y-6">
-        <h3 className="text-2xl font-bold text-[#185166] mb-4">
-          Booking Address
-        </h3>
-        
-        <Input
-          placeholder="Street Address"
-          value={data.street || ''}
-          onChange={(e) => onUpdate({ street: e.target.value })}
-          className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
-        />
-        
-        <div className="grid grid-cols-2 gap-4">
+      {/* Booking Address - Only show if no address is selected or in admin mode */}
+      {(isAdminMode || !data.addressId) && (
+        <div className="space-y-6">
+          <h3 className="text-2xl font-bold text-[#185166] mb-4">
+            Booking Address
+          </h3>
+          
           <Input
-            placeholder="Postcode"
-            value={data.postcode || ''}
-            onChange={(e) => onUpdate({ postcode: e.target.value })}
+            placeholder="Street Address"
+            value={data.street || ''}
+            onChange={(e) => onUpdate({ street: e.target.value })}
             className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
           />
           
-          <Input
-            placeholder="City"
-            value={data.city || ''}
-            onChange={(e) => onUpdate({ city: e.target.value })}
-            className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              placeholder="Postcode"
+              value={data.postcode || ''}
+              onChange={(e) => onUpdate({ postcode: e.target.value })}
+              className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
+            />
+            
+            <Input
+              placeholder="City"
+              value={data.city || ''}
+              onChange={(e) => onUpdate({ city: e.target.value })}
+              className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ADMIN MODE: Payment Method Selection (only if no Stripe) */}
       {isAdminMode && data.customerId && !checkingPaymentMethods && !hasPaymentMethods && (

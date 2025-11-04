@@ -215,6 +215,16 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
         </div>
       )}
 
+      {/* DEBUG: Customer Pricing Override Status - Remove after debugging */}
+      {data.customerId && (
+        <div className="flex justify-between items-center text-xs text-muted-foreground border-t pt-2 mt-2">
+          <span>
+            DEBUG: Customer #{data.customerId} | Service: {data.serviceType || 'none'} | 
+            Override: {customerOverride ? `£${customerOverride.override_rate}/hr` : 'none found'}
+          </span>
+        </div>
+      )}
+
       {/* Schedule Section */}
       {data.selectedDate && <div className="space-y-3 mt-3">
           <div className="flex justify-between items-center">
