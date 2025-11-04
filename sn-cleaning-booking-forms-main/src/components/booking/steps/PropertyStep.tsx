@@ -184,7 +184,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
   // Auto-select cleaning products for deep cleaning or uncleaned properties
   React.useEffect(() => {
     if (data.serviceType === 'deep' || data.alreadyCleaned === false) {
-      if (data.cleaningProducts.includes('no') || data.cleaningProducts.length === 0) {
+      // For deep cleaning, always ensure only 'products' is selected
+      if (!data.cleaningProducts.includes('products') || data.cleaningProducts.length !== 1 || data.cleaningProducts[0] !== 'products') {
         onUpdate({ cleaningProducts: ['products'] });
       }
     }
