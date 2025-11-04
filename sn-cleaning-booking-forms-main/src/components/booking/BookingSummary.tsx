@@ -284,7 +284,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
         .filter((m: any) => m.type === 'additional')
         .map((modifier: any, idx: number) => (
           <div key={`additional-${idx}`} className="flex justify-between items-center">
-            <span className="text-muted-foreground">{modifier.label}</span>
+            <span className="text-muted-foreground">Extra charge</span>
             <span className="text-foreground font-semibold">
               £{modifier.amount.toFixed(2)}
             </span>
@@ -296,7 +296,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
         .filter((m: any) => m.type === 'discount')
         .map((modifier: any, idx: number) => (
           <div key={`discount-${idx}`} className="flex justify-between items-center text-green-600">
-            <span>{modifier.label}</span>
+            <span>Discount</span>
             <span className="font-semibold">
               -£{modifier.amount.toFixed(2)}
             </span>

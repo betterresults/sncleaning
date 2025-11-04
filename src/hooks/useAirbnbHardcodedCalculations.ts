@@ -330,39 +330,48 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
 
     // Time-specific surcharges
     if (bookingData.selectedTime) {
-      const [hours, minutes] = bookingData.selectedTime.split(':').map(Number);
-      const selectedTimeMinutes = hours * 60 + minutes;
+      // Parse time from format "7am - 8am" to get the start hour
+      const startTime = bookingData.selectedTime.split(' - ')[0];
+      const hourMatch = startTime.match(/(\d+)(am|pm)/i);
+      
+      if (hourMatch) {
+        let hours = parseInt(hourMatch[1]);
+        const isPM = hourMatch[2].toLowerCase() === 'pm';
+        if (isPM && hours !== 12) hours += 12;
+        if (!isPM && hours === 12) hours = 0;
+        const selectedTimeMinutes = hours * 60;
 
-      timeSurchargeRules.forEach(rule => {
-        if (rule.start_time && rule.end_time) {
-          const [startHours, startMinutes] = rule.start_time.split(':').map(Number);
-          const [endHours, endMinutes] = rule.end_time.split(':').map(Number);
-          const startTimeMinutes = startHours * 60 + startMinutes;
-          const endTimeMinutes = endHours * 60 + endMinutes;
+        timeSurchargeRules.forEach(rule => {
+          if (rule.start_time && rule.end_time) {
+            const [startHours, startMinutes] = rule.start_time.split(':').map(Number);
+            const [endHours, endMinutes] = rule.end_time.split(':').map(Number);
+            const startTimeMinutes = startHours * 60 + startMinutes;
+            const endTimeMinutes = endHours * 60 + endMinutes;
 
-          if (selectedTimeMinutes >= startTimeMinutes && selectedTimeMinutes < endTimeMinutes) {
-            const modifier = rule.modifier_type === 'percentage'
-              ? (cleaningCost * rule.price_modifier) / 100
-              : rule.price_modifier;
+            if (selectedTimeMinutes >= startTimeMinutes && selectedTimeMinutes < endTimeMinutes) {
+              const modifier = rule.modifier_type === 'percentage'
+                ? (cleaningCost * rule.price_modifier) / 100
+                : rule.price_modifier;
 
-            if (modifier > 0) {
-              additionalCharge += modifier;
-              modifierDetails.push({
-                type: 'additional',
-                label: rule.label || 'Time surcharge',
-                amount: modifier
-              });
-            } else if (modifier < 0) {
-              discount += Math.abs(modifier);
-              modifierDetails.push({
-                type: 'discount',
-                label: rule.label || 'Time discount',
-                amount: Math.abs(modifier)
-              });
+              if (modifier > 0) {
+                additionalCharge += modifier;
+                modifierDetails.push({
+                  type: 'additional',
+                  label: rule.label || 'Time surcharge',
+                  amount: modifier
+                });
+              } else if (modifier < 0) {
+                discount += Math.abs(modifier);
+                modifierDetails.push({
+                  type: 'discount',
+                  label: rule.label || 'Time discount',
+                  amount: Math.abs(modifier)
+                });
+              }
             }
           }
-        }
-      });
+        });
+      }
     }
 
     // TOTAL COST (with modifiers)
