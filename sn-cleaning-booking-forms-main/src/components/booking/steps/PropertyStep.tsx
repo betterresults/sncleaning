@@ -394,8 +394,6 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
               ? (data.propertyFeatures.separateKitchen || data.propertyFeatures.livingRoom)
               : data.propertyFeatures[feature.option as keyof typeof data.propertyFeatures];
             
-            const IconComponent = (LucideIcons as any)[feature.icon] || Home;
-            
             return (
               <button
                 key={feature.option}
@@ -425,11 +423,11 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                 }}
               >
                 <div className="flex flex-col items-center justify-center h-full">
-                  {IconComponent && (
-                    <IconComponent className={`h-6 w-6 mb-2 transition-all duration-500 ${
-                      isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
-                    }`} />
-                  )}
+                  <div className={`mb-2 transition-all duration-500 ${
+                    isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                  }`}>
+                    {renderIcon(feature.icon, `h-6 w-6 ${isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'}`)}
+                  </div>
                   <span className={`text-sm font-semibold transition-colors ${
                     isSelected ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
                   }`}>{feature.label}</span>
