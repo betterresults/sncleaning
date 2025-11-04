@@ -50,11 +50,21 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
   // Build a public URL from Supabase storage path
   const getIconUrl = (storagePath?: string | null): string | null => {
     if (!storagePath) return null;
+    
+    // If already a full URL, return as-is
     if (storagePath.startsWith('http')) return storagePath;
-    const [bucket, ...parts] = storagePath.split('/');
-    if (!bucket || parts.length === 0) return null;
-    const path = parts.join('/');
-    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+    
+    // If path contains '/', split bucket and path
+    if (storagePath.includes('/')) {
+      const [bucket, ...parts] = storagePath.split('/');
+      if (!bucket || parts.length === 0) return null;
+      const path = parts.join('/');
+      const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+      return data?.publicUrl || null;
+    }
+    
+    // Otherwise, assume it's in form-icons bucket (fallback for legacy data)
+    const { data } = supabase.storage.from('form-icons').getPublicUrl(storagePath);
     return data?.publicUrl || null;
   };
 
