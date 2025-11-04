@@ -335,8 +335,8 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
                   data.propertyAccess === 'meet' ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
                 }`} />
               </div>
-              <span className={`text-sm font-semibold transition-colors ${
-                data.propertyAccess === 'meet' ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
+              <span className={`text-base font-bold transition-colors ${
+                data.propertyAccess === 'meet' ? 'text-primary' : 'text-slate-500 group-hover:text-primary'
               }`}>Meet at property</span>
             </div>
           </button>
@@ -357,8 +357,8 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                 </svg>
               </div>
-              <span className={`text-sm font-semibold transition-colors ${
-                data.propertyAccess === 'collect' ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
+              <span className={`text-base font-bold transition-colors ${
+                data.propertyAccess === 'collect' ? 'text-primary' : 'text-slate-500 group-hover:text-primary'
               }`}>Collect keys</span>
             </div>
           </button>
@@ -379,8 +379,8 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
-              <span className={`text-sm font-semibold transition-colors ${
-                data.propertyAccess === 'keybox' ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
+              <span className={`text-base font-bold transition-colors ${
+                data.propertyAccess === 'keybox' ? 'text-primary' : 'text-slate-500 group-hover:text-primary'
               }`}>Keybox</span>
             </div>
           </button>
@@ -401,8 +401,8 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
               </div>
-              <span className={`text-sm font-semibold transition-colors ${
-                data.propertyAccess === 'other' ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
+              <span className={`text-base font-bold transition-colors ${
+                data.propertyAccess === 'other' ? 'text-primary' : 'text-slate-500 group-hover:text-primary'
               }`}>Other</span>
             </div>
           </button>
