@@ -44,7 +44,6 @@ import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, Check, ChevronsUpDown } from 'lucide-react';
 import { useAllCustomerPricingOverrides } from '@/hooks/useCustomerPricingOverride';
 import { useServiceTypes, useCleaningTypes } from '@/hooks/useCompanySettings';
-import { useAirbnbFieldConfigs } from '@/hooks/useAirbnbFieldConfigs';
 import { cn } from '@/lib/utils';
 
 interface FormData {
@@ -83,8 +82,8 @@ export const CustomerPricingOverrides = () => {
   // Fetch service types from company_settings
   const { data: serviceTypes = [] } = useServiceTypes();
   
-  // Fetch all possible cleaning types from airbnb_field_configs
-  const { data: allCleaningTypeConfigs = [], isLoading: isLoadingCleaningTypes } = useAirbnbFieldConfigs('Service Type', true);
+// Fetch all cleaning types from company settings
+  const { data: cleaningTypes = [], isLoading: loadingCleaningTypes } = useCleaningTypes();
 
   // Update available cleaning types when service type changes
   useEffect(() => {
@@ -94,23 +93,18 @@ export const CustomerPricingOverrides = () => {
       return;
     }
 
-    // For airbnb-cleaning, show the service type options from airbnb_field_configs
-    if (formData.service_type === 'airbnb-cleaning') {
-      console.log('Setting cleaning types for airbnb:', allCleaningTypeConfigs);
-      setAvailableCleaningTypes(allCleaningTypeConfigs || []);
+    // Use allowed_cleaning_types from the selected service type
+    const selectedService = serviceTypes.find((st: any) => st.key === formData.service_type);
+    const allowedKeys: string[] = selectedService?.allowed_cleaning_types || [];
+
+    if (allowedKeys.length > 0) {
+      const available = (cleaningTypes || []).filter((ct: any) => allowedKeys.includes(ct.key));
+      setAvailableCleaningTypes(available);
     } else {
-      // For other services, check if they have cleaning types in company_settings
-      const selectedService = serviceTypes.find((st: any) => st.key === formData.service_type);
-      if (selectedService?.allowed_cleaning_types && selectedService.allowed_cleaning_types.length > 0) {
-        // This service has cleaning types - would need to fetch them
-        // For now, we'll leave it empty until we implement for other services
-        setAvailableCleaningTypes([]);
-      } else {
-        setAvailableCleaningTypes([]);
-        setFormData(prev => ({ ...prev, cleaning_type: '' }));
-      }
+      setAvailableCleaningTypes([]);
+      setFormData(prev => ({ ...prev, cleaning_type: '' }));
     }
-  }, [formData.service_type, serviceTypes, allCleaningTypeConfigs]);
+  }, [formData.service_type, serviceTypes, cleaningTypes]);
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -230,10 +224,15 @@ export const CustomerPricingOverrides = () => {
     return service?.label || key;
   };
 
+  const serviceHasCleaningTypes = (serviceKey: string) => {
+    const service = serviceTypes.find((st: any) => st.key === serviceKey);
+    return !!(service?.allowed_cleaning_types && service.allowed_cleaning_types.length > 0);
+  };
+
   const getCleaningTypeName = (key: string | null) => {
     if (!key) return '(All)';
-    const cleaningType = allCleaningTypeConfigs.find((ct: any) => ct.option === key);
-    return cleaningType?.label || key;
+    const ct = (cleaningTypes as any[]).find((c: any) => c.key === key);
+    return ct?.label || key;
   };
 
   return (
@@ -401,15 +400,6 @@ export const CustomerPricingOverrides = () => {
               </Select>
             </div>
 
-            {/* Debug info - temporary */}
-            {formData.service_type === 'airbnb-cleaning' && (
-              <div className="text-xs text-muted-foreground space-y-1">
-                <div>Service selected: {formData.service_type}</div>
-                <div>Cleaning types loaded: {allCleaningTypeConfigs.length}</div>
-                <div>Available types: {availableCleaningTypes.length}</div>
-                {isLoadingCleaningTypes && <div>⏳ Loading...</div>}
-              </div>
-            )}
 
             {availableCleaningTypes.length > 0 && (
               <div className="space-y-2">
@@ -424,7 +414,7 @@ export const CustomerPricingOverrides = () => {
                   <SelectContent className="bg-background z-50">
                     <SelectItem value="">All cleaning types</SelectItem>
                     {availableCleaningTypes.map((cleaningType: any) => (
-                      <SelectItem key={cleaningType.id} value={cleaningType.option}>
+                      <SelectItem key={cleaningType.key} value={cleaningType.key}>
                         {cleaningType.label}
                       </SelectItem>
                     ))}
