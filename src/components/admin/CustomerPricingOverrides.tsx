@@ -405,14 +405,16 @@ export const CustomerPricingOverrides = () => {
               <div className="space-y-2">
                 <Label htmlFor="cleaning_type">Cleaning Type</Label>
                 <Select
-                  value={formData.cleaning_type}
-                  onValueChange={(value) => setFormData({ ...formData, cleaning_type: value })}
+                  value={formData.cleaning_type === '' ? 'ALL' : formData.cleaning_type}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, cleaning_type: value === 'ALL' ? '' : value })
+                  }
                 >
                   <SelectTrigger id="cleaning_type">
                     <SelectValue placeholder="All (leave blank for entire service)" />
                   </SelectTrigger>
                   <SelectContent className="bg-background z-50">
-                    <SelectItem value="">All cleaning types</SelectItem>
+                    <SelectItem value="ALL">All cleaning types</SelectItem>
                     {availableCleaningTypes.map((cleaningType: any) => (
                       <SelectItem key={cleaningType.key} value={cleaningType.key}>
                         {cleaningType.label}
