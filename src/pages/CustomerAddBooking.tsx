@@ -51,6 +51,9 @@ const CustomerAddBooking = () => {
     if (serviceType === 'airbnb-cleaning') {
       // Redirect to dedicated customer Airbnb booking page
       navigate('/customer/airbnb-form');
+    } else if (serviceType === 'linen-order') {
+      // Redirect to linen order page
+      navigate('/customer/linen-form');
     } else {
       setSelectedService(serviceType);
     }

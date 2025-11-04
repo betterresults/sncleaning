@@ -54,16 +54,6 @@ export const getCustomerNavigation = (hasLinenAccess: boolean = false) => [
     icon: Plus,
   },
   {
-    title: "Airbnb Booking",
-    url: "/customer/airbnb-form",
-    icon: Home,
-  },
-  {
-    title: "Linen Order",
-    url: "/customer/linen-form",
-    icon: Shirt,
-  },
-  {
     title: "Completed Bookings",
     url: "/customer-completed-bookings",
     icon: Calendar,

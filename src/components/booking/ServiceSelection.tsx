@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Users, Droplets, Home, HardHat, Layers, Building, Waves } from 'lucide-react';
+import { Users, Droplets, Home, HardHat, Layers, Building, Waves, Shirt } from 'lucide-react';
 
 interface ServiceSelectionProps {
   onServiceSelect: (serviceType: string) => void;
@@ -16,6 +16,13 @@ const getServices = (isAdminView: boolean = false) => [
     icon: Building,
     available: true, // Always available for both admin and customer
     description: 'Turnaround cleaning for short-term rentals'
+  },
+  {
+    id: 'linen-order',
+    title: 'Linen Order',
+    icon: Shirt,
+    available: true, // Always available for both admin and customer
+    description: 'Order fresh linens for your property'
   },
   {
     id: 'end-of-tenancy',
