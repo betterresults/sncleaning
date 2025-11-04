@@ -158,19 +158,15 @@ const AirbnbBookingForm: React.FC = () => {
     totalCost: 0,
   });
 
-  // Check if user is admin AND on admin route
+  // Check if user is admin AND on admin route, and load customer ID for logged-in customers
   useEffect(() => {
-    const checkAdmin = async () => {
+    const checkAdminAndLoadCustomer = async () => {
       // Only enable admin mode if on /admin/ route
       const isAdminRoute = location.pathname.includes('/admin/');
       
-      if (!isAdminRoute) {
-        setIsAdminMode(false);
-        return;
-      }
-      
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
+        // Check if user is admin
         const { data: role } = await supabase
           .from('user_roles')
           .select('role')
@@ -178,11 +174,27 @@ const AirbnbBookingForm: React.FC = () => {
           .single();
         
         setIsAdminMode(role?.role === 'admin' && isAdminRoute);
+        
+        // If not admin, load customer profile
+        if (role?.role !== 'admin') {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('customer_id')
+            .eq('user_id', session.user.id)
+            .single();
+          
+          if (profile?.customer_id) {
+            setBookingData(prev => ({
+              ...prev,
+              customerId: profile.customer_id
+            }));
+          }
+        }
       } else {
         setIsAdminMode(false);
       }
     };
-    checkAdmin();
+    checkAdminAndLoadCustomer();
   }, [location.pathname]);
 
   // Load Stripe on mount

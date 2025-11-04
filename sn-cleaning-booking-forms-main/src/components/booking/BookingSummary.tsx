@@ -195,17 +195,17 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
           </div>
         </div>}
 
-      {/* Customer Pricing Override */}
-      {customerOverride && customerOverride.override_rate !== 0 && calculations.totalHours > 0 && (
-        <div className={`flex justify-between items-center ${customerOverride.override_rate < 0 ? 'text-green-600' : 'text-orange-600'}`}>
+      {/* Customer Pricing Override - Only show discounts, hide additional charges */}
+      {customerOverride && customerOverride.override_rate < 0 && calculations.totalHours > 0 && (
+        <div className="flex justify-between items-center text-green-600">
           <span>
-            Customer {customerOverride.override_rate < 0 ? 'Discount' : 'Adjustment'}
+            Special Discount
             {customerOverride.cleaning_type && ` (${customerOverride.cleaning_type})`}
           </span>
           <span className="font-semibold">
-            {customerOverride.override_rate < 0 ? '-' : '+'}£{Math.abs(customerOverride.override_rate * calculations.totalHours).toFixed(2)}
+            -£{Math.abs(customerOverride.override_rate * calculations.totalHours).toFixed(2)}
             <span className="text-xs text-muted-foreground ml-1">
-              ({calculations.totalHours}h × {customerOverride.override_rate < 0 ? '-' : '+'}£{Math.abs(customerOverride.override_rate)}/hr)
+              ({calculations.totalHours}h × -£{Math.abs(customerOverride.override_rate)}/hr)
             </span>
           </span>
         </div>
