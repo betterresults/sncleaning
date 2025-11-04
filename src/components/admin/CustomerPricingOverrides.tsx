@@ -426,7 +426,7 @@ export const CustomerPricingOverrides = () => {
               </div>
             )}
 
-            {isLoadingCleaningTypes && formData.service_type === 'airbnb-cleaning' && (
+            {loadingCleaningTypes && formData.service_type === 'airbnb-cleaning' && (
               <div className="text-sm text-muted-foreground">
                 Loading cleaning types...
               </div>
