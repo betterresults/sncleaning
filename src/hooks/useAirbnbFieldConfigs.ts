@@ -170,3 +170,36 @@ export const useDeleteFieldConfig = () => {
     },
   });
 };
+
+export const useAirbnbFieldConfigsBatch = (categories: string[], onlyVisible = false) => {
+  return useQuery({
+    queryKey: ['airbnb-field-configs-batch', categories, onlyVisible],
+    queryFn: async () => {
+      let query = supabase
+        .from('airbnb_field_configs')
+        .select('*')
+        .eq('is_active', true)
+        .in('category', categories);
+      
+      if (onlyVisible) {
+        query = query.eq('is_visible', true);
+      }
+      
+      query = query.order('display_order', { ascending: true });
+
+      const { data, error } = await query;
+      if (error) throw error;
+      
+      // Group by category
+      const grouped: Record<string, FieldConfig[]> = {};
+      (data as FieldConfig[]).forEach(config => {
+        if (!grouped[config.category]) {
+          grouped[config.category] = [];
+        }
+        grouped[config.category].push(config);
+      });
+      
+      return grouped;
+    },
+  });
+};

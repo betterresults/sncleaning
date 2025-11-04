@@ -4,7 +4,7 @@ import { Switch } from '@/components/ui/switch';
 import { BookingData } from '../AirbnbBookingForm';
 import { Home, Building, Plus, Minus, CheckCircle, Droplets, Wrench, X, BookOpen, Zap, Bed } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
-import { useAirbnbFieldConfigs } from '@/hooks/useAirbnbFieldConfigs';
+import { useAirbnbFieldConfigsBatch } from '@/hooks/useAirbnbFieldConfigs';
 import { useAirbnbHardcodedCalculations } from '@/hooks/useAirbnbHardcodedCalculations';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,21 +16,30 @@ interface PropertyStepProps {
 }
 
 const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) => {
-  // Fetch all dynamic configurations from database
-  const { data: propertyTypeConfigs = [], isLoading: isLoadingPropertyTypes } = useAirbnbFieldConfigs('Property Type', true);
-  const { data: bedroomConfigs = [], isLoading: isLoadingBedrooms } = useAirbnbFieldConfigs('Bedrooms', true);
-  const { data: bathroomConfigs = [], isLoading: isLoadingBathrooms } = useAirbnbFieldConfigs('Bathrooms', true);
-  const { data: additionalRoomsConfigs = [], isLoading: isLoadingAdditionalRooms } = useAirbnbFieldConfigs('Additional Rooms', true);
-  const { data: propertyFeatureConfigs = [], isLoading: isLoadingFeatures } = useAirbnbFieldConfigs('Property Features', true);
-  const { data: serviceTypeConfigs = [], isLoading: isLoadingServiceTypes } = useAirbnbFieldConfigs('Service Type', true);
-  const { data: cleaningHistoryConfigs = [], isLoading: isLoadingHistory } = useAirbnbFieldConfigs('Cleaning History', true);
-  const { data: ovenCleaningConfigs = [], isLoading: isLoadingOvenCleaning } = useAirbnbFieldConfigs('Oven Cleaning', true);
-  const { data: cleaningSuppliesConfigs = [], isLoading: isLoadingSupplies } = useAirbnbFieldConfigs('Cleaning Supplies', true);
-  const { data: equipmentArrangementConfigs = [], isLoading: isLoadingEquipment } = useAirbnbFieldConfigs('Equipment Arrangement', true);
+  // Fetch all dynamic configurations from database in one batch query
+  const { data: allConfigs, isLoading: isLoadingConfigs } = useAirbnbFieldConfigsBatch([
+    'Property Type',
+    'Bedrooms',
+    'Bathrooms',
+    'Additional Rooms',
+    'Property Features',
+    'Service Type',
+    'Cleaning History',
+    'Oven Cleaning',
+    'Cleaning Supplies',
+    'Equipment Arrangement'
+  ], true);
 
-  const isLoadingConfigs = isLoadingPropertyTypes || isLoadingBedrooms || isLoadingBathrooms || 
-    isLoadingAdditionalRooms || isLoadingFeatures || isLoadingServiceTypes || isLoadingHistory || 
-    isLoadingOvenCleaning || isLoadingSupplies || isLoadingEquipment;
+  const propertyTypeConfigs = allConfigs?.['Property Type'] || [];
+  const bedroomConfigs = allConfigs?.['Bedrooms'] || [];
+  const bathroomConfigs = allConfigs?.['Bathrooms'] || [];
+  const additionalRoomsConfigs = allConfigs?.['Additional Rooms'] || [];
+  const propertyFeatureConfigs = allConfigs?.['Property Features'] || [];
+  const serviceTypeConfigs = allConfigs?.['Service Type'] || [];
+  const cleaningHistoryConfigs = allConfigs?.['Cleaning History'] || [];
+  const ovenCleaningConfigs = allConfigs?.['Oven Cleaning'] || [];
+  const cleaningSuppliesConfigs = allConfigs?.['Cleaning Supplies'] || [];
+  const equipmentArrangementConfigs = allConfigs?.['Equipment Arrangement'] || [];
 
   // Helper function to render icon (Lucide or emoji)
   const renderIcon = (iconName: string | null, className: string = "h-6 w-6") => {
