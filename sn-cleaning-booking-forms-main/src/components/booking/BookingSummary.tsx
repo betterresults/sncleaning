@@ -199,7 +199,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
       {customerOverride && customerOverride.override_rate < 0 && calculations.totalHours > 0 && (
         <div className="flex justify-between items-center mt-2 pt-2 border-t border-green-100">
           <div className="flex items-center gap-2">
-            <span className="text-green-600 font-medium">Special Customer Discount</span>
+            <span className="text-green-600 font-medium">Valued Customer Discount</span>
             <Popover>
               <PopoverTrigger asChild>
                 <button type="button" aria-label="Discount details" className="focus:outline-none">
@@ -208,12 +208,10 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
               </PopoverTrigger>
               <PopoverContent className="w-auto max-w-xs">
                 <p className="text-sm">
-                  <span className="font-medium">Special pricing:</span> -£{Math.abs(customerOverride.override_rate)}/hour
-                  {customerOverride.cleaning_type && (
-                    <span className="block text-muted-foreground mt-1">
-                      Applies to: {customerOverride.cleaning_type.replace(/-/g, ' ').replace(/_/g, ' ')}
-                    </span>
-                  )}
+                  <span className="font-medium">Thank you for your continued trust!</span>
+                  <span className="block text-muted-foreground mt-2">
+                    As a valued customer, you receive special pricing on our services.
+                  </span>
                 </p>
               </PopoverContent>
             </Popover>
