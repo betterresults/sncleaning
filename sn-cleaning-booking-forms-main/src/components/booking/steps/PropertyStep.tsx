@@ -634,11 +634,14 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       {/* Oven Cleaning - Combined */}
       {(data.serviceType === 'deep' || data.alreadyCleaned === false) && ovenCleaningConfigs.length > 0 && (
         <div className="relative z-[5] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-          <h2 className="text-2xl font-bold text-slate-700 mb-4">
-            Do you require oven cleaning?
+          <h2 className="text-2xl font-bold text-slate-700 mb-2">
+            Oven Cleaning
           </h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {ovenCleaningConfigs.map((oven: any) => {
+          <p className="text-sm text-slate-600 mb-4">
+            Choose oven size if you require oven cleaning
+          </p>
+          <div className="grid grid-cols-3 gap-4">
+            {ovenCleaningConfigs.filter((oven: any) => oven.option !== 'not-required').map((oven: any) => {
               const isSelected = data.ovenType === oven.option;
               const IconComponent = (LucideIcons as any)[oven.icon];
               
@@ -658,8 +661,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                         isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
                       }`} />
                     )}
-                    <span className={`text-sm font-semibold transition-colors ${
-                      isSelected ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
+                    <span className={`text-base font-bold transition-colors ${
+                      isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'
                     }`}>{oven.label}</span>
                   </div>
                 </button>
@@ -672,14 +675,27 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       {/* Cleaning Supplies - Dynamic */}
       {cleaningSuppliesConfigs.length > 0 && (
         <div className="relative z-[4] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-          <h2 className="text-2xl font-bold text-slate-700 mb-4">
+          <h2 className="text-2xl font-bold text-slate-700 mb-2">
             Cleaning supplies
           </h2>
+          <p className="text-sm text-slate-600 mb-4">
+            {(data.serviceType === 'deep' || data.alreadyCleaned === false) 
+              ? "For deep cleaning services, we will provide professional cleaning products to ensure the highest quality results."
+              : "We recommend choosing our professional cleaning products as they significantly improve cleaning quality and effectiveness compared to regular store-bought products."
+            }
+          </p>
           
           <div className="grid grid-cols-3 gap-4">
-            {cleaningSuppliesConfigs.map((supply: any) => {
+            {cleaningSuppliesConfigs
+              .filter((supply: any) => {
+                // Hide "no" option for deep cleaning
+                if ((data.serviceType === 'deep' || data.alreadyCleaned === false) && supply.option === 'no') {
+                  return false;
+                }
+                return true;
+              })
+              .map((supply: any) => {
               const isSelected = data.cleaningProducts === supply.option;
-              const isDisabled = (supply.option === 'no') && (data.serviceType === 'deep' || data.alreadyCleaned === false);
               
               return (
                 <button
@@ -692,7 +708,6 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                   onClick={() => onUpdate({ 
                     cleaningProducts: isSelected ? '' : supply.option 
                   })}
-                  disabled={isDisabled}
                 >
                   <div className="flex flex-col items-center justify-center h-full relative">
                     <div className={`mb-2 transition-all duration-500 ${
@@ -700,14 +715,9 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                     }`}>
                       {renderIcon(supply.icon, 'h-8 w-8')}
                     </div>
-                    <span className={`text-sm font-semibold transition-colors ${
-                      isSelected ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
+                    <span className={`text-base font-bold transition-colors ${
+                      isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'
                     }`}>{supply.label}</span>
-                    {isDisabled && (
-                      <div className="absolute inset-0 bg-muted/80 rounded-2xl flex items-center justify-center">
-                        <span className="text-xs text-muted-foreground font-semibold">Not available</span>
-                      </div>
-                    )}
                   </div>
                 </button>
               );
