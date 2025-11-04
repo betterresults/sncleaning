@@ -18,6 +18,19 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
   Table,
   TableBody,
   TableCell,
@@ -28,10 +41,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, ChevronsUpDown } from 'lucide-react';
 import { useAllCustomerPricingOverrides } from '@/hooks/useCustomerPricingOverride';
 import { useServiceTypes, useCleaningTypes } from '@/hooks/useCompanySettings';
 import { useAirbnbFieldConfigs } from '@/hooks/useAirbnbFieldConfigs';
+import { cn } from '@/lib/utils';
 
 interface FormData {
   customer_id: string;
@@ -51,6 +65,7 @@ export const CustomerPricingOverrides = () => {
     override_rate: '',
   });
   const [availableCleaningTypes, setAvailableCleaningTypes] = useState<any[]>([]);
+  const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
 
   const { data: overrides = [], isLoading } = useAllCustomerPricingOverrides();
   const { data: customers = [] } = useQuery({
@@ -314,21 +329,53 @@ export const CustomerPricingOverrides = () => {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="customer">Customer *</Label>
-              <Select
-                value={formData.customer_id}
-                onValueChange={(value) => setFormData({ ...formData, customer_id: value })}
-              >
-                <SelectTrigger id="customer">
-                  <SelectValue placeholder="Select customer" />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers.map((customer: any) => (
-                    <SelectItem key={customer.id} value={customer.id.toString()}>
-                      {customer.full_name || `${customer.first_name || ''} ${customer.last_name || ''}`.trim()}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={customerSearchOpen} onOpenChange={setCustomerSearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={customerSearchOpen}
+                    className="w-full justify-between"
+                  >
+                    {formData.customer_id
+                      ? customers.find((c: any) => c.id.toString() === formData.customer_id)?.full_name ||
+                        `${customers.find((c: any) => c.id.toString() === formData.customer_id)?.first_name || ''} ${customers.find((c: any) => c.id.toString() === formData.customer_id)?.last_name || ''}`.trim()
+                      : "Search customer..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0 bg-background" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search customer..." />
+                    <CommandList>
+                      <CommandEmpty>No customer found.</CommandEmpty>
+                      <CommandGroup>
+                        {customers.map((customer: any) => {
+                          const displayName = customer.full_name || `${customer.first_name || ''} ${customer.last_name || ''}`.trim();
+                          return (
+                            <CommandItem
+                              key={customer.id}
+                              value={`${customer.id}-${displayName}`}
+                              onSelect={() => {
+                                setFormData({ ...formData, customer_id: customer.id.toString() });
+                                setCustomerSearchOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  formData.customer_id === customer.id.toString() ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {displayName}
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-2">
