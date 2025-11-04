@@ -1948,6 +1948,54 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduling_rules: {
+        Row: {
+          created_at: string
+          day_of_week: number | null
+          description: string | null
+          display_order: number | null
+          end_time: string | null
+          id: string
+          is_active: boolean | null
+          label: string | null
+          modifier_type: string | null
+          price_modifier: number | null
+          rule_type: string
+          start_time: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week?: number | null
+          description?: string | null
+          display_order?: number | null
+          end_time?: string | null
+          id?: string
+          is_active?: boolean | null
+          label?: string | null
+          modifier_type?: string | null
+          price_modifier?: number | null
+          rule_type: string
+          start_time?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number | null
+          description?: string | null
+          display_order?: number | null
+          end_time?: string | null
+          id?: string
+          is_active?: boolean | null
+          label?: string | null
+          modifier_type?: string | null
+          price_modifier?: number | null
+          rule_type?: string
+          start_time?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       service_pricing_formulas: {
         Row: {
           base_hourly_rate: number | null

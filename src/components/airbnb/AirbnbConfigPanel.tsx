@@ -34,6 +34,7 @@ import {
   FieldConfig 
 } from '@/hooks/useAirbnbFieldConfigs';
 import { useAirbnbCategoryDefaults, useUpsertCategoryDefault } from '@/hooks/useAirbnbCategoryDefaults';
+import { SchedulingRulesPanel } from './SchedulingRulesPanel';
 import {
   useAirbnbPricingFormulas,
   useCreatePricingFormula,
@@ -1127,9 +1128,10 @@ export const AirbnbConfigPanel: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       <Tabs defaultValue="fields" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="fields">Field Configuration</TabsTrigger>
           <TabsTrigger value="formulas">Pricing Formulas</TabsTrigger>
+          <TabsTrigger value="scheduling">Scheduling & Pricing</TabsTrigger>
         </TabsList>
 
          <TabsContent value="fields" className="space-y-6">
@@ -2027,6 +2029,10 @@ export const AirbnbConfigPanel: React.FC = () => {
               </Card>
             ))}
           </div>
+        </TabsContent>
+
+        <TabsContent value="scheduling" className="space-y-6">
+          <SchedulingRulesPanel />
         </TabsContent>
       </Tabs>
     </div>
