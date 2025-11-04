@@ -661,20 +661,16 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                 </p>
               </div>
             </div>
-            <div className={`p-1 rounded-lg border-2 transition-all ${
-              data.hasOvenCleaning ? 'border-primary bg-primary/5' : 'border-border bg-muted/20'
-            }`}>
-              <Switch
-                checked={data.hasOvenCleaning}
-                onCheckedChange={(checked) => {
-                  onUpdate({ 
-                    hasOvenCleaning: checked,
-                    ovenType: checked ? data.ovenType : '' // Reset oven type when disabled
-                  });
-                }}
-                className="scale-125"
-              />
-            </div>
+            <Switch
+              checked={data.hasOvenCleaning}
+              onCheckedChange={(checked) => {
+                onUpdate({ 
+                  hasOvenCleaning: checked,
+                  ovenType: checked ? data.ovenType : '' // Reset oven type when disabled
+                });
+              }}
+              className={`w-16 h-7 ${!data.hasOvenCleaning ? 'border-2 border-border' : ''}`}
+            />
           </div>
           
           {data.hasOvenCleaning && (
