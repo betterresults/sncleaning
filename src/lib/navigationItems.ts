@@ -1,4 +1,4 @@
-import { Briefcase, Calendar, History, DollarSign, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Calculator, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package, TrendingUp, Activity, Bell, CheckSquare, TestTube } from 'lucide-react';
+import { Briefcase, Calendar, History, DollarSign, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Calculator, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package, TrendingUp, Activity, Bell, CheckSquare, TestTube, Shirt } from 'lucide-react';
 
 export const cleanerNavigation = [
   {
@@ -52,6 +52,16 @@ export const getCustomerNavigation = (hasLinenAccess: boolean = false) => [
     title: "Add Booking",
     url: "/customer-add-booking",
     icon: Plus,
+  },
+  {
+    title: "Airbnb Booking",
+    url: "/customer/airbnb-form",
+    icon: Home,
+  },
+  {
+    title: "Linen Order",
+    url: "/customer/linen-form",
+    icon: Shirt,
   },
   {
     title: "Completed Bookings",
@@ -232,6 +242,16 @@ export const adminNavigation = [
         title: "Airbnb Form Settings",
         url: "/admin-airbnb-form-settings",
         icon: CheckSquare,
+      },
+      {
+        title: "Airbnb Booking Form",
+        url: "/admin/airbnb",
+        icon: Home,
+      },
+      {
+        title: "Linen Order Form",
+        url: "/admin/linen",
+        icon: Shirt,
       },
       {
         title: "Invoiless API Test",

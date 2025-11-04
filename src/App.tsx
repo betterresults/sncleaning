@@ -29,6 +29,7 @@ import CustomerPhotos from "./pages/CustomerPhotos";
 import CustomerLinenManagement from './pages/CustomerLinenManagement';
 import CreateCustomerAccounts from "./pages/CreateCustomerAccounts";
 import AirbnbBooking from "./pages/AirbnbBooking";
+import LinenOrder from "./pages/LinenOrder";
 import BookingConfirmation from "./pages/BookingConfirmation";
 import AdminAddBooking from "./pages/AdminAddBooking";
 import CleanerSettings from './pages/CleanerSettings';
@@ -74,6 +75,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/airbnb" element={<AirbnbBooking />} />
+            <Route path="/linen-order" element={<LinenOrder />} />
             <Route path="/booking-confirmation" element={<BookingConfirmation />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/upcoming-bookings" element={<UpcomingBookings />} />
@@ -99,8 +101,10 @@ const App = () => (
                  <Route path="/customer-add-booking" element={<CustomerAddBooking />} />
           <Route path="/customer-linen-management" element={<CustomerLinenManagement />} />
                  <Route path="/customer/airbnb-form" element={<AirbnbBooking />} />
+                 <Route path="/customer/linen-form" element={<LinenOrder />} />
                <Route path="/admin-add-booking" element={<AdminAddBooking />} />
                <Route path="/admin/airbnb" element={<AirbnbBooking />} />
+               <Route path="/admin/linen" element={<LinenOrder />} />
                <Route path="/photos/:folderName" element={<CustomerPhotos />} />
                <Route path="/create-customer-accounts" element={<CreateCustomerAccounts />} />
                 <Route path="/recurring-bookings" element={<RecurringBookings />} />
