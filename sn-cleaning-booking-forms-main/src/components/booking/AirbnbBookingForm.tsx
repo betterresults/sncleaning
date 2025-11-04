@@ -316,8 +316,8 @@ const AirbnbBookingForm: React.FC = () => {
             {!isAdminMode && bookingData.customerId && (
               <Button
                 variant="outline"
-                onClick={() => window.location.href = '/customer'}
-                className="text-sm"
+                onClick={() => window.location.href = '/'}
+                className="text-sm font-medium hover:bg-accent/50 transition-all duration-200 shadow-sm"
               >
                 ← Back to Account
               </Button>
