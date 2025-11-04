@@ -241,7 +241,7 @@ const LinenOrderForm: React.FC = () => {
               </Button>
             )}
             <h1 className={`text-3xl md:text-4xl font-bold text-[#185166] ${!isAdminMode && orderData.customerId ? '' : 'mx-auto'}`}>
-              🧺 Order Linen Packages
+              Order Linen Packages
             </h1>
             {!isAdminMode && orderData.customerId && <div className="w-[160px]" />}
           </div>
