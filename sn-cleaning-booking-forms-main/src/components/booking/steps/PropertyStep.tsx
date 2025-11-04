@@ -394,7 +394,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
               ? (data.propertyFeatures.separateKitchen || data.propertyFeatures.livingRoom)
               : data.propertyFeatures[feature.option as keyof typeof data.propertyFeatures];
             
-            const IconComponent = (LucideIcons as any)[feature.icon];
+            const IconComponent = (LucideIcons as any)[feature.icon] || Home;
             
             return (
               <button

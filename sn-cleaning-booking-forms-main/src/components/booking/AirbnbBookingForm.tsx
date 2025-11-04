@@ -309,7 +309,7 @@ const AirbnbBookingForm: React.FC = () => {
                 const isCompleted = currentStep > stepNumber;
                 
                 return (
-                  <div key={step.id} className="flex items-center gap-1">
+                  <div key={step.id} className="contents">
                     <button
                       onClick={() => (isCompleted || stepNumber <= currentStep) && setCurrentStep(stepNumber)}
                       disabled={!(isCompleted || stepNumber <= currentStep)}
