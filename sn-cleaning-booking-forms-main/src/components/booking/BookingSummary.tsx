@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BookingData } from './AirbnbBookingForm';
-import { Home, Clock, Calendar, PoundSterling, ChevronDown, ChevronUp, AlertTriangle, Edit2 } from 'lucide-react';
+import { Home, Clock, Calendar, PoundSterling, ChevronDown, ChevronUp, AlertTriangle, Edit2, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -284,7 +284,15 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
         .filter((m: any) => m.type === 'additional')
         .map((modifier: any, idx: number) => (
           <div key={`additional-${idx}`} className="flex justify-between items-center">
-            <span className="text-muted-foreground">Extra charge</span>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">Extra charge</span>
+              <div className="group relative">
+                <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-48 p-2 bg-popover text-popover-foreground text-xs rounded-md shadow-md border z-10">
+                  {modifier.label}
+                </div>
+              </div>
+            </div>
             <span className="text-foreground font-semibold">
               £{modifier.amount.toFixed(2)}
             </span>
@@ -296,7 +304,15 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
         .filter((m: any) => m.type === 'discount')
         .map((modifier: any, idx: number) => (
           <div key={`discount-${idx}`} className="flex justify-between items-center text-green-600">
-            <span>Discount</span>
+            <div className="flex items-center gap-2">
+              <span>Discount</span>
+              <div className="group relative">
+                <Info className="w-4 h-4 cursor-help" />
+                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-48 p-2 bg-popover text-popover-foreground text-xs rounded-md shadow-md border z-10">
+                  {modifier.label}
+                </div>
+              </div>
+            </div>
             <span className="font-semibold">
               -£{modifier.amount.toFixed(2)}
             </span>
