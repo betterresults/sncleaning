@@ -5,9 +5,10 @@ import { Calendar } from '@/components/ui/calendar';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BookingData } from '../AirbnbBookingForm';
-import { CalendarDays, Clock, Mic, AlertTriangle } from 'lucide-react';
+import { CalendarDays, Clock, Mic, AlertTriangle, Info } from 'lucide-react';
 import { useAirbnbFieldConfigs } from '@/hooks/useAirbnbFieldConfigs';
 import { SelectionCard } from '@/components/ui/selection-card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ScheduleStepProps {
   data: BookingData;
@@ -65,14 +66,26 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
         .filter(time => parseInt(time.split(':')[0]) >= minHour)
         .map(time => {
           const hour = parseInt(time.split(':')[0]);
-          return hour < 12 ? `${hour}:00 AM` : hour === 12 ? '12:00 PM' : `${hour - 12}:00 PM`;
+          const nextHour = hour + 1;
+          const formatHour = (h: number) => {
+            if (h < 12) return `${h}am`;
+            if (h === 12) return '12pm';
+            return `${h - 12}pm`;
+          };
+          return `${formatHour(hour)} - ${formatHour(nextHour)}`;
         });
     }
 
     // For future dates, show all time slots
     return allTimeSlots.map(time => {
       const hour = parseInt(time.split(':')[0]);
-      return hour < 12 ? `${hour}:00 AM` : hour === 12 ? '12:00 PM' : `${hour - 12}:00 PM`;
+      const nextHour = hour + 1;
+      const formatHour = (h: number) => {
+        if (h < 12) return `${h}am`;
+        if (h === 12) return '12pm';
+        return `${h - 12}pm`;
+      };
+      return `${formatHour(hour)} - ${formatHour(nextHour)}`;
     });
   };
 
@@ -94,12 +107,16 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
     if (isToday) {
       // For same-day bookings, if flexible or no specific time, use earliest available (now + 2h)
       if (data.selectedTime && !isFlexible) {
-        const timeStr = data.selectedTime.replace(/[AP]M/, '').trim();
-        const [hours, minutes] = timeStr.split(':').map(Number);
-        let adjustedHours = hours;
-        if (data.selectedTime.includes('PM') && hours !== 12) adjustedHours += 12;
-        if (data.selectedTime.includes('AM') && hours === 12) adjustedHours = 0;
-        cleaningDate.setHours(adjustedHours, minutes || 0, 0, 0);
+        // Parse time from format "7am - 8am" to get the start hour
+        const startTime = data.selectedTime.split(' - ')[0];
+        const hourMatch = startTime.match(/(\d+)(am|pm)/i);
+        if (hourMatch) {
+          let adjustedHours = parseInt(hourMatch[1]);
+          const isPM = hourMatch[2].toLowerCase() === 'pm';
+          if (isPM && adjustedHours !== 12) adjustedHours += 12;
+          if (!isPM && adjustedHours === 12) adjustedHours = 0;
+          cleaningDate.setHours(adjustedHours, 0, 0, 0);
+        }
       } else {
         const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000);
         cleaningDate.setHours(twoHoursFromNow.getHours(), twoHoursFromNow.getMinutes(), 0, 0);
@@ -110,12 +127,16 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
     
     // Not same-day: compute hours until cleaning based on selected time or default
     if (data.selectedTime) {
-      const timeStr = data.selectedTime.replace(/[AP]M/, '').trim();
-      const [hours, minutes] = timeStr.split(':').map(Number);
-      let adjustedHours = hours;
-      if (data.selectedTime.includes('PM') && hours !== 12) adjustedHours += 12;
-      if (data.selectedTime.includes('AM') && hours === 12) adjustedHours = 0;
-      cleaningDate.setHours(adjustedHours, minutes || 0, 0, 0);
+      // Parse time from format "7am - 8am" to get the start hour
+      const startTime = data.selectedTime.split(' - ')[0];
+      const hourMatch = startTime.match(/(\d+)(am|pm)/i);
+      if (hourMatch) {
+        let adjustedHours = parseInt(hourMatch[1]);
+        const isPM = hourMatch[2].toLowerCase() === 'pm';
+        if (isPM && adjustedHours !== 12) adjustedHours += 12;
+        if (!isPM && adjustedHours === 12) adjustedHours = 0;
+        cleaningDate.setHours(adjustedHours, 0, 0, 0);
+      }
     } else {
       cleaningDate.setHours(9, 0, 0, 0);
     }
@@ -209,18 +230,23 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
 
           {/* Time Selection - Only show if not flexible */}
           {!isFlexible && (
-            <div className="grid grid-cols-2 gap-3">
-              {timeSlots.map((time) => (
-                <Button
-                  key={time}
-                  variant={data.selectedTime === time ? 'default' : 'outline'}
-                  className="h-12 text-sm"
-                  onClick={() => onUpdate({ selectedTime: data.selectedTime === time ? undefined : time })}
-                >
-                  {time}
-                </Button>
-              ))}
-            </div>
+            <>
+              <p className="text-sm text-muted-foreground mb-3">
+                Select your preferred arrival window. Our team will arrive within this 1-hour slot. Please note we cannot guarantee an exact arrival time.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {timeSlots.map((time) => (
+                  <Button
+                    key={time}
+                    variant={data.selectedTime === time ? 'default' : 'outline'}
+                    className="h-12 text-sm"
+                    onClick={() => onUpdate({ selectedTime: data.selectedTime === time ? undefined : time })}
+                  >
+                    {time}
+                  </Button>
+                ))}
+              </div>
+            </>
           )}
 
           {/* Same Day Turnaround - Only show for check-in/checkout when time is selected */}

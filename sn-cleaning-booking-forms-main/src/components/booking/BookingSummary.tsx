@@ -6,6 +6,7 @@ import { Home, Clock, Calendar, PoundSterling, ChevronDown, ChevronUp, AlertTria
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAirbnbHardcodedCalculations } from '@/hooks/useAirbnbHardcodedCalculations';
@@ -286,12 +287,18 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
           <div key={`additional-${idx}`} className="flex justify-between items-center">
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">Extra charge</span>
-              <div className="group relative">
-                <Info className="w-4 h-4 text-muted-foreground cursor-help" />
-                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-48 p-2 bg-popover text-popover-foreground text-xs rounded-md shadow-md border z-10">
-                  {modifier.label}
-                </div>
-              </div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="focus:outline-none">
+                      <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-sm">{modifier.label}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
             <span className="text-foreground font-semibold">
               £{modifier.amount.toFixed(2)}
@@ -306,12 +313,18 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
           <div key={`discount-${idx}`} className="flex justify-between items-center text-green-600">
             <div className="flex items-center gap-2">
               <span>Discount</span>
-              <div className="group relative">
-                <Info className="w-4 h-4 cursor-help" />
-                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-48 p-2 bg-popover text-popover-foreground text-xs rounded-md shadow-md border z-10">
-                  {modifier.label}
-                </div>
-              </div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="focus:outline-none">
+                      <Info className="w-4 h-4 cursor-help" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-sm">{modifier.label}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
             <span className="font-semibold">
               -£{modifier.amount.toFixed(2)}
