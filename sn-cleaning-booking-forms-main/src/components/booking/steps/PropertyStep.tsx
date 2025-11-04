@@ -648,31 +648,37 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       {ovenCleaningConfigs.length > 0 && (
         <div className="relative z-[5] p-4 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white border-2 border-border transition-shadow duration-300">
           <div className="flex items-center justify-between mb-4 p-3 bg-muted/30 rounded-xl border border-border">
-            <div>
-              <h2 className="text-xl font-bold text-slate-700">
-                Add professional oven cleaning
-              </h2>
-              <p className="text-sm text-slate-600 mt-1">
-                Include professional oven cleaning service
-              </p>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <LucideIcons.Microwave className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-700">
+                  Add professional oven cleaning
+                </h2>
+                <p className="text-sm text-slate-600 mt-1">
+                  Include professional oven cleaning service
+                </p>
+              </div>
             </div>
-            <Switch
-              checked={data.hasOvenCleaning}
-              onCheckedChange={(checked) => {
-                onUpdate({ 
-                  hasOvenCleaning: checked,
-                  ovenType: checked ? data.ovenType : '' // Reset oven type when disabled
-                });
-              }}
-            />
+            <div className={`p-1 rounded-lg border-2 transition-all ${
+              data.hasOvenCleaning ? 'border-primary bg-primary/5' : 'border-border bg-muted/20'
+            }`}>
+              <Switch
+                checked={data.hasOvenCleaning}
+                onCheckedChange={(checked) => {
+                  onUpdate({ 
+                    hasOvenCleaning: checked,
+                    ovenType: checked ? data.ovenType : '' // Reset oven type when disabled
+                  });
+                }}
+                className="scale-125"
+              />
+            </div>
           </div>
           
           {data.hasOvenCleaning && (
-            <>
-              <p className="text-sm text-slate-600 mb-4">
-                Choose oven size
-              </p>
-              <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
                 {ovenCleaningConfigs.filter((oven: any) => oven.option !== 'not-required').map((oven: any) => {
                   const isSelected = data.ovenType === oven.option;
                   const IconComponent = (LucideIcons as any)[oven.icon];
@@ -701,7 +707,6 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                   );
                 })}
               </div>
-            </>
           )}
         </div>
       )}
