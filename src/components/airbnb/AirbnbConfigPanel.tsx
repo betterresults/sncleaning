@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Trash2, Eye, EyeOff, GripVertical, Upload } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import {
   DndContext,
   closestCenter,
@@ -66,19 +67,24 @@ import { Switch } from '@/components/ui/switch';
 // Sortable Field Row Component
 interface SortableFieldRowProps {
   config: FieldConfig;
-  renderIcon: (iconName: string | null) => React.ReactNode;
+  renderIcon: (iconName: string | null, color?: string | null, size?: number | null) => React.ReactNode;
   getCurrentValue: (configId: string, field: string, defaultValue: any) => any;
   handleLocalChange: (id: string, field: string, value: any) => void;
   editingIcon: string | null;
   setEditingIcon: (id: string | null) => void;
   customIconUrl: string;
   setCustomIconUrl: (url: string) => void;
-  iconMode: 'lucide' | 'url';
-  setIconMode: (mode: 'lucide' | 'url') => void;
+  iconMode: 'lucide' | 'url' | 'upload';
+  setIconMode: (mode: 'lucide' | 'url' | 'upload') => void;
   iconSearchQuery: string;
   setIconSearchQuery: (query: string) => void;
   handleUpdateConfig: (id: string, updates: Partial<FieldConfig>) => void;
   deleteConfig: any;
+  iconColor: string;
+  setIconColor: (color: string) => void;
+  iconSize: number;
+  setIconSize: (size: number) => void;
+  handleIconUpload: (file: File) => Promise<string>;
 }
 
 const SortableFieldRow: React.FC<SortableFieldRowProps> = ({
@@ -96,6 +102,11 @@ const SortableFieldRow: React.FC<SortableFieldRowProps> = ({
   setIconSearchQuery,
   handleUpdateConfig,
   deleteConfig,
+  iconColor,
+  setIconColor,
+  iconSize,
+  setIconSize,
+  handleIconUpload,
 }) => {
   const {
     attributes,
@@ -181,10 +192,12 @@ const SortableFieldRow: React.FC<SortableFieldRowProps> = ({
               className="h-9 w-9 p-0"
               onClick={() => {
                 setEditingIcon(config.id);
-                setCustomIconUrl(config.icon || '');
+                setCustomIconUrl(config.icon || config.icon_storage_path || '');
+                setIconColor(config.icon_color || '#000000');
+                setIconSize(config.icon_size || 24);
               }}
             >
-              {renderIcon(config.icon) || <Upload className="h-3 w-3" />}
+              {renderIcon(config.icon || config.icon_storage_path, config.icon_color, config.icon_size) || <Upload className="h-3 w-3" />}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -193,9 +206,10 @@ const SortableFieldRow: React.FC<SortableFieldRowProps> = ({
             </DialogHeader>
             <div className="space-y-4">
               <Tabs value={iconMode} onValueChange={(v: any) => setIconMode(v)}>
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="lucide">Lucide Icons</TabsTrigger>
                   <TabsTrigger value="url">Custom URL</TabsTrigger>
+                  <TabsTrigger value="upload">Upload</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="lucide" className="space-y-4">
@@ -254,15 +268,87 @@ const SortableFieldRow: React.FC<SortableFieldRowProps> = ({
                     )}
                   </div>
                 </TabsContent>
+                
+                <TabsContent value="upload" className="space-y-4">
+                  <div>
+                    <Label>Upload Icon</Label>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          try {
+                            const path = await handleIconUpload(file);
+                            setCustomIconUrl(path);
+                          } catch (error) {
+                            console.error('Upload failed:', error);
+                          }
+                        }
+                      }}
+                      className="cursor-pointer"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Upload an image file (PNG, JPG, SVG)
+                    </p>
+                  </div>
+                  {customIconUrl && !customIconUrl.startsWith('http') && (
+                    <div className="flex justify-center p-8 border rounded bg-muted/20">
+                      <img 
+                        src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/form-icons/${customIconUrl}`} 
+                        alt="Preview" 
+                        className="max-h-16 max-w-16 object-contain" 
+                      />
+                    </div>
+                  )}
+                </TabsContent>
               </Tabs>
               
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Icon Color</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="color"
+                      value={iconColor}
+                      onChange={(e) => setIconColor(e.target.value)}
+                      className="h-10 w-20 cursor-pointer"
+                    />
+                    <Input
+                      type="text"
+                      value={iconColor}
+                      onChange={(e) => setIconColor(e.target.value)}
+                      placeholder="#000000"
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label>Icon Size (px)</Label>
+                  <Input
+                    type="number"
+                    min="12"
+                    max="64"
+                    value={iconSize}
+                    onChange={(e) => setIconSize(Number(e.target.value))}
+                    className="h-10"
+                  />
+                </div>
+              </div>
+              
               <div className="flex justify-center p-4 border rounded">
-                {renderIcon(customIconUrl) || <span className="text-muted-foreground">Icon preview</span>}
+                {renderIcon(customIconUrl, iconColor, iconSize) || <span className="text-muted-foreground">Icon preview</span>}
               </div>
               
               <Button
                 onClick={() => {
-                  handleUpdateConfig(config.id, { icon: customIconUrl });
+                  const isUploadedFile = customIconUrl && !customIconUrl.startsWith('http') && !Object.keys(LucideIcons).includes(customIconUrl);
+                  handleUpdateConfig(config.id, { 
+                    icon: isUploadedFile ? null : customIconUrl,
+                    icon_storage_path: isUploadedFile ? customIconUrl : null,
+                    icon_color: iconColor,
+                    icon_size: iconSize
+                  });
                   setEditingIcon(null);
                   setIconSearchQuery('');
                 }}
@@ -371,7 +457,9 @@ export const AirbnbConfigPanel: React.FC = () => {
   const [editingIcon, setEditingIcon] = useState<string | null>(null);
   const [customIconUrl, setCustomIconUrl] = useState('');
   const [iconSearchQuery, setIconSearchQuery] = useState('');
-  const [iconMode, setIconMode] = useState<'lucide' | 'url'>('lucide');
+  const [iconMode, setIconMode] = useState<'lucide' | 'url' | 'upload'>('lucide');
+  const [iconColor, setIconColor] = useState('#000000');
+  const [iconSize, setIconSize] = useState(24);
   const [localChanges, setLocalChanges] = useState<Record<string, Partial<FieldConfig>>>({});
 
   const [currentFormula, setCurrentFormula] = useState<Partial<PricingFormula>>({
@@ -422,6 +510,9 @@ export const AirbnbConfigPanel: React.FC = () => {
       value_type: newValueType,
       time: timeInMinutes,
       icon: newIcon || null,
+      icon_color: '#000000',
+      icon_size: 24,
+      icon_storage_path: null,
       min_value: newMinValue,
       max_value: newMaxValue,
       is_visible: categoryVisibility[category] ?? true,
@@ -477,18 +568,40 @@ export const AirbnbConfigPanel: React.FC = () => {
     });
   };
 
-  const renderIcon = (iconName: string | null) => {
+  const renderIcon = (iconName: string | null, color: string | null = null, size: number | null = null) => {
     if (!iconName) return null;
+    
+    const iconColor = color || '#000000';
+    const iconSize = size || 24;
     
     // Check if it's a URL
     if (iconName.startsWith('http://') || iconName.startsWith('https://')) {
-      return <img src={iconName} alt="icon" className="h-4 w-4 object-contain" />;
+      return <img src={iconName} alt="icon" style={{ width: iconSize, height: iconSize }} className="object-contain" />;
+    }
+    
+    // Check if it's a storage path
+    if (!Object.keys(LucideIcons).includes(iconName)) {
+      const storageUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/form-icons/${iconName}`;
+      return <img src={storageUrl} alt="icon" style={{ width: iconSize, height: iconSize }} className="object-contain" />;
     }
     
     // Otherwise treat as Lucide icon name
     const IconComponent = (LucideIcons as any)[iconName];
     if (!IconComponent) return null;
-    return <IconComponent className="h-4 w-4" />;
+    return <IconComponent style={{ width: iconSize, height: iconSize, color: iconColor }} />;
+  };
+
+  const handleIconUpload = async (file: File): Promise<string> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from('form-icons')
+      .upload(fileName, file);
+
+    if (uploadError) throw uploadError;
+    
+    return fileName;
   };
 
   const toggleCategoryVisibility = (category: string) => {
@@ -1276,6 +1389,11 @@ export const AirbnbConfigPanel: React.FC = () => {
                                 setIconSearchQuery={setIconSearchQuery}
                                 handleUpdateConfig={handleUpdateConfig}
                                 deleteConfig={deleteConfig}
+                                iconColor={iconColor}
+                                setIconColor={setIconColor}
+                                iconSize={iconSize}
+                                setIconSize={setIconSize}
+                                handleIconUpload={handleIconUpload}
                               />
                             ))}
                           </SortableContext>

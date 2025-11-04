@@ -131,6 +131,9 @@ export type Database = {
           created_at: string
           display_order: number | null
           icon: string | null
+          icon_color: string | null
+          icon_size: number | null
+          icon_storage_path: string | null
           id: string
           is_active: boolean | null
           is_visible: boolean | null
@@ -149,6 +152,9 @@ export type Database = {
           created_at?: string
           display_order?: number | null
           icon?: string | null
+          icon_color?: string | null
+          icon_size?: number | null
+          icon_storage_path?: string | null
           id?: string
           is_active?: boolean | null
           is_visible?: boolean | null
@@ -167,6 +173,9 @@ export type Database = {
           created_at?: string
           display_order?: number | null
           icon?: string | null
+          icon_color?: string | null
+          icon_size?: number | null
+          icon_storage_path?: string | null
           id?: string
           is_active?: boolean | null
           is_visible?: boolean | null

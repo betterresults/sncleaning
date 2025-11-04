@@ -11,6 +11,9 @@ export interface FieldConfig {
   time: number | null;
   is_active: boolean | null;
   icon: string | null;
+  icon_color: string | null;
+  icon_size: number | null;
+  icon_storage_path: string | null;
   label: string | null;
   min_value: number | null;
   max_value: number | null;
@@ -92,6 +95,9 @@ export const useCreateFieldConfig = () => {
           value_type: config.value_type,
           time: config.time,
           icon: config.icon,
+          icon_color: config.icon_color ?? '#000000',
+          icon_size: config.icon_size ?? 24,
+          icon_storage_path: config.icon_storage_path ?? null,
           label: config.label,
           min_value: (config as any).min_value ?? null,
           max_value: config.max_value,
