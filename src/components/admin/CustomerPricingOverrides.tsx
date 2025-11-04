@@ -84,7 +84,7 @@ export const CustomerPricingOverrides = () => {
   const { data: serviceTypes = [] } = useServiceTypes();
   
   // Fetch all possible cleaning types from airbnb_field_configs
-  const { data: allCleaningTypeConfigs = [] } = useAirbnbFieldConfigs('Service Type', true);
+  const { data: allCleaningTypeConfigs = [], isLoading: isLoadingCleaningTypes } = useAirbnbFieldConfigs('Service Type', true);
 
   // Update available cleaning types when service type changes
   useEffect(() => {
@@ -96,7 +96,8 @@ export const CustomerPricingOverrides = () => {
 
     // For airbnb-cleaning, show the service type options from airbnb_field_configs
     if (formData.service_type === 'airbnb-cleaning') {
-      setAvailableCleaningTypes(allCleaningTypeConfigs);
+      console.log('Setting cleaning types for airbnb:', allCleaningTypeConfigs);
+      setAvailableCleaningTypes(allCleaningTypeConfigs || []);
     } else {
       // For other services, check if they have cleaning types in company_settings
       const selectedService = serviceTypes.find((st: any) => st.key === formData.service_type);
@@ -382,12 +383,15 @@ export const CustomerPricingOverrides = () => {
               <Label htmlFor="service_type">Service Type *</Label>
               <Select
                 value={formData.service_type}
-                onValueChange={(value) => setFormData({ ...formData, service_type: value })}
+                onValueChange={(value) => {
+                  console.log('Service type selected:', value);
+                  setFormData({ ...formData, service_type: value, cleaning_type: '' });
+                }}
               >
                 <SelectTrigger id="service_type">
                   <SelectValue placeholder="Select service type" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background z-50">
                   {serviceTypes.map((service: any) => (
                     <SelectItem key={service.key} value={service.key}>
                       {service.label}
@@ -396,6 +400,16 @@ export const CustomerPricingOverrides = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Debug info - temporary */}
+            {formData.service_type === 'airbnb-cleaning' && (
+              <div className="text-xs text-muted-foreground space-y-1">
+                <div>Service selected: {formData.service_type}</div>
+                <div>Cleaning types loaded: {allCleaningTypeConfigs.length}</div>
+                <div>Available types: {availableCleaningTypes.length}</div>
+                {isLoadingCleaningTypes && <div>⏳ Loading...</div>}
+              </div>
+            )}
 
             {availableCleaningTypes.length > 0 && (
               <div className="space-y-2">
@@ -407,10 +421,10 @@ export const CustomerPricingOverrides = () => {
                   <SelectTrigger id="cleaning_type">
                     <SelectValue placeholder="All (leave blank for entire service)" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All service types</SelectItem>
+                  <SelectContent className="bg-background z-50">
+                    <SelectItem value="">All cleaning types</SelectItem>
                     {availableCleaningTypes.map((cleaningType: any) => (
-                      <SelectItem key={cleaningType.option} value={cleaningType.option}>
+                      <SelectItem key={cleaningType.id} value={cleaningType.option}>
                         {cleaningType.label}
                       </SelectItem>
                     ))}
@@ -419,6 +433,12 @@ export const CustomerPricingOverrides = () => {
                 <p className="text-xs text-muted-foreground">
                   Leave empty to apply override to all cleaning types
                 </p>
+              </div>
+            )}
+
+            {isLoadingCleaningTypes && formData.service_type === 'airbnb-cleaning' && (
+              <div className="text-sm text-muted-foreground">
+                Loading cleaning types...
               </div>
             )}
 
