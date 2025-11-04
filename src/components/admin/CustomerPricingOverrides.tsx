@@ -161,6 +161,10 @@ export const CustomerPricingOverrides = () => {
       cleaning_type: override.cleaning_type || '',
       override_rate: override.override_rate.toString(),
     });
+    // Scroll to form
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
   };
 
   const handleCancelEdit = () => {
@@ -225,9 +229,9 @@ export const CustomerPricingOverrides = () => {
       </div>
 
       {/* Inline Form */}
-      <Card className="p-6">
+      <Card className={`p-6 ${editingId ? 'border-primary border-2' : ''}`}>
         <h3 className="text-xl font-semibold mb-4">
-          {editingId ? 'Edit Pricing Override' : 'Add New Pricing Override'}
+          {editingId ? '✏️ Edit Pricing Override' : 'Add New Pricing Override'}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
