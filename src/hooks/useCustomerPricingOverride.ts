@@ -11,6 +11,32 @@ interface CustomerPricingOverride {
   updated_at: string;
 }
 
+// Normalize incoming values to match DB tokens
+const normalizeServiceType = (input: string | null): string | null => {
+  if (!input) return null;
+  const key = input.toLowerCase().replace(/\s+/g, '').replace(/_/g, '').replace(/-/g, '');
+  // Map known variants to canonical DB value
+  if (key.includes('airbnb')) return 'airbnb';
+  return input; // fallback to original
+};
+
+const normalizeCleaningType = (input: string | null): string | null => {
+  if (!input) return null;
+  switch (input) {
+    case 'checkin-checkout':
+      return 'check_in_check_out';
+    case 'midstay':
+      return 'midstay_cleaning';
+    case 'light':
+      return 'light_cleaning';
+    case 'deep':
+      return 'deep_cleaning';
+    default:
+      // also try converting hyphens to underscores
+      return input.replace(/-/g, '_');
+  }
+};
+
 export const useCustomerPricingOverride = (
   customerId: number | null,
   serviceType: string | null,
@@ -20,15 +46,18 @@ export const useCustomerPricingOverride = (
     queryKey: ['customer-pricing-override', customerId, serviceType, cleaningType],
     queryFn: async () => {
       if (!customerId || !serviceType) return null;
-      
+
+      const normalizedService = normalizeServiceType(serviceType);
+      const normalizedCleaning = normalizeCleaningType(cleaningType);
+
       // Try to find specific cleaning type override first
-      if (cleaningType) {
+      if (normalizedCleaning) {
         const { data } = await supabase
           .from('customer_pricing_overrides')
           .select('*')
           .eq('customer_id', customerId)
-          .eq('service_type', serviceType)
-          .eq('cleaning_type', cleaningType)
+          .eq('service_type', normalizedService)
+          .eq('cleaning_type', normalizedCleaning)
           .maybeSingle();
           
         if (data) return data as CustomerPricingOverride;
@@ -39,7 +68,7 @@ export const useCustomerPricingOverride = (
         .from('customer_pricing_overrides')
         .select('*')
         .eq('customer_id', customerId)
-        .eq('service_type', serviceType)
+        .eq('service_type', normalizedService)
         .is('cleaning_type', null)
         .maybeSingle();
         
