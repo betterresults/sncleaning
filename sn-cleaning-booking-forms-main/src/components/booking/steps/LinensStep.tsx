@@ -253,7 +253,7 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
                 }`}
               >
                 <Icon className={`h-6 w-6 mx-auto mb-2 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
-                  <span className="text-base font-bold text-slate-500">{option.label}</span>
+                  <span className="text-sm font-semibold">{option.label}</span>
               </button>
             );
           })}
@@ -284,7 +284,7 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
                   }`}
                 >
                   <Shirt className={`h-6 w-6 mx-auto mb-2 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
-                  <span className="text-base font-bold text-slate-500">{option.label}</span>
+                  <span className="text-sm font-semibold">{option.label}</span>
                 </button>
               );
             })}
@@ -323,7 +323,7 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
                     {!isSelected ? (
                       <div className="flex flex-col items-center justify-center h-full p-3">
                         <div className="text-2xl mb-2">🛏️</div>
-                        <span className="text-base font-bold text-slate-500 text-center leading-tight">
+                        <span className="text-sm font-semibold text-slate-700 text-center leading-tight">
                           {size.name}
                         </span>
                       </div>
@@ -569,7 +569,7 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
                     {!isSelected ? (
                       <div className="flex flex-col items-center justify-center h-full p-3">
                         <div className="text-2xl mb-2">{linen.icon}</div>
-                        <span className="text-base font-bold text-slate-500 text-center leading-tight">
+                        <span className="text-sm font-semibold text-slate-700 text-center leading-tight">
                           {linen.name}
                         </span>
                         <span className="text-xs text-muted-foreground mt-1">

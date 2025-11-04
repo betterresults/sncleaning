@@ -477,8 +477,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                   }`}>
                     {renderFeatureIcon(feature, `h-6 w-6 ${isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'}`)}
                   </div>
-                  <span className={`text-base font-bold transition-colors ${
-                    isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'
+                  <span className={`text-sm font-semibold transition-colors ${
+                    isSelected ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
                   }`}>{feature.label}</span>
                 </div>
               </button>
@@ -548,8 +548,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full">
                     {IconComponent && <IconComponent className="h-6 w-6 mb-2 text-muted-foreground group-hover:text-primary transition-all duration-500" />}
-                    <span className={`text-base font-bold transition-colors ${
-                      data.numberOfFloors > 0 ? 'text-primary' : 'text-slate-500 group-hover:text-primary'
+                    <span className={`text-sm font-semibold transition-colors ${
+                      data.numberOfFloors > 0 ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
                     }`}>{floorsConfig.label}</span>
                   </div>
                 )}
@@ -581,8 +581,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                     data.serviceType === service.option ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
                   }`)}
                 </div>
-                <span className={`text-base font-bold transition-colors ${
-                  data.serviceType === service.option ? 'text-primary' : 'text-slate-500 group-hover:text-primary'
+                <span className={`text-sm font-semibold transition-colors ${
+                  data.serviceType === service.option ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
                 }`}>{service.label}</span>
               </div>
             </button>
@@ -620,8 +620,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                         isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
                       }`} />
                     )}
-                    <span className={`text-base font-bold transition-colors ${
-                      isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'
+                    <span className={`text-sm font-semibold transition-colors ${
+                      isSelected ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
                     }`}>{option.label}</span>
                   </div>
                 </button>
@@ -658,8 +658,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                         isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
                       }`} />
                     )}
-                    <span className={`text-base font-bold transition-colors ${
-                      isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'
+                    <span className={`text-sm font-semibold transition-colors ${
+                      isSelected ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
                     }`}>{oven.label}</span>
                   </div>
                 </button>
@@ -700,8 +700,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                     }`}>
                       {renderIcon(supply.icon, 'h-8 w-8')}
                     </div>
-                    <span className={`text-base font-bold transition-colors ${
-                      isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'
+                    <span className={`text-sm font-semibold transition-colors ${
+                      isSelected ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
                     }`}>{supply.label}</span>
                     {isDisabled && (
                       <div className="absolute inset-0 bg-muted/80 rounded-2xl flex items-center justify-center">
@@ -745,8 +745,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                   }`}>
                     {renderIcon(arrangement.icon, 'h-6 w-6')}
                   </div>
-                  <span className={`text-base font-bold transition-colors ${
-                    isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'
+                  <span className={`text-sm font-semibold transition-colors ${
+                    isSelected ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
                   }`}>{arrangement.label}</span>
                 </button>
               );
