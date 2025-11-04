@@ -711,9 +711,15 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                   } ${isLocked && 'cursor-not-allowed opacity-90'}`}
                   onClick={() => {
                     if (!isLocked) {
-                      onUpdate({ 
-                        cleaningProducts: isSelected ? '' : supply.option 
-                      });
+                      // For 'no' option (equipment only), always set it and clear products
+                      if (supply.option === 'no') {
+                        onUpdate({ cleaningProducts: 'no' });
+                      } else {
+                        // For other options, allow toggle
+                        onUpdate({ 
+                          cleaningProducts: isSelected ? '' : supply.option 
+                        });
+                      }
                     }
                   }}
                   disabled={isLocked}
