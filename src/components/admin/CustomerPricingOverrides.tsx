@@ -4,13 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -41,7 +34,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Check, ChevronsUpDown } from 'lucide-react';
+import { Pencil, Trash2, Check, ChevronsUpDown } from 'lucide-react';
 import { useAllCustomerPricingOverrides } from '@/hooks/useCustomerPricingOverride';
 import { useServiceTypes, useCleaningTypes } from '@/hooks/useCompanySettings';
 import { cn } from '@/lib/utils';
@@ -55,7 +48,6 @@ interface FormData {
 
 export const CustomerPricingOverrides = () => {
   const queryClient = useQueryClient();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({
     customer_id: '',
@@ -117,7 +109,7 @@ export const CustomerPricingOverrides = () => {
       queryClient.invalidateQueries({ queryKey: ['all-customer-pricing-overrides'] });
       queryClient.invalidateQueries({ queryKey: ['customer-pricing-override'] });
       toast.success('Override created successfully');
-      handleCloseDialog();
+      handleCancelEdit();
     },
     onError: (error: any) => {
       toast.error(error.message || 'Failed to create override');
@@ -136,7 +128,7 @@ export const CustomerPricingOverrides = () => {
       queryClient.invalidateQueries({ queryKey: ['all-customer-pricing-overrides'] });
       queryClient.invalidateQueries({ queryKey: ['customer-pricing-override'] });
       toast.success('Override updated successfully');
-      handleCloseDialog();
+      handleCancelEdit();
     },
     onError: (error: any) => {
       toast.error(error.message || 'Failed to update override');
@@ -161,29 +153,17 @@ export const CustomerPricingOverrides = () => {
     },
   });
 
-  const handleOpenDialog = (override?: any) => {
-    if (override) {
-      setEditingId(override.id);
-      setFormData({
-        customer_id: override.customer_id.toString(),
-        service_type: override.service_type,
-        cleaning_type: override.cleaning_type || '',
-        override_rate: override.override_rate.toString(),
-      });
-    } else {
-      setEditingId(null);
-      setFormData({
-        customer_id: '',
-        service_type: '',
-        cleaning_type: '',
-        override_rate: '',
-      });
-    }
-    setIsDialogOpen(true);
+  const handleEdit = (override: any) => {
+    setEditingId(override.id);
+    setFormData({
+      customer_id: override.customer_id.toString(),
+      service_type: override.service_type,
+      cleaning_type: override.cleaning_type || '',
+      override_rate: override.override_rate.toString(),
+    });
   };
 
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
+  const handleCancelEdit = () => {
     setEditingId(null);
     setFormData({
       customer_id: '',
@@ -237,18 +217,152 @@ export const CustomerPricingOverrides = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-bold">Customer Pricing Overrides</h2>
-          <p className="text-muted-foreground mt-1">
-            Manage custom hourly rate adjustments for specific customers and services
-          </p>
-        </div>
-        <Button onClick={() => handleOpenDialog()}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Override
-        </Button>
+      <div>
+        <h2 className="text-3xl font-bold">Customer Pricing Overrides</h2>
+        <p className="text-muted-foreground mt-1">
+          Manage custom hourly rate adjustments for specific customers and services
+        </p>
       </div>
+
+      {/* Inline Form */}
+      <Card className="p-6">
+        <h3 className="text-xl font-semibold mb-4">
+          {editingId ? 'Edit Pricing Override' : 'Add New Pricing Override'}
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="customer">Customer *</Label>
+            <Popover open={customerSearchOpen} onOpenChange={setCustomerSearchOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={customerSearchOpen}
+                  className="w-full justify-between"
+                >
+                  {formData.customer_id
+                    ? customers.find((c: any) => c.id.toString() === formData.customer_id)?.full_name ||
+                      `${customers.find((c: any) => c.id.toString() === formData.customer_id)?.first_name || ''} ${customers.find((c: any) => c.id.toString() === formData.customer_id)?.last_name || ''}`.trim()
+                    : "Search customer..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0 bg-background z-50" align="start">
+                <Command>
+                  <CommandInput placeholder="Search customer..." />
+                  <CommandList>
+                    <CommandEmpty>No customer found.</CommandEmpty>
+                    <CommandGroup>
+                      {customers.map((customer: any) => {
+                        const displayName = customer.full_name || `${customer.first_name || ''} ${customer.last_name || ''}`.trim();
+                        return (
+                          <CommandItem
+                            key={customer.id}
+                            value={`${customer.id}-${displayName}`}
+                            onSelect={() => {
+                              setFormData({ ...formData, customer_id: customer.id.toString() });
+                              setCustomerSearchOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                formData.customer_id === customer.id.toString() ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {displayName}
+                          </CommandItem>
+                        );
+                      })}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="service_type">Service Type *</Label>
+            <Select
+              value={formData.service_type}
+              onValueChange={(value) => {
+                console.log('Service type selected:', value);
+                setFormData({ ...formData, service_type: value, cleaning_type: '' });
+              }}
+            >
+              <SelectTrigger id="service_type">
+                <SelectValue placeholder="Select service type" />
+              </SelectTrigger>
+              <SelectContent className="bg-background z-50">
+                {serviceTypes.map((service: any) => (
+                  <SelectItem key={service.key} value={service.key}>
+                    {service.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {availableCleaningTypes.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="cleaning_type">Cleaning Type</Label>
+              <Select
+                value={formData.cleaning_type === '' ? 'ALL' : formData.cleaning_type}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, cleaning_type: value === 'ALL' ? '' : value })
+                }
+              >
+                <SelectTrigger id="cleaning_type">
+                  <SelectValue placeholder="All (leave blank for entire service)" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="ALL">All cleaning types</SelectItem>
+                  {availableCleaningTypes.map((cleaningType: any) => (
+                    <SelectItem key={cleaningType.key} value={cleaningType.key}>
+                      {cleaningType.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Leave empty to apply override to all cleaning types
+              </p>
+            </div>
+          )}
+
+          {loadingCleaningTypes && formData.service_type === 'airbnb-cleaning' && (
+            <div className="text-sm text-muted-foreground">
+              Loading cleaning types...
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="override_rate">Override Rate (£/hour) *</Label>
+            <Input
+              id="override_rate"
+              type="number"
+              step="0.01"
+              placeholder="e.g., -3 for discount, +5 for markup"
+              value={formData.override_rate}
+              onChange={(e) => setFormData({ ...formData, override_rate: e.target.value })}
+            />
+            <p className="text-xs text-muted-foreground">
+              Negative value = discount, Positive value = markup
+            </p>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 mt-6">
+          {editingId && (
+            <Button variant="outline" onClick={handleCancelEdit}>
+              Cancel
+            </Button>
+          )}
+          <Button onClick={handleSubmit}>
+            {editingId ? 'Update Override' : 'Create Override'}
+          </Button>
+        </div>
+      </Card>
 
       <Card>
         <Table>
@@ -297,7 +411,7 @@ export const CustomerPricingOverrides = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleOpenDialog(override)}
+                        onClick={() => handleEdit(override)}
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -321,144 +435,6 @@ export const CustomerPricingOverrides = () => {
         </Table>
       </Card>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editingId ? 'Edit' : 'Add'} Pricing Override</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="customer">Customer *</Label>
-              <Popover open={customerSearchOpen} onOpenChange={setCustomerSearchOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={customerSearchOpen}
-                    className="w-full justify-between"
-                  >
-                    {formData.customer_id
-                      ? customers.find((c: any) => c.id.toString() === formData.customer_id)?.full_name ||
-                        `${customers.find((c: any) => c.id.toString() === formData.customer_id)?.first_name || ''} ${customers.find((c: any) => c.id.toString() === formData.customer_id)?.last_name || ''}`.trim()
-                      : "Search customer..."}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0 bg-background z-50" align="start">
-                  <Command>
-                    <CommandInput placeholder="Search customer..." />
-                    <CommandList>
-                      <CommandEmpty>No customer found.</CommandEmpty>
-                      <CommandGroup>
-                        {customers.map((customer: any) => {
-                          const displayName = customer.full_name || `${customer.first_name || ''} ${customer.last_name || ''}`.trim();
-                          return (
-                            <CommandItem
-                              key={customer.id}
-                              value={`${customer.id}-${displayName}`}
-                              onSelect={() => {
-                                setFormData({ ...formData, customer_id: customer.id.toString() });
-                                setCustomerSearchOpen(false);
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  formData.customer_id === customer.id.toString() ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              {displayName}
-                            </CommandItem>
-                          );
-                        })}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="service_type">Service Type *</Label>
-              <Select
-                value={formData.service_type}
-                onValueChange={(value) => {
-                  console.log('Service type selected:', value);
-                  setFormData({ ...formData, service_type: value, cleaning_type: '' });
-                }}
-              >
-                <SelectTrigger id="service_type">
-                  <SelectValue placeholder="Select service type" />
-                </SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                  {serviceTypes.map((service: any) => (
-                    <SelectItem key={service.key} value={service.key}>
-                      {service.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-
-            {availableCleaningTypes.length > 0 && (
-              <div className="space-y-2">
-                <Label htmlFor="cleaning_type">Cleaning Type</Label>
-                <Select
-                  value={formData.cleaning_type === '' ? 'ALL' : formData.cleaning_type}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, cleaning_type: value === 'ALL' ? '' : value })
-                  }
-                >
-                  <SelectTrigger id="cleaning_type">
-                    <SelectValue placeholder="All (leave blank for entire service)" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background z-50">
-                    <SelectItem value="ALL">All cleaning types</SelectItem>
-                    {availableCleaningTypes.map((cleaningType: any) => (
-                      <SelectItem key={cleaningType.key} value={cleaningType.key}>
-                        {cleaningType.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Leave empty to apply override to all cleaning types
-                </p>
-              </div>
-            )}
-
-            {loadingCleaningTypes && formData.service_type === 'airbnb-cleaning' && (
-              <div className="text-sm text-muted-foreground">
-                Loading cleaning types...
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="override_rate">Override Rate (£/hour) *</Label>
-              <Input
-                id="override_rate"
-                type="number"
-                step="0.01"
-                placeholder="e.g., -3 for discount, +5 for markup"
-                value={formData.override_rate}
-                onChange={(e) => setFormData({ ...formData, override_rate: e.target.value })}
-              />
-              <p className="text-xs text-muted-foreground">
-                Negative value = discount, Positive value = markup
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={handleCloseDialog}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit}>
-              {editingId ? 'Update' : 'Create'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
