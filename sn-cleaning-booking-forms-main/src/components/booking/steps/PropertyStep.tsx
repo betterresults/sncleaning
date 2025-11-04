@@ -269,7 +269,11 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
           {/* Bedrooms */}
           <div>
             <div className="flex items-center justify-center">
-              <div className="flex items-center bg-card border border-border rounded-2xl p-2 w-full">
+              <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${
+                data.bedrooms 
+                  ? 'bg-primary/5 border-2 border-primary shadow-lg' 
+                  : 'bg-card border-2 border-border'
+              }`}>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -280,7 +284,9 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                   <Minus className="h-5 w-5" />
                 </Button>
                 <div className="flex-1 text-center">
-                <div className="text-base font-bold text-slate-500">
+                  <div className={`text-base font-bold transition-colors ${
+                    data.bedrooms ? 'text-primary' : 'text-slate-400'
+                  }`}>
                     {data.bedrooms ? getBedroomLabel(data.bedrooms) : 'Bedrooms'}
                   </div>
                 </div>
@@ -300,7 +306,11 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
           {/* Bathrooms */}
           <div>
             <div className="flex items-center justify-center">
-              <div className="flex items-center bg-card border border-border rounded-2xl p-2 w-full">
+              <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${
+                data.bathrooms 
+                  ? 'bg-primary/5 border-2 border-primary shadow-lg' 
+                  : 'bg-card border-2 border-border'
+              }`}>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -311,7 +321,9 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                   <Minus className="h-5 w-5" />
                 </Button>
                 <div className="flex-1 text-center">
-                  <div className="text-base font-bold text-slate-500">
+                  <div className={`text-base font-bold transition-colors ${
+                    data.bathrooms ? 'text-primary' : 'text-slate-400'
+                  }`}>
                     {data.bathrooms ? `${data.bathrooms} Bathroom${data.bathrooms !== '1' && data.bathrooms !== '6+' && parseInt(data.bathrooms) > 1 ? 's' : data.bathrooms === '6+' ? 's' : ''}` : 'Bathrooms'}
                   </div>
                 </div>
@@ -634,10 +646,10 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Oven Cleaning - Always Visible with Switch */}
       {ovenCleaningConfigs.length > 0 && (
-        <div className="relative z-[5] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-          <div className="flex items-center justify-between mb-4">
+        <div className="relative z-[5] p-4 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white border-2 border-border transition-shadow duration-300">
+          <div className="flex items-center justify-between mb-4 p-3 bg-muted/30 rounded-xl border border-border">
             <div>
-              <h2 className="text-2xl font-bold text-slate-700">
+              <h2 className="text-xl font-bold text-slate-700">
                 Add professional oven cleaning
               </h2>
               <p className="text-sm text-slate-600 mt-1">
