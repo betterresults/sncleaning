@@ -696,18 +696,27 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
               })
               .map((supply: any) => {
               const isSelected = data.cleaningProducts === supply.option;
+              const isDeepCleaning = data.serviceType === 'deep' || data.alreadyCleaned === false;
+              const isLocked = isDeepCleaning && isSelected;
               
               return (
                 <button
                   key={supply.option}
-                  className={`group relative h-24 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+                  className={`group relative h-24 rounded-2xl border-2 transition-all duration-500 ${
+                    !isLocked && 'hover:scale-105'
+                  } ${
                     isSelected
                       ? 'border-primary bg-primary/5 shadow-xl'
                       : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
-                  }`}
-                  onClick={() => onUpdate({ 
-                    cleaningProducts: isSelected ? '' : supply.option 
-                  })}
+                  } ${isLocked && 'cursor-not-allowed opacity-90'}`}
+                  onClick={() => {
+                    if (!isLocked) {
+                      onUpdate({ 
+                        cleaningProducts: isSelected ? '' : supply.option 
+                      });
+                    }
+                  }}
+                  disabled={isLocked}
                 >
                   <div className="flex flex-col items-center justify-center h-full relative">
                     <div className={`mb-2 transition-all duration-500 ${
