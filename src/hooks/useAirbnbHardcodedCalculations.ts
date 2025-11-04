@@ -104,9 +104,12 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
       alreadyCleanedCostValue = getConfigValue('cleaning history', 'No'); // Add to hourly rate
     }
 
-    // Oven cleaning time - only when hasOvenCleaning is true AND a specific type is chosen
+    // Oven cleaning time and cost - only when hasOvenCleaning is true AND a specific type is chosen
     const ovenCleaningTime = (bookingData.hasOvenCleaning && bookingData.ovenType && bookingData.ovenType !== 'dontneed' && bookingData.ovenType !== '')
       ? getConfigTime('oven cleaning', bookingData.ovenType)
+      : 0;
+    const ovenCleaningCost = (bookingData.hasOvenCleaning && bookingData.ovenType && bookingData.ovenType !== 'dontneed' && bookingData.ovenType !== '')
+      ? getConfigValue('oven cleaning', bookingData.ovenType)
       : 0;
 
     // Additional rooms time - sum of each selected room count * its time
@@ -372,8 +375,8 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
       }
     }
 
-    // TOTAL COST (with modifiers)
-    const totalCost = cleaningCost + shortNoticeCharge + equipmentOneTimeCost + additionalCharge - discount;
+    // TOTAL COST (with modifiers and oven cleaning)
+    const totalCost = cleaningCost + shortNoticeCharge + equipmentOneTimeCost + ovenCleaningCost + additionalCharge - discount;
 
     // LINEN HANDLING DISPLAY-ONLY CALC (no impact on totals)
     // Display the same additionalTime that is actually added to totalHours
@@ -403,6 +406,7 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
       cleaningCost,
       shortNoticeCharge,
       equipmentOneTimeCost,
+      ovenCleaningCost,
       additionalCharge,
       discount,
       modifierDetails,
@@ -428,6 +432,7 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
         missingServiceType: !bookingData.serviceType,
         alreadyCleanedValue,
         ovenCleaningTime,
+        ovenCleaningCost,
         additionalRoomsTime,
         additionalRoomsBreakdown,
         propertyFeaturesTime,
