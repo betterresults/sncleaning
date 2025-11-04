@@ -6,7 +6,7 @@ import { Home, Clock, Calendar, PoundSterling, ChevronDown, ChevronUp, AlertTria
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAirbnbHardcodedCalculations } from '@/hooks/useAirbnbHardcodedCalculations';
@@ -287,18 +287,16 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
           <div key={`additional-${idx}`} className="flex justify-between items-center">
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">Extra charge</span>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="focus:outline-none">
-                      <Info className="w-4 h-4 text-muted-foreground cursor-help" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="text-sm">{modifier.label}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button type="button" aria-label="Extra charge info" className="focus:outline-none">
+                    <Info className="w-4 h-4 text-muted-foreground cursor-pointer" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent>
+                  <p className="text-sm">{modifier.label}</p>
+                </PopoverContent>
+              </Popover>
             </div>
             <span className="text-foreground font-semibold">
               £{modifier.amount.toFixed(2)}
@@ -313,18 +311,16 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
           <div key={`discount-${idx}`} className="flex justify-between items-center text-green-600">
             <div className="flex items-center gap-2">
               <span>Discount</span>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="focus:outline-none">
-                      <Info className="w-4 h-4 cursor-help" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="text-sm">{modifier.label}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button type="button" aria-label="Discount info" className="focus:outline-none">
+                    <Info className="w-4 h-4 cursor-pointer" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent>
+                  <p className="text-sm">{modifier.label}</p>
+                </PopoverContent>
+              </Popover>
             </div>
             <span className="font-semibold">
               -£{modifier.amount.toFixed(2)}
