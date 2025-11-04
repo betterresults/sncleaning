@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { PropertyStep } from './steps/PropertyStep';
 import { LinensStep } from './steps/LinensStep';
@@ -173,17 +174,21 @@ const AirbnbBookingForm: React.FC = () => {
           .eq('user_id', session.user.id)
           .single();
         
-        setIsAdminMode(role?.role === 'admin' && isAdminRoute);
+        const isAdmin = role?.role === 'admin';
+        setIsAdminMode(isAdmin && isAdminRoute);
         
-        // If not admin, load customer profile
-        if (role?.role !== 'admin') {
+        // If not on admin route (customer booking), always load customer profile
+        if (!isAdminRoute) {
           const { data: profile } = await supabase
             .from('profiles')
             .select('customer_id')
             .eq('user_id', session.user.id)
             .single();
           
+          console.log('[AirbnbBookingForm] Loading customer profile:', profile);
+          
           if (profile?.customer_id) {
+            console.log('[AirbnbBookingForm] Setting customer ID:', profile.customer_id);
             setBookingData(prev => ({
               ...prev,
               customerId: profile.customer_id
@@ -307,9 +312,21 @@ const AirbnbBookingForm: React.FC = () => {
       {/* Header */}
       <header className="bg-white py-4 mb-3 border-b border-border shadow-[0_10px_30px_rgba(0,0,0,0.14)]">
         <div className="container mx-auto px-2 sm:px-4">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700 text-center mb-4">
-            Airbnb Cleaning Booking Form
-          </h1>
+          <div className="flex items-center justify-between mb-4">
+            {!isAdminMode && bookingData.customerId && (
+              <Button
+                variant="outline"
+                onClick={() => window.location.href = '/customer'}
+                className="text-sm"
+              >
+                ← Back to Account
+              </Button>
+            )}
+            <h1 className={`text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700 ${!isAdminMode && bookingData.customerId ? '' : 'mx-auto'}`}>
+              Airbnb Cleaning Booking Form
+            </h1>
+            {!isAdminMode && bookingData.customerId && <div className="w-[140px]" />}
+          </div>
           
           {/* Step Navigation - Mobile Optimized */}
           <div className="max-w-4xl mx-auto">

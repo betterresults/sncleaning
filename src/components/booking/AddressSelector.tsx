@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Plus, Check, ChevronsUpDown, MapPin } from 'lucide-react';
+import CreateAddressDialog from './CreateAddressDialog';
 
 import { cn } from '@/lib/utils';
 import {
@@ -171,19 +172,20 @@ const AddressSelector = ({ customerId, onAddressSelect }: AddressSelectorProps) 
           </PopoverContent>
         </Popover>
         
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="h-16 w-16 rounded-2xl border-2 border-gray-200 hover:bg-gray-50"
-          disabled={!customerId}
-          onClick={() => {
-            setSelectedAddress(null);
-            onAddressSelect(null);
-          }}
+        <CreateAddressDialog
+          customerId={customerId}
+          onAddressCreated={handleAddressCreated}
         >
-          <Plus className="h-5 w-5" />
-        </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-16 w-16 rounded-2xl border-2 border-gray-200 hover:bg-gray-50"
+            disabled={!customerId}
+          >
+            <Plus className="h-5 w-5" />
+          </Button>
+        </CreateAddressDialog>
       </div>
     </div>
   );

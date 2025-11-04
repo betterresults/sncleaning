@@ -25,6 +25,8 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditingPricing, setIsEditingPricing] = useState(false);
 
+  console.log('[BookingSummary] Current customer ID:', data.customerId);
+
   // Use hardcoded calculations
   const calculations = useAirbnbHardcodedCalculations(data);
 
@@ -39,6 +41,8 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
     'airbnb-cleaning',
     data.serviceType || null
   );
+  
+  console.log('[BookingSummary] Customer override:', customerOverride);
 
   // Fetch linen products from database
   const {
