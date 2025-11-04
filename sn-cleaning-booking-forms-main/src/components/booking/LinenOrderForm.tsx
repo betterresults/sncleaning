@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { 
   Package2, ShoppingCart, Calendar, Clock, Info, Minus, Plus,
-  BedDouble, BedSingle, Bath, Shirt, UtensilsCrossed
+  BedDouble, BedSingle, Bath, Shirt, UtensilsCrossed, CalendarCheck, ArrowRight
 } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
@@ -16,18 +14,26 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useLinenProducts } from '@/hooks/useLinenProducts';
+import { PaymentStep } from './steps/PaymentStep';
+import { cn } from '@/lib/utils';
 
 export interface LinenOrderData {
   linenPackages: Record<string, number>;
   deliveryTiming: 'next-3-days' | 'next-7-days' | 'flexible' | '';
   deliveryNotes: string;
   
-  // Contact (for payment)
+  // Fields required by PaymentStep
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
-  address: string;
+  
+  // Address fields for PaymentStep
+  addressId?: string;
+  houseNumber: string;
+  street: string;
+  postcode: string;
+  city: string;
   
   totalCost: number;
   customerId?: number;
@@ -51,7 +57,7 @@ const LinenOrderForm: React.FC = () => {
   const { toast } = useToast();
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [isAdminMode, setIsAdminMode] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentStep, setCurrentStep] = useState<1 | 2>(1);
   const { products: linenProductsFromDB = [] } = useLinenProducts();
   
   const [orderData, setOrderData] = useState<LinenOrderData>({
@@ -62,7 +68,10 @@ const LinenOrderForm: React.FC = () => {
     lastName: '',
     email: '',
     phone: '',
-    address: '',
+    houseNumber: '',
+    street: '',
+    postcode: '',
+    city: '',
     totalCost: 0,
   });
 
@@ -197,30 +206,22 @@ const LinenOrderForm: React.FC = () => {
 
   const linenTotal = orderData.totalCost;
   const hasReachedMinimum = linenTotal >= 150;
-  const canSubmit = hasReachedMinimum && orderData.deliveryTiming && orderData.email;
+  
+  const canContinueToPayment = hasReachedMinimum && orderData.deliveryTiming;
 
-  const handleSubmit = async () => {
-    if (!canSubmit) return;
-    
-    setIsSubmitting(true);
-    try {
-      // Here you would submit the order
-      toast({
-        title: "Order Placed!",
-        description: "Your linen order has been submitted successfully.",
-      });
-      
-      // Navigate to confirmation or dashboard
-      navigate('/customer-dashboard');
-    } catch (error) {
-      console.error('Error submitting order:', error);
-      toast({
-        title: "Error",
-        description: "Failed to submit order. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
+  const updateOrderData = (updates: Partial<LinenOrderData>) => {
+    setOrderData(prev => ({ ...prev, ...updates }));
+  };
+
+  const nextStep = () => {
+    if (currentStep === 1 && canContinueToPayment) {
+      setCurrentStep(2);
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep === 2) {
+      setCurrentStep(1);
     }
   };
 
@@ -245,14 +246,35 @@ const LinenOrderForm: React.FC = () => {
             {!isAdminMode && orderData.customerId && <div className="w-[160px]" />}
           </div>
           <p className="text-center text-gray-600 mt-2">Fresh, quality linens delivered to your property</p>
+          
+          {/* Step Indicator */}
+          <div className="flex items-center justify-center gap-4 mt-6">
+            <div className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg transition-all",
+              currentStep === 1 ? "bg-[#18A5A5] text-white" : "bg-gray-200 text-gray-600"
+            )}>
+              <span className="font-semibold">1</span>
+              <span>Linen Selection</span>
+            </div>
+            <ArrowRight className="text-gray-400" />
+            <div className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg transition-all",
+              currentStep === 2 ? "bg-[#18A5A5] text-white" : "bg-gray-200 text-gray-600"
+            )}>
+              <span className="font-semibold">2</span>
+              <span>Payment Details</span>
+            </div>
+          </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Form - Takes 2 columns */}
-          <div className="lg:col-span-2 space-y-6">
+        {currentStep === 1 ? (
+          // Step 1: Linen Selection
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Main Form - Takes 2 columns */}
+            <div className="lg:col-span-2 space-y-6">
             {/* Linen Packages Section */}
             <Card className="p-6 bg-white shadow-lg">
               <div className="flex items-center gap-3 mb-6">
@@ -260,20 +282,12 @@ const LinenOrderForm: React.FC = () => {
                 <h2 className="text-2xl font-bold text-[#185166]">Select Linen Packages</h2>
               </div>
 
-              {/* Info Banners */}
-              <div className="space-y-3 mb-6">
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                    <div className="text-sm text-blue-800">
-                      <strong>Delivery Confirmation Required:</strong> Linen delivery timing will be confirmed with you after your order. We'll arrange the best delivery time based on your preferences below.
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                  <div className="text-sm text-amber-800">
-                    <strong>Important:</strong> £150 minimum order for linen delivery. Depending on your booking frequency, we can arrange delivery every 2-4 weeks.
+              {/* Info Banner */}
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-6">
+                <div className="flex items-start gap-3">
+                  <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-blue-800">
+                    <strong>Note:</strong> £150 minimum order required. Delivery date will be confirmed based on your address and our availability.
                   </div>
                 </div>
               </div>
@@ -291,7 +305,7 @@ const LinenOrderForm: React.FC = () => {
                       className={`relative overflow-hidden transition-all duration-300 ${
                         isSelected
                           ? 'ring-2 ring-[#18A5A5] shadow-lg'
-                          : 'hover:shadow-md hover:scale-105'
+                          : 'hover:shadow-md'
                       }`}
                     >
                       <div className="p-4 space-y-3">
@@ -306,38 +320,29 @@ const LinenOrderForm: React.FC = () => {
                           <p className="text-lg font-bold text-[#18A5A5] mt-1">£{pkg.price.toFixed(2)}</p>
                         </div>
 
-                        {isSelected ? (
-                          <div className="flex items-center justify-center gap-2 mt-3">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={() => updatePackageQuantity(pkg.id, quantity - 1)}
-                            >
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                            <span className="text-lg font-bold text-[#185166] min-w-[2rem] text-center">
-                              {quantity}
-                            </span>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={() => updatePackageQuantity(pkg.id, quantity + 1)}
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ) : (
+                        {/* Always show quantity controls */}
+                        <div className="flex items-center justify-center gap-2 mt-3">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full mt-3"
-                            onClick={() => updatePackageQuantity(pkg.id, 1)}
+                            className="h-8 w-8 p-0"
+                            onClick={() => updatePackageQuantity(pkg.id, quantity - 1)}
+                            disabled={quantity === 0}
                           >
-                            Add
+                            <Minus className="h-4 w-4" />
                           </Button>
-                        )}
+                          <span className="text-lg font-bold text-[#185166] min-w-[2rem] text-center">
+                            {quantity}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => updatePackageQuantity(pkg.id, quantity + 1)}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
 
                         {/* Info tooltip */}
                         <div className="group relative">
@@ -363,46 +368,77 @@ const LinenOrderForm: React.FC = () => {
               </div>
 
               <div className="space-y-6">
+                {/* Info Text */}
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    📦 Delivery date will be confirmed based on your address and our availability. We'll contact you within 24 hours to arrange the delivery.
+                  </p>
+                </div>
+
                 <div>
                   <Label className="text-base font-semibold mb-3 block">
-                    When would you like delivery? <span className="text-red-500">*</span>
+                    Delivery Preferences <span className="text-red-500">*</span>
                   </Label>
-                  <RadioGroup
-                    value={orderData.deliveryTiming}
-                    onValueChange={(value: any) => setOrderData(prev => ({ ...prev, deliveryTiming: value }))}
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
-                        <RadioGroupItem value="next-3-days" id="next-3-days" />
-                        <Label htmlFor="next-3-days" className="flex-1 cursor-pointer">
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-[#18A5A5]" />
-                            <span className="font-medium">Next 3 days</span>
-                          </div>
-                        </Label>
-                      </div>
-                      
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
-                        <RadioGroupItem value="next-7-days" id="next-7-days" />
-                        <Label htmlFor="next-7-days" className="flex-1 cursor-pointer">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-[#18A5A5]" />
-                            <span className="font-medium">Next 7 days</span>
-                          </div>
-                        </Label>
-                      </div>
-                      
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
-                        <RadioGroupItem value="flexible" id="flexible" />
-                        <Label htmlFor="flexible" className="flex-1 cursor-pointer">
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-[#18A5A5]" />
-                            <span className="font-medium">I am completely flexible</span>
-                          </div>
-                        </Label>
-                      </div>
-                    </div>
-                  </RadioGroup>
+                  
+                  {/* 3 Cards on one row */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card
+                      onClick={() => updateOrderData({ deliveryTiming: 'next-3-days' })}
+                      className={cn(
+                        "cursor-pointer transition-all hover:shadow-lg",
+                        orderData.deliveryTiming === 'next-3-days' && "ring-2 ring-[#18A5A5] shadow-lg"
+                      )}
+                    >
+                      <CardContent className="p-6 flex flex-col items-center text-center gap-3">
+                        <Clock className={cn(
+                          "h-8 w-8",
+                          orderData.deliveryTiming === 'next-3-days' ? "text-[#18A5A5]" : "text-gray-600"
+                        )} />
+                        <h3 className={cn(
+                          "font-semibold",
+                          orderData.deliveryTiming === 'next-3-days' ? "text-[#18A5A5]" : "text-[#185166]"
+                        )}>Next 3 days</h3>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card
+                      onClick={() => updateOrderData({ deliveryTiming: 'next-7-days' })}
+                      className={cn(
+                        "cursor-pointer transition-all hover:shadow-lg",
+                        orderData.deliveryTiming === 'next-7-days' && "ring-2 ring-[#18A5A5] shadow-lg"
+                      )}
+                    >
+                      <CardContent className="p-6 flex flex-col items-center text-center gap-3">
+                        <Calendar className={cn(
+                          "h-8 w-8",
+                          orderData.deliveryTiming === 'next-7-days' ? "text-[#18A5A5]" : "text-gray-600"
+                        )} />
+                        <h3 className={cn(
+                          "font-semibold",
+                          orderData.deliveryTiming === 'next-7-days' ? "text-[#18A5A5]" : "text-[#185166]"
+                        )}>Next 7 days</h3>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card
+                      onClick={() => updateOrderData({ deliveryTiming: 'flexible' })}
+                      className={cn(
+                        "cursor-pointer transition-all hover:shadow-lg",
+                        orderData.deliveryTiming === 'flexible' && "ring-2 ring-[#18A5A5] shadow-lg"
+                      )}
+                    >
+                      <CardContent className="p-6 flex flex-col items-center text-center gap-3">
+                        <CalendarCheck className={cn(
+                          "h-8 w-8",
+                          orderData.deliveryTiming === 'flexible' ? "text-[#18A5A5]" : "text-gray-600"
+                        )} />
+                        <h3 className={cn(
+                          "font-semibold",
+                          orderData.deliveryTiming === 'flexible' ? "text-[#18A5A5]" : "text-[#185166]"
+                        )}>Completely flexible</h3>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
 
                 <div>
@@ -411,23 +447,11 @@ const LinenOrderForm: React.FC = () => {
                   </Label>
                   <Textarea
                     id="deliveryNotes"
-                    placeholder="e.g., Prefer morning delivery, leave with neighbor if not home, gate code, etc."
+                    placeholder="e.g., Prefer morning delivery, gate code, access instructions, etc."
                     value={orderData.deliveryNotes}
-                    onChange={(e) => setOrderData(prev => ({ ...prev, deliveryNotes: e.target.value }))}
+                    onChange={(e) => updateOrderData({ deliveryNotes: e.target.value })}
                     rows={4}
                     className="resize-none"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="address" className="text-base font-semibold mb-2 block">
-                    Delivery Address <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="address"
-                    placeholder="Full delivery address"
-                    value={orderData.address}
-                    onChange={(e) => setOrderData(prev => ({ ...prev, address: e.target.value }))}
                   />
                 </div>
               </div>
@@ -480,13 +504,10 @@ const LinenOrderForm: React.FC = () => {
                       <span className="text-[#18A5A5]">£{linenTotal.toFixed(2)}</span>
                     </div>
 
-                    {!hasReachedMinimum && (
+                    {!hasReachedMinimum && linenTotal > 0 && (
                       <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                         <p className="text-sm text-red-800 text-center">
-                          <strong>Need £{(150 - linenTotal).toFixed(2)} more</strong> to reach minimum
-                        </p>
-                        <p className="text-xs text-red-600 text-center mt-1">
-                          £150 minimum required
+                          <strong>Need £{(150 - linenTotal).toFixed(2)} more</strong> to reach £150 minimum
                         </p>
                       </div>
                     )}
@@ -498,13 +519,13 @@ const LinenOrderForm: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Submit Button */}
+                  {/* Continue Button */}
                   <Button
-                    onClick={handleSubmit}
-                    disabled={!canSubmit || isSubmitting}
+                    onClick={nextStep}
+                    disabled={!canContinueToPayment}
                     className="w-full bg-[#18A5A5] hover:bg-[#185166] text-white py-6 text-lg font-semibold"
                   >
-                    {isSubmitting ? 'Processing...' : 'Place Order'}
+                    Continue to Payment
                   </Button>
 
                   {!orderData.deliveryTiming && linenTotal > 0 && (
@@ -512,11 +533,28 @@ const LinenOrderForm: React.FC = () => {
                       Please select delivery timing to continue
                     </p>
                   )}
+                  
+                  {!hasReachedMinimum && orderData.deliveryTiming && (
+                    <p className="text-xs text-center text-gray-500">
+                      £150 minimum order required
+                    </p>
+                  )}
                 </div>
               )}
             </Card>
           </div>
         </div>
+        ) : (
+          // Step 2: Payment Step
+          <Elements stripe={stripePromise}>
+            <PaymentStep
+              data={orderData as any}
+              onUpdate={updateOrderData}
+              onBack={prevStep}
+              isAdminMode={isAdminMode}
+            />
+          </Elements>
+        )}
       </main>
     </div>
   );
