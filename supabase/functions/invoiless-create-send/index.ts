@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { customerId, service, cost, hours, discount, dueDate, notes } = await req.json();
+    const { customerId, service, cost, hours, discount, invoiceTerm, notes } = await req.json();
 
     // Validate required fields
     if (!customerId) {
@@ -30,6 +30,12 @@ serve(async (req) => {
       throw new Error('INVOILESS_API_KEY is not configured');
     }
 
+    // Calculate due date from invoice term (default 1 day)
+    const termDays = invoiceTerm ? parseInt(invoiceTerm) : 1;
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + termDays);
+    const dueDateString = dueDate.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+
     // Prepare invoice data - discount is sent as actual amount, not percentage
     const invoiceData: any = {
       customerId: customerId,
@@ -41,17 +47,13 @@ serve(async (req) => {
           quantity: 1
         }
       ],
-      notes: notes || ''
+      notes: notes || '',
+      dueDate: dueDateString
     };
 
     // Only add discount if provided
     if (discount && parseFloat(discount) > 0) {
       invoiceData.discount = parseFloat(discount);
-    }
-
-    // Only add due date if provided
-    if (dueDate) {
-      invoiceData.dueDate = dueDate;
     }
 
     console.log('Creating invoice in Invoiless:', invoiceData);
@@ -60,7 +62,7 @@ serve(async (req) => {
     const createResponse = await fetch('https://api.invoiless.com/v1/invoices', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${INVOILESS_API_KEY}`,
+        'api-key': INVOILESS_API_KEY,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(invoiceData),
