@@ -79,25 +79,6 @@ const ServiceSelection = ({ onServiceSelect, isAdminView = false }: ServiceSelec
 
   return (
     <div className="space-y-8">
-      {/* Development Notice - Moved to Top */}
-      <div className="p-6 bg-primary/5 rounded-xl border border-primary/20 space-y-3">
-        <h3 className="text-lg font-semibold text-[#185166]">
-          📋 Booking forms in our app are currently under development
-        </h3>
-        <p className="text-gray-600">
-          While we're perfecting the booking experience, you can easily create new bookings by duplicating from your completed ones in the <strong>Completed Bookings</strong> tab.
-        </p>
-        <div className="text-sm text-gray-500">
-          Simply find a completed booking, click duplicate, and choose your new date and time!
-        </div>
-      </div>
-
-      <div className="text-center">
-        <h2 className="text-3xl font-bold text-[#185166] mb-4">
-          Choose the service you would like to book
-        </h2>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {services.map((service) => {
           const IconComponent = service.icon;
@@ -105,10 +86,10 @@ const ServiceSelection = ({ onServiceSelect, isAdminView = false }: ServiceSelec
           return (
             <Card 
               key={service.id}
-              className={`relative overflow-hidden transition-all duration-300 hover:shadow-lg ${
+              className={`relative overflow-hidden transition-all duration-300 ${
                 service.available 
-                  ? 'cursor-pointer hover:scale-105 border-2 border-transparent hover:border-[#18A5A5]' 
-                  : 'cursor-not-allowed opacity-75'
+                  ? 'cursor-pointer hover:scale-105 border-2 border-transparent hover:border-[#18A5A5] shadow-[0_8px_16px_rgba(0,0,0,0.15)] hover:shadow-[0_12px_24px_rgba(0,0,0,0.25)]' 
+                  : 'cursor-not-allowed opacity-75 shadow-md'
               }`}
               onClick={() => service.available && handleServiceClick(service.id)}
             >

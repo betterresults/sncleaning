@@ -42,7 +42,7 @@ const PublicServiceSelection = () => {
           className="mb-6 flex items-center gap-2 text-[#185166] border-[#185166] hover:bg-[#185166] hover:text-white"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Home
+          Back
         </Button>
 
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl p-8">
@@ -50,9 +50,6 @@ const PublicServiceSelection = () => {
             <h1 className="text-4xl font-bold text-[#185166] mb-4">
               Choose Your Service
             </h1>
-            <p className="text-lg text-muted-foreground">
-              Select the cleaning service you'd like to book
-            </p>
             {postcode && (
               <p className="text-sm text-muted-foreground mt-2">
                 Service area: <span className="font-semibold">{postcode}</span>
