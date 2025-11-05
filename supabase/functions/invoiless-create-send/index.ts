@@ -30,15 +30,18 @@ serve(async (req) => {
       throw new Error('INVOILESS_API_KEY is not configured');
     }
 
-    // Calculate due date from invoice term (default 1 day)
+    // Calculate invoice date (today) and due date from invoice term (default 1 day)
+    const today = new Date();
+    const dateString = today.toISOString().split('T')[0]; // YYYY-MM-DD
     const termDays = invoiceTerm ? parseInt(invoiceTerm) : 1;
-    const dueDate = new Date();
+    const dueDate = new Date(today);
     dueDate.setDate(dueDate.getDate() + termDays);
-    const dueDateString = dueDate.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    const dueDateString = dueDate.toISOString().split('T')[0]; // YYYY-MM-DD
 
     // Prepare invoice data - discount is sent as actual amount, not percentage
     const invoiceData: any = {
       customerId: customerId,
+      date: dateString,
       items: [
         {
           name: service,
