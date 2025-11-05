@@ -603,7 +603,7 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
                     className="hover:opacity-80 transition-opacity"
                   >
                     <Badge variant="destructive" className="text-sm font-medium px-3 py-1.5 cursor-pointer">
-                      Unassigned - Click to Assign
+                      Unassigned
                     </Badge>
                   </button>
                 )}
