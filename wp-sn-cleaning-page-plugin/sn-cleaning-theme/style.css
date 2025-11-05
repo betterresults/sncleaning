@@ -1,0 +1,21 @@
+/*
+Theme Name: SN Cleaning Services
+Theme URI: https://sncleaningservices.co.uk
+Author: SN Core LTD
+Author URI: https://sncleaningservices.co.uk
+Description: Professional cleaning services theme with fully editable content via WordPress dashboard. Built for SN Cleaning Services with modern design system and reusable components.
+Version: 1.0.0
+Requires at least: 6.0
+Tested up to: 6.4
+Requires PHP: 7.4
+License: GNU General Public License v2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: sn-cleaning
+Tags: cleaning, business, professional, services, custom-theme
+
+This theme is designed specifically for SN Cleaning Services.
+All content is editable via SN Cleaning → Theme Settings in WordPress dashboard.
+*/
+
+/* This stylesheet is primarily for theme registration. 
+   Main styles are in assets/css/main.css (compiled from Tailwind) */

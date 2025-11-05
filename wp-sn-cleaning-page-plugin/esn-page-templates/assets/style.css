@@ -1,0 +1,145 @@
+/* ESN Page Templates Styles */
+
+/* Design System Colors */
+:root {
+  --primary: 180 63% 36%; /* Teal to match React */
+  --primary-light: 180 45% 40%;
+  --primary-dark: 203 55% 25%;
+  --primary-foreground: 0 0% 100%;
+  --background: 0 0% 100%;
+  --foreground: 203 55% 25%; /* Dark teal text */
+  --muted: 210 40% 96%;
+  --muted-foreground: 210 11% 22%;
+  --card: 0 0% 100%;
+  --card-foreground: 210 11% 15%;
+  --border: 210 40% 90%;
+  --primary-glow: 180 63% 70%;
+}
+
+.dark {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+}
+
+/* Utility Classes */
+.section-padding {
+  padding: 4rem 0;
+}
+
+.section-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.btn-primary {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  padding: 0.75rem 2rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-block;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background: hsl(var(--primary-dark));
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px hsl(var(--primary) / 0.3);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: hsl(var(--foreground));
+  padding: 0.75rem 2rem;
+  border: 2px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-block;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: hsl(var(--muted));
+  border-color: hsl(var(--primary));
+}
+
+/* Component Styles */
+.bg-gradient-surface {
+  background: linear-gradient(135deg, hsl(var(--muted) / 0.3), hsl(var(--background)));
+}
+
+.text-primary {
+  color: hsl(var(--primary));
+}
+
+.bg-primary {
+  background-color: hsl(var(--primary));
+}
+
+.bg-primary-dark {
+  background-color: hsl(var(--primary-dark));
+}
+
+.text-foreground {
+  color: hsl(var(--foreground));
+}
+
+.text-muted-foreground {
+  color: hsl(var(--muted-foreground));
+}
+
+.bg-background {
+  background-color: hsl(var(--background));
+}
+
+.bg-muted {
+  background-color: hsl(var(--muted));
+}
+
+.bg-card {
+  background-color: hsl(var(--card));
+}
+
+.border-border {
+  border-color: hsl(var(--border));
+}
+
+/* FAQ Styles */
+.faq-content {
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.faq-icon {
+  font-size: 1.5rem;
+  font-weight: bold;
+  transition: transform 0.3s ease;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .section-padding {
+    padding: 2rem 0;
+  }
+  
+  .grid {
+    gap: 1rem;
+  }
+}
+
+/* Gradient Backgrounds */
+.bg-gradient-to-br {
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.1), hsl(var(--background)), hsl(var(--primary) / 0.05));
+}
+
+.bg-gradient-to-r {
+  background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary-light)));
+}
