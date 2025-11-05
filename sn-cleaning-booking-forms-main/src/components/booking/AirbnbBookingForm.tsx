@@ -87,6 +87,7 @@ export interface BookingData {
   adminDiscountPercentage?: number;
   adminHourlyRateOverride?: number;
   adminTotalCostOverride?: number;
+  adminRemoveShortNoticeCharge?: boolean;
   
   // Admin/Customer specific fields
   customerId?: number;

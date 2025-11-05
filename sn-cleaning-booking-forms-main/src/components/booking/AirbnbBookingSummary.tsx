@@ -171,8 +171,29 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
       total += overrideAmount; // Can be negative (discount) or positive (markup)
     }
 
+    // Add short notice charge (unless admin removed it)
+    if (!(isAdminMode && data.adminRemoveShortNoticeCharge)) {
+      total += shortNoticeInfo.charge;
+    }
+
+    // Add equipment one-time cost
+    total += calculations.equipmentOneTimeCost || 0;
+
+    // Add oven cleaning cost
+    total += calculations.ovenCleaningCost || 0;
+
     // Add linen packages cost
     total += calculateLinenCost();
+    
+    // Add scheduling modifiers (additional charges and discounts)
+    const additionalCharges = calculations.modifierDetails
+      ?.filter((m: any) => m.type === 'additional')
+      .reduce((sum: number, m: any) => sum + m.amount, 0) || 0;
+    const discounts = calculations.modifierDetails
+      ?.filter((m: any) => m.type === 'discount')
+      .reduce((sum: number, m: any) => sum + m.amount, 0) || 0;
+    
+    total += additionalCharges - discounts;
     const subtotal = total;
 
     // Apply admin discount if set (apply percentage first, then fixed amount)
@@ -185,7 +206,8 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
     return Math.max(0, total);
   };
   const shortNoticeInfo = getShortNoticeInfo();
-  const hasShortNoticeCharge = shortNoticeInfo.charge > 0;
+  // Admin can remove short notice charge
+  const hasShortNoticeCharge = shortNoticeInfo.charge > 0 && !(isAdminMode && data.adminRemoveShortNoticeCharge);
   const effectiveHourlyRate = data.adminHourlyRateOverride !== undefined ? data.adminHourlyRateOverride : calculations.hourlyRate;
   const renderSummaryContent = () => <div className="space-y-3">
       {/* Service Section */}
@@ -317,12 +339,17 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
     }).filter(Boolean)}
 
       {/* Short Notice Charge */}
-      {hasShortNoticeCharge && <div className="flex justify-between items-center">
+      {shortNoticeInfo.charge > 0 && (
+        <div className="flex justify-between items-center">
           <span className="text-muted-foreground">{shortNoticeInfo.notice}</span>
-          <span className="text-foreground font-semibold">
+          <span className={`font-semibold ${isAdminMode && data.adminRemoveShortNoticeCharge ? 'line-through text-gray-400' : 'text-foreground'}`}>
+            {isAdminMode && data.adminRemoveShortNoticeCharge && (
+              <span className="text-green-600 mr-2 no-underline">WAIVED</span>
+            )}
             £{shortNoticeInfo.charge.toFixed(2)}
           </span>
-        </div>}
+        </div>
+      )}
       
       {/* Additional Charges from Scheduling Rules */}
       {calculations.modifierDetails && calculations.modifierDetails
@@ -448,11 +475,25 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
           })} className="h-10 mt-1" />
               </div>
               
+              <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
+                <div>
+                  <Label className="text-xs font-medium text-orange-900">Remove Short Notice Charge</Label>
+                  <p className="text-xs text-orange-600 mt-0.5">Waive urgent booking fee</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={data.adminRemoveShortNoticeCharge || false}
+                  onChange={(e) => onUpdate({ adminRemoveShortNoticeCharge: e.target.checked })}
+                  className="h-5 w-5 rounded border-orange-300 text-orange-600 focus:ring-orange-500"
+                />
+              </div>
+              
               <Button variant="ghost" size="sm" onClick={() => onUpdate({
           adminHourlyRateOverride: undefined,
           adminDiscountAmount: undefined,
           adminDiscountPercentage: undefined,
-          adminTotalCostOverride: undefined
+          adminTotalCostOverride: undefined,
+          adminRemoveShortNoticeCharge: false
         })} className="w-full text-xs">
                 Reset All Overrides
               </Button>
