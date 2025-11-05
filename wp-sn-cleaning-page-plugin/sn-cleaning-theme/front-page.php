@@ -76,7 +76,7 @@ $options = get_option('sn_theme_options', array());
                             </h3>
                         </div>
 
-                        <form id="quote-form-desktop" action="/choose-service" method="get" class="space-y-4">
+                        <form id="quote-form-desktop" action="https://account.sncleaningservices.co.uk/choose-service" method="get" class="space-y-4">
                             <div class="flex items-center bg-white rounded-xl border-2 border-gray-300 shadow-sm px-4 py-3">
                                 <svg class="w-6 h-6 text-teal-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                 <input type="text" id="postcode-desktop" name="postcode" placeholder="Enter postcode" required class="border-0 bg-transparent text-lg placeholder:text-gray-500 focus:outline-none p-0 font-medium w-full text-gray-900" />
@@ -96,7 +96,7 @@ $options = get_option('sn_theme_options', array());
 
                     <!-- Mobile Form -->
                     <div class="lg:hidden w-full max-w-2xl mx-auto">
-                        <form id="quote-form-mobile" action="/choose-service" method="get" class="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-6 border border-gray-200">
+                        <form id="quote-form-mobile" action="https://account.sncleaningservices.co.uk/choose-service" method="get" class="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-6 border border-gray-200">
                             <div class="text-center mb-4">
                                 <h3 class="text-2xl font-bold font-heading text-gray-900">
                                     Get Your Quote
