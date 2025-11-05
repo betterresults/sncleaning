@@ -431,7 +431,8 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   };
 
   const handlePaymentAction = (booking: Booking) => {
-    if (booking.payment_method === 'Invoiless') {
+    const paymentMethod = booking.payment_method?.toLowerCase() || '';
+    if (paymentMethod.includes('invoice')) {
       setSelectedBookingForInvoiless(booking);
       setInvoilessDialogOpen(true);
     } else {
