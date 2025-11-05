@@ -248,45 +248,85 @@ const LinenOrderForm: React.FC = () => {
       setCurrentStep(1);
     }
   };
-  return <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+  return <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-white py-6 border-b border-border shadow-sm">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-2">
-            {!isAdminMode && orderData.customerId && <Button variant="outline" onClick={() => navigate('/customer-dashboard')} className="text-sm">
+      <header className="bg-white py-4 mb-3 border-b border-border shadow-[0_10px_30px_rgba(0,0,0,0.14)]">
+        <div className="container mx-auto px-2 sm:px-4">
+          <div className="flex items-center justify-between mb-4">
+            {!isAdminMode && orderData.customerId && (
+              <Button
+                variant="outline"
+                onClick={() => navigate('/customer-dashboard')}
+                className="text-sm font-medium hover:bg-accent/50 transition-all duration-200 shadow-sm"
+              >
                 ← Back to Dashboard
-              </Button>}
-            <h1 className={`text-3xl md:text-4xl font-bold text-[#185166] ${!isAdminMode && orderData.customerId ? '' : 'mx-auto'}`}>
-              Order Linen Packages
+              </Button>
+            )}
+            <h1 className={`text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700 ${!isAdminMode && orderData.customerId ? '' : 'mx-auto'}`}>
+              Linen Order Form
             </h1>
-            {!isAdminMode && orderData.customerId && <div className="w-[160px]" />}
+            {!isAdminMode && orderData.customerId && <div className="w-[140px]" />}
           </div>
           
-          
-          {/* Step Indicator */}
-          <div className="flex items-center justify-center gap-4 mt-6">
-            <div className={cn("flex items-center gap-2 px-4 py-2 rounded-lg transition-all", currentStep === 1 ? "bg-[#18A5A5] text-white" : "bg-gray-200 text-gray-600")}>
-              <span className="font-semibold">1</span>
-              <span>Linen Selection</span>
-            </div>
-            <ArrowRight className="text-gray-400" />
-            <div className={cn("flex items-center gap-2 px-4 py-2 rounded-lg transition-all", currentStep === 2 ? "bg-[#18A5A5] text-white" : "bg-gray-200 text-gray-600")}>
-              <span className="font-semibold">2</span>
-              <span>Payment Details</span>
+          {/* Step Navigation - Mobile Optimized */}
+          <div className="max-w-4xl mx-auto">
+            {/* Compact stepper with progress */}
+            <div className="flex items-center justify-center gap-1 px-2">
+              {[
+                { id: 1, title: 'Selection' },
+                { id: 2, title: 'Summary' }
+              ].map((step, index) => {
+                const stepNumber = index + 1;
+                const isActive = currentStep === stepNumber;
+                const isCompleted = currentStep > stepNumber;
+                
+                return (
+                  <div key={step.id} className="contents">
+                    <button
+                      onClick={() => (isCompleted || stepNumber <= currentStep) && setCurrentStep(stepNumber as 1 | 2)}
+                      disabled={!(isCompleted || stepNumber <= currentStep)}
+                      className={`flex flex-col items-center justify-center transition-all duration-300 ${
+                        isActive ? 'flex-1' : 'w-12'
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                        isActive 
+                          ? 'bg-primary text-white scale-110' 
+                          : isCompleted 
+                          ? 'bg-primary text-white' 
+                          : 'bg-gray-200 text-gray-400'
+                      }`}>
+                        {stepNumber}
+                      </div>
+                      {isActive && (
+                        <span className="text-xs sm:text-sm font-medium text-primary mt-1 text-center">
+                          {step.title}
+                        </span>
+                      )}
+                    </button>
+                    
+                    {index < 1 && (
+                      <div className={`h-0.5 flex-1 max-w-[20px] sm:max-w-[30px] transition-all ${
+                        currentStep > stepNumber ? 'bg-primary' : 'bg-gray-200'
+                      }`} />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8 max-w-7xl">
+      <main className="container mx-auto px-2 sm:px-4 py-2 max-w-[1400px]">
         {currentStep === 1 ?
       // Step 1: Linen Selection
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
             {/* Main Form - Takes 2 columns */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-4 lg:space-y-6">
             {/* Linen Packages Section */}
-            <Card className="p-6 bg-white shadow-lg">
+            <Card className="p-4 sm:p-6 lg:p-8 bg-white transition-shadow duration-300 border border-border shadow-[0_20px_60px_rgba(0,0,0,0.18),0_2px_8px_rgba(0,0,0,0.12)]">
               <div className="flex items-center gap-3 mb-6">
                 <Package2 className="h-7 w-7 text-[#18A5A5]" />
                 <h2 className="text-2xl font-bold text-[#185166]">Select Linen Packages</h2>
@@ -346,7 +386,7 @@ const LinenOrderForm: React.FC = () => {
             </Card>
 
             {/* Delivery Preferences */}
-            <Card className="p-6 bg-white shadow-lg">
+            <Card className="p-4 sm:p-6 lg:p-8 bg-white transition-shadow duration-300 border border-border shadow-[0_20px_60px_rgba(0,0,0,0.18),0_2px_8px_rgba(0,0,0,0.12)]">
               <div className="flex items-center gap-3 mb-6">
                 <Calendar className="h-7 w-7 text-[#18A5A5]" />
                 <h2 className="text-2xl font-bold text-[#185166]">Delivery Preferences</h2>
@@ -410,7 +450,7 @@ const LinenOrderForm: React.FC = () => {
 
           {/* Order Summary - Takes 1 column */}
           <div className="lg:col-span-1">
-            <Card className="p-6 bg-white shadow-lg sticky top-4">
+            <Card className="p-4 sm:p-6 bg-white sticky top-4 transition-shadow duration-300 border border-border shadow-[0_20px_60px_rgba(0,0,0,0.18),0_2px_8px_rgba(0,0,0,0.12)]">
               <div className="flex items-center gap-3 mb-6">
                 <ShoppingCart className="h-6 w-6 text-[#18A5A5]" />
                 <h2 className="text-xl font-bold text-[#185166]">Order Summary</h2>
