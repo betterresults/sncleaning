@@ -32,11 +32,11 @@ serve(async (req) => {
 
     // Calculate invoice date (today) and due date from invoice term (default 1 day)
     const today = new Date();
-    const dateString = today.toISOString().split('T')[0]; // YYYY-MM-DD
+    const dateString = today.toISOString(); // full ISO 8601
     const termDays = invoiceTerm ? parseInt(invoiceTerm) : 1;
     const dueDate = new Date(today);
     dueDate.setDate(dueDate.getDate() + termDays);
-    const dueDateString = dueDate.toISOString().split('T')[0]; // YYYY-MM-DD
+    const dueDateString = dueDate.toISOString(); // full ISO 8601
 
     // Prepare invoice data - discount is sent as actual amount, not percentage
     const invoiceData: any = {
