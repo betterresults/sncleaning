@@ -7,19 +7,27 @@ import { trackEvent } from "@/utils/analytics";
 
 const HomepageHeroSection = () => {
   const [postcode, setPostcode] = useState("");
+  const [email, setEmail] = useState("");
 
   const handleGetQuote = () => {
     trackEvent('get_quote_click', {
       location: 'homepage_hero',
-      postcode: postcode || 'not_provided'
+      postcode: postcode || 'not_provided',
+      email: email || 'not_provided'
     });
     
     const bookingPageUrl = '/booking';
+    const params = new URLSearchParams();
+    
     if (postcode) {
-      window.location.href = bookingPageUrl + '?postcode=' + encodeURIComponent(postcode);
-    } else {
-      window.location.href = bookingPageUrl;
+      params.append('postcode', postcode);
     }
+    if (email) {
+      params.append('email', email);
+    }
+    
+    const url = params.toString() ? `${bookingPageUrl}?${params.toString()}` : bookingPageUrl;
+    window.location.href = url;
   };
 
   return (
@@ -94,16 +102,33 @@ const HomepageHeroSection = () => {
               </div>
 
               <div className="space-y-4">
-                {/* Desktop input with icon */}
+                {/* Postcode input */}
                 <div className="flex items-center bg-background rounded-xl border-2 border-input shadow-sm px-4 py-3">
                   <MapPin className="w-6 h-6 text-primary mr-3 flex-shrink-0" />
                   <Input
                     id="postcode-desktop"
                     type="text"
-                    placeholder="Enter a postcode here"
+                    placeholder="Enter postcode"
                     value={postcode}
                     onChange={(e) => setPostcode(e.target.value)}
-                    className="border-0 bg-transparent text-lg placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0 p-0 font-medium"
+                    onKeyPress={(e) => e.key === 'Enter' && handleGetQuote()}
+                    className="border-0 bg-transparent text-lg placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 p-0 font-medium text-foreground"
+                  />
+                </div>
+                
+                {/* Email input */}
+                <div className="flex items-center bg-background rounded-xl border-2 border-input shadow-sm px-4 py-3">
+                  <svg className="w-6 h-6 text-primary mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  <Input
+                    id="email-desktop"
+                    type="email"
+                    placeholder="Enter email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleGetQuote()}
+                    className="border-0 bg-transparent text-lg placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 p-0 font-medium text-foreground"
                   />
                 </div>
                 
@@ -120,21 +145,36 @@ const HomepageHeroSection = () => {
 
             {/* Mobile Form */}
             <div className="lg:hidden w-full max-w-2xl mx-auto">
-              <div className="bg-background rounded-2xl p-3 shadow-xl border border-input">
+              <div className="bg-background rounded-2xl p-3 shadow-xl border border-input space-y-2">
                 <div className="flex items-center px-4 py-3">
                   <MapPin className="w-6 h-6 text-primary mr-3 flex-shrink-0" />
                   <Input
                     id="postcode-mobile"
                     type="text"
-                    placeholder="Enter a postcode here"
+                    placeholder="Enter postcode"
                     value={postcode}
                     onChange={(e) => setPostcode(e.target.value)}
-                    className="border-0 bg-transparent text-lg placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0 p-0 font-medium"
+                    onKeyPress={(e) => e.key === 'Enter' && handleGetQuote()}
+                    className="border-0 bg-transparent text-lg placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 p-0 font-medium text-foreground"
+                  />
+                </div>
+                <div className="flex items-center px-4 py-3">
+                  <svg className="w-6 h-6 text-primary mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  <Input
+                    id="email-mobile"
+                    type="email"
+                    placeholder="Enter email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleGetQuote()}
+                    className="border-0 bg-transparent text-lg placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 p-0 font-medium text-foreground"
                   />
                 </div>
                 <Button
                   onClick={handleGetQuote}
-                  className="btn-hero w-full h-12 text-base mt-2"
+                  className="btn-hero w-full h-12 text-base"
                 >
                   Get A Quote
                   <ArrowRight className="w-5 h-5 ml-2" />
