@@ -35,6 +35,8 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
   const [bookingTotalHours, setBookingTotalHours] = useState<number>(0);
   const [calculatedCleanerPay, setCalculatedCleanerPay] = useState<number | null>(null);
   const [isHourlyService, setIsHourlyService] = useState<boolean>(false);
+  const [customHourlyRate, setCustomHourlyRate] = useState<string>('');
+  const [customPercentageRate, setCustomPercentageRate] = useState<string>('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -90,32 +92,44 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
     }
   };
 
-  // Calculate cleaner pay when cleaner is selected
+  // Set default rates when cleaner is selected
   useEffect(() => {
     if (selectedCleaner) {
       const cleaner = cleaners.find(c => c.id.toString() === selectedCleaner);
       if (cleaner) {
-        let calculatedPay: number;
-        
-        if (isHourlyService && bookingTotalHours > 0 && cleaner.hourly_rate) {
-          // Use hourly rate calculation
-          calculatedPay = bookingTotalHours * cleaner.hourly_rate;
-        } else if (bookingTotalCost > 0 && cleaner.presentage_rate) {
-          // Use percentage calculation
-          calculatedPay = (bookingTotalCost * cleaner.presentage_rate) / 100;
-        } else {
-          setCalculatedCleanerPay(null);
-          return;
-        }
-        
-        setCalculatedCleanerPay(calculatedPay);
-      } else {
-        setCalculatedCleanerPay(null);
+        setCustomHourlyRate(cleaner.hourly_rate?.toString() || '');
+        setCustomPercentageRate(cleaner.presentage_rate?.toString() || '');
       }
+    } else {
+      setCustomHourlyRate('');
+      setCustomPercentageRate('');
+    }
+  }, [selectedCleaner, cleaners]);
+
+  // Calculate cleaner pay when values change
+  useEffect(() => {
+    if (selectedCleaner) {
+      let calculatedPay: number | null = null;
+      
+      if (isHourlyService && bookingTotalHours > 0 && customHourlyRate) {
+        // Use hourly rate calculation
+        const hourlyRate = parseFloat(customHourlyRate);
+        if (!isNaN(hourlyRate)) {
+          calculatedPay = bookingTotalHours * hourlyRate;
+        }
+      } else if (bookingTotalCost > 0 && customPercentageRate) {
+        // Use percentage calculation
+        const percentageRate = parseFloat(customPercentageRate);
+        if (!isNaN(percentageRate)) {
+          calculatedPay = (bookingTotalCost * percentageRate) / 100;
+        }
+      }
+      
+      setCalculatedCleanerPay(calculatedPay);
     } else {
       setCalculatedCleanerPay(null);
     }
-  }, [selectedCleaner, bookingTotalCost, bookingTotalHours, isHourlyService, cleaners]);
+  }, [selectedCleaner, bookingTotalCost, bookingTotalHours, isHourlyService, customHourlyRate, customPercentageRate]);
 
   const handleAssign = async () => {
     if (!bookingId || !selectedCleaner) return;
@@ -131,10 +145,11 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
       if (calculatedCleanerPay !== null) {
         updateData.cleaner_pay = calculatedCleanerPay;
         
-        // Also store the cleaner percentage used
-        const cleaner = cleaners.find(c => c.id.toString() === selectedCleaner);
-        if (cleaner) {
-          updateData.cleaner_percentage = cleaner.presentage_rate;
+        // Store the custom rates used
+        if (isHourlyService && customHourlyRate) {
+          updateData.cleaner_rate = parseFloat(customHourlyRate);
+        } else if (customPercentageRate) {
+          updateData.cleaner_percentage = parseFloat(customPercentageRate);
         }
       }
 
@@ -199,19 +214,25 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
           </div>
 
           {/* Show calculated cleaner pay */}
-          {calculatedCleanerPay !== null && (
-            <div className="bg-primary/5 rounded-lg p-4 space-y-2">
+          {selectedCleaner && (
+            <div className="bg-primary/5 rounded-lg p-4 space-y-3">
               {isHourlyService ? (
                 <>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Total Hours:</span>
                     <span className="font-semibold">{bookingTotalHours.toFixed(2)}h</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Hourly Rate:</span>
-                    <span className="font-semibold">
-                      £{cleaners.find(c => c.id.toString() === selectedCleaner)?.hourly_rate}/hr
-                    </span>
+                  <div className="space-y-2">
+                    <Label htmlFor="hourly-rate" className="text-sm text-muted-foreground">Hourly Rate (£):</Label>
+                    <Input
+                      id="hourly-rate"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={customHourlyRate}
+                      onChange={(e) => setCustomHourlyRate(e.target.value)}
+                      placeholder="Enter hourly rate"
+                    />
                   </div>
                 </>
               ) : (
@@ -220,18 +241,27 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                     <span className="text-sm text-muted-foreground">Booking Total:</span>
                     <span className="font-semibold">£{bookingTotalCost.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Cleaner Rate:</span>
-                    <span className="font-semibold">
-                      {cleaners.find(c => c.id.toString() === selectedCleaner)?.presentage_rate}%
-                    </span>
+                  <div className="space-y-2">
+                    <Label htmlFor="percentage-rate" className="text-sm text-muted-foreground">Cleaner Rate (%):</Label>
+                    <Input
+                      id="percentage-rate"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={customPercentageRate}
+                      onChange={(e) => setCustomPercentageRate(e.target.value)}
+                      placeholder="Enter percentage rate"
+                    />
                   </div>
                 </>
               )}
-              <div className="border-t pt-2 flex justify-between items-center">
-                <span className="text-sm font-semibold">Cleaner Pay:</span>
-                <span className="text-lg font-bold text-primary">£{calculatedCleanerPay.toFixed(2)}</span>
-              </div>
+              {calculatedCleanerPay !== null && (
+                <div className="border-t pt-2 flex justify-between items-center">
+                  <span className="text-sm font-semibold">Cleaner Pay:</span>
+                  <span className="text-lg font-bold text-primary">£{calculatedCleanerPay.toFixed(2)}</span>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -243,6 +273,8 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
               onOpenChange(false);
               setSelectedCleaner('');
               setCalculatedCleanerPay(null);
+              setCustomHourlyRate('');
+              setCustomPercentageRate('');
             }}
             disabled={isLoading}
           >
