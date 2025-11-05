@@ -464,19 +464,25 @@ useEffect(() => {
         additionalDetails: data
       };
 
-      // If user is a customer with saved payment method
-      if (customerId && defaultPaymentMethod) {
+      // Check if using a saved payment method (customer's or admin-selected)
+      const usingSavedPaymentMethod = (customerId && defaultPaymentMethod) || 
+                                      (isAdminMode && selectedAdminPaymentMethod);
+
+      if (usingSavedPaymentMethod) {
         // Submit booking first
         const result = await submitBooking(bookingPayload, true);
 
-        console.log('[PaymentStep] submitBooking result (has default PM):', result);
+        console.log('[PaymentStep] submitBooking result (using saved PM):', result);
 
         if (!result.success || !result.bookingId) {
           throw new Error('Failed to create booking');
         }
 
-        // For urgent bookings, charge immediately
-        if (isUrgentBooking) {
+        // Handle Stripe charge timing based on admin selection
+        const chargeTiming = data.stripeChargeTiming || 'authorize';
+        
+        if (chargeTiming === 'immediate' || (isUrgentBooking && chargeTiming !== 'none')) {
+          // Charge immediately
           const { data: chargeResult, error: chargeError } = await supabase.functions.invoke(
             'system-payment-action',
             {
@@ -490,7 +496,11 @@ useEffect(() => {
           if (chargeError || !chargeResult?.success) {
             throw new Error(chargeResult?.error || 'Payment failed');
           }
+        } else if (chargeTiming === 'authorize' && !isUrgentBooking) {
+          // Authorization already handled by payment method verification
+          console.log('[PaymentStep] Payment authorized, will be charged later');
         }
+        // If 'none', skip payment processing
 
         navigate('/booking-confirmation', { state: { bookingId: result.bookingId } });
       } else {
