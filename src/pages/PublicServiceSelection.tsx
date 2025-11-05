@@ -20,13 +20,24 @@ const PublicServiceSelection = () => {
   }, [searchParams]);
 
   const handleServiceSelect = (serviceType: string) => {
-    // Store selected service and redirect to auth/signup with service info
+    // Store selected service and booking details
     sessionStorage.setItem('selectedService', serviceType);
     sessionStorage.setItem('bookingPostcode', postcode);
     sessionStorage.setItem('bookingEmail', email);
     
-    // Redirect to auth page with message to sign up/login
-    navigate(`/auth?service=${serviceType}&postcode=${postcode}&email=${email}`);
+    // For public booking forms (Airbnb, Linen), redirect directly to the form
+    if (serviceType === 'airbnb-cleaning') {
+      navigate(`/airbnb?postcode=${encodeURIComponent(postcode)}&email=${encodeURIComponent(email)}`);
+      return;
+    }
+    
+    if (serviceType === 'linen-order') {
+      navigate(`/linen-order?postcode=${encodeURIComponent(postcode)}&email=${encodeURIComponent(email)}`);
+      return;
+    }
+    
+    // For other services, redirect to auth page to sign up/login first
+    navigate(`/auth?service=${serviceType}&postcode=${encodeURIComponent(postcode)}&email=${encodeURIComponent(email)}`);
   };
 
   const handleBackToHome = () => {
