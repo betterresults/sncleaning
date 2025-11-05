@@ -58,14 +58,12 @@ const PublicServiceSelection = () => {
 
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl p-8">
           <div className="mb-8 text-center">
-            <h1 className="text-4xl font-bold text-[#185166] mb-4">
-              Choose Your Service
+            <h1 className="text-5xl font-bold text-[#185166] mb-2">
+              {postcode ? `Services We Offer in ${postcode}` : 'Choose Your Service'}
             </h1>
-            {postcode && (
-              <p className="text-sm text-muted-foreground mt-2">
-                Service area: <span className="font-semibold">{postcode}</span>
-              </p>
-            )}
+            <p className="text-lg text-gray-600 mt-2">
+              Select the cleaning service you need
+            </p>
           </div>
 
           <ServiceSelection onServiceSelect={handleServiceSelect} isAdminView={false} />
