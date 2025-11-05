@@ -134,8 +134,13 @@ $options = get_option('sn_theme_options', array());
                 }
             }
             
-            if (desktopPostcode) desktopPostcode.addEventListener('input', validateDesktopForm);
-            if (desktopEmail) desktopEmail.addEventListener('input', validateDesktopForm);
+            ['input','change','keyup'].forEach(evt => {
+                if (desktopPostcode) desktopPostcode.addEventListener(evt, validateDesktopForm);
+                if (desktopEmail) desktopEmail.addEventListener(evt, validateDesktopForm);
+            });
+            // Run once on load to catch autofill
+            validateDesktopForm();
+            window.addEventListener('load', validateDesktopForm);
             
             // Mobile form validation
             const mobilePostcode = document.getElementById('postcode-mobile');
@@ -149,8 +154,13 @@ $options = get_option('sn_theme_options', array());
                 }
             }
             
-            if (mobilePostcode) mobilePostcode.addEventListener('input', validateMobileForm);
-            if (mobileEmail) mobileEmail.addEventListener('input', validateMobileForm);
+            ['input','change','keyup'].forEach(evt => {
+                if (mobilePostcode) mobilePostcode.addEventListener(evt, validateMobileForm);
+                if (mobileEmail) mobileEmail.addEventListener(evt, validateMobileForm);
+            });
+            // Run once on load to catch autofill
+            validateMobileForm();
+            window.addEventListener('load', validateMobileForm);
         })();
         </script>
     </section>
