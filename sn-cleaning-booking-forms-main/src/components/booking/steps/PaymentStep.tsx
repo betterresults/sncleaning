@@ -64,13 +64,22 @@ const emailSchema = z.string().email('Please enter a valid email address');
 const ukPhoneSchema = z.string().regex(/^\+44\d{10}$/, 'UK phone must be +44 followed by 10 digits');
 
 interface PaymentStepProps {
-  data: BookingData;
-  onUpdate: (updates: Partial<BookingData>) => void;
+  data: BookingData | any;
+  onUpdate: (updates: Partial<BookingData> | any) => void;
   onBack: () => void;
   isAdminMode?: boolean;
+  formType?: 'airbnb' | 'linen';
+  bookingSummary?: React.ReactNode;
 }
 
-const PaymentStep: React.FC<PaymentStepProps> = ({ data, onUpdate, onBack, isAdminMode = false }) => {
+const PaymentStep: React.FC<PaymentStepProps> = ({ 
+  data, 
+  onUpdate, 
+  onBack, 
+  isAdminMode = false, 
+  formType = 'airbnb',
+  bookingSummary 
+}) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, customerId, paymentMethods, loading: loadingPaymentMethods } = useSimpleAuth();
@@ -548,7 +557,9 @@ useEffect(() => {
   const canContinue = data.firstName && data.lastName && data.email && data.phone && data.street && data.postcode;
 
   return (
-    <div className="space-y-8">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Main Form - Takes 2 columns */}
+      <div className="lg:col-span-2 space-y-8">
       {/* Admin Test Mode Warning */}
       {adminTestMode && (
         <div className="bg-orange-50 border-2 border-orange-500 rounded-xl p-6">
@@ -1012,6 +1023,12 @@ useEffect(() => {
             'Complete Booking'
           )}
         </Button>
+      </div>
+      </div>
+
+      {/* Sidebar - Booking Summary */}
+      <div className="lg:col-span-1">
+        {bookingSummary}
       </div>
     </div>
   );

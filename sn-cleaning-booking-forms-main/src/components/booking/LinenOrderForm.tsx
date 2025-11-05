@@ -15,6 +15,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useLinenProducts } from '@/hooks/useLinenProducts';
 import { PaymentStep } from './steps/PaymentStep';
+import { LinenOrderSummary } from '@/components/booking/summaries/LinenOrderSummary';
 import { cn } from '@/lib/utils';
 
 export interface LinenOrderData {
@@ -552,6 +553,13 @@ const LinenOrderForm: React.FC = () => {
               onUpdate={updateOrderData}
               onBack={prevStep}
               isAdminMode={isAdminMode}
+              formType="linen"
+              bookingSummary={
+                <LinenOrderSummary 
+                  data={orderData} 
+                  linenProducts={linenPackages}
+                />
+              }
             />
           </Elements>
         )}
