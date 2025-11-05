@@ -158,7 +158,7 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
           .gte('date_time', dashboardDateFilter.dateFrom)
           .lte('date_time', dashboardDateFilter.dateTo);
       } else {
-        bookingsQuery = bookingsQuery.lt('date_time', new Date().toISOString());
+        bookingsQuery = bookingsQuery.lte('date_time', new Date().toISOString());
       }
 
       const { data: bookingsData, error: bookingsError } = await bookingsQuery
