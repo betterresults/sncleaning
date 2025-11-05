@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { bookingId, bookingType } = await req.json();
+    const { bookingId, bookingType, isResend } = await req.json();
 
     if (!bookingId) {
       throw new Error('Booking ID is required');
@@ -28,7 +28,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Step 1: Fetch booking data based on booking type
-    console.log('Fetching booking data for ID:', bookingId, 'Type:', bookingType);
+    console.log('Fetching booking data for ID:', bookingId, 'Type:', bookingType, 'IsResend:', isResend);
     const tableName = bookingType === 'past' ? 'past_bookings' : 'bookings';
     const { data: booking, error: bookingError } = await supabase
       .from(tableName)
@@ -43,11 +43,58 @@ serve(async (req) => {
     console.log('Booking data fetched:', { 
       email: booking.email, 
       service_type: booking.service_type,
-      cleaning_type: booking.cleaning_type 
+      cleaning_type: booking.cleaning_type,
+      invoice_id: booking.invoice_id
     });
 
     if (!booking.email) {
       throw new Error('Booking must have an email address');
+    }
+
+    // If this is a resend and we have an existing invoice, just resend it
+    if (isResend && booking.invoice_id) {
+      console.log('Resending existing invoice:', booking.invoice_id);
+      const sendInvoiceResponse = await fetch(
+        `https://api.invoiless.com/v1/invoices/${booking.invoice_id}/send`,
+        {
+          method: 'POST',
+          headers: {
+            'api-key': INVOILESS_API_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: booking.email,
+            subject: 'Your Invoice from SN Cleaning Services'
+          })
+        }
+      );
+
+      if (!sendInvoiceResponse.ok) {
+        const errorText = await sendInvoiceResponse.text();
+        throw new Error(`Failed to resend invoice: ${sendInvoiceResponse.status} - ${errorText}`);
+      }
+
+      console.log('Invoice resent successfully');
+
+      // Update payment status
+      await supabase
+        .from(tableName)
+        .update({ payment_status: 'Invoice Sent' })
+        .eq('id', bookingId);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          invoiceId: booking.invoice_id,
+          invoiceLink: booking.invoice_link,
+          emailSent: true,
+          message: 'Invoice resent successfully'
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     // Step 2: Find or create customer in Invoiless

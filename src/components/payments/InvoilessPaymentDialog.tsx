@@ -40,7 +40,7 @@ export function InvoilessPaymentDialog({
   const customerName = `${booking.first_name || ''} ${booking.last_name || ''}`.trim() || 'Customer';
   const hasInvoice = !!booking.invoice_id && !!booking.invoice_link;
 
-  const handleCreateSendInvoice = async () => {
+  const handleCreateSendInvoice = async (isResend = false) => {
     if (!booking.email) {
       toast({
         title: "Missing Email",
@@ -55,7 +55,8 @@ export function InvoilessPaymentDialog({
       const { data, error } = await supabase.functions.invoke('invoiless-auto-invoice', {
         body: {
           bookingId: booking.id,
-          bookingType
+          bookingType,
+          isResend
         }
       });
 
@@ -63,8 +64,8 @@ export function InvoilessPaymentDialog({
 
       if (data.success) {
         toast({
-          title: "Invoice Sent",
-          description: `Invoice created and sent to ${booking.email}`,
+          title: isResend ? "Invoice Resent" : "Invoice Sent",
+          description: `Invoice ${isResend ? 'resent' : 'created and sent'} to ${booking.email}`,
         });
         onSuccess?.();
         onClose();
@@ -161,7 +162,7 @@ export function InvoilessPaymentDialog({
           <div className="space-y-2">
             {!hasInvoice ? (
               <Button
-                onClick={handleCreateSendInvoice}
+                onClick={() => handleCreateSendInvoice(false)}
                 disabled={isLoading || !booking.email}
                 className="w-full"
               >
@@ -190,24 +191,24 @@ export function InvoilessPaymentDialog({
 
                 {booking.payment_status !== 'Paid' && (
                   <>
-                    <Button
-                      onClick={handleCreateSendInvoice}
-                      disabled={isLoading}
-                      variant="outline"
-                      className="w-full"
-                    >
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Sending...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="mr-2 h-4 w-4" />
-                          Resend Invoice
-                        </>
-                      )}
-                    </Button>
+                <Button
+                  onClick={() => handleCreateSendInvoice(true)}
+                  disabled={isLoading}
+                  variant="outline"
+                  className="w-full"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="mr-2 h-4 w-4" />
+                      Resend Invoice
+                    </>
+                  )}
+                </Button>
 
                     <Button
                       onClick={handleSyncStatus}
