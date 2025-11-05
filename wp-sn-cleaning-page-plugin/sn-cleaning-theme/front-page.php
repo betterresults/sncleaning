@@ -76,18 +76,18 @@ $options = get_option('sn_theme_options', array());
                             </h3>
                         </div>
 
-                        <form action="<?php echo esc_url(sn_get_option('booking_url', 'https://book.sncleaningservices.co.uk')); ?>" method="get" class="space-y-4">
-                            <div class="flex items-center bg-gray-100 rounded-xl border-2 border-gray-200 shadow-sm px-4 py-3">
+                        <form id="quote-form-desktop" action="<?php echo esc_url(sn_get_option('booking_url', 'https://book.sncleaningservices.co.uk')); ?>" method="get" class="space-y-4">
+                            <div class="flex items-center bg-white rounded-xl border-2 border-gray-300 shadow-sm px-4 py-3">
                                 <svg class="w-6 h-6 text-teal-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                <input type="text" name="postcode" placeholder="Enter postcode" class="border-0 bg-transparent text-lg placeholder:text-gray-500 focus:outline-none p-0 font-medium w-full text-gray-900" />
+                                <input type="text" id="postcode-desktop" name="postcode" placeholder="Enter postcode" required class="border-0 bg-transparent text-lg placeholder:text-gray-500 focus:outline-none p-0 font-medium w-full text-gray-900" />
                             </div>
 
-                            <div class="flex items-center bg-gray-100 rounded-xl border-2 border-gray-200 shadow-sm px-4 py-3">
+                            <div class="flex items-center bg-white rounded-xl border-2 border-gray-300 shadow-sm px-4 py-3">
                                 <svg class="w-6 h-6 text-teal-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                                <input type="email" name="email" placeholder="Enter email" class="border-0 bg-transparent text-lg placeholder:text-gray-500 focus:outline-none p-0 font-medium w-full text-gray-900" />
+                                <input type="email" id="email-desktop" name="email" placeholder="Enter email" required class="border-0 bg-transparent text-lg placeholder:text-gray-500 focus:outline-none p-0 font-medium w-full text-gray-900" />
                             </div>
                             
-                            <button type="submit" class="w-full h-14 text-lg bg-white hover:bg-gray-50 font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105" style="color: #185166;">
+                            <button type="submit" id="submit-desktop" disabled class="w-full h-14 text-lg bg-white hover:bg-gray-50 font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100" style="color: #185166;">
                                 Get Instant Quote
                                 <span class="ml-2">→</span>
                             </button>
@@ -96,21 +96,21 @@ $options = get_option('sn_theme_options', array());
 
                     <!-- Mobile Form -->
                     <div class="lg:hidden w-full max-w-2xl mx-auto">
-                        <form action="<?php echo esc_url(sn_get_option('booking_url', 'https://book.sncleaningservices.co.uk')); ?>" method="get" class="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-6 border border-gray-200">
+                        <form id="quote-form-mobile" action="<?php echo esc_url(sn_get_option('booking_url', 'https://book.sncleaningservices.co.uk')); ?>" method="get" class="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-6 border border-gray-200">
                             <div class="text-center mb-4">
                                 <h3 class="text-2xl font-bold font-heading text-gray-900">
                                     Get Your Quote
                                 </h3>
                             </div>
-                            <div class="flex items-center bg-gray-100 rounded-xl border-2 border-gray-200 shadow-sm px-4 py-3 mb-4">
+                            <div class="flex items-center bg-white rounded-xl border-2 border-gray-300 shadow-sm px-4 py-3 mb-4">
                                 <svg class="w-6 h-6 text-teal-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                <input type="text" name="postcode" placeholder="Enter postcode" class="border-0 bg-transparent text-base placeholder:text-gray-500 focus:outline-none p-0 font-medium w-full text-gray-900" />
+                                <input type="text" id="postcode-mobile" name="postcode" placeholder="Enter postcode" required class="border-0 bg-transparent text-base placeholder:text-gray-500 focus:outline-none p-0 font-medium w-full text-gray-900" />
                             </div>
-                            <div class="flex items-center bg-gray-100 rounded-xl border-2 border-gray-200 shadow-sm px-4 py-3 mb-4">
+                            <div class="flex items-center bg-white rounded-xl border-2 border-gray-300 shadow-sm px-4 py-3 mb-4">
                                 <svg class="w-6 h-6 text-teal-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                                <input type="email" name="email" placeholder="Enter email" class="border-0 bg-transparent text-base placeholder:text-gray-500 focus:outline-none p-0 font-medium w-full text-gray-900" />
+                                <input type="email" id="email-mobile" name="email" placeholder="Enter email" required class="border-0 bg-transparent text-base placeholder:text-gray-500 focus:outline-none p-0 font-medium w-full text-gray-900" />
                             </div>
-                            <button type="submit" class="w-full h-12 text-base bg-white hover:bg-gray-50 font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300" style="color: #185166;">
+                            <button type="submit" id="submit-mobile" disabled class="w-full h-12 text-base bg-white hover:bg-gray-50 font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100" style="color: #185166;">
                                 Get Instant Quote
                                 <span class="ml-2">→</span>
                             </button>
@@ -119,6 +119,40 @@ $options = get_option('sn_theme_options', array());
                 </div>
             </div>
         </div>
+
+        <script>
+        (function() {
+            // Desktop form validation
+            const desktopPostcode = document.getElementById('postcode-desktop');
+            const desktopEmail = document.getElementById('email-desktop');
+            const desktopSubmit = document.getElementById('submit-desktop');
+            
+            function validateDesktopForm() {
+                if (desktopPostcode && desktopEmail && desktopSubmit) {
+                    const isValid = desktopPostcode.value.trim() !== '' && desktopEmail.value.trim() !== '';
+                    desktopSubmit.disabled = !isValid;
+                }
+            }
+            
+            if (desktopPostcode) desktopPostcode.addEventListener('input', validateDesktopForm);
+            if (desktopEmail) desktopEmail.addEventListener('input', validateDesktopForm);
+            
+            // Mobile form validation
+            const mobilePostcode = document.getElementById('postcode-mobile');
+            const mobileEmail = document.getElementById('email-mobile');
+            const mobileSubmit = document.getElementById('submit-mobile');
+            
+            function validateMobileForm() {
+                if (mobilePostcode && mobileEmail && mobileSubmit) {
+                    const isValid = mobilePostcode.value.trim() !== '' && mobileEmail.value.trim() !== '';
+                    mobileSubmit.disabled = !isValid;
+                }
+            }
+            
+            if (mobilePostcode) mobilePostcode.addEventListener('input', validateMobileForm);
+            if (mobileEmail) mobileEmail.addEventListener('input', validateMobileForm);
+        })();
+        </script>
     </section>
 
     <!-- Service Types Section - Exact from HomepageServiceTypesSection.tsx -->
