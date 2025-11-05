@@ -496,9 +496,23 @@ useEffect(() => {
           if (chargeError || !chargeResult?.success) {
             throw new Error(chargeResult?.error || 'Payment failed');
           }
-        } else if (chargeTiming === 'authorize' && !isUrgentBooking) {
-          // Authorization already handled by payment method verification
-          console.log('[PaymentStep] Payment authorized, will be charged later');
+        } else if (chargeTiming === 'authorize') {
+          // Authorize payment for later capture
+          console.log('[PaymentStep] Authorizing payment...');
+          const { data: authResult, error: authError } = await supabase.functions.invoke(
+            'system-payment-action',
+            {
+              body: {
+                bookingId: result.bookingId,
+                action: 'authorize'
+              }
+            }
+          );
+
+          if (authError || !authResult?.success) {
+            throw new Error(authResult?.error || 'Payment authorization failed');
+          }
+          console.log('[PaymentStep] Payment authorized successfully');
         }
         // If 'none', skip payment processing
 

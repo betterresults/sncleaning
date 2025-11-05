@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BookingData } from './AirbnbBookingForm';
@@ -209,6 +209,29 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
   // Admin can remove short notice charge
   const hasShortNoticeCharge = shortNoticeInfo.charge > 0 && !(isAdminMode && data.adminRemoveShortNoticeCharge);
   const effectiveHourlyRate = data.adminHourlyRateOverride !== undefined ? data.adminHourlyRateOverride : calculations.hourlyRate;
+
+  // Update parent form's totalCost whenever calculated total changes
+  useEffect(() => {
+    if (onUpdate && calculations.totalHours > 0) {
+      const calculatedTotal = calculateTotal();
+      if (calculatedTotal !== data.totalCost) {
+        onUpdate({ totalCost: calculatedTotal });
+      }
+    }
+  }, [
+    calculations.totalHours,
+    calculations.hourlyRate,
+    calculations.equipmentOneTimeCost,
+    calculations.ovenCleaningCost,
+    data.adminHourlyRateOverride,
+    data.adminTotalCostOverride,
+    data.adminDiscountPercentage,
+    data.adminDiscountAmount,
+    data.adminRemoveShortNoticeCharge,
+    data.linenPackages,
+    customerOverride?.override_rate,
+    shortNoticeInfo.charge
+  ]);
   const renderSummaryContent = () => <div className="space-y-3">
       {/* Service Section */}
       {getServiceDescription() && (calculations.totalHours ?? 0) > 0 && <div className="space-y-3">
