@@ -5,7 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { PropertyStep } from './steps/PropertyStep';
 import { LinensStep } from './steps/LinensStep';
 import { ScheduleStep } from './steps/ScheduleStep';
-import { BookingSummary } from './BookingSummary';
+import { BookingSummary } from './AirbnbBookingSummary';
 import { PaymentStep } from './steps/PaymentStep';
 import { Home, Brush, Calendar, User, CreditCard, Package2 } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';

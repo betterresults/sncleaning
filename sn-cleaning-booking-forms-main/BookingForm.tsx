@@ -6,7 +6,7 @@ import { PropertyStep } from './steps/PropertyStep';
 import { LinensStep } from './steps/LinensStep';
 import { ScheduleStep } from './steps/ScheduleStep';
 import { ContactStep } from './steps/ContactStep';
-import { BookingSummary } from './BookingSummary';
+import { BookingSummary } from './BookingSummary.Legacy';
 import { PaymentStep } from './steps/PaymentStep';
 import { Home, Brush, Calendar, User, CreditCard, Package2 } from 'lucide-react';
 
