@@ -89,6 +89,9 @@ export interface BookingData {
   adminTotalCostOverride?: number;
   adminRemoveShortNoticeCharge?: boolean;
   
+  // Admin payment control
+  stripeChargeTiming?: 'immediate' | 'authorize' | 'none';
+  
   // Admin/Customer specific fields
   customerId?: number;
   selectedCustomer?: any;

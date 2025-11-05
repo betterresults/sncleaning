@@ -82,7 +82,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, customerId, paymentMethods, loading: loadingPaymentMethods } = useSimpleAuth();
+  const { user, customerId, paymentMethods: userPaymentMethods, loading: loadingPaymentMethods } = useSimpleAuth();
   const { submitBooking, loading: submitting } = useAirbnbBookingSubmit();
   const [processing, setProcessing] = useState(false);
   const [searchParams] = useSearchParams();
@@ -93,16 +93,47 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   const [cardComplete, setCardComplete] = useState(false);
   const [companyPaymentMethods, setCompanyPaymentMethods] = useState<string[]>([]);
   const [selectedAdminPaymentMethod, setSelectedAdminPaymentMethod] = useState<string>('');
+  const [adminCustomerPaymentMethods, setAdminCustomerPaymentMethods] = useState<any[]>([]);
 const [editDetails, setEditDetails] = useState(false);
   
 // Use admin-selected customerId or logged-in/selected customerId
 const { selectedCustomerId } = useAdminCustomer();
 const effectiveCustomerId = isAdminMode ? data.customerId : (customerId || selectedCustomerId || null);
+
+// In admin mode, use admin customer payment methods; otherwise use logged-in user's
+const paymentMethods = isAdminMode ? adminCustomerPaymentMethods : userPaymentMethods;
+
 console.log('[PaymentStep] ID context', { isAdminMode, customerId, selectedCustomerId, effectiveCustomerId });
 const { hasPaymentMethods, loading: checkingPaymentMethods } = usePaymentMethodCheck(effectiveCustomerId || null);
   
 // Admin testing mode - skip payment if URL has ?adminTest=true
 const adminTestMode = searchParams.get('adminTest') === 'true';
+
+// Fetch payment methods for admin-selected customer
+useEffect(() => {
+  if (isAdminMode && effectiveCustomerId) {
+    const fetchAdminCustomerPaymentMethods = async () => {
+      console.log('[PaymentStep] Fetching payment methods for customer:', effectiveCustomerId);
+      const { data, error } = await supabase
+        .from('customer_payment_methods')
+        .select('*')
+        .eq('customer_id', effectiveCustomerId)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('[PaymentStep] Error fetching payment methods:', error);
+        setAdminCustomerPaymentMethods([]);
+      } else {
+        console.log('[PaymentStep] Fetched payment methods:', data);
+        setAdminCustomerPaymentMethods(data || []);
+      }
+    };
+    fetchAdminCustomerPaymentMethods();
+  } else if (isAdminMode) {
+    // Reset if no customer selected
+    setAdminCustomerPaymentMethods([]);
+  }
+}, [isAdminMode, effectiveCustomerId]);
 
 // Auto-fill logged-in or selected customer data on mount
 useEffect(() => {
@@ -921,6 +952,59 @@ useEffect(() => {
               <p className="text-sm text-gray-600">
                 ⚠️ Customer has no saved payment methods. Please select payment method above.
               </p>
+            )}
+            
+            {/* Stripe Charge Timing - Only show when Stripe payment method is selected */}
+            {selectedAdminPaymentMethod && selectedAdminPaymentMethod.startsWith('stripe:') && (
+              <div className="mt-6 p-4 bg-blue-50 rounded-xl border-2 border-blue-200">
+                <h4 className="text-sm font-bold text-blue-900 mb-3">Stripe Payment Timing</h4>
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors">
+                    <input
+                      type="radio"
+                      name="stripeTiming"
+                      value="immediate"
+                      checked={data.stripeChargeTiming === 'immediate'}
+                      onChange={(e) => onUpdate({ stripeChargeTiming: 'immediate' })}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Charge Now</p>
+                      <p className="text-xs text-gray-600">Immediately charge the full amount</p>
+                    </div>
+                  </label>
+                  
+                  <label className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors">
+                    <input
+                      type="radio"
+                      name="stripeTiming"
+                      value="authorize"
+                      checked={data.stripeChargeTiming === 'authorize' || !data.stripeChargeTiming}
+                      onChange={(e) => onUpdate({ stripeChargeTiming: 'authorize' })}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Authorize Only (Default)</p>
+                      <p className="text-xs text-gray-600">Hold funds, capture later (standard flow)</p>
+                    </div>
+                  </label>
+                  
+                  <label className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors">
+                    <input
+                      type="radio"
+                      name="stripeTiming"
+                      value="none"
+                      checked={data.stripeChargeTiming === 'none'}
+                      onChange={(e) => onUpdate({ stripeChargeTiming: 'none' })}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">No Charge</p>
+                      <p className="text-xs text-gray-600">Save card only, manual payment later</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
             )}
           </div>
         </div>
