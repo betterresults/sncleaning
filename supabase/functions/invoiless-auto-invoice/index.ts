@@ -83,8 +83,7 @@ serve(async (req) => {
           firstName: booking.first_name || '',
           lastName: booking.last_name || '',
           phone: booking.phone_number || '',
-          address: booking.address || '',
-          zipCode: booking.postcode || '',
+          address: booking.address || ''
         }
       };
 
