@@ -160,7 +160,10 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
     if (isAdminMode && data.adminTotalCostOverride !== undefined && data.adminTotalCostOverride !== null) {
       return data.adminTotalCostOverride;
     }
-    let total = calculations.totalCost;
+    
+    // Calculate base cost - use override rate if set, otherwise use calculated rate
+    const effectiveRate = data.adminHourlyRateOverride !== undefined ? data.adminHourlyRateOverride : calculations.hourlyRate;
+    let total = (calculations.totalHours || 0) * effectiveRate;
 
     // Apply customer pricing override (discount/markup per hour)
     if (customerOverride?.override_rate && calculations.totalHours) {

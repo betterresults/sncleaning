@@ -143,17 +143,35 @@ useEffect(() => {
   useEffect(() => {
     if (isAdminMode) {
       const fetchCompanyPaymentMethods = async () => {
-        const { data: settings } = await supabase
+        const { data: settings, error } = await supabase
           .from('company_settings')
           .select('setting_value')
           .eq('setting_category', 'payment')
           .eq('setting_key', 'methods')
           .single();
         
+        console.log('[PaymentStep] Payment methods settings:', { settings, error });
+        
         if (settings?.setting_value) {
-          const methods = Array.isArray(settings.setting_value) 
-            ? (settings.setting_value as string[])
-            : [];
+          let methods: string[] = [];
+          
+          // Handle different data formats
+          if (Array.isArray(settings.setting_value)) {
+            methods = settings.setting_value as string[];
+          } else if (typeof settings.setting_value === 'object' && settings.setting_value !== null) {
+            // If it's an object with a methods array
+            methods = (settings.setting_value as any).methods || [];
+          } else if (typeof settings.setting_value === 'string') {
+            // If it's a JSON string, parse it
+            try {
+              const parsed = JSON.parse(settings.setting_value);
+              methods = Array.isArray(parsed) ? parsed : (parsed.methods || []);
+            } catch (e) {
+              console.error('[PaymentStep] Failed to parse payment methods:', e);
+            }
+          }
+          
+          console.log('[PaymentStep] Parsed payment methods:', methods);
           setCompanyPaymentMethods(methods);
         }
       };
