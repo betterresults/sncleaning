@@ -12,6 +12,8 @@ interface BookingDetails {
   service_type: string;
   total_cost: number;
   customer: number;
+  payment_status: string;
+  payment_method: string;
 }
 
 interface ServiceTypeSetting {
@@ -37,20 +39,22 @@ const BookingConfirmation = () => {
         postcode: 'SW1A 1AA',
         service_type: 'airbnb',
         total_cost: 250.00,
-        customer: 1
+        customer: 1,
+        payment_status: 'Pending',
+        payment_method: 'Stripe'
       });
       setServiceTypeLabel('Airbnb Cleaning');
       setLoading(false);
       return;
     }
 
-    const fetchBooking = async () => {
+      const fetchBooking = async () => {
       try {
         const { data, error } = await supabase
           .from('bookings')
-          .select('id, date_time, address, postcode, service_type, total_cost, customer')
+          .select('id, date_time, address, postcode, service_type, total_cost, customer, payment_status, payment_method')
           .eq('id', bookingId)
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
         setBooking(data);
@@ -176,6 +180,18 @@ const BookingConfirmation = () => {
                 £{booking.total_cost.toFixed(2)}
               </span>
             </div>
+            {booking.payment_status && (
+              <div className="flex justify-between items-center mt-3">
+                <span className="text-gray-600">Payment Status</span>
+                <span className={`font-semibold ${
+                  booking.payment_status.toLowerCase() === 'paid' ? 'text-green-600' :
+                  booking.payment_status.toLowerCase() === 'authorized' ? 'text-blue-600' :
+                  'text-orange-600'
+                }`}>
+                  {booking.payment_status.charAt(0).toUpperCase() + booking.payment_status.slice(1)}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
