@@ -129,19 +129,80 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error authorizing payment:', error)
     
-    // If authorization fails, update booking status
+    // If authorization fails, update booking status and send notification
     if (bookingId) {
       try {
         const supabaseClient = createClient(
           Deno.env.get('SUPABASE_URL') ?? '',
           Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
         )
+        
+        // Update booking status to failed
         await supabaseClient
           .from('bookings')
           .update({ payment_status: 'failed' })
           .eq('id', bookingId)
+        
+        // Get booking details for email notification
+        const { data: booking } = await supabaseClient
+          .from('bookings')
+          .select('*, customer:customers(*)')
+          .eq('id', bookingId)
+          .single()
+        
+        if (booking && booking.customer) {
+          // Get notification trigger
+          const { data: trigger } = await supabaseClient
+            .from('notification_triggers')
+            .select('*, template:email_notification_templates(*)')
+            .eq('trigger_event', 'authorization_failed')
+            .eq('is_enabled', true)
+            .single()
+          
+          if (trigger && trigger.template) {
+            // Prepare notification variables
+            const notificationVariables = {
+              customer_name: `${booking.customer.first_name || ''} ${booking.customer.last_name || ''}`.trim() || 'Valued Customer',
+              booking_date: booking.date_only ? new Date(booking.date_only).toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : 'TBC',
+              booking_time: booking.time_only || 'TBC',
+              service_type: booking.service_type || 'Cleaning Service',
+              address: booking.address || 'Address not specified',
+              total_cost: booking.total_cost?.toString() || '0',
+              booking_id: bookingId.toString(),
+              error_message: error.message || 'Authorization failed'
+            }
+            
+            // Send notification to each recipient type
+            const recipientTypes = trigger.recipient_types || []
+            for (const recipientType of recipientTypes) {
+              let recipientEmail = ''
+              
+              if (recipientType === 'customer' && booking.customer.email) {
+                recipientEmail = booking.customer.email
+              } else if (recipientType === 'admin') {
+                recipientEmail = 'sales@sncleaningservices.co.uk'
+              }
+              
+              if (recipientEmail) {
+                // Call send-notification-email edge function
+                await fetch('https://dkomihipebixlegygnoy.supabase.co/functions/v1/send-notification-email', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`
+                  },
+                  body: JSON.stringify({
+                    template_id: trigger.template.id,
+                    recipient_email: recipientEmail,
+                    variables: notificationVariables
+                  })
+                })
+              }
+            }
+          }
+        }
       } catch (updateError) {
-        console.error('Failed to update booking status:', updateError)
+        console.error('Failed to update booking status or send notification:', updateError)
       }
     }
 
