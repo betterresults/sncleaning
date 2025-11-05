@@ -317,7 +317,7 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
 
   const handlePaymentAction = (booking: Booking) => {
     const paymentMethod = booking.payment_method?.toLowerCase() || '';
-    if (paymentMethod.includes('invoice')) {
+    if (paymentMethod.includes('invoiless') || paymentMethod.includes('invoice')) {
       setSelectedBookingForInvoiless(booking);
       setInvoilessDialogOpen(true);
     } else {
