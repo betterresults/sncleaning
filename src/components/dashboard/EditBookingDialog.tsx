@@ -670,7 +670,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="Stripe">Stripe</SelectItem>
-                            <SelectItem value="Invoiceless">Invoiceless</SelectItem>
+                            <SelectItem value="Invoiless">Invoiless</SelectItem>
                             <SelectItem value="Cash">Cash</SelectItem>
                           </SelectContent>
                         </Select>
