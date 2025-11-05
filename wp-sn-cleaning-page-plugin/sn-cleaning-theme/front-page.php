@@ -123,6 +123,7 @@ $options = get_option('sn_theme_options', array());
         <script>
         (function() {
             // Desktop form validation
+            const desktopForm = document.getElementById('quote-form-desktop');
             const desktopPostcode = document.getElementById('postcode-desktop');
             const desktopEmail = document.getElementById('email-desktop');
             const desktopSubmit = document.getElementById('submit-desktop');
@@ -143,6 +144,7 @@ $options = get_option('sn_theme_options', array());
             window.addEventListener('load', validateDesktopForm);
             
             // Mobile form validation
+            const mobileForm = document.getElementById('quote-form-mobile');
             const mobilePostcode = document.getElementById('postcode-mobile');
             const mobileEmail = document.getElementById('email-mobile');
             const mobileSubmit = document.getElementById('submit-mobile');
@@ -161,6 +163,29 @@ $options = get_option('sn_theme_options', array());
             // Run once on load to catch autofill
             validateMobileForm();
             window.addEventListener('load', validateMobileForm);
+
+            // Instant redirect on submit (prevents any delay)
+            const ACCOUNT_BASE = 'https://account.sncleaningservices.co.uk/choose-service';
+            function redirectToAccount(form) {
+                const pc = form.querySelector('input[name="postcode"]')?.value.trim() || '';
+                const em = form.querySelector('input[name="email"]')?.value.trim() || '';
+                const url = ACCOUNT_BASE + '?postcode=' + encodeURIComponent(pc) + '&email=' + encodeURIComponent(em);
+                // Immediate navigation without waiting on any third-party handlers
+                window.location.assign(url);
+            }
+
+            if (desktopForm) {
+                desktopForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    redirectToAccount(desktopForm);
+                });
+            }
+            if (mobileForm) {
+                mobileForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    redirectToAccount(mobileForm);
+                });
+            }
         })();
         </script>
     </section>
