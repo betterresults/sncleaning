@@ -5,8 +5,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Download, X } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useLocation } from 'react-router-dom';
 
 const InstallPrompt = () => {
+  const location = useLocation();
   const { isInstallable, isInstalled, install } = usePWAInstall();
   const isMobile = useIsMobile();
   const [isDismissed, setIsDismissed] = useState(false);
@@ -53,6 +55,11 @@ const InstallPrompt = () => {
     setIsDismissed(false);
     setShowDebug(false);
   };
+
+  // Don't show on /choose-service page
+  if (location.pathname === '/choose-service') {
+    return null;
+  }
 
   // Don't show if already installed or user dismissed it
   if (isInstalled || isDismissed) {
