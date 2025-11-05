@@ -32,7 +32,9 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
   const [selectedCleaner, setSelectedCleaner] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [bookingTotalCost, setBookingTotalCost] = useState<number>(0);
+  const [bookingTotalHours, setBookingTotalHours] = useState<number>(0);
   const [calculatedCleanerPay, setCalculatedCleanerPay] = useState<number | null>(null);
+  const [isHourlyService, setIsHourlyService] = useState<boolean>(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -48,13 +50,20 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
     try {
       const { data, error } = await supabase
         .from('bookings')
-        .select('total_cost, cleaner')
+        .select('total_cost, cleaner, total_hours, cleaning_time, service_type, cleaner_rate')
         .eq('id', bookingId)
         .single();
 
       if (error) throw error;
       
       setBookingTotalCost(data.total_cost || 0);
+      const hours = data.total_hours || data.cleaning_time || 0;
+      setBookingTotalHours(hours);
+      
+      // Determine if this is an hourly service (based on cleaner_rate being set or service type)
+      const isHourly = data.cleaner_rate != null && data.cleaner_rate > 0;
+      setIsHourlyService(isHourly);
+      
       if (data.cleaner) {
         setSelectedCleaner(data.cleaner.toString());
       }
@@ -83,10 +92,22 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
 
   // Calculate cleaner pay when cleaner is selected
   useEffect(() => {
-    if (selectedCleaner && bookingTotalCost > 0) {
+    if (selectedCleaner) {
       const cleaner = cleaners.find(c => c.id.toString() === selectedCleaner);
-      if (cleaner && cleaner.presentage_rate) {
-        const calculatedPay = (bookingTotalCost * cleaner.presentage_rate) / 100;
+      if (cleaner) {
+        let calculatedPay: number;
+        
+        if (isHourlyService && bookingTotalHours > 0 && cleaner.hourly_rate) {
+          // Use hourly rate calculation
+          calculatedPay = bookingTotalHours * cleaner.hourly_rate;
+        } else if (bookingTotalCost > 0 && cleaner.presentage_rate) {
+          // Use percentage calculation
+          calculatedPay = (bookingTotalCost * cleaner.presentage_rate) / 100;
+        } else {
+          setCalculatedCleanerPay(null);
+          return;
+        }
+        
         setCalculatedCleanerPay(calculatedPay);
       } else {
         setCalculatedCleanerPay(null);
@@ -94,7 +115,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
     } else {
       setCalculatedCleanerPay(null);
     }
-  }, [selectedCleaner, bookingTotalCost, cleaners]);
+  }, [selectedCleaner, bookingTotalCost, bookingTotalHours, isHourlyService, cleaners]);
 
   const handleAssign = async () => {
     if (!bookingId || !selectedCleaner) return;
@@ -180,16 +201,33 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
           {/* Show calculated cleaner pay */}
           {calculatedCleanerPay !== null && (
             <div className="bg-primary/5 rounded-lg p-4 space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Booking Total:</span>
-                <span className="font-semibold">£{bookingTotalCost.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Cleaner Rate:</span>
-                <span className="font-semibold">
-                  {cleaners.find(c => c.id.toString() === selectedCleaner)?.presentage_rate}%
-                </span>
-              </div>
+              {isHourlyService ? (
+                <>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Total Hours:</span>
+                    <span className="font-semibold">{bookingTotalHours.toFixed(2)}h</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Hourly Rate:</span>
+                    <span className="font-semibold">
+                      £{cleaners.find(c => c.id.toString() === selectedCleaner)?.hourly_rate}/hr
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Booking Total:</span>
+                    <span className="font-semibold">£{bookingTotalCost.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Cleaner Rate:</span>
+                    <span className="font-semibold">
+                      {cleaners.find(c => c.id.toString() === selectedCleaner)?.presentage_rate}%
+                    </span>
+                  </div>
+                </>
+              )}
               <div className="border-t pt-2 flex justify-between items-center">
                 <span className="text-sm font-semibold">Cleaner Pay:</span>
                 <span className="text-lg font-bold text-primary">£{calculatedCleanerPay.toFixed(2)}</span>
