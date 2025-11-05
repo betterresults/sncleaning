@@ -291,20 +291,45 @@ export const useAirbnbBookingSubmit = () => {
           if (!isNaN(dateObj.getTime())) {
             const dateStr = dateObj.toISOString().split('T')[0];
             
-            // Convert time from "9:00 AM" format to 24-hour "09:00" format
+            // Convert time from various formats to 24-hour "HH:MM" format
             let time24 = bookingData.selectedTime;
-            if (bookingData.selectedTime.includes('AM') || bookingData.selectedTime.includes('PM')) {
-              const [time, period] = bookingData.selectedTime.split(' ');
-              let [hours, minutes] = time.split(':');
-              let hour = parseInt(hours);
+            
+            // Extract start time if it's a range (e.g., "9am - 10am" -> "9am")
+            if (time24.includes(' - ')) {
+              time24 = time24.split(' - ')[0].trim();
+            }
+            
+            // Handle formats like "9am", "10pm", "9:00 AM", "10:30 PM"
+            if (time24.toLowerCase().includes('am') || time24.toLowerCase().includes('pm')) {
+              // Remove spaces and convert to lowercase for easier parsing
+              const timeStr = time24.toLowerCase().replace(/\s+/g, '');
+              const isPM = timeStr.includes('pm');
+              const isAM = timeStr.includes('am');
               
-              if (period === 'PM' && hour !== 12) {
+              // Extract the numeric part (before 'am' or 'pm')
+              const numericPart = timeStr.replace(/[ap]m/g, '');
+              
+              let hour: number;
+              let minutes: number = 0;
+              
+              if (numericPart.includes(':')) {
+                // Format like "9:30" or "10:00"
+                const parts = numericPart.split(':');
+                hour = parseInt(parts[0]);
+                minutes = parseInt(parts[1]);
+              } else {
+                // Format like "9" or "10"
+                hour = parseInt(numericPart);
+              }
+              
+              // Convert to 24-hour format
+              if (isPM && hour !== 12) {
                 hour += 12;
-              } else if (period === 'AM' && hour === 12) {
+              } else if (isAM && hour === 12) {
                 hour = 0;
               }
               
-              time24 = `${hour.toString().padStart(2, '0')}:${minutes}`;
+              time24 = `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
             }
             
             console.log('[useAirbnbBookingSubmit] Converted time:', bookingData.selectedTime, '->', time24);
