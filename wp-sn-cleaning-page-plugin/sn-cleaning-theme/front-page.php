@@ -79,7 +79,12 @@ $options = get_option('sn_theme_options', array());
                         <form action="<?php echo esc_url(sn_get_option('booking_url', 'https://book.sncleaningservices.co.uk')); ?>" method="get" class="space-y-4">
                             <div class="flex items-center bg-gray-100 rounded-xl border-2 border-gray-200 shadow-sm px-4 py-3">
                                 <svg class="w-6 h-6 text-teal-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                <input type="text" name="postcode" placeholder="Enter your postcode" class="border-0 bg-transparent text-lg placeholder:text-gray-500 focus:outline-none p-0 font-medium w-full text-gray-900" />
+                                <input type="text" name="postcode" placeholder="Enter postcode" class="border-0 bg-transparent text-lg placeholder:text-gray-500 focus:outline-none p-0 font-medium w-full text-gray-900" />
+                            </div>
+
+                            <div class="flex items-center bg-gray-100 rounded-xl border-2 border-gray-200 shadow-sm px-4 py-3">
+                                <svg class="w-6 h-6 text-teal-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                <input type="email" name="email" placeholder="Enter email" class="border-0 bg-transparent text-lg placeholder:text-gray-500 focus:outline-none p-0 font-medium w-full text-gray-900" />
                             </div>
                             
                             <button type="submit" class="w-full h-14 text-lg bg-white hover:bg-gray-50 font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105" style="color: #185166;">
@@ -99,7 +104,11 @@ $options = get_option('sn_theme_options', array());
                             </div>
                             <div class="flex items-center bg-gray-100 rounded-xl border-2 border-gray-200 shadow-sm px-4 py-3 mb-4">
                                 <svg class="w-6 h-6 text-teal-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                <input type="text" name="postcode" placeholder="Enter your postcode" class="border-0 bg-transparent text-base placeholder:text-gray-500 focus:outline-none p-0 font-medium w-full text-gray-900" />
+                                <input type="text" name="postcode" placeholder="Enter postcode" class="border-0 bg-transparent text-base placeholder:text-gray-500 focus:outline-none p-0 font-medium w-full text-gray-900" />
+                            </div>
+                            <div class="flex items-center bg-gray-100 rounded-xl border-2 border-gray-200 shadow-sm px-4 py-3 mb-4">
+                                <svg class="w-6 h-6 text-teal-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                <input type="email" name="email" placeholder="Enter email" class="border-0 bg-transparent text-base placeholder:text-gray-500 focus:outline-none p-0 font-medium w-full text-gray-900" />
                             </div>
                             <button type="submit" class="w-full h-12 text-base bg-white hover:bg-gray-50 font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300" style="color: #185166;">
                                 Get Instant Quote
