@@ -578,10 +578,13 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
                 </Badge>
               </div>
 
-              {/* Cleaner Info */}
+              {/* Cleaner Info - Clickable */}
               <div className="py-4">
                 {!isUnsigned ? (
-                  <div className="space-y-1">
+                  <button 
+                    onClick={() => handleAssignCleaner(booking.id)}
+                    className="space-y-1 hover:bg-accent/50 rounded-lg p-2 -m-2 transition-colors text-left w-full"
+                  >
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-full bg-gray-400 flex items-center justify-center flex-shrink-0">
                         <User className="w-4 h-4 text-white" />
@@ -593,11 +596,16 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
                         £{booking.cleaner_pay.toFixed(2)}
                       </p>
                     )}
-                  </div>
+                  </button>
                 ) : (
-                  <Badge variant="destructive" className="text-sm font-medium px-3 py-1.5">
-                    Unassigned
-                  </Badge>
+                  <button
+                    onClick={() => handleAssignCleaner(booking.id)}
+                    className="hover:opacity-80 transition-opacity"
+                  >
+                    <Badge variant="destructive" className="text-sm font-medium px-3 py-1.5 cursor-pointer">
+                      Unassigned - Click to Assign
+                    </Badge>
+                  </button>
                 )}
               </div>
 
@@ -805,23 +813,31 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
                 </div>
               </div>
 
-              {/* Row 3: Service Badge & Cleaner */}
+              {/* Row 3: Service Badge & Cleaner - Clickable */}
               <div className="flex flex-wrap items-center gap-3">
                 <Badge className={`${serviceBadgeColor} text-xs px-2 py-1 rounded-full`}>
                   {serviceLabel} - {cleaningLabel}
                 </Badge>
                 
                 {!isUnsigned ? (
-                  <div className="flex items-center gap-2 text-sm">
+                  <button 
+                    onClick={() => handleAssignCleaner(booking.id)}
+                    className="flex items-center gap-2 text-sm hover:bg-accent/50 rounded-lg px-2 py-1 -ml-2 transition-colors"
+                  >
                     <div className="w-6 h-6 rounded-full bg-gray-400 flex items-center justify-center">
                       <User className="w-3 h-3 text-white" />
                     </div>
                     <span className="font-medium">{cleanerName}</span>
-                  </div>
+                  </button>
                 ) : (
-                  <Badge variant="destructive" className="text-xs px-2 py-1">
-                    Unassigned
-                  </Badge>
+                  <button
+                    onClick={() => handleAssignCleaner(booking.id)}
+                    className="hover:opacity-80 transition-opacity"
+                  >
+                    <Badge variant="destructive" className="text-xs px-2 py-1 cursor-pointer">
+                      Unassigned
+                    </Badge>
+                  </button>
                 )}
               </div>
 
