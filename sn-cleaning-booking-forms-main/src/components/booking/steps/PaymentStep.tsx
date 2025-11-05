@@ -91,7 +91,8 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   const stripe = useStripe();
   const elements = useElements();
   const [cardComplete, setCardComplete] = useState(false);
-const [companyPaymentMethods, setCompanyPaymentMethods] = useState<string[]>([]);
+  const [companyPaymentMethods, setCompanyPaymentMethods] = useState<string[]>([]);
+  const [selectedAdminPaymentMethod, setSelectedAdminPaymentMethod] = useState<string>('');
 const [editDetails, setEditDetails] = useState(false);
   
 // Use admin-selected customerId or logged-in/selected customerId
@@ -859,8 +860,8 @@ useEffect(() => {
         </div>
       )}
 
-      {/* ADMIN MODE: Payment Method Selection (only if no Stripe) */}
-      {isAdminMode && data.customerId && !checkingPaymentMethods && !hasPaymentMethods && (
+      {/* ADMIN MODE: Payment Method Selection */}
+      {isAdminMode && data.customerId && !checkingPaymentMethods && (
         <div className="space-y-6">
           <h3 className="text-2xl font-bold text-[#185166] mb-4">
             Payment Method
@@ -868,39 +869,59 @@ useEffect(() => {
           
           <div className="space-y-4">
             <Select
-              value={data.paymentMethod || ''}
-              onValueChange={(value) => onUpdate({ paymentMethod: value })}
+              value={selectedAdminPaymentMethod || data.paymentMethod || ''}
+              onValueChange={(value) => {
+                setSelectedAdminPaymentMethod(value);
+                onUpdate({ paymentMethod: value });
+              }}
             >
               <SelectTrigger className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white">
                 <SelectValue placeholder="Choose payment method..." />
               </SelectTrigger>
               <SelectContent className="bg-white z-50">
-                {companyPaymentMethods.map((method) => (
-                  <SelectItem key={method} value={method}>
-                    {method}
-                  </SelectItem>
-                ))}
+                {/* Saved Customer Cards */}
+                {hasPaymentMethods && paymentMethods.length > 0 && (
+                  <>
+                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                      Saved Cards
+                    </div>
+                    {paymentMethods.map((pm: any) => (
+                      <SelectItem key={pm.stripe_payment_method_id} value={`stripe:${pm.stripe_payment_method_id}`}>
+                        {pm.card_brand?.toUpperCase?.()} •••• {pm.card_last4} (Exp: {pm.card_exp_month}/{pm.card_exp_year})
+                        {pm.is_default && ' ⭐'}
+                      </SelectItem>
+                    ))}
+                    {companyPaymentMethods.length > 0 && (
+                      <div className="border-t my-1" />
+                    )}
+                  </>
+                )}
+                
+                {/* Company Payment Methods */}
+                {companyPaymentMethods.length > 0 && (
+                  <>
+                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                      Other Methods
+                    </div>
+                    {companyPaymentMethods.map((method) => (
+                      <SelectItem key={method} value={method}>
+                        {method}
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
               </SelectContent>
             </Select>
             
-            <p className="text-sm text-gray-600">
-              Customer has no saved payment methods. Please select payment method.
-            </p>
-          </div>
-        </div>
-      )}
-      
-      {/* ADMIN MODE: Show Stripe card info (if exists) */}
-      {isAdminMode && data.customerId && !checkingPaymentMethods && hasPaymentMethods && (
-        <div className="rounded-2xl border-2 border-green-200 bg-green-50 p-6">
-          <div className="flex items-center gap-3">
-            <Shield className="h-6 w-6 text-green-600 flex-shrink-0" />
-            <div>
-              <h4 className="font-bold text-green-900">Saved Payment Method</h4>
-              <p className="text-sm text-green-700">
-                Customer has saved payment methods in Stripe. Payment will be processed automatically.
+            {hasPaymentMethods ? (
+              <p className="text-sm text-gray-600">
+                💳 Customer has {paymentMethods.length} saved card{paymentMethods.length !== 1 ? 's' : ''}. Select preferred payment method above.
               </p>
-            </div>
+            ) : (
+              <p className="text-sm text-gray-600">
+                ⚠️ Customer has no saved payment methods. Please select payment method above.
+              </p>
+            )}
           </div>
         </div>
       )}
