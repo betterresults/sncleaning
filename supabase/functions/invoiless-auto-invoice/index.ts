@@ -215,8 +215,7 @@ Postcode: ${booking.postcode || 'N/A'}`;
         },
         body: JSON.stringify({
           email: booking.email,
-          subject: 'Your Invoice from SN Cleaning Services',
-          message: 'Dear customer, please find your invoice attached.'
+          subject: 'Your Invoice from SN Cleaning Services'
         })
       }
     );
