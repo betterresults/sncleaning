@@ -283,8 +283,16 @@ useEffect(() => {
             }
           }
 
-          // Navigate to confirmation
-          navigate(`/booking-confirmation?bookingId=${bookingId}`, { replace: true });
+          // Navigate to confirmation or upcoming bookings for admin
+          if (isAdminMode) {
+            navigate(`/upcoming-bookings`, { replace: true });
+            toast({
+              title: "Booking Created",
+              description: "Booking created successfully. You can view it in upcoming bookings.",
+            });
+          } else {
+            navigate(`/booking-confirmation?bookingId=${bookingId}`, { replace: true });
+          }
         } catch (error: any) {
           console.error('Payment return error:', error);
           toast({
@@ -397,7 +405,11 @@ useEffect(() => {
           description: "Admin test mode - payment skipped"
         });
 
-        navigate('/booking-confirmation', { state: { bookingId: result.bookingId } });
+        if (isAdminMode) {
+          navigate('/upcoming-bookings', { replace: true });
+        } else {
+          navigate('/booking-confirmation', { state: { bookingId: result.bookingId } });
+        }
         return;
       } catch (error: any) {
         console.error('Booking error:', error);
@@ -516,7 +528,15 @@ useEffect(() => {
         }
         // If 'none', skip payment processing
 
-        navigate('/booking-confirmation', { state: { bookingId: result.bookingId } });
+        if (isAdminMode) {
+          navigate('/upcoming-bookings', { replace: true });
+          toast({
+            title: "Booking Created",
+            description: "Booking created successfully. You can view it in upcoming bookings.",
+          });
+        } else {
+          navigate('/booking-confirmation', { state: { bookingId: result.bookingId } });
+        }
       } else {
         // No saved payment method - use CardElement to create payment method
         console.log('[PaymentStep] No saved payment method, using CardElement');
@@ -613,7 +633,15 @@ useEffect(() => {
         }
 
         console.log('[PaymentStep] Navigating to confirmation...');
-        navigate('/booking-confirmation', { state: { bookingId: result.bookingId } });
+        if (isAdminMode) {
+          navigate('/upcoming-bookings', { replace: true });
+          toast({
+            title: "Booking Created",
+            description: "Booking created successfully. You can view it in upcoming bookings.",
+          });
+        } else {
+          navigate('/booking-confirmation', { state: { bookingId: result.bookingId } });
+        }
       }
       
     } catch (error: any) {
