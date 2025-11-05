@@ -86,6 +86,17 @@ interface EmailTemplate {
   variables: string[];
 }
 
+interface Booking {
+  id: number;
+  date_time: string;
+  address: string;
+  total_cost: number | string;
+  service_type: string;
+  booking_status: string;
+  date_only: string;
+  time_only: string | null;
+}
+
 const EmailNotificationManager = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -100,6 +111,9 @@ const EmailNotificationManager = () => {
   const [message, setMessage] = useState('');
   const [sendMode, setSendMode] = useState<'individual' | 'bulk'>('individual');
   const { sendManualEmail, isLoading: isSending } = useManualEmailNotification();
+  const [customerBookings, setCustomerBookings] = useState<Booking[]>([]);
+  const [selectedBooking, setSelectedBooking] = useState<string>('');
+  const [loadingBookings, setLoadingBookings] = useState(false);
 
   // Load recipients (customers and cleaners with email addresses)
   const loadRecipients = async () => {
@@ -392,13 +406,67 @@ const EmailNotificationManager = () => {
     }
   };
 
+  const loadCustomerBookings = async (customerId: string) => {
+    setLoadingBookings(true);
+    try {
+      const customerIdNum = parseInt(customerId, 10);
+      
+      const { data: bookingsData, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('id, date_time, address, total_cost, service_type, booking_status, date_only, time_only')
+        .eq('customer', customerIdNum)
+        .order('date_time', { ascending: false });
+
+      if (bookingsError) throw bookingsError;
+
+      const { data: pastBookingsData, error: pastBookingsError } = await supabase
+        .from('past_bookings')
+        .select('id, date_time, address, total_cost, service_type, booking_status, date_only')
+        .eq('customer', customerIdNum)
+        .order('date_time', { ascending: false });
+
+      if (pastBookingsError) throw pastBookingsError;
+
+      const allBookings: Booking[] = [
+        ...(bookingsData || []).map(b => ({
+          ...b,
+          total_cost: typeof b.total_cost === 'number' ? b.total_cost : parseFloat(b.total_cost || '0')
+        })),
+        ...(pastBookingsData || []).map(pb => ({
+          ...pb,
+          time_only: null,
+          total_cost: typeof pb.total_cost === 'string' ? parseFloat(pb.total_cost || '0') : pb.total_cost
+        }))
+      ];
+
+      setCustomerBookings(allBookings);
+    } catch (error) {
+      console.error('Error loading customer bookings:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load customer bookings',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoadingBookings(false);
+    }
+  };
+
   const handleClientSelect = (clientId: string) => {
     setSelectedClient(clientId);
+    setSelectedBooking('');
+    setCustomerBookings([]);
     
     if (clientId !== 'manual') {
       const client = recipients.find(r => r.id === clientId);
       if (client) {
         setEmailAddress(client.email);
+        
+        // Load customer bookings if it's a customer
+        if (client.type === 'customer') {
+          const customerId = client.id.replace('customer_', '');
+          loadCustomerBookings(customerId);
+        }
         
         // Re-process template with client data if template is selected
         if (selectedTemplate && selectedTemplate !== 'none') {
@@ -414,6 +482,48 @@ const EmailNotificationManager = () => {
       }
     } else {
       setEmailAddress('');
+    }
+  };
+
+  const handleBookingSelect = (bookingId: string) => {
+    setSelectedBooking(bookingId);
+    
+    if (bookingId && bookingId !== 'none') {
+      const booking = customerBookings.find(b => b.id.toString() === bookingId);
+      if (booking && selectedTemplate && selectedTemplate !== 'none') {
+        const template = templates.find(t => t.id === selectedTemplate);
+        const client = recipients.find(r => r.id === selectedClient);
+        
+        if (template && client) {
+          // Create enhanced client data with booking info
+          const enhancedClientData = {
+            ...client,
+            booking_date: booking.date_only || new Date(booking.date_time).toLocaleDateString(),
+            booking_time: booking.time_only || new Date(booking.date_time).toLocaleTimeString(),
+            address: booking.address,
+            total_cost: booking.total_cost?.toString() || '0',
+            service_type: booking.service_type,
+            booking_status: booking.booking_status
+          };
+          
+          const processedSubject = processTemplateVariables(template.subject, enhancedClientData);
+          const processedContent = processTemplateVariables(template.html_content, enhancedClientData);
+          
+          setSubject(processedSubject);
+          setMessage(processedContent);
+        }
+      }
+    } else if (selectedTemplate && selectedTemplate !== 'none') {
+      // Re-process with just client data (no booking)
+      const template = templates.find(t => t.id === selectedTemplate);
+      const client = recipients.find(r => r.id === selectedClient);
+      if (template && client) {
+        const processedSubject = processTemplateVariables(template.subject, client);
+        const processedContent = processTemplateVariables(template.html_content, client);
+        
+        setSubject(processedSubject);
+        setMessage(processedContent);
+      }
     }
   };
 
@@ -572,6 +682,32 @@ const EmailNotificationManager = () => {
                 disabled={selectedClient !== 'manual'}
               />
             </div>
+
+            {selectedClientData?.type === 'customer' && customerBookings.length > 0 && (
+              <div>
+                <Label>Attach Booking (Optional)</Label>
+                <Select value={selectedBooking} onValueChange={handleBookingSelect}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="No booking attached" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No booking attached</SelectItem>
+                    {customerBookings.map(booking => (
+                      <SelectItem key={booking.id} value={booking.id.toString()}>
+                        {new Date(booking.date_time).toLocaleDateString()} - {booking.address} - £{booking.total_cost}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Select a booking to automatically populate booking variables in the email template
+                </p>
+              </div>
+            )}
+
+            {loadingBookings && (
+              <p className="text-sm text-muted-foreground">Loading customer bookings...</p>
+            )}
           </CardContent>
         </Card>
       ) : (
