@@ -300,12 +300,6 @@ const EmailNotificationManager = () => {
   };
 
   const processTemplateVariables = (content: string, clientData?: any) => {
-    console.log('=== PROCESSING TEMPLATE VARIABLES ===');
-    console.log('Content length:', content.length);
-    console.log('ClientData provided:', clientData);
-    console.log('Selected client from state:', selectedClient);
-    console.log('Recipients available:', recipients.length);
-    
     let processedContent = content;
     
     // Get selected client data - use provided clientData or find from selectedClient
@@ -313,33 +307,19 @@ const EmailNotificationManager = () => {
       ? recipients.find(r => r.id === selectedClient)
       : null);
     
-    console.log('Processing template for client:', selectedClientData);
-    
-    // Check if this is a payment setup email (no booking data)
-    const isPaymentSetup = !selectedClientData?.bookingId;
-    
     if (selectedClientData) {
-      console.log('FOUND CLIENT DATA - processing variables');
-      
       // Replace customer_name
       processedContent = processedContent.replace(
         /\{\{customer_name\}\}/g, 
-        selectedClientData.name
+        selectedClientData.name || ''
       );
-      console.log('After customer_name replacement');
       
-      // Replace customer email - ensure we have the actual email
+      // Replace customer email
       const customerEmail = selectedClientData.email || '';
-      console.log('Customer email found:', customerEmail, 'from data:', selectedClientData);
-      console.log('Before email replacement - content contains {{email}}:', processedContent.includes('{{email}}'));
-      
       processedContent = processedContent.replace(
         /\{\{email\}\}/g, 
         customerEmail
       );
-      
-      console.log('After email replacement - content contains {{email}}:', processedContent.includes('{{email}}'));
-      console.log('Email should now be:', customerEmail);
       
       // Generate payment link using Supabase edge function
       const customerId = selectedClientData.id.replace('customer_', '').replace('cleaner_', '');
@@ -351,44 +331,55 @@ const EmailNotificationManager = () => {
         paymentLink
       );
       
-      // Replace login_link using your domain
+      // Replace login_link
       const loginLink = `https://account.sncleaningservices.co.uk/auth`;
       processedContent = processedContent.replace(
         /\{\{login_link\}\}/g, 
         loginLink
       );
       
-      // Set default temporary password as requested
+      // Set default temporary password
       const tempPassword = "TempPass123!";
-      console.log('Setting temp_password to:', tempPassword);
-      console.log('Before temp_password replacement - content contains {{temp_password}}:', processedContent.includes('{{temp_password}}'));
-      
       processedContent = processedContent.replace(
         /\{\{temp_password\}\}/g, 
         tempPassword
       );
       
-      console.log('After temp_password replacement - content contains {{temp_password}}:', processedContent.includes('{{temp_password}}'));
-    } else {
-      console.log('NO CLIENT DATA FOUND - cannot process variables');
-    }
-    
-    console.log('Final processed content contains email placeholder?', processedContent.includes('{{email}}'));
-    console.log('Final processed content contains temp_password placeholder?', processedContent.includes('{{temp_password}}'));
-    
-    // For payment setup emails, remove booking-related sections
-    if (isPaymentSetup) {
-      // Remove booking-related conditionals
-      processedContent = processedContent.replace(/\{\{#if has_booking_data\}\}[\s\S]*?\{\{\/if\}\}/g, '');
-      processedContent = processedContent.replace(/\{\{#unless has_booking_data\}\}([\s\S]*?)\{\{\/unless\}\}/g, '$1');
+      // Replace booking-related variables if they exist in clientData
+      if (selectedClientData.booking_date) {
+        processedContent = processedContent.replace(
+          /\{\{booking_date\}\}/g, 
+          selectedClientData.booking_date
+        );
+      }
       
-      // Remove individual field conditionals for booking data
-      ['booking_date', 'address', 'total_cost', 'booking_time', 'service_type', 'cleaner_name'].forEach(field => {
-        processedContent = processedContent.replace(new RegExp(`\\{\\{#if ${field}\\}\\}[\\s\\S]*?\\{\\{\\/if\\}\\}`, 'g'), '');
-      });
+      if (selectedClientData.booking_time) {
+        processedContent = processedContent.replace(
+          /\{\{booking_time\}\}/g, 
+          selectedClientData.booking_time
+        );
+      }
       
-      // Clean up any remaining handlebars variables
-      processedContent = processedContent.replace(/\{\{[^}]+\}\}/g, '');
+      if (selectedClientData.service_type) {
+        processedContent = processedContent.replace(
+          /\{\{service_type\}\}/g, 
+          selectedClientData.service_type
+        );
+      }
+      
+      if (selectedClientData.address) {
+        processedContent = processedContent.replace(
+          /\{\{address\}\}/g, 
+          selectedClientData.address
+        );
+      }
+      
+      if (selectedClientData.total_cost) {
+        processedContent = processedContent.replace(
+          /\{\{total_cost\}\}/g, 
+          selectedClientData.total_cost
+        );
+      }
     }
     
     return processedContent;
