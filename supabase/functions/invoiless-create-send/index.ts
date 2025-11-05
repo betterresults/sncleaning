@@ -42,7 +42,7 @@ serve(async (req) => {
 
     // Prepare invoice data - discount is sent as actual amount, not percentage
     const invoiceData: any = {
-      customerId: customerId,
+      customer: customerId,  // Invoiless API expects 'customer', not 'customerId'
       date: dateString,
       items: [
         {
