@@ -25,6 +25,7 @@ import CustomerDashboard from "./pages/CustomerDashboard";
 import CustomerCompletedBookings from "./pages/CustomerCompletedBookings";
 import CustomerSettings from "./pages/CustomerSettings";
 import CustomerAddBooking from "./pages/CustomerAddBooking";
+import PublicServiceSelection from "./pages/PublicServiceSelection";
 import CustomerPhotos from "./pages/CustomerPhotos";
 import CustomerLinenManagement from './pages/CustomerLinenManagement';
 import CreateCustomerAccounts from "./pages/CreateCustomerAccounts";
@@ -74,6 +75,7 @@ const App = () => (
             <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/choose-service" element={<PublicServiceSelection />} />
             <Route path="/airbnb" element={<AirbnbBooking />} />
             <Route path="/linen-order" element={<LinenOrder />} />
             <Route path="/booking-confirmation" element={<BookingConfirmation />} />
