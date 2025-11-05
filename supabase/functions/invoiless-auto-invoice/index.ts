@@ -27,10 +27,11 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Step 1: Fetch booking data
-    console.log('Fetching booking data for ID:', bookingId);
+    // Step 1: Fetch booking data based on booking type
+    console.log('Fetching booking data for ID:', bookingId, 'Type:', bookingType);
+    const tableName = bookingType === 'past' ? 'past_bookings' : 'bookings';
     const { data: booking, error: bookingError } = await supabase
-      .from('past_bookings')
+      .from(tableName)
       .select('*')
       .eq('id', bookingId)
       .single();
@@ -231,10 +232,10 @@ Postcode: ${booking.postcode || 'N/A'}`;
       // Continue anyway - invoice is created
     }
 
-    // Step 5: Update past_bookings table
+    // Step 5: Update booking table with invoice details
     console.log('Updating booking with invoice details');
     const { error: updateError } = await supabase
-      .from('past_bookings')
+      .from(tableName)
       .update({
         invoice_id: invoice.id,
         invoice_link: invoice.url,
