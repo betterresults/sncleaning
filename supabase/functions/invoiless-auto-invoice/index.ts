@@ -103,16 +103,18 @@ serve(async (req) => {
     console.log('Searching for customer by email (raw):', emailTrimmed);
 
     const doSearch = async () => {
-      const url = new URL('https://api.invoiless.com/v1/customers');
-      // IMPORTANT: use the same approach as invoiless-get-customer (works in admin)
-      url.searchParams.append('search', emailTrimmed);
 
-      const res = await fetch(url.toString(), {
-        method: 'GET',
+      const url = `${supabaseUrl}/functions/v1/invoiless-get-customer`;
+      const bearer = Deno.env.get('SUPABASE_ANON_KEY') || supabaseServiceKey;
+
+      const res = await fetch(url, {
+        method: 'POST',
         headers: {
-          'api-key': INVOILESS_API_KEY,
-          'Accept': 'application/json',
+          'Authorization': `Bearer ${bearer}`,
+          'apikey': bearer,
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ email: emailTrimmed })
       });
 
       const status = res.status;
@@ -122,17 +124,17 @@ serve(async (req) => {
       } catch (e) {
         const text = await res.text();
         console.warn('Search response not JSON, status=', status, 'body=', text?.slice(0, 200));
-        throw new Error(`Failed to parse Invoiless search response (status ${status})`);
+        throw new Error(`Failed to parse invoiless-get-customer response (status ${status})`);
       }
 
-      console.log('Invoiless search status:', status, 'keys:', json && typeof json === 'object' ? Object.keys(json) : typeof json);
+      console.log('invoiless-get-customer status:', status, 'keys:', json && typeof json === 'object' ? Object.keys(json) : typeof json);
 
       if (!res.ok) {
-        console.error('Invoiless search error payload:', JSON.stringify(json).slice(0, 500));
-        throw new Error(`Failed to search customer: ${status}`);
+        console.error('invoiless-get-customer error payload:', JSON.stringify(json).slice(0, 500));
+        throw new Error(`invoiless-get-customer failed: ${status}`);
       }
 
-      // Normalize common shapes: array | {data: []} | {results: []} | {items: []}
+      // The function returns the raw Invoiless API data
       const list = Array.isArray(json)
         ? json
         : Array.isArray(json?.data)
