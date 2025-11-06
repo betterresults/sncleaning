@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload, X, Camera, AlertTriangle, Trash2, Eye, Download, Link2 } from 'lucide-react';
+import { compressImage } from '@/utils/imageCompression';
 
 interface PhotoManagementDialogProps {
   open: boolean;
@@ -181,13 +182,16 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
   const { toast } = useToast();
   const { userRole } = useAuth();
   const [photos, setPhotos] = useState<CleaningPhoto[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [beforeFiles, setBeforeFiles] = useState<File[]>([]);
-  const [afterFiles, setAfterFiles] = useState<File[]>([]);
-  const [additionalFiles, setAdditionalFiles] = useState<File[]>([]);
-  const [additionalDetails, setAdditionalDetails] = useState('');
-  const [showAdditionalTab, setShowAdditionalTab] = useState(false);
+const [loading, setLoading] = useState(false);
+const [uploading, setUploading] = useState(false);
+const [beforeFiles, setBeforeFiles] = useState<File[]>([]);
+const [afterFiles, setAfterFiles] = useState<File[]>([]);
+const [additionalFiles, setAdditionalFiles] = useState<File[]>([]);
+const [additionalDetails, setAdditionalDetails] = useState('');
+const [showAdditionalTab, setShowAdditionalTab] = useState(false);
+// Upload progress tracking
+const [uploadedCount, setUploadedCount] = useState(0);
+const [totalToUpload, setTotalToUpload] = useState(0);
 
   const bookingDate = new Date(booking.date_time).toISOString().split('T')[0];
   const safePostcode = booking.postcode?.toString().replace(/[\s\u00A0]+/g, '').toUpperCase() || 'NA';
@@ -255,45 +259,76 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
     }
   };
 
-  const handleFileSelect = (files: FileList | null, type: 'before' | 'after' | 'additional') => {
-    if (!files) return;
-    
-    let fileArray: File[];
+const handleFileSelect = (files: FileList | null, type: 'before' | 'after' | 'additional') => {
+  console.info(`📥 Selecting files for ${type}...`, { inputCount: files?.length || 0 });
+  if (!files) return;
+
+  const all = Array.from(files);
+  const accepted: File[] = [];
+  const skipped: { name: string; reason: string }[] = [];
+  let heicDetected = false;
+
+  for (const file of all) {
+    const lower = file.name.toLowerCase();
+    const isHeic = /\.(heic|heif)$/i.test(lower);
+    const isImageByType = !!file.type && file.type.startsWith('image/');
+    const isImageByExt = /\.(jpg|jpeg|png|webp|heic|heif)$/i.test(lower);
 
     if (type === 'additional') {
-      // Allow any file type up to 10MB for additional uploads
-      fileArray = Array.from(files).filter(file => file.size <= 10 * 1024 * 1024);
-      if (fileArray.length !== files.length) {
-        toast({
-          title: 'Invalid Files',
-          description: 'Some files were skipped. Only files under 10MB are allowed.',
-          variant: 'destructive'
-        });
+      if (file.size <= 10 * 1024 * 1024) {
+        accepted.push(file);
+      } else {
+        skipped.push({ name: file.name, reason: 'Exceeds 10MB' });
       }
-    } else {
-      // Only images up to 5MB for before/after
-      fileArray = Array.from(files).filter(file => file.type.startsWith('image/') && file.size <= 5 * 1024 * 1024);
-      if (fileArray.length !== files.length) {
-        toast({
-          title: 'Invalid Files',
-          description: 'Some files were skipped. Only images under 5MB are allowed.',
-          variant: 'destructive'
-        });
-      }
+      continue;
     }
 
-    switch (type) {
-      case 'before':
-        setBeforeFiles(prev => [...prev, ...fileArray]);
-        break;
-      case 'after':
-        setAfterFiles(prev => [...prev, ...fileArray]);
-        break;
-      case 'additional':
-        setAdditionalFiles(prev => [...prev, ...fileArray]);
-        break;
+    if (isHeic) heicDetected = true;
+
+    // Before/After: accept images by MIME or extension (no size limit, will compress on upload)
+    if (isImageByType || isImageByExt) {
+      accepted.push(file);
+    } else {
+      skipped.push({ name: file.name, reason: 'Unsupported type' });
     }
-  };
+  }
+
+  if (heicDetected) {
+    console.warn('⚠️ HEIC/HEIF files detected in selection');
+    toast({
+      title: 'HEIC Files Detected',
+      description: 'HEIC may not preview or compress but will upload. JPG is recommended for compatibility.',
+    });
+  }
+
+  console.info('✅ File selection complete', {
+    type,
+    inputCount: all.length,
+    accepted: accepted.length,
+    skipped,
+  });
+
+  if (accepted.length === 0) {
+    toast({
+      title: 'No Compatible Files',
+      description: type === 'additional' ? 'All files exceeded 10MB.' : 'Please select image files (JPG, PNG, WebP, HEIC).',
+      variant: 'destructive',
+    });
+    return;
+  }
+
+  switch (type) {
+    case 'before':
+      setBeforeFiles(prev => [...prev, ...accepted]);
+      break;
+    case 'after':
+      setAfterFiles(prev => [...prev, ...accepted]);
+      break;
+    case 'additional':
+      setAdditionalFiles(prev => [...prev, ...accepted]);
+      break;
+  }
+};
 
   const removeFile = (index: number, type: 'before' | 'after' | 'additional') => {
     switch (type) {
@@ -309,44 +344,81 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
     }
   };
 
-  const uploadFiles = async (files: File[], photoType: 'before' | 'after' | 'additional') => {
-    const uploadPromises = files.map(async (file, index) => {
+const uploadFiles = async (files: File[], photoType: 'before' | 'after' | 'additional') => {
+  const baseFolder = photos[0]?.file_path?.split('/')[0] || folderPath;
+  const results: string[] = [];
+  const errors: string[] = [];
+  const CONCURRENCY = Math.min(3, Math.max(1, files.length));
+  let index = 0;
+
+  const worker = async () => {
+    while (index < files.length) {
+      const i = index++;
+      const file = files[i];
+
       const timestamp = Date.now();
-      const fileName = `${timestamp}_${index}_${file.name}`;
-      const baseFolder = photos[0]?.file_path?.split('/')[0] || folderPath;
+      const fileName = `${timestamp}_${i}_${file.name}`;
       const filePath = `${baseFolder}/${photoType}/${fileName}`;
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('cleaning.photos')
-        .upload(filePath, file, { cacheControl: '3600', upsert: true, contentType: file.type || 'application/octet-stream' });
+      try {
+        const lower = file.name.toLowerCase();
+        const isHeic = /\.(heic|heif)$/i.test(lower);
+        const isCompressibleImage = !isHeic && ((file.type && file.type.startsWith('image/')) || /\.(jpg|jpeg|png|webp)$/i.test(lower));
 
-      if (uploadError) {
-        throw new Error(`Upload failed for ${file.name}: ${uploadError.message}`);
+        let toUpload: File = file;
+        if (isCompressibleImage) {
+          try {
+            console.info(`🗜️ Compressing: ${file.name}`);
+            toUpload = await compressImage(file);
+          } catch (err) {
+            console.warn(`Compression failed for ${file.name}, uploading original.`, err);
+            toUpload = file;
+          }
+        }
+
+        const { error: uploadError } = await supabase.storage
+          .from('cleaning.photos')
+          .upload(filePath, toUpload, {
+            cacheControl: '3600',
+            upsert: true,
+            contentType: toUpload.type || file.type || 'application/octet-stream',
+          });
+
+        if (uploadError) throw new Error(uploadError.message);
+
+        const { error: dbError } = await supabase
+          .from('cleaning_photos')
+          .insert({
+            booking_id: booking.id,
+            customer_id: booking.customer,
+            cleaner_id: booking.cleaner,
+            file_path: filePath,
+            photo_type: photoType,
+            postcode: booking.postcode,
+            booking_date: bookingDate,
+            damage_details: photoType === 'additional' ? additionalDetails : null,
+          });
+
+        if (dbError) throw new Error(dbError.message);
+
+        results.push(filePath);
+        setUploadedCount((c) => c + 1);
+        console.info(`✅ Uploaded ${file.name} -> ${filePath}`);
+      } catch (e: any) {
+        const msg = e?.message || 'Unknown error';
+        errors.push(`${file.name}: ${msg}`);
+        console.error(`❌ Upload failed for ${file.name}: ${msg}`);
       }
-
-      // Save metadata to database
-      const { error: dbError } = await supabase
-        .from('cleaning_photos')
-        .insert({
-          booking_id: booking.id,
-          customer_id: booking.customer,
-          cleaner_id: booking.cleaner,
-          file_path: filePath,
-          photo_type: photoType,
-          postcode: booking.postcode,
-          booking_date: bookingDate,
-          damage_details: photoType === 'additional' ? additionalDetails : null
-        });
-
-      if (dbError) {
-        throw new Error(`Database error: ${dbError.message}`);
-      }
-
-      return filePath;
-    });
-
-    return Promise.all(uploadPromises);
+    }
   };
+
+  await Promise.all(Array.from({ length: CONCURRENCY }, () => worker()));
+
+  if (errors.length) {
+    throw new Error(`Some files failed: ${errors.slice(0, 3).join('; ')}${errors.length > 3 ? '…' : ''}`);
+  }
+  return results;
+};
 
   const handleUpload = async () => {
     if (!beforeFiles.length && !afterFiles.length && !additionalFiles.length) {
@@ -358,7 +430,10 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
       return;
     }
 
-    setUploading(true);
+const total = beforeFiles.length + afterFiles.length + additionalFiles.length;
+setTotalToUpload(total);
+setUploadedCount(0);
+setUploading(true);
 
     try {
       const uploadPromises = [];
@@ -382,12 +457,14 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
         description: `Uploaded ${beforeFiles.length + afterFiles.length + additionalFiles.length} file${beforeFiles.length + afterFiles.length + additionalFiles.length === 1 ? '' : 's'}.`
       });
 
-      // Reset form
-      setBeforeFiles([]);
-      setAfterFiles([]);
-      setAdditionalFiles([]);
-      setAdditionalDetails('');
-      setShowAdditionalTab(false);
+// Reset form
+setBeforeFiles([]);
+setAfterFiles([]);
+setAdditionalFiles([]);
+setAdditionalDetails('');
+setShowAdditionalTab(false);
+setTotalToUpload(0);
+setUploadedCount(0);
       
       // Refresh photos
       await fetchPhotos();
@@ -504,7 +581,7 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
           type="file"
           accept={type === 'additional' ? '*/*' : 'image/*'}
           multiple
-          onChange={(e) => onFileSelect(e.target.files)}
+          onChange={(e) => { const input = e.target as HTMLInputElement; const fl = input.files; console.info(`📥 Input change (${type}):`, { filesLength: fl?.length || 0 }); onFileSelect(fl); input.value = ''; }}
           className="hidden"
           id={`file-${type}`}
         />
@@ -513,15 +590,15 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
           <p className="text-sm text-gray-600">
             Click to select {type} {type === 'additional' ? 'files' : 'photos'} or drag and drop
           </p>
-          <p className="text-xs text-gray-400 mt-1">
-            {type === 'additional' ? 'Any file type up to 10MB each' : 'JPG, PNG, WebP up to 5MB each'}
-          </p>
+<p className="text-xs text-gray-400 mt-1">
+  {type === 'additional' ? 'Any file type up to 10MB each' : 'JPG, PNG, WebP, HEIC (large files will be compressed)'}
+</p>
         </label>
       </div>
 
         {files.length > 0 && (
           <div className="grid grid-cols-2 gap-2">
-            {files.map((file, index) => (
+            {files.slice(0, 60).map((file, index) => (
               <div key={index} className="relative">
                 {file.type === 'application/pdf' ? (
                   <div className="w-full h-24 bg-red-50 border-2 border-red-200 rounded flex flex-col items-center justify-center">
@@ -725,9 +802,9 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
             </Tabs>
 
             <div className="flex justify-end gap-2 pt-4 border-t">
-              <Button onClick={handleUpload} disabled={uploading}>
-                {uploading ? 'Uploading...' : 'Upload Files'}
-              </Button>
+<Button onClick={handleUpload} disabled={uploading}>
+  {uploading ? `Uploading... ${uploadedCount}/${totalToUpload}` : 'Upload Files'}
+</Button>
             </div>
           </TabsContent>
         </Tabs>
