@@ -8,8 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, X, Camera, AlertTriangle, Bug } from 'lucide-react';
-import StorageTestDialog from '@/components/debug/StorageTestDialog';
+import { Upload, X, Camera, AlertTriangle } from 'lucide-react';
 
 interface CleaningPhotosUploadDialogProps {
   open: boolean;
@@ -33,7 +32,6 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   const [additionalFiles, setAdditionalFiles] = useState<File[]>([]);
   const [additionalDetails, setAdditionalDetails] = useState('');
   const [showAdditionalTab, setShowAdditionalTab] = useState(false);
-  const [showStorageTest, setShowStorageTest] = useState(false);
 
   const bookingDate = new Date(booking.date_time).toISOString().split('T')[0];
   const safePostcode = booking.postcode?.toString().replace(/\s+/g, '').toUpperCase() || 'NA';
@@ -327,8 +325,8 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     onFileSelect: (files: FileList | null) => void;
     onRemove: (index: number) => void;
   }) => (
-    <div className="space-y-4">
-      <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 sm:p-6 text-center hover:border-gray-300 transition-colors touch-manipulation">
+    <div className="space-y-6">
+      <div className="border-2 border-dashed border-primary/30 rounded-xl p-8 text-center hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 cursor-pointer">
         <input
           type="file"
           accept={type === 'additional' ? "*/*" : "image/*"}
@@ -338,14 +336,16 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
           id={`file-${type}`}
         />
         <label htmlFor={`file-${type}`} className="cursor-pointer block">
-          <Camera className="h-10 w-10 sm:h-8 sm:w-8 mx-auto mb-2 text-gray-400" />
-          <p className="text-sm sm:text-base text-gray-600 font-medium">
+          <div className="p-4 rounded-full bg-primary/10 w-fit mx-auto mb-4">
+            <Camera className="h-12 w-12 text-primary" />
+          </div>
+          <p className="text-lg font-semibold text-foreground mb-2">
             Select {type} {type === 'additional' ? 'files' : 'photos'}
           </p>
-          <p className="text-xs text-gray-400 mt-1 hidden sm:block">
-            Click to select or drag and drop
+          <p className="text-sm text-muted-foreground mb-1">
+            Click to select multiple files
           </p>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-muted-foreground">
             {type === 'additional' 
               ? 'Any file type up to 10MB each' 
               : 'JPG, PNG, WebP up to 5MB each'
@@ -355,40 +355,55 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       </div>
 
       {files.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {files.map((file, index) => (
-            <div key={index} className="relative group">
-              {file.type === 'application/pdf' ? (
-                <div className="w-full h-32 sm:h-24 bg-red-50 border-2 border-red-200 rounded flex flex-col items-center justify-center">
-                  <svg className="h-8 w-8 text-red-600 mb-1" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                  </svg>
-                  <p className="text-xs text-red-600 text-center px-1">{file.name}</p>
-                </div>
-              ) : file.type.startsWith('image/') ? (
-                <img
-                  src={URL.createObjectURL(file)}
-                  alt={`${type} photo ${index + 1}`}
-                  className="w-full h-32 sm:h-24 object-cover rounded border shadow-sm"
-                />
-              ) : (
-                <div className="w-full h-32 sm:h-24 bg-gray-50 border-2 border-gray-200 rounded flex flex-col items-center justify-center">
-                  <svg className="h-8 w-8 text-gray-600 mb-1" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                  </svg>
-                  <p className="text-xs text-gray-600 text-center px-1 break-all">{file.name}</p>
-                  <p className="text-xs text-gray-400">{(file.size / 1024 / 1024).toFixed(1)}MB</p>
-                </div>
-              )}
-              <button
-                onClick={() => onRemove(index)}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-2 sm:p-1 hover:bg-red-600 touch-manipulation shadow-lg"
-                aria-label={`Remove ${type} file ${index + 1}`}
-              >
-                <X className="h-4 w-4 sm:h-3 sm:w-3" />
-              </button>
-            </div>
-          ))}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <p className="text-sm font-medium text-foreground">
+              {files.length} {files.length === 1 ? 'file' : 'files'} selected
+            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => files.forEach((_, i) => onRemove(0))}
+              className="text-xs text-muted-foreground hover:text-destructive"
+            >
+              Clear all
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 max-h-[50vh] overflow-y-auto p-1">
+            {files.map((file, index) => (
+              <div key={index} className="relative group">
+                {file.type === 'application/pdf' ? (
+                  <div className="w-full aspect-square bg-red-50 border-2 border-red-200 rounded-lg flex flex-col items-center justify-center p-2">
+                    <svg className="h-10 w-10 text-red-600 mb-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                    </svg>
+                    <p className="text-xs text-red-600 text-center px-1 line-clamp-2">{file.name}</p>
+                  </div>
+                ) : file.type.startsWith('image/') ? (
+                  <img
+                    src={URL.createObjectURL(file)}
+                    alt={`${type} photo ${index + 1}`}
+                    className="w-full aspect-square object-cover rounded-lg border-2 border-border shadow-sm hover:shadow-md transition-shadow"
+                  />
+                ) : (
+                  <div className="w-full aspect-square bg-muted border-2 border-border rounded-lg flex flex-col items-center justify-center p-2">
+                    <svg className="h-10 w-10 text-muted-foreground mb-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                    </svg>
+                    <p className="text-xs text-muted-foreground text-center px-1 break-all line-clamp-2">{file.name}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{(file.size / 1024 / 1024).toFixed(1)}MB</p>
+                  </div>
+                )}
+                <button
+                  onClick={() => onRemove(index)}
+                  className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1.5 hover:bg-destructive/90 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                  aria-label={`Remove ${type} file ${index + 1}`}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -396,39 +411,40 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-md sm:max-w-lg md:max-w-2xl h-[90vh] sm:max-h-[85vh] flex flex-col p-3 sm:p-6 m-2">
-        <DialogHeader className="flex-shrink-0 space-y-2 pb-3">
-          <DialogTitle className="flex items-center gap-2 text-sm sm:text-lg">
-            <Upload className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-            <span className="truncate">Upload Cleaning Photos</span>
+      <DialogContent className="w-screen h-screen max-w-none max-h-none flex flex-col p-0 m-0 rounded-none">
+        <DialogHeader className="flex-shrink-0 space-y-3 p-6 border-b bg-gradient-to-r from-primary/5 to-primary/10">
+          <DialogTitle className="flex items-center gap-3 text-xl font-semibold">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Upload className="h-6 w-6 text-primary" />
+            </div>
+            <span>Upload Cleaning Photos</span>
           </DialogTitle>
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            Booking #{booking.id} - {booking.postcode} ({bookingDate})
+          <p className="text-sm text-muted-foreground">
+            Booking #{booking.id} - {booking.postcode} - {bookingDate}
           </p>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-hidden p-6">
           <Tabs defaultValue="before" className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-3 mb-3 h-auto p-1 shrink-0">
-              <TabsTrigger value="before" className="text-xs sm:text-sm py-2 px-1">
-                Before
+            <TabsList className="grid w-full grid-cols-3 mb-6 h-12 p-1 shrink-0">
+              <TabsTrigger value="before" className="text-base py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                Before {beforeFiles.length > 0 && `(${beforeFiles.length})`}
               </TabsTrigger>
-              <TabsTrigger value="after" className="text-xs sm:text-sm py-2 px-1">
-                After
+              <TabsTrigger value="after" className="text-base py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                After {afterFiles.length > 0 && `(${afterFiles.length})`}
               </TabsTrigger>
               <TabsTrigger 
                 value="additional" 
-                className={`text-xs sm:text-sm py-2 px-1 ${showAdditionalTab ? "text-orange-600" : ""}`}
+                className="text-base py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
-                <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
-                <span className="hidden sm:inline">Additional</span>
-                <span className="sm:hidden">Info</span>
+                <AlertTriangle className="h-4 w-4 mr-2 flex-shrink-0" />
+                Additional {additionalFiles.length > 0 && `(${additionalFiles.length})`}
               </TabsTrigger>
             </TabsList>
 
-            <div className="flex-1 overflow-y-auto pb-3">
+            <div className="flex-1 overflow-y-auto">
               <TabsContent value="before" className="mt-0 h-auto">
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <FileUploadArea
                     type="before"
                     files={beforeFiles}
@@ -439,7 +455,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
               </TabsContent>
 
               <TabsContent value="after" className="mt-0 h-auto">
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <FileUploadArea
                     type="after"
                     files={afterFiles}
@@ -514,14 +530,14 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
 
         {/* Upload Progress Indicator */}
         {uploading && (
-          <div className="flex-shrink-0 bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
-            <div className="flex items-center gap-3">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 flex-shrink-0"></div>
+          <div className="flex-shrink-0 bg-primary/10 border border-primary/20 rounded-lg p-4 mx-6 mb-4">
+            <div className="flex items-center gap-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent flex-shrink-0"></div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-blue-800 truncate">
+                <p className="text-base font-semibold text-foreground">
                   {uploadStep}
                 </p>
-                <p className="text-xs text-blue-600 truncate">
+                <p className="text-sm text-muted-foreground mt-1">
                   {uploadProgress}
                 </p>
               </div>
@@ -529,48 +545,22 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
           </div>
         )}
 
-        <div className="flex-shrink-0 border-t pt-3">
-          <div className="flex flex-col gap-2">
-            <Button 
-              onClick={handleUpload} 
-              disabled={uploading}
-              className="w-full py-4 text-base font-medium"
-            >
-              {uploading ? (
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>Uploading...</span>
-                </div>
-              ) : (
-                'Upload Photos'
-              )}
-            </Button>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowStorageTest(true)}
-                className="flex items-center gap-1"
-              >
-                <Bug className="h-3 w-3" />
-                Test Storage
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => onOpenChange(false)}
-                disabled={uploading}
-                className="flex-1 py-3 text-sm"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
+        <div className="flex-shrink-0 border-t p-6 bg-background">
+          <Button 
+            onClick={handleUpload} 
+            disabled={uploading}
+            className="w-full py-6 text-lg font-semibold"
+          >
+            {uploading ? (
+              <div className="flex items-center gap-3">
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                <span>Uploading...</span>
+              </div>
+            ) : (
+              <>Upload {beforeFiles.length + afterFiles.length + additionalFiles.length} {beforeFiles.length + afterFiles.length + additionalFiles.length === 1 ? 'Photo' : 'Photos'}</>
+            )}
+          </Button>
         </div>
-
-        <StorageTestDialog 
-          open={showStorageTest}
-          onOpenChange={setShowStorageTest}
-        />
       </DialogContent>
     </Dialog>
   );
