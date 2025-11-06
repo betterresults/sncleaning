@@ -42,72 +42,49 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
 
   const handleFileSelect = async (files: FileList | null, type: 'before' | 'after' | 'additional') => {
     if (!files) return;
-    
-    setCompressing(true);
-    setCompressionProgress(`Preparing ${files.length} files...`);
-    
+
+    // БЪРЗО: Добавяме избраните файлове незабавно, компресираме по време на качване
     const fileArray = Array.from(files);
-    const compressedFiles: File[] = [];
-    let skippedFiles = 0;
-    
-    // Компресиране на всички снимки
-    for (let i = 0; i < fileArray.length; i++) {
-      const file = fileArray[i];
-      setCompressionProgress(`Processing ${i + 1}/${fileArray.length}...`);
-      
+    const accepted: File[] = [];
+    let skipped = 0;
+
+    for (const file of fileArray) {
       if (type === 'additional') {
-        // Allow any file type for additional information, compress only images
+        // Допълнителни: разрешаваме всички типове до 10MB
         if (file.size <= 10 * 1024 * 1024) {
-          if (file.type.startsWith('image/')) {
-            const compressed = await compressImage(file);
-            compressedFiles.push(compressed);
-          } else {
-            compressedFiles.push(file);
-          }
+          accepted.push(file);
         } else {
-          skippedFiles++;
+          skipped++;
         }
       } else {
-        // Only images for before/after photos - compress them
+        // Before/After: само изображения, без ограничение за размер (ще компресираме при качване)
         if (file.type.startsWith('image/')) {
-          const compressed = await compressImage(file);
-          compressedFiles.push(compressed);
+          accepted.push(file);
         } else {
-          skippedFiles++;
+          skipped++;
         }
       }
     }
 
-    if (skippedFiles > 0) {
-      const allowedTypes = type === 'additional' ? 'images or files under 10MB' : 'images only';
-      toast({
-        title: 'Some Files Skipped',
-        description: `${skippedFiles} file(s) were skipped. Only ${allowedTypes} are allowed.`,
-        variant: 'destructive'
-      });
+    if (skipped > 0) {
+      const allowed = type === 'additional' ? 'images or files under 10MB' : 'images only';
+      toast({ title: 'Some Files Skipped', description: `${skipped} file(s) were skipped. Only ${allowed} are allowed.`, variant: 'destructive' });
     }
 
-    // Добавяне към state
     switch (type) {
       case 'before':
-        setBeforeFiles(prev => [...prev, ...compressedFiles]);
+        setBeforeFiles(prev => [...prev, ...accepted]);
         break;
       case 'after':
-        setAfterFiles(prev => [...prev, ...compressedFiles]);
+        setAfterFiles(prev => [...prev, ...accepted]);
         break;
       case 'additional':
-        setAdditionalFiles(prev => [...prev, ...compressedFiles]);
+        setAdditionalFiles(prev => [...prev, ...accepted]);
         break;
     }
-    
-    setCompressing(false);
-    setCompressionProgress('');
-    
-    if (compressedFiles.length > 0) {
-      toast({
-        title: 'Photos Ready',
-        description: `${compressedFiles.length} photo${compressedFiles.length === 1 ? '' : 's'} prepared for upload`
-      });
+
+    if (accepted.length > 0) {
+      toast({ title: 'Files Selected', description: `${accepted.length} file${accepted.length === 1 ? '' : 's'} added. Ready to upload.` });
     }
   };
 
@@ -131,12 +108,24 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     setUploadStep(`Uploading ${photoType} ${fileType}...`);
     
     const uploadPromises = files.map(async (file, index) => {
+      let fileToUpload = file;
+
+      // Компресираме изображенията при качване, за да не блокираме избора
+      if (file.type.startsWith('image/')) {
+        setUploadProgress(`Compressing ${file.name} (${index + 1}/${totalFiles})`);
+        try {
+          fileToUpload = await compressImage(file);
+        } catch (e) {
+          console.warn('Compression failed, uploading original:', e);
+        }
+      }
+
       const timestamp = Date.now();
       const fileName = `${timestamp}_${index}_${file.name}`;
       const filePath = `${folderPath}/${photoType}/${fileName}`;
 
       setUploadProgress(`Uploading ${file.name} (${index + 1}/${totalFiles})`);
-      console.log('Attempting to upload file:', { filePath, fileSize: file.size, fileType: file.type });
+      console.log('Attempting to upload file:', { filePath, fileSize: fileToUpload.size, fileType: fileToUpload.type });
 
       // Upload to storage with retry logic and detailed error logging
       let uploadData, uploadError;
@@ -146,7 +135,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       do {
         const response = await supabase.storage
           .from('cleaning.photos')
-          .upload(filePath, file, { cacheControl: '3600', upsert: true, contentType: file.type });
+          .upload(filePath, fileToUpload, { cacheControl: '3600', upsert: true, contentType: fileToUpload.type });
         
         uploadData = response.data;
         uploadError = response.error;
@@ -162,8 +151,8 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
         console.error('Storage upload error after all retries:', {
           error: uploadError,
           filePath,
-          fileSize: file.size,
-          fileType: file.type,
+          fileSize: fileToUpload.size,
+          fileType: fileToUpload.type,
           retryCount
         });
         
