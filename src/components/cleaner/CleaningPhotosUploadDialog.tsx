@@ -78,15 +78,14 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
 
     console.info(`📋 Processing ${fileArray.length} files...`);
 
+    let heicDetected = false;
     for (const file of fileArray) {
-      // Check for HEIC files
-      if (file.name.toLowerCase().endsWith('.heic')) {
-        console.warn('⚠️ HEIC file detected', { fileName: file.name, size: file.size });
-        toast({
-          title: 'HEIC Files Detected',
-          description: 'HEIC files may not preview correctly but will upload. Consider converting to JPG for better compatibility.',
-          variant: 'default'
-        });
+      const lowerName = file.name.toLowerCase();
+      const isImageByType = !!file.type && file.type.startsWith('image/');
+      const isImageByExt = /\.(heic|heif|jpg|jpeg|png|webp)$/i.test(lowerName);
+      const isHeic = /\.(heic|heif)$/i.test(lowerName);
+      if (isHeic) {
+        heicDetected = true;
       }
 
       if (type === 'additional') {
@@ -99,15 +98,24 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
           console.warn(`❌ Skipped: ${file.name} - too large (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
         }
       } else {
-        // Before/After: only images, no size limit (will compress during upload)
-        if (file.type.startsWith('image/')) {
+        // Before/After: accept images by MIME or common extensions (handles iOS HEIC with empty type)
+        if (isImageByType || isImageByExt) {
           accepted.push(file);
-          console.info(`✅ Accepted image: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB, ${file.type})`);
+          console.info(`✅ Accepted image: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB, ${file.type || 'unknown type'})`);
         } else {
-          skipped.push({ name: file.name, reason: 'Not an image file' });
-          console.warn(`❌ Skipped: ${file.name} - not an image (${file.type})`);
+          skipped.push({ name: file.name, reason: 'Unsupported file type' });
+          console.warn(`❌ Skipped: ${file.name} - unsupported (${file.type || 'unknown'})`);
         }
       }
+    }
+
+    if (heicDetected) {
+      console.warn('⚠️ HEIC/HEIF files detected in selection');
+      toast({
+        title: 'HEIC Files Detected',
+        description: 'HEIC may not preview or compress but will upload. JPG is recommended for compatibility.',
+        variant: 'default'
+      });
     }
 
     console.info(`✅ File selection complete`, {
@@ -124,6 +132,16 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
         description: `${skipped.length} file(s) were skipped. Only ${allowed} are allowed.`, 
         variant: 'destructive' 
       });
+    }
+
+    if (accepted.length === 0) {
+      console.warn('❌ No compatible files accepted from selection');
+      toast({
+        title: 'No Compatible Files',
+        description: type === 'additional' ? 'All files exceeded 10MB.' : 'Please select image files (JPG, PNG, WebP, HEIC).',
+        variant: 'destructive'
+      });
+      return;
     }
 
     // Add files to state immediately - no chunking
@@ -467,7 +485,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
             type="file"
             accept={type === 'additional' ? "*/*" : "image/*"}
             multiple
-            onChange={(e) => onFileSelect(e.target.files)}
+            onChange={(e) => { const fl = (e.target as HTMLInputElement).files; console.info(`📥 Input change (${type}):`, { filesLength: fl?.length || 0 }); onFileSelect(fl); (e.target as HTMLInputElement).value = ''; }}
             className="hidden"
             id={`file-${type}`}
           />
