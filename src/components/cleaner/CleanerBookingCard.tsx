@@ -4,6 +4,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Calendar, Clock, MapPin, User, Upload, Eye, CheckCircle, X, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Booking } from './types';
+import { useServiceTypes, useCleaningTypes, getServiceTypeLabel, getCleaningTypeLabel } from '@/hooks/useCompanySettings';
 
 interface CleanerBookingCardProps {
   booking: Booking;
@@ -23,6 +24,9 @@ const CleanerBookingCard = ({
   onAcceptBooking
 }: CleanerBookingCardProps) => {
   const navigate = useNavigate();
+  const { data: serviceTypes = [] } = useServiceTypes();
+  const { data: cleaningTypes = [] } = useCleaningTypes();
+
   // Check if booking is for today
   const isToday = () => {
     const bookingDate = new Date(booking.date_time).toDateString();
@@ -34,7 +38,12 @@ const CleanerBookingCard = ({
   const isSameDay = booking.same_day;
 
   // Check if this is an End of Tenancy booking
-  const isEndOfTenancy = booking.service_type === 'End of Tenancy' || booking.cleaning_type === 'End of Tenancy';
+  const isEndOfTenancy = booking.service_type === 'end_of_tenancy' || booking.cleaning_type === 'end_of_tenancy';
+
+  // Get formatted labels
+  const serviceTypeLabel = getServiceTypeLabel(booking.service_type, serviceTypes);
+  const cleaningTypeLabel = getCleaningTypeLabel(booking.cleaning_type, cleaningTypes);
+  const displayTitle = cleaningTypeLabel ? `${serviceTypeLabel} - ${cleaningTypeLabel}` : serviceTypeLabel;
 
   return (
     <div className={`group relative overflow-hidden rounded-2xl border p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/30 ${
@@ -48,7 +57,7 @@ const CleanerBookingCard = ({
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <h3 className="text-xl font-bold text-foreground tracking-tight">
-              {booking.service_type || 'Cleaning Service'}
+              {displayTitle}
             </h3>
             {isSameDay && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
@@ -56,11 +65,6 @@ const CleanerBookingCard = ({
               </span>
             )}
           </div>
-          {booking.cleaning_type && (
-            <div className="text-sm text-muted-foreground font-medium capitalize">
-              {booking.cleaning_type}
-            </div>
-          )}
         </div>
         <div className="text-right">
           <div className="text-2xl font-bold text-green-600">£{booking.cleaner_pay || 0}</div>

@@ -20,6 +20,8 @@ import {
   Timer
 } from 'lucide-react';
 import { Booking } from './types';
+import { useServiceTypes, useCleaningTypes, getServiceTypeLabel, getCleaningTypeLabel } from '@/hooks/useCompanySettings';
+import { formatPropertyDetails, formatAdditionalDetails } from '@/utils/bookingFormatters';
 
 interface ViewBookingDialogProps {
   open: boolean;
@@ -32,6 +34,9 @@ const ViewBookingDialog: React.FC<ViewBookingDialogProps> = ({
   onOpenChange,
   booking,
 }) => {
+  const { data: serviceTypes = [] } = useServiceTypes();
+  const { data: cleaningTypes = [] } = useCleaningTypes();
+
   if (!booking) return null;
 
   const getStatusBadge = (status: string) => {
@@ -49,41 +54,10 @@ const ViewBookingDialog: React.FC<ViewBookingDialogProps> = ({
     }
   };
 
-  // Helper to parse and format JSON data
-  const parseDetails = (details: string | null | undefined) => {
-    if (!details) return null;
-    try {
-      const parsed = JSON.parse(details);
-      return parsed;
-    } catch {
-      return details; // Return as-is if not JSON
-    }
-  };
-
-  // Helper to render property details in a readable format
-  const renderPropertyDetails = (details: any) => {
-    if (!details) return null;
-    
-    if (typeof details === 'string') {
-      return <div className="text-sm bg-gray-50 p-2 rounded whitespace-pre-wrap">{details}</div>;
-    }
-
-    // If it's an object, render key-value pairs
-    return (
-      <div className="space-y-2">
-        {Object.entries(details).map(([key, value]) => (
-          <div key={key} className="text-sm">
-            <span className="font-medium text-gray-700 capitalize">
-              {key.replace(/_/g, ' ')}:
-            </span>{' '}
-            <span className="text-gray-600">{String(value)}</span>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  const propertyDetailsData = parseDetails(booking.property_details);
+  const serviceTypeLabel = getServiceTypeLabel(booking.service_type, serviceTypes);
+  const cleaningTypeLabel = getCleaningTypeLabel(booking.cleaning_type, cleaningTypes);
+  const formattedPropertyDetails = formatPropertyDetails(booking.property_details);
+  const formattedAdditionalDetails = formatAdditionalDetails(booking.additional_details);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -205,17 +179,17 @@ const ViewBookingDialog: React.FC<ViewBookingDialogProps> = ({
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {booking.service_type && (
+                {serviceTypeLabel && (
                   <div className="space-y-1">
                     <div className="text-sm font-medium text-gray-500">Service Type</div>
-                    <div className="font-medium">{booking.service_type}</div>
+                    <div className="font-medium">{serviceTypeLabel}</div>
                   </div>
                 )}
                 
-                {booking.cleaning_type && (
+                {cleaningTypeLabel && (
                   <div className="space-y-1">
                     <div className="text-sm font-medium text-gray-500">Cleaning Type</div>
-                    <div className="font-medium capitalize">{booking.cleaning_type}</div>
+                    <div className="font-medium">{cleaningTypeLabel}</div>
                   </div>
                 )}
                 
@@ -247,7 +221,7 @@ const ViewBookingDialog: React.FC<ViewBookingDialogProps> = ({
           </Card>
 
           {/* Additional Details */}
-          {(booking.additional_details || booking.property_details || booking.exclude_areas || booking.extras) && (
+          {(formattedAdditionalDetails || formattedPropertyDetails || booking.exclude_areas || booking.extras) && (
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
@@ -256,19 +230,17 @@ const ViewBookingDialog: React.FC<ViewBookingDialogProps> = ({
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {booking.additional_details && (
+                {formattedAdditionalDetails && (
                   <div className="space-y-1">
                     <div className="text-sm font-medium text-gray-500">Additional Details</div>
-                    <div className="text-sm bg-gray-50 p-2 rounded">{booking.additional_details}</div>
+                    <div className="text-sm bg-gray-50 p-3 rounded whitespace-pre-wrap">{formattedAdditionalDetails}</div>
                   </div>
                 )}
 
-                {propertyDetailsData && (
+                {formattedPropertyDetails && (
                   <div className="space-y-1">
                     <div className="text-sm font-medium text-gray-500">Property Details</div>
-                    <div className="text-sm bg-gray-50 p-3 rounded">
-                      {renderPropertyDetails(propertyDetailsData)}
-                    </div>
+                    <div className="text-sm bg-gray-50 p-3 rounded whitespace-pre-wrap">{formattedPropertyDetails}</div>
                   </div>
                 )}
 
