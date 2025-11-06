@@ -155,7 +155,8 @@ export const formatAdditionalDetails = (detailsString: string | null | undefined
   if (details.alreadyCleaned !== undefined) {
     lines.push(`Already Cleaned: ${formatFieldValue(details.alreadyCleaned)}`);
   }
-  if (details.linensHandling) {
+  // Only show linens handling if cleaner needs to do something (not customer-handles)
+  if (details.linensHandling && details.linensHandling !== "customer-handles") {
     lines.push(`Linens Handling: ${formatFieldValue(details.linensHandling)}`);
   }
   // Short Notice Charge removed - cleaners don't need to see it
