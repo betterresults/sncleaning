@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Edit, Trash2, Copy, X, UserPlus, DollarSign, Repeat, MoreHorizontal, Clock, MapPin, User, Mail, Phone, Send, Calendar } from 'lucide-react';
+import { Edit, Trash2, Copy, X, UserPlus, DollarSign, Repeat, MoreHorizontal, Clock, MapPin, User, Mail, Phone, Send, Calendar, Camera } from 'lucide-react';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import { InvoilessPaymentDialog } from '@/components/payments/InvoilessPaymentDialog';
@@ -46,6 +46,7 @@ interface Booking {
   additional_details?: string;
   frequently?: string;
   booking_status?: string;
+  has_photos?: boolean;
   cleaners?: {
     id: number;
     first_name: string;
@@ -531,9 +532,12 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
 
               {/* Customer Name */}
               <div className="py-4">
-                <h3 className="text-lg font-bold text-foreground leading-tight">
-                  {booking.first_name} {booking.last_name}
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-foreground leading-tight">
+                    {booking.first_name} {booking.last_name}
+                  </h3>
+                  <Camera className={`h-4 w-4 ${booking.has_photos ? 'text-green-600' : 'text-gray-400'}`} />
+                </div>
                 <div className="flex items-center gap-2 mt-2">
                   <Popover>
                     <PopoverTrigger asChild>
@@ -730,9 +734,12 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
                   
                   {/* Customer Name */}
                   <div>
-                    <h3 className="text-base font-bold text-foreground">
-                      {booking.first_name} {booking.last_name}
-                    </h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-foreground">
+                        {booking.first_name} {booking.last_name}
+                      </h3>
+                      <Camera className={`h-4 w-4 ${booking.has_photos ? 'text-green-600' : 'text-gray-400'}`} />
+                    </div>
                     <div className="flex items-center gap-2 mt-1">
                       <Popover>
                         <PopoverTrigger asChild>

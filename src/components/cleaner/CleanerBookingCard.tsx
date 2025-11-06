@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Calendar, Clock, MapPin, User, Upload, Eye, CheckCircle, X, FileText } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Upload, Eye, CheckCircle, X, FileText, Camera } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Booking } from './types';
 import { useServiceTypes, useCleaningTypes, getServiceTypeLabel, getCleaningTypeLabel } from '@/hooks/useCompanySettings';
@@ -59,6 +59,7 @@ const CleanerBookingCard = ({
             <h3 className="text-xl font-bold text-foreground tracking-tight">
               {serviceTypeLabel}
             </h3>
+            <Camera className={`h-4 w-4 ${booking.has_photos ? 'text-green-600' : 'text-gray-400'}`} />
             {isSameDay && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
                 Same Day
