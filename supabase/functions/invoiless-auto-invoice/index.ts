@@ -105,9 +105,10 @@ serve(async (req) => {
       const res = await fetch(
         `https://api.invoiless.com/v1/customers?search=${encodeURIComponent(emailNormalized)}`,
         {
+          method: 'GET',
           headers: {
             'api-key': INVOILESS_API_KEY,
-            'Content-Type': 'application/json',
+            'Accept': 'application/json',
           },
         }
       );
@@ -116,11 +117,18 @@ serve(async (req) => {
         throw new Error(`Failed to search customer: ${res.status} - ${errorText}`);
       }
       const json = await res.json();
-      // Support both array and { data: [] } shapes just in case
-      const list = Array.isArray(json) ? json : (Array.isArray(json?.data) ? json.data : []);
+      // Support common shapes: array | {data: []} | {results: []} | {items: []}
+      const list = Array.isArray(json)
+        ? json
+        : Array.isArray(json?.data)
+          ? json.data
+          : Array.isArray(json?.results)
+            ? json.results
+            : Array.isArray(json?.items)
+              ? json.items
+              : [];
       return list;
     };
-
     let customers = await doSearch();
     let customerId: string;
     let customerCreated = false;
