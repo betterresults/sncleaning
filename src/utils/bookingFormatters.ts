@@ -1,6 +1,27 @@
 // Utility functions to format booking data for cleaner-friendly display
 
 /**
+ * Normalizes cleaning type keys to match company settings format
+ */
+export const normalizeCleaningTypeKey = (key: string): string => {
+  const mappings: Record<string, string> = {
+    'checkin-checkout': 'check_in_check_out',
+    'midstay': 'midstay_cleaning',
+    // Add more mappings as needed
+  };
+  
+  return mappings[key] || key;
+};
+
+/**
+ * Normalizes service type keys to match company settings format
+ */
+export const normalizeServiceTypeKey = (key: string): string => {
+  // Add mappings if needed in the future
+  return key;
+};
+
+/**
  * Converts camelCase or snake_case keys to human-readable labels
  */
 export const formatFieldName = (key: string): string => {

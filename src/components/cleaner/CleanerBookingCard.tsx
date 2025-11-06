@@ -5,6 +5,7 @@ import { Calendar, Clock, MapPin, User, Upload, Eye, CheckCircle, X, FileText } 
 import { useNavigate } from 'react-router-dom';
 import { Booking } from './types';
 import { useServiceTypes, useCleaningTypes, getServiceTypeLabel, getCleaningTypeLabel } from '@/hooks/useCompanySettings';
+import { normalizeCleaningTypeKey, normalizeServiceTypeKey } from '@/utils/bookingFormatters';
 
 interface CleanerBookingCardProps {
   booking: Booking;
@@ -41,8 +42,8 @@ const CleanerBookingCard = ({
   const isEndOfTenancy = booking.service_type === 'end_of_tenancy' || booking.cleaning_type === 'end_of_tenancy';
 
   // Get formatted labels
-  const serviceTypeLabel = getServiceTypeLabel(booking.service_type, serviceTypes);
-  const cleaningTypeLabel = getCleaningTypeLabel(booking.cleaning_type, cleaningTypes);
+  const serviceTypeLabel = getServiceTypeLabel(normalizeServiceTypeKey(booking.service_type), serviceTypes);
+  const cleaningTypeLabel = getCleaningTypeLabel(normalizeCleaningTypeKey(booking.cleaning_type), cleaningTypes);
 
   return (
     <div className={`group relative overflow-hidden rounded-2xl border p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/30 ${
