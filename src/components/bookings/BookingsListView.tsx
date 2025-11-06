@@ -287,6 +287,28 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
     applyFilters();
   }, [bookings, filters]);
 
+  // Refresh data when page becomes visible again (e.g., after navigating back)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchData();
+      }
+    };
+
+    const handleFocus = () => {
+      fetchData();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
+
   const handleEdit = (bookingId: number) => {
     const booking = bookings.find(b => b.id === bookingId);
     if (booking) {
