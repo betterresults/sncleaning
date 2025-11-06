@@ -5,6 +5,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Wifi, WifiOff } from 'lucide-react';
 
+// ВРЕМЕННО ДЕАКТИВИРАНА СИСТЕМА ЗА GPS ЛОКАЦИЯ
+// Променете на true, когато искате да активирате отново автоматичното tracking
+const LOCATION_TRACKING_ENABLED = false;
+
 interface Booking {
   id: number;
   address?: string;
@@ -300,7 +304,8 @@ const LocationTracker: React.FC<LocationTrackerProps> = ({
 
   // Auto-start tracking when component mounts
   useEffect(() => {
-    if (effectiveCleanerId && bookings.length > 0) {
+    // ДЕАКТИВИРАНО: Автоматичното location tracking е временно изключено
+    if (LOCATION_TRACKING_ENABLED && effectiveCleanerId && bookings.length > 0) {
       startTracking();
     }
 
@@ -317,6 +322,11 @@ const LocationTracker: React.FC<LocationTrackerProps> = ({
       });
     }
   }, []);
+
+  // ДЕАКТИВИРАНО: Не показваме картата когато location tracking е изключен
+  if (!LOCATION_TRACKING_ENABLED) {
+    return null;
+  }
 
   return (
     <Card className="mb-4">

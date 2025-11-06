@@ -123,24 +123,14 @@ const CleanerTodayBookingsList = () => {
     if (!effectiveCleanerId) return;
 
     try {
-      // Get current location
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000
-        });
-      });
-
-      const location = `${position.coords.latitude},${position.coords.longitude}`;
-
+      // ВРЕМЕННО: Ръчен check-in без проверка на локация
       const { error } = await supabase
         .from('cleaner_tracking')
         .insert({
           booking_id: booking.id,
           cleaner_id: effectiveCleanerId,
           check_in_time: new Date().toISOString(),
-          check_in_location: location,
+          check_in_location: null, // Без локация за момента
           is_auto_checked_in: false
         });
 
@@ -161,10 +151,10 @@ const CleanerTodayBookingsList = () => {
 
       fetchTodaysBookings();
     } catch (error) {
-      console.error('Error getting location:', error);
+      console.error('Error during check-in:', error);
       toast({
-        title: "Location Error",
-        description: "Could not get your location. Please enable location services.",
+        title: "Check-in Error",
+        description: "An error occurred during check-in.",
         variant: "destructive",
       });
     }
@@ -174,17 +164,6 @@ const CleanerTodayBookingsList = () => {
     if (!effectiveCleanerId) return;
 
     try {
-      // Get current location
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000
-        });
-      });
-
-      const location = `${position.coords.latitude},${position.coords.longitude}`;
-
       // Find the tracking record for this booking
       const trackingRecord = trackingRecords.find(tr => tr.booking_id === booking.id);
       
@@ -197,11 +176,12 @@ const CleanerTodayBookingsList = () => {
         return;
       }
 
+      // ВРЕМЕННО: Ръчен check-out без проверка на локация
       const { error } = await supabase
         .from('cleaner_tracking')
         .update({
           check_out_time: new Date().toISOString(),
-          check_out_location: location,
+          check_out_location: null, // Без локация за момента
           is_auto_checked_out: false
         })
         .eq('id', trackingRecord.id);
@@ -223,10 +203,10 @@ const CleanerTodayBookingsList = () => {
 
       fetchTodaysBookings();
     } catch (error) {
-      console.error('Error getting location:', error);
+      console.error('Error during check-out:', error);
       toast({
-        title: "Location Error",
-        description: "Could not get your location. Please enable location services.",
+        title: "Check-out Error",
+        description: "An error occurred during check-out.",
         variant: "destructive",
       });
     }
