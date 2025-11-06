@@ -98,43 +98,59 @@ serve(async (req) => {
     }
 
     // Step 2: Find or create customer in Invoiless
-    console.log('Searching for customer by email:', booking.email);
-    const searchResponse = await fetch(
-      `https://api.invoiless.com/v1/customers?search=${encodeURIComponent(booking.email)}`,
-      {
-        headers: {
-          'api-key': INVOILESS_API_KEY,
-          'Content-Type': 'application/json',
-        },
+    const emailNormalized = (booking.email || '').trim().toLowerCase();
+    console.log('Searching for customer by email:', emailNormalized);
+
+    const doSearch = async () => {
+      const res = await fetch(
+        `https://api.invoiless.com/v1/customers?search=${encodeURIComponent(emailNormalized)}`,
+        {
+          headers: {
+            'api-key': INVOILESS_API_KEY,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Failed to search customer: ${res.status} - ${errorText}`);
       }
-    );
+      const json = await res.json();
+      // Support both array and { data: [] } shapes just in case
+      const list = Array.isArray(json) ? json : (Array.isArray(json?.data) ? json.data : []);
+      return list;
+    };
 
-    if (!searchResponse.ok) {
-      const errorText = await searchResponse.text();
-      throw new Error(`Failed to search customer: ${searchResponse.status} - ${errorText}`);
-    }
-
-    const customers = await searchResponse.json();
+    let customers = await doSearch();
     let customerId: string;
     let customerCreated = false;
 
-    // Find exact email match (case-insensitive)
-    const existingCustomer = customers?.find((c: any) => 
-      c.billTo?.email?.toLowerCase() === booking.email.toLowerCase()
-    );
+    const findExact = (arr: any[]) => arr.find((c: any) => {
+      const e1 = (c?.billTo?.email || '').trim().toLowerCase();
+      const e2 = (c?.email || '').trim().toLowerCase();
+      return e1 === emailNormalized || e2 === emailNormalized;
+    });
+
+    let existingCustomer = Array.isArray(customers) ? findExact(customers) : undefined;
+
+    // Quick re-check to avoid race conditions or eventual consistency
+    if (!existingCustomer) {
+      customers = await doSearch();
+      existingCustomer = Array.isArray(customers) ? findExact(customers) : undefined;
+    }
 
     if (existingCustomer) {
       customerId = existingCustomer.id;
       console.log('Customer found with exact email match:', customerId);
     } else {
-      // Create new customer
+      // Create new customer with normalized email
       console.log('Customer not found, creating new customer');
       const customerData = {
         billTo: {
-          email: booking.email,
+          email: emailNormalized,
           firstName: booking.first_name || '',
           lastName: booking.last_name || '',
-          phone: booking.phone_number || '',
+          phone: (booking.phone_number || '').trim(),
           address: booking.address || ''
         }
       };
@@ -158,7 +174,6 @@ serve(async (req) => {
       customerCreated = true;
       console.log('Customer created:', customerId);
     }
-
     // Step 3: Create invoice
     const today = new Date();
     const dateString = today.toISOString().split('T')[0];
