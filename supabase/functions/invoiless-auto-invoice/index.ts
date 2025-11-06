@@ -134,20 +134,22 @@ serve(async (req) => {
         throw new Error(`invoiless-get-customer failed: ${status}`);
       }
 
-      // The function returns the raw Invoiless API data
-      const list = Array.isArray(json)
-        ? json
-        : Array.isArray(json?.data)
-          ? json.data
-          : Array.isArray(json?.results)
-            ? json.results
-            : Array.isArray(json?.items)
-              ? json.items
-              : [];
+      // Normalize list from invoiless-get-customer (common shapes: {docs: []} | [] | {data: []} | {results: []} | {items: []})
+      const list = Array.isArray(json?.docs)
+        ? json.docs
+        : Array.isArray(json)
+          ? json
+          : Array.isArray(json?.data)
+            ? json.data
+            : Array.isArray(json?.results)
+              ? json.results
+              : Array.isArray(json?.items)
+                ? json.items
+                : [];
 
       console.log('Customers found (count):', Array.isArray(list) ? list.length : 0);
       if (Array.isArray(list) && list.length) {
-        const preview = list.slice(0, 3).map((c: any) => ({ id: c?.id, email: (c?.billTo?.email || c?.email || '').toString() }));
+        const preview = list.slice(0, 3).map((c: any) => ({ id: c?.id ?? c?._id, email: (c?.billTo?.email || c?.email || '').toString() }));
         console.log('Customers preview:', preview);
       }
 
@@ -174,7 +176,12 @@ serve(async (req) => {
     }
 
     if (existingCustomer) {
-      customerId = existingCustomer.id;
+      const resolvedId = existingCustomer.id || existingCustomer._id;
+      console.log('Exact match customer found. id:', existingCustomer.id, ' _id:', existingCustomer._id, ' chosen:', resolvedId);
+      if (!resolvedId) {
+        throw new Error('Exact match found in Invoiless but missing id/_id. Aborting to prevent duplicate.');
+      }
+      customerId = resolvedId;
       console.log('Customer found with exact email match:', customerId);
     } else {
       // Create new customer with normalized email
