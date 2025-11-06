@@ -36,6 +36,7 @@ interface Booking {
   date_time: string;
   total_cost: number | string;
   payment_status: string;
+  payment_method?: string;
   customer: number;
   cleaners?: {
     first_name: string;
@@ -509,7 +510,7 @@ const PaymentManagementDashboard = () => {
                       <TableCell className="max-w-xs truncate">{booking.address}</TableCell>
                       <TableCell>£{(typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost).toFixed(2)}</TableCell>
                       <TableCell>
-                        <PaymentStatusIndicator status={booking.payment_status} />
+                        <PaymentStatusIndicator status={booking.payment_status} paymentMethod={booking.payment_method} />
                       </TableCell>
                       <TableCell>
                         {booking.cleaners ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}` : 'Unassigned'}
@@ -568,7 +569,7 @@ const PaymentManagementDashboard = () => {
                       <TableCell className="max-w-xs truncate">{booking.address}</TableCell>
                       <TableCell>£{(typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost).toFixed(2)}</TableCell>
                       <TableCell>
-                        <PaymentStatusIndicator status={booking.payment_status} />
+                        <PaymentStatusIndicator status={booking.payment_status} paymentMethod={booking.payment_method} />
                       </TableCell>
                       <TableCell>
                         {booking.cleaners ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}` : 'Unassigned'}
@@ -627,7 +628,7 @@ const PaymentManagementDashboard = () => {
                       <TableCell className="max-w-xs truncate">{booking.address}</TableCell>
                       <TableCell>£{(typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost).toFixed(2)}</TableCell>
                       <TableCell>
-                        <PaymentStatusIndicator status={booking.payment_status} />
+                        <PaymentStatusIndicator status={booking.payment_status} paymentMethod={booking.payment_method} />
                       </TableCell>
                       <TableCell>
                         {booking.cleaners ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}` : 'Unassigned'}
@@ -680,7 +681,7 @@ const PaymentManagementDashboard = () => {
                       <TableCell className="max-w-xs truncate">{booking.address}</TableCell>
                       <TableCell>£{(typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost).toFixed(2)}</TableCell>
                       <TableCell>
-                        <PaymentStatusIndicator status={booking.payment_status} />
+                        <PaymentStatusIndicator status={booking.payment_status} paymentMethod={booking.payment_method} />
                       </TableCell>
                       <TableCell>
                         {booking.cleaners ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}` : 'Unassigned'}
@@ -736,7 +737,7 @@ const PaymentManagementDashboard = () => {
                       </TableCell>
                       <TableCell>£{(typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost).toFixed(2)}</TableCell>
                       <TableCell>
-                        <PaymentStatusIndicator status={booking.payment_status} />
+                        <PaymentStatusIndicator status={booking.payment_status} paymentMethod={booking.payment_method} />
                       </TableCell>
                       <TableCell>
                         <Button
@@ -790,7 +791,7 @@ const PaymentManagementDashboard = () => {
                       </TableCell>
                       <TableCell>£{(typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost).toFixed(2)}</TableCell>
                       <TableCell>
-                        <PaymentStatusIndicator status={booking.payment_status} />
+                        <PaymentStatusIndicator status={booking.payment_status} paymentMethod={booking.payment_method} />
                       </TableCell>
                       <TableCell>
                         <Button

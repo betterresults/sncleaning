@@ -612,7 +612,8 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
               {/* Payment Status & Total Cost */}
               <div className="py-4 flex items-center justify-end gap-2 pr-2">
                 <PaymentStatusIndicator 
-                  status={booking.payment_status} 
+                  status={booking.payment_status}
+                  paymentMethod={booking.payment_method}
                   isClickable={true}
                   onClick={() => handlePaymentAction(booking)}
                   size="md"
@@ -844,7 +845,8 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
               {/* Row 4: Payment & Cost */}
               <div className="flex items-center justify-between pt-2 border-t">
                 <PaymentStatusIndicator 
-                  status={booking.payment_status} 
+                  status={booking.payment_status}
+                  paymentMethod={booking.payment_method}
                   isClickable={true}
                   onClick={() => handlePaymentAction(booking)}
                   size="sm"

@@ -21,6 +21,7 @@ interface Booking {
   service_type: string;
   total_cost: number;
   payment_status: string;
+  payment_method?: string;
   cleaner: number | null;
   customer: number;
   cleaner_pay: number | null;
@@ -138,7 +139,7 @@ const DayBookingsDialog: React.FC<DayBookingsDialogProps> = ({
                         
                         <div className="flex items-center gap-2">
                           {getPaymentStatusIcon(booking.payment_status, booking.total_cost)}
-                          <PaymentStatusIndicator status={booking.payment_status} />
+                          <PaymentStatusIndicator status={booking.payment_status} paymentMethod={booking.payment_method} />
                         </div>
                       </div>
 

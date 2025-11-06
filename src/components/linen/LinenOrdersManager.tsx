@@ -925,7 +925,8 @@ export const LinenOrdersManager = () => {
                       </div>
                     </div>
                     <PaymentStatusIndicator 
-                      status={order.payment_status || 'unpaid'} 
+                      status={order.payment_status || 'unpaid'}
+                      paymentMethod={order.payment_method}
                       onClick={() => openPaymentDialog(order)}
                       isClickable={true}
                       size="lg"

@@ -16,6 +16,7 @@ interface BaseBooking {
   total_cost: number | string;
   booking_status: string;
   payment_status?: string;
+  payment_method?: string;
   same_day?: boolean;
   invoice_id?: string;
   invoice_link?: string;
@@ -138,7 +139,8 @@ const BookingCard = <T extends BaseBooking>({
           </div>
           {booking.payment_status && (type === 'upcoming' ? isWithin24Hours() : true) && (
             <PaymentStatusIndicator 
-              status={booking.payment_status} 
+              status={booking.payment_status}
+              paymentMethod={booking.payment_method}
               isClickable={!booking.payment_status.toLowerCase().includes('paid') && !!onPaymentAction}
               onClick={!booking.payment_status.toLowerCase().includes('paid') && onPaymentAction ? () => onPaymentAction(booking) : undefined}
               size="md"

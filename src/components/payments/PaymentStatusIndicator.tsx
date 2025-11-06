@@ -1,15 +1,31 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Clock, AlertCircle, DollarSign } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, AlertCircle, DollarSign, CreditCard, Banknote, FileText, Zap } from 'lucide-react';
 
 interface PaymentStatusIndicatorProps {
   status: string;
+  paymentMethod?: string;
   onClick?: () => void;
   size?: 'sm' | 'md' | 'lg';
   isClickable?: boolean;
 }
 
-const PaymentStatusIndicator = ({ status, onClick, size = 'md', isClickable = false }: PaymentStatusIndicatorProps) => {
+const PaymentStatusIndicator = ({ status, paymentMethod, onClick, size = 'md', isClickable = false }: PaymentStatusIndicatorProps) => {
+  const getPaymentIcon = (paymentMethod: string | undefined) => {
+    const normalized = paymentMethod?.toLowerCase() || '';
+    
+    if (normalized.includes('stripe') || normalized.includes('card')) {
+      return CreditCard;
+    } else if (normalized.includes('cash')) {
+      return Banknote;
+    } else if (normalized.includes('invoice')) {
+      return FileText;
+    } else if (normalized.includes('gocardless') || normalized.includes('direct')) {
+      return Zap;
+    }
+    return DollarSign;
+  };
+
   const getStatusConfig = (status: string) => {
     const normalizedStatus = status?.toLowerCase() || '';
     
@@ -42,28 +58,28 @@ const PaymentStatusIndicator = ({ status, onClick, size = 'md', isClickable = fa
         return {
           label: 'Unpaid',
           className: 'bg-gray-500 hover:bg-gray-600',
-          icon: DollarSign,
+          icon: getPaymentIcon(paymentMethod),
           color: 'text-white'
         };
       case 'collecting':
         return {
           label: 'Collecting',
           className: 'bg-yellow-500 hover:bg-yellow-600',
-          icon: DollarSign,
+          icon: getPaymentIcon(paymentMethod),
           color: 'text-white'
         };
       case 'pending':
         return {
           label: 'Pending',
           className: 'bg-gray-500 hover:bg-gray-600',
-          icon: DollarSign,
+          icon: getPaymentIcon(paymentMethod),
           color: 'text-white'
         };
       case 'processing':
         return {
           label: 'Processing',
           className: 'bg-purple-500 hover:bg-purple-600',
-          icon: DollarSign,
+          icon: getPaymentIcon(paymentMethod),
           color: 'text-white'
         };
       default:
