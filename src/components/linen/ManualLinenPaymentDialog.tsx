@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CreditCard, DollarSign, Clock, Zap, RotateCcw, Mail, Link } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { playSuccessSound } from '@/utils/soundEffects';
 
 interface PaymentMethod {
   id: string;
@@ -192,6 +193,7 @@ const ManualLinenPaymentDialog = ({ order, isOpen, onClose, onSuccess }: ManualL
 
       if (updateError) throw updateError;
 
+      playSuccessSound();
       toast({
         title: 'Payment Successful',
         description: 'Customer has been charged successfully',

@@ -76,14 +76,19 @@ const CleanerPastBookings = () => {
 
   const getTimePeriodDates = (period: string) => {
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
     
     switch (period) {
       case 'current-month':
-        return { from: startOfMonth(now), to: endOfMonth(now) };
+        // Set end of month to 23:59:59.999 to include all bookings on the last day
+        const endOfCurrentMonth = endOfMonth(now);
+        endOfCurrentMonth.setHours(23, 59, 59, 999);
+        return { from: startOfMonth(now), to: endOfCurrentMonth };
       case 'last-month':
         const lastMonth = subMonths(now, 1);
-        return { from: startOfMonth(lastMonth), to: endOfMonth(lastMonth) };
+        const endOfLastMonth = endOfMonth(lastMonth);
+        endOfLastMonth.setHours(23, 59, 59, 999);
+        return { from: startOfMonth(lastMonth), to: endOfLastMonth };
       case 'last-3-months':
         const last3Months = subMonths(now, 3);
         return { from: startOfMonth(last3Months), to: today };
@@ -116,8 +121,11 @@ const CleanerPastBookings = () => {
       );
     }
     if (filters.dateTo) {
+      // Set end of day to include all bookings on the selected date
+      const endDate = new Date(filters.dateTo);
+      endDate.setHours(23, 59, 59, 999);
       filtered = filtered.filter(booking => 
-        new Date(booking.date_time) <= new Date(filters.dateTo)
+        new Date(booking.date_time) <= endDate
       );
     }
 

@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { CreditCard, Loader2, CheckCircle, AlertCircle, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { playSuccessSound } from '@/utils/soundEffects';
 
 interface UnpaidBooking {
   id: string;
@@ -190,6 +191,7 @@ const CustomerDirectPaymentDialog = ({
       if (error) throw error;
 
       if (data.success) {
+        playSuccessSound();
         toast({
           title: 'Payment Successful! 🎉',
           description: `Successfully charged £${totalAmount.toFixed(2)} for ${unpaidBookings.length} booking(s). All bookings have been marked as paid.`,
