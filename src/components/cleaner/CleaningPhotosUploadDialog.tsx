@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload, X, Camera, AlertTriangle } from 'lucide-react';
+import { compressImage } from '@/utils/imageCompression';
 
 interface CleaningPhotosUploadDialogProps {
   open: boolean;
@@ -32,48 +33,81 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   const [additionalFiles, setAdditionalFiles] = useState<File[]>([]);
   const [additionalDetails, setAdditionalDetails] = useState('');
   const [showAdditionalTab, setShowAdditionalTab] = useState(false);
+  const [compressing, setCompressing] = useState(false);
+  const [compressionProgress, setCompressionProgress] = useState('');
 
   const bookingDate = new Date(booking.date_time).toISOString().split('T')[0];
   const safePostcode = booking.postcode?.toString().replace(/\s+/g, '').toUpperCase() || 'NA';
   const folderPath = `${booking.id}_${safePostcode}_${bookingDate}_${booking.customer}`;
 
-  const handleFileSelect = (files: FileList | null, type: 'before' | 'after' | 'additional') => {
+  const handleFileSelect = async (files: FileList | null, type: 'before' | 'after' | 'additional') => {
     if (!files) return;
     
-    let fileArray: File[];
+    setCompressing(true);
+    setCompressionProgress(`Preparing ${files.length} files...`);
     
-    if (type === 'additional') {
-      // Allow any file type for additional information
-      fileArray = Array.from(files).filter(file => {
-        const isValidSize = file.size <= 10 * 1024 * 1024; // 10MB limit for additional files
-        return isValidSize;
-      });
-    } else {
-      // Only images for before/after photos
-      fileArray = Array.from(files).filter(file => 
-        file.type.startsWith('image/') && file.size <= 5 * 1024 * 1024 // 5MB limit
-      );
+    const fileArray = Array.from(files);
+    const compressedFiles: File[] = [];
+    let skippedFiles = 0;
+    
+    // Компресиране на всички снимки
+    for (let i = 0; i < fileArray.length; i++) {
+      const file = fileArray[i];
+      setCompressionProgress(`Processing ${i + 1}/${fileArray.length}...`);
+      
+      if (type === 'additional') {
+        // Allow any file type for additional information, compress only images
+        if (file.size <= 10 * 1024 * 1024) {
+          if (file.type.startsWith('image/')) {
+            const compressed = await compressImage(file);
+            compressedFiles.push(compressed);
+          } else {
+            compressedFiles.push(file);
+          }
+        } else {
+          skippedFiles++;
+        }
+      } else {
+        // Only images for before/after photos - compress them
+        if (file.type.startsWith('image/')) {
+          const compressed = await compressImage(file);
+          compressedFiles.push(compressed);
+        } else {
+          skippedFiles++;
+        }
+      }
     }
 
-    if (fileArray.length !== files.length) {
-      const allowedTypes = type === 'additional' ? 'files under 10MB' : 'images under 5MB';
+    if (skippedFiles > 0) {
+      const allowedTypes = type === 'additional' ? 'images or files under 10MB' : 'images only';
       toast({
-        title: 'Invalid Files',
-        description: `Some files were skipped. Only ${allowedTypes} are allowed.`,
+        title: 'Some Files Skipped',
+        description: `${skippedFiles} file(s) were skipped. Only ${allowedTypes} are allowed.`,
         variant: 'destructive'
       });
     }
 
+    // Добавяне към state
     switch (type) {
       case 'before':
-        setBeforeFiles(prev => [...prev, ...fileArray]);
+        setBeforeFiles(prev => [...prev, ...compressedFiles]);
         break;
       case 'after':
-        setAfterFiles(prev => [...prev, ...fileArray]);
+        setAfterFiles(prev => [...prev, ...compressedFiles]);
         break;
       case 'additional':
-        setAdditionalFiles(prev => [...prev, ...fileArray]);
+        setAdditionalFiles(prev => [...prev, ...compressedFiles]);
         break;
+    }
+    
+    setCompressing(false);
+    setCompressionProgress('');
+    
+    if (compressedFiles.length > 0) {
+      toast({
+        title: 'Photos Ready',
+        description: `${compressedFiles.length} photo${compressedFiles.length === 1 ? '' : 's'} prepared for upload`
+      });
     }
   };
 
@@ -369,7 +403,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
               Clear all
             </Button>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 max-h-[50vh] overflow-y-auto p-1">
+          <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 max-h-[50vh] overflow-y-auto p-1">
             {files.map((file, index) => (
               <div key={index} className="relative group">
                 {file.type === 'application/pdf' ? (
@@ -423,6 +457,16 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
             Booking #{booking.id} - {booking.postcode} - {bookingDate}
           </p>
         </DialogHeader>
+
+        {/* Compression Progress Indicator */}
+        {compressing && (
+          <div className="flex-shrink-0 bg-blue-50 border border-blue-200 rounded-lg p-4 mx-6 mt-6">
+            <div className="flex items-center gap-3">
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
+              <p className="text-sm text-blue-800 font-medium">{compressionProgress}</p>
+            </div>
+          </div>
+        )}
 
         <div className="flex-1 min-h-0 overflow-hidden p-6">
           <Tabs defaultValue="before" className="h-full flex flex-col">
