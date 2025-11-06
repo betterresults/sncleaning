@@ -98,26 +98,41 @@ serve(async (req) => {
     }
 
     // Step 2: Find or create customer in Invoiless
-    const emailNormalized = (booking.email || '').trim().toLowerCase();
-    console.log('Searching for customer by email:', emailNormalized);
+    const emailTrimmed = (booking.email || '').trim();
+    const emailNormalized = emailTrimmed.toLowerCase();
+    console.log('Searching for customer by email (raw):', emailTrimmed);
 
     const doSearch = async () => {
-      const res = await fetch(
-        `https://api.invoiless.com/v1/customers?search=${encodeURIComponent(emailNormalized)}`,
-        {
-          method: 'GET',
-          headers: {
-            'api-key': INVOILESS_API_KEY,
-            'Accept': 'application/json',
-          },
-        }
-      );
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Failed to search customer: ${res.status} - ${errorText}`);
+      const url = new URL('https://api.invoiless.com/v1/customers');
+      // IMPORTANT: use the same approach as invoiless-get-customer (works in admin)
+      url.searchParams.append('search', emailTrimmed);
+
+      const res = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'api-key': INVOILESS_API_KEY,
+          'Accept': 'application/json',
+        },
+      });
+
+      const status = res.status;
+      let json: any = null;
+      try {
+        json = await res.json();
+      } catch (e) {
+        const text = await res.text();
+        console.warn('Search response not JSON, status=', status, 'body=', text?.slice(0, 200));
+        throw new Error(`Failed to parse Invoiless search response (status ${status})`);
       }
-      const json = await res.json();
-      // Support common shapes: array | {data: []} | {results: []} | {items: []}
+
+      console.log('Invoiless search status:', status, 'keys:', json && typeof json === 'object' ? Object.keys(json) : typeof json);
+
+      if (!res.ok) {
+        console.error('Invoiless search error payload:', JSON.stringify(json).slice(0, 500));
+        throw new Error(`Failed to search customer: ${status}`);
+      }
+
+      // Normalize common shapes: array | {data: []} | {results: []} | {items: []}
       const list = Array.isArray(json)
         ? json
         : Array.isArray(json?.data)
@@ -127,8 +142,16 @@ serve(async (req) => {
             : Array.isArray(json?.items)
               ? json.items
               : [];
-      return list;
+
+      console.log('Customers found (count):', Array.isArray(list) ? list.length : 0);
+      if (Array.isArray(list) && list.length) {
+        const preview = list.slice(0, 3).map((c: any) => ({ id: c?.id, email: (c?.billTo?.email || c?.email || '').toString() }));
+        console.log('Customers preview:', preview);
+      }
+
+      return list as any[];
     };
+
     let customers = await doSearch();
     let customerId: string;
     let customerCreated = false;
@@ -141,8 +164,9 @@ serve(async (req) => {
 
     let existingCustomer = Array.isArray(customers) ? findExact(customers) : undefined;
 
-    // Quick re-check to avoid race conditions or eventual consistency
+    // Re-check once to avoid eventual consistency
     if (!existingCustomer) {
+      console.log('No exact match on first search. Re-checking...');
       customers = await doSearch();
       existingCustomer = Array.isArray(customers) ? findExact(customers) : undefined;
     }
@@ -174,7 +198,8 @@ serve(async (req) => {
 
       if (!createCustomerResponse.ok) {
         const errorText = await createCustomerResponse.text();
-        throw new Error(`Failed to create customer: ${createCustomerResponse.status} - ${errorText}`);
+        console.error('Create customer failed payload:', errorText?.slice(0, 500));
+        throw new Error(`Failed to create customer: ${createCustomerResponse.status}`);
       }
 
       const newCustomer = await createCustomerResponse.json();
