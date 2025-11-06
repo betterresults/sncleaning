@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, X, Camera, AlertTriangle } from 'lucide-react';
+import { Upload, X, Camera, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { compressImage } from '@/utils/imageCompression';
 
 interface CleaningPhotosUploadDialogProps {
@@ -23,6 +23,10 @@ interface CleaningPhotosUploadDialogProps {
   };
 }
 
+const CONCURRENCY_LIMIT = 3; // Max 3 files uploading simultaneously
+const INITIAL_PREVIEW_COUNT = 60; // Show first 60 thumbnails by default
+const LOW_MEMORY_THRESHOLD = 40; // Switch to low-memory mode for >40 files on iOS
+
 const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPhotosUploadDialogProps) => {
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
@@ -33,62 +37,135 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   const [additionalFiles, setAdditionalFiles] = useState<File[]>([]);
   const [additionalDetails, setAdditionalDetails] = useState('');
   const [showAdditionalTab, setShowAdditionalTab] = useState(false);
-  const [compressing, setCompressing] = useState(false);
-  const [compressionProgress, setCompressionProgress] = useState('');
+  const [showAllPreviews, setShowAllPreviews] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
+  const [currentFileIndex, setCurrentFileIndex] = useState(0);
+  const [totalFilesToUpload, setTotalFilesToUpload] = useState(0);
 
   const bookingDate = new Date(booking.date_time).toISOString().split('T')[0];
   const safePostcode = booking.postcode?.toString().replace(/\s+/g, '').toUpperCase() || 'NA';
   const folderPath = `${booking.id}_${safePostcode}_${bookingDate}_${booking.customer}`;
 
-  const handleFileSelect = async (files: FileList | null, type: 'before' | 'after' | 'additional') => {
-    if (!files) return;
+  // Device detection
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isAndroid = /Android/.test(navigator.userAgent);
+  const isMobile = isIOS || isAndroid;
+  const totalFiles = beforeFiles.length + afterFiles.length + additionalFiles.length;
+  const isLowMemoryMode = isIOS && totalFiles > LOW_MEMORY_THRESHOLD;
 
-    // БЪРЗО: Добавяме избраните файлове незабавно, компресираме по време на качване
+  const handleFileSelect = async (files: FileList | null, type: 'before' | 'after' | 'additional') => {
+    console.info('🎬 File selection started', {
+      type,
+      filesCount: files?.length || 0,
+      device: isIOS ? 'iOS' : isAndroid ? 'Android' : 'Desktop',
+      userAgent: navigator.userAgent,
+      availableMemory: (navigator as any).deviceMemory || 'unknown'
+    });
+
+    if (!files || files.length === 0) {
+      console.warn('⚠️ No files returned from file input', { filesNull: files === null, filesLength: files?.length });
+      toast({ 
+        title: 'No Files Selected', 
+        description: 'Your device did not return any files. Try selecting fewer files or restart the app.',
+        variant: 'destructive' 
+      });
+      return;
+    }
+
     const fileArray = Array.from(files);
     const accepted: File[] = [];
-    let skipped = 0;
+    const skipped: { name: string; reason: string }[] = [];
+
+    console.info(`📋 Processing ${fileArray.length} files...`);
 
     for (const file of fileArray) {
+      // Check for HEIC files
+      if (file.name.toLowerCase().endsWith('.heic')) {
+        console.warn('⚠️ HEIC file detected', { fileName: file.name, size: file.size });
+        toast({
+          title: 'HEIC Files Detected',
+          description: 'HEIC files may not preview correctly but will upload. Consider converting to JPG for better compatibility.',
+          variant: 'default'
+        });
+      }
+
       if (type === 'additional') {
-        // Допълнителни: разрешаваме всички типове до 10MB
+        // Additional files: allow any type up to 10MB
         if (file.size <= 10 * 1024 * 1024) {
           accepted.push(file);
+          console.info(`✅ Accepted additional file: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
         } else {
-          skipped++;
+          skipped.push({ name: file.name, reason: 'File too large (max 10MB)' });
+          console.warn(`❌ Skipped: ${file.name} - too large (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
         }
       } else {
-        // Before/After: само изображения, без ограничение за размер (ще компресираме при качване)
+        // Before/After: only images, no size limit (will compress during upload)
         if (file.type.startsWith('image/')) {
           accepted.push(file);
+          console.info(`✅ Accepted image: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB, ${file.type})`);
         } else {
-          skipped++;
+          skipped.push({ name: file.name, reason: 'Not an image file' });
+          console.warn(`❌ Skipped: ${file.name} - not an image (${file.type})`);
         }
       }
     }
 
-    if (skipped > 0) {
+    console.info(`✅ File selection complete`, {
+      accepted: accepted.length,
+      skipped: skipped.length,
+      totalSize: `${(accepted.reduce((sum, f) => sum + f.size, 0) / 1024 / 1024).toFixed(2)}MB`
+    });
+
+    if (skipped.length > 0) {
       const allowed = type === 'additional' ? 'images or files under 10MB' : 'images only';
-      toast({ title: 'Some Files Skipped', description: `${skipped} file(s) were skipped. Only ${allowed} are allowed.`, variant: 'destructive' });
+      console.warn('⚠️ Files skipped', skipped);
+      toast({ 
+        title: 'Some Files Skipped', 
+        description: `${skipped.length} file(s) were skipped. Only ${allowed} are allowed.`, 
+        variant: 'destructive' 
+      });
     }
 
+    // Add files to state immediately - no chunking
     switch (type) {
       case 'before':
-        setBeforeFiles(prev => [...prev, ...accepted]);
+        setBeforeFiles(prev => {
+          const newFiles = [...prev, ...accepted];
+          console.info(`📁 Before files updated: ${newFiles.length} total`);
+          return newFiles;
+        });
         break;
       case 'after':
-        setAfterFiles(prev => [...prev, ...accepted]);
+        setAfterFiles(prev => {
+          const newFiles = [...prev, ...accepted];
+          console.info(`📁 After files updated: ${newFiles.length} total`);
+          return newFiles;
+        });
         break;
       case 'additional':
-        setAdditionalFiles(prev => [...prev, ...accepted]);
+        setAdditionalFiles(prev => {
+          const newFiles = [...prev, ...accepted];
+          console.info(`📁 Additional files updated: ${newFiles.length} total`);
+          return newFiles;
+        });
         break;
     }
 
     if (accepted.length > 0) {
-      toast({ title: 'Files Selected', description: `${accepted.length} file${accepted.length === 1 ? '' : 's'} added. Ready to upload.` });
+      toast({ 
+        title: 'Files Selected', 
+        description: `${accepted.length} file${accepted.length === 1 ? '' : 's'} added. Ready to upload.` 
+      });
+      
+      // Auto-show debug on mobile if many files selected
+      if (isMobile && accepted.length > 30) {
+        setShowDebug(true);
+      }
     }
   };
 
   const removeFile = (index: number, type: 'before' | 'after' | 'additional') => {
+    console.info(`🗑️ Removing file at index ${index} from ${type}`);
     switch (type) {
       case 'before':
         setBeforeFiles(prev => prev.filter((_, i) => i !== index));
@@ -102,111 +179,129 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     }
   };
 
-  const uploadFiles = async (files: File[], photoType: 'before' | 'after' | 'additional') => {
-    const totalFiles = files.length;
+  // Sequential upload with limited concurrency
+  const uploadFilesSequentially = async (files: File[], photoType: 'before' | 'after' | 'additional') => {
+    const results: string[] = [];
     const fileType = photoType === 'additional' ? 'files' : 'photos';
-    setUploadStep(`Uploading ${photoType} ${fileType}...`);
     
-    const uploadPromises = files.map(async (file, index) => {
-      let fileToUpload = file;
+    console.info(`🚀 Starting sequential upload for ${files.length} ${photoType} ${fileType}`);
+    setUploadStep(`Uploading ${photoType} ${fileType}...`);
 
-      // Компресираме изображенията при качване, за да не блокираме избора
-      if (file.type.startsWith('image/')) {
-        setUploadProgress(`Compressing ${file.name} (${index + 1}/${totalFiles})`);
-        try {
-          fileToUpload = await compressImage(file);
-        } catch (e) {
-          console.warn('Compression failed, uploading original:', e);
-        }
-      }
+    // Upload in batches with limited concurrency
+    for (let i = 0; i < files.length; i += CONCURRENCY_LIMIT) {
+      const batch = files.slice(i, Math.min(i + CONCURRENCY_LIMIT, files.length));
+      console.info(`📦 Processing batch ${Math.floor(i / CONCURRENCY_LIMIT) + 1}: files ${i + 1}-${i + batch.length}`);
 
-      const timestamp = Date.now();
-      const fileName = `${timestamp}_${index}_${file.name}`;
-      const filePath = `${folderPath}/${photoType}/${fileName}`;
-
-      setUploadProgress(`Uploading ${file.name} (${index + 1}/${totalFiles})`);
-      console.log('Attempting to upload file:', { filePath, fileSize: fileToUpload.size, fileType: fileToUpload.type });
-
-      // Upload to storage with retry logic and detailed error logging
-      let uploadData, uploadError;
-      let retryCount = 0;
-      const maxRetries = 3;
-      
-      do {
-        const response = await supabase.storage
-          .from('cleaning.photos')
-          .upload(filePath, fileToUpload, { cacheControl: '3600', upsert: true, contentType: fileToUpload.type });
+      const batchPromises = batch.map(async (file, batchIndex) => {
+        const globalIndex = i + batchIndex;
+        const fileNumber = globalIndex + 1;
         
-        uploadData = response.data;
-        uploadError = response.error;
-        
-        if (uploadError && retryCount < maxRetries - 1) {
-          console.warn(`Upload attempt ${retryCount + 1} failed, retrying...`, uploadError);
-          await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponential backoff
-          retryCount++;
+        setCurrentFileIndex(fileNumber);
+        console.info(`📤 [${fileNumber}/${files.length}] Processing: ${file.name}`);
+
+        let fileToUpload = file;
+
+        // Compress images one by one
+        if (file.type.startsWith('image/')) {
+          setUploadProgress(`Compressing ${file.name} (${fileNumber}/${files.length})`);
+          console.info(`🗜️ [${fileNumber}/${files.length}] Compressing ${file.name}...`);
+          
+          try {
+            const originalSize = (file.size / 1024 / 1024).toFixed(2);
+            fileToUpload = await compressImage(file);
+            const compressedSize = (fileToUpload.size / 1024 / 1024).toFixed(2);
+            console.info(`✅ [${fileNumber}/${files.length}] Compressed ${file.name}: ${originalSize}MB → ${compressedSize}MB`);
+          } catch (e) {
+            console.warn(`⚠️ [${fileNumber}/${files.length}] Compression failed for ${file.name}, using original:`, e);
+          }
         }
-      } while (uploadError && retryCount < maxRetries);
 
-      if (uploadError) {
-        console.error('Storage upload error after all retries:', {
-          error: uploadError,
-          filePath,
-          fileSize: fileToUpload.size,
-          fileType: fileToUpload.type,
-          retryCount
-        });
+        const timestamp = Date.now();
+        const fileName = `${timestamp}_${globalIndex}_${file.name}`;
+        const filePath = `${folderPath}/${photoType}/${fileName}`;
+
+        setUploadProgress(`Uploading ${file.name} (${fileNumber}/${files.length})`);
+        console.info(`📤 [${fileNumber}/${files.length}] Uploading to: ${filePath}`);
+
+        // Upload to storage with retry logic
+        let uploadData, uploadError;
+        let retryCount = 0;
+        const maxRetries = 3;
         
-        // More specific error messages
-        if (uploadError.message.includes('JWT')) {
-          throw new Error(`Authentication failed while uploading ${file.name}. Please try logging out and back in.`);
-        } else if (uploadError.message.includes('Policy')) {
-          throw new Error(`Permission denied for ${file.name}. Please contact support if this persists.`);
-        } else if (uploadError.message.includes('size')) {
-          throw new Error(`File ${file.name} is too large. Maximum size is ${photoType === 'additional' ? '10MB' : '5MB'}.`);
-        } else {
-          throw new Error(`Upload failed for ${file.name}: ${uploadError.message}`);
+        do {
+          const response = await supabase.storage
+            .from('cleaning.photos')
+            .upload(filePath, fileToUpload, { 
+              cacheControl: '3600', 
+              upsert: true, 
+              contentType: fileToUpload.type 
+            });
+          
+          uploadData = response.data;
+          uploadError = response.error;
+          
+          if (uploadError && retryCount < maxRetries - 1) {
+            console.warn(`⚠️ [${fileNumber}/${files.length}] Upload attempt ${retryCount + 1} failed, retrying...`, uploadError);
+            await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+            retryCount++;
+          }
+        } while (uploadError && retryCount < maxRetries);
+
+        if (uploadError) {
+          console.error(`❌ [${fileNumber}/${files.length}] Upload failed after ${maxRetries} attempts:`, {
+            error: uploadError,
+            filePath,
+            fileSize: fileToUpload.size,
+            fileType: fileToUpload.type
+          });
+          
+          if (uploadError.message.includes('JWT')) {
+            throw new Error(`Authentication failed while uploading ${file.name}. Please log out and back in.`);
+          } else if (uploadError.message.includes('Policy')) {
+            throw new Error(`Permission denied for ${file.name}. Contact support if this persists.`);
+          } else if (uploadError.message.includes('size')) {
+            throw new Error(`File ${file.name} is too large. Maximum is ${photoType === 'additional' ? '10MB' : '5MB'}.`);
+          } else {
+            throw new Error(`Upload failed for ${file.name}: ${uploadError.message}`);
+          }
         }
-      }
 
-      console.log('File uploaded successfully:', { filePath, uploadData });
-      setUploadProgress(`Saving ${file.name} metadata (${index + 1}/${totalFiles})`);
+        console.info(`✅ [${fileNumber}/${files.length}] Upload successful: ${filePath}`);
+        setUploadProgress(`Saving metadata for ${file.name} (${fileNumber}/${files.length})`);
 
-      // Save metadata to database with better error handling
-      console.log('Saving photo metadata to database:', {
-        booking_id: booking.id,
-        customer_id: booking.customer,
-        cleaner_id: booking.cleaner,
-        file_path: filePath,
-        photo_type: photoType,
-        postcode: booking.postcode,
-        booking_date: bookingDate
+        // Save metadata to database
+        const { error: dbError } = await supabase
+          .from('cleaning_photos')
+          .insert({
+            booking_id: booking.id,
+            customer_id: booking.customer,
+            cleaner_id: booking.cleaner,
+            file_path: filePath,
+            photo_type: photoType,
+            postcode: booking.postcode,
+            booking_date: bookingDate,
+            damage_details: photoType === 'additional' ? additionalDetails : null
+          });
+
+        if (dbError) {
+          console.error(`❌ [${fileNumber}/${files.length}] Database insert failed:`, dbError);
+          throw new Error(`Database error: ${dbError.message}`);
+        }
+
+        console.info(`✅ [${fileNumber}/${files.length}] Metadata saved successfully`);
+        setUploadProgress(`✓ ${file.name} completed (${fileNumber}/${files.length})`);
+
+        return filePath;
       });
 
-      const { error: dbError } = await supabase
-        .from('cleaning_photos')
-        .insert({
-          booking_id: booking.id,
-          customer_id: booking.customer,
-          cleaner_id: booking.cleaner,
-          file_path: filePath,
-          photo_type: photoType,
-          postcode: booking.postcode,
-          booking_date: bookingDate,
-          damage_details: photoType === 'additional' ? additionalDetails : null
-        });
+      const batchResults = await Promise.all(batchPromises);
+      results.push(...batchResults);
+      
+      console.info(`✅ Batch ${Math.floor(i / CONCURRENCY_LIMIT) + 1} complete: ${batchResults.length} files uploaded`);
+    }
 
-      if (dbError) {
-        console.error('Database insert error for file:', filePath, dbError);
-        throw new Error(`Database error: ${dbError.message}`);
-      }
-
-      console.log('Photo metadata saved successfully for:', filePath);
-      setUploadProgress(`✓ ${file.name} completed`);
-
-      return filePath;
-    });
-
-    return Promise.all(uploadPromises);
+    console.info(`✅ All ${photoType} files uploaded successfully: ${results.length} files`);
+    return results;
   };
 
   const handleUpload = async () => {
@@ -219,42 +314,47 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       return;
     }
 
-    // Verify authenticated session before uploading
+    console.info('🚀 Upload initiated', {
+      before: beforeFiles.length,
+      after: afterFiles.length,
+      additional: additionalFiles.length,
+      total: totalFiles
+    });
+
+    // Verify authentication
     const { data: authData, error: authError } = await supabase.auth.getUser();
     if (authError || !authData?.user) {
+      console.error('❌ Authentication check failed:', authError);
       toast({
-        title: 'Not signed in',
+        title: 'Not Signed In',
         description: 'Please sign in again and retry the upload.',
         variant: 'destructive'
       });
       return;
     }
 
+    console.info('✅ Authentication verified:', { userId: authData.user.id });
+
     setUploading(true);
     setUploadStep('Starting upload...');
     setUploadProgress('Preparing files...');
+    setTotalFilesToUpload(totalFiles);
+    setCurrentFileIndex(0);
 
     try {
-      const totalFiles = beforeFiles.length + afterFiles.length + additionalFiles.length;
-      let completedFiles = 0;
-
-      const updateProgress = () => {
-        completedFiles++;
-        setUploadProgress(`Completed ${completedFiles}/${totalFiles} photos`);
-      };
-
       if (beforeFiles.length > 0) {
-        await uploadFiles(beforeFiles, 'before');
-        completedFiles += beforeFiles.length;
+        console.info(`📤 Uploading ${beforeFiles.length} before photos...`);
+        await uploadFilesSequentially(beforeFiles, 'before');
       }
 
       if (afterFiles.length > 0) {
-        await uploadFiles(afterFiles, 'after');
-        completedFiles += afterFiles.length;
+        console.info(`📤 Uploading ${afterFiles.length} after photos...`);
+        await uploadFilesSequentially(afterFiles, 'after');
       }
 
       if (additionalFiles.length > 0) {
         if (!additionalDetails.trim()) {
+          console.warn('⚠️ Additional files selected but no details provided');
           toast({
             title: 'Additional Details Required',
             description: 'Please provide details about the additional information.',
@@ -265,52 +365,59 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
           setUploadProgress('');
           return;
         }
-        await uploadFiles(additionalFiles, 'additional');
-        completedFiles += additionalFiles.length;
+        console.info(`📤 Uploading ${additionalFiles.length} additional files...`);
+        await uploadFilesSequentially(additionalFiles, 'additional');
       }
 
-      // Mark booking as having photos
+      // Update booking status
+      setUploadStep('Updating booking status...');
+      console.info('📝 Updating booking status...');
+      
+      const { error: updateError } = await supabase
+        .from('bookings')
+        .update({ has_photos: true })
+        .eq('id', booking.id);
+
+      if (updateError) {
+        console.error('⚠️ Failed to update booking status:', updateError);
+      } else {
+        console.info('✅ Booking status updated');
+      }
+
+      // Also update past_bookings table
       try {
-        setUploadStep('Updating booking status...');
-        const { error: updateError } = await supabase
-          .from('bookings')
+        const { error: pastUpdateError } = await supabase
+          .from('past_bookings')
           .update({ has_photos: true })
           .eq('id', booking.id);
 
-        if (updateError) {
-          console.error('Failed to update booking status:', updateError);
+        if (pastUpdateError) {
+          console.warn('⚠️ Failed to update past booking status (non-critical):', pastUpdateError);
+        } else {
+          console.info('✅ Past booking status updated');
         }
-
-        // Also update past_bookings table if the booking exists there
-        try {
-          const { error: pastUpdateError } = await supabase
-            .from('past_bookings')
-            .update({ has_photos: true })
-            .eq('id', booking.id);
-
-          if (pastUpdateError) {
-            console.error('Failed to update past booking status:', pastUpdateError);
-            // This is non-critical - don't fail the main upload
-          }
-        } catch (pastError) {
-          console.error('Past booking update error:', pastError);
-          // This is non-critical - don't fail the main upload
-        }
-      } catch (updateError) {
-        console.error('Booking update error:', updateError);
-        // Don't fail the upload if status update fails
+      } catch (pastError) {
+        console.warn('⚠️ Past booking update error (non-critical):', pastError);
       }
 
       setUploadStep('Upload completed successfully!');
       setUploadProgress(`✓ All ${totalFiles} photos uploaded`);
+
+      console.info('🎉 Upload process completed successfully!', {
+        totalFiles,
+        before: beforeFiles.length,
+        after: afterFiles.length,
+        additional: additionalFiles.length
+      });
 
       toast({
         title: 'Files Uploaded Successfully',
         description: `Uploaded ${totalFiles} file${totalFiles === 1 ? '' : 's'} successfully. Customer will be notified in 15 minutes.`
       });
 
-      // Reset form after a short delay
+      // Reset form after delay
       setTimeout(() => {
+        console.info('🔄 Resetting form...');
         setBeforeFiles([]);
         setAfterFiles([]);
         setAdditionalFiles([]);
@@ -318,11 +425,13 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
         setShowAdditionalTab(false);
         setUploadStep('');
         setUploadProgress('');
+        setCurrentFileIndex(0);
+        setTotalFilesToUpload(0);
         onOpenChange(false);
       }, 2000);
 
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('❌ Upload error:', error);
       setUploadStep('Upload failed');
       setUploadProgress('Please try again');
       
@@ -347,94 +456,124 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     files: File[];
     onFileSelect: (files: FileList | null) => void;
     onRemove: (index: number) => void;
-  }) => (
-    <div className="space-y-6">
-      <div className="border-2 border-dashed border-primary/30 rounded-xl p-8 text-center hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 cursor-pointer">
-        <input
-          type="file"
-          accept={type === 'additional' ? "*/*" : "image/*"}
-          multiple
-          onChange={(e) => onFileSelect(e.target.files)}
-          className="hidden"
-          id={`file-${type}`}
-        />
-        <label htmlFor={`file-${type}`} className="cursor-pointer block">
-          <div className="p-4 rounded-full bg-primary/10 w-fit mx-auto mb-4">
-            <Camera className="h-12 w-12 text-primary" />
-          </div>
-          <p className="text-lg font-semibold text-foreground mb-2">
-            Select {type} {type === 'additional' ? 'files' : 'photos'}
-          </p>
-          <p className="text-sm text-muted-foreground mb-1">
-            Click to select multiple files
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {type === 'additional' 
-              ? 'Any file type up to 10MB each' 
-              : 'JPG, PNG, WebP up to 5MB each'
-            }
-          </p>
-        </label>
-      </div>
+  }) => {
+    const displayFiles = showAllPreviews ? files : files.slice(0, INITIAL_PREVIEW_COUNT);
+    const hiddenCount = files.length - INITIAL_PREVIEW_COUNT;
 
-      {files.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <p className="text-sm font-medium text-foreground">
-              {files.length} {files.length === 1 ? 'file' : 'files'} selected
+    return (
+      <div className="space-y-6">
+        <div className="border-2 border-dashed border-primary/30 rounded-xl p-8 text-center hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 cursor-pointer">
+          <input
+            type="file"
+            accept={type === 'additional' ? "*/*" : "image/*"}
+            multiple
+            onChange={(e) => onFileSelect(e.target.files)}
+            className="hidden"
+            id={`file-${type}`}
+          />
+          <label htmlFor={`file-${type}`} className="cursor-pointer block">
+            <div className="p-4 rounded-full bg-primary/10 w-fit mx-auto mb-4">
+              <Camera className="h-12 w-12 text-primary" />
+            </div>
+            <p className="text-lg font-semibold text-foreground mb-2">
+              Select {type} {type === 'additional' ? 'files' : 'photos'}
             </p>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => files.forEach((_, i) => onRemove(0))}
-              className="text-xs text-muted-foreground hover:text-destructive"
-            >
-              Clear all
-            </Button>
-          </div>
-          <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 max-h-[50vh] overflow-y-auto p-1">
-            {files.map((file, index) => (
-              <div key={index} className="relative group">
-                {file.type === 'application/pdf' ? (
-                  <div className="w-full aspect-square bg-red-50 border-2 border-red-200 rounded-lg flex flex-col items-center justify-center p-2">
-                    <svg className="h-10 w-10 text-red-600 mb-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                    </svg>
-                    <p className="text-xs text-red-600 text-center px-1 line-clamp-2">{file.name}</p>
-                  </div>
-                ) : file.type.startsWith('image/') ? (
-                  <img
-                    src={URL.createObjectURL(file)}
-                    alt={`${type} photo ${index + 1}`}
-                    className="w-full aspect-square object-cover rounded-lg border-2 border-border shadow-sm hover:shadow-md transition-shadow"
-                  />
-                ) : (
-                  <div className="w-full aspect-square bg-muted border-2 border-border rounded-lg flex flex-col items-center justify-center p-2">
-                    <svg className="h-10 w-10 text-muted-foreground mb-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                    </svg>
-                    <p className="text-xs text-muted-foreground text-center px-1 break-all line-clamp-2">{file.name}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{(file.size / 1024 / 1024).toFixed(1)}MB</p>
-                  </div>
-                )}
-                <button
-                  onClick={() => onRemove(index)}
-                  className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1.5 hover:bg-destructive/90 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                  aria-label={`Remove ${type} file ${index + 1}`}
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
-          </div>
+            <p className="text-sm text-muted-foreground mb-1">
+              Click to select multiple files (up to 150)
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {type === 'additional' 
+                ? 'Any file type up to 10MB each' 
+                : 'JPG, PNG, WebP, HEIC - will be compressed automatically'
+              }
+            </p>
+          </label>
         </div>
-      )}
-    </div>
-  );
+
+        {files.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <p className="text-sm font-medium text-foreground">
+                {files.length} {files.length === 1 ? 'file' : 'files'} selected
+                {isLowMemoryMode && <span className="ml-2 text-xs text-orange-600">(Low-memory mode active)</span>}
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => files.forEach((_, i) => onRemove(0))}
+                className="text-xs text-muted-foreground hover:text-destructive"
+              >
+                Clear all
+              </Button>
+            </div>
+
+            {!isLowMemoryMode ? (
+              <>
+                <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 max-h-[50vh] overflow-y-auto p-1">
+                  {displayFiles.map((file, index) => (
+                    <div key={index} className="relative group">
+                      {file.type === 'application/pdf' ? (
+                        <div className="w-full aspect-square bg-red-50 border-2 border-red-200 rounded-lg flex flex-col items-center justify-center p-2">
+                          <svg className="h-10 w-10 text-red-600 mb-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                          </svg>
+                          <p className="text-xs text-red-600 text-center px-1 line-clamp-2">{file.name}</p>
+                        </div>
+                      ) : file.type.startsWith('image/') ? (
+                        <img
+                          src={URL.createObjectURL(file)}
+                          alt={`${type} photo ${index + 1}`}
+                          className="w-full aspect-square object-cover rounded-lg border-2 border-border shadow-sm hover:shadow-md transition-shadow"
+                          onLoad={(e) => URL.revokeObjectURL(e.currentTarget.src)}
+                        />
+                      ) : (
+                        <div className="w-full aspect-square bg-muted border-2 border-border rounded-lg flex flex-col items-center justify-center p-2">
+                          <svg className="h-10 w-10 text-muted-foreground mb-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                          </svg>
+                          <p className="text-xs text-muted-foreground text-center px-1 break-all line-clamp-2">{file.name}</p>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => onRemove(index)}
+                        className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1.5 hover:bg-destructive/90 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                        aria-label={`Remove ${type} file ${index + 1}`}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                {hiddenCount > 0 && !showAllPreviews && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAllPreviews(true)}
+                    className="w-full"
+                  >
+                    Show all ({hiddenCount} more)
+                  </Button>
+                )}
+              </>
+            ) : (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
+                <p className="text-sm text-orange-800 font-medium">
+                  Low-memory mode: {files.length} files ready to upload
+                </p>
+                <p className="text-xs text-orange-600 mt-1">
+                  Previews disabled to save memory. Files will upload normally.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-screen h-screen max-w-none max-h-none flex flex-col p-0 m-0 rounded-none">
+      <DialogContent fullScreen className="flex flex-col bg-background">
         <DialogHeader className="flex-shrink-0 space-y-3 p-6 border-b bg-gradient-to-r from-primary/5 to-primary/10">
           <DialogTitle className="flex items-center gap-3 text-xl font-semibold">
             <div className="p-2 rounded-lg bg-primary/10">
@@ -447,12 +586,49 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
           </p>
         </DialogHeader>
 
-        {/* Compression Progress Indicator */}
-        {compressing && (
-          <div className="flex-shrink-0 bg-blue-50 border border-blue-200 rounded-lg p-4 mx-6 mt-6">
-            <div className="flex items-center gap-3">
-              <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
-              <p className="text-sm text-blue-800 font-medium">{compressionProgress}</p>
+        {/* Debug Panel */}
+        {(showDebug || (isMobile && totalFiles > 30)) && (
+          <div className="flex-shrink-0 mx-6 mt-4">
+            <div className="border border-border rounded-lg bg-muted/30">
+              <button
+                onClick={() => setShowDebug(!showDebug)}
+                className="w-full flex items-center justify-between p-3 text-sm font-medium hover:bg-muted/50 transition-colors"
+              >
+                <span>Debug Information</span>
+                {showDebug ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </button>
+              {showDebug && (
+                <div className="p-4 pt-0 space-y-2 text-xs font-mono">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="font-semibold text-muted-foreground">Device</p>
+                      <p>{isIOS ? 'iOS' : isAndroid ? 'Android' : 'Desktop'}</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-muted-foreground">Memory Mode</p>
+                      <p className={isLowMemoryMode ? 'text-orange-600' : 'text-green-600'}>
+                        {isLowMemoryMode ? 'Low Memory' : 'Normal'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-muted-foreground">Files Selected</p>
+                      <p>Before: {beforeFiles.length}, After: {afterFiles.length}, Additional: {additionalFiles.length}</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-muted-foreground">Total Size</p>
+                      <p>{((beforeFiles.reduce((s, f) => s + f.size, 0) + afterFiles.reduce((s, f) => s + f.size, 0) + additionalFiles.reduce((s, f) => s + f.size, 0)) / 1024 / 1024).toFixed(2)}MB</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-muted-foreground">Concurrency</p>
+                      <p>{CONCURRENCY_LIMIT} parallel uploads</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-muted-foreground">Available Memory</p>
+                      <p>{(navigator as any).deviceMemory || 'Unknown'} GB</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -475,7 +651,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
               </TabsTrigger>
             </TabsList>
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto overscroll-contain">
               <TabsContent value="before" className="mt-0 h-auto">
                 <div className="space-y-4">
                   <FileUploadArea
@@ -561,36 +737,53 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
           </Tabs>
         </div>
 
-        {/* Upload Progress Indicator */}
+        {/* Upload Progress with Animation */}
         {uploading && (
-          <div className="flex-shrink-0 bg-primary/10 border border-primary/20 rounded-lg p-4 mx-6 mb-4">
+          <div className="flex-shrink-0 bg-primary/10 border border-primary/20 rounded-lg p-4 mx-6 mb-4 animate-pulse">
             <div className="flex items-center gap-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent flex-shrink-0"></div>
+              <div className="relative flex-shrink-0">
+                <div className="animate-spin rounded-full h-8 w-8 border-3 border-primary border-t-transparent"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-xs font-bold text-primary">{currentFileIndex}</span>
+                </div>
+              </div>
               <div className="flex-1 min-w-0">
-                <p className="text-base font-semibold text-foreground">
-                  {uploadStep}
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-base font-semibold text-foreground">
+                    {uploadStep}
+                  </p>
+                  <p className="text-sm font-medium text-primary">
+                    {currentFileIndex}/{totalFilesToUpload}
+                  </p>
+                </div>
+                <p className="text-sm text-muted-foreground truncate">
                   {uploadProgress}
                 </p>
+                {/* Progress bar */}
+                <div className="w-full bg-muted rounded-full h-2 mt-2 overflow-hidden">
+                  <div 
+                    className="bg-primary h-full transition-all duration-300 ease-out"
+                    style={{ width: `${totalFilesToUpload > 0 ? (currentFileIndex / totalFilesToUpload) * 100 : 0}%` }}
+                  />
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        <div className="flex-shrink-0 border-t p-6 bg-background">
+        <div className="flex-shrink-0 border-t p-6 bg-background pb-[env(safe-area-inset-bottom)]">
           <Button 
             onClick={handleUpload} 
-            disabled={uploading}
+            disabled={uploading || totalFiles === 0}
             className="w-full py-6 text-lg font-semibold"
           >
             {uploading ? (
               <div className="flex items-center gap-3">
                 <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                <span>Uploading...</span>
+                <span>Uploading... {currentFileIndex}/{totalFilesToUpload}</span>
               </div>
             ) : (
-              <>Upload {beforeFiles.length + afterFiles.length + additionalFiles.length} {beforeFiles.length + afterFiles.length + additionalFiles.length === 1 ? 'Photo' : 'Photos'}</>
+              <>Upload {totalFiles} {totalFiles === 1 ? 'Photo' : 'Photos'}</>
             )}
           </Button>
         </div>
