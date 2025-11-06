@@ -49,11 +49,47 @@ const ViewBookingDialog: React.FC<ViewBookingDialogProps> = ({
     }
   };
 
+  // Helper to parse and format JSON data
+  const parseDetails = (details: string | null | undefined) => {
+    if (!details) return null;
+    try {
+      const parsed = JSON.parse(details);
+      return parsed;
+    } catch {
+      return details; // Return as-is if not JSON
+    }
+  };
+
+  // Helper to render property details in a readable format
+  const renderPropertyDetails = (details: any) => {
+    if (!details) return null;
+    
+    if (typeof details === 'string') {
+      return <div className="text-sm bg-gray-50 p-2 rounded whitespace-pre-wrap">{details}</div>;
+    }
+
+    // If it's an object, render key-value pairs
+    return (
+      <div className="space-y-2">
+        {Object.entries(details).map(([key, value]) => (
+          <div key={key} className="text-sm">
+            <span className="font-medium text-gray-700 capitalize">
+              {key.replace(/_/g, ' ')}:
+            </span>{' '}
+            <span className="text-gray-600">{String(value)}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const propertyDetailsData = parseDetails(booking.property_details);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl lg:max-w-3xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-center flex items-center justify-center gap-2">
+          <DialogTitle className="text-lg sm:text-xl font-bold text-center flex items-center justify-center gap-2">
             <Briefcase className="h-5 w-5" />
             Booking Details
           </DialogTitle>
@@ -168,11 +204,20 @@ const ViewBookingDialog: React.FC<ViewBookingDialogProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-gray-500">Service Type</div>
-                  <div className="font-medium">{booking.cleaning_type || 'Standard Cleaning'}</div>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {booking.service_type && (
+                  <div className="space-y-1">
+                    <div className="text-sm font-medium text-gray-500">Service Type</div>
+                    <div className="font-medium">{booking.service_type}</div>
+                  </div>
+                )}
+                
+                {booking.cleaning_type && (
+                  <div className="space-y-1">
+                    <div className="text-sm font-medium text-gray-500">Cleaning Type</div>
+                    <div className="font-medium capitalize">{booking.cleaning_type}</div>
+                  </div>
+                )}
                 
                 {booking.total_hours && (
                   <div className="space-y-1">
@@ -181,13 +226,6 @@ const ViewBookingDialog: React.FC<ViewBookingDialogProps> = ({
                       Duration
                     </div>
                     <div className="font-medium">{booking.total_hours} hours</div>
-                  </div>
-                )}
-
-                {booking.cleaning_type && (
-                  <div className="space-y-1">
-                    <div className="text-sm font-medium text-gray-500">Cleaning Type</div>
-                    <div className="font-medium">{booking.cleaning_type}</div>
                   </div>
                 )}
               </div>
@@ -225,10 +263,12 @@ const ViewBookingDialog: React.FC<ViewBookingDialogProps> = ({
                   </div>
                 )}
 
-                {booking.property_details && (
+                {propertyDetailsData && (
                   <div className="space-y-1">
                     <div className="text-sm font-medium text-gray-500">Property Details</div>
-                    <div className="text-sm bg-gray-50 p-2 rounded">{booking.property_details}</div>
+                    <div className="text-sm bg-gray-50 p-3 rounded">
+                      {renderPropertyDetails(propertyDetailsData)}
+                    </div>
                   </div>
                 )}
 
