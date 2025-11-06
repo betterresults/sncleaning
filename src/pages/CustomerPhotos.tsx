@@ -55,12 +55,27 @@ const CustomerPhotos = () => {
 
   const fetchBookingInfo = async () => {
     try {
-      // Extract booking ID from folder name (format: bookingId_postcode_date_time)
-      const bookingIdStr = folderName?.split('_')[0];
-      if (!bookingIdStr) return;
+      // Extract booking ID from folder name
+      // Format can be: bookingId_postcode_date_time OR postcode_date_bookingId
+      const parts = folderName?.split('_') || [];
+      if (parts.length === 0) return;
       
-      const bookingId = parseInt(bookingIdStr, 10);
-      if (isNaN(bookingId)) return;
+      // Try to find booking ID (could be first or last part)
+      let bookingId: number | null = null;
+      
+      // Check if first part is a number (format: bookingId_postcode_date_time)
+      const firstNum = parseInt(parts[0], 10);
+      if (!isNaN(firstNum)) {
+        bookingId = firstNum;
+      } else if (parts.length > 0) {
+        // Check if last part is a number (format: postcode_date_bookingId)
+        const lastNum = parseInt(parts[parts.length - 1], 10);
+        if (!isNaN(lastNum)) {
+          bookingId = lastNum;
+        }
+      }
+      
+      if (!bookingId) return;
 
       const { data, error } = await supabase
         .from('bookings')
@@ -87,12 +102,50 @@ const CustomerPhotos = () => {
       
       console.log('Fetching photos for folder:', folderName);
 
-      // Try multiple variants of the folder to handle special/nbsp spaces in postcodes
-      const candidates = Array.from(new Set([
+      // Extract booking ID from folder name to find actual storage path
+      const parts = folderName?.split('_') || [];
+      let bookingId: number | null = null;
+      
+      // Try first part (format: bookingId_postcode_date_time)
+      const firstNum = parseInt(parts[0], 10);
+      if (!isNaN(firstNum)) {
+        bookingId = firstNum;
+      } else if (parts.length > 0) {
+        // Try last part (format: postcode_date_bookingId)
+        const lastNum = parseInt(parts[parts.length - 1], 10);
+        if (!isNaN(lastNum)) {
+          bookingId = lastNum;
+        }
+      }
+
+      let candidates: string[] = [];
+
+      if (bookingId) {
+        // Query database to find actual folder path
+        const { data: photoData, error: photoError } = await supabase
+          .from('cleaning_photos')
+          .select('file_path')
+          .eq('booking_id', bookingId)
+          .limit(1)
+          .single();
+
+        if (!photoError && photoData?.file_path) {
+          // Extract folder from file path (e.g., "110703_N193QJ_2025-11-06_12/after/photo.jpg" -> "110703_N193QJ_2025-11-06_12")
+          const folderMatch = photoData.file_path.match(/^([^\/]+)\//);
+          if (folderMatch) {
+            const actualFolder = folderMatch[1];
+            console.log('Found actual folder from database:', actualFolder);
+            candidates.push(actualFolder);
+          }
+        }
+      }
+
+      // Also try multiple variants of the provided folder name
+      candidates.push(...Array.from(new Set([
         folderName || '',
         (folderName || '').replace(/\u00A0/g, ' '), // NBSP to normal space
         (folderName || '').replace(/[\u00A0 ]+/g, ''), // remove all spaces
-      ].filter(Boolean)));
+      ].filter(Boolean))));
 
       let usedFolder = candidates[0];
       let mainFiles: any[] | null = null;
