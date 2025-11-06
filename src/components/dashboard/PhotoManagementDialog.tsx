@@ -193,6 +193,10 @@ const [showAdditionalTab, setShowAdditionalTab] = useState(false);
 const [uploadedCount, setUploadedCount] = useState(0);
 const [totalToUpload, setTotalToUpload] = useState(0);
 
+// Device detection
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+const deviceMemory = (navigator as any).deviceMemory || 'unknown';
+
   const bookingDate = new Date(booking.date_time).toISOString().split('T')[0];
   const safePostcode = booking.postcode?.toString().replace(/[\s\u00A0]+/g, '').toUpperCase() || 'NA';
   const folderPath = `${booking.id}_${safePostcode}_${bookingDate}_${booking.customer}`;
@@ -317,17 +321,36 @@ const handleFileSelect = (files: FileList | null, type: 'before' | 'after' | 'ad
     return;
   }
 
+  // Memory warning for large selections on mobile
+  if (accepted.length > 30 && isMobile) {
+    toast({
+      title: 'Large Upload Detected',
+      description: `Uploading ${accepted.length} photos may take several minutes on mobile. Please keep this tab active.`,
+    });
+  }
+
+  let previousCount = 0;
   switch (type) {
     case 'before':
+      previousCount = beforeFiles.length;
       setBeforeFiles(prev => [...prev, ...accepted]);
       break;
     case 'after':
+      previousCount = afterFiles.length;
       setAfterFiles(prev => [...prev, ...accepted]);
       break;
     case 'additional':
+      previousCount = additionalFiles.length;
       setAdditionalFiles(prev => [...prev, ...accepted]);
       break;
   }
+
+  console.info('✅ State updated:', { 
+    type, 
+    previousCount, 
+    addedCount: accepted.length,
+    newTotal: previousCount + accepted.length 
+  });
 };
 
   const removeFile = (index: number, type: 'before' | 'after' | 'additional') => {
@@ -348,8 +371,18 @@ const uploadFiles = async (files: File[], photoType: 'before' | 'after' | 'addit
   const baseFolder = photos[0]?.file_path?.split('/')[0] || folderPath;
   const results: string[] = [];
   const errors: string[] = [];
-  const CONCURRENCY = Math.min(3, Math.max(1, files.length));
+  const CONCURRENCY = isMobile 
+    ? Math.min(2, Math.max(1, files.length)) // Max 2 on mobile
+    : Math.min(3, Math.max(1, files.length)); // Max 3 on desktop
   let index = 0;
+
+  console.info(`🚀 Starting upload batch:`, { 
+    photoType, 
+    totalFiles: files.length, 
+    concurrency: CONCURRENCY,
+    isMobile,
+    deviceMemory
+  });
 
   const worker = async () => {
     while (index < files.length) {
@@ -366,7 +399,8 @@ const uploadFiles = async (files: File[], photoType: 'before' | 'after' | 'addit
         const isCompressibleImage = !isHeic && ((file.type && file.type.startsWith('image/')) || /\.(jpg|jpeg|png|webp)$/i.test(lower));
 
         let toUpload: File = file;
-        if (isCompressibleImage) {
+        if (isCompressibleImage && !isMobile) {
+          // Only compress on desktop
           try {
             console.info(`🗜️ Compressing: ${file.name}`);
             toUpload = await compressImage(file);
@@ -374,6 +408,8 @@ const uploadFiles = async (files: File[], photoType: 'before' | 'after' | 'addit
             console.warn(`Compression failed for ${file.name}, uploading original.`, err);
             toUpload = file;
           }
+        } else if (isMobile) {
+          console.info(`📱 Mobile detected: skipping compression for ${file.name}`);
         }
 
         const { error: uploadError } = await supabase.storage
@@ -574,14 +610,33 @@ setUploadedCount(0);
     files: File[];
     onFileSelect: (files: FileList | null) => void;
     onRemove: (index: number) => void;
-  }) => (
+  }) => {
+    const showThumbnails = !isMobile || files.length <= 10;
+    
+    return (
     <div className="space-y-4">
       <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center hover:border-gray-300 transition-colors">
         <input
           type="file"
           accept={type === 'additional' ? '*/*' : 'image/*'}
           multiple
-          onChange={(e) => { const input = e.target as HTMLInputElement; const fl = input.files; console.info(`📥 Input change (${type}):`, { filesLength: fl?.length || 0 }); onFileSelect(fl); input.value = ''; }}
+          onChange={(e) => { 
+            const input = e.target as HTMLInputElement; 
+            const fl = input.files; 
+            console.info(`📱 Device:`, { isMobile, memory: deviceMemory, userAgent: navigator.userAgent });
+            console.info(`📥 Input change (${type}):`, { 
+              filesLength: fl?.length || 0,
+              filesNull: fl === null,
+              filesEmpty: fl?.length === 0,
+              timestamp: new Date().toISOString()
+            });
+            if (fl && fl.length > 0) {
+              const sizes = Array.from(fl).slice(0, 3).map(f => `${f.name}: ${(f.size/1024/1024).toFixed(1)}MB`);
+              console.info('📸 First 3 files:', sizes);
+            }
+            onFileSelect(fl); 
+            input.value = ''; 
+          }}
           className="hidden"
           id={`file-${type}`}
         />
@@ -597,6 +652,13 @@ setUploadedCount(0);
       </div>
 
         {files.length > 0 && (
+          <>
+            <p className="text-sm font-medium">
+              {files.length} file{files.length === 1 ? '' : 's'} selected
+              {files.length > 10 && isMobile && ' (thumbnails hidden to save memory)'}
+            </p>
+            
+            {showThumbnails ? (
           <div className="grid grid-cols-2 gap-2">
             {files.slice(0, 60).map((file, index) => (
               <div key={index} className="relative">
@@ -631,9 +693,24 @@ setUploadedCount(0);
               </div>
             ))}
           </div>
+            ) : (
+              <div className="space-y-1 max-h-40 overflow-y-auto">
+                {files.map((file, index) => (
+                  <div key={index} className="flex items-center justify-between text-xs p-2 bg-gray-50 rounded">
+                    <span className="truncate flex-1">{file.name}</span>
+                    <span className="text-gray-400 mx-2">{(file.size/1024/1024).toFixed(1)}MB</span>
+                    <button onClick={() => onRemove(index)} className="text-red-500">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
     </div>
-  );
+    );
+  };
 
   const groupedPhotos = photos.reduce((acc, photo) => {
     if (!acc[photo.photo_type]) {
