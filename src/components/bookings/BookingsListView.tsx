@@ -88,6 +88,7 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState<Filters>({
@@ -202,7 +203,13 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchData();
   };
 
   const applyFilters = () => {
@@ -486,6 +493,8 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
           filters={filters}
           onFiltersChange={setFilters}
           cleaners={cleaners}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
         />
       )}
 

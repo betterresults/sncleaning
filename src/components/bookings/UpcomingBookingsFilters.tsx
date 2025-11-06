@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Calendar, Filter, X } from 'lucide-react';
+import { Search, Calendar, Filter, X, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -31,9 +31,11 @@ interface UpcomingBookingsFiltersProps {
   filters: FiltersState;
   onFiltersChange: (filters: FiltersState) => void;
   cleaners: Cleaner[];
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
-export function UpcomingBookingsFilters({ filters, onFiltersChange, cleaners }: UpcomingBookingsFiltersProps) {
+export function UpcomingBookingsFilters({ filters, onFiltersChange, cleaners, onRefresh, isRefreshing = false }: UpcomingBookingsFiltersProps) {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [filterType, setFilterType] = useState<'cleaner' | 'paymentMethod' | 'paymentStatus' | 'serviceType' | 'cleaningType' | 'bookingStatus' | ''>('');
   const [activeDateTab, setActiveDateTab] = useState<'from' | 'to'>('from');
@@ -118,7 +120,7 @@ export function UpcomingBookingsFilters({ filters, onFiltersChange, cleaners }: 
           />
         </div>
 
-        {/* Date Range + Advanced Filters on same row */}
+        {/* Date Range + Advanced Filters + Refresh on same row */}
         <div className="flex items-center gap-2">
           {/* Date Range Filter */}
           <Popover>
@@ -358,9 +360,26 @@ export function UpcomingBookingsFilters({ filters, onFiltersChange, cleaners }: 
                 </div>
               )}
             </div>
-          </PopoverContent>
-        </Popover>
-      </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Refresh Button */}
+          {onRefresh && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              className="h-9 sm:h-11 w-9 sm:w-11 rounded-lg shrink-0"
+              title="Refresh bookings"
+            >
+              <RefreshCw className={cn(
+                "h-4 w-4",
+                isRefreshing && "animate-spin"
+              )} />
+            </Button>
+          )}
+        </div>
 
       {/* Clear Filters - Full width row */}
       {hasActiveFilters && (
