@@ -130,16 +130,14 @@ export const formatAdditionalDetails = (detailsString: string | null | undefined
     const details = typeof detailsString === "string" ? JSON.parse(detailsString) : detailsString;
     const lines: string[] = [];
 
-    // Direct fields
-    if (details.alreadyCleaned !== undefined) {
-      lines.push(`Already Cleaned: ${formatFieldValue(details.alreadyCleaned)}`);
-    }
-    if (details.linensHandling) {
-      lines.push(`Linens Handling: ${formatFieldValue(details.linensHandling)}`);
-    }
-    if (details.shortNoticeCharge) {
-      lines.push(`Short Notice Charge: ${formatFieldValue(details.shortNoticeCharge, "charge")}`);
-    }
+  // Direct fields
+  if (details.alreadyCleaned !== undefined) {
+    lines.push(`Already Cleaned: ${formatFieldValue(details.alreadyCleaned)}`);
+  }
+  if (details.linensHandling) {
+    lines.push(`Linens Handling: ${formatFieldValue(details.linensHandling)}`);
+  }
+  // Short Notice Charge removed - cleaners don't need to see it
 
     // Access information
     if (details.access && typeof details.access === "object") {

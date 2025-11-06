@@ -43,7 +43,6 @@ const CleanerBookingCard = ({
   // Get formatted labels
   const serviceTypeLabel = getServiceTypeLabel(booking.service_type, serviceTypes);
   const cleaningTypeLabel = getCleaningTypeLabel(booking.cleaning_type, cleaningTypes);
-  const displayTitle = cleaningTypeLabel ? `${serviceTypeLabel} - ${cleaningTypeLabel}` : serviceTypeLabel;
 
   return (
     <div className={`group relative overflow-hidden rounded-2xl border p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/30 ${
@@ -57,7 +56,7 @@ const CleanerBookingCard = ({
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <h3 className="text-xl font-bold text-foreground tracking-tight">
-              {displayTitle}
+              {serviceTypeLabel}
             </h3>
             {isSameDay && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
@@ -65,6 +64,11 @@ const CleanerBookingCard = ({
               </span>
             )}
           </div>
+          {cleaningTypeLabel && (
+            <p className="text-sm text-muted-foreground">
+              {cleaningTypeLabel}
+            </p>
+          )}
         </div>
         <div className="text-right">
           <div className="text-2xl font-bold text-green-600">£{booking.cleaner_pay || 0}</div>
