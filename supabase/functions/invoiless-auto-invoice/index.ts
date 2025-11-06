@@ -118,9 +118,14 @@ serve(async (req) => {
     let customerId: string;
     let customerCreated = false;
 
-    if (customers && customers.length > 0) {
-      customerId = customers[0].id;
-      console.log('Customer found:', customerId);
+    // Find exact email match (case-insensitive)
+    const existingCustomer = customers?.find((c: any) => 
+      c.billTo?.email?.toLowerCase() === booking.email.toLowerCase()
+    );
+
+    if (existingCustomer) {
+      customerId = existingCustomer.id;
+      console.log('Customer found with exact email match:', customerId);
     } else {
       // Create new customer
       console.log('Customer not found, creating new customer');
