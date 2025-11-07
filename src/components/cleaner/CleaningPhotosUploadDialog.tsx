@@ -345,8 +345,23 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       setShowDebug(true);
     }
 
-    // Trigger auto-upload immediately
-    await handleAutoUpload(accepted, type);
+    // Always persist files in state so manual upload remains available
+    switch (type) {
+      case 'before':
+        setBeforeFiles(prev => [...prev, ...accepted]);
+        break;
+      case 'after':
+        setAfterFiles(prev => [...prev, ...accepted]);
+        break;
+      case 'additional':
+        setAdditionalFiles(prev => [...prev, ...accepted]);
+        break;
+    }
+
+    // Trigger auto-upload on next tick to avoid mobile UI stalls with large selections
+    setTimeout(() => {
+      void handleAutoUpload(accepted, type);
+    }, 50);
   };
 
   const removeFile = (index: number, type: 'before' | 'after' | 'additional') => {
@@ -507,11 +522,11 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       return { uploadedPaths: [], failCount: files.length, errors };
     }
     
-    // Upload in batches
-    for (let i = 0; i < files.length; i += DIRECT_UPLOAD_BATCH) {
-      const batch = files.slice(i, i + DIRECT_UPLOAD_BATCH);
-      const batchNum = Math.floor(i / DIRECT_UPLOAD_BATCH) + 1;
-      const totalBatches = Math.ceil(files.length / DIRECT_UPLOAD_BATCH);
+    const BATCH = isMobile ? 3 : DIRECT_UPLOAD_BATCH;
+    for (let i = 0; i < files.length; i += BATCH) {
+      const batch = files.slice(i, i + BATCH);
+      const batchNum = Math.floor(i / BATCH) + 1;
+      const totalBatches = Math.ceil(files.length / BATCH);
       
       console.log(`📦 Uploading batch ${batchNum}/${totalBatches} (${batch.length} files)`);
       
