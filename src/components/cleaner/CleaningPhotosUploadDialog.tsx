@@ -25,7 +25,7 @@ interface CleaningPhotosUploadDialogProps {
 
 const INITIAL_PREVIEW_COUNT = 60; // Show first 60 thumbnails by default
 const LOW_MEMORY_THRESHOLD = 40; // Switch to low-memory mode for >40 files on iOS
-const LAST_EDIT_TIME = '07/11/2025, 12:15:00'; // Cleaner upload flow - zero selection limits
+const LAST_EDIT_TIME = '07/11/2025, 12:40:00'; // Multi-select restored for before/after (image/*), additional accepts any
 
 const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPhotosUploadDialogProps) => {
   const { toast } = useToast();
@@ -511,7 +511,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
         <div className="border-2 border-dashed border-primary/30 rounded-xl p-8 text-center hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 cursor-pointer">
           <input
             type="file"
-            accept="*/*"
+            accept={type === 'additional' ? "*/*" : "image/*"}
             multiple
             onChange={(e) => { const fl = (e.target as HTMLInputElement).files; console.info(`📥 Input change (${type}):`, { filesLength: fl?.length || 0 }); onFileSelect(fl); (e.target as HTMLInputElement).value = ''; }}
             className="hidden"
