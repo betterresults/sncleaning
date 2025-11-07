@@ -397,6 +397,20 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
 
     console.log(`📤 Starting direct upload of ${files.length} files (Type: ${photoType})`);
     
+    // Check if files are still accessible (mobile browsers may revoke access)
+    try {
+      const testFile = files[0];
+      if (testFile) {
+        const testSlice = testFile.slice(0, 1);
+        await testSlice.arrayBuffer();
+        console.log('✅ File access check passed');
+      }
+    } catch (accessError) {
+      console.error('❌ Files no longer accessible:', accessError);
+      errors.push('Files no longer accessible. Please re-select photos and upload immediately.');
+      return { uploadedPaths: [], failCount: files.length, errors };
+    }
+    
     // Upload in batches
     for (let i = 0; i < files.length; i += DIRECT_UPLOAD_BATCH) {
       const batch = files.slice(i, i + DIRECT_UPLOAD_BATCH);
@@ -411,6 +425,13 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
           const timestamp = Date.now();
           const fileName = `${timestamp}_${fileNum}_${file.name}`;
           const filePath = `${folderPath}/${photoType}/${fileName}`;
+          
+          // Check file accessibility before processing
+          try {
+            await file.slice(0, 1).arrayBuffer();
+          } catch (accessError) {
+            throw new Error(`File "${file.name}" no longer accessible (browser revoked access)`);
+          }
           
           // Optional light compression for large images (>3MB)
           let fileToUpload = file;
@@ -429,6 +450,12 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
               console.log(`✅ [${fileNum}] Frontend compression: saved ${saved}%`);
             } catch (compError) {
               console.warn(`⚠️  [${fileNum}] Frontend compression failed, uploading original:`, compError);
+              // If compression fails, verify original file is still accessible
+              try {
+                await file.slice(0, 1).arrayBuffer();
+              } catch (accessError) {
+                throw new Error(`File "${file.name}" became inaccessible during compression`);
+              }
             }
           }
           
@@ -436,14 +463,25 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
           setUploadProgress(`Uploading ${file.name} (${fileNum}/${files.length})`);
           console.log(`⬆️  [${fileNum}/${files.length}] Uploading: ${file.name}`);
           
-          const { error } = await supabase.storage
-            .from('cleaning.photos')
-            .upload(filePath, fileToUpload, {
-              cacheControl: '3600',
-              upsert: true
-            });
+          try {
+            const { error } = await supabase.storage
+              .from('cleaning.photos')
+              .upload(filePath, fileToUpload, {
+                cacheControl: '3600',
+                upsert: true
+              });
 
-          if (error) throw error;
+            if (error) {
+              throw new Error(`Storage upload failed for "${file.name}": ${error.message}`);
+            }
+          } catch (uploadError: any) {
+            // Provide more context about the failure
+            const errorMsg = uploadError.message || 'Unknown upload error';
+            if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError')) {
+              throw new Error(`Network error uploading "${file.name}" (check connection and try again)`);
+            }
+            throw new Error(`Upload failed for "${file.name}": ${errorMsg}`);
+          }
           
           console.log(`✅ [${fileNum}] Upload successful`);
           return { filePath, fileName: file.name };
