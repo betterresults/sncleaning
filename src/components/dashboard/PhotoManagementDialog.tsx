@@ -649,7 +649,13 @@ const PhotoCard = ({ photo, selected, selectMode, onSelect, onView, onDownload, 
       try {
         const { data, error } = await supabase.storage
           .from('cleaning.photos')
-          .createSignedUrl(photo.file_path, 3600);
+          .createSignedUrl(photo.file_path, 3600, {
+            transform: {
+              width: 200,
+              height: 200,
+              resize: 'cover'
+            }
+          });
 
         if (error) throw error;
         setImageUrl(data.signedUrl);
