@@ -25,7 +25,7 @@ interface CleaningPhotosUploadDialogProps {
 
 const INITIAL_PREVIEW_COUNT = 60; // Show first 60 thumbnails by default
 const LOW_MEMORY_THRESHOLD = 40; // Switch to low-memory mode for >40 files on iOS
-const LAST_EDIT_TIME = '07/11/2025, 09:30:00'; // Cleaner upload flow - all limits removed
+const LAST_EDIT_TIME = '07/11/2025, 12:15:00'; // Cleaner upload flow - zero selection limits
 
 const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPhotosUploadDialogProps) => {
   const { toast } = useToast();
@@ -98,21 +98,9 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
         heicDetected = true;
       }
 
-      if (type === 'additional') {
-        // Accept all file types for additional - compression will handle images, backend enforces limits
-        accepted.push(file);
-        console.info(`✅ Accepted additional file: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
-        continue;
-      } else {
-        // Before/After: accept images by MIME or common extensions (handles iOS HEIC with empty type)
-        if (isImageByType || isImageByExt) {
-          accepted.push(file);
-          console.info(`✅ Accepted image: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB, ${file.type || 'unknown type'})`);
-        } else {
-          skipped.push({ name: file.name, reason: 'Unsupported file type' });
-          console.warn(`❌ Skipped: ${file.name} - unsupported (${file.type || 'unknown'})`);
-        }
-      }
+      // Accept all file types for all tabs; compression will handle images, backend enforces limits
+      accepted.push(file);
+      console.info(`✅ Accepted ${type} file: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB, ${file.type || 'unknown type'})`);
     }
 
     if (heicDetected) {
@@ -399,18 +387,6 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       }
 
       if (additionalFiles.length > 0) {
-        if (!additionalDetails.trim()) {
-          console.warn('⚠️ Additional files selected but no details provided');
-          toast({
-            title: 'Additional Details Required',
-            description: 'Please provide details about the additional information.',
-            variant: 'destructive'
-          });
-          setUploading(false);
-          setUploadStep('');
-          setUploadProgress('');
-          return;
-        }
         console.info(`📤 Uploading ${additionalFiles.length} additional files...`);
         const { successfulUploads, failedUploads } = await uploadFilesSequentially(additionalFiles, 'additional');
         totalSuccessful += successfulUploads.length;
@@ -535,7 +511,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
         <div className="border-2 border-dashed border-primary/30 rounded-xl p-8 text-center hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 cursor-pointer">
           <input
             type="file"
-            accept={type === 'additional' ? "*/*" : "image/*"}
+            accept="*/*"
             multiple
             onChange={(e) => { const fl = (e.target as HTMLInputElement).files; console.info(`📥 Input change (${type}):`, { filesLength: fl?.length || 0 }); onFileSelect(fl); (e.target as HTMLInputElement).value = ''; }}
             className="hidden"
