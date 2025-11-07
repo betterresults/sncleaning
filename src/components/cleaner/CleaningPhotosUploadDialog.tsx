@@ -25,14 +25,7 @@ interface CleaningPhotosUploadDialogProps {
 
 const INITIAL_PREVIEW_COUNT = 60; // Show first 60 thumbnails by default
 const LOW_MEMORY_THRESHOLD = 40; // Switch to low-memory mode for >40 files on iOS
-const LAST_EDIT_TIME = new Date().toLocaleString('en-GB', { 
-  day: '2-digit', 
-  month: '2-digit', 
-  year: 'numeric', 
-  hour: '2-digit', 
-  minute: '2-digit',
-  second: '2-digit'
-});
+const LAST_EDIT_TIME = '07/11/2025, 08:15:00'; // Updated: Fixed Android upload issues - removed 10MB limit, added size guard, improved errors
 
 const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPhotosUploadDialogProps) => {
   const { toast } = useToast();
@@ -66,7 +59,12 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       filesCount: files?.length || 0,
       device: isIOS ? 'iOS' : isAndroid ? 'Android' : 'Desktop',
       userAgent: navigator.userAgent,
-      availableMemory: (navigator as any).deviceMemory || 'unknown'
+      availableMemory: (navigator as any).deviceMemory || 'unknown',
+      firstThreeSizes: Array.from(files || []).slice(0, 3).map(f => ({
+        name: f.name,
+        sizeMB: (f.size / 1024 / 1024).toFixed(2),
+        type: f.type || 'unknown'
+      }))
     });
 
     if (!files || files.length === 0) {
@@ -80,6 +78,22 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     }
 
     const fileArray = Array.from(files);
+    
+    // Calculate total size of selection
+    const totalMB = fileArray.reduce((sum, f) => sum + f.size, 0) / (1024 * 1024);
+    console.info(`🧮 Total selected size: ${totalMB.toFixed(2)}MB across ${fileArray.length} files`);
+
+    // Guard against extremely large batches on mobile
+    if (isMobile && totalMB > 80) {
+      console.warn(`❌ Selection too large: ${totalMB.toFixed(2)}MB exceeds 80MB mobile limit`);
+      toast({
+        title: 'Too Many Large Photos',
+        description: `You selected about ${totalMB.toFixed(1)}MB of files. Please upload in smaller batches (e.g. 10-15 photos at a time).`,
+        variant: 'destructive'
+      });
+      return;
+    }
+    
     const accepted: File[] = [];
     const skipped: { name: string; reason: string }[] = [];
 
@@ -96,14 +110,10 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       }
 
       if (type === 'additional') {
-        // Additional files: allow any type up to 10MB
-        if (file.size <= 10 * 1024 * 1024) {
-          accepted.push(file);
-          console.info(`✅ Accepted additional file: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
-        } else {
-          skipped.push({ name: file.name, reason: 'File too large (max 10MB)' });
-          console.warn(`❌ Skipped: ${file.name} - too large (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
-        }
+        // Accept all file types for additional - compression will handle images, backend enforces limits
+        accepted.push(file);
+        console.info(`✅ Accepted additional file: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+        continue;
       } else {
         // Before/After: accept images by MIME or common extensions (handles iOS HEIC with empty type)
         if (isImageByType || isImageByExt) {
@@ -132,7 +142,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     });
 
     if (skipped.length > 0) {
-      const allowed = type === 'additional' ? 'images or files under 10MB' : 'images only';
+      const allowed = type === 'additional' ? 'files (large images will be compressed)' : 'images only';
       console.warn('⚠️ Files skipped', skipped);
       toast({ 
         title: 'Some Files Skipped', 
@@ -145,7 +155,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       console.warn('❌ No compatible files accepted from selection');
       toast({
         title: 'No Compatible Files',
-        description: type === 'additional' ? 'All files exceeded 10MB.' : 'Please select image files (JPG, PNG, WebP, HEIC).',
+        description: 'Please select image files (JPG, PNG, WebP, HEIC) or other supported files.',
         variant: 'destructive'
       });
       return;
@@ -279,7 +289,14 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
         } while (uploadError && retryCount < maxRetries);
 
         if (uploadError) {
-          const errorMsg = uploadError.message;
+          let errorMsg = uploadError.message;
+          
+          // Detect payload too large errors
+          if (errorMsg.includes('413') || errorMsg.toLowerCase().includes('payload too large') || errorMsg.toLowerCase().includes('too large')) {
+            errorMsg = 'File too large for server (try smaller batch)';
+            console.error(`❌ 413 Payload Too Large: ${file.name} (${(fileToUpload.size / 1024 / 1024).toFixed(2)}MB)`);
+          }
+          
           console.error(`❌ [${fileNumber}/${files.length}] Upload failed after ${maxRetries} attempts:`, uploadError);
           failedUploads.push({ name: file.name, error: errorMsg });
           continue; // Skip to next file
@@ -547,7 +564,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
             </p>
             <p className="text-xs text-muted-foreground">
               {type === 'additional' 
-                ? 'Any file type up to 10MB each' 
+                ? 'Any file type - large images will be compressed automatically' 
                 : 'JPG, PNG, WebP, HEIC - will be compressed automatically'
               }
             </p>
