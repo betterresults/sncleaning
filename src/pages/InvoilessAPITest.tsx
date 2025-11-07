@@ -474,19 +474,27 @@ const InvoilessAPITest = () => {
                           {JSON.stringify(apiResponse, null, 2)}
                         </pre>
                         
-                        {extractInvoilessId(apiResponse) && selectedCustomerId && (
+                        {selectedCustomerId && (
                           <div className="space-y-2">
-                            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                              <p className="text-sm font-medium text-green-900">
-                                Found Invoiless ID: <span className="font-mono">{extractInvoilessId(apiResponse)}</span>
-                              </p>
-                              <p className="text-xs text-green-700 mt-1">
-                                Will be saved to: {selectedCustomer?.first_name} {selectedCustomer?.last_name}
-                              </p>
-                            </div>
+                            {extractInvoilessId(apiResponse) ? (
+                              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <p className="text-sm font-medium text-green-900">
+                                  Found Invoiless ID: <span className="font-mono">{extractInvoilessId(apiResponse)}</span>
+                                </p>
+                                <p className="text-xs text-green-700 mt-1">
+                                  Will be saved to: {selectedCustomer?.first_name} {selectedCustomer?.last_name}
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="p-3 bg-muted rounded-lg">
+                                <p className="text-sm">
+                                  No Invoiless ID found in the response. Make sure the search returned a customer.
+                                </p>
+                              </div>
+                            )}
                             <Button 
                               onClick={handleSaveInvoilessId}
-                              disabled={saveLoading}
+                              disabled={saveLoading || !extractInvoilessId(apiResponse)}
                               className="w-full"
                             >
                               {saveLoading ? (
