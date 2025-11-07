@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8'
+import { Image } from 'npm:imagescript'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -101,12 +102,10 @@ async function processPhotos(
       
       if (isImage) {
         try {
-          // Simple compression using Deno's built-in APIs
-          // For production, consider using external compression service
-          processedFile = await compressImageSimple(originalFile)
-          console.log(`Compressed ${filePath}`)
+          processedFile = await compressImage(originalFile)
+          console.log(`✓ Compressed ${filePath}`)
         } catch (compError) {
-          console.error(`Compression failed for ${filePath}, using original:`, compError)
+          console.error(`✗ Compression failed for ${filePath}, using original:`, compError)
         }
       }
 
@@ -167,15 +166,60 @@ async function processPhotos(
   console.log(`Background processing complete for booking ${bookingId}`)
 }
 
-async function compressImageSimple(file: Blob): Promise<Blob> {
-  // Basic compression: just reduce quality if file is large
-  if (file.size < 1024 * 1024) {
-    // Files under 1MB, no compression needed
+async function compressImage(file: Blob): Promise<Blob> {
+  const startTime = Date.now()
+  const originalSize = file.size
+  
+  // Skip small files (already optimized)
+  if (originalSize < 500 * 1024) {
+    console.log(`Skipping compression for small file (${(originalSize/1024).toFixed(0)}KB)`)
     return file
   }
 
-  // For larger files, return original for now
-  // In production, use external compression service or Deno image library
-  console.log('Image compression placeholder - using original file')
-  return file
+  try {
+    // Convert blob to array buffer
+    const arrayBuffer = await file.arrayBuffer()
+    const uint8Array = new Uint8Array(arrayBuffer)
+    
+    // Decode image
+    const image = await Image.decode(uint8Array)
+    console.log(`Original dimensions: ${image.width}x${image.height}`)
+    
+    // Calculate new dimensions (max 1920px)
+    const maxDimension = 1920
+    let newWidth = image.width
+    let newHeight = image.height
+    
+    if (image.width > maxDimension || image.height > maxDimension) {
+      if (image.width > image.height) {
+        newWidth = maxDimension
+        newHeight = Math.round((image.height / image.width) * maxDimension)
+      } else {
+        newHeight = maxDimension
+        newWidth = Math.round((image.width / image.height) * maxDimension)
+      }
+      
+      // Resize image
+      image.resize(newWidth, newHeight)
+      console.log(`Resized to: ${newWidth}x${newHeight}`)
+    }
+    
+    // Encode as JPEG with 80% quality
+    const compressedBuffer = await image.encodeJPEG(80)
+    const compressedBlob = new Blob([compressedBuffer], { type: 'image/jpeg' })
+    
+    const compressionTime = Date.now() - startTime
+    const compressionRatio = ((1 - compressedBlob.size / originalSize) * 100).toFixed(1)
+    
+    console.log(`✓ Compression complete:`)
+    console.log(`  Original: ${(originalSize/1024/1024).toFixed(2)}MB`)
+    console.log(`  Compressed: ${(compressedBlob.size/1024/1024).toFixed(2)}MB`)
+    console.log(`  Saved: ${compressionRatio}% in ${compressionTime}ms`)
+    
+    return compressedBlob
+    
+  } catch (error) {
+    console.error('Compression failed, using original file:', error)
+    return file
+  }
 }

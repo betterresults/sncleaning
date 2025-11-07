@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload, X, Camera, AlertTriangle, ChevronDown, ChevronUp, Image as ImageIcon, Trash2, CheckCircle2, ZoomIn } from 'lucide-react';
+import { compressImage } from '@/utils/imageCompression';
 
 interface CleaningPhotosUploadDialogProps {
   open: boolean;
@@ -411,13 +412,33 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
           const fileName = `${timestamp}_${fileNum}_${file.name}`;
           const filePath = `${folderPath}/${photoType}/${fileName}`;
           
+          // Optional light compression for large images (>3MB)
+          let fileToUpload = file;
+          const isImage = file.type.startsWith('image/') && !file.name.toLowerCase().endsWith('.heic');
+          const isLarge = file.size > 3 * 1024 * 1024;
+          
+          if (isImage && isLarge) {
+            console.log(`🗜️  [${fileNum}] Compressing ${file.name} (${(file.size/1024/1024).toFixed(2)}MB)...`);
+            try {
+              fileToUpload = await compressImage(file, {
+                maxSizeMB: 5,
+                maxWidthOrHeight: 2560,
+                initialQuality: 0.85
+              });
+              const saved = ((1 - fileToUpload.size / file.size) * 100).toFixed(0);
+              console.log(`✅ [${fileNum}] Frontend compression: saved ${saved}%`);
+            } catch (compError) {
+              console.warn(`⚠️  [${fileNum}] Frontend compression failed, uploading original:`, compError);
+            }
+          }
+          
           setCurrentFileIndex(fileNum);
           setUploadProgress(`Uploading ${file.name} (${fileNum}/${files.length})`);
           console.log(`⬆️  [${fileNum}/${files.length}] Uploading: ${file.name}`);
           
           const { error } = await supabase.storage
             .from('cleaning.photos')
-            .upload(filePath, file, {
+            .upload(filePath, fileToUpload, {
               cacheControl: '3600',
               upsert: true
             });
