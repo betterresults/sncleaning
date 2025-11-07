@@ -25,7 +25,7 @@ interface CleaningPhotosUploadDialogProps {
 
 const INITIAL_PREVIEW_COUNT = 60; // Show first 60 thumbnails by default
 const LOW_MEMORY_THRESHOLD = 40; // Switch to low-memory mode for >40 files on iOS
-const LAST_EDIT_TIME = '07/11/2025, 08:15:00'; // Updated: Fixed Android upload issues - removed 10MB limit, added size guard, improved errors
+const LAST_EDIT_TIME = '07/11/2025, 09:30:00'; // Cleaner upload flow - all limits removed
 
 const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPhotosUploadDialogProps) => {
   const { toast } = useToast();
@@ -82,17 +82,6 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     // Calculate total size of selection
     const totalMB = fileArray.reduce((sum, f) => sum + f.size, 0) / (1024 * 1024);
     console.info(`🧮 Total selected size: ${totalMB.toFixed(2)}MB across ${fileArray.length} files`);
-
-    // Guard against extremely large batches on mobile
-    if (isMobile && totalMB > 80) {
-      console.warn(`❌ Selection too large: ${totalMB.toFixed(2)}MB exceeds 80MB mobile limit`);
-      toast({
-        title: 'Too Many Large Photos',
-        description: `You selected about ${totalMB.toFixed(1)}MB of files. Please upload in smaller batches (e.g. 10-15 photos at a time).`,
-        variant: 'destructive'
-      });
-      return;
-    }
     
     const accepted: File[] = [];
     const skipped: { name: string; reason: string }[] = [];
