@@ -622,6 +622,13 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     const hiddenCount = files.length - INITIAL_PREVIEW_COUNT;
 
     const handleSmartPick = async (e: React.MouseEvent<HTMLElement>) => {
+      // On mobile devices, skip showOpenFilePicker and use native input
+      if (isMobile) {
+        console.info('📱 Mobile device detected - using native file input');
+        return; // Let the label's htmlFor trigger the native input
+      }
+
+      // Desktop: Try to use showOpenFilePicker for better UX
       const picker = (window as any).showOpenFilePicker;
       if (typeof picker !== 'function') return; // fallback to native input
       try {
@@ -664,7 +671,10 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
               Select {type} {type === 'additional' ? 'files' : 'photos'}
             </p>
             <p className="text-sm text-muted-foreground mb-1">
-              Click to select multiple files (up to 150)
+              {isMobile 
+                ? 'Tap to select from gallery or take photo (up to 150)'
+                : 'Click to select multiple files (up to 150)'
+              }
             </p>
             <p className="text-xs text-muted-foreground">
               {type === 'additional' 
