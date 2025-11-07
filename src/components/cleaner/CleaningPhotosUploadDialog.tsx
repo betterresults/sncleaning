@@ -249,14 +249,14 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     );
   };
 
-  const handleFileSelect = async (files: FileList | null, type: 'before' | 'after' | 'additional') => {
+  const handleFileSelect = async (files: File[], type: 'before' | 'after' | 'additional') => {
     console.info('🎬 File selection started', {
       type,
-      filesCount: files?.length || 0,
+      filesCount: files.length,
       device: isIOS ? 'iOS' : isAndroid ? 'Android' : 'Desktop',
       userAgent: navigator.userAgent,
       availableMemory: (navigator as any).deviceMemory || 'unknown',
-      firstThreeSizes: Array.from(files || []).slice(0, 3).map(f => ({
+      firstThreeSizes: files.slice(0, 3).map(f => ({
         name: f.name,
         sizeMB: (f.size / 1024 / 1024).toFixed(2),
         type: f.type || 'unknown'
@@ -264,7 +264,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     });
 
     if (!files || files.length === 0) {
-      console.warn('⚠️ No files returned from file input', { filesNull: files === null, filesLength: files?.length });
+      console.warn('⚠️ No files returned from file input', { filesNull: files == null, filesLength: files?.length });
       toast({ 
         title: 'No Files Selected', 
         description: 'Your device did not return any files. Try selecting fewer files or restart the app.',
@@ -273,7 +273,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       return;
     }
 
-    const fileArray = Array.from(files);
+    const fileArray = files;
     
     // Calculate total size of selection
     const totalMB = fileArray.reduce((sum, f) => sum + f.size, 0) / (1024 * 1024);
@@ -780,7 +780,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   const FileUploadArea = ({ type, files, onFileSelect, onRemove }: {
     type: 'before' | 'after' | 'additional';
     files: File[];
-    onFileSelect: (files: File[] | FileList | null) => void;
+    onFileSelect: (files: File[]) => void;
     onRemove: (index: number) => void;
   }) => {
     const inputRef = React.useRef<HTMLInputElement>(null);
@@ -1110,7 +1110,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
                   <FileUploadArea
                     type="before"
                     files={beforeFiles}
-                    onFileSelect={(files: any) => handleFileSelect(Array.isArray(files) ? files : Array.from(files || []), 'before')}
+                    onFileSelect={(files) => handleFileSelect(files, 'before')}
                     onRemove={(index) => removeFile(index, 'before')}
                   />
                 </div>
@@ -1121,7 +1121,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
                   <FileUploadArea
                     type="after"
                     files={afterFiles}
-                    onFileSelect={(files) => handleFileSelect(Array.isArray(files) ? files : Array.from(files || []), 'after')}
+                    onFileSelect={(files) => handleFileSelect(files, 'after')}
                     onRemove={(index) => removeFile(index, 'after')}
                   />
                 </div>
@@ -1167,7 +1167,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
                       <FileUploadArea
                         type="additional"
                         files={additionalFiles}
-                        onFileSelect={(files) => handleFileSelect(Array.isArray(files) ? files : Array.from(files || []), 'additional')}
+                        onFileSelect={(files) => handleFileSelect(files, 'additional')}
                         onRemove={(index) => removeFile(index, 'additional')}
                       />
 
