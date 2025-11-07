@@ -657,7 +657,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
         <div className="border-2 border-dashed border-primary/30 rounded-xl p-8 text-center hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 cursor-pointer">
           <input
             type="file"
-            accept={type === 'additional' ? "*/*" : "image/jpeg,image/png,image/webp,image/heic,image/heif"}
+            accept={type === 'additional' ? "*/*" : "image/*"}
             multiple
             onChange={(e) => { const fl = (e.target as HTMLInputElement).files; console.info(`📥 Input change (${type}):`, { filesLength: fl?.length || 0 }); onFileSelect(fl); (e.target as HTMLInputElement).value = ''; }}
             className="hidden"
