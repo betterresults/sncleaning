@@ -810,11 +810,32 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
             accept={type === 'additional' ? "*/*" : "image/*"}
             multiple
             disabled={uploading}
-            onChange={(e) => { const fl = (e.target as HTMLInputElement).files; console.info(`📥 Input change (${type}):`, { filesLength: fl?.length || 0 }); onFileSelect(fl); (e.target as HTMLInputElement).value = ''; }}
+            onChange={(e) => { 
+              console.info(`🔔 onChange EVENT FIRED for ${type}!`, { 
+                hasFiles: !!e.target.files, 
+                fileCount: e.target.files?.length || 0,
+                firstFileName: e.target.files?.[0]?.name,
+                device: isMobile ? 'Mobile' : 'Desktop'
+              });
+              const fl = (e.target as HTMLInputElement).files; 
+              console.info(`📥 Input change (${type}):`, { filesLength: fl?.length || 0 }); 
+              onFileSelect(fl); 
+              (e.target as HTMLInputElement).value = ''; 
+            }}
+            onClick={() => console.info(`🖱️ Input CLICKED for ${type}`)}
+            onFocus={() => console.info(`🎯 Input FOCUSED for ${type}`)}
+            onBlur={() => console.info(`👋 Input BLURRED for ${type}`)}
             className="hidden"
             id={`file-${type}`}
           />
-          <label htmlFor={`file-${type}`} onClick={handleSmartPick} className="cursor-pointer block">
+          <label 
+            htmlFor={`file-${type}`} 
+            onClick={(e) => {
+              console.info(`🏷️ Label CLICKED for ${type}`, { isMobile, uploading });
+              handleSmartPick(e);
+            }} 
+            className="cursor-pointer block"
+          >
             <div className="p-4 rounded-full bg-primary/10 w-fit mx-auto mb-4">
               <Camera className="h-12 w-12 text-primary" />
             </div>
