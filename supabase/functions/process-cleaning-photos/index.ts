@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8'
-import { Image } from 'npm:imagescript'
+import Jimp from 'npm:jimp@0.22.10'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -177,35 +177,33 @@ async function compressImage(file: Blob): Promise<Blob> {
   }
 
   try {
-    // Convert blob to array buffer
+    // Convert blob to buffer
     const arrayBuffer = await file.arrayBuffer()
-    const uint8Array = new Uint8Array(arrayBuffer)
+    const buffer = Buffer.from(arrayBuffer)
     
-    // Decode image
-    const image = await Image.decode(uint8Array)
-    console.log(`Original dimensions: ${image.width}x${image.height}`)
+    // Load image with Jimp
+    const image = await Jimp.read(buffer)
+    console.log(`Original dimensions: ${image.bitmap.width}x${image.bitmap.height}`)
     
     // Calculate new dimensions (max 1920px)
     const maxDimension = 1920
-    let newWidth = image.width
-    let newHeight = image.height
+    const width = image.bitmap.width
+    const height = image.bitmap.height
     
-    if (image.width > maxDimension || image.height > maxDimension) {
-      if (image.width > image.height) {
-        newWidth = maxDimension
-        newHeight = Math.round((image.height / image.width) * maxDimension)
+    if (width > maxDimension || height > maxDimension) {
+      if (width > height) {
+        image.resize(maxDimension, Jimp.AUTO)
       } else {
-        newHeight = maxDimension
-        newWidth = Math.round((image.width / image.height) * maxDimension)
+        image.resize(Jimp.AUTO, maxDimension)
       }
-      
-      // Resize image
-      image.resize(newWidth, newHeight)
-      console.log(`Resized to: ${newWidth}x${newHeight}`)
+      console.log(`Resized to: ${image.bitmap.width}x${image.bitmap.height}`)
     }
     
-    // Encode as JPEG with 80% quality
-    const compressedBuffer = await image.encodeJPEG(80)
+    // Set JPEG quality to 80%
+    image.quality(80)
+    
+    // Convert to buffer
+    const compressedBuffer = await image.getBufferAsync(Jimp.MIME_JPEG)
     const compressedBlob = new Blob([compressedBuffer], { type: 'image/jpeg' })
     
     const compressionTime = Date.now() - startTime
