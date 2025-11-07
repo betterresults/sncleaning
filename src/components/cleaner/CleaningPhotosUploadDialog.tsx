@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, X, Camera, AlertTriangle, ChevronDown, ChevronUp, Image as ImageIcon, Trash2, CheckCircle2 } from 'lucide-react';
+import { Upload, X, Camera, AlertTriangle, ChevronDown, ChevronUp, Image as ImageIcon, Trash2, CheckCircle2, ZoomIn } from 'lucide-react';
 
 interface CleaningPhotosUploadDialogProps {
   open: boolean;
@@ -46,6 +46,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   const [showExistingPhotos, setShowExistingPhotos] = useState(false);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const [showDeleteAnimation, setShowDeleteAnimation] = useState(false);
+  const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
 
   const bookingDate = new Date(booking.date_time).toISOString().split('T')[0];
   const safePostcode = booking.postcode?.toString().replace(/\s+/g, '').toUpperCase() || 'NA';
@@ -150,7 +151,10 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
 
     return (
       <div className="relative group">
-        <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+        <div 
+          className="aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+          onClick={() => setViewingPhoto(photo.file_path)}
+        >
           {imageUrl ? (
             <img
               src={imageUrl}
@@ -165,8 +169,11 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
           )}
         </div>
         <button
-          onClick={() => deletePhoto(photo.id, photo.file_path)}
-          className="absolute top-1 right-1 p-1.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+          onClick={(e) => {
+            e.stopPropagation();
+            deletePhoto(photo.id, photo.file_path);
+          }}
+          className="absolute top-1 right-1 p-1.5 bg-destructive text-destructive-foreground rounded-full shadow-lg hover:scale-110 transition-transform"
           title="Delete photo"
         >
           <Trash2 className="h-3 w-3" />
@@ -174,6 +181,57 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
         <p className="text-xs text-muted-foreground mt-1 truncate">
           {new Date(photo.created_at).toLocaleDateString()}
         </p>
+      </div>
+    );
+  };
+
+  const PhotoViewer = ({ filePath, onClose }: { filePath: string; onClose: () => void }) => {
+    const [fullImageUrl, setFullImageUrl] = useState<string>('');
+
+    useEffect(() => {
+      const loadFullImage = async () => {
+        const { data } = await supabase.storage
+          .from('cleaning.photos')
+          .createSignedUrl(filePath, 3600);
+        if (data?.signedUrl) setFullImageUrl(data.signedUrl);
+      };
+      loadFullImage();
+    }, [filePath]);
+
+    return (
+      <div 
+        className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4 animate-fade-in"
+        onClick={onClose}
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
+          title="Close"
+        >
+          <X className="h-6 w-6 text-white" />
+        </button>
+        
+        <div className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center">
+          {fullImageUrl ? (
+            <img
+              src={fullImageUrl}
+              alt="Full size"
+              className="max-w-full max-h-full object-contain rounded-lg animate-scale-in"
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <div className="flex items-center justify-center">
+              <Camera className="h-12 w-12 text-white/50 animate-pulse" />
+            </div>
+          )}
+        </div>
+
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full">
+          <p className="text-white text-sm flex items-center gap-2">
+            <ZoomIn className="h-4 w-4" />
+            Click outside to close
+          </p>
+        </div>
       </div>
     );
   };
@@ -951,6 +1009,14 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
           </Button>
         </div>
       </DialogContent>
+
+      {/* Photo Viewer Modal */}
+      {viewingPhoto && (
+        <PhotoViewer 
+          filePath={viewingPhoto}
+          onClose={() => setViewingPhoto(null)}
+        />
+      )}
     </Dialog>
   );
 };
