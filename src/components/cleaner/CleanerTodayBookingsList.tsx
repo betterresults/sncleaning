@@ -60,6 +60,7 @@ const CleanerTodayBookingsList = () => {
     cleaner: number;
     postcode: string;
     date_time: string;
+    address: string;
   } | null>(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
@@ -230,7 +231,8 @@ const CleanerTodayBookingsList = () => {
         customer: booking.customer,
         cleaner: booking.cleaner,
         postcode: booking.postcode,
-        date_time: booking.date_time
+        date_time: booking.date_time,
+        address: booking.address
       });
       setUploadDialogOpen(true);
     } else {
@@ -474,7 +476,14 @@ const CleanerTodayBookingsList = () => {
         <CleaningPhotosUploadDialog
           open={uploadDialogOpen}
           onOpenChange={setUploadDialogOpen}
-          booking={selectedBooking}
+          booking={{
+            id: selectedBooking.id,
+            customer: selectedBooking.customer || 0,
+            cleaner: selectedBooking.cleaner || 0,
+            postcode: selectedBooking.postcode,
+            date_time: selectedBooking.date_time,
+            address: selectedBooking.address
+          }}
         />
       )}
     </div>

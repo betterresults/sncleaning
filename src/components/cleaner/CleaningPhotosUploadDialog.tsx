@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, X, Camera, AlertTriangle, ChevronDown, ChevronUp, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { Upload, X, Camera, AlertTriangle, ChevronDown, ChevronUp, Image as ImageIcon, Trash2, CheckCircle2 } from 'lucide-react';
 
 interface CleaningPhotosUploadDialogProps {
   open: boolean;
@@ -19,6 +19,7 @@ interface CleaningPhotosUploadDialogProps {
     cleaner: number;
     postcode: string;
     date_time: string;
+    address: string;
   };
 }
 
@@ -44,6 +45,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   const [loadingPhotos, setLoadingPhotos] = useState(false);
   const [showExistingPhotos, setShowExistingPhotos] = useState(false);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
+  const [showDeleteAnimation, setShowDeleteAnimation] = useState(false);
 
   const bookingDate = new Date(booking.date_time).toISOString().split('T')[0];
   const safePostcode = booking.postcode?.toString().replace(/\s+/g, '').toUpperCase() || 'NA';
@@ -128,10 +130,10 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
         return updated;
       });
 
-      toast({
-        title: "Photo Deleted",
-        description: "Photo has been removed successfully",
-      });
+      // Show animated checkmark
+      setShowDeleteAnimation(true);
+      setTimeout(() => setShowDeleteAnimation(false), 1500);
+
     } catch (error) {
       console.error('Error deleting photo:', error);
       toast({
@@ -667,6 +669,15 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent fullScreen className="flex flex-col bg-background">
+        {/* Delete Animation Overlay */}
+        {showDeleteAnimation && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+            <div className="animate-scale-in">
+              <CheckCircle2 className="h-20 w-20 text-green-500 animate-[scale-in_0.3s_ease-out]" strokeWidth={2.5} />
+            </div>
+          </div>
+        )}
+
         <DialogHeader className="flex-shrink-0 space-y-3 p-6 border-b bg-gradient-to-r from-primary/5 to-primary/10">
           <DialogTitle className="flex items-center gap-3 text-xl font-semibold">
             <div className="p-2 rounded-lg bg-primary/10">
@@ -675,7 +686,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
             <span>Upload Cleaning Photos</span>
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
-            Booking #{booking.id} - {booking.postcode} - {bookingDate}
+            {booking.address} • {booking.postcode} • {new Date(booking.date_time).toLocaleDateString()}
           </p>
         </DialogHeader>
 

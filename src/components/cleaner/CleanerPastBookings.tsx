@@ -524,7 +524,8 @@ const CleanerPastBookings = () => {
             customer: selectedBookingForUpload.customer || 0,
             cleaner: selectedBookingForUpload.cleaner || 0,
             postcode: selectedBookingForUpload.postcode,
-            date_time: selectedBookingForUpload.date_time
+            date_time: selectedBookingForUpload.date_time,
+            address: selectedBookingForUpload.address
           }}
         />
       )}
