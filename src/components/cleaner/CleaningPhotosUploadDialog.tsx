@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, X, Camera, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Upload, X, Camera, AlertTriangle, ChevronDown, ChevronUp, Image as ImageIcon, Trash2 } from 'lucide-react';
 
 interface CleaningPhotosUploadDialogProps {
   open: boolean;
@@ -40,6 +40,8 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   const [showDebug, setShowDebug] = useState(false);
   const [currentFileIndex, setCurrentFileIndex] = useState(0);
   const [totalFilesToUpload, setTotalFilesToUpload] = useState(0);
+  const [existingPhotos, setExistingPhotos] = useState<any[]>([]);
+  const [loadingPhotos, setLoadingPhotos] = useState(false);
 
   const bookingDate = new Date(booking.date_time).toISOString().split('T')[0];
   const safePostcode = booking.postcode?.toString().replace(/\s+/g, '').toUpperCase() || 'NA';
@@ -51,6 +53,109 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   const isMobile = isIOS || isAndroid;
   const totalFiles = beforeFiles.length + afterFiles.length + additionalFiles.length;
   const isLowMemoryMode = isIOS && totalFiles > LOW_MEMORY_THRESHOLD;
+
+  useEffect(() => {
+    if (open) {
+      fetchExistingPhotos();
+    }
+  }, [open, booking.id]);
+
+  const fetchExistingPhotos = async () => {
+    setLoadingPhotos(true);
+    try {
+      const { data, error } = await supabase
+        .from('cleaning_photos')
+        .select('*')
+        .eq('booking_id', booking.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setExistingPhotos(data || []);
+    } catch (error) {
+      console.error('Error fetching photos:', error);
+    } finally {
+      setLoadingPhotos(false);
+    }
+  };
+
+  const deletePhoto = async (photoId: string, filePath: string) => {
+    try {
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from('cleaning_photos')
+        .delete()
+        .eq('id', photoId);
+
+      if (dbError) throw dbError;
+
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from('cleaning.photos')
+        .remove([filePath]);
+
+      if (storageError) console.warn('Storage deletion warning:', storageError);
+
+      // Update local state
+      setExistingPhotos(prev => prev.filter(p => p.id !== photoId));
+
+      toast({
+        title: "Photo Deleted",
+        description: "Photo has been removed successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting photo:', error);
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete photo",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getPhotoUrl = async (filePath: string) => {
+    const { data } = await supabase.storage
+      .from('cleaning.photos')
+      .createSignedUrl(filePath, 3600);
+    return data?.signedUrl;
+  };
+
+  const ExistingPhotoItem = ({ photo }: { photo: any }) => {
+    const [imageUrl, setImageUrl] = useState<string>('');
+    
+    useEffect(() => {
+      getPhotoUrl(photo.file_path).then(url => {
+        if (url) setImageUrl(url);
+      });
+    }, [photo.file_path]);
+
+    return (
+      <div className="relative group">
+        <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={photo.photo_type}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Camera className="h-6 w-6 text-gray-400" />
+            </div>
+          )}
+        </div>
+        <button
+          onClick={() => deletePhoto(photo.id, photo.file_path)}
+          className="absolute top-1 right-1 p-1.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+          title="Delete photo"
+        >
+          <Trash2 className="h-3 w-3" />
+        </button>
+        <p className="text-xs text-muted-foreground mt-1 truncate">
+          {new Date(photo.created_at).toLocaleDateString()}
+        </p>
+      </div>
+    );
+  };
 
   const handleFileSelect = async (files: FileList | null, type: 'before' | 'after' | 'additional') => {
     console.info('🎬 File selection started', {
@@ -376,6 +481,9 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       setCurrentFileIndex(0);
       setTotalFilesToUpload(0);
       
+      // Refresh existing photos
+      fetchExistingPhotos();
+      
       // Close dialog after short delay
       setTimeout(() => {
         onOpenChange(false);
@@ -596,6 +704,53 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Existing Photos Section */}
+        {loadingPhotos ? (
+          <div className="flex-shrink-0 mx-6 mt-4 p-4 border rounded-lg bg-muted/30">
+            <p className="text-sm text-muted-foreground">Loading existing photos...</p>
+          </div>
+        ) : existingPhotos.length > 0 && (
+          <div className="flex-shrink-0 mx-6 mt-4 p-4 border rounded-lg bg-muted/30">
+            <h3 className="font-semibold mb-3 flex items-center gap-2">
+              <ImageIcon className="h-4 w-4" />
+              Uploaded Photos ({existingPhotos.length})
+            </h3>
+            
+            <Tabs defaultValue="before" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="before">
+                  Before ({existingPhotos.filter(p => p.photo_type === 'before').length})
+                </TabsTrigger>
+                <TabsTrigger value="after">
+                  After ({existingPhotos.filter(p => p.photo_type === 'after').length})
+                </TabsTrigger>
+                <TabsTrigger value="additional">
+                  Additional ({existingPhotos.filter(p => p.photo_type === 'additional').length})
+                </TabsTrigger>
+              </TabsList>
+
+              {(['before', 'after', 'additional'] as const).map(type => {
+                const photosByType = existingPhotos.filter(p => p.photo_type === type);
+                return (
+                  <TabsContent key={type} value={type} className="mt-4">
+                    {photosByType.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        No {type} photos yet
+                      </p>
+                    ) : (
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 max-h-[200px] overflow-y-auto">
+                        {photosByType.map((photo) => (
+                          <ExistingPhotoItem key={photo.id} photo={photo} />
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+                );
+              })}
+            </Tabs>
           </div>
         )}
 
