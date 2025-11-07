@@ -503,39 +503,43 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     try {
       let totalUploaded = 0;
       let totalFailed = 0;
+      const allErrors: string[] = [];
       const allUploadedPaths: Array<{ paths: string[], type: string }> = [];
 
       // Upload before files
       if (beforeFiles.length > 0) {
         setUploadStep('Uploading before photos...');
-        const { uploadedPaths, failCount } = await uploadFilesDirectly(beforeFiles, 'before');
+        const { uploadedPaths, failCount, errors } = await uploadFilesDirectly(beforeFiles, 'before');
         if (uploadedPaths.length > 0) {
           allUploadedPaths.push({ paths: uploadedPaths, type: 'before' });
           totalUploaded += uploadedPaths.length;
         }
         totalFailed += failCount;
+        allErrors.push(...errors);
       }
 
       // Upload after files
       if (afterFiles.length > 0) {
         setUploadStep('Uploading after photos...');
-        const { uploadedPaths, failCount } = await uploadFilesDirectly(afterFiles, 'after');
+        const { uploadedPaths, failCount, errors } = await uploadFilesDirectly(afterFiles, 'after');
         if (uploadedPaths.length > 0) {
           allUploadedPaths.push({ paths: uploadedPaths, type: 'after' });
           totalUploaded += uploadedPaths.length;
         }
         totalFailed += failCount;
+        allErrors.push(...errors);
       }
 
       // Upload additional files
       if (additionalFiles.length > 0) {
         setUploadStep('Uploading additional files...');
-        const { uploadedPaths, failCount } = await uploadFilesDirectly(additionalFiles, 'additional');
+        const { uploadedPaths, failCount, errors } = await uploadFilesDirectly(additionalFiles, 'additional');
         if (uploadedPaths.length > 0) {
           allUploadedPaths.push({ paths: uploadedPaths, type: 'additional' });
           totalUploaded += uploadedPaths.length;
         }
         totalFailed += failCount;
+        allErrors.push(...errors);
       }
 
       // Call edge function to process photos in background
@@ -571,13 +575,23 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
 
       const uploadTime = ((Date.now() - startTime) / 1000).toFixed(1);
 
-      // Show success toast
-      toast({
-        title: "Photos Uploaded!",
-        description: totalFailed > 0
-          ? `${totalUploaded} uploaded, ${totalFailed} failed. Processing in background...`
-          : `${totalUploaded} photos uploaded! Processing in background...`,
-      });
+      // Show success toast with detailed error info
+      if (totalFailed > 0) {
+        const errorSummary = allErrors.slice(0, 3).join('; ');
+        const moreErrors = allErrors.length > 3 ? ` +${allErrors.length - 3} more` : '';
+        console.error('Upload failures:', allErrors);
+        
+        toast({
+          title: "Upload Partially Complete",
+          description: `${totalUploaded} uploaded, ${totalFailed} failed. Errors: ${errorSummary}${moreErrors}`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Photos Uploaded!",
+          description: `${totalUploaded} photos uploaded! Processing in background...`,
+        });
+      }
 
       console.log(`✅ Upload complete in ${uploadTime}s. ${totalUploaded} uploaded, ${totalFailed} failed`);
 
@@ -595,10 +609,12 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       // Refresh existing photos
       fetchExistingPhotos();
       
-      // Close dialog after short delay
-      setTimeout(() => {
-        onOpenChange(false);
-      }, 1500);
+      // Close dialog after short delay only if no failures
+      if (totalFailed === 0) {
+        setTimeout(() => {
+          onOpenChange(false);
+        }, 1500);
+      }
 
     } catch (error) {
       console.error('Upload error:', error);
