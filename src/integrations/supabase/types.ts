@@ -1033,6 +1033,7 @@ export type Database = {
           google_review: string | null
           id: number
           image: string | null
+          invoiless_id: string | null
           last_name: string | null
           phone: string | null
           whatsapp: string | null
@@ -1048,6 +1049,7 @@ export type Database = {
           google_review?: string | null
           id?: number
           image?: string | null
+          invoiless_id?: string | null
           last_name?: string | null
           phone?: string | null
           whatsapp?: string | null
@@ -1063,6 +1065,7 @@ export type Database = {
           google_review?: string | null
           id?: number
           image?: string | null
+          invoiless_id?: string | null
           last_name?: string | null
           phone?: string | null
           whatsapp?: string | null
