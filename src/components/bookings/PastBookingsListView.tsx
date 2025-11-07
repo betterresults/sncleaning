@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Edit, Trash2, Copy, UserPlus, DollarSign, Repeat, MoreHorizontal, Clock, MapPin, User, Mail, Phone, Send, Calendar } from 'lucide-react';
+import { Edit, Trash2, Copy, UserPlus, DollarSign, Repeat, MoreHorizontal, Clock, MapPin, User, Mail, Phone, Send, Calendar, Camera } from 'lucide-react';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import { InvoilessPaymentDialog } from '@/components/payments/InvoilessPaymentDialog';
@@ -19,6 +19,7 @@ import AssignCleanerDialog from '../dashboard/AssignCleanerDialog';
 import DuplicateBookingDialog from '../dashboard/DuplicateBookingDialog';
 import ConvertToRecurringDialog from '../dashboard/ConvertToRecurringDialog';
 import ManualEmailDialog from '../dashboard/ManualEmailDialog';
+import PhotoManagementDialog from '../dashboard/PhotoManagementDialog';
 import { useServiceTypes, useCleaningTypes, getServiceTypeBadgeColor as getBadgeColor } from '@/hooks/useCompanySettings';
 
 interface Booking {
@@ -119,6 +120,8 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
   const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<Booking | null>(null);
   const [invoilessDialogOpen, setInvoilessDialogOpen] = useState(false);
   const [selectedBookingForInvoiless, setSelectedBookingForInvoiless] = useState<Booking | null>(null);
+  const [photoManagementOpen, setPhotoManagementOpen] = useState(false);
+  const [selectedBookingForPhotos, setSelectedBookingForPhotos] = useState<Booking | null>(null);
   const { toast } = useToast();
   
   // Fetch service/cleaning types for labels and badge colors
@@ -362,6 +365,11 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
       setSelectedBookingForPayment(booking);
       setPaymentDialogOpen(true);
     }
+  };
+
+  const handlePhotoManagement = (booking: Booking) => {
+    setSelectedBookingForPhotos(booking);
+    setPhotoManagementOpen(true);
   };
 
   const handleDelete = (bookingId: number) => {
@@ -628,33 +636,38 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48 z-50 bg-popover">
-                    <DropdownMenuItem onClick={() => handleEdit(booking.id)}>
+                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleEdit(booking.id); }}>
                       <Edit className="w-4 h-4 mr-2" />
                       Edit
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleDuplicate(booking)}>
+                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleDuplicate(booking); }}>
                       <Copy className="w-4 h-4 mr-2" />
                       Duplicate
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleAssignCleaner(booking.id)}>
+                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handlePhotoManagement(booking); }}>
+                      <Camera className="w-4 h-4 mr-2" />
+                      {booking.has_photos ? 'View/Manage Photos' : 'Upload Photos'}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleAssignCleaner(booking.id); }}>
                       <UserPlus className="w-4 h-4 mr-2" />
                       Assign Cleaner
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleMakeRecurring(booking)}>
+                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleMakeRecurring(booking); }}>
                       <Repeat className="w-4 h-4 mr-2" />
                       Make Recurring
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleSendEmail(booking)}>
+                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleSendEmail(booking); }}>
                       <Send className="w-4 h-4 mr-2" />
                       Send Email
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => handlePaymentAction(booking)}>
+                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handlePaymentAction(booking); }}>
                       <DollarSign className="w-4 h-4 mr-2" />
                       {booking.payment_method === 'Invoiless' ? 'Manage Invoice' : 'Manage Payment'}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => handleDelete(booking.id)} className="text-red-600">
+                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleDelete(booking.id); }} className="text-red-600">
                       <Trash2 className="w-4 h-4 mr-2" />
                       Delete
                     </DropdownMenuItem>
@@ -751,33 +764,38 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48 z-50 bg-popover">
-                    <DropdownMenuItem onClick={() => handleEdit(booking.id)}>
+                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleEdit(booking.id); }}>
                       <Edit className="w-4 h-4 mr-2" />
                       Edit
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleDuplicate(booking)}>
+                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleDuplicate(booking); }}>
                       <Copy className="w-4 h-4 mr-2" />
                       Duplicate
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleAssignCleaner(booking.id)}>
+                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handlePhotoManagement(booking); }}>
+                      <Camera className="w-4 h-4 mr-2" />
+                      {booking.has_photos ? 'View/Manage Photos' : 'Upload Photos'}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleAssignCleaner(booking.id); }}>
                       <UserPlus className="w-4 h-4 mr-2" />
                       Assign Cleaner
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleMakeRecurring(booking)}>
+                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleMakeRecurring(booking); }}>
                       <Repeat className="w-4 h-4 mr-2" />
                       Make Recurring
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleSendEmail(booking)}>
+                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleSendEmail(booking); }}>
                       <Send className="w-4 h-4 mr-2" />
                       Send Email
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => handlePaymentAction(booking)}>
+                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handlePaymentAction(booking); }}>
                       <DollarSign className="w-4 h-4 mr-2" />
                       {booking.payment_method === 'Invoiless' ? 'Manage Invoice' : 'Manage Payment'}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => handleDelete(booking.id)} className="text-red-600">
+                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleDelete(booking.id); }} className="text-red-600">
                       <Trash2 className="w-4 h-4 mr-2" />
                       Delete
                     </DropdownMenuItem>
@@ -939,6 +957,22 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
             fetchData();
             setInvoilessDialogOpen(false);
             setSelectedBookingForInvoiless(null);
+          }}
+        />
+      )}
+
+      {selectedBookingForPhotos && (
+        <PhotoManagementDialog
+          open={photoManagementOpen}
+          onOpenChange={setPhotoManagementOpen}
+          booking={{
+            id: selectedBookingForPhotos.id,
+            customer: selectedBookingForPhotos.customer,
+            cleaner: selectedBookingForPhotos.cleaner || 0,
+            date_time: selectedBookingForPhotos.date_time,
+            postcode: selectedBookingForPhotos.postcode,
+            first_name: selectedBookingForPhotos.first_name,
+            last_name: selectedBookingForPhotos.last_name
           }}
         />
       )}
