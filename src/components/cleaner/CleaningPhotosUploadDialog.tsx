@@ -768,14 +768,18 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     onFileSelect: (files: FileList | null) => void;
     onRemove: (index: number) => void;
   }) => {
+    const inputRef = React.useRef<HTMLInputElement>(null);
     const displayFiles = showAllPreviews ? files : files.slice(0, INITIAL_PREVIEW_COUNT);
     const hiddenCount = files.length - INITIAL_PREVIEW_COUNT;
 
     const handleSmartPick = async (e: React.MouseEvent<HTMLElement>) => {
-      // On mobile devices, skip showOpenFilePicker and use native input
+      // On mobile, programmatically click the hidden input (htmlFor can fail inside modals)
       if (isMobile) {
-        console.info('📱 Mobile device detected - using native file input');
-        return; // Let the label's htmlFor trigger the native input
+        console.info('📱 Mobile: programmatically clicking hidden input');
+        e.preventDefault();
+        e.stopPropagation();
+        inputRef.current?.click();
+        return;
       }
 
       // Desktop: Try to use showOpenFilePicker for better UX
@@ -806,6 +810,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       <div className="space-y-6">
         <div className="border-2 border-dashed border-primary/30 rounded-xl p-8 text-center hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 cursor-pointer">
           <input
+            ref={inputRef}
             type="file"
             accept={type === 'additional' ? "*/*" : "image/*"}
             multiple
