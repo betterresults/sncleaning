@@ -780,7 +780,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   const FileUploadArea = ({ type, files, onFileSelect, onRemove }: {
     type: 'before' | 'after' | 'additional';
     files: File[];
-    onFileSelect: (files: FileList | null) => void;
+    onFileSelect: (files: File[] | FileList | null) => void;
     onRemove: (index: number) => void;
   }) => {
     const inputRef = React.useRef<HTMLInputElement>(null);
@@ -812,10 +812,8 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
           excludeAcceptAllOption: type !== 'additional',
         });
         const filesPicked = await Promise.all(handles.map((h: any) => h.getFile()));
-        const dt = new DataTransfer();
-        filesPicked.forEach((f: File) => dt.items.add(f));
         console.info(`📥 showOpenFilePicker returned ${filesPicked.length} files for ${type}`);
-        onFileSelect(dt.files);
+        onFileSelect(filesPicked as File[]);
       } catch (err) {
         console.warn('showOpenFilePicker failed, falling back to input', err);
       }
@@ -831,16 +829,16 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
             multiple
             disabled={uploading}
             onChange={(e) => { 
+              const fileList = (e.target as HTMLInputElement).files;
+              const filesArr = fileList ? Array.from(fileList) : [];
               console.info(`🔔 onChange EVENT FIRED for ${type}!`, { 
-                hasFiles: !!e.target.files, 
-                fileCount: e.target.files?.length || 0,
-                firstFileName: e.target.files?.[0]?.name,
+                fileCount: filesArr.length,
+                firstFileName: filesArr[0]?.name,
                 device: isMobile ? 'Mobile' : 'Desktop'
               });
-              const fl = (e.target as HTMLInputElement).files; 
-              console.info(`📥 Input change (${type}):`, { filesLength: fl?.length || 0 }); 
-              onFileSelect(fl); 
-              (e.target as HTMLInputElement).value = ''; 
+              onFileSelect(filesArr);
+              // Reset value AFTER copying files to avoid FileList invalidation on mobile
+              (e.target as HTMLInputElement).value = '';
             }}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             aria-label={`Select ${type} files`}
@@ -1112,7 +1110,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
                   <FileUploadArea
                     type="before"
                     files={beforeFiles}
-                    onFileSelect={(files) => handleFileSelect(files, 'before')}
+                    onFileSelect={(files: any) => handleFileSelect(Array.isArray(files) ? files : Array.from(files || []), 'before')}
                     onRemove={(index) => removeFile(index, 'before')}
                   />
                 </div>
@@ -1123,7 +1121,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
                   <FileUploadArea
                     type="after"
                     files={afterFiles}
-                    onFileSelect={(files) => handleFileSelect(files, 'after')}
+                    onFileSelect={(files) => handleFileSelect(Array.isArray(files) ? files : Array.from(files || []), 'after')}
                     onRemove={(index) => removeFile(index, 'after')}
                   />
                 </div>
@@ -1169,7 +1167,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
                       <FileUploadArea
                         type="additional"
                         files={additionalFiles}
-                        onFileSelect={(files) => handleFileSelect(files, 'additional')}
+                        onFileSelect={(files) => handleFileSelect(Array.isArray(files) ? files : Array.from(files || []), 'additional')}
                         onRemove={(index) => removeFile(index, 'additional')}
                       />
 
