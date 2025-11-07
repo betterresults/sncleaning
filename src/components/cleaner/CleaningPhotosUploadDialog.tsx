@@ -25,7 +25,7 @@ interface CleaningPhotosUploadDialogProps {
 
 const INITIAL_PREVIEW_COUNT = 60; // Show first 60 thumbnails by default
 const LOW_MEMORY_THRESHOLD = 40; // Switch to low-memory mode for >40 files on iOS
-const LAST_EDIT_TIME = '07/11/2025, 12:40:00'; // Multi-select restored for before/after (image/*), additional accepts any
+const BATCH_SIZE = 5; // Upload 5 files in parallel
 
 const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPhotosUploadDialogProps) => {
   const { toast } = useToast();
@@ -191,134 +191,163 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     }
   };
 
-  // Strictly one-by-one sequential upload with continue-on-error
+  // Parallel batch upload with batched DB inserts
   const uploadFilesSequentially = async (files: File[], photoType: 'before' | 'after' | 'additional') => {
     const successfulUploads: string[] = [];
     const failedUploads: { name: string; error: string }[] = [];
     const fileType = photoType === 'additional' ? 'files' : 'photos';
+    const metadataToInsert: any[] = [];
     
-    console.info(`🚀 Starting strictly sequential upload for ${files.length} ${photoType} ${fileType}`);
+    console.info(`🚀 Starting parallel batch upload for ${files.length} ${photoType} ${fileType} (batches of ${BATCH_SIZE})`);
     setUploadStep(`Uploading ${photoType} ${fileType}...`);
 
-    // Determine compression options based on file count
+    // Compression options based on file count
     const compressionOptions = files.length > 50 
       ? { maxWidthOrHeight: 1600, initialQuality: 0.7, maxSizeMB: 1.5 }
       : undefined;
 
-    // Process files one-by-one
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const fileNumber = i + 1;
+    // Process files in batches
+    for (let batchStart = 0; batchStart < files.length; batchStart += BATCH_SIZE) {
+      const batchEnd = Math.min(batchStart + BATCH_SIZE, files.length);
+      const batch = files.slice(batchStart, batchEnd);
+      const batchNumber = Math.floor(batchStart / BATCH_SIZE) + 1;
+      const totalBatches = Math.ceil(files.length / BATCH_SIZE);
       
-      setCurrentFileIndex(fileNumber);
-      console.info(`📤 [${fileNumber}/${files.length}] Processing: ${file.name}`);
+      console.info(`📦 Processing batch ${batchNumber}/${totalBatches} (${batch.length} files)`);
 
-      try {
-        let fileToUpload = file;
-
-        // Compress images
-        if (file.type.startsWith('image/')) {
-          setUploadProgress(`Compressing ${file.name} (${fileNumber}/${files.length})`);
-          console.info(`🗜️ [${fileNumber}/${files.length}] Compressing ${file.name}...`);
+      // Upload batch in parallel
+      const batchResults = await Promise.allSettled(
+        batch.map(async (file, batchIndex) => {
+          const globalIndex = batchStart + batchIndex;
+          const fileNumber = globalIndex + 1;
           
-          try {
-            const originalSize = (file.size / 1024 / 1024).toFixed(2);
-            fileToUpload = await compressImage(file, compressionOptions);
-            const compressedSize = (fileToUpload.size / 1024 / 1024).toFixed(2);
-            console.info(`✅ [${fileNumber}/${files.length}] Compressed ${file.name}: ${originalSize}MB → ${compressedSize}MB`);
-          } catch (e) {
-            console.warn(`⚠️ [${fileNumber}/${files.length}] Compression failed for ${file.name}, using original:`, e);
+          setCurrentFileIndex(fileNumber);
+          console.info(`📤 [${fileNumber}/${files.length}] Processing: ${file.name}`);
+
+          let fileToUpload = file;
+
+          // Compress images (skip if already <1MB)
+          if (file.type.startsWith('image/')) {
+            const fileSizeMB = file.size / 1024 / 1024;
+            
+            if (fileSizeMB < 1) {
+              console.info(`⏭️ [${fileNumber}/${files.length}] Skipping compression for ${file.name} (${fileSizeMB.toFixed(2)}MB < 1MB)`);
+            } else {
+              setUploadProgress(`Compressing ${file.name} (${fileNumber}/${files.length})`);
+              console.info(`🗜️ [${fileNumber}/${files.length}] Compressing ${file.name}...`);
+              
+              try {
+                const originalSize = fileSizeMB.toFixed(2);
+                fileToUpload = await compressImage(file, compressionOptions);
+                const compressedSize = (fileToUpload.size / 1024 / 1024).toFixed(2);
+                console.info(`✅ [${fileNumber}/${files.length}] Compressed ${file.name}: ${originalSize}MB → ${compressedSize}MB`);
+              } catch (e) {
+                console.warn(`⚠️ [${fileNumber}/${files.length}] Compression failed for ${file.name}, using original:`, e);
+              }
+            }
+          } else if (file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+            fileToUpload = new File([file], file.name, { type: 'image/heic' });
           }
-        } else if (file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
-          // Handle HEIC/HEIF with empty MIME type
-          fileToUpload = new File([file], file.name, { type: 'image/heic' });
-        }
 
-        const timestamp = Date.now();
-        const fileName = `${timestamp}_${i}_${file.name}`;
-        const filePath = `${folderPath}/${photoType}/${fileName}`;
+          const timestamp = Date.now();
+          const fileName = `${timestamp}_${globalIndex}_${file.name}`;
+          const filePath = `${folderPath}/${photoType}/${fileName}`;
 
-        setUploadProgress(`Uploading ${file.name} (${fileNumber}/${files.length})`);
-        console.info(`📤 [${fileNumber}/${files.length}] Uploading to: ${filePath}`);
+          setUploadProgress(`Uploading ${file.name} (${fileNumber}/${files.length})`);
+          console.info(`📤 [${fileNumber}/${files.length}] Uploading to: ${filePath}`);
 
-        // Upload to storage with retry logic
-        let uploadData, uploadError;
-        let retryCount = 0;
-        const maxRetries = 3;
+          // Upload with retry logic
+          let uploadData, uploadError;
+          let retryCount = 0;
+          const maxRetries = 3;
+          
+          do {
+            const response = await supabase.storage
+              .from('cleaning.photos')
+              .upload(filePath, fileToUpload, { 
+                cacheControl: '3600', 
+                upsert: true, 
+                contentType: fileToUpload.type || 'application/octet-stream'
+              });
+            
+            uploadData = response.data;
+            uploadError = response.error;
+            
+            if (uploadError && retryCount < maxRetries - 1) {
+              console.warn(`⚠️ [${fileNumber}/${files.length}] Upload attempt ${retryCount + 1} failed, retrying...`, uploadError);
+              await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+              retryCount++;
+            }
+          } while (uploadError && retryCount < maxRetries);
+
+          if (uploadError) {
+            let errorMsg = uploadError.message;
+            if (errorMsg.includes('413') || errorMsg.toLowerCase().includes('payload too large') || errorMsg.toLowerCase().includes('too large')) {
+              errorMsg = 'File too large for server';
+              console.error(`❌ 413 Payload Too Large: ${file.name} (${(fileToUpload.size / 1024 / 1024).toFixed(2)}MB)`);
+            }
+            console.error(`❌ [${fileNumber}/${files.length}] Upload failed after ${maxRetries} attempts:`, uploadError);
+            throw new Error(errorMsg);
+          }
+
+          console.info(`✅ [${fileNumber}/${files.length}] Upload successful: ${filePath}`);
+          setUploadProgress(`✓ ${file.name} uploaded (${fileNumber}/${files.length})`);
+
+          return { filePath, fileName: file.name };
+        })
+      );
+
+      // Process batch results
+      batchResults.forEach((result, batchIndex) => {
+        const globalIndex = batchStart + batchIndex;
+        const file = batch[batchIndex];
         
-        do {
-          const response = await supabase.storage
-            .from('cleaning.photos')
-            .upload(filePath, fileToUpload, { 
-              cacheControl: '3600', 
-              upsert: true, 
-              contentType: fileToUpload.type || 'application/octet-stream'
-            });
-          
-          uploadData = response.data;
-          uploadError = response.error;
-          
-          if (uploadError && retryCount < maxRetries - 1) {
-            console.warn(`⚠️ [${fileNumber}/${files.length}] Upload attempt ${retryCount + 1} failed, retrying...`, uploadError);
-            await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
-            retryCount++;
-          }
-        } while (uploadError && retryCount < maxRetries);
-
-        if (uploadError) {
-          let errorMsg = uploadError.message;
-          
-          // Detect payload too large errors
-          if (errorMsg.includes('413') || errorMsg.toLowerCase().includes('payload too large') || errorMsg.toLowerCase().includes('too large')) {
-            errorMsg = 'File too large for server (try smaller batch)';
-            console.error(`❌ 413 Payload Too Large: ${file.name} (${(fileToUpload.size / 1024 / 1024).toFixed(2)}MB)`);
-          }
-          
-          console.error(`❌ [${fileNumber}/${files.length}] Upload failed after ${maxRetries} attempts:`, uploadError);
-          failedUploads.push({ name: file.name, error: errorMsg });
-          continue; // Skip to next file
-        }
-
-        console.info(`✅ [${fileNumber}/${files.length}] Upload successful: ${filePath}`);
-        setUploadProgress(`Saving metadata for ${file.name} (${fileNumber}/${files.length})`);
-
-        // Save metadata to database
-        const { error: dbError } = await supabase
-          .from('cleaning_photos')
-          .insert({
+        if (result.status === 'fulfilled') {
+          successfulUploads.push(result.value.filePath);
+          metadataToInsert.push({
             booking_id: booking.id,
             customer_id: booking.customer,
             cleaner_id: booking.cleaner,
-            file_path: filePath,
+            file_path: result.value.filePath,
             photo_type: photoType,
             postcode: booking.postcode,
             booking_date: bookingDate,
             damage_details: photoType === 'additional' ? additionalDetails : null
           });
-
-        if (dbError) {
-          console.error(`❌ [${fileNumber}/${files.length}] Database insert failed:`, dbError);
-          failedUploads.push({ name: file.name, error: dbError.message });
-          continue; // Skip to next file
+        } else {
+          const errorMsg = result.reason?.message || 'Unknown error';
+          console.error(`❌ [${globalIndex + 1}/${files.length}] Failed:`, result.reason);
+          failedUploads.push({ name: file.name, error: errorMsg });
         }
+      });
+    }
 
-        console.info(`✅ [${fileNumber}/${files.length}] Metadata saved successfully`);
-        setUploadProgress(`✓ ${file.name} completed (${fileNumber}/${files.length})`);
-        successfulUploads.push(filePath);
+    // Batch insert all metadata at once
+    if (metadataToInsert.length > 0) {
+      setUploadProgress(`Saving metadata for ${metadataToInsert.length} files...`);
+      console.info(`💾 Batch inserting ${metadataToInsert.length} metadata records...`);
+      
+      const { error: dbError } = await supabase
+        .from('cleaning_photos')
+        .insert(metadataToInsert);
 
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-        console.error(`❌ [${fileNumber}/${files.length}] Unexpected error:`, error);
-        failedUploads.push({ name: file.name, error: errorMsg });
+      if (dbError) {
+        console.error(`❌ Batch database insert failed:`, dbError);
+        // Don't fail the entire upload, just log it
+        toast({
+          title: 'Metadata Save Warning',
+          description: 'Files uploaded but some metadata may be missing.',
+          variant: 'default'
+        });
+      } else {
+        console.info(`✅ Batch metadata insert successful`);
       }
-
-      // Micro-yield between files to keep UI responsive
-      await new Promise(resolve => setTimeout(resolve, 50));
     }
 
     console.info(`✅ Upload batch complete for ${photoType}:`, {
       successful: successfulUploads.length,
-      failed: failedUploads.length
+      failed: failedUploads.length,
+      batches: Math.ceil(files.length / BATCH_SIZE)
     });
 
     if (failedUploads.length > 0) {
@@ -653,9 +682,6 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
             Booking #{booking.id} - {booking.postcode} - {bookingDate}
-          </p>
-          <p className="text-xs text-muted-foreground/70 italic">
-            Last edit: {LAST_EDIT_TIME}
           </p>
         </DialogHeader>
 
