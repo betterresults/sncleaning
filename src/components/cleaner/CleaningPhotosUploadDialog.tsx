@@ -42,6 +42,8 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   const [totalFilesToUpload, setTotalFilesToUpload] = useState(0);
   const [existingPhotos, setExistingPhotos] = useState<any[]>([]);
   const [loadingPhotos, setLoadingPhotos] = useState(false);
+  const [showExistingPhotos, setShowExistingPhotos] = useState(false);
+  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
 
   const bookingDate = new Date(booking.date_time).toISOString().split('T')[0];
   const safePostcode = booking.postcode?.toString().replace(/\s+/g, '').toUpperCase() || 'NA';
@@ -70,7 +72,30 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setExistingPhotos(data || []);
+      const photos = data || [];
+      setExistingPhotos(photos);
+      
+      // Pre-fetch all thumbnail URLs
+      const urlPromises = photos.map(async (photo) => {
+        const { data } = await supabase.storage
+          .from('cleaning.photos')
+          .createSignedUrl(photo.file_path, 3600, {
+            transform: {
+              width: 200,
+              height: 200,
+              resize: 'cover'
+            }
+          });
+        return { id: photo.id, url: data?.signedUrl || '' };
+      });
+      
+      const urlResults = await Promise.all(urlPromises);
+      const urlMap = urlResults.reduce((acc, { id, url }) => {
+        if (url) acc[id] = url;
+        return acc;
+      }, {} as Record<string, string>);
+      
+      setPhotoUrls(urlMap);
     } catch (error) {
       console.error('Error fetching photos:', error);
     } finally {
@@ -95,8 +120,13 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
 
       if (storageError) console.warn('Storage deletion warning:', storageError);
 
-      // Update local state
+      // Update local state without triggering re-fetch
       setExistingPhotos(prev => prev.filter(p => p.id !== photoId));
+      setPhotoUrls(prev => {
+        const updated = { ...prev };
+        delete updated[photoId];
+        return updated;
+      });
 
       toast({
         title: "Photo Deleted",
@@ -112,21 +142,9 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     }
   };
 
-  const getPhotoUrl = async (filePath: string) => {
-    const { data } = await supabase.storage
-      .from('cleaning.photos')
-      .createSignedUrl(filePath, 3600);
-    return data?.signedUrl;
-  };
 
   const ExistingPhotoItem = ({ photo }: { photo: any }) => {
-    const [imageUrl, setImageUrl] = useState<string>('');
-    
-    useEffect(() => {
-      getPhotoUrl(photo.file_path).then(url => {
-        if (url) setImageUrl(url);
-      });
-    }, [photo.file_path]);
+    const imageUrl = photoUrls[photo.id];
 
     return (
       <div className="relative group">
@@ -136,10 +154,11 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
               src={imageUrl}
               alt={photo.photo_type}
               className="w-full h-full object-cover"
+              loading="lazy"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <Camera className="h-6 w-6 text-gray-400" />
+              <Camera className="h-6 w-6 text-gray-400 animate-pulse" />
             </div>
           )}
         </div>
@@ -707,50 +726,62 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
           </div>
         )}
 
-        {/* Existing Photos Section */}
+        {/* Existing Photos Section - Collapsible */}
         {loadingPhotos ? (
           <div className="flex-shrink-0 mx-6 mt-4 p-4 border rounded-lg bg-muted/30">
             <p className="text-sm text-muted-foreground">Loading existing photos...</p>
           </div>
         ) : existingPhotos.length > 0 && (
-          <div className="flex-shrink-0 mx-6 mt-4 p-4 border rounded-lg bg-muted/30">
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <ImageIcon className="h-4 w-4" />
-              Uploaded Photos ({existingPhotos.length})
-            </h3>
+          <div className="flex-shrink-0 mx-6 mt-4 border rounded-lg bg-muted/30">
+            <button
+              onClick={() => setShowExistingPhotos(!showExistingPhotos)}
+              className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors rounded-t-lg"
+            >
+              <div className="flex items-center gap-2">
+                <ImageIcon className="h-4 w-4" />
+                <h3 className="font-semibold">
+                  Uploaded Photos ({existingPhotos.length})
+                </h3>
+              </div>
+              {showExistingPhotos ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </button>
             
-            <Tabs defaultValue="before" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="before">
-                  Before ({existingPhotos.filter(p => p.photo_type === 'before').length})
-                </TabsTrigger>
-                <TabsTrigger value="after">
-                  After ({existingPhotos.filter(p => p.photo_type === 'after').length})
-                </TabsTrigger>
-                <TabsTrigger value="additional">
-                  Additional ({existingPhotos.filter(p => p.photo_type === 'additional').length})
-                </TabsTrigger>
-              </TabsList>
+            {showExistingPhotos && (
+              <div className="p-4 pt-0">
+                <Tabs defaultValue="before" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="before">
+                      Before ({existingPhotos.filter(p => p.photo_type === 'before').length})
+                    </TabsTrigger>
+                    <TabsTrigger value="after">
+                      After ({existingPhotos.filter(p => p.photo_type === 'after').length})
+                    </TabsTrigger>
+                    <TabsTrigger value="additional">
+                      Additional ({existingPhotos.filter(p => p.photo_type === 'additional').length})
+                    </TabsTrigger>
+                  </TabsList>
 
-              {(['before', 'after', 'additional'] as const).map(type => {
-                const photosByType = existingPhotos.filter(p => p.photo_type === type);
-                return (
-                  <TabsContent key={type} value={type} className="mt-4">
-                    {photosByType.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        No {type} photos yet
-                      </p>
-                    ) : (
-                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 max-h-[200px] overflow-y-auto">
-                        {photosByType.map((photo) => (
-                          <ExistingPhotoItem key={photo.id} photo={photo} />
-                        ))}
-                      </div>
-                    )}
-                  </TabsContent>
-                );
-              })}
-            </Tabs>
+                  {(['before', 'after', 'additional'] as const).map(type => {
+                    const photosByType = existingPhotos.filter(p => p.photo_type === type);
+                    return (
+                      <TabsContent key={type} value={type} className="mt-4">
+                        {photosByType.length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-4">
+                            No {type} photos yet
+                          </p>
+                        ) : (
+                          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 max-h-[350px] overflow-y-auto">
+                            {photosByType.map((photo) => (
+                              <ExistingPhotoItem key={photo.id} photo={photo} />
+                            ))}
+                          </div>
+                        )}
+                      </TabsContent>
+                    );
+                  })}
+                </Tabs>
+              </div>
+            )}
           </div>
         )}
 
