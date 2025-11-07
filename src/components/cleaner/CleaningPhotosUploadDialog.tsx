@@ -31,6 +31,7 @@ const DIRECT_UPLOAD_BATCH = 10; // Upload 10 files at once
 const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPhotosUploadDialogProps) => {
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
+  const [autoUploading, setAutoUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState('');
   const [uploadStep, setUploadStep] = useState('');
   const [beforeFiles, setBeforeFiles] = useState<File[]>([]);
@@ -333,42 +334,19 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       return;
     }
 
-    // Add files to state immediately - no chunking
-    switch (type) {
-      case 'before':
-        setBeforeFiles(prev => {
-          const newFiles = [...prev, ...accepted];
-          console.info(`📁 Before files updated: ${newFiles.length} total`);
-          return newFiles;
-        });
-        break;
-      case 'after':
-        setAfterFiles(prev => {
-          const newFiles = [...prev, ...accepted];
-          console.info(`📁 After files updated: ${newFiles.length} total`);
-          return newFiles;
-        });
-        break;
-      case 'additional':
-        setAdditionalFiles(prev => {
-          const newFiles = [...prev, ...accepted];
-          console.info(`📁 Additional files updated: ${newFiles.length} total`);
-          return newFiles;
-        });
-        break;
+    // Show immediate feedback
+    toast({ 
+      title: 'Auto-uploading...', 
+      description: `Starting upload of ${accepted.length} ${type} file${accepted.length === 1 ? '' : 's'}...` 
+    });
+
+    // Auto-show debug on mobile if many files selected
+    if (isMobile && accepted.length > 30) {
+      setShowDebug(true);
     }
 
-    if (accepted.length > 0) {
-      toast({ 
-        title: 'Files Selected', 
-        description: `${accepted.length} file${accepted.length === 1 ? '' : 's'} added. Ready to upload.` 
-      });
-      
-      // Auto-show debug on mobile if many files selected
-      if (isMobile && accepted.length > 30) {
-        setShowDebug(true);
-      }
-    }
+    // Trigger auto-upload immediately
+    await handleAutoUpload(accepted, type);
   };
 
   const removeFile = (index: number, type: 'before' | 'after' | 'additional') => {
@@ -383,6 +361,124 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       case 'additional':
         setAdditionalFiles(prev => prev.filter((_, i) => i !== index));
         break;
+    }
+  };
+
+  // Auto-upload handler - uploads immediately when files are selected
+  const handleAutoUpload = async (files: File[], type: 'before' | 'after' | 'additional') => {
+    console.log(`🚀 Auto-upload triggered for ${files.length} ${type} files`);
+
+    // Verify authentication
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError || !authData?.user) {
+      toast({
+        title: 'Not Signed In',
+        description: 'Please sign in again and retry.',
+        variant: 'destructive'
+      });
+      // Keep files in state for manual retry
+      switch (type) {
+        case 'before': setBeforeFiles(files); break;
+        case 'after': setAfterFiles(files); break;
+        case 'additional': setAdditionalFiles(files); break;
+      }
+      return;
+    }
+
+    setAutoUploading(true);
+    setUploading(true);
+    setUploadStep(`Auto-uploading ${type} photos...`);
+    setUploadProgress('Starting...');
+    setTotalFilesToUpload(files.length);
+    setCurrentFileIndex(0);
+    const startTime = Date.now();
+
+    try {
+      // Upload files directly
+      const { uploadedPaths, failCount, errors } = await uploadFilesDirectly(files, type);
+
+      // Call edge function for background processing
+      if (uploadedPaths.length > 0) {
+        setUploadStep('Starting background processing...');
+        try {
+          await supabase.functions.invoke('process-cleaning-photos', {
+            body: {
+              filePaths: uploadedPaths,
+              bookingId: booking.id,
+              photoType: type,
+              customerId: booking.customer,
+              cleanerId: booking.cleaner,
+              postcode: booking.postcode,
+              bookingDate: bookingDate
+            }
+          });
+          console.log(`✓ Started background processing for ${uploadedPaths.length} ${type} photos`);
+        } catch (processError) {
+          console.error(`Failed to start background processing for ${type}:`, processError);
+        }
+
+        // Update booking status
+        await supabase.from('bookings').update({ has_photos: true }).eq('id', booking.id);
+        try {
+          await supabase.from('past_bookings').update({ has_photos: true }).eq('id', booking.id);
+        } catch (e) {
+          console.warn('Past booking update skipped:', e);
+        }
+      }
+
+      const uploadTime = ((Date.now() - startTime) / 1000).toFixed(1);
+
+      // Show result toast
+      if (failCount > 0) {
+        const errorSummary = errors.slice(0, 2).join('; ');
+        const moreErrors = errors.length > 2 ? ` +${errors.length - 2} more` : '';
+        console.error('Upload failures:', errors);
+        
+        toast({
+          title: "Upload Partially Complete",
+          description: `${uploadedPaths.length} uploaded, ${failCount} failed. ${errorSummary}${moreErrors}`,
+          variant: "destructive",
+        });
+
+        // Keep failed files in state for retry
+        switch (type) {
+          case 'before': setBeforeFiles(files); break;
+          case 'after': setAfterFiles(files); break;
+          case 'additional': setAdditionalFiles(files); break;
+        }
+      } else {
+        toast({
+          title: "Auto-Upload Complete!",
+          description: `${uploadedPaths.length} ${type} photos uploaded in ${uploadTime}s`,
+        });
+      }
+
+      console.log(`✅ Auto-upload complete in ${uploadTime}s. ${uploadedPaths.length} uploaded, ${failCount} failed`);
+
+      // Refresh existing photos
+      fetchExistingPhotos();
+
+    } catch (error) {
+      console.error('Auto-upload error:', error);
+      toast({
+        title: "Auto-Upload Failed",
+        description: error instanceof Error ? error.message : "Please try again",
+        variant: "destructive",
+      });
+      
+      // Keep files in state for manual retry
+      switch (type) {
+        case 'before': setBeforeFiles(files); break;
+        case 'after': setAfterFiles(files); break;
+        case 'additional': setAdditionalFiles(files); break;
+      }
+    } finally {
+      setAutoUploading(false);
+      setUploading(false);
+      setUploadProgress('');
+      setUploadStep('');
+      setCurrentFileIndex(0);
+      setTotalFilesToUpload(0);
     }
   };
 
@@ -713,6 +809,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
             type="file"
             accept={type === 'additional' ? "*/*" : "image/*"}
             multiple
+            disabled={uploading}
             onChange={(e) => { const fl = (e.target as HTMLInputElement).files; console.info(`📥 Input change (${type}):`, { filesLength: fl?.length || 0 }); onFileSelect(fl); (e.target as HTMLInputElement).value = ''; }}
             className="hidden"
             id={`file-${type}`}
@@ -842,6 +939,16 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
           <p className="text-sm text-muted-foreground">
             {booking.address} • {booking.postcode} • {new Date(booking.date_time).toLocaleDateString()}
           </p>
+          
+          {/* Mobile Auto-Upload Info Banner */}
+          {isMobile && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+              <p className="text-xs text-blue-800 flex items-center gap-2">
+                <Camera className="h-4 w-4 flex-shrink-0" />
+                <span>📱 Photos upload automatically when selected for best reliability</span>
+              </p>
+            </div>
+          )}
         </DialogHeader>
 
         {/* Debug Panel */}
@@ -1089,6 +1196,13 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
         )}
 
         <div className="flex-shrink-0 border-t p-6 bg-background pb-[env(safe-area-inset-bottom)]">
+          {totalFiles > 0 && !uploading && (
+            <div className="mb-3 text-center">
+              <p className="text-xs text-muted-foreground">
+                Files ready • Click to manually upload or wait for auto-upload to complete
+              </p>
+            </div>
+          )}
           <Button 
             onClick={handleUpload} 
             disabled={uploading || totalFiles === 0}
@@ -1097,10 +1211,12 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
             {uploading ? (
               <div className="flex items-center gap-3">
                 <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                <span>Uploading... {currentFileIndex}/{totalFilesToUpload}</span>
+                <span>{autoUploading ? 'Auto-uploading...' : 'Uploading...'} {currentFileIndex}/{totalFilesToUpload}</span>
               </div>
+            ) : totalFiles > 0 ? (
+              <>Retry Upload ({totalFiles} {totalFiles === 1 ? 'File' : 'Files'})</>
             ) : (
-              <>Upload {totalFiles} {totalFiles === 1 ? 'Photo' : 'Photos'}</>
+              <>Select Photos to Upload</>
             )}
           </Button>
         </div>
