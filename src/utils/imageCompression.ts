@@ -1,11 +1,20 @@
 import imageCompression from 'browser-image-compression';
 
-export const compressImage = async (file: File): Promise<File> => {
+interface CompressionOptions {
+  maxSizeMB?: number;
+  maxWidthOrHeight?: number;
+  initialQuality?: number;
+}
+
+export const compressImage = async (
+  file: File, 
+  customOptions?: CompressionOptions
+): Promise<File> => {
   const options = {
-    maxSizeMB: 2,                // максимум 2MB след компресия
-    maxWidthOrHeight: 1920,      // максимална резолюция 1920px
-    useWebWorker: true,          // използва web worker за performance
-    initialQuality: 0.8,         // качество 80%
+    maxSizeMB: customOptions?.maxSizeMB ?? 2,
+    maxWidthOrHeight: customOptions?.maxWidthOrHeight ?? 1920,
+    useWebWorker: true,
+    initialQuality: customOptions?.initialQuality ?? 0.8,
   };
   
   try {
@@ -14,6 +23,6 @@ export const compressImage = async (file: File): Promise<File> => {
     return compressedFile;
   } catch (error) {
     console.error('Compression failed:', error);
-    return file; // връща оригинала при грешка
+    return file;
   }
 };

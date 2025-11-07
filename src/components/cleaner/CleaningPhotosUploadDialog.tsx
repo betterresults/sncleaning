@@ -23,9 +23,16 @@ interface CleaningPhotosUploadDialogProps {
   };
 }
 
-const CONCURRENCY_LIMIT = 3; // Max 3 files uploading simultaneously
 const INITIAL_PREVIEW_COUNT = 60; // Show first 60 thumbnails by default
 const LOW_MEMORY_THRESHOLD = 40; // Switch to low-memory mode for >40 files on iOS
+const LAST_EDIT_TIME = new Date().toLocaleString('en-GB', { 
+  day: '2-digit', 
+  month: '2-digit', 
+  year: 'numeric', 
+  hour: '2-digit', 
+  minute: '2-digit',
+  second: '2-digit'
+});
 
 const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPhotosUploadDialogProps) => {
   const { toast } = useToast();
@@ -197,45 +204,51 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     }
   };
 
-  // Sequential upload with limited concurrency
+  // Strictly one-by-one sequential upload with continue-on-error
   const uploadFilesSequentially = async (files: File[], photoType: 'before' | 'after' | 'additional') => {
-    const results: string[] = [];
+    const successfulUploads: string[] = [];
+    const failedUploads: { name: string; error: string }[] = [];
     const fileType = photoType === 'additional' ? 'files' : 'photos';
     
-    console.info(`🚀 Starting sequential upload for ${files.length} ${photoType} ${fileType}`);
+    console.info(`🚀 Starting strictly sequential upload for ${files.length} ${photoType} ${fileType}`);
     setUploadStep(`Uploading ${photoType} ${fileType}...`);
 
-    // Upload in batches with limited concurrency
-    for (let i = 0; i < files.length; i += CONCURRENCY_LIMIT) {
-      const batch = files.slice(i, Math.min(i + CONCURRENCY_LIMIT, files.length));
-      console.info(`📦 Processing batch ${Math.floor(i / CONCURRENCY_LIMIT) + 1}: files ${i + 1}-${i + batch.length}`);
+    // Determine compression options based on file count
+    const compressionOptions = files.length > 50 
+      ? { maxWidthOrHeight: 1600, initialQuality: 0.7, maxSizeMB: 1.5 }
+      : undefined;
 
-      const batchPromises = batch.map(async (file, batchIndex) => {
-        const globalIndex = i + batchIndex;
-        const fileNumber = globalIndex + 1;
-        
-        setCurrentFileIndex(fileNumber);
-        console.info(`📤 [${fileNumber}/${files.length}] Processing: ${file.name}`);
+    // Process files one-by-one
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const fileNumber = i + 1;
+      
+      setCurrentFileIndex(fileNumber);
+      console.info(`📤 [${fileNumber}/${files.length}] Processing: ${file.name}`);
 
+      try {
         let fileToUpload = file;
 
-        // Compress images one by one
+        // Compress images
         if (file.type.startsWith('image/')) {
           setUploadProgress(`Compressing ${file.name} (${fileNumber}/${files.length})`);
           console.info(`🗜️ [${fileNumber}/${files.length}] Compressing ${file.name}...`);
           
           try {
             const originalSize = (file.size / 1024 / 1024).toFixed(2);
-            fileToUpload = await compressImage(file);
+            fileToUpload = await compressImage(file, compressionOptions);
             const compressedSize = (fileToUpload.size / 1024 / 1024).toFixed(2);
             console.info(`✅ [${fileNumber}/${files.length}] Compressed ${file.name}: ${originalSize}MB → ${compressedSize}MB`);
           } catch (e) {
             console.warn(`⚠️ [${fileNumber}/${files.length}] Compression failed for ${file.name}, using original:`, e);
           }
+        } else if (file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+          // Handle HEIC/HEIF with empty MIME type
+          fileToUpload = new File([file], file.name, { type: 'image/heic' });
         }
 
         const timestamp = Date.now();
-        const fileName = `${timestamp}_${globalIndex}_${file.name}`;
+        const fileName = `${timestamp}_${i}_${file.name}`;
         const filePath = `${folderPath}/${photoType}/${fileName}`;
 
         setUploadProgress(`Uploading ${file.name} (${fileNumber}/${files.length})`);
@@ -252,7 +265,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
             .upload(filePath, fileToUpload, { 
               cacheControl: '3600', 
               upsert: true, 
-              contentType: fileToUpload.type 
+              contentType: fileToUpload.type || 'application/octet-stream'
             });
           
           uploadData = response.data;
@@ -266,22 +279,10 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
         } while (uploadError && retryCount < maxRetries);
 
         if (uploadError) {
-          console.error(`❌ [${fileNumber}/${files.length}] Upload failed after ${maxRetries} attempts:`, {
-            error: uploadError,
-            filePath,
-            fileSize: fileToUpload.size,
-            fileType: fileToUpload.type
-          });
-          
-          if (uploadError.message.includes('JWT')) {
-            throw new Error(`Authentication failed while uploading ${file.name}. Please log out and back in.`);
-          } else if (uploadError.message.includes('Policy')) {
-            throw new Error(`Permission denied for ${file.name}. Contact support if this persists.`);
-          } else if (uploadError.message.includes('size')) {
-            throw new Error(`File ${file.name} is too large. Maximum is ${photoType === 'additional' ? '10MB' : '5MB'}.`);
-          } else {
-            throw new Error(`Upload failed for ${file.name}: ${uploadError.message}`);
-          }
+          const errorMsg = uploadError.message;
+          console.error(`❌ [${fileNumber}/${files.length}] Upload failed after ${maxRetries} attempts:`, uploadError);
+          failedUploads.push({ name: file.name, error: errorMsg });
+          continue; // Skip to next file
         }
 
         console.info(`✅ [${fileNumber}/${files.length}] Upload successful: ${filePath}`);
@@ -303,23 +304,34 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
 
         if (dbError) {
           console.error(`❌ [${fileNumber}/${files.length}] Database insert failed:`, dbError);
-          throw new Error(`Database error: ${dbError.message}`);
+          failedUploads.push({ name: file.name, error: dbError.message });
+          continue; // Skip to next file
         }
 
         console.info(`✅ [${fileNumber}/${files.length}] Metadata saved successfully`);
         setUploadProgress(`✓ ${file.name} completed (${fileNumber}/${files.length})`);
+        successfulUploads.push(filePath);
 
-        return filePath;
-      });
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        console.error(`❌ [${fileNumber}/${files.length}] Unexpected error:`, error);
+        failedUploads.push({ name: file.name, error: errorMsg });
+      }
 
-      const batchResults = await Promise.all(batchPromises);
-      results.push(...batchResults);
-      
-      console.info(`✅ Batch ${Math.floor(i / CONCURRENCY_LIMIT) + 1} complete: ${batchResults.length} files uploaded`);
+      // Micro-yield between files to keep UI responsive
+      await new Promise(resolve => setTimeout(resolve, 50));
     }
 
-    console.info(`✅ All ${photoType} files uploaded successfully: ${results.length} files`);
-    return results;
+    console.info(`✅ Upload batch complete for ${photoType}:`, {
+      successful: successfulUploads.length,
+      failed: failedUploads.length
+    });
+
+    if (failedUploads.length > 0) {
+      console.warn(`⚠️ Failed uploads:`, failedUploads);
+    }
+
+    return { successfulUploads, failedUploads };
   };
 
   const handleUpload = async () => {
@@ -360,14 +372,24 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     setCurrentFileIndex(0);
 
     try {
+      let totalSuccessful = 0;
+      let totalFailed = 0;
+      const allFailedFiles: { name: string; error: string }[] = [];
+
       if (beforeFiles.length > 0) {
         console.info(`📤 Uploading ${beforeFiles.length} before photos...`);
-        await uploadFilesSequentially(beforeFiles, 'before');
+        const { successfulUploads, failedUploads } = await uploadFilesSequentially(beforeFiles, 'before');
+        totalSuccessful += successfulUploads.length;
+        totalFailed += failedUploads.length;
+        allFailedFiles.push(...failedUploads);
       }
 
       if (afterFiles.length > 0) {
         console.info(`📤 Uploading ${afterFiles.length} after photos...`);
-        await uploadFilesSequentially(afterFiles, 'after');
+        const { successfulUploads, failedUploads } = await uploadFilesSequentially(afterFiles, 'after');
+        totalSuccessful += successfulUploads.length;
+        totalFailed += failedUploads.length;
+        allFailedFiles.push(...failedUploads);
       }
 
       if (additionalFiles.length > 0) {
@@ -384,72 +406,96 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
           return;
         }
         console.info(`📤 Uploading ${additionalFiles.length} additional files...`);
-        await uploadFilesSequentially(additionalFiles, 'additional');
+        const { successfulUploads, failedUploads } = await uploadFilesSequentially(additionalFiles, 'additional');
+        totalSuccessful += successfulUploads.length;
+        totalFailed += failedUploads.length;
+        allFailedFiles.push(...failedUploads);
       }
 
-      // Update booking status
-      setUploadStep('Updating booking status...');
-      console.info('📝 Updating booking status...');
-      
-      const { error: updateError } = await supabase
-        .from('bookings')
-        .update({ has_photos: true })
-        .eq('id', booking.id);
-
-      if (updateError) {
-        console.error('⚠️ Failed to update booking status:', updateError);
-      } else {
-        console.info('✅ Booking status updated');
-      }
-
-      // Also update past_bookings table
-      try {
-        const { error: pastUpdateError } = await supabase
-          .from('past_bookings')
+      // Update booking status if at least one file succeeded
+      if (totalSuccessful > 0) {
+        setUploadStep('Updating booking status...');
+        console.info('📝 Updating booking status...');
+        
+        const { error: updateError } = await supabase
+          .from('bookings')
           .update({ has_photos: true })
           .eq('id', booking.id);
 
-        if (pastUpdateError) {
-          console.warn('⚠️ Failed to update past booking status (non-critical):', pastUpdateError);
+        if (updateError) {
+          console.error('⚠️ Failed to update booking status:', updateError);
         } else {
-          console.info('✅ Past booking status updated');
+          console.info('✅ Booking status updated');
         }
-      } catch (pastError) {
-        console.warn('⚠️ Past booking update error (non-critical):', pastError);
+
+        // Also update past_bookings table
+        try {
+          const { error: pastUpdateError } = await supabase
+            .from('past_bookings')
+            .update({ has_photos: true })
+            .eq('id', booking.id);
+
+          if (pastUpdateError) {
+            console.warn('⚠️ Failed to update past booking status (non-critical):', pastUpdateError);
+          } else {
+            console.info('✅ Past booking status updated');
+          }
+        } catch (pastError) {
+          console.warn('⚠️ Past booking update error (non-critical):', pastError);
+        }
       }
 
-      setUploadStep('Upload completed successfully!');
-      setUploadProgress(`✓ All ${totalFiles} photos uploaded`);
-
-      console.info('🎉 Upload process completed successfully!', {
+      // Show summary
+      console.info('🎉 Upload process completed!', {
         totalFiles,
-        before: beforeFiles.length,
-        after: afterFiles.length,
-        additional: additionalFiles.length
+        successful: totalSuccessful,
+        failed: totalFailed
       });
 
-      toast({
-        title: 'Files Uploaded Successfully',
-        description: `Uploaded ${totalFiles} file${totalFiles === 1 ? '' : 's'} successfully. Customer will be notified in 15 minutes.`
-      });
+      if (totalFailed === 0) {
+        setUploadStep('Upload completed successfully!');
+        setUploadProgress(`✓ All ${totalSuccessful} photos uploaded`);
+        toast({
+          title: 'All Files Uploaded Successfully',
+          description: `Uploaded ${totalSuccessful} file${totalSuccessful === 1 ? '' : 's'} successfully. Customer will be notified in 15 minutes.`
+        });
+      } else if (totalSuccessful > 0) {
+        setUploadStep('Upload partially completed');
+        setUploadProgress(`✓ ${totalSuccessful} succeeded, ${totalFailed} failed`);
+        toast({
+          title: 'Upload Partially Completed',
+          description: `${totalSuccessful} file${totalSuccessful === 1 ? '' : 's'} uploaded successfully. ${totalFailed} file${totalFailed === 1 ? '' : 's'} failed.`,
+          variant: 'default'
+        });
+      } else {
+        setUploadStep('Upload failed');
+        setUploadProgress('All files failed to upload');
+        toast({
+          title: 'Upload Failed',
+          description: `All ${totalFailed} file${totalFailed === 1 ? '' : 's'} failed to upload. Please try again.`,
+          variant: 'destructive'
+        });
+      }
 
-      // Reset form after delay
-      setTimeout(() => {
-        console.info('🔄 Resetting form...');
-        setBeforeFiles([]);
-        setAfterFiles([]);
-        setAdditionalFiles([]);
-        setAdditionalDetails('');
-        setShowAdditionalTab(false);
-        setUploadStep('');
-        setUploadProgress('');
-        setCurrentFileIndex(0);
-        setTotalFilesToUpload(0);
-        onOpenChange(false);
-      }, 2000);
+      // Reset form after delay if at least one succeeded
+      if (totalSuccessful > 0) {
+        setTimeout(() => {
+          console.info('🔄 Resetting form...');
+          setBeforeFiles([]);
+          setAfterFiles([]);
+          setAdditionalFiles([]);
+          setAdditionalDetails('');
+          setShowAdditionalTab(false);
+          setUploadStep('');
+          setUploadProgress('');
+          setCurrentFileIndex(0);
+          setTotalFilesToUpload(0);
+          onOpenChange(false);
+        }, 2000);
+      }
 
     } catch (error) {
-      console.error('❌ Upload error:', error);
+      console.error('❌ Unexpected upload error:', error);
       setUploadStep('Upload failed');
       setUploadProgress('Please try again');
       
@@ -602,6 +648,9 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
           <p className="text-sm text-muted-foreground">
             Booking #{booking.id} - {booking.postcode} - {bookingDate}
           </p>
+          <p className="text-xs text-muted-foreground/70 italic">
+            Last edit: {LAST_EDIT_TIME}
+          </p>
         </DialogHeader>
 
         {/* Debug Panel */}
@@ -637,8 +686,8 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
                       <p>{((beforeFiles.reduce((s, f) => s + f.size, 0) + afterFiles.reduce((s, f) => s + f.size, 0) + additionalFiles.reduce((s, f) => s + f.size, 0)) / 1024 / 1024).toFixed(2)}MB</p>
                     </div>
                     <div>
-                      <p className="font-semibold text-muted-foreground">Concurrency</p>
-                      <p>{CONCURRENCY_LIMIT} parallel uploads</p>
+                      <p className="font-semibold text-muted-foreground">Processing Mode</p>
+                      <p>Strictly Sequential (1-by-1)</p>
                     </div>
                     <div>
                       <p className="font-semibold text-muted-foreground">Available Memory</p>
