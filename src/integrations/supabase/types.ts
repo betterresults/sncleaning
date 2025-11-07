@@ -1733,6 +1733,36 @@ export type Database = {
         }
         Relationships: []
       }
+      photo_processing_status: {
+        Row: {
+          booking_id: number
+          created_at: string | null
+          error_message: string | null
+          file_path: string
+          id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          booking_id: number
+          created_at?: string | null
+          error_message?: string | null
+          file_path: string
+          id?: string
+          status: string
+          updated_at?: string | null
+        }
+        Update: {
+          booking_id?: number
+          created_at?: string | null
+          error_message?: string | null
+          file_path?: string
+          id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           cleaner_id: number | null
