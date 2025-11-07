@@ -285,12 +285,32 @@ const InvoilessAPITest = () => {
   const selectedCustomer = customers.find(c => c.id.toString() === selectedCustomerId);
 
   const extractInvoilessId = (response: any): string | null => {
-    if (!response?.data?.data) return null;
+    if (!response?.data) return null;
     
-    // The Invoiless API returns an array of customers
-    const customers = response.data.data;
+    // Try different possible response structures
+    let customers = null;
+    
+    // Check if data.data exists (nested structure)
+    if (response.data.data) {
+      customers = response.data.data;
+    }
+    // Check if data is directly the array
+    else if (Array.isArray(response.data)) {
+      customers = response.data;
+    }
+    // Check if data.customers exists
+    else if (response.data.customers) {
+      customers = response.data.customers;
+    }
+    
+    // Extract ID from the first customer
     if (Array.isArray(customers) && customers.length > 0) {
       return customers[0].id?.toString() || null;
+    }
+    
+    // If single customer object
+    if (customers && typeof customers === 'object' && customers.id) {
+      return customers.id.toString();
     }
     
     return null;
