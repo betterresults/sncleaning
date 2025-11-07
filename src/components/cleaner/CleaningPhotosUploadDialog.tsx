@@ -808,7 +808,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
 
     return (
       <div className="space-y-6">
-        <div className="border-2 border-dashed border-primary/30 rounded-xl p-8 text-center hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 cursor-pointer">
+        <div className="relative border-2 border-dashed border-primary/30 rounded-xl p-8 text-center hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 cursor-pointer">
           <input
             ref={inputRef}
             type="file"
@@ -827,20 +827,10 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
               onFileSelect(fl); 
               (e.target as HTMLInputElement).value = ''; 
             }}
-            onClick={() => console.info(`🖱️ Input CLICKED for ${type}`)}
-            onFocus={() => console.info(`🎯 Input FOCUSED for ${type}`)}
-            onBlur={() => console.info(`👋 Input BLURRED for ${type}`)}
-            className="hidden"
-            id={`file-${type}`}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            aria-label={`Select ${type} files`}
           />
-          <label 
-            htmlFor={`file-${type}`} 
-            onClick={(e) => {
-              console.info(`🏷️ Label CLICKED for ${type}`, { isMobile, uploading });
-              handleSmartPick(e);
-            }} 
-            className="cursor-pointer block"
-          >
+          <div className="cursor-pointer block">
             <div className="p-4 rounded-full bg-primary/10 w-fit mx-auto mb-4">
               <Camera className="h-12 w-12 text-primary" />
             </div>
@@ -859,7 +849,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
                 : 'JPG, PNG, WebP, HEIC - will be compressed automatically'
               }
             </p>
-          </label>
+          </div>
         </div>
 
         {files.length > 0 && (
