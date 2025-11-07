@@ -198,17 +198,28 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       loadFullImage();
     }, [filePath]);
 
+    useEffect(() => {
+      const handleEscape = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') onClose();
+      };
+      window.addEventListener('keydown', handleEscape);
+      return () => window.removeEventListener('keydown', handleEscape);
+    }, [onClose]);
+
     return (
       <div 
         className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4 animate-fade-in"
         onClick={onClose}
       >
         <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
-          title="Close"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
+          className="absolute top-2 right-2 sm:top-4 sm:right-4 p-3 sm:p-4 bg-white/20 hover:bg-white/30 rounded-full transition-colors z-50 backdrop-blur-sm"
+          title="Close (or press Escape)"
         >
-          <X className="h-6 w-6 text-white" />
+          <X className="h-8 w-8 sm:h-10 sm:w-10 text-white" strokeWidth={2.5} />
         </button>
         
         <div className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center">
@@ -229,7 +240,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full">
           <p className="text-white text-sm flex items-center gap-2">
             <ZoomIn className="h-4 w-4" />
-            Click outside to close
+            Tap outside or press X to close
           </p>
         </div>
       </div>
