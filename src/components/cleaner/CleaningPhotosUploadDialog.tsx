@@ -249,14 +249,14 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     );
   };
 
-  const handleFileSelect = async (files: File[], type: 'before' | 'after' | 'additional') => {
+  const handleFileSelect = async (files: FileList | null, type: 'before' | 'after' | 'additional') => {
     console.info('🎬 File selection started', {
       type,
-      filesCount: files.length,
+      filesCount: files?.length || 0,
       device: isIOS ? 'iOS' : isAndroid ? 'Android' : 'Desktop',
       userAgent: navigator.userAgent,
       availableMemory: (navigator as any).deviceMemory || 'unknown',
-      firstThreeSizes: files.slice(0, 3).map(f => ({
+      firstThreeSizes: Array.from(files || []).slice(0, 3).map(f => ({
         name: f.name,
         sizeMB: (f.size / 1024 / 1024).toFixed(2),
         type: f.type || 'unknown'
@@ -264,7 +264,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     });
 
     if (!files || files.length === 0) {
-      console.warn('⚠️ No files returned from file input', { filesNull: files == null, filesLength: files?.length });
+      console.warn('⚠️ No files returned from file input', { filesNull: files === null, filesLength: files?.length });
       toast({ 
         title: 'No Files Selected', 
         description: 'Your device did not return any files. Try selecting fewer files or restart the app.',
@@ -273,7 +273,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       return;
     }
 
-    const fileArray = files;
+    const fileArray = Array.from(files);
     
     // Calculate total size of selection
     const totalMB = fileArray.reduce((sum, f) => sum + f.size, 0) / (1024 * 1024);
@@ -780,7 +780,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   const FileUploadArea = ({ type, files, onFileSelect, onRemove }: {
     type: 'before' | 'after' | 'additional';
     files: File[];
-    onFileSelect: (files: File[]) => void;
+    onFileSelect: (files: FileList | null) => void;
     onRemove: (index: number) => void;
   }) => {
     const inputRef = React.useRef<HTMLInputElement>(null);
@@ -797,26 +797,9 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
         return;
       }
 
-      // Desktop: Try to use showOpenFilePicker for better UX
-      const picker = (window as any).showOpenFilePicker;
-      if (typeof picker !== 'function') return; // fallback to native input
-      try {
-        e.preventDefault();
-        e.stopPropagation();
-        const types = type === 'additional'
-          ? [{ description: 'All files', accept: { '*/*': ['.*'] } }]
-          : [{ description: 'Images', accept: { 'image/*': ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif'] } }];
-        const handles = await picker({
-          multiple: true,
-          types,
-          excludeAcceptAllOption: type !== 'additional',
-        });
-        const filesPicked = await Promise.all(handles.map((h: any) => h.getFile()));
-        console.info(`📥 showOpenFilePicker returned ${filesPicked.length} files for ${type}`);
-        onFileSelect(filesPicked as File[]);
-      } catch (err) {
-        console.warn('showOpenFilePicker failed, falling back to input', err);
-      }
+      // Desktop: Use native input for multi-file selection compatibility
+      // showOpenFilePicker disabled to maintain FileList compatibility
+      return;
     };
 
     return (
@@ -830,13 +813,12 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
             disabled={uploading}
             onChange={(e) => { 
               const fileList = (e.target as HTMLInputElement).files;
-              const filesArr = fileList ? Array.from(fileList) : [];
               console.info(`🔔 onChange EVENT FIRED for ${type}!`, { 
-                fileCount: filesArr.length,
-                firstFileName: filesArr[0]?.name,
+                fileCount: fileList?.length || 0,
+                firstFileName: fileList?.[0]?.name,
                 device: isMobile ? 'Mobile' : 'Desktop'
               });
-              onFileSelect(filesArr);
+              onFileSelect(fileList);
               // Reset value AFTER copying files to avoid FileList invalidation on mobile
               (e.target as HTMLInputElement).value = '';
             }}
