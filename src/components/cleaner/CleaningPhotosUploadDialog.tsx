@@ -506,6 +506,30 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     const displayFiles = showAllPreviews ? files : files.slice(0, INITIAL_PREVIEW_COUNT);
     const hiddenCount = files.length - INITIAL_PREVIEW_COUNT;
 
+    const handleSmartPick = async (e: React.MouseEvent<HTMLElement>) => {
+      const picker = (window as any).showOpenFilePicker;
+      if (typeof picker !== 'function') return; // fallback to native input
+      try {
+        e.preventDefault();
+        e.stopPropagation();
+        const types = type === 'additional'
+          ? [{ description: 'All files', accept: { '*/*': ['.*'] } }]
+          : [{ description: 'Images', accept: { 'image/*': ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif'] } }];
+        const handles = await picker({
+          multiple: true,
+          types,
+          excludeAcceptAllOption: type !== 'additional',
+        });
+        const filesPicked = await Promise.all(handles.map((h: any) => h.getFile()));
+        const dt = new DataTransfer();
+        filesPicked.forEach((f: File) => dt.items.add(f));
+        console.info(`📥 showOpenFilePicker returned ${filesPicked.length} files for ${type}`);
+        onFileSelect(dt.files);
+      } catch (err) {
+        console.warn('showOpenFilePicker failed, falling back to input', err);
+      }
+    };
+
     return (
       <div className="space-y-6">
         <div className="border-2 border-dashed border-primary/30 rounded-xl p-8 text-center hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 cursor-pointer">
@@ -517,7 +541,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
             className="hidden"
             id={`file-${type}`}
           />
-          <label htmlFor={`file-${type}`} className="cursor-pointer block">
+          <label htmlFor={`file-${type}`} onClick={handleSmartPick} className="cursor-pointer block">
             <div className="p-4 rounded-full bg-primary/10 w-fit mx-auto mb-4">
               <Camera className="h-12 w-12 text-primary" />
             </div>
