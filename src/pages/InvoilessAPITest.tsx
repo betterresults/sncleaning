@@ -30,6 +30,7 @@ const InvoilessAPITest = () => {
   const [manualEmail, setManualEmail] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [apiResponse, setApiResponse] = useState<any>(null);
+  const [saveLoading, setSaveLoading] = useState(false);
   
   // Create customer form state
   const [createLoading, setCreateLoading] = useState(false);
@@ -283,6 +284,67 @@ const InvoilessAPITest = () => {
 
   const selectedCustomer = customers.find(c => c.id.toString() === selectedCustomerId);
 
+  const extractInvoilessId = (response: any): string | null => {
+    if (!response?.data?.data) return null;
+    
+    // The Invoiless API returns an array of customers
+    const customers = response.data.data;
+    if (Array.isArray(customers) && customers.length > 0) {
+      return customers[0].id?.toString() || null;
+    }
+    
+    return null;
+  };
+
+  const handleSaveInvoilessId = async () => {
+    const invoilessId = extractInvoilessId(apiResponse);
+    
+    if (!invoilessId) {
+      toast({
+        title: 'Error',
+        description: 'No Invoiless customer ID found in response',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!selectedCustomerId) {
+      toast({
+        title: 'Error',
+        description: 'Please select a customer to save the Invoiless ID to',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setSaveLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('customers')
+        .update({ invoiless_id: invoilessId })
+        .eq('id', parseInt(selectedCustomerId));
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: `Invoiless ID saved to customer #${selectedCustomerId}`,
+      });
+
+      // Refresh customers list to show updated data
+      await fetchCustomers();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
   return (
     <AdminGuard>
       <SidebarProvider>
@@ -387,10 +449,37 @@ const InvoilessAPITest = () => {
                           Status: {apiResponse.status || 'Error'} {apiResponse.statusText || ''}
                         </CardDescription>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="space-y-4">
                         <pre className="p-4 bg-muted rounded-lg overflow-auto text-xs">
                           {JSON.stringify(apiResponse, null, 2)}
                         </pre>
+                        
+                        {extractInvoilessId(apiResponse) && selectedCustomerId && (
+                          <div className="space-y-2">
+                            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                              <p className="text-sm font-medium text-green-900">
+                                Found Invoiless ID: <span className="font-mono">{extractInvoilessId(apiResponse)}</span>
+                              </p>
+                              <p className="text-xs text-green-700 mt-1">
+                                Will be saved to: {selectedCustomer?.first_name} {selectedCustomer?.last_name}
+                              </p>
+                            </div>
+                            <Button 
+                              onClick={handleSaveInvoilessId}
+                              disabled={saveLoading}
+                              className="w-full"
+                            >
+                              {saveLoading ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Saving...
+                                </>
+                              ) : (
+                                'Save Invoiless ID to Customer'
+                              )}
+                            </Button>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   )}
