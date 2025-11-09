@@ -1,14 +1,52 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import CleanerTodayBookingsList from '@/components/cleaner/CleanerTodayBookingsList';
 import CleanerBottomNav from '@/components/cleaner/CleanerBottomNav';
 import { isCapacitor } from '@/utils/capacitor';
+import { supabase } from '@/integrations/supabase/client';
+import { useAdminCleaner } from '@/contexts/AdminCleanerContext';
 
 const CleanerTodayPage = () => {
   const { user, userRole, cleanerId, loading } = useAuth();
+  const { selectedCleanerId } = useAdminCleaner();
+  const navigate = useNavigate();
+  const [checkingBookings, setCheckingBookings] = useState(true);
 
-  if (loading) {
+  const effectiveCleanerId = userRole === 'admin' ? selectedCleanerId : cleanerId;
+
+  useEffect(() => {
+    const checkTodayBookings = async () => {
+      if (!effectiveCleanerId || loading) return;
+
+      try {
+        const today = new Date();
+        const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000 - 1);
+
+        const { count, error } = await supabase
+          .from('bookings')
+          .select('id', { count: 'exact', head: true })
+          .eq('cleaner', effectiveCleanerId)
+          .gte('date_time', startOfDay.toISOString())
+          .lte('date_time', endOfDay.toISOString());
+
+        if (!error && count !== null) {
+          if (count === 0) {
+            navigate('/cleaner-bookings', { replace: true });
+          }
+        }
+      } catch (error) {
+        console.error('Error checking today bookings:', error);
+      } finally {
+        setCheckingBookings(false);
+      }
+    };
+
+    checkTodayBookings();
+  }, [effectiveCleanerId, loading, navigate]);
+
+  if (loading || checkingBookings) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-base">Loading today's work...</div>
