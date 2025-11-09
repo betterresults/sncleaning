@@ -249,14 +249,14 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     );
   };
 
-  const handleFileSelect = async (files: FileList | null, type: 'before' | 'after' | 'additional') => {
+  const handleFileSelect = async (files: File[], type: 'before' | 'after' | 'additional') => {
     console.info('🎬 File selection started', {
       type,
-      filesCount: files?.length || 0,
+      filesCount: files.length,
       device: isIOS ? 'iOS' : isAndroid ? 'Android' : 'Desktop',
       userAgent: navigator.userAgent,
       availableMemory: (navigator as any).deviceMemory || 'unknown',
-      firstThreeSizes: Array.from(files || []).slice(0, 3).map(f => ({
+      firstThreeSizes: files.slice(0, 3).map(f => ({
         name: f.name,
         sizeMB: (f.size / 1024 / 1024).toFixed(2),
         type: f.type || 'unknown'
@@ -264,7 +264,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     });
 
     if (!files || files.length === 0) {
-      console.warn('⚠️ No files returned from file input', { filesNull: files === null, filesLength: files?.length });
+      console.warn('⚠️ No files returned from file input', { filesNull: files == null, filesLength: files.length });
       toast({ 
         title: 'No Files Selected', 
         description: 'Your device did not return any files. Try selecting fewer files or restart the app.',
@@ -273,7 +273,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       return;
     }
 
-    const fileArray = Array.from(files);
+    const fileArray = files;
     
     // Calculate total size of selection
     const totalMB = fileArray.reduce((sum, f) => sum + f.size, 0) / (1024 * 1024);
@@ -780,7 +780,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   const FileUploadArea = ({ type, files, onFileSelect, onRemove }: {
     type: 'before' | 'after' | 'additional';
     files: File[];
-    onFileSelect: (files: FileList | null) => void;
+    onFileSelect: (files: File[]) => void;
     onRemove: (index: number) => void;
   }) => {
     const inputRef = React.useRef<HTMLInputElement>(null);
@@ -813,12 +813,13 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
             disabled={uploading}
             onChange={(e) => { 
               const fileList = (e.target as HTMLInputElement).files;
+              const filesArr = fileList ? Array.from(fileList) : [];
               console.info(`🔔 onChange EVENT FIRED for ${type}!`, { 
-                fileCount: fileList?.length || 0,
-                firstFileName: fileList?.[0]?.name,
+                fileCount: filesArr.length,
+                firstFileName: filesArr[0]?.name,
                 device: isMobile ? 'Mobile' : 'Desktop'
               });
-              onFileSelect(fileList);
+              onFileSelect(filesArr);
               // Reset value AFTER copying files to avoid FileList invalidation on mobile
               (e.target as HTMLInputElement).value = '';
             }}
