@@ -45,6 +45,15 @@ body {
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
 
+/* Additional safe area utilities for native app */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.content-bottom-spacer {
+  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+}
+
 @layer base {
   :root {
     --background: 0 0% 98%;
