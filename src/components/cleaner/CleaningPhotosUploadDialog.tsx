@@ -893,21 +893,35 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     const handleSmartPick = async (e: React.MouseEvent<HTMLElement>) => {
       // Use native file picker on Capacitor for better reliability
       if (isCapacitor()) {
-        console.info('📱 Capacitor: Using native file picker', { platform: getPlatform() });
+        console.info('📱 Capacitor: Using native Camera API picker', { platform: getPlatform() });
         e.preventDefault();
         e.stopPropagation();
         
         try {
-          const accept = type === 'additional' ? '*/*' : 'image/*';
-          const pickedFiles = await pickFilesNative({ multiple: true, accept });
+          const pickedFiles = await pickFilesNative({ multiple: true });
           console.info(`📱 Native picker returned ${pickedFiles.length} files`);
           onFileSelect(pickedFiles);
         } catch (error: any) {
-          if (error.message !== 'File picker cancelled') {
+          const errorMessage = error.message || '';
+          
+          // Handle permission denied
+          if (errorMessage.includes('permission') || errorMessage.includes('denied')) {
+            toast({
+              title: 'Photo Access Required',
+              description: 'Please enable photo access in your device settings to upload photos.',
+              variant: 'destructive'
+            });
+          } 
+          // Handle user cancellation (not an error)
+          else if (errorMessage.includes('cancel') || errorMessage.includes('No images')) {
+            console.info('User cancelled photo selection');
+          }
+          // Other errors
+          else {
             console.error('Native picker error:', error);
             toast({
-              title: 'File Selection Error',
-              description: 'Could not access files. Please try again.',
+              title: 'Photo Selection Error',
+              description: 'Could not access photos. Please try again or check app permissions.',
               variant: 'destructive'
             });
           }
