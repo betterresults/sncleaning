@@ -10,6 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload, X, Camera, AlertTriangle, ChevronDown, ChevronUp, Image as ImageIcon, Trash2, CheckCircle2, ZoomIn } from 'lucide-react';
 import { compressImage } from '@/utils/imageCompression';
+import { isCapacitor, getPlatform } from '@/utils/capacitor';
+import { pickFilesNative } from '@/utils/nativeFilePicker';
 
 interface CleaningPhotosUploadDialogProps {
   open: boolean;
@@ -29,7 +31,7 @@ const LOW_MEMORY_THRESHOLD = 40; // Switch to low-memory mode for >40 files on i
 const DIRECT_UPLOAD_BATCH = 10; // Upload 10 files at once
 
 // Version tag for quick build identification in UI and logs
-const UPLOADER_VERSION = 'Update: 4';
+const UPLOADER_VERSION = 'Capacitor: 1';
 
 const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPhotosUploadDialogProps) => {
   const { toast } = useToast();
@@ -58,16 +60,25 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   const folderPath = `${booking.id}_${safePostcode}_${bookingDate}_${booking.customer}`;
 
   // Device detection
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const isAndroid = /Android/.test(navigator.userAgent);
-  const isMobile = isIOS || isAndroid;
+  const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isAndroidDevice = /Android/.test(navigator.userAgent);
+  const isCapacitorApp = isCapacitor();
+  const capacitorPlatform = isCapacitorApp ? getPlatform() : null;
+  const isMobile = isIOSDevice || isAndroidDevice || isCapacitorApp;
   const totalFiles = beforeFiles.length + afterFiles.length + additionalFiles.length;
-  const isLowMemoryMode = isIOS && totalFiles > LOW_MEMORY_THRESHOLD;
+  const isLowMemoryMode = isIOSDevice && totalFiles > LOW_MEMORY_THRESHOLD;
 
   // Log build version once on mount
   useEffect(() => {
     const isPWA = window.matchMedia('(display-mode: standalone)').matches;
-    console.info(`Uploader build: ${UPLOADER_VERSION}`, { isPWA, isMobile, isIOS, isAndroid });
+    console.info(`Uploader build: ${UPLOADER_VERSION}`, { 
+      isPWA, 
+      isMobile, 
+      isIOS: isIOSDevice, 
+      isAndroid: isAndroidDevice,
+      isCapacitor: isCapacitorApp,
+      platform: capacitorPlatform
+    });
   }, []);
 
   useEffect(() => {
@@ -262,7 +273,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     console.info('🎬 File selection started', {
       type,
       filesCount: files.length,
-      device: isIOS ? 'iOS' : isAndroid ? 'Android' : 'Desktop',
+      device: isIOSDevice ? 'iOS' : isAndroidDevice ? 'Android' : 'Desktop',
       userAgent: navigator.userAgent,
       availableMemory: (navigator as any).deviceMemory || 'unknown',
       firstThreeSizes: files.slice(0, 3).map(f => ({
@@ -880,9 +891,33 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     const hiddenCount = files.length - INITIAL_PREVIEW_COUNT;
 
     const handleSmartPick = async (e: React.MouseEvent<HTMLElement>) => {
-      // On mobile, programmatically click the hidden input (htmlFor can fail inside modals)
+      // Use native file picker on Capacitor for better reliability
+      if (isCapacitor()) {
+        console.info('📱 Capacitor: Using native file picker', { platform: getPlatform() });
+        e.preventDefault();
+        e.stopPropagation();
+        
+        try {
+          const accept = type === 'additional' ? '*/*' : 'image/*';
+          const pickedFiles = await pickFilesNative({ multiple: true, accept });
+          console.info(`📱 Native picker returned ${pickedFiles.length} files`);
+          onFileSelect(pickedFiles);
+        } catch (error: any) {
+          if (error.message !== 'File picker cancelled') {
+            console.error('Native picker error:', error);
+            toast({
+              title: 'File Selection Error',
+              description: 'Could not access files. Please try again.',
+              variant: 'destructive'
+            });
+          }
+        }
+        return;
+      }
+
+      // On mobile PWA, programmatically click the hidden input
       if (isMobile) {
-        console.info('📱 Mobile: programmatically clicking hidden input');
+        console.info('📱 Mobile PWA: programmatically clicking hidden input');
         e.preventDefault();
         e.stopPropagation();
         inputRef.current?.click();
@@ -890,7 +925,6 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
       }
 
       // Desktop: Use native input for multi-file selection compatibility
-      // showOpenFilePicker disabled to maintain FileList compatibility
       return;
     };
 
@@ -1094,7 +1128,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <p className="font-semibold text-muted-foreground">Device</p>
-                      <p>{isIOS ? 'iOS' : isAndroid ? 'Android' : 'Desktop'}</p>
+                      <p>{isIOSDevice ? 'iOS' : isAndroidDevice ? 'Android' : 'Desktop'}</p>
                     </div>
                     <div>
                       <p className="font-semibold text-muted-foreground">Memory Mode</p>
