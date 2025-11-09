@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Lock, User, Eye, EyeOff } from 'lucide-react';
+import { Lock, User, Eye, EyeOff, LogOut } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import CleanerBottomNav from '@/components/cleaner/CleanerBottomNav';
@@ -18,20 +18,35 @@ import { isCapacitor } from '@/utils/capacitor';
 const CleanerSettings = () => {
   const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
 
+  const isNativeApp = isCapacitor();
+
   const handleSignOut = async () => {
+    setLoggingOut(true);
     try {
       await signOut();
+      if (isNativeApp) {
+        navigate('/auth');
+      }
     } catch (error) {
       console.error('Error signing out:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to sign out. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoggingOut(false);
     }
   };
 
@@ -99,6 +114,143 @@ const CleanerSettings = () => {
     return <Navigate to="/auth" replace />;
   }
 
+  // Mobile-only view for native app
+  if (isNativeApp) {
+    return (
+      <div className="min-h-screen bg-background pb-24">
+        {/* Header */}
+        <div className="sticky top-0 z-40 bg-background border-b border-border">
+          <div className="px-4 py-4">
+            <h1 className="text-2xl font-bold text-foreground">Account Settings</h1>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-4 space-y-4">
+          {/* Account Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-primary">
+                <User className="h-5 w-5" />
+                Account Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Email</Label>
+                <Input value={user?.email || ''} disabled className="bg-muted" />
+              </div>
+              <div>
+                <Label>Name</Label>
+                <Input 
+                  value={`${user?.user_metadata?.first_name || ''} ${user?.user_metadata?.last_name || ''}`.trim() || 'Not provided'} 
+                  disabled 
+                  className="bg-muted" 
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Change Password */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-primary">
+                <Lock className="h-5 w-5" />
+                Change Password
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handlePasswordChange} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="newPassword"
+                      type={showPassword ? 'text' : 'password'}
+                      value={passwordData.newPassword}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                      placeholder="Enter new password"
+                      required
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-gray-400" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-gray-400" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      placeholder="Confirm new password"
+                      required
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-4 w-4 text-gray-400" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-gray-400" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                  disabled={passwordLoading}
+                >
+                  {passwordLoading ? 'Updating...' : 'Update Password'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Logout Button */}
+          <Card className="border-destructive/20">
+            <CardContent className="p-4">
+              <Button
+                onClick={handleSignOut}
+                disabled={loggingOut}
+                variant="destructive"
+                className="w-full"
+                size="lg"
+              >
+                <LogOut className="h-5 w-5 mr-2" />
+                {loggingOut ? 'Signing out...' : 'Sign Out'}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        <CleanerBottomNav />
+      </div>
+    );
+  }
+
+  // Desktop view with sidebar
   return (
     <SidebarProvider>
       <div className="min-h-screen flex flex-col w-full bg-gray-50 pb-24">
@@ -226,7 +378,6 @@ const CleanerSettings = () => {
             </main>
           </SidebarInset>
         </div>
-        {isCapacitor() && <CleanerBottomNav />}
       </div>
     </SidebarProvider>
   );

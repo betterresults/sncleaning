@@ -37,8 +37,7 @@ const CleanerTodayPage = () => {
         <CleanerTodayBookingsList />
       </div>
 
-      {/* Bottom Navigation - only show in Capacitor */}
-      {isCapacitor() && <CleanerBottomNav />}
+      <CleanerBottomNav />
     </div>
   );
 };

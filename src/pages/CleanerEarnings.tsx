@@ -35,6 +35,30 @@ const CleanerEarningsPage = () => {
     return <Navigate to="/auth" replace />;
   }
 
+  const isNativeApp = isCapacitor();
+
+  // Mobile-only view for native app
+  if (isNativeApp) {
+    return (
+      <div className="min-h-screen bg-background pb-24">
+        {/* Header */}
+        <div className="sticky top-0 z-40 bg-background border-b border-border">
+          <div className="px-4 py-4">
+            <h1 className="text-2xl font-bold text-foreground">My Earnings</h1>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-4">
+          <CleanerEarnings />
+        </div>
+
+        <CleanerBottomNav />
+      </div>
+    );
+  }
+
+  // Desktop view with sidebar
   return (
     <SidebarProvider>
       <div className="min-h-screen flex flex-col w-full bg-gray-50 pb-24">
@@ -60,7 +84,6 @@ const CleanerEarningsPage = () => {
             </main>
           </SidebarInset>
         </div>
-        {isCapacitor() && <CleanerBottomNav />}
       </div>
     </SidebarProvider>
   );
