@@ -95,11 +95,6 @@ const Index = () => {
         });
 
         if (error) throw error;
-
-        toast({
-          title: 'Success',
-          description: 'Logged in successfully!',
-        });
       } else {
         const { data, error } = await supabase.auth.signUp({
           email,
