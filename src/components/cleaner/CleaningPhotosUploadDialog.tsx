@@ -29,7 +29,7 @@ const LOW_MEMORY_THRESHOLD = 40; // Switch to low-memory mode for >40 files on i
 const DIRECT_UPLOAD_BATCH = 10; // Upload 10 files at once
 
 // Version tag for quick build identification in UI and logs
-const UPLOADER_VERSION = 'Update: 3';
+const UPLOADER_VERSION = 'Update: 4';
 
 const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPhotosUploadDialogProps) => {
   const { toast } = useToast();
@@ -579,8 +579,13 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
         try {
           // Materialize file into stable blob (critical for PWA)
           console.log(`📦 Materializing [${i + 1}/${files.length}] ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
-          const buffer = await file.arrayBuffer();
-          let stableFile = new File([buffer], file.name, { type: file.type || 'application/octet-stream' });
+          let stableFile: File = file;
+          try {
+            const buffer = await file.arrayBuffer();
+            stableFile = new File([buffer], file.name, { type: file.type || 'application/octet-stream' });
+          } catch (matErr) {
+            console.warn(`⚠️ Materialize failed for ${file.name}, using original File`, matErr);
+          }
           
           // Skip compression on mobile by default for maximum reliability
           const isImage = file.type.startsWith('image/') && /\.(jpg|jpeg|png|webp)$/i.test(file.name);
@@ -613,7 +618,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
           
           // Small delay between files to avoid radio spikes
           if (i < files.length - 1) {
-            await new Promise(r => setTimeout(r, 100));
+            await new Promise(r => setTimeout(r, 150));
           }
         } catch (error: any) {
           failCount++;
@@ -900,37 +905,37 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
             disabled={uploading}
             onChange={(e) => { 
               const input = e.target as HTMLInputElement;
-              const fileList = input.files;
               const isPWA = window.matchMedia('(display-mode: standalone)').matches;
 
-              console.info(`🔔 onChange EVENT FIRED for ${type}!`, { 
+              console.info(`🔔 onChange for ${type}`, {
                 device: isMobile ? 'Mobile' : 'Desktop',
                 isPWA,
-                initialFileCount: fileList?.length || 0
+                initialFileCount: input.files?.length || 0,
               });
 
-              // Simple approach: short delay for file system to settle, then convert
-              setTimeout(() => {
-                const filesArr = fileList ? Array.from(fileList) : [];
-                
-                console.info(`📥 Files captured for ${type}`, { 
-                  count: filesArr.length,
-                  isPWA,
-                  firstFileName: filesArr[0]?.name
-                });
-                
-                if (filesArr.length > 0) {
-                  onFileSelect(filesArr);
-                } else {
-                  toast({
-                    title: 'No Files Captured',
-                    description: 'Your device did not provide files. Please try again.',
-                    variant: 'destructive'
-                  });
+              const tryRead = (attempt = 0) => {
+                const current = input.files ? Array.from(input.files) : [];
+                console.info(`📥 Capture attempt ${attempt}: count=${current.length}`);
+
+                if (current.length > 0 || attempt >= 6) {
+                  if (current.length > 0) {
+                    onFileSelect(current);
+                  } else {
+                    toast({
+                      title: 'No Files Captured',
+                      description: 'Your device did not provide files. Please try again.',
+                      variant: 'destructive',
+                    });
+                  }
+                  input.value = ''; // reset after capture
+                  return;
                 }
-                
-                input.value = ''; // Reset after copy
-              }, 150);
+
+                setTimeout(() => tryRead(attempt + 1), 80);
+              };
+
+              // Short initial delay to let PWA file picker settle, then micro-poll if needed
+              setTimeout(() => tryRead(0), 150);
             }}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             aria-label={`Select ${type} files`}
