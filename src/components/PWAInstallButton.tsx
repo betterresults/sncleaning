@@ -2,9 +2,15 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, Smartphone } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { isCapacitor } from '@/utils/capacitor';
 
 const PWAInstallButton = () => {
   const { isInstallable, isInstalled, install } = usePWAInstall();
+
+  // Don't show in native Capacitor app
+  if (isCapacitor()) {
+    return null;
+  }
 
   const handleInstall = async () => {
     console.log('Manual install button clicked');
