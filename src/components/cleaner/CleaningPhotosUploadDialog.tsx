@@ -29,7 +29,7 @@ const LOW_MEMORY_THRESHOLD = 40; // Switch to low-memory mode for >40 files on i
 const DIRECT_UPLOAD_BATCH = 10; // Upload 10 files at once
 
 // Version tag for quick build identification in UI and logs
-const UPLOADER_VERSION = 'Update: 2';
+const UPLOADER_VERSION = 'Update: 3';
 
 const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPhotosUploadDialogProps) => {
   const { toast } = useToast();
@@ -66,7 +66,8 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
 
   // Log build version once on mount
   useEffect(() => {
-    console.info(`Uploader build: ${UPLOADER_VERSION}`);
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches;
+    console.info(`Uploader build: ${UPLOADER_VERSION}`, { isPWA, isMobile, isIOS, isAndroid });
   }, []);
 
   useEffect(() => {
@@ -391,7 +392,13 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   const handleAutoUpload = async (files: File[], type: 'before' | 'after' | 'additional') => {
     console.log(`🚀 Auto-upload triggered for ${files.length} ${type} files`);
 
-    // Verify authentication
+    // Verify and refresh authentication (critical for PWA long sessions)
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.warn('No session, attempting refresh...');
+      await supabase.auth.refreshSession();
+    }
+    
     const { data: authData, error: authError } = await supabase.auth.getUser();
     if (authError || !authData?.user) {
       toast({
@@ -505,6 +512,46 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     }
   };
 
+  // Retry helper with exponential backoff
+  const uploadWithRetry = async (
+    file: File, 
+    filePath: string, 
+    maxAttempts: number = 3
+  ): Promise<{ success: boolean; error?: string }> => {
+    const delays = [300, 800, 1500]; // Exponential backoff
+    
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        const { error: uploadError } = await supabase.storage
+          .from('cleaning.photos')
+          .upload(filePath, file, {
+            contentType: file.type || 'application/octet-stream',
+            cacheControl: '3600',
+            upsert: true
+          });
+        
+        if (uploadError) throw uploadError;
+        return { success: true };
+      } catch (error: any) {
+        const isNetworkError = 
+          error?.message?.includes('Failed to fetch') || 
+          error?.message?.includes('NetworkError') ||
+          error instanceof TypeError;
+        
+        if (isNetworkError && attempt < maxAttempts - 1) {
+          const delay = delays[attempt];
+          console.warn(`🔁 Retry ${attempt + 1}/${maxAttempts - 1} for ${file.name} after ${delay}ms`);
+          await new Promise(r => setTimeout(r, delay));
+          continue;
+        }
+        
+        return { success: false, error: error.message || 'Upload failed' };
+      }
+    }
+    
+    return { success: false, error: 'Max retries exceeded' };
+  };
+
   // Direct upload (no compression, no retry - backend handles it)
   const uploadFilesDirectly = async (
     files: File[],
@@ -514,114 +561,139 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
     let failCount = 0;
     const errors: string[] = [];
 
-    console.log(`📤 Starting direct upload of ${files.length} files (Type: ${photoType})`);
+    const BATCH = isMobile ? 1 : DIRECT_UPLOAD_BATCH; // Strictly sequential on mobile
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches;
+    console.log(`📤 Starting direct upload of ${files.length} files (Type: ${photoType}, BATCH=${BATCH})`, { isPWA, isMobile });
     
-    // Check if files are still accessible (mobile browsers may revoke access)
-    try {
-      const testFile = files[0];
-      if (testFile) {
-        const testSlice = testFile.slice(0, 1);
-        await testSlice.arrayBuffer();
-        console.log('✅ File access check passed');
-      }
-    } catch (accessError) {
-      console.error('❌ Files no longer accessible:', accessError);
-      errors.push('Files no longer accessible. Please re-select photos and upload immediately.');
-      return { uploadedPaths: [], failCount: files.length, errors };
-    }
-    
-    const BATCH = isMobile ? 3 : DIRECT_UPLOAD_BATCH;
-    for (let i = 0; i < files.length; i += BATCH) {
-      const batch = files.slice(i, i + BATCH);
-      const batchNum = Math.floor(i / BATCH) + 1;
-      const totalBatches = Math.ceil(files.length / BATCH);
-      
-      console.log(`📦 Uploading batch ${batchNum}/${totalBatches} (${batch.length} files)`);
-      
-      const batchResults = await Promise.allSettled(
-        batch.map(async (file, batchIndex) => {
-          const fileNum = i + batchIndex + 1;
-          const timestamp = Date.now();
-          const fileName = `${timestamp}_${fileNum}_${file.name}`;
-          const filePath = `${folderPath}/${photoType}/${fileName}`;
+    if (isMobile) {
+      // Strictly sequential for mobile/PWA
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const timestamp = Date.now();
+        const fileName = `${timestamp}_${i + 1}_${file.name}`;
+        const filePath = `${folderPath}/${photoType}/${fileName}`;
+        
+        setCurrentFileIndex(i + 1);
+        setUploadProgress(`Uploading ${i + 1}/${files.length}: ${file.name.slice(0, 30)}...`);
+        
+        try {
+          // Materialize file into stable blob (critical for PWA)
+          console.log(`📦 Materializing [${i + 1}/${files.length}] ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+          const buffer = await file.arrayBuffer();
+          let stableFile = new File([buffer], file.name, { type: file.type || 'application/octet-stream' });
           
-          // Check file accessibility before processing
-          try {
-            await file.slice(0, 1).arrayBuffer();
-          } catch (accessError) {
-            throw new Error(`File "${file.name}" no longer accessible (browser revoked access)`);
+          // Skip compression on mobile by default for maximum reliability
+          const isImage = file.type.startsWith('image/') && /\.(jpg|jpeg|png|webp)$/i.test(file.name);
+          const isVeryLarge = file.size > 10 * 1024 * 1024;
+          
+          if (isImage && isVeryLarge) {
+            console.log(`🗜️ Large file, attempting light compression for ${file.name}`);
+            try {
+              const compressed = await compressImage(stableFile, { maxSizeMB: 5, initialQuality: 0.9 });
+              stableFile = compressed;
+            } catch (compressError) {
+              console.warn(`⚠️ Compression failed, using original:`, compressError);
+            }
           }
           
-          // Optional light compression for large images (>3MB)
-          let fileToUpload = file;
-          const isImage = file.type.startsWith('image/') && !file.name.toLowerCase().endsWith('.heic');
-          const isLarge = file.size > 3 * 1024 * 1024;
+          console.log(`⬆️  [${i + 1}/${files.length}] Uploading: ${file.name}`);
           
-          if (isImage && isLarge) {
-            console.log(`🗜️  [${fileNum}] Compressing ${file.name} (${(file.size/1024/1024).toFixed(2)}MB)...`);
-            try {
-              fileToUpload = await compressImage(file, {
-                maxSizeMB: 5,
-                maxWidthOrHeight: 2560,
-                initialQuality: 0.85
-              });
-              const saved = ((1 - fileToUpload.size / file.size) * 100).toFixed(0);
-              console.log(`✅ [${fileNum}] Frontend compression: saved ${saved}%`);
-            } catch (compError) {
-              console.warn(`⚠️  [${fileNum}] Frontend compression failed, uploading original:`, compError);
-              // If compression fails, verify original file is still accessible
+          // Upload with retry logic
+          const result = await uploadWithRetry(stableFile, filePath);
+          
+          if (result.success) {
+            uploadedPaths.push(filePath);
+            console.log(`✅ [${i + 1}/${files.length}] ${file.name} uploaded`);
+          } else {
+            failCount++;
+            const errorMsg = `${file.name}: ${result.error}`;
+            errors.push(errorMsg);
+            console.error(`❌ [${i + 1}/${files.length}] Failed after retries:`, result.error);
+          }
+          
+          // Small delay between files to avoid radio spikes
+          if (i < files.length - 1) {
+            await new Promise(r => setTimeout(r, 100));
+          }
+        } catch (error: any) {
+          failCount++;
+          const errorMsg = `${file.name}: ${error.message || 'Upload failed'}`;
+          errors.push(errorMsg);
+          console.error(`❌ [${i + 1}/${files.length}] Upload error:`, error);
+        }
+        
+        // Update progress
+        const progress = Math.round(((i + 1) / files.length) * 100);
+        setUploadProgress(`Uploaded ${i + 1}/${files.length} (${progress}%)`);
+      }
+    } else {
+      // Desktop: batch processing
+      for (let i = 0; i < files.length; i += BATCH) {
+        const batch = files.slice(i, i + BATCH);
+        const batchNum = Math.floor(i / BATCH) + 1;
+        const totalBatches = Math.ceil(files.length / BATCH);
+        
+        console.log(`📦 Uploading batch ${batchNum}/${totalBatches} (${batch.length} files)`);
+        
+        const batchResults = await Promise.allSettled(
+          batch.map(async (file, batchIndex) => {
+            const fileNum = i + batchIndex + 1;
+            const timestamp = Date.now();
+            const fileName = `${timestamp}_${fileNum}_${file.name}`;
+            const filePath = `${folderPath}/${photoType}/${fileName}`;
+            
+            let fileToUpload = file;
+            
+            // Optional light compression for large images (>3MB)
+            const isImage = file.type.startsWith('image/') && !file.name.toLowerCase().endsWith('.heic');
+            const isLarge = file.size > 3 * 1024 * 1024;
+            
+            if (isImage && isLarge) {
+              console.log(`🗜️  [${fileNum}] Compressing ${file.name} (${(file.size/1024/1024).toFixed(2)}MB)...`);
               try {
-                await file.slice(0, 1).arrayBuffer();
-              } catch (accessError) {
-                throw new Error(`File "${file.name}" became inaccessible during compression`);
+                fileToUpload = await compressImage(file, {
+                  maxSizeMB: 5,
+                  maxWidthOrHeight: 2560,
+                  initialQuality: 0.85
+                });
+                const saved = ((1 - fileToUpload.size / file.size) * 100).toFixed(0);
+                console.log(`✅ [${fileNum}] Frontend compression: saved ${saved}%`);
+              } catch (compError) {
+                console.warn(`⚠️  [${fileNum}] Frontend compression failed, uploading original:`, compError);
               }
             }
-          }
-          
-          setCurrentFileIndex(fileNum);
-          setUploadProgress(`Uploading ${file.name} (${fileNum}/${files.length})`);
-          console.log(`⬆️  [${fileNum}/${files.length}] Uploading: ${file.name}`);
-          
-          try {
-            const { error } = await supabase.storage
-              .from('cleaning.photos')
-              .upload(filePath, fileToUpload, {
-                cacheControl: '3600',
-                upsert: true
-              });
-
-            if (error) {
-              throw new Error(`Storage upload failed for "${file.name}": ${error.message}`);
+            
+            setCurrentFileIndex(fileNum);
+            setUploadProgress(`Uploading ${file.name} (${fileNum}/${files.length})`);
+            console.log(`⬆️  [${fileNum}/${files.length}] Uploading: ${file.name}`);
+            
+            const result = await uploadWithRetry(fileToUpload, filePath);
+            
+            if (!result.success) {
+              throw new Error(result.error || 'Upload failed');
             }
-          } catch (uploadError: any) {
-            // Provide more context about the failure
-            const errorMsg = uploadError.message || 'Unknown upload error';
-            if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError')) {
-              throw new Error(`Network error uploading "${file.name}" (check connection and try again)`);
-            }
-            throw new Error(`Upload failed for "${file.name}": ${errorMsg}`);
-          }
-          
-          console.log(`✅ [${fileNum}] Upload successful`);
-          return { filePath, fileName: file.name };
-        })
-      );
+            
+            console.log(`✅ [${fileNum}] Upload successful`);
+            return { filePath, fileName: file.name };
+          })
+        );
 
-      // Process batch results
-      for (const result of batchResults) {
-        if (result.status === 'fulfilled') {
-          uploadedPaths.push(result.value.filePath);
-        } else {
-          failCount++;
-          const errorMsg = result.reason?.message || 'Upload failed';
-          errors.push(errorMsg);
-          console.error(`❌ Upload failed:`, errorMsg);
+        // Process batch results
+        for (const result of batchResults) {
+          if (result.status === 'fulfilled') {
+            uploadedPaths.push(result.value.filePath);
+          } else {
+            failCount++;
+            const errorMsg = result.reason?.message || 'Upload failed';
+            errors.push(errorMsg);
+            console.error(`❌ Upload failed:`, errorMsg);
+          }
         }
-      }
 
-      // Update progress
-      const progress = Math.round(((uploadedPaths.length + failCount) / files.length) * 100);
-      setUploadProgress(`Uploaded ${uploadedPaths.length + failCount}/${files.length} (${progress}%)`);
+        // Update progress
+        const progress = Math.round(((uploadedPaths.length + failCount) / files.length) * 100);
+        setUploadProgress(`Uploaded ${uploadedPaths.length + failCount}/${files.length} (${progress}%)`);
+      }
     }
 
     return { uploadedPaths, failCount, errors };
@@ -639,6 +711,13 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
 
     console.log('🚀 Starting instant upload for', { before: beforeFiles.length, after: afterFiles.length, additional: additionalFiles.length });
 
+    // Verify and refresh authentication (critical for PWA long sessions)
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.warn('No session, attempting refresh...');
+      await supabase.auth.refreshSession();
+    }
+    
     // Verify authentication
     const { data: authData, error: authError } = await supabase.auth.getUser();
     if (authError || !authData?.user) {
@@ -819,57 +898,39 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
             accept={type === 'additional' ? "*/*" : "image/*"}
             multiple
             disabled={uploading}
-            onChange={async (e) => { 
+            onChange={(e) => { 
               const input = e.target as HTMLInputElement;
-
-              const pollForFiles = async (
-                inputEl: HTMLInputElement,
-                timeoutMs = 1200,
-                intervalMs = 80
-              ): Promise<File[]> => {
-                const start = Date.now();
-                const readFiles = () => {
-                  const fl = inputEl.files;
-                  return fl && fl.length ? Array.from(fl) : [];
-                };
-                let files = readFiles();
-                if (files.length > 0) return files;
-                await new Promise<void>((resolve) => {
-                  const id = setInterval(() => {
-                    files = readFiles();
-                    if (files.length > 0 || Date.now() - start >= timeoutMs) {
-                      clearInterval(id);
-                      resolve();
-                    }
-                  }, intervalMs);
-                });
-                return files;
-              };
+              const fileList = input.files;
+              const isPWA = window.matchMedia('(display-mode: standalone)').matches;
 
               console.info(`🔔 onChange EVENT FIRED for ${type}!`, { 
-                device: isMobile ? 'Mobile' : 'Desktop'
+                device: isMobile ? 'Mobile' : 'Desktop',
+                isPWA,
+                initialFileCount: fileList?.length || 0
               });
 
-              const filesArr = await pollForFiles(input);
-
-              console.info(`📥 Files available after selection for ${type}`, {
-                count: filesArr.length,
-                firstFileName: filesArr[0]?.name,
-              });
-
-              if (filesArr.length === 0) {
-                toast({
-                  title: 'No Files Captured',
-                  description: 'Your device did not provide files. Please try again.',
-                  variant: 'destructive'
+              // Simple approach: short delay for file system to settle, then convert
+              setTimeout(() => {
+                const filesArr = fileList ? Array.from(fileList) : [];
+                
+                console.info(`📥 Files captured for ${type}`, { 
+                  count: filesArr.length,
+                  isPWA,
+                  firstFileName: filesArr[0]?.name
                 });
-                input.value = '';
-                return;
-              }
-
-              onFileSelect(filesArr);
-              // Reset value AFTER copying files to avoid FileList invalidation on mobile
-              input.value = '';
+                
+                if (filesArr.length > 0) {
+                  onFileSelect(filesArr);
+                } else {
+                  toast({
+                    title: 'No Files Captured',
+                    description: 'Your device did not provide files. Please try again.',
+                    variant: 'destructive'
+                  });
+                }
+                
+                input.value = ''; // Reset after copy
+              }, 150);
             }}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             aria-label={`Select ${type} files`}
