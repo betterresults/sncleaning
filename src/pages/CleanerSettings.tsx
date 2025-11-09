@@ -12,6 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Lock, User, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import CleanerBottomNav from '@/components/cleaner/CleanerBottomNav';
+import { isCapacitor } from '@/utils/capacitor';
 
 const CleanerSettings = () => {
   const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
@@ -99,7 +101,7 @@ const CleanerSettings = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full bg-gray-50">
+      <div className="min-h-screen flex flex-col w-full bg-gray-50 pb-20">
         <UnifiedHeader 
           title=""
           user={user}
@@ -224,6 +226,7 @@ const CleanerSettings = () => {
             </main>
           </SidebarInset>
         </div>
+        {isCapacitor() && <CleanerBottomNav />}
       </div>
     </SidebarProvider>
   );

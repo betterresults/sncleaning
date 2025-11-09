@@ -8,6 +8,8 @@ import { cleanerNavigation } from '@/lib/navigationItems';
 import { useAdminCleaner } from '@/contexts/AdminCleanerContext';
 import AdminCleanerSelector from '@/components/admin/AdminCleanerSelector';
 import CleanerEarnings from '@/components/cleaner/CleanerEarnings';
+import CleanerBottomNav from '@/components/cleaner/CleanerBottomNav';
+import { isCapacitor } from '@/utils/capacitor';
 
 const CleanerEarningsPage = () => {
   const { user, userRole, cleanerId, loading, signOut } = useAuth();
@@ -35,7 +37,7 @@ const CleanerEarningsPage = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full bg-gray-50">
+      <div className="min-h-screen flex flex-col w-full bg-gray-50 pb-20">
         <UnifiedHeader 
           title=""
           user={user}
@@ -58,6 +60,7 @@ const CleanerEarningsPage = () => {
             </main>
           </SidebarInset>
         </div>
+        {isCapacitor() && <CleanerBottomNav />}
       </div>
     </SidebarProvider>
   );
