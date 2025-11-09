@@ -24,7 +24,22 @@ export async function pickFilesNative(options: FilePickerOptions = {}): Promise<
       multiple 
     });
 
-    // Pick photos from gallery (this will request permissions automatically)
+    // Check and request permissions explicitly
+    console.log('📱 Checking photo permissions...');
+    const permissionStatus = await Camera.checkPermissions();
+    console.log('📱 Current permission status:', permissionStatus);
+
+    if (permissionStatus.photos !== 'granted') {
+      console.log('📱 Requesting photo permissions...');
+      const requestResult = await Camera.requestPermissions({ permissions: ['photos'] });
+      console.log('📱 Permission request result:', requestResult);
+      
+      if (requestResult.photos !== 'granted') {
+        throw new Error('Photo access permission denied. Please enable photo access in your device settings.');
+      }
+    }
+
+    // Pick photos from gallery
     const photos = await Camera.pickImages({
       quality: 90,
       limit: multiple ? 0 : 1, // 0 = unlimited on Android

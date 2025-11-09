@@ -41,13 +41,6 @@ const CleanerEarningsPage = () => {
   if (isNativeApp) {
     return (
       <div className="min-h-screen bg-background content-bottom-spacer">
-        {/* Header */}
-        <div className="sticky top-0 z-40 bg-background border-b border-border">
-          <div className="px-4 py-4">
-            <h1 className="text-2xl font-bold text-foreground">My Earnings</h1>
-          </div>
-        </div>
-
         {/* Content */}
         <div className="p-4">
           <CleanerEarnings />

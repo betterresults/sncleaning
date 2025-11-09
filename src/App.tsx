@@ -62,6 +62,7 @@ import NotFound from "./pages/NotFound";
 import { AdminCustomerProvider } from "./contexts/AdminCustomerContext";
 import { AdminCleanerProvider } from "./contexts/AdminCleanerContext";
 import InstallPrompt from "./components/InstallPrompt";
+import { isCapacitor } from "@/utils/capacitor";
 
 const queryClient = new QueryClient();
 
@@ -75,7 +76,7 @@ const App = () => (
           <AdminCustomerProvider>
             <AdminCleanerProvider>
             <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={isCapacitor() ? <CleanerTodayPage /> : <Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/choose-service" element={<PublicServiceSelection />} />
             <Route path="/airbnb" element={<AirbnbBooking />} />

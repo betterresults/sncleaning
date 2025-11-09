@@ -21,16 +21,19 @@ const CleanerTodayPage = () => {
   }
 
   const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Cleaner';
+  const isNativeApp = isCapacitor();
 
   return (
     <div className="min-h-screen bg-background content-bottom-spacer">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-background border-b border-border">
-        <div className="px-4 py-4">
-          <h1 className="text-2xl font-bold text-foreground">Today's Work</h1>
-          <p className="text-sm text-muted-foreground">Hello, {firstName}</p>
+      {/* Header - hidden in native app */}
+      {!isNativeApp && (
+        <div className="sticky top-0 z-40 bg-background border-b border-border">
+          <div className="px-4 py-4">
+            <h1 className="text-2xl font-bold text-foreground">Today's Work</h1>
+            <p className="text-sm text-muted-foreground">Hello, {firstName}</p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Content */}
       <div className="p-4">

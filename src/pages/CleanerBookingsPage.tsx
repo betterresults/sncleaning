@@ -29,15 +29,18 @@ const CleanerBookingsPage = () => {
   }
 
   const showAvailableBookings = availableCount && availableCount > 0;
+  const isNativeApp = isCapacitor();
 
   return (
     <div className="min-h-screen bg-background content-bottom-spacer">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-background border-b border-border">
-        <div className="px-4 py-4">
-          <h1 className="text-2xl font-bold text-foreground">My Bookings</h1>
+      {/* Header - hidden in native app */}
+      {!isNativeApp && (
+        <div className="sticky top-0 z-40 bg-background border-b border-border">
+          <div className="px-4 py-4">
+            <h1 className="text-2xl font-bold text-foreground">My Bookings</h1>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Content */}
       <div className="p-4">
