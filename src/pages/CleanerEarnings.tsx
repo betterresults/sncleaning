@@ -40,7 +40,7 @@ const CleanerEarningsPage = () => {
   // Mobile-only view for native app
   if (isNativeApp) {
     return (
-      <div className="min-h-screen bg-background pb-24">
+      <div className="min-h-screen bg-background content-bottom-spacer">
         {/* Header */}
         <div className="sticky top-0 z-40 bg-background border-b border-border">
           <div className="px-4 py-4">
