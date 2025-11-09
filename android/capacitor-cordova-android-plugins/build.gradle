@@ -51,13 +51,7 @@ dependencies {
 }
 
 // PLUGIN GRADLE EXTENSIONS START
-def cordovaVars = file('../capacitor-cordova-android-plugins/cordova.variables.gradle')
-if (cordovaVars.exists()) {
-    apply from: cordovaVars
-} else {
-    println("⚠️ Skipping missing cordova.variables.gradle in app/capacitor.build.gradle")
-}
-
+apply from: "cordova.variables.gradle"
 // PLUGIN GRADLE EXTENSIONS END
 
 for (def func : cdvPluginPostBuildExtras) {
