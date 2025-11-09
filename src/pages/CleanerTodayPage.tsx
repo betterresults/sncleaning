@@ -23,7 +23,7 @@ const CleanerTodayPage = () => {
   const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Cleaner';
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-background border-b border-border">
         <div className="px-4 py-4">

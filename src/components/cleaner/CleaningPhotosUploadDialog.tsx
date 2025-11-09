@@ -1101,15 +1101,6 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
             {booking.address} • {booking.postcode} • {new Date(booking.date_time).toLocaleDateString()}
           </p>
           
-          {/* Mobile Auto-Upload Info Banner */}
-          {isMobile && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
-              <p className="text-xs text-blue-800 flex items-center gap-2">
-                <Camera className="h-4 w-4 flex-shrink-0" />
-                <span>📱 Photos upload automatically when selected for best reliability</span>
-              </p>
-            </div>
-          )}
         </DialogHeader>
 
         {/* Debug Panel */}

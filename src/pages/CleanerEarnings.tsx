@@ -37,7 +37,7 @@ const CleanerEarningsPage = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full bg-gray-50 pb-20">
+      <div className="min-h-screen flex flex-col w-full bg-gray-50 pb-24">
         <UnifiedHeader 
           title=""
           user={user}
