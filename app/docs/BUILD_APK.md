@@ -46,11 +46,16 @@ This creates an `app/android` folder with your Android project.
 
 ## Step 5: Sync Capacitor
 
+From the `app` directory:
+
 ```bash
+cd app
 npx cap sync android
 ```
 
 This copies your web build to the Android project.
+
+**Note**: The production config (`app/capacitor.config.ts`) is set up to load from bundled files, so your APK will work offline without requiring internet to load the app shell.
 
 ## Step 6: Open in Android Studio
 
@@ -112,6 +117,33 @@ When you make changes:
 7. Send cleaners the new download link
 
 **Note**: Cleaners will need to uninstall the old version and install the new one manually (no auto-update with direct APK distribution).
+
+---
+
+## Development vs Production Config
+
+Two Capacitor configurations are available:
+
+### Production Config (`app/capacitor.config.ts`)
+- **Default**: Used for building production APKs
+- **No server section**: Loads from bundled files
+- **Works offline**: No internet required for app shell
+- **App Name**: "SN Cleaning"
+- **Use for**: Building APKs for cleaners
+
+### Development Config (`app/capacitor.config.dev.ts`)
+- **Optional**: For development testing only
+- **Has server section**: Points to `https://account.sncleaningservices.co.uk`
+- **Hot-reload**: Live updates from your custom domain
+- **App Name**: "SN Cleaning Dev"
+- **Use for**: Testing during development
+
+To use the dev config:
+```bash
+cd app
+npx cap sync android --config capacitor.config.dev.ts
+npx cap open android
+```
 
 ---
 
