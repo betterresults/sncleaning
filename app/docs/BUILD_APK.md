@@ -35,11 +35,14 @@ This creates a `dist` folder with your production build.
 
 ## Step 4: Add Android Platform
 
+Navigate to the app folder and add Android:
+
 ```bash
+cd app
 npx cap add android
 ```
 
-This creates an `android` folder with your Android project.
+This creates an `app/android` folder with your Android project.
 
 ## Step 5: Sync Capacitor
 
@@ -62,7 +65,7 @@ This opens the project in Android Studio.
 1. In Android Studio, go to **Build** → **Build Bundle(s) / APK(s)** → **Build APK(s)**
 2. Wait for the build to complete (shows notification when done)
 3. Click **locate** in the notification to find the APK file
-4. The APK will be in: `android/app/build/outputs/apk/debug/app-debug.apk`
+4. The APK will be in: `app/android/app/build/outputs/apk/debug/app-debug.apk`
 
 ## Step 8: Upload to GitHub Releases
 
@@ -77,38 +80,13 @@ This opens the project in Android Studio.
 
 Send your cleaners:
 1. **The direct APK download link** from GitHub releases
-2. **Installation instructions** (see below)
+2. **Installation instructions** (see CLEANER_INSTRUCTIONS.md in app/docs/)
 
 ---
 
 ## Installation Instructions for Cleaners
 
-### How to Install the SN Cleaning App (Android)
-
-1. **Download the APK**:
-   - Open the link we sent you in Chrome or your default browser
-   - Tap "Download" when prompted
-
-2. **Enable Installation from Unknown Sources**:
-   - Go to **Settings** → **Security** (or **Apps & notifications**)
-   - Enable **"Install unknown apps"** for your browser (Chrome/Firefox)
-   - Or enable **"Unknown sources"** on older Android versions
-
-3. **Install the App**:
-   - Find the downloaded APK in your **Downloads** folder
-   - Tap on it to install
-   - Tap **Install** when prompted
-   - Tap **Open** to launch the app
-
-4. **Login**:
-   - Use your cleaner credentials to login
-   - The app works exactly like the website but with better camera and file handling
-
-5. **Upload Photos**:
-   - Go to your bookings
-   - Tap "Upload Photos"
-   - Select multiple photos at once (works reliably now!)
-   - Photos upload in batches automatically
+See the detailed [CLEANER_INSTRUCTIONS.md](./CLEANER_INSTRUCTIONS.md) file in this folder.
 
 ---
 
@@ -125,6 +103,7 @@ When you make changes:
 4. Rebuild:
    ```bash
    npm run build
+   cd app
    npx cap sync android
    npx cap open android
    ```
