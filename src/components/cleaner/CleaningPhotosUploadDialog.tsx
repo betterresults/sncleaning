@@ -28,6 +28,9 @@ const INITIAL_PREVIEW_COUNT = 60; // Show first 60 thumbnails by default
 const LOW_MEMORY_THRESHOLD = 40; // Switch to low-memory mode for >40 files on iOS
 const DIRECT_UPLOAD_BATCH = 10; // Upload 10 files at once
 
+// Version tag for quick build identification in UI and logs
+const UPLOADER_VERSION = 'Update: 2';
+
 const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPhotosUploadDialogProps) => {
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
@@ -60,6 +63,11 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   const isMobile = isIOS || isAndroid;
   const totalFiles = beforeFiles.length + afterFiles.length + additionalFiles.length;
   const isLowMemoryMode = isIOS && totalFiles > LOW_MEMORY_THRESHOLD;
+
+  // Log build version once on mount
+  useEffect(() => {
+    console.info(`Uploader build: ${UPLOADER_VERSION}`);
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -811,17 +819,57 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
             accept={type === 'additional' ? "*/*" : "image/*"}
             multiple
             disabled={uploading}
-            onChange={(e) => { 
-              const fileList = (e.target as HTMLInputElement).files;
-              const filesArr = fileList ? Array.from(fileList) : [];
+            onChange={async (e) => { 
+              const input = e.target as HTMLInputElement;
+
+              const pollForFiles = async (
+                inputEl: HTMLInputElement,
+                timeoutMs = 1200,
+                intervalMs = 80
+              ): Promise<File[]> => {
+                const start = Date.now();
+                const readFiles = () => {
+                  const fl = inputEl.files;
+                  return fl && fl.length ? Array.from(fl) : [];
+                };
+                let files = readFiles();
+                if (files.length > 0) return files;
+                await new Promise<void>((resolve) => {
+                  const id = setInterval(() => {
+                    files = readFiles();
+                    if (files.length > 0 || Date.now() - start >= timeoutMs) {
+                      clearInterval(id);
+                      resolve();
+                    }
+                  }, intervalMs);
+                });
+                return files;
+              };
+
               console.info(`🔔 onChange EVENT FIRED for ${type}!`, { 
-                fileCount: filesArr.length,
-                firstFileName: filesArr[0]?.name,
                 device: isMobile ? 'Mobile' : 'Desktop'
               });
+
+              const filesArr = await pollForFiles(input);
+
+              console.info(`📥 Files available after selection for ${type}`, {
+                count: filesArr.length,
+                firstFileName: filesArr[0]?.name,
+              });
+
+              if (filesArr.length === 0) {
+                toast({
+                  title: 'No Files Captured',
+                  description: 'Your device did not provide files. Please try again.',
+                  variant: 'destructive'
+                });
+                input.value = '';
+                return;
+              }
+
               onFileSelect(filesArr);
               // Reset value AFTER copying files to avoid FileList invalidation on mobile
-              (e.target as HTMLInputElement).value = '';
+              input.value = '';
             }}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             aria-label={`Select ${type} files`}
@@ -947,6 +995,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
               <Upload className="h-6 w-6 text-primary" />
             </div>
             <span>Upload Cleaning Photos</span>
+            <span className="text-xs text-muted-foreground ml-2">• {UPLOADER_VERSION}</span>
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
             {booking.address} • {booking.postcode} • {new Date(booking.date_time).toLocaleDateString()}
