@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SN Cleaning</string>
+    <string name="title_activity_main">SN Cleaning</string>
+    <string name="package_name">com.sncleaning.cleaners</string>
+    <string name="custom_url_scheme">com.sncleaning.cleaners</string>
+</resources>
