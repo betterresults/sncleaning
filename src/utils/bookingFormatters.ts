@@ -142,6 +142,26 @@ export const formatPropertyDetails = (detailsString: string | null | undefined):
 };
 
 /**
+ * Formats service/cleaning type to display name
+ */
+export const formatServiceType = (serviceType: string | null | undefined): string => {
+  if (!serviceType) return 'Standard Cleaning';
+  
+  const serviceTypeMap: Record<string, string> = {
+    'standard_cleaning': 'Standard Cleaning',
+    'deep_cleaning': 'Deep Cleaning',
+    'checkin-checkout': 'Check-in/Check-out',
+    'check_in_check_out': 'Check-in/Check-out',
+    'midstay': 'Midstay Cleaning',
+    'midstay_cleaning': 'Midstay Cleaning',
+    'end_of_tenancy': 'End of Tenancy',
+    'after_party': 'After Party Cleaning',
+  };
+  
+  return serviceTypeMap[serviceType] || serviceType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+};
+
+/**
  * Formats additional details from JSON string to readable text
  */
 export const formatAdditionalDetails = (detailsString: string | null | undefined): string => {
