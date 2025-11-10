@@ -176,6 +176,8 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
       }
 
       const { data: bookingsData, error: bookingsError } = await bookingsQuery
+        .neq('booking_status', 'Cancelled')
+        .neq('booking_status', 'cancelled')
         .order('date_time', { ascending: true });
 
       if (bookingsError) {
