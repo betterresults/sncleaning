@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { CalendarDays, Clock, MapPin, User, Banknote, UserPlus } from 'lucide-react';
 import { Booking } from './types';
+import { formatAdditionalDetails } from '@/utils/bookingFormatters';
 
 const CleanerAvailableBookings = () => {
   const { cleanerId } = useAuth();
@@ -214,7 +215,7 @@ const CleanerAvailableBookings = () => {
                   <div className="pt-3 border-t">
                     <div className="text-sm">
                       <span className="font-medium">Additional Details:</span>
-                      <p className="mt-1 text-gray-600">{booking.additional_details}</p>
+                      <div className="mt-1 text-gray-600 whitespace-pre-wrap">{formatAdditionalDetails(booking.additional_details)}</div>
                     </div>
                   </div>
                 )}

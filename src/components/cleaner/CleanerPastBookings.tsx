@@ -314,15 +314,17 @@ const CleanerPastBookings = () => {
             <span className="ml-1 hidden sm:inline">Photos</span>
           </Button>
           
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePaymentAction(booking)}
-            className="bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 border-green-200 hover:border-green-300"
-          >
-            <CreditCard className="h-4 w-4" />
-            <span className="ml-1 hidden sm:inline">Payment</span>
-          </Button>
+          {userRole === 'admin' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePaymentAction(booking)}
+              className="bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 border-green-200 hover:border-green-300"
+            >
+              <CreditCard className="h-4 w-4" />
+              <span className="ml-1 hidden sm:inline">Payment</span>
+            </Button>
+          )}
         </div>
       </div>
     </div>
