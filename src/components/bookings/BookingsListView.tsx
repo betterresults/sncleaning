@@ -448,12 +448,39 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
     if (!bookingToDelete) return;
 
     try {
+      // Get booking details before deletion for activity log
+      const { data: bookingData } = await supabase
+        .from('bookings')
+        .select('*, customers(first_name, last_name, email)')
+        .eq('id', bookingToDelete)
+        .single();
+
       const { error } = await supabase
         .from('bookings')
         .delete()
         .eq('id', bookingToDelete);
 
       if (error) throw error;
+
+      // Log deletion to activity_logs for admin notifications
+      if (bookingData) {
+        await supabase.from('activity_logs').insert({
+          action_type: 'booking_deleted',
+          entity_type: 'booking',
+          entity_id: bookingToDelete.toString(),
+          user_role: 'admin',
+          details: {
+            booking_id: bookingToDelete,
+            customer_name: bookingData.customers ? 
+              `${bookingData.customers.first_name} ${bookingData.customers.last_name}` : 
+              `${bookingData.first_name} ${bookingData.last_name}`,
+            customer_email: bookingData.customers?.email || bookingData.email,
+            booking_date: bookingData.date_time,
+            service_type: bookingData.service_type,
+            address: bookingData.address
+          }
+        });
+      }
 
       toast({
         title: "Success",

@@ -60,6 +60,11 @@ export const useNotifications = () => {
         type = 'booking';
         severity = 'warning';
         break;
+      case 'booking_deleted':
+        message = `Booking #${log.details?.booking_id} deleted - ${log.details?.customer_name || 'customer'} on ${log.details?.booking_date ? new Date(log.details.booking_date).toLocaleDateString() : 'unknown date'}`;
+        type = 'booking';
+        severity = 'error';
+        break;
       case 'customer_created':
         message = `New customer registered: ${log.details?.name || 'Unknown'}`;
         type = 'customer';

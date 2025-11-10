@@ -312,14 +312,14 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
     try {
       console.log('Attempting to delete booking with ID:', bookingToDelete);
       
-      // Check if booking exists first
-      const { data: existingBooking, error: checkError } = await supabase
+      // Get booking details for activity log before deletion
+      const { data: bookingData, error: checkError } = await supabase
         .from('bookings')
-        .select('id')
+        .select('*, customers(first_name, last_name, email)')
         .eq('id', bookingToDelete)
         .single();
 
-      if (checkError || !existingBooking) {
+      if (checkError || !bookingData) {
         console.error('Booking not found:', checkError);
         toast({
           title: "Error",
@@ -353,6 +353,24 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
           variant: "destructive"
         });
       } else {
+        // Log deletion to activity_logs for admin notifications
+        await supabase.from('activity_logs').insert({
+          action_type: 'booking_deleted',
+          entity_type: 'booking',
+          entity_id: bookingToDelete.toString(),
+          user_role: 'admin',
+          details: {
+            booking_id: bookingToDelete,
+            customer_name: bookingData.customers ? 
+              `${bookingData.customers.first_name} ${bookingData.customers.last_name}` : 
+              `${bookingData.first_name} ${bookingData.last_name}`,
+            customer_email: bookingData.customers?.email || bookingData.email,
+            booking_date: bookingData.date_time,
+            service_type: bookingData.service_type,
+            address: bookingData.address
+          }
+        });
+
         toast({
           title: "Success",
           description: "Booking deleted successfully!"
