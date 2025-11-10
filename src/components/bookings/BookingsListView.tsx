@@ -374,15 +374,55 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
 
     try {
       console.log('Attempting to cancel booking...');
-      const { error, data } = await supabase
+      
+      // First, get the booking data
+      const { data: bookingData, error: fetchError } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('id', bookingToCancel)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Update booking status to Cancelled
+      const { error: updateError } = await supabase
         .from('bookings')
         .update({ booking_status: 'Cancelled' })
-        .eq('id', bookingToCancel)
-        .select();
+        .eq('id', bookingToCancel);
 
-      console.log('Cancel booking response:', { error, data });
+      if (updateError) throw updateError;
 
-      if (error) throw error;
+      // Copy to past_bookings (only copy the fields that exist in past_bookings)
+      const { error: insertError } = await supabase
+        .from('past_bookings')
+        .insert([{
+          id: bookingData.id,
+          first_name: bookingData.first_name,
+          last_name: bookingData.last_name,
+          phone_number: bookingData.phone_number,
+          email: bookingData.email,
+          date_time: bookingData.date_time,
+          address: bookingData.address,
+          postcode: bookingData.postcode,
+          service_type: bookingData.service_type,
+          cleaning_type: bookingData.cleaning_type,
+          total_cost: String(bookingData.total_cost),
+          cleaner: bookingData.cleaner,
+          cleaner_pay: bookingData.cleaner_pay,
+          customer: bookingData.customer,
+          payment_status: bookingData.payment_status,
+          payment_method: bookingData.payment_method,
+          booking_status: 'Cancelled',
+          has_photos: bookingData.has_photos,
+          additional_details: bookingData.additional_details
+        }]);
+
+      if (insertError) {
+        console.error('Error copying to past_bookings:', insertError);
+        // Don't fail the whole operation if copy fails
+      }
+
+      console.log('Booking cancelled and moved to past bookings');
 
       toast({
         title: "Success",
