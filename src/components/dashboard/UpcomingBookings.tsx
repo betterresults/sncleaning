@@ -183,8 +183,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
       }
 
       const { data: bookingsData, error: bookingsError } = await bookingsQuery
-        .neq('booking_status', 'Cancelled')
-        .neq('booking_status', 'cancelled')
+        .not('booking_status', 'in', '("Cancelled","cancelled")')
         .order('date_time', { ascending: sortOrder === 'asc' });
 
       if (bookingsError) {
