@@ -383,18 +383,28 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   };
 
   const handleCancel = async (bookingId: number) => {
+    console.log('UpcomingBookings - handleCancel called with bookingId:', bookingId);
     setBookingToCancel(bookingId);
     setCancelDialogOpen(true);
+    console.log('UpcomingBookings - Cancel dialog should now be open');
   };
 
   const confirmCancel = async () => {
-    if (!bookingToCancel) return;
+    console.log('UpcomingBookings - confirmCancel called with bookingToCancel:', bookingToCancel);
+    if (!bookingToCancel) {
+      console.log('UpcomingBookings - No booking to cancel, returning');
+      return;
+    }
     
     try {
-      const { error } = await supabase
+      console.log('UpcomingBookings - Attempting to cancel booking...');
+      const { error, data } = await supabase
         .from('bookings')
         .update({ booking_status: 'Cancelled' })
-        .eq('id', bookingToCancel);
+        .eq('id', bookingToCancel)
+        .select();
+
+      console.log('UpcomingBookings - Cancel booking response:', { error, data });
 
       if (error) {
         console.error('Error cancelling booking:', error);

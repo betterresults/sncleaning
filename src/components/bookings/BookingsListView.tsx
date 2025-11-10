@@ -357,18 +357,28 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
   };
 
   const handleCancel = (bookingId: number) => {
+    console.log('handleCancel called with bookingId:', bookingId);
     setBookingToCancel(bookingId);
     setCancelDialogOpen(true);
+    console.log('Cancel dialog should now be open');
   };
 
   const confirmCancel = async () => {
-    if (!bookingToCancel) return;
+    console.log('confirmCancel called with bookingToCancel:', bookingToCancel);
+    if (!bookingToCancel) {
+      console.log('No booking to cancel, returning');
+      return;
+    }
 
     try {
-      const { error } = await supabase
+      console.log('Attempting to cancel booking...');
+      const { error, data } = await supabase
         .from('bookings')
-        .update({ booking_status: 'cancelled' })
-        .eq('id', bookingToCancel);
+        .update({ booking_status: 'Cancelled' })
+        .eq('id', bookingToCancel)
+        .select();
+
+      console.log('Cancel booking response:', { error, data });
 
       if (error) throw error;
 
