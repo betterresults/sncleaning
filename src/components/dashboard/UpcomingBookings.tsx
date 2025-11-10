@@ -176,14 +176,9 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
         bookingsQuery = bookingsQuery
           .gte('date_time', dashboardDateFilter.dateFrom)
           .lte('date_time', dashboardDateFilter.dateTo);
-      } else {
-        // Show all future bookings when no date filter is provided
-        bookingsQuery = bookingsQuery
-          .gte('date_time', new Date().toISOString());
       }
 
       const { data: bookingsData, error: bookingsError } = await bookingsQuery
-        .not('booking_status', 'in', '("Cancelled","cancelled")')
         .order('date_time', { ascending: sortOrder === 'asc' });
 
       if (bookingsError) {

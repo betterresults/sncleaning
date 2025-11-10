@@ -171,12 +171,9 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
         bookingsQuery = bookingsQuery
           .gte('date_time', dashboardDateFilter.dateFrom)
           .lte('date_time', dashboardDateFilter.dateTo);
-      } else {
-        bookingsQuery = bookingsQuery.gte('date_time', new Date().toISOString());
       }
 
       const { data: bookingsData, error: bookingsError } = await bookingsQuery
-        .not('booking_status', 'in', '("Cancelled","cancelled")')
         .order('date_time', { ascending: true });
 
       if (bookingsError) {
