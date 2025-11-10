@@ -25,6 +25,7 @@ interface PastBooking {
   phone_number: string;
   address: string;
   postcode: string;
+  service_type: string;
   cleaning_type: string;
   total_cost: string;
   cleaner_pay: number;
@@ -263,7 +264,9 @@ const CleanerPastBookings = () => {
       <div className="flex items-start justify-between mb-3 sm:mb-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <h3 className="text-lg sm:text-xl font-bold text-foreground tracking-tight">{formatServiceType(booking.cleaning_type)}</h3>
+            <h3 className="text-lg sm:text-xl font-bold text-foreground tracking-tight">
+              {formatServiceType(booking.service_type)} {formatServiceType(booking.cleaning_type)}
+            </h3>
             <div className="flex items-center">
               <Camera className={`h-4 w-4 ${booking.has_photos ? 'text-green-600' : 'text-gray-400'}`} />
             </div>
