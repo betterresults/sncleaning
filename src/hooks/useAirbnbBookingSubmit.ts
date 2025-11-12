@@ -198,6 +198,17 @@ export const useAirbnbBookingSubmit = () => {
     try {
       setLoading(true);
 
+      // Validation: Ensure date and time are provided
+      if (!bookingData.selectedDate || !bookingData.selectedTime) {
+        toast({
+          title: "Missing Information",
+          description: "Please select both a date and time for your booking.",
+          variant: "destructive"
+        });
+        setLoading(false);
+        return { success: false };
+      }
+
       // Step 1: Check if customer exists or create new one
       let customerId: number;
       
