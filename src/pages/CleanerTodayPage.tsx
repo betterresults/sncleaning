@@ -4,6 +4,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import CleanerTodayBookingsList from '@/components/cleaner/CleanerTodayBookingsList';
 import CleanerBottomNav from '@/components/cleaner/CleanerBottomNav';
 import { isCapacitor } from '@/utils/capacitor';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdminCleaner } from '@/contexts/AdminCleanerContext';
 
@@ -59,12 +60,13 @@ const CleanerTodayPage = () => {
   }
 
   const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Cleaner';
-  const isNativeApp = isCapacitor();
+  const isMobile = useIsMobile();
+  const isMobileView = isCapacitor() || isMobile;
 
   return (
     <div className="min-h-screen bg-background content-bottom-spacer">
-      {/* Header - hidden in native app */}
-      {!isNativeApp && (
+      {/* Header - hidden in mobile view */}
+      {!isMobileView && (
         <div className="sticky top-0 z-40 bg-background border-b border-border">
           <div className="px-4 py-4">
             <h1 className="text-2xl font-bold text-foreground">Today's Work</h1>
