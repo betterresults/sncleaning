@@ -35,6 +35,7 @@ import ManualEmailDialog from './ManualEmailDialog';
 interface Booking {
   id: number;
   date_time: string;
+  time_only?: string | null;
   first_name: string;
   last_name: string;
   email: string;
@@ -159,6 +160,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
         .from('bookings')
         .select(`
           *,
+          time_only,
           cleaners!bookings_cleaner_fkey (
             id,
             first_name,

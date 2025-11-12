@@ -198,17 +198,6 @@ export const useAirbnbBookingSubmit = () => {
     try {
       setLoading(true);
 
-      // Validation: Ensure date and time are provided
-      if (!bookingData.selectedDate || !bookingData.selectedTime) {
-        toast({
-          title: "Missing Information",
-          description: "Please select both a date and time for your booking.",
-          variant: "destructive"
-        });
-        setLoading(false);
-        return { success: false };
-      }
-
       // Step 1: Check if customer exists or create new one
       let customerId: number;
       
@@ -404,6 +393,10 @@ export const useAirbnbBookingSubmit = () => {
         
         // Dates
         date_time: bookingDateTime?.toISOString(),
+        date_only: bookingData.selectedDate ? bookingData.selectedDate.toISOString().split('T')[0] : null,
+        time_only: (bookingData.flexibility === 'flexible-time' || !bookingData.selectedTime) 
+          ? null 
+          : bookingData.selectedTime, // Will be the converted 24-hour time from processing above
         
         // Hours
         hours_required: bookingData.estimatedHours || 0, // system calculated

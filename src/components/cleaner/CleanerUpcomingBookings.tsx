@@ -54,6 +54,7 @@ const CleanerUpcomingBookings = () => {
         .from('bookings')
         .select(`
           *,
+          time_only,
           cleaners!bookings_cleaner_fkey (
             id,
             first_name,

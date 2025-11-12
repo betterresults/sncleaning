@@ -25,6 +25,7 @@ import { useServiceTypes, useCleaningTypes, getServiceTypeBadgeColor as getBadge
 interface Booking {
   id: number;
   date_time: string;
+  time_only?: string | null;
   first_name: string;
   last_name: string;
   email: string;
@@ -509,7 +510,11 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
       {displayedBookings.map((booking) => {
         const isUnsigned = !booking.cleaner;
         const cleanerName = getCleanerName(booking);
-        const bookingTime = booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'N/A';
+        // Check if time is flexible (time_only is NULL)
+        const isFlexibleTime = !booking.time_only;
+        const bookingTime = isFlexibleTime 
+          ? '⏰ Flexible' 
+          : (booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'N/A');
         const bookingDate = booking.date_time ? format(new Date(booking.date_time), 'dd MMM') : 'N/A';
         const serviceBadgeColor = serviceTypes ? getBadgeColor(booking.service_type, serviceTypes) : 'bg-gray-500 text-white';
         const serviceLabel = getServiceTypeLabel(booking.service_type);
@@ -526,7 +531,9 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
               <div className="bg-primary/10 h-full flex items-center justify-center">
                 <div className="text-center py-4">
                   <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{bookingDate}</div>
-                  <div className="text-2xl font-bold text-primary mt-1">{bookingTime}</div>
+                  <div className={`text-2xl font-bold ${isFlexibleTime ? 'text-orange-500' : 'text-primary'} mt-1`} title={isFlexibleTime ? 'Customer requested flexible arrival time' : undefined}>
+                    {bookingTime}
+                  </div>
                   {booking.total_hours && (
                     <div className="text-sm font-semibold text-muted-foreground mt-1">
                       {booking.total_hours}h

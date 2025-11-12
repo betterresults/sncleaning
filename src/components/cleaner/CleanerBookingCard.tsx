@@ -45,6 +45,9 @@ const CleanerBookingCard = ({
   const serviceTypeLabel = getServiceTypeLabel(normalizeServiceTypeKey(booking.service_type), serviceTypes);
   const cleaningTypeLabel = getCleaningTypeLabel(normalizeCleaningTypeKey(booking.cleaning_type), cleaningTypes);
 
+  // Check if time is flexible (time_only is NULL)
+  const isFlexibleTime = !booking.time_only;
+
   return (
     <div className={`group relative overflow-hidden rounded-2xl border p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/30 ${
       isSameDay 
@@ -83,16 +86,22 @@ const CleanerBookingCard = ({
         <div className="flex items-center gap-4 text-sm">
           <div className="flex items-center gap-2 text-muted-foreground min-w-0 flex-1">
             <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
-            <span className="font-medium truncate">{new Date(booking.date_time).toLocaleDateString('en-GB', { 
-              weekday: 'short',
-              day: 'numeric', 
-              month: 'short', 
-              year: 'numeric' 
-            })}, {new Date(booking.date_time).toLocaleTimeString('en-GB', { 
-              hour: 'numeric', 
-              minute: '2-digit',
-              hour12: true 
-            })}</span>
+            <span className="font-medium truncate">
+              {new Date(booking.date_time).toLocaleDateString('en-GB', { 
+                weekday: 'short',
+                day: 'numeric', 
+                month: 'short', 
+                year: 'numeric' 
+              })}, {isFlexibleTime ? (
+                <span className="text-orange-500" title="Customer requested flexible arrival time">⏰ Flexible</span>
+              ) : (
+                new Date(booking.date_time).toLocaleTimeString('en-GB', { 
+                  hour: 'numeric', 
+                  minute: '2-digit',
+                  hour12: true 
+                })
+              )}
+            </span>
           </div>
           {booking.total_hours && (
             <div className="flex items-center gap-2 text-muted-foreground">

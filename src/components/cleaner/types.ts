@@ -1,7 +1,7 @@
-
 export interface Booking {
   id: number;
   date_time: string;
+  time_only?: string | null;
   first_name: string;
   last_name: string;
   email: string;
