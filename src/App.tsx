@@ -76,7 +76,7 @@ const App = () => (
           <AdminCustomerProvider>
             <AdminCleanerProvider>
             <Routes>
-            <Route path="/" element={isCapacitor() ? <CleanerTodayPage /> : <Index />} />
+            <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/choose-service" element={<PublicServiceSelection />} />
             <Route path="/airbnb" element={<AirbnbBooking />} />
