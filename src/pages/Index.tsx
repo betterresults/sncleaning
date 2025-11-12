@@ -38,7 +38,8 @@ const Index = () => {
     
     // Redirect cleaners to mobile or desktop view
     if (userRole === 'user' && cleanerId) {
-      const redirectPath = isCapacitor() ? '/cleaner-today' : '/cleaner-dashboard';
+      const isMobileWeb = typeof window !== 'undefined' && window.innerWidth < 768;
+      const redirectPath = (isCapacitor() || isMobileWeb) ? '/cleaner-today' : '/cleaner-dashboard';
       console.log(`Index - Redirecting cleaner to ${redirectPath}`);
       return <Navigate to={redirectPath} replace />;
     }
