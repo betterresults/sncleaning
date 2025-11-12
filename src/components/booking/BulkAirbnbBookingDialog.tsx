@@ -130,7 +130,7 @@ const BulkAirbnbBookingDialog: React.FC<BulkAirbnbBookingDialogProps> = ({
           payment_method: 'Cash',
           booking_status: 'active',
           same_day: bookingDate.sameDayCleaning
-        });
+        }).select();
       });
 
       const results = await Promise.all(bookingPromises);
