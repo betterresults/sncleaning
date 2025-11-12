@@ -103,11 +103,8 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
 
   // Fetch cleaners when dialog opens
   React.useEffect(() => {
-    console.log('📊 Dialog open state changed:', open);
     if (open) {
-      console.log('📋 Fetching cleaners...');
       fetchCleaners();
-      console.log('📦 Current booking data:', booking);
     }
   }, [open]);
 
@@ -144,26 +141,11 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
   ];
 
   const handleDuplicate = async () => {
-    console.log('=== DUPLICATE BOOKING STARTED ===');
-    console.log('Booking:', booking);
-    console.log('Selected date:', selectedDate);
-    console.log('Selected hour:', selectedHour);
-    console.log('Selected minute:', selectedMinute);
-    console.log('Cleaner option:', cleanerOption);
-    console.log('Selected cleaner:', selectedCleaner);
-    
     if (!booking || !selectedDate || !selectedHour || !selectedMinute) {
-      console.error('❌ Missing required fields:', { 
-        hasBooking: !!booking, 
-        selectedDate, 
-        selectedHour, 
-        selectedMinute 
-      });
       return;
     }
 
     setIsLoading(true);
-    console.log('✅ Validation passed, proceeding with duplication...');
 
     try {
       // Convert 12-hour format to 24-hour format
@@ -177,8 +159,6 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
       // Combine date and time
       const newDateTime = new Date(selectedDate);
       newDateTime.setHours(hour24, parseInt(selectedMinute), 0, 0);
-
-      console.log('Creating duplicate booking with date:', newDateTime.toISOString());
 
       // Determine cleaner assignment
       let assignedCleaner: number | null = null;
@@ -221,25 +201,15 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
         frequently: frequently, // Set frequently field
       };
 
-      console.log('📤 Inserting duplicate booking data:', duplicateData);
-
       const { data: insertedData, error } = await supabase
         .from('bookings')
         .insert([duplicateData])
         .select();
 
       if (error) {
-        console.error('❌ Database error duplicating booking:', error);
-        console.error('Error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
+        console.error('Error duplicating booking:', error);
         throw error;
       }
-
-      console.log('✅ Booking duplicated successfully!', insertedData);
       onSuccess();
       onOpenChange(false);
       
@@ -260,15 +230,6 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
 
   const isFormValid = selectedDate && selectedHour && selectedMinute && 
     (cleanerOption !== 'different' || selectedCleaner !== null);
-
-  console.log('🔍 Form validation state:', {
-    isFormValid,
-    selectedDate,
-    selectedHour,
-    selectedMinute,
-    cleanerOption,
-    selectedCleaner
-  });
 
   const isAirbnbBooking = booking?.service_type === 'Air BnB' || booking?.cleaning_type === 'Air BnB';
 
@@ -446,10 +407,7 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
               Cancel
             </Button>
             <Button
-              onClick={() => {
-                console.log('🔘 Duplicate button clicked!');
-                handleDuplicate();
-              }}
+              onClick={handleDuplicate}
               disabled={!isFormValid || isLoading}
               className="px-12 py-3 h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-medium shadow-lg disabled:opacity-50 transition-all duration-200"
             >

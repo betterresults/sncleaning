@@ -326,10 +326,8 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
   };
 
   const handleDuplicate = (booking: Booking) => {
-    console.log('🔄 handleDuplicate called with booking:', booking.id);
     setSelectedBookingForDuplicate(booking);
     setDuplicateDialogOpen(true);
-    console.log('✅ Duplicate dialog opened');
   };
 
   const handleAssignCleaner = (bookingId: number) => {
