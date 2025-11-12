@@ -37,6 +37,25 @@ const CleanerDashboard = () => {
     return <Navigate to="/auth" replace />;
   }
 
+  const isMobile = useIsMobile();
+  const isMobileView = isCapacitor() || isMobile;
+
+  if (isMobileView) {
+    return (
+      <div className="min-h-screen bg-background content-bottom-spacer">
+        <div className="p-4">
+          {userRole === 'admin' && (
+            <div className="mb-4">
+              <AdminCleanerSelector />
+            </div>
+          )}
+          <CleanerUpcomingBookings />
+        </div>
+        <CleanerBottomNav />
+      </div>
+    );
+  }
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex flex-col w-full bg-gray-50 overflow-x-hidden">
