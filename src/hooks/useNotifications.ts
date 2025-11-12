@@ -51,17 +51,17 @@ export const useNotifications = () => {
 
     switch (log.action_type) {
       case 'booking_created':
-        message = `New booking created for ${log.details?.customer_email || 'customer'}`;
+        message = `New booking - ${log.details?.customer_name || log.details?.customer_email || 'customer'} on ${log.details?.booking_date ? new Date(log.details.booking_date).toLocaleDateString('en-GB') : 'unknown date'}`;
         type = 'booking';
         severity = 'success';
         break;
       case 'booking_cancelled':
-        message = `Booking cancelled for ${log.details?.customer_email || 'customer'}`;
+        message = `Booking cancelled - ${log.details?.customer_name || log.details?.customer_email || 'customer'} on ${log.details?.booking_date ? new Date(log.details.booking_date).toLocaleDateString('en-GB') : 'unknown date'}`;
         type = 'booking';
         severity = 'warning';
         break;
       case 'booking_deleted':
-        message = `Booking #${log.details?.booking_id} deleted - ${log.details?.customer_name || 'customer'} on ${log.details?.booking_date ? new Date(log.details.booking_date).toLocaleDateString() : 'unknown date'}`;
+        message = `Booking #${log.details?.booking_id} deleted - ${log.details?.customer_name || 'customer'} on ${log.details?.booking_date ? new Date(log.details.booking_date).toLocaleDateString('en-GB') : 'unknown date'}`;
         type = 'booking';
         severity = 'error';
         break;
@@ -77,18 +77,18 @@ export const useNotifications = () => {
         break;
       case 'booking_status_changed':
         if (log.details?.new_status === 'completed') {
-          message = `Booking completed for ${log.details?.customer_email || 'customer'}`;
+          message = `Booking completed - ${log.details?.customer_name || log.details?.customer_email || 'customer'} on ${log.details?.booking_date ? new Date(log.details.booking_date).toLocaleDateString('en-GB') : 'unknown date'}`;
           type = 'booking';
           severity = 'success';
         } else {
-          message = `Booking status changed to ${log.details?.new_status}`;
+          message = `Booking status: ${log.details?.new_status} - ${log.details?.customer_name || log.details?.customer_email || 'customer'} on ${log.details?.booking_date ? new Date(log.details.booking_date).toLocaleDateString('en-GB') : 'unknown date'}`;
           type = 'booking';
           severity = 'info';
         }
         break;
       case 'file_upload':
         if (log.details?.file_type?.includes('image')) {
-          message = `Cleaning photos uploaded for booking`;
+          message = `Photos uploaded - ${log.details?.customer_name || 'booking'} on ${log.details?.booking_date ? new Date(log.details.booking_date).toLocaleDateString('en-GB') : 'unknown date'}`;
           type = 'booking';
           severity = 'info';
         }
