@@ -141,6 +141,33 @@ const BulkAirbnbBookingDialog: React.FC<BulkAirbnbBookingDialogProps> = ({
         throw new Error(`Failed to create ${errors.length} booking(s)`);
       }
 
+      // Log each successful booking creation to activity_logs
+      const successfulResults = results.filter(result => !result.error && result.data);
+      for (const result of successfulResults) {
+        if (result.data && result.data.length > 0) {
+          const booking = result.data[0];
+          try {
+            await supabase.from('activity_logs').insert({
+              action_type: 'booking_created',
+              entity_type: 'booking',
+              entity_id: booking.id?.toString(),
+              user_role: 'admin',
+              details: {
+                booking_id: booking.id,
+                customer_name: `${customer.first_name} ${customer.last_name}`,
+                customer_email: customer.email,
+                booking_date: booking.date_time,
+                service_type: 'Air BnB',
+                address: `${address}, ${postcode}`
+              }
+            });
+          } catch (logError) {
+            console.error('Failed to log booking creation:', logError);
+            // Don't fail if logging fails
+          }
+        }
+      }
+
       toast({
         title: "Success",
         description: `Created ${bookingDates.length} Airbnb bookings successfully`,
