@@ -188,9 +188,15 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
         frequently = 'Same Day';
       }
       
+      // Extract date_only and time_only from newDateTime
+      const dateOnly = newDateTime.toISOString().split('T')[0];
+      const timeOnly = `${hour24.toString().padStart(2, '0')}:${selectedMinute}:00`;
+      
       const duplicateData = {
         ...bookingData,
         date_time: newDateTime.toISOString(),
+        date_only: dateOnly,
+        time_only: timeOnly,
         payment_status: 'Unpaid', // Reset payment status for new booking
         cleaner: assignedCleaner, // Use determined cleaner assignment
         cleaner_pay: null, // Reset cleaner pay
