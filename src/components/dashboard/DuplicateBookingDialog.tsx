@@ -141,12 +141,26 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
   ];
 
   const handleDuplicate = async () => {
+    console.log('=== DUPLICATE BOOKING STARTED ===');
+    console.log('Booking:', booking);
+    console.log('Selected date:', selectedDate);
+    console.log('Selected hour:', selectedHour);
+    console.log('Selected minute:', selectedMinute);
+    console.log('Cleaner option:', cleanerOption);
+    console.log('Selected cleaner:', selectedCleaner);
+    
     if (!booking || !selectedDate || !selectedHour || !selectedMinute) {
-      console.log('Missing required fields:', { booking: !!booking, selectedDate, selectedHour, selectedMinute });
+      console.error('❌ Missing required fields:', { 
+        hasBooking: !!booking, 
+        selectedDate, 
+        selectedHour, 
+        selectedMinute 
+      });
       return;
     }
 
     setIsLoading(true);
+    console.log('✅ Validation passed, proceeding with duplication...');
 
     try {
       // Convert 12-hour format to 24-hour format
@@ -204,18 +218,25 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
         frequently: frequently, // Set frequently field
       };
 
-      console.log('Inserting duplicate booking data:', duplicateData);
+      console.log('📤 Inserting duplicate booking data:', duplicateData);
 
-      const { error } = await supabase
+      const { data: insertedData, error } = await supabase
         .from('bookings')
-        .insert([duplicateData]);
+        .insert([duplicateData])
+        .select();
 
       if (error) {
-        console.error('Error duplicating booking:', error);
+        console.error('❌ Database error duplicating booking:', error);
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         throw error;
       }
 
-      console.log('Booking duplicated successfully');
+      console.log('✅ Booking duplicated successfully!', insertedData);
       onSuccess();
       onOpenChange(false);
       
