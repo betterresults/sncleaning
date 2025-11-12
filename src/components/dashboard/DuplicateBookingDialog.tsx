@@ -103,8 +103,11 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
 
   // Fetch cleaners when dialog opens
   React.useEffect(() => {
+    console.log('📊 Dialog open state changed:', open);
     if (open) {
+      console.log('📋 Fetching cleaners...');
       fetchCleaners();
+      console.log('📦 Current booking data:', booking);
     }
   }, [open]);
 
@@ -257,6 +260,15 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
 
   const isFormValid = selectedDate && selectedHour && selectedMinute && 
     (cleanerOption !== 'different' || selectedCleaner !== null);
+
+  console.log('🔍 Form validation state:', {
+    isFormValid,
+    selectedDate,
+    selectedHour,
+    selectedMinute,
+    cleanerOption,
+    selectedCleaner
+  });
 
   const isAirbnbBooking = booking?.service_type === 'Air BnB' || booking?.cleaning_type === 'Air BnB';
 
@@ -434,7 +446,10 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
               Cancel
             </Button>
             <Button
-              onClick={handleDuplicate}
+              onClick={() => {
+                console.log('🔘 Duplicate button clicked!');
+                handleDuplicate();
+              }}
               disabled={!isFormValid || isLoading}
               className="px-12 py-3 h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-medium shadow-lg disabled:opacity-50 transition-all duration-200"
             >
