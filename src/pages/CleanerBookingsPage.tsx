@@ -10,6 +10,7 @@ import CleanerPastBookings from '@/components/cleaner/CleanerPastBookings';
 import CleanerBottomNav from '@/components/cleaner/CleanerBottomNav';
 import { useAvailableBookingsCount } from '@/hooks/useAvailableBookingsCount';
 import { isCapacitor } from '@/utils/capacitor';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const CleanerBookingsPage = () => {
   const { user, userRole, cleanerId, loading } = useAuth();
@@ -29,12 +30,13 @@ const CleanerBookingsPage = () => {
   }
 
   const showAvailableBookings = availableCount && availableCount > 0;
-  const isNativeApp = isCapacitor();
+  const isMobile = useIsMobile();
+  const isMobileView = isCapacitor() || isMobile;
 
   return (
     <div className="min-h-screen bg-background content-bottom-spacer">
-      {/* Header - hidden in native app */}
-      {!isNativeApp && (
+      {/* Header - hidden in mobile view */}
+      {!isMobileView && (
         <div className="sticky top-0 z-40 bg-background border-b border-border">
           <div className="px-4 py-4">
             <h1 className="text-2xl font-bold text-foreground">My Bookings</h1>

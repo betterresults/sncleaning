@@ -10,6 +10,7 @@ import AdminCleanerSelector from '@/components/admin/AdminCleanerSelector';
 import CleanerEarnings from '@/components/cleaner/CleanerEarnings';
 import CleanerBottomNav from '@/components/cleaner/CleanerBottomNav';
 import { isCapacitor } from '@/utils/capacitor';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const CleanerEarningsPage = () => {
   const { user, userRole, cleanerId, loading, signOut } = useAuth();
@@ -35,10 +36,11 @@ const CleanerEarningsPage = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  const isNativeApp = isCapacitor();
+  const isMobile = useIsMobile();
+  const isMobileView = isCapacitor() || isMobile;
 
-  // Mobile-only view for native app
-  if (isNativeApp) {
+  // Mobile view for native app and mobile browsers
+  if (isMobileView) {
     return (
       <div className="min-h-screen bg-background content-bottom-spacer">
         {/* Content */}
