@@ -312,9 +312,6 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
     if (!bookingToDelete) return;
     
     try {
-      console.log('🚨 [UpcomingBookings] confirmDelete called for booking:', bookingToDelete);
-      console.log('🚨 [UpcomingBookings] This should NOT run in list view mode!');
-      
       // Get booking details for activity log before deletion
       const { data: bookingData, error: checkError } = await supabase
         .from('bookings')

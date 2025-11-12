@@ -484,6 +484,27 @@ export const useAirbnbBookingSubmit = () => {
         throw new Error(bookingError?.message || 'Failed to create booking');
       }
 
+      // Log booking creation to activity_logs
+      try {
+        await supabase.from('activity_logs').insert({
+          action_type: 'booking_created',
+          entity_type: 'booking',
+          entity_id: booking.id.toString(),
+          user_role: 'admin',
+          details: {
+            booking_id: booking.id,
+            customer_name: `${bookingData.firstName} ${bookingData.lastName}`,
+            customer_email: bookingData.email,
+            booking_date: bookingDateTime?.toISOString(),
+            service_type: 'Air BnB',
+            address: `${addressForBooking}, ${postcodeForBooking}`
+          }
+        });
+      } catch (logError) {
+        console.error('Failed to log booking creation:', logError);
+        // Don't fail the booking if logging fails
+      }
+
       // Step 3: Authorize payment only if not skipped (for non-urgent bookings)
       if (!skipPaymentAuth) {
         const { data: paymentResult, error: paymentError } = await supabase.functions.invoke(
