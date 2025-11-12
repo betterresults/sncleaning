@@ -34,7 +34,7 @@ const CleanerTodayPage = () => {
 
         if (!error && count !== null) {
           if (count === 0) {
-            navigate('/cleaner-bookings', { replace: true });
+            navigate('/cleaner-dashboard', { replace: true });
           }
         }
       } catch (error) {

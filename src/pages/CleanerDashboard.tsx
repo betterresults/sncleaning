@@ -8,6 +8,9 @@ import { cleanerNavigation } from '@/lib/navigationItems';
 import { useAdminCleaner } from '@/contexts/AdminCleanerContext';
 import AdminCleanerSelector from '@/components/admin/AdminCleanerSelector';
 import CleanerUpcomingBookings from '@/components/cleaner/CleanerUpcomingBookings';
+import CleanerBottomNav from '@/components/cleaner/CleanerBottomNav';
+import { isCapacitor } from '@/utils/capacitor';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const CleanerDashboard = () => {
   const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
@@ -32,6 +35,25 @@ const CleanerDashboard = () => {
   // Allow users with role 'user' who have a cleanerId, or admins
   if (!user || (userRole !== 'user' && userRole !== 'admin') || (userRole === 'user' && !cleanerId)) {
     return <Navigate to="/auth" replace />;
+  }
+
+  const isMobile = useIsMobile();
+  const isMobileView = isCapacitor() || isMobile;
+
+  if (isMobileView) {
+    return (
+      <div className="min-h-screen bg-background content-bottom-spacer">
+        <div className="p-4">
+          {userRole === 'admin' && (
+            <div className="mb-4">
+              <AdminCleanerSelector />
+            </div>
+          )}
+          <CleanerUpcomingBookings />
+        </div>
+        <CleanerBottomNav />
+      </div>
+    );
   }
 
   return (
