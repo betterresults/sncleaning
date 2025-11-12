@@ -450,12 +450,16 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
     if (!bookingToDelete) return;
 
     try {
+      console.log('📍 [BookingsListView] confirmDelete called for booking:', bookingToDelete);
+      
       // Get booking details before deletion for activity log
       const { data: bookingData } = await supabase
         .from('bookings')
         .select('*, customers(first_name, last_name, email)')
         .eq('id', bookingToDelete)
         .single();
+
+      console.log('📍 [BookingsListView] Booking data retrieved:', bookingData);
 
       const { error } = await supabase
         .from('bookings')
@@ -464,9 +468,11 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
 
       if (error) throw error;
 
+      console.log('📍 [BookingsListView] Booking deleted, creating activity log...');
+
       // Log deletion to activity_logs for admin notifications
       if (bookingData) {
-        await supabase.from('activity_logs').insert({
+        const activityLogData = {
           action_type: 'booking_deleted',
           entity_type: 'booking',
           entity_id: bookingToDelete.toString(),
@@ -481,7 +487,13 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
             service_type: bookingData.service_type,
             address: bookingData.address
           }
-        });
+        };
+        
+        console.log('📍 [BookingsListView] Inserting activity log:', activityLogData);
+        await supabase.from('activity_logs').insert(activityLogData);
+        console.log('📍 [BookingsListView] Activity log created successfully');
+      } else {
+        console.warn('📍 [BookingsListView] No booking data found, skipping activity log');
       }
 
       toast({
