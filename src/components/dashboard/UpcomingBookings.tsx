@@ -723,7 +723,8 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
           )}
         </div>
 
-      {totalPages > 1 && (
+      {/* Only show pagination for calendar view - list view has its own pagination */}
+      {viewMode !== 'list' && totalPages > 1 && (
         <div className="flex justify-center space-x-2">
           <Button
             variant="outline"
