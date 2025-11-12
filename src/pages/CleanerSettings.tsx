@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import CleanerBottomNav from '@/components/cleaner/CleanerBottomNav';
 import { isCapacitor } from '@/utils/capacitor';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const CleanerSettings = () => {
   const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
@@ -29,13 +30,14 @@ const CleanerSettings = () => {
     confirmPassword: ''
   });
 
-  const isNativeApp = isCapacitor();
+  const isMobile = useIsMobile();
+  const isMobileView = isCapacitor() || isMobile;
 
   const handleSignOut = async () => {
     setLoggingOut(true);
     try {
       await signOut();
-      if (isNativeApp) {
+      if (isMobileView) {
         navigate('/auth');
       }
     } catch (error) {
@@ -114,8 +116,8 @@ const CleanerSettings = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Mobile-only view for native app
-  if (isNativeApp) {
+  // Mobile view for native app and mobile browsers
+  if (isMobileView) {
     return (
       <div className="min-h-screen bg-background content-bottom-spacer">
         {/* Content */}
