@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import InstallPrompt from '@/components/InstallPrompt';
 import PWAInstallButton from '@/components/PWAInstallButton';
+import { isCapacitor } from '@/utils/capacitor';
 
 const Index = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -35,10 +36,11 @@ const Index = () => {
   if (!authLoading && user) {
     console.log('Index - Redirecting authenticated user:', { userRole, cleanerId, customerId });
     
-    // Redirect cleaners to cleaner dashboard
+    // Redirect cleaners to mobile or desktop view
     if (userRole === 'user' && cleanerId) {
-      console.log('Index - Redirecting cleaner to /cleaner-dashboard');
-      return <Navigate to="/cleaner-dashboard" replace />;
+      const redirectPath = isCapacitor() ? '/cleaner-today' : '/cleaner-dashboard';
+      console.log(`Index - Redirecting cleaner to ${redirectPath}`);
+      return <Navigate to={redirectPath} replace />;
     }
     
     // Redirect customers to customer dashboard
