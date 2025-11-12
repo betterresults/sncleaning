@@ -8,6 +8,9 @@ import { cleanerNavigation } from '@/lib/navigationItems';
 import { useAdminCleaner } from '@/contexts/AdminCleanerContext';
 import AdminCleanerSelector from '@/components/admin/AdminCleanerSelector';
 import CleanerUpcomingBookings from '@/components/cleaner/CleanerUpcomingBookings';
+import CleanerBottomNav from '@/components/cleaner/CleanerBottomNav';
+import { isCapacitor } from '@/utils/capacitor';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const CleanerDashboard = () => {
   const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
