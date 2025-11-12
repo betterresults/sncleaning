@@ -495,9 +495,9 @@ export const useAirbnbBookingSubmit = () => {
             booking_id: booking.id,
             customer_name: `${bookingData.firstName} ${bookingData.lastName}`,
             customer_email: bookingData.email,
-            booking_date: startDateTime.toISOString(),
+            booking_date: bookingDateTime?.toISOString(),
             service_type: 'Air BnB',
-            address: `${bookingData.address}, ${bookingData.postcode}`
+            address: `${addressForBooking}, ${postcodeForBooking}`
           }
         });
       } catch (logError) {
