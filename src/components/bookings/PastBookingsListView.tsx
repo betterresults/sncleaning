@@ -566,11 +566,11 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
       {displayedBookings.map((booking) => {
         const isUnsigned = !booking.cleaner;
         const cleanerName = getCleanerName(booking);
-        // Check if time is flexible (time_only is NULL)
-        const isFlexibleTime = !booking.time_only;
-        const bookingTime = isFlexibleTime 
-          ? '⏰ Flexible' 
-          : (booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'N/A');
+        // Past bookings should never show 'Flexible'. Prefer time_only, then date_time; if none, show '—'.
+        const timeFromTimeOnly = booking.time_only ? String(booking.time_only).slice(0,5) : null;
+        const timeFromDate = booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : null;
+        const bookingTime = timeFromTimeOnly ?? timeFromDate ?? '—';
+        const isTimeMissing = !timeFromTimeOnly && !timeFromDate;
         const bookingDate = booking.date_time ? format(new Date(booking.date_time), 'dd MMM') : 'N/A';
         const serviceBadgeColor = serviceTypes ? getBadgeColor(booking.service_type, serviceTypes) : 'bg-gray-500 text-white';
         const serviceLabel = getServiceTypeLabel(booking.service_type);
@@ -587,7 +587,7 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
               <div className="bg-primary/10 h-full flex items-center justify-center">
                 <div className="text-center py-4">
                   <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{bookingDate}</div>
-                  <div className={`text-2xl font-bold ${isFlexibleTime ? 'text-orange-500' : 'text-primary'} mt-1`} title={isFlexibleTime ? 'Customer requested flexible arrival time' : undefined}>
+                  <div className={`text-2xl font-bold ${isTimeMissing ? 'text-orange-500' : 'text-primary'} mt-1`} title={isTimeMissing ? 'Time not recorded' : undefined}>
                     {bookingTime}
                   </div>
                   {booking.total_hours && (
