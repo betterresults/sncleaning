@@ -168,11 +168,41 @@ export const getServiceTypeBadgeColor = (serviceType: string, serviceTypes: Serv
 };
 
 export const getServiceTypeLabel = (serviceType: string, serviceTypes: ServiceType[]) => {
+  if (!serviceType) return '';
+  
   const type = serviceTypes.find(t => t.key === serviceType);
-  return type?.label || serviceType;
+  if (type?.label) return type.label;
+  
+  // Fallback: format the key nicely and ensure it ends with "Cleaning"
+  const formatted = serviceType
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+  
+  // Add "Cleaning" if not already present
+  if (!formatted.toLowerCase().includes('cleaning')) {
+    return `${formatted} Cleaning`;
+  }
+  
+  return formatted;
 };
 
 export const getCleaningTypeLabel = (cleaningType: string, cleaningTypes: CleaningType[]) => {
+  if (!cleaningType) return '';
+  
   const type = cleaningTypes.find(t => t.key === cleaningType);
-  return type?.label || cleaningType;
+  if (type?.label) return type.label;
+  
+  // Fallback: format the key nicely and ensure it ends with "Cleaning"  
+  const formatted = cleaningType
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+  
+  // Add "Cleaning" if not already present
+  if (!formatted.toLowerCase().includes('cleaning')) {
+    return `${formatted} Cleaning`;
+  }
+  
+  return formatted;
 };
