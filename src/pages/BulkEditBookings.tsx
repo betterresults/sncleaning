@@ -129,11 +129,13 @@ const BulkEditBookings = () => {
   const fetchBookings = async () => {
     try {
       const tableName = bookingType === 'past' ? 'past_bookings' : 'bookings';
+      const foreignKey = bookingType === 'past' ? 'past_bookings_cleaner_fkey' : 'bookings_cleaner_fkey';
+      
       const { data, error } = await supabase
         .from(tableName)
         .select(`
           *,
-          cleaners:cleaner (
+          cleaners!${foreignKey} (
             id,
             first_name,
             last_name
