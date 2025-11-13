@@ -5,7 +5,7 @@ import { Calendar, Clock, MapPin, User, Upload, Eye, CheckCircle, X, FileText, C
 import { useNavigate } from 'react-router-dom';
 import { Booking } from './types';
 import { useServiceTypes, useCleaningTypes, getServiceTypeLabel, getCleaningTypeLabel } from '@/hooks/useCompanySettings';
-import { normalizeCleaningTypeKey, normalizeServiceTypeKey } from '@/utils/bookingFormatters';
+import { normalizeCleaningTypeKey, normalizeServiceTypeKey, correctBookingTypes } from '@/utils/bookingFormatters';
 
 interface CleanerBookingCardProps {
   booking: Booking;
@@ -38,12 +38,15 @@ const CleanerBookingCard = ({
   // Check if booking is same day
   const isSameDay = booking.same_day;
 
-  // Check if this is an End of Tenancy booking
-  const isEndOfTenancy = booking.service_type === 'end_of_tenancy' || booking.cleaning_type === 'end_of_tenancy';
+  // Correct swapped service_type and cleaning_type
+  const { serviceType: correctedServiceType, cleaningType: correctedCleaningType } = correctBookingTypes(booking);
 
-  // Get formatted labels
-  const serviceTypeLabel = getServiceTypeLabel(normalizeServiceTypeKey(booking.service_type), serviceTypes);
-  const cleaningTypeLabel = getCleaningTypeLabel(normalizeCleaningTypeKey(booking.cleaning_type), cleaningTypes);
+  // Check if this is an End of Tenancy booking
+  const isEndOfTenancy = correctedServiceType === 'end_of_tenancy' || correctedCleaningType === 'end_of_tenancy';
+
+  // Get formatted labels using corrected values
+  const serviceTypeLabel = getServiceTypeLabel(normalizeServiceTypeKey(correctedServiceType), serviceTypes);
+  const cleaningTypeLabel = getCleaningTypeLabel(normalizeCleaningTypeKey(correctedCleaningType), cleaningTypes);
 
   // Check if time is flexible (time_only is NULL)
   const isFlexibleTime = !booking.time_only;
