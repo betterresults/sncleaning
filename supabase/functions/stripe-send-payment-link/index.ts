@@ -61,51 +61,103 @@ const handler = async (req: Request): Promise<Response> => {
       console.log('Created new Stripe customer:', stripeCustomer.id);
     }
 
-    // Create payment link (note: payment_method_collection is not supported for one-time payments)
-    const paymentLinkConfig: any = {
-      line_items: [
-        {
-          price_data: {
-            currency: 'gbp',
-            product_data: {
-              name: description,
-              metadata: {
-                customer_id: customer_id.toString(),
-                booking_id: booking_id?.toString() || ''
-              }
+    const successUrl = `${req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/') || 'https://dkomihipebixlegygnoy.supabase.co'}/auth?payment_success=true`;
+    const cancelUrl = `${req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/') || 'https://dkomihipebixlegygnoy.supabase.co'}/auth?payment_cancelled=true`;
+
+    // If collect_payment_method is true, use Checkout Session (supports saving card)
+    // Otherwise use Payment Link (simpler, doesn't save card)
+    if (collect_payment_method) {
+      const session = await stripe.checkout.sessions.create({
+        customer: stripeCustomer.id,
+        mode: 'payment',
+        line_items: [
+          {
+            price_data: {
+              currency: 'gbp',
+              product_data: {
+                name: description,
+                metadata: {
+                  customer_id: customer_id.toString(),
+                  booking_id: booking_id?.toString() || ''
+                }
+              },
+              unit_amount: Math.round(amount * 100),
             },
-            unit_amount: Math.round(amount * 100), // Convert to pence
+            quantity: 1,
           },
-          quantity: 1,
+        ],
+        payment_intent_data: {
+          setup_future_usage: 'off_session', // Save card for future use
+          metadata: {
+            customer_id: customer_id.toString(),
+            booking_id: booking_id?.toString() || ''
+          }
         },
-      ],
-      after_completion: {
-        type: 'redirect',
-        redirect: {
-          url: `${req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/') || 'https://dkomihipebixlegygnoy.supabase.co'}/auth?payment_success=true`
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        billing_address_collection: 'auto',
+        metadata: {
+          customer_id: customer_id.toString(),
+          booking_id: booking_id?.toString() || '',
+          collect_payment_method: 'true'
         }
-      },
-      automatic_tax: { enabled: false },
-      billing_address_collection: 'auto',
-      customer_creation: 'if_required',
-      metadata: {
-        customer_id: customer_id.toString(),
-        booking_id: booking_id?.toString() || ''
-      }
-    };
+      });
 
-    const paymentLink = await stripe.paymentLinks.create(paymentLinkConfig);
+      console.log('Created checkout session with card saving:', session.id);
 
-    console.log('Created payment link:', paymentLink.id);
+      return new Response(JSON.stringify({
+        success: true,
+        payment_link_url: session.url,
+        stripe_customer_id: stripeCustomer.id,
+        session_id: session.id
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    } else {
+      // Use Payment Link for simple one-time payments without saving card
+      const paymentLink = await stripe.paymentLinks.create({
+        line_items: [
+          {
+            price_data: {
+              currency: 'gbp',
+              product_data: {
+                name: description,
+                metadata: {
+                  customer_id: customer_id.toString(),
+                  booking_id: booking_id?.toString() || ''
+                }
+              },
+              unit_amount: Math.round(amount * 100),
+            },
+            quantity: 1,
+          },
+        ],
+        after_completion: {
+          type: 'redirect',
+          redirect: {
+            url: successUrl
+          }
+        },
+        automatic_tax: { enabled: false },
+        billing_address_collection: 'auto',
+        customer_creation: 'if_required',
+        metadata: {
+          customer_id: customer_id.toString(),
+          booking_id: booking_id?.toString() || ''
+        }
+      });
 
-    return new Response(JSON.stringify({
-      success: true,
-      payment_link_url: paymentLink.url,
-      stripe_customer_id: stripeCustomer.id,
-      payment_link_id: paymentLink.id
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+      console.log('Created payment link:', paymentLink.id);
+
+      return new Response(JSON.stringify({
+        success: true,
+        payment_link_url: paymentLink.url,
+        stripe_customer_id: stripeCustomer.id,
+        payment_link_id: paymentLink.id
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
   } catch (error) {
     console.error('Error in send-payment-link:', error);
