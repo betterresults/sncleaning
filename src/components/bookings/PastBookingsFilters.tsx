@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Calendar, Filter, X, RefreshCw } from 'lucide-react';
+import { Search, Calendar, Filter, X, RefreshCw, Settings } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 interface Cleaner {
   id: number;
@@ -36,6 +37,7 @@ interface PastBookingsFiltersProps {
 }
 
 export function PastBookingsFilters({ filters, onFiltersChange, cleaners, onRefresh, isRefreshing = false }: PastBookingsFiltersProps) {
+  const navigate = useNavigate();
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [filterType, setFilterType] = useState<'cleaner' | 'paymentMethod' | 'paymentStatus' | 'serviceType' | 'cleaningType' | 'bookingStatus' | ''>('');
   const [activeDateTab, setActiveDateTab] = useState<'from' | 'to'>('from');
@@ -120,7 +122,7 @@ export function PastBookingsFilters({ filters, onFiltersChange, cleaners, onRefr
           />
         </div>
 
-        {/* Date Range + Advanced Filters + Refresh on same row */}
+        {/* Date Range + Advanced Filters + Bulk Edit + Refresh on same row */}
         <div className="flex items-center gap-2">
           {/* Date Range Filter */}
           <Popover>
@@ -362,6 +364,17 @@ export function PastBookingsFilters({ filters, onFiltersChange, cleaners, onRefr
             </div>
             </PopoverContent>
           </Popover>
+
+          {/* Bulk Edit Button */}
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigate('/bulk-edit-bookings')}
+            className="h-9 sm:h-11 w-9 sm:w-11 rounded-lg shrink-0"
+            title="Bulk edit bookings"
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
 
           {/* Refresh Button */}
           {onRefresh && (
