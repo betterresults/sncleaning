@@ -25,7 +25,7 @@ const CleanerUpcomingBookings = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(25);  // Increased from 10 to 25
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // Filter states
@@ -139,9 +139,14 @@ const CleanerUpcomingBookings = () => {
 
     // Status filter
     if (statusFilter !== 'all') {
-      filtered = filtered.filter(booking => 
-        booking.booking_status?.toLowerCase() === statusFilter.toLowerCase()
-      );
+      filtered = filtered.filter(booking => {
+        const status = booking.booking_status?.toLowerCase() || '';
+        // Handle null/empty status - treat as 'active' or 'pending' by default
+        if (!status || status === '') {
+          return statusFilter === 'active' || statusFilter === 'pending';
+        }
+        return status === statusFilter.toLowerCase();
+      });
     }
 
     // Service type filter (use service_type, not cleaning_type)
