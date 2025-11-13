@@ -63,10 +63,7 @@ const CleanerUpcomingBookings = () => {
         `)
         .eq('cleaner', effectiveCleanerId)
         .gte('date_time', startOfDay(new Date()).toISOString())
-        .neq('booking_status', 'completed')
-        .neq('booking_status', 'Completed')
-        .neq('booking_status', 'cancelled')
-        .neq('booking_status', 'Cancelled')
+        // No status filtering per requirement
         .order('date_time', { ascending: sortOrder === 'asc' });
 
       if (bookingsError) {
@@ -78,13 +75,9 @@ const CleanerUpcomingBookings = () => {
       console.log('Fetched bookings for cleaner:', bookingsData?.length || 0, 'bookings');
       console.log('Sample booking data:', bookingsData?.[0]);
       
-      // Safety filter: exclude completed/cancelled bookings from display
-      const filteredData = (bookingsData || []).filter(booking => {
-        const status = booking.booking_status?.toLowerCase();
-        return status !== 'completed' && status !== 'cancelled';
-      });
-      
-      setBookings(filteredData);
+      // No status-based filtering; include all upcoming records
+      const bookingsList = bookingsData || [];
+      setBookings(bookingsList);
 
       // Extract unique service types for filter dropdown (use service_type, not cleaning_type)
       const uniqueServiceTypes = [...new Set(
