@@ -280,7 +280,8 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('stripe-send-payment-link', {
+      // Generate the payment link
+      const { data: linkData, error: linkError } = await supabase.functions.invoke('stripe-send-payment-link', {
         body: {
           customer_id: customer.id,
           email: customer.email,
@@ -292,24 +293,49 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
         }
       });
 
-      if (error) throw error;
+      if (linkError) throw linkError;
 
-      // Open payment link in new tab
-      if (data.payment_link_url) {
-        window.open(data.payment_link_url, '_blank');
-
-        toast({
-          title: 'Payment Link Created',
-          description: `Payment link sent to ${customer.email}. Customer can pay £${amount}${collectForFuture ? ' and save their card for future invoices' : ''}.`,
-        });
-        
-        onOpenChange(false);
+      if (!linkData.payment_link_url) {
+        throw new Error('No payment link URL returned');
       }
+
+      // Send email with the payment link
+      const { error: emailError } = await supabase.functions.invoke('send-notification-email', {
+        body: {
+          recipient_email: customer.email,
+          recipient_name: `${customer.first_name} ${customer.last_name}`.trim(),
+          custom_subject: `Payment Request - £${amount}`,
+          custom_content: `
+            <h2>Payment Request</h2>
+            <p>Dear ${customer.first_name},</p>
+            <p>You have a payment request for <strong>£${amount}</strong>.</p>
+            <p><strong>Description:</strong> ${description}</p>
+            ${collectForFuture ? '<p>This payment will also save your card details for future invoices.</p>' : ''}
+            <p>Please click the button below to complete your payment securely:</p>
+            <p style="margin: 30px 0;">
+              <a href="${linkData.payment_link_url}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Pay Now</a>
+            </p>
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="word-break: break-all;">${linkData.payment_link_url}</p>
+            <p>If you have any questions, please don't hesitate to contact us.</p>
+            <p>Best regards,<br>SN Cleaning Services</p>
+          `
+        }
+      });
+
+      if (emailError) throw emailError;
+
+      toast({
+        title: 'Payment Email Sent',
+        description: `Payment request for £${amount} sent to ${customer.email}${collectForFuture ? '. Card will be saved for future use.' : ''}.`,
+      });
+      
+      onOpenChange(false);
     } catch (error: any) {
       console.error('Error sending payment link:', error);
       toast({
         title: 'Error',
-        description: error.message || 'Failed to create payment link',
+        description: error.message || 'Failed to send payment link',
         variant: 'destructive',
       });
     } finally {
@@ -574,9 +600,19 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
 
           {mode !== 'preview' && (
             <div className="text-xs text-muted-foreground space-y-1">
-              <p>• Payment method collection opens in a new tab</p>
-              <p>• Customer enters card details securely via Stripe</p>
-              <p>• Card is saved for future authorized payments</p>
+              {mode === 'payment_link' ? (
+                <>
+                  <p>• Payment link will be emailed to the customer</p>
+                  <p>• Customer clicks the link to pay securely via Stripe</p>
+                  {collectForFuture && <p>• Card will be saved for future authorized payments</p>}
+                </>
+              ) : (
+                <>
+                  <p>• Payment method collection link sent via email</p>
+                  <p>• Customer enters card details securely via Stripe</p>
+                  <p>• Card is saved for future authorized payments</p>
+                </>
+              )}
               <p>• 
                 <button 
                   onClick={() => setShowEmailLogs(true)}
