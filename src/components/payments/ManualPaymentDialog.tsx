@@ -159,11 +159,35 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
       if (error) throw error;
 
       if (data.payment_link_url) {
-        window.open(data.payment_link_url, '_blank');
+        // Email the payment link to the customer instead of opening it here
+        const { error: emailError } = await supabase.functions.invoke('send-notification-email', {
+          body: {
+            recipient_email: booking.email,
+            recipient_name: `${booking.first_name} ${booking.last_name}`.trim(),
+            custom_subject: `Payment Request - £${amount}`,
+            custom_content: `
+              <h2>Payment Request</h2>
+              <p>Dear ${booking.first_name},</p>
+              <p>You have a payment request for <strong>£${amount}</strong>.</p>
+              <p><strong>Description:</strong> ${paymentLinkDescription}</p>
+              ${collectForFuture ? '<p>This payment will also save your card details for future invoices.</p>' : ''}
+              <p>Please click the button below to complete your payment securely:</p>
+              <p style="margin: 30px 0;">
+                <a href="${data.payment_link_url}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Pay Now</a>
+              </p>
+              <p>Or copy and paste this link into your browser:</p>
+              <p style="word-break: break-all;">${data.payment_link_url}</p>
+              <p>If you have any questions, please don't hesitate to contact us.</p>
+              <p>Best regards,<br>SN Cleaning Services</p>
+            `
+          }
+        });
+
+        if (emailError) throw emailError;
 
         toast({
-          title: 'Payment Link Created',
-          description: `Payment link sent to ${booking.email}. Customer can pay £${amount}${collectForFuture ? ' and save their card for future invoices' : ''}.`,
+          title: 'Payment Email Sent',
+          description: `Payment request for £${amount} emailed to ${booking.email}${collectForFuture ? '. Card will be saved for future use.' : ''}.`,
         });
         onClose();
       }
