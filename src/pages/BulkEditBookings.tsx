@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { LinenUsageEditor } from '@/components/dashboard/LinenUsageEditor';
+import { CreditCard } from 'lucide-react';
 import { useServiceTypes, useCleaningTypes, ServiceType, CleaningType } from '@/hooks/useCompanySettings';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
@@ -98,6 +99,7 @@ const BulkEditBookings = () => {
     bookingStatus: 'all',
     customerSearch: '',
   });
+  const [sendingPaymentLinks, setSendingPaymentLinks] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -356,6 +358,89 @@ const BulkEditBookings = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBulkSendPaymentLinks = async () => {
+    if (selectedBookings.length === 0) {
+      toast({
+        title: "No Selection",
+        description: "Please select at least one booking to send payment links.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSendingPaymentLinks(true);
+    let successCount = 0;
+    let errorCount = 0;
+    const errors: string[] = [];
+
+    try {
+      for (const bookingId of selectedBookings) {
+        const booking = bookings.find(b => b.id === bookingId);
+        if (!booking) continue;
+
+        // Validate booking has required data
+        if (!booking.email || !booking.first_name || !booking.total_cost) {
+          errors.push(`Booking #${bookingId}: Missing email, name, or cost`);
+          errorCount++;
+          continue;
+        }
+
+        try {
+          const { data, error } = await supabase.functions.invoke('stripe-send-payment-link', {
+            body: {
+              customer_id: booking.id,
+              email: booking.email,
+              name: `${booking.first_name} ${booking.last_name || ''}`.trim(),
+              amount: booking.total_cost,
+              description: `Cleaning Service - ${format(new Date(booking.date_time), 'dd MMM yyyy')}`,
+              booking_id: booking.id,
+              collect_payment_method: true, // Collect card details for future use
+            }
+          });
+
+          if (error) {
+            errors.push(`Booking #${bookingId}: ${error.message}`);
+            errorCount++;
+          } else if (data?.success) {
+            successCount++;
+          } else {
+            errors.push(`Booking #${bookingId}: ${data?.error || 'Unknown error'}`);
+            errorCount++;
+          }
+        } catch (err: any) {
+          errors.push(`Booking #${bookingId}: ${err.message}`);
+          errorCount++;
+        }
+      }
+
+      // Show results
+      if (successCount > 0) {
+        toast({
+          title: "Payment Links Sent",
+          description: `Successfully sent ${successCount} payment link${successCount !== 1 ? 's' : ''}. Card details will be collected for future bookings.`,
+        });
+      }
+
+      if (errorCount > 0) {
+        toast({
+          title: "Some Payments Failed",
+          description: `${errorCount} payment link${errorCount !== 1 ? 's' : ''} failed. ${errors.slice(0, 3).join('; ')}`,
+          variant: "destructive",
+        });
+      }
+
+    } catch (error: any) {
+      console.error('Error sending payment links:', error);
+      toast({
+        title: "Payment Links Failed",
+        description: error.message || "Failed to send payment links.",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingPaymentLinks(false);
     }
   };
 
@@ -778,6 +863,24 @@ const BulkEditBookings = () => {
                           {loading ? 'Updating...' : `Update ${selectedBookings.length} booking${selectedBookings.length !== 1 ? 's' : ''}`}
                         </Button>
                       </div>
+                    </div>
+
+                    {/* Stripe Payment Links Section */}
+                    <div className="mt-6 pt-6 border-t">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="font-semibold text-foreground">Stripe Payment & Card Collection</h3>
+                          <p className="text-sm text-muted-foreground mt-1">Send payment links and collect card details for future bookings</p>
+                        </div>
+                      </div>
+                      <Button 
+                        onClick={handleBulkSendPaymentLinks}
+                        disabled={sendingPaymentLinks || selectedBookings.length === 0}
+                        className="w-full bg-primary hover:bg-primary/90"
+                      >
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        {sendingPaymentLinks ? 'Sending...' : `Send Payment Links (${selectedBookings.length} booking${selectedBookings.length !== 1 ? 's' : ''})`}
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
