@@ -97,7 +97,6 @@ const handler = async (req: Request): Promise<Response> => {
 
     // If we want to collect payment method, configure the link to save the card
     if (collect_payment_method) {
-      paymentLinkConfig.customer = stripeCustomer.id;
       paymentLinkConfig.payment_method_collection = 'always';
       paymentLinkConfig.payment_method_types = ['card'];
     }
