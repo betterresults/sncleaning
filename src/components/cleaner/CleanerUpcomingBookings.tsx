@@ -32,7 +32,6 @@ const CleanerUpcomingBookings = () => {
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [customerSearch, setCustomerSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
   const [serviceTypeFilter, setServiceTypeFilter] = useState('all');
   const [serviceTypes, setServiceTypes] = useState<string[]>([]);
 
@@ -137,18 +136,6 @@ const CleanerUpcomingBookings = () => {
       );
     }
 
-    // Status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(booking => {
-        const status = booking.booking_status?.toLowerCase() || '';
-        // Handle null/empty status - treat as 'active' or 'pending' by default
-        if (!status || status === '') {
-          return statusFilter === 'active' || statusFilter === 'pending';
-        }
-        return status === statusFilter.toLowerCase();
-      });
-    }
-
     // Service type filter (use service_type, not cleaning_type)
     if (serviceTypeFilter !== 'all') {
       filtered = filtered.filter(booking => 
@@ -171,7 +158,6 @@ const CleanerUpcomingBookings = () => {
     setDateFrom(undefined);
     setDateTo(undefined);
     setCustomerSearch('');
-    setStatusFilter('all');
     setServiceTypeFilter('all');
   };
 
@@ -217,7 +203,7 @@ const CleanerUpcomingBookings = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [bookings, dateFrom, dateTo, customerSearch, statusFilter, serviceTypeFilter]);
+  }, [bookings, dateFrom, dateTo, customerSearch, serviceTypeFilter]);
 
   // Pagination
   const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
@@ -251,20 +237,18 @@ const CleanerUpcomingBookings = () => {
     <div className="space-y-3 sm:space-y-4 w-full">
       <UpcomingBookingsStats stats={stats} />
 
-      <BookingFilters
-        dateFrom={dateFrom}
-        dateTo={dateTo}
-        customerSearch={customerSearch}
-        statusFilter={statusFilter}
-        serviceTypeFilter={serviceTypeFilter}
-        serviceTypes={serviceTypes}
-        onDateFromChange={setDateFrom}
-        onDateToChange={setDateTo}
-        onCustomerSearchChange={setCustomerSearch}
-        onStatusFilterChange={setStatusFilter}
-        onServiceTypeFilterChange={setServiceTypeFilter}
-        onClearFilters={handleClearFilters}
-      />
+          <BookingFilters
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            customerSearch={customerSearch}
+            serviceTypeFilter={serviceTypeFilter}
+            serviceTypes={serviceTypes}
+            onDateFromChange={setDateFrom}
+            onDateToChange={setDateTo}
+            onCustomerSearchChange={setCustomerSearch}
+            onServiceTypeFilterChange={setServiceTypeFilter}
+            onClearFilters={handleClearFilters}
+          />
 
       <TableControls
         itemsPerPage={itemsPerPage}
