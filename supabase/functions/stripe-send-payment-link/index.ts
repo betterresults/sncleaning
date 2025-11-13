@@ -61,7 +61,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.log('Created new Stripe customer:', stripeCustomer.id);
     }
 
-    // Create payment link with payment method collection
+    // Create payment link (note: payment_method_collection is not supported for one-time payments)
     const paymentLinkConfig: any = {
       line_items: [
         {
@@ -90,16 +90,9 @@ const handler = async (req: Request): Promise<Response> => {
       customer_creation: 'if_required',
       metadata: {
         customer_id: customer_id.toString(),
-        booking_id: booking_id?.toString() || '',
-        collect_payment_method: collect_payment_method.toString()
+        booking_id: booking_id?.toString() || ''
       }
     };
-
-    // If we want to collect payment method, configure the link to save the card
-    if (collect_payment_method) {
-      paymentLinkConfig.payment_method_collection = 'always';
-      paymentLinkConfig.payment_method_types = ['card'];
-    }
 
     const paymentLink = await stripe.paymentLinks.create(paymentLinkConfig);
 
