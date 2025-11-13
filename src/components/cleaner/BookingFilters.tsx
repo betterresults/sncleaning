@@ -17,13 +17,11 @@ interface BookingFiltersProps {
   dateFrom: Date | undefined;
   dateTo: Date | undefined;
   customerSearch: string;
-  statusFilter: string;
   serviceTypeFilter: string;
   serviceTypes: string[];
   onDateFromChange: (date: Date | undefined) => void;
   onDateToChange: (date: Date | undefined) => void;
   onCustomerSearchChange: (value: string) => void;
-  onStatusFilterChange: (value: string) => void;
   onServiceTypeFilterChange: (value: string) => void;
   onClearFilters: () => void;
 }
@@ -32,13 +30,11 @@ const BookingFilters: React.FC<BookingFiltersProps> = ({
   dateFrom,
   dateTo,
   customerSearch,
-  statusFilter,
   serviceTypeFilter,
   serviceTypes,
   onDateFromChange,
   onDateToChange,
   onCustomerSearchChange,
-  onStatusFilterChange,
   onServiceTypeFilterChange,
   onClearFilters,
 }) => {
@@ -117,38 +113,21 @@ const BookingFilters: React.FC<BookingFiltersProps> = ({
       </div>
 
       {/* Filter dropdowns */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="status-filter" className="text-sm font-medium">Status</Label>
-          <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-            <SelectTrigger className="h-9">
-              <SelectValue placeholder="All statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="confirmed">Confirmed</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="service-type-filter" className="text-sm font-medium">Service Type</Label>
-          <Select value={serviceTypeFilter} onValueChange={onServiceTypeFilterChange}>
-            <SelectTrigger className="h-9">
-              <SelectValue placeholder="All services" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Services</SelectItem>
-              {serviceTypes.map((serviceType) => (
+      <div className="space-y-2">
+        <Label htmlFor="service-type-filter" className="text-sm font-medium">Service Type</Label>
+        <Select value={serviceTypeFilter} onValueChange={onServiceTypeFilterChange}>
+          <SelectTrigger className="h-9">
+            <SelectValue placeholder="All services" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Services</SelectItem>
+            {serviceTypes.map((serviceType) => (
                 <SelectItem key={serviceType} value={serviceType}>
                   {serviceType}
                 </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Clear filters button */}
