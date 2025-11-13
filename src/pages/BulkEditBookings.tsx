@@ -82,6 +82,10 @@ const BulkEditBookings = () => {
   const { user, userRole, cleanerId, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Check if we're editing past or upcoming bookings
+  const searchParams = new URLSearchParams(window.location.search);
+  const bookingType = searchParams.get('type') || 'upcoming';
 
   const [loading, setLoading] = useState(false);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -116,7 +120,7 @@ const BulkEditBookings = () => {
   useEffect(() => {
     fetchBookings();
     fetchCleaners();
-  }, []);
+  }, [bookingType]);
 
   useEffect(() => {
     applyFilters();
@@ -124,25 +128,26 @@ const BulkEditBookings = () => {
 
   const fetchBookings = async () => {
     try {
+      const tableName = bookingType === 'past' ? 'past_bookings' : 'bookings';
       const { data, error } = await supabase
-        .from('bookings')
+        .from(tableName)
         .select(`
           *,
-          cleaners!bookings_cleaner_fkey (
+          cleaners:cleaner (
             id,
             first_name,
             last_name
           )
         `)
-        .gte('date_time', new Date().toISOString())
-        .order('date_time', { ascending: true });
+        .order('date_time', { ascending: bookingType === 'upcoming' });
 
       if (error) {
         console.error('Error fetching bookings:', error);
         return;
       }
 
-      setBookings(data || []);
+      // Type assertion to handle differences between bookings and past_bookings tables
+      setBookings((data || []) as Booking[]);
     } catch (error) {
       console.error('Error fetching bookings:', error);
     }
@@ -305,8 +310,9 @@ const BulkEditBookings = () => {
           break;
       }
 
+      const tableName = bookingType === 'past' ? 'past_bookings' : 'bookings';
       const { data, error } = await supabase
-        .from('bookings')
+        .from(tableName)
         .update(updateData)
         .in('id', selectedBookings)
         .select();
@@ -689,13 +695,13 @@ const BulkEditBookings = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => navigate('/upcoming-bookings')}
+                    onClick={() => navigate(bookingType === 'past' ? '/past-bookings' : '/upcoming-bookings')}
                     className="rounded-full"
                   >
                     <ArrowLeft className="h-5 w-5" />
                   </Button>
                   <div>
-                    <h1 className="text-3xl font-bold text-foreground">Bulk Edit Bookings</h1>
+                    <h1 className="text-3xl font-bold text-foreground">Bulk Edit {bookingType === 'past' ? 'Past' : 'Upcoming'} Bookings</h1>
                     <p className="text-muted-foreground mt-1">Filter and select bookings to update any field in bulk</p>
                   </div>
                 </div>
