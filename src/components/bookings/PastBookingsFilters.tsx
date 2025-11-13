@@ -369,7 +369,7 @@ export function PastBookingsFilters({ filters, onFiltersChange, cleaners, onRefr
           <Button
             variant="outline"
             size="icon"
-            onClick={() => navigate('/bulk-edit-bookings')}
+            onClick={() => navigate('/bulk-edit-bookings?type=past')}
             className="h-9 sm:h-11 w-9 sm:w-11 rounded-lg shrink-0"
             title="Bulk edit bookings"
           >
