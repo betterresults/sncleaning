@@ -527,6 +527,13 @@ const BulkEditBookings = () => {
     ];
   };
 
+  // Format currency safely for number or string inputs
+  const formatCurrency = (value: unknown) => {
+    const num = typeof value === 'number' ? value : Number(value ?? 0);
+    if (Number.isNaN(num)) return '0.00';
+    return num.toFixed(2);
+  };
+
   const getCurrentFieldValue = (booking: Booking, fieldType: string) => {
     if (fieldType === 'cleaner') {
       return booking.cleaners ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}` : 'No cleaner assigned';
@@ -976,7 +983,7 @@ const BulkEditBookings = () => {
                                   {booking.cleaners ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}` : 'No cleaner assigned'}
                                 </TableCell>
                                 <TableCell className="font-medium">
-                                  £{booking.total_cost?.toFixed(2) || '0.00'}
+                                  £{formatCurrency(booking.total_cost)}
                                 </TableCell>
                                 {editType && (
                                   <TableCell className="bg-blue-50/50 font-medium">
