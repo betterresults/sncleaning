@@ -2,23 +2,120 @@
 
 /**
  * Normalizes cleaning type keys to match company settings format
+ * Handles various formats and edge cases from legacy data
  */
-export const normalizeCleaningTypeKey = (key: string): string => {
+export const normalizeCleaningTypeKey = (key: string | null | undefined): string => {
+  if (!key) return '';
+  
+  const lowerKey = key.toLowerCase().trim();
+  
   const mappings: Record<string, string> = {
     'checkin-checkout': 'check_in_check_out',
+    'check in check out': 'check_in_check_out',
     'midstay': 'midstay_cleaning',
-    // Add more mappings as needed
+    'mid-stay': 'midstay_cleaning',
+    'mid stay': 'midstay_cleaning',
+    'standard cleaning': 'standard_cleaning',
+    'deep cleaning': 'deep_cleaning',
+    'one off': 'one_off',
+    'one-off': 'one_off',
+    'light cleaning': 'light_cleaning',
+    // Handle cases where service types ended up in cleaning_type field
+    'airbnb': 'check_in_check_out',  // Common swap
+    'domestic': 'standard_cleaning',
+    'commercial': 'standard_cleaning',
+    'domestic cleaning': 'standard_cleaning',
+    'commercial cleaning': 'standard_cleaning',
   };
   
-  return mappings[key] || key;
+  return mappings[lowerKey] || key;
 };
 
 /**
  * Normalizes service type keys to match company settings format
+ * Handles various formats and edge cases from legacy data
  */
-export const normalizeServiceTypeKey = (key: string): string => {
-  // Add mappings if needed in the future
-  return key;
+export const normalizeServiceTypeKey = (key: string | null | undefined): string => {
+  if (!key) return '';
+  
+  const lowerKey = key.toLowerCase().trim();
+  
+  const mappings: Record<string, string> = {
+    'domestic cleaning': 'domestic',
+    'commercial cleaning': 'commercial',
+    'standard cleaning': 'domestic',  // Legacy mapping
+    'deep cleaning': 'deep_cleaning',
+    'end of tenancy': 'end_of_tenancy',
+    'end-of-tenancy': 'end_of_tenancy',
+    // Handle cases where cleaning types ended up in service_type field
+    'check_in_check_out': 'airbnb',
+    'checkin-checkout': 'airbnb',
+    'midstay_cleaning': 'airbnb',
+    'standard_cleaning': 'domestic',
+    'deep_cleaning': 'deep_cleaning',
+  };
+  
+  return mappings[lowerKey] || key;
+};
+
+/**
+ * Intelligently corrects service_type and cleaning_type when they're swapped
+ * Returns corrected { serviceType, cleaningType } object
+ */
+export const correctBookingTypes = (booking: { service_type?: string | null; cleaning_type?: string | null }) => {
+  const serviceType = booking.service_type || '';
+  const cleaningType = booking.cleaning_type || '';
+  
+  // Known service type keys (these should be in service_type field)
+  const serviceTypeKeys = ['domestic', 'commercial', 'airbnb', 'end_of_tenancy', 'deep_cleaning', 'domestic_cleaning'];
+  
+  // Known cleaning type keys (these should be in cleaning_type field)  
+  const cleaningTypeKeys = ['check_in_check_out', 'checkin-checkout', 'midstay_cleaning', 'standard_cleaning', 'deep_cleaning', 'one_off', 'light_cleaning'];
+  
+  const serviceLower = serviceType.toLowerCase().trim();
+  const cleaningLower = cleaningType.toLowerCase().trim();
+  
+  // Check if they're swapped
+  const serviceIsActuallyCleaning = cleaningTypeKeys.includes(serviceLower) || serviceLower.includes('check_in') || serviceLower.includes('checkin');
+  const cleaningIsActuallyService = serviceTypeKeys.includes(cleaningLower) || ['airbnb', 'domestic', 'commercial'].includes(cleaningLower);
+  
+  // If both are swapped, swap them back
+  if (serviceIsActuallyCleaning && cleaningIsActuallyService) {
+    return {
+      serviceType: cleaningType,
+      cleaningType: serviceType
+    };
+  }
+  
+  // If only service is wrong, try to infer correct service from cleaning
+  if (serviceIsActuallyCleaning && !cleaningIsActuallyService) {
+    // Airbnb-related cleaning types should have airbnb as service
+    if (serviceLower.includes('check_in') || serviceLower.includes('checkin') || serviceLower.includes('midstay')) {
+      return {
+        serviceType: 'airbnb',
+        cleaningType: serviceType
+      };
+    }
+    // Standard/deep cleaning could be domestic or commercial - keep original cleaning, default to domestic
+    return {
+      serviceType: 'domestic',
+      cleaningType: serviceType
+    };
+  }
+  
+  // If only cleaning is wrong, swap
+  if (cleaningIsActuallyService && !serviceIsActuallyCleaning) {
+    return {
+      serviceType: cleaningType,
+      cleaningType: serviceType
+    };
+  }
+  
+  // No swap needed
+  return {
+    serviceType: serviceType,
+    cleaningType: cleaningType
+  };
 };
 
 /**

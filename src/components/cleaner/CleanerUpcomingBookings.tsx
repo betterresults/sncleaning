@@ -87,11 +87,11 @@ const CleanerUpcomingBookings = () => {
       
       setBookings(filteredData);
 
-      // Extract unique service types for filter dropdown
+      // Extract unique service types for filter dropdown (use service_type, not cleaning_type)
       const uniqueServiceTypes = [...new Set(
         (bookingsData || [])
-          .map(booking => booking.cleaning_type)
-          .filter(cleaningType => cleaningType && cleaningType.trim() !== '')
+          .map(booking => booking.service_type)
+          .filter(serviceType => serviceType && serviceType.trim() !== '')
       )].sort();
       
       setServiceTypes(uniqueServiceTypes);
@@ -144,10 +144,10 @@ const CleanerUpcomingBookings = () => {
       );
     }
 
-    // Service type filter
+    // Service type filter (use service_type, not cleaning_type)
     if (serviceTypeFilter !== 'all') {
       filtered = filtered.filter(booking => 
-        booking.cleaning_type === serviceTypeFilter
+        booking.service_type === serviceTypeFilter
       );
     }
 

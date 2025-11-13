@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { Booking } from './types';
 import { useServiceTypes, useCleaningTypes, getServiceTypeLabel, getCleaningTypeLabel } from '@/hooks/useCompanySettings';
-import { formatPropertyDetails, formatAdditionalDetails, normalizeCleaningTypeKey, normalizeServiceTypeKey } from '@/utils/bookingFormatters';
+import { formatPropertyDetails, formatAdditionalDetails, normalizeCleaningTypeKey, normalizeServiceTypeKey, correctBookingTypes } from '@/utils/bookingFormatters';
 
 interface ViewBookingDialogProps {
   open: boolean;
@@ -54,8 +54,11 @@ const ViewBookingDialog: React.FC<ViewBookingDialogProps> = ({
     }
   };
 
-  const serviceTypeLabel = getServiceTypeLabel(normalizeServiceTypeKey(booking.service_type), serviceTypes);
-  const cleaningTypeLabel = getCleaningTypeLabel(normalizeCleaningTypeKey(booking.cleaning_type), cleaningTypes);
+  // Correct swapped service_type and cleaning_type
+  const { serviceType: correctedServiceType, cleaningType: correctedCleaningType } = correctBookingTypes(booking);
+
+  const serviceTypeLabel = getServiceTypeLabel(normalizeServiceTypeKey(correctedServiceType), serviceTypes);
+  const cleaningTypeLabel = getCleaningTypeLabel(normalizeCleaningTypeKey(correctedCleaningType), cleaningTypes);
   const formattedPropertyDetails = formatPropertyDetails(booking.property_details);
   const formattedAdditionalDetails = formatAdditionalDetails(booking.additional_details);
 
