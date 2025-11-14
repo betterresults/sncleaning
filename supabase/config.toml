@@ -1,5 +1,8 @@
 project_id = "dkomihipebixlegygnoy"
 
+[functions.resend-webhook]
+verify_jwt = false
+
 [functions.stripe-verify-payment-method]
 verify_jwt = false
 
