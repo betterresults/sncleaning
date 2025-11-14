@@ -41,39 +41,23 @@ const handler = async (req: Request): Promise<Response> => {
     // Resolve payment link: prefer provided, else fetch from DB
     let finalPaymentLink = paymentLink || '';
 
-    // Try bookings.payment_link then invoice_link
-    if (!finalPaymentLink) {
-      const { data: bPay, error: bPayErr } = await supabase
-        .from('bookings')
-        .select('payment_link')
-        .eq('id', bookingId)
-        .single();
-      if (!bPayErr && bPay?.payment_link) finalPaymentLink = bPay.payment_link;
-    }
+    // Try bookings.invoice_link
     if (!finalPaymentLink) {
       const { data: bInv } = await supabase
         .from('bookings')
         .select('invoice_link')
         .eq('id', bookingId)
-        .single();
+        .maybeSingle();
       if (bInv?.invoice_link) finalPaymentLink = bInv.invoice_link;
     }
 
-    // Try past_bookings.payment_link then invoice_link
-    if (!finalPaymentLink) {
-      const { data: pPay, error: pPayErr } = await supabase
-        .from('past_bookings')
-        .select('payment_link')
-        .eq('id', bookingId)
-        .single();
-      if (!pPayErr && pPay?.payment_link) finalPaymentLink = pPay.payment_link;
-    }
+    // Try past_bookings.invoice_link
     if (!finalPaymentLink) {
       const { data: pInv } = await supabase
         .from('past_bookings')
         .select('invoice_link')
         .eq('id', bookingId)
-        .single();
+        .maybeSingle();
       if (pInv?.invoice_link) finalPaymentLink = pInv.invoice_link;
     }
 
