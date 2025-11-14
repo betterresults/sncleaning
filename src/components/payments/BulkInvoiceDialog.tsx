@@ -226,6 +226,7 @@ const BulkInvoiceDialog = ({ open, onOpenChange, selectedBookings, onSuccess }: 
           name: customerName,
           amount: totalAmount,
           description: `Combined invoice for ${selectedBookings.length} cleaning service${selectedBookings.length > 1 ? 's' : ''}`,
+          booking_ids: selectedBookings.map(b => b.id),
         }
       });
 
