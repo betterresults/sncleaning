@@ -81,6 +81,26 @@ serve(async (req) => {
           .eq('delivery_id', deliveryId);
         break;
 
+      case 'email.clicked':
+        console.log(`Email ${deliveryId} link was clicked: ${emailData.click?.link || 'unknown'}`);
+        // Update to opened status if not already (some email clients don't trigger open event)
+        const { data: existingLog } = await supabaseClient
+          .from('notification_logs')
+          .select('status, opened_at')
+          .eq('delivery_id', deliveryId)
+          .single();
+        
+        if (existingLog && !existingLog.opened_at) {
+          await supabaseClient
+            .from('notification_logs')
+            .update({ 
+              status: 'opened',
+              opened_at: new Date().toISOString()
+            })
+            .eq('delivery_id', deliveryId);
+        }
+        break;
+
       case 'email.bounced':
         console.log(`Email ${deliveryId} bounced`);
         await supabaseClient
