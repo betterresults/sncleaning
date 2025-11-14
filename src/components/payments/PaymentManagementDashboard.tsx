@@ -310,19 +310,19 @@ const PaymentManagementDashboard = () => {
     setBulkInvoiceDialogOpen(true);
   };
 
-  const handleEmailPreview = (booking: Booking) => {
+  const handleEmailPreview = async (booking: Booking) => {
     setPreviewBooking(booking);
     setPreviewMessageType('email');
     setMessagePreviewOpen(true);
   };
 
-  const handleSmsPreview = (booking: Booking) => {
+  const handleSmsPreview = async (booking: Booking) => {
     setPreviewBooking(booking);
     setPreviewMessageType('sms');
     setMessagePreviewOpen(true);
   };
 
-  const getPreviewMessage = () => {
+  const getPreviewMessage = async () => {
     if (!previewBooking) return '';
     
     const amount = typeof previewBooking.total_cost === 'string' 
@@ -342,8 +342,37 @@ Please complete your payment at your earliest convenience.
 Best regards,
 SN Cleaning Team`;
     } else {
-      return `Hi ${previewBooking.first_name}, invoice for £${amount.toFixed(2)} sent by email from SN Cleaning. Check spam folder.
+      // Fetch payment link for SMS preview
+      let paymentLink = '';
+      
+      const { data: booking } = await supabase
+        .from('bookings')
+        .select('invoice_link')
+        .eq('id', previewBooking.id)
+        .maybeSingle();
+      
+      if (booking?.invoice_link) {
+        paymentLink = booking.invoice_link;
+      } else {
+        const { data: pastBooking } = await supabase
+          .from('past_bookings')
+          .select('invoice_link')
+          .eq('id', previewBooking.id)
+          .maybeSingle();
+        
+        if (pastBooking?.invoice_link) {
+          paymentLink = pastBooking.invoice_link;
+        }
+      }
+      
+      return paymentLink
+        ? `Hi ${previewBooking.first_name}, invoice for £${amount.toFixed(2)} has been sent by email from SN Cleaning Services. If you don't see it, please check the spam folder. You can also pay here: ${paymentLink}
 
+Thank you,
+SN Cleaning Team`
+        : `Hi ${previewBooking.first_name}, invoice for £${amount.toFixed(2)} has been sent by email from SN Cleaning Services. If you don't see it, please check the spam folder.
+
+Thank you,
 SN Cleaning Team`;
     }
   };
@@ -620,7 +649,6 @@ SN Cleaning Team`;
                   <TableHead className="font-bold text-slate-700">Payment</TableHead>
                   <TableHead className="font-bold text-slate-700">Communications</TableHead>
                   <TableHead className="font-bold text-slate-700">Cleaner</TableHead>
-                  <TableHead className="font-bold text-slate-700">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -688,18 +716,6 @@ SN Cleaning Team`;
                           <span className="text-slate-400 italic">Unassigned</span>
                         )}
                       </TableCell>
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleSendPaymentSMS(booking)}
-                          disabled={isSendingSMS}
-                          className="rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
-                        >
-                          <MessageSquare className="h-4 w-4 mr-1" />
-                          SMS
-                        </Button>
-                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -741,10 +757,10 @@ SN Cleaning Team`;
           open={messagePreviewOpen}
           onOpenChange={setMessagePreviewOpen}
           messageType={previewMessageType}
-          defaultMessage={getPreviewMessage()}
           recipientName={`${previewBooking.first_name} ${previewBooking.last_name}`}
           recipientContact={previewMessageType === 'email' ? previewBooking.email : previewBooking.phone_number}
           onSend={handleSendPreviewMessage}
+          loadMessage={getPreviewMessage}
         />
       )}
     </div>
