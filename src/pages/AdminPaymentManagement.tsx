@@ -6,7 +6,6 @@ import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { adminNavigation } from '@/lib/navigationItems';
 import PaymentManagementDashboard from '@/components/payments/PaymentManagementDashboard';
-import { PaymentSystemTest } from '@/components/admin/PaymentSystemTest';
 
 const AdminPaymentManagement = () => {
   const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
@@ -51,8 +50,7 @@ const AdminPaymentManagement = () => {
           />
           <SidebarInset className="flex-1">
             <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
-              <div className="max-w-7xl mx-auto space-y-6">
-                <PaymentSystemTest />
+              <div className="max-w-7xl mx-auto">
                 <PaymentManagementDashboard />
               </div>
             </main>
