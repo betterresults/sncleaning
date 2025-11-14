@@ -141,14 +141,12 @@ const PaymentManagementDashboard = () => {
     try {
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const monthStartStr = format(monthStart, 'yyyy-MM-dd');
-      const todayStr = format(now, 'yyyy-MM-dd');
       
       const { data, error } = await supabase
         .from('bookings')
         .select('total_cost, payment_status, cleaner_pay, date_time')
-        .gte('date_time', monthStartStr + 'T00:00:00')
-        .lte('date_time', todayStr + 'T23:59:59');
+        .gte('date_time', monthStart.toISOString())
+        .lte('date_time', now.toISOString());
 
       if (error) throw error;
 
@@ -448,48 +446,63 @@ const PaymentManagementDashboard = () => {
       )}
 
       {/* Bookings Table */}
-      <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0 overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 border-b">
-          <CardTitle className="flex items-center justify-between text-lg">
-            <span className="font-semibold">Payment Management</span>
-            <span className="text-sm font-normal text-muted-foreground bg-white px-3 py-1 rounded-full">
-              {filteredBookings.length} result{filteredBookings.length !== 1 ? 's' : ''}
-            </span>
-          </CardTitle>
-        </CardHeader>
+      <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0 overflow-hidden hover:shadow-[0_8px_30px_rgb(0,0,0,0.16)] transition-all duration-300">
+        <div className="bg-gradient-to-br from-slate-600 via-slate-700 to-slate-800 p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-xl">
+                <DollarSign className="h-6 w-6 text-white" />
+              </div>
+              <h2 className="text-xl font-bold text-white">Payment Management</h2>
+            </div>
+            <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full">
+              <span className="text-sm font-semibold text-slate-800">
+                {filteredBookings.length} result{filteredBookings.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+          </div>
+        </div>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="hover:bg-transparent border-b">
+                <TableRow className="hover:bg-transparent border-b bg-gradient-to-r from-slate-50 to-slate-100">
                   <TableHead className="w-12">
                     <Checkbox
                       checked={selectedBookingIds.size === filteredBookings.length && filteredBookings.length > 0}
                       onCheckedChange={handleSelectAll}
                     />
                   </TableHead>
-                  <TableHead className="font-semibold">Customer</TableHead>
-                  <TableHead className="font-semibold">Date & Time</TableHead>
-                  <TableHead className="font-semibold">Address</TableHead>
-                  <TableHead className="font-semibold">Amount</TableHead>
-                  <TableHead className="font-semibold">Status</TableHead>
-                  <TableHead className="font-semibold">Cleaner</TableHead>
-                  <TableHead className="font-semibold">Actions</TableHead>
+                  <TableHead className="font-bold text-slate-700">Customer</TableHead>
+                  <TableHead className="font-bold text-slate-700">Date & Time</TableHead>
+                  <TableHead className="font-bold text-slate-700">Address</TableHead>
+                  <TableHead className="font-bold text-slate-700">Amount</TableHead>
+                  <TableHead className="font-bold text-slate-700">Status</TableHead>
+                  <TableHead className="font-bold text-slate-700">Cleaner</TableHead>
+                  <TableHead className="font-bold text-slate-700">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredBookings.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-12">
-                      <div className="flex flex-col items-center gap-2">
-                        <AlertCircle className="h-12 w-12 text-muted-foreground/50" />
-                        <p className="text-muted-foreground">No bookings found</p>
+                    <TableCell colSpan={8} className="text-center py-16">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="p-4 bg-slate-100 rounded-2xl">
+                          <AlertCircle className="h-12 w-12 text-slate-400" />
+                        </div>
+                        <p className="text-slate-600 font-medium text-lg">No bookings found</p>
+                        <p className="text-slate-400 text-sm">Try adjusting your filters</p>
                       </div>
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredBookings.map((booking) => (
-                    <TableRow key={booking.id} className="hover:bg-primary/5">
+                  filteredBookings.map((booking, index) => (
+                    <TableRow 
+                      key={booking.id} 
+                      className={`hover:bg-gradient-to-r hover:from-primary/5 hover:to-blue-50/50 transition-all duration-200 ${
+                        index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
+                      }`}
+                    >
                       <TableCell>
                         <Checkbox
                           checked={selectedBookingIds.has(booking.id)}
@@ -498,26 +511,28 @@ const PaymentManagementDashboard = () => {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{booking.first_name} {booking.last_name}</div>
-                          <div className="text-sm text-muted-foreground">{booking.email}</div>
+                          <div className="font-semibold text-slate-900">{booking.first_name} {booking.last_name}</div>
+                          <div className="text-sm text-slate-500">{booking.email}</div>
                         </div>
                       </TableCell>
-                      <TableCell className="whitespace-nowrap">
+                      <TableCell className="whitespace-nowrap font-medium text-slate-700">
                         {format(new Date(booking.date_time), 'dd MMM yyyy HH:mm')}
                       </TableCell>
-                      <TableCell className="max-w-xs truncate">{booking.address}</TableCell>
-                      <TableCell className="font-semibold">£{(typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost).toFixed(2)}</TableCell>
+                      <TableCell className="max-w-xs truncate text-slate-600">{booking.address}</TableCell>
+                      <TableCell className="font-bold text-slate-900">£{(typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost).toFixed(2)}</TableCell>
                       <TableCell>
                         <PaymentStatusIndicator status={booking.payment_status} paymentMethod={booking.payment_method} />
                       </TableCell>
-                      <TableCell>
-                        {booking.cleaners ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}` : 'Unassigned'}
+                      <TableCell className="text-slate-700">
+                        {booking.cleaners ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}` : (
+                          <span className="text-slate-400 italic">Unassigned</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Button
                           size="sm"
                           onClick={() => handlePaymentAction(booking)}
-                          className="rounded-xl"
+                          className="rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
                         >
                           <DollarSign className="h-4 w-4 mr-1" />
                           Manage
