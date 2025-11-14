@@ -195,7 +195,7 @@ const BulkInvoiceDialog = ({ open, onOpenChange, selectedBookings, onSuccess }: 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Send Bulk Invoice</DialogTitle>
+          <DialogTitle>{invoiceMethod === 'stripe' ? 'Send Bulk Payment Link' : 'Send Invoiless Invoices'}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -211,6 +211,7 @@ const BulkInvoiceDialog = ({ open, onOpenChange, selectedBookings, onSuccess }: 
                 <Label htmlFor="invoiless" className="font-normal cursor-pointer">Invoiless Invoice</Label>
               </div>
             </RadioGroup>
+            <p className="text-sm text-muted-foreground mt-2">{invoiceMethod === 'stripe' ? 'Sends one email with a single payment link covering all selected services.' : 'Creates and emails separate Invoiless invoices for each selected service.'}</p>
           </div>
 
           <div>
@@ -258,7 +259,7 @@ const BulkInvoiceDialog = ({ open, onOpenChange, selectedBookings, onSuccess }: 
           </Button>
           <Button onClick={handleSendBulkInvoice} disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Send Invoice
+            {invoiceMethod === 'stripe' ? 'Send Payment Link' : 'Send Invoiless Invoices'}
           </Button>
         </DialogFooter>
       </DialogContent>
