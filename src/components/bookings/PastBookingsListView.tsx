@@ -123,6 +123,8 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
   const [selectedBookingForInvoiless, setSelectedBookingForInvoiless] = useState<Booking | null>(null);
   const [photoManagementOpen, setPhotoManagementOpen] = useState(false);
   const [selectedBookingForPhotos, setSelectedBookingForPhotos] = useState<Booking | null>(null);
+  const [selectedBookingIds, setSelectedBookingIds] = useState<Set<number>>(new Set());
+  const [combinedPaymentDialogOpen, setCombinedPaymentDialogOpen] = useState(false);
   const { toast } = useToast();
   
   // Fetch service/cleaning types for labels and badge colors
@@ -496,6 +498,30 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
     return 'Unassigned';
   };
 
+  const handleToggleBookingSelection = (bookingId: number) => {
+    setSelectedBookingIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(bookingId)) {
+        newSet.delete(bookingId);
+      } else {
+        newSet.add(bookingId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedBookingIds.size === displayedBookings.length) {
+      setSelectedBookingIds(new Set());
+    } else {
+      setSelectedBookingIds(new Set(displayedBookings.map(b => b.id)));
+    }
+  };
+
+  const getSelectedBookingsData = () => {
+    return bookings.filter(b => selectedBookingIds.has(b.id));
+  };
+
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -562,6 +588,31 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
         />
       )}
 
+      {/* Multi-select actions bar */}
+      {selectedBookingIds.size > 0 && (
+        <div className="bg-primary/10 rounded-lg p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="font-semibold text-primary">
+              {selectedBookingIds.size} booking{selectedBookingIds.size > 1 ? 's' : ''} selected
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedBookingIds(new Set())}
+            >
+              Clear Selection
+            </Button>
+          </div>
+          <Button
+            onClick={() => setCombinedPaymentDialogOpen(true)}
+            className="bg-primary hover:bg-primary/90"
+          >
+            <DollarSign className="h-4 w-4 mr-2" />
+            Generate Combined Invoice
+          </Button>
+        </div>
+      )}
+
       {/* Cards View - Current page bookings */}
       {displayedBookings.map((booking) => {
         const isUnsigned = !booking.cleaner;
@@ -582,7 +633,16 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
             className="bg-card rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.18)] hover:-translate-y-1 transition-all duration-200 border-none overflow-hidden"
           >
             {/* Desktop Layout */}
-            <div className="hidden lg:grid lg:grid-cols-[100px_1fr_2fr_15%_16%_15%_40px] items-center gap-3 p-0">
+            <div className="hidden lg:grid lg:grid-cols-[50px_100px_1fr_2fr_15%_16%_15%_40px] items-center gap-3 p-0">
+              {/* Checkbox */}
+              <div className="h-full flex items-center justify-center">
+                <input
+                  type="checkbox"
+                  checked={selectedBookingIds.has(booking.id)}
+                  onChange={() => handleToggleBookingSelection(booking.id)}
+                  className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                />
+              </div>
               {/* Time Box */}
               <div className="bg-primary/10 h-full flex items-center justify-center">
                 <div className="text-center py-4">
