@@ -29,9 +29,8 @@ const EmailStatusIndicator = ({ customerEmail, phoneNumber, onClick }: EmailStat
     try {
       const { data, error } = await supabase
         .from('notification_logs')
-        .select('status, recipient_email, notification_type')
-        .eq('recipient_email', customerEmail)
-        .eq('notification_type', 'email');
+        .select('status, recipient_email')
+        .eq('recipient_email', customerEmail);
 
       if (error) throw error;
 
@@ -41,9 +40,8 @@ const EmailStatusIndicator = ({ customerEmail, phoneNumber, onClick }: EmailStat
       if (phoneNumber) {
         const { data: smsResult } = await supabase
           .from('notification_logs')
-          .select('status, recipient_email, notification_type')
-          .eq('recipient_email', phoneNumber)
-          .eq('notification_type', 'sms');
+          .select('status, recipient_email')
+          .eq('recipient_email', phoneNumber);
         
         smsData = smsResult || [];
       }

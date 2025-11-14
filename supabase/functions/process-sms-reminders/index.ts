@@ -85,6 +85,7 @@ const handler = async (req: Request): Promise<Response> => {
             phoneNumber: reminder.phone_number,
             customerName: reminder.customer_name,
             amount: reminder.amount,
+            paymentLink: reminder.payment_link,
           }),
         });
 
