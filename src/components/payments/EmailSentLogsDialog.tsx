@@ -17,7 +17,12 @@ interface EmailLog {
   status: string;
   sent_at: string;
   created_at: string;
+  opened_at?: string;
+  delivered_at?: string;
   email_notification_templates?: {
+    name: string;
+  };
+  template?: {
     name: string;
   };
 }
@@ -67,6 +72,8 @@ export const EmailSentLogsDialog: React.FC<EmailSentLogsDialogProps> = ({
           status,
           sent_at,
           created_at,
+          opened_at,
+          delivered_at,
           email_notification_templates (name)
         `)
         .order('created_at', { ascending: false })
