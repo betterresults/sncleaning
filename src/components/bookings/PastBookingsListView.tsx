@@ -1133,6 +1133,16 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
           booking={selectedBookingForEmail as any}
         />
       )}
+
+      <CombinedPaymentDialog
+        open={combinedPaymentDialogOpen}
+        onOpenChange={setCombinedPaymentDialogOpen}
+        bookings={getSelectedBookingsData()}
+        onPaymentSent={() => {
+          fetchData();
+          setSelectedBookingIds(new Set());
+        }}
+      />
     </div>
   );
 };
