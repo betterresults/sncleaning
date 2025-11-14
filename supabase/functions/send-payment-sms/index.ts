@@ -11,7 +11,7 @@ interface SendSMSRequest {
   phoneNumber: string;
   customerName: string;
   amount: number;
-  paymentLink: string;
+  paymentLink?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -33,12 +33,11 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Twilio credentials not configured');
     }
 
-    if (!paymentLink) {
-      throw new Error('Payment link is required');
-    }
+    // Use provided payment link or generate fallback link
+    const finalPaymentLink = paymentLink || `https://dkomihipebixlegygnoy.supabase.co/functions/v1/create-payment-link?booking_id=${bookingId}`;
 
     // Create concise SMS message
-    const message = `Hi ${customerName}, invoice for £${amount.toFixed(2)} sent by email from SN Cleaning. Check spam folder. Alternatively, you can pay here: ${paymentLink} Thanks.`;
+    const message = `Hi ${customerName}, invoice for £${amount.toFixed(2)} sent by email from SN Cleaning. Check spam folder. Alternatively, you can pay here: ${finalPaymentLink} Thanks.`;
 
     console.log('SMS message:', message);
 
