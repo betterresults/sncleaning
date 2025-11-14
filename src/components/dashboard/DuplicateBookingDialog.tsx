@@ -11,6 +11,8 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface Booking {
   id: number;
@@ -102,6 +104,8 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSameDayCleaning, setIsSameDayCleaning] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Fetch cleaners when dialog opens
   React.useEffect(() => {
@@ -212,8 +216,19 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
 
       if (error) {
         console.error('Error duplicating booking:', error);
+        toast({
+          title: "Error",
+          description: "Failed to duplicate booking. Please try again.",
+          variant: "destructive",
+        });
         throw error;
       }
+      
+      toast({
+        title: "Success",
+        description: "Booking duplicated successfully! Redirecting to upcoming bookings...",
+      });
+      
       onSuccess();
       onOpenChange(false);
       
@@ -225,6 +240,11 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
       setCleanerOption('same');
       setSelectedCleaner(null);
       setIsSameDayCleaning(false);
+      
+      // Navigate to upcoming bookings
+      setTimeout(() => {
+        navigate('/upcoming-bookings');
+      }, 500);
     } catch (error) {
       console.error('Error duplicating booking:', error);
     } finally {
