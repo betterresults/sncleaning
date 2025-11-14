@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, RefreshCw, Download, Search } from 'lucide-react';
+import { Loader2, RefreshCw, Download, Search, Mail } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { EmailSentLogsDialog } from './EmailSentLogsDialog';
 
 interface StripePayment {
   stripe_payment_intent_id: string;
@@ -56,6 +57,7 @@ export const StripePaymentsDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchType, setSearchType] = useState<'all' | 'customer' | 'email'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'authorized' | 'unpaid'>('all');
+  const [showEmailLogs, setShowEmailLogs] = useState(false);
 
   const fetchPayments = async () => {
     setLoading(true);
