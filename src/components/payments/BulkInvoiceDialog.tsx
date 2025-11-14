@@ -121,7 +121,7 @@ const BulkInvoiceDialog = ({ open, onOpenChange, selectedBookings, onSuccess }: 
             continue;
           }
 
-          const { error } = await supabase.functions.invoke('stripe-send-payment-link', {
+          const { data, error } = await supabase.functions.invoke('stripe-send-payment-link', {
             body: {
               customer_id: booking.id, // keep parity with working flow
               email: booking.email,
@@ -130,11 +130,36 @@ const BulkInvoiceDialog = ({ open, onOpenChange, selectedBookings, onSuccess }: 
               description: `Cleaning Service - ${format(new Date(booking.date_time), 'dd MMM yyyy')}`,
               booking_id: booking.id,
               collect_payment_method: true,
-              send_email: true,
             }
           });
 
           if (error) throw error;
+
+          // Send email with the payment link
+          if (data?.payment_link_url) {
+            const { error: emailError } = await supabase.functions.invoke('send-notification-email', {
+              body: {
+                recipient_email: booking.email,
+                recipient_name: `${booking.first_name} ${booking.last_name || ''}`.trim(),
+                custom_subject: `Payment for Cleaning Service - ${format(new Date(booking.date_time), 'dd MMM yyyy')}`,
+                custom_content: `
+                  <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; max-width: 600px; margin: 0 auto; background-color: #fafafa; padding: 40px 20px;">
+                    <div style="background-color: white; border-radius: 8px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                      <h2 style="color: hsl(196, 62%, 25%); font-size: 22px; margin: 0 0 16px;">Complete Your Payment</h2>
+                      <p style="color: hsl(210, 20%, 15%); font-size: 16px;">Please complete your payment of <strong>£${(typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost).toFixed(2)}</strong> for your cleaning service on ${format(new Date(booking.date_time), 'dd MMM yyyy')}.</p>
+                      <div style="text-align: center; margin: 24px 0;">
+                        <a href="${data.payment_link_url}" style="background-color: hsl(180, 75%, 37%); color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600;">Pay Now</a>
+                      </div>
+                      <p style="color: hsl(210, 15%, 35%); font-size: 12px;">If the button doesn’t work, copy this link:</p>
+                      <p style="word-break: break-all; background-color: hsl(0, 0%, 96%); padding: 10px; border-radius: 4px; font-size: 12px; color: hsl(210, 20%, 15%);">${data.payment_link_url}</p>
+                    </div>
+                  </div>
+                `,
+              }
+            });
+            if (emailError) throw emailError;
+          }
+
           successCount++;
         } catch (e: any) {
           console.error('Payment link error:', e);
@@ -182,10 +207,20 @@ const BulkInvoiceDialog = ({ open, onOpenChange, selectedBookings, onSuccess }: 
       // Send payment link with combined invoice
       const { data, error } = await supabase.functions.invoke('stripe-send-payment-link', {
         body: {
-          recipient_email: customerEmail,
-          recipient_name: customerName,
-          custom_subject: `Cleaning Services Invoice - £${totalAmount.toFixed(2)}`,
-          custom_content: `
+          // Create a single combined link (no email here)
+          customer_id: selectedBookings[0].customer,
+          email: customerEmail,
+          name: customerName,
+          amount: totalAmount,
+          description: `Combined invoice for ${selectedBookings.length} cleaning service${selectedBookings.length > 1 ? 's' : ''}`,
+        }
+      });
+
+      if (error) throw error;
+
+      // Send email with the combined payment link
+      if (data?.payment_link_url) {
+        const emailHtml = `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; max-width: 600px; margin: 0 auto; background-color: #fafafa; padding: 40px 20px;">
               <div style="background-color: white; border-radius: 8px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
                 <div style="text-align: center; margin-bottom: 32px;">
@@ -216,11 +251,12 @@ const BulkInvoiceDialog = ({ open, onOpenChange, selectedBookings, onSuccess }: 
                   <div style="font-size: 14px; margin-top: 8px; opacity: 0.9;">${selectedBookings.length} service${selectedBookings.length > 1 ? 's' : ''}</div>
                 </div>
 
-                <div style="background-color: hsl(196, 85%, 95%); border-radius: 8px; padding: 16px; margin: 24px 0;">
-                  <p style="color: hsl(196, 62%, 25%); font-size: 14px; line-height: 1.6; margin: 0;">
-                    <strong>Automated Payment System:</strong> Your card details will be securely saved for automatic payment of your next bookings. We will place a hold on your card 24 hours before each service and charge it after the service is completed.
-                  </p>
+                <div style="text-align: center; margin: 24px 0;">
+                  <a href="${data.payment_link_url}" style="background-color: hsl(180, 75%, 37%); color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600;">Pay Now</a>
                 </div>
+
+                <p style="color: hsl(210, 15%, 35%); font-size: 12px;">If the button doesn’t work, copy this link:</p>
+                <p style="word-break: break-all; background-color: hsl(0, 0%, 96%); padding: 10px; border-radius: 4px; font-size: 12px; color: hsl(210, 20%, 15%);">${data.payment_link_url}</p>
 
                 <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid hsl(0, 0%, 90%);">
                   <p style="color: hsl(210, 20%, 30%); font-size: 14px; line-height: 1.6;">If you have any questions about this invoice, please don't hesitate to contact us.</p>
@@ -228,14 +264,18 @@ const BulkInvoiceDialog = ({ open, onOpenChange, selectedBookings, onSuccess }: 
                 </div>
               </div>
             </div>
-          `,
-          amount: totalAmount,
-          customer_id: selectedBookings[0].customer,
-          description: `Combined invoice for ${selectedBookings.length} cleaning service${selectedBookings.length > 1 ? 's' : ''}`
-        }
-      });
+          `;
 
-      if (error) throw error;
+        const { error: emailError } = await supabase.functions.invoke('send-notification-email', {
+          body: {
+            recipient_email: customerEmail,
+            recipient_name: customerName,
+            custom_subject: `Cleaning Services Invoice - £${totalAmount.toFixed(2)}`,
+            custom_content: emailHtml,
+          }
+        });
+        if (emailError) throw emailError;
+      }
 
       toast({
         title: 'Bulk invoice sent',
