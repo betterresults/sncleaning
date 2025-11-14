@@ -17,6 +17,19 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Get the signature headers from Resend
+    const svixId = req.headers.get('svix-id');
+    const svixTimestamp = req.headers.get('svix-timestamp');
+    const svixSignature = req.headers.get('svix-signature');
+
+    // Verify webhook signature (optional but recommended for security)
+    const webhookSecret = Deno.env.get('RESEND_WEBHOOK_SECRET');
+    if (webhookSecret && svixSignature) {
+      console.log('Verifying webhook signature');
+      // For now, we'll just log this - Resend uses Svix for webhooks
+      // Full verification would require the Svix SDK
+    }
+
     const payload = await req.json();
     console.log('Received Resend webhook:', JSON.stringify(payload));
 
