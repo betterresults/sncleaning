@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { format } from 'date-fns';
 
 interface Booking {
   id: number;
@@ -31,6 +32,7 @@ const BulkInvoiceDialog = ({ open, onOpenChange, selectedBookings, onSuccess }: 
   const [loading, setLoading] = useState(false);
   const [description, setDescription] = useState('');
   const [invoiceMethod, setInvoiceMethod] = useState<'stripe' | 'invoiless'>('stripe');
+  const [stripeMode, setStripeMode] = useState<'combined' | 'individual'>('individual');
   const { toast } = useToast();
 
   const totalAmount = selectedBookings.reduce((sum, booking) => {
@@ -106,6 +108,62 @@ const BulkInvoiceDialog = ({ open, onOpenChange, selectedBookings, onSuccess }: 
   };
 
   const handleStripePaymentLink = async () => {
+    if (stripeMode === 'individual') {
+      let successCount = 0;
+      let errorCount = 0;
+      const errors: string[] = [];
+
+      for (const booking of selectedBookings) {
+        try {
+          if (!booking.email || !booking.first_name || !booking.total_cost) {
+            errors.push(`Booking #${booking.id}: Missing email, name, or cost`);
+            errorCount++;
+            continue;
+          }
+
+          const { error } = await supabase.functions.invoke('stripe-send-payment-link', {
+            body: {
+              customer_id: booking.id, // keep parity with working flow
+              email: booking.email,
+              name: `${booking.first_name} ${booking.last_name || ''}`.trim(),
+              amount: typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost,
+              description: `Cleaning Service - ${format(new Date(booking.date_time), 'dd MMM yyyy')}`,
+              booking_id: booking.id,
+              collect_payment_method: true,
+              send_email: true,
+            }
+          });
+
+          if (error) throw error;
+          successCount++;
+        } catch (e: any) {
+          console.error('Payment link error:', e);
+          errorCount++;
+          if (e?.message) errors.push(e.message);
+        }
+      }
+
+      if (successCount > 0) {
+        toast({
+          title: 'Payment Links Sent',
+          description: `Successfully sent ${successCount} payment link${successCount !== 1 ? 's' : ''}.`,
+        });
+        onSuccess();
+        onOpenChange(false);
+      }
+
+      if (errorCount > 0) {
+        toast({
+          title: 'Some links failed',
+          description: `${errorCount} link${errorCount !== 1 ? 's' : ''} failed. ${errors.slice(0,3).join('; ')}`,
+          variant: 'destructive'
+        });
+      }
+
+      return;
+    }
+
+    // Combined single payment link covering all selected services
     const customerEmail = selectedBookings[0].email;
     const customerName = `${selectedBookings[0].first_name} ${selectedBookings[0].last_name}`.trim();
 
@@ -211,8 +269,24 @@ const BulkInvoiceDialog = ({ open, onOpenChange, selectedBookings, onSuccess }: 
                 <Label htmlFor="invoiless" className="font-normal cursor-pointer">Invoiless Invoice</Label>
               </div>
             </RadioGroup>
-            <p className="text-sm text-muted-foreground mt-2">{invoiceMethod === 'stripe' ? 'Sends one email with a single payment link covering all selected services.' : 'Creates and emails separate Invoiless invoices for each selected service.'}</p>
+            <p className="text-sm text-muted-foreground mt-2">{invoiceMethod === 'stripe' ? (stripeMode === 'combined' ? 'Sends one email with a single payment link covering all selected services.' : 'Sends individual payment links for each selected booking (same as Completed Bookings).') : 'Creates and emails separate Invoiless invoices for each selected service.'}</p>
           </div>
+
+          {invoiceMethod === 'stripe' && (
+            <div>
+              <Label>Stripe Mode</Label>
+              <RadioGroup value={stripeMode} onValueChange={(v: 'combined' | 'individual') => setStripeMode(v)} className="flex gap-4 mt-2">
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="individual" id="stripe-individual" />
+                  <Label htmlFor="stripe-individual" className="font-normal cursor-pointer">Individual links</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="combined" id="stripe-combined" />
+                  <Label htmlFor="stripe-combined" className="font-normal cursor-pointer">Single combined link</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
 
           <div>
             <Label>Selected Bookings ({selectedBookings.length})</Label>
@@ -259,7 +333,7 @@ const BulkInvoiceDialog = ({ open, onOpenChange, selectedBookings, onSuccess }: 
           </Button>
           <Button onClick={handleSendBulkInvoice} disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {invoiceMethod === 'stripe' ? 'Send Payment Link' : 'Send Invoiless Invoices'}
+            {invoiceMethod === 'stripe' ? (stripeMode === 'individual' ? 'Send Payment Links' : 'Send Payment Link') : 'Send Invoiless Invoices'}
           </Button>
         </DialogFooter>
       </DialogContent>
