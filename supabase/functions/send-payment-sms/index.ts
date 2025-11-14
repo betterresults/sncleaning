@@ -36,7 +36,7 @@ const handler = async (req: Request): Promise<Response> => {
     const paymentLink = `https://dkomihipebixlegygnoy.supabase.co/functions/v1/create-payment-link?booking_id=${bookingId}`;
 
     // Create concise SMS message
-    const message = `Hi ${customerName}, we've sent an email about your £${amount.toFixed(2)} invoice (from noreply@sncleaning.co.uk). Please check spam if not in inbox. Pay now: ${paymentLink}`;
+    const message = `Hi ${customerName}, invoice for £${amount.toFixed(2)} sent by email from SN Cleaning. Check spam folder. Alternatively, you can pay here: ${paymentLink} Thanks.`;
 
     console.log('SMS message:', message);
 
@@ -71,16 +71,17 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Insert notification log
+    // Insert notification log with notification_type
     await supabase.from('notification_logs').insert({
       entity_type: 'booking',
       entity_id: bookingId.toString(),
-      recipient_email: phoneNumber, // Store phone number in email field for now
+      recipient_email: phoneNumber,
       recipient_type: 'customer',
       status: 'sent',
       subject: 'Payment Reminder SMS',
       content: message,
       delivery_id: twilioData.sid,
+      notification_type: 'sms',
     });
 
     return new Response(

@@ -333,6 +333,55 @@ Postcode: ${booking.postcode || 'N/A'}`;
     if (sendInvoiceResponse.ok) {
       emailSent = true;
       console.log('Invoice sent successfully');
+
+      // Auto-send SMS reminder if phone number exists
+      if (booking.phone_number && booking.phone_number.trim()) {
+        console.log('Sending SMS reminder to:', booking.phone_number);
+        
+        try {
+          const customerName = booking.first_name || 'Customer';
+          const amount = parseFloat(booking.total_cost || 0);
+          
+          // Send immediate SMS
+          const smsResponse = await fetch(`${supabaseUrl}/functions/v1/send-payment-sms`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${supabaseServiceKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              bookingId: booking.id,
+              phoneNumber: booking.phone_number,
+              customerName,
+              amount,
+            }),
+          });
+
+          if (smsResponse.ok) {
+            console.log('SMS sent successfully');
+            
+            // Queue 2-hour follow-up SMS reminder
+            const sendAt = new Date();
+            sendAt.setHours(sendAt.getHours() + 2);
+            
+            await supabase.from('sms_reminders_queue').insert({
+              booking_id: booking.id,
+              phone_number: booking.phone_number,
+              customer_name: customerName,
+              amount,
+              send_at: sendAt.toISOString(),
+              status: 'pending',
+            });
+            
+            console.log('2-hour SMS reminder queued for:', sendAt.toISOString());
+          } else {
+            console.warn('Failed to send SMS:', await smsResponse.text());
+          }
+        } catch (smsError: any) {
+          console.error('Error sending SMS:', smsError);
+          // Don't fail the whole process if SMS fails
+        }
+      }
     } else {
       const errorText = await sendInvoiceResponse.text();
       console.warn('Failed to send invoice email:', errorText);
