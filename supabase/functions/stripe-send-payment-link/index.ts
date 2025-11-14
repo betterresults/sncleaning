@@ -14,6 +14,7 @@ interface SendPaymentLinkRequest {
   amount: number;
   description?: string;
   booking_id?: number;
+  booking_ids?: number[]; // Optional: when creating a combined link for multiple bookings
   collect_payment_method?: boolean; // If true, also collect payment method for future use
 }
 
@@ -38,6 +39,7 @@ const handler = async (req: Request): Promise<Response> => {
       amount, 
       description = 'Cleaning Service Payment',
       booking_id,
+      booking_ids,
       collect_payment_method = false
     }: SendPaymentLinkRequest = await req.json();
 
@@ -109,10 +111,14 @@ const handler = async (req: Request): Promise<Response> => {
 
       console.log('Created checkout session with card saving:', session.id);
 
-      // Persist link for this booking (both current and past tables)
+      // Persist link for the related booking(s)
       if (booking_id && session.url) {
         await supabase.from('bookings').update({ invoice_link: session.url }).eq('id', booking_id);
         await supabase.from('past_bookings').update({ invoice_link: session.url }).eq('id', booking_id);
+      }
+      if (Array.isArray(booking_ids) && booking_ids.length > 0 && session.url) {
+        await supabase.from('bookings').update({ invoice_link: session.url }).in('id', booking_ids);
+        await supabase.from('past_bookings').update({ invoice_link: session.url }).in('id', booking_ids);
       }
 
       return new Response(JSON.stringify({
@@ -159,10 +165,14 @@ const handler = async (req: Request): Promise<Response> => {
 
       console.log('Created payment link:', paymentLink.id);
 
-      // Persist link for this booking (both current and past tables)
+      // Persist link for the related booking(s)
       if (booking_id && paymentLink.url) {
         await supabase.from('bookings').update({ invoice_link: paymentLink.url }).eq('id', booking_id);
         await supabase.from('past_bookings').update({ invoice_link: paymentLink.url }).eq('id', booking_id);
+      }
+      if (Array.isArray(booking_ids) && booking_ids.length > 0 && paymentLink.url) {
+        await supabase.from('bookings').update({ invoice_link: paymentLink.url }).in('id', booking_ids);
+        await supabase.from('past_bookings').update({ invoice_link: paymentLink.url }).in('id', booking_ids);
       }
 
       return new Response(JSON.stringify({
