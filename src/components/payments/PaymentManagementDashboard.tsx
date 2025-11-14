@@ -82,19 +82,27 @@ const PaymentManagementDashboard = () => {
   const [bulkInvoiceDialogOpen, setBulkInvoiceDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
-  const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [selectedBookingIds, setSelectedBookingIds] = useState<Set<number>>(new Set());
   const [availableStatuses, setAvailableStatuses] = useState<string[]>([]);
+  const [currentMonthStats, setCurrentMonthStats] = useState<PaymentStats>({
+    totalBookings: 0,
+    paidBookings: 0,
+    unpaidBookings: 0,
+    failedBookings: 0,
+    totalRevenue: 0,
+    pendingRevenue: 0,
+  });
   const { toast } = useToast();
 
   useEffect(() => {
     fetchBookings();
+    fetchCurrentMonthStats();
   }, [startDate, endDate]);
 
   useEffect(() => {
     applyFilters();
-    calculateCurrentStats();
     extractAvailableStatuses();
   }, [allBookings, searchTerm, statusFilter]);
 
@@ -102,7 +110,7 @@ const PaymentManagementDashboard = () => {
     try {
       setLoading(true);
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('bookings')
         .select(`
           *,
@@ -110,10 +118,17 @@ const PaymentManagementDashboard = () => {
             first_name,
             last_name
           )
-        `)
-        .gte('date_time', startDate)
-        .lte('date_time', endDate + 'T23:59:59')
-        .order('date_time', { ascending: false });
+        `);
+
+      // Only apply date filters if they are set
+      if (startDate) {
+        query = query.gte('date_time', startDate);
+      }
+      if (endDate) {
+        query = query.lte('date_time', endDate + 'T23:59:59');
+      }
+
+      const { data, error } = await query.order('date_time', { ascending: false });
 
       if (error) throw error;
 
@@ -130,6 +145,55 @@ const PaymentManagementDashboard = () => {
     }
   };
 
+  const fetchCurrentMonthStats = async () => {
+    try {
+      const monthStart = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+      const today = format(new Date(), 'yyyy-MM-dd');
+      
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('total_cost, payment_status')
+        .gte('date_time', monthStart)
+        .lte('date_time', today + 'T23:59:59');
+
+      if (error) throw error;
+
+      const stats: PaymentStats = {
+        totalBookings: data?.length || 0,
+        paidBookings: 0,
+        unpaidBookings: 0,
+        failedBookings: 0,
+        totalRevenue: 0,
+        pendingRevenue: 0,
+      };
+
+      data?.forEach(booking => {
+        const cost = typeof booking.total_cost === 'string' 
+          ? parseFloat(booking.total_cost) || 0 
+          : booking.total_cost || 0;
+        
+        const status = booking.payment_status?.toLowerCase();
+        
+        if (status === 'paid') {
+          stats.paidBookings++;
+          stats.totalRevenue += cost;
+        } else if (['failed', 'authorization_failed', 'capture_failed'].includes(status)) {
+          stats.failedBookings++;
+          stats.pendingRevenue += cost;
+        } else if (['unpaid', 'not paid', ''].includes(status) || !status) {
+          stats.unpaidBookings++;
+          stats.pendingRevenue += cost;
+        } else {
+          stats.pendingRevenue += cost;
+        }
+      });
+
+      setCurrentMonthStats(stats);
+    } catch (error: any) {
+      console.error('Error fetching current month stats:', error);
+    }
+  };
+
   const extractAvailableStatuses = () => {
     const statuses = new Set<string>();
     allBookings.forEach(booking => {
@@ -138,42 +202,6 @@ const PaymentManagementDashboard = () => {
       }
     });
     setAvailableStatuses(Array.from(statuses).sort());
-  };
-
-  const calculateCurrentStats = () => {
-    const bookings = allBookings;
-    
-    const stats: PaymentStats = {
-      totalBookings: bookings.length,
-      paidBookings: 0,
-      unpaidBookings: 0,
-      failedBookings: 0,
-      totalRevenue: 0,
-      pendingRevenue: 0,
-    };
-
-    bookings.forEach(booking => {
-      const cost = typeof booking.total_cost === 'string' 
-        ? parseFloat(booking.total_cost) || 0 
-        : booking.total_cost;
-      
-      const status = booking.payment_status?.toLowerCase();
-      
-      if (status === 'paid') {
-        stats.paidBookings++;
-        stats.totalRevenue += cost;
-      } else if (['failed', 'authorization_failed', 'capture_failed'].includes(status)) {
-        stats.failedBookings++;
-        stats.pendingRevenue += cost;
-      } else if (['unpaid', 'not paid', ''].includes(status) || !status) {
-        stats.unpaidBookings++;
-        stats.pendingRevenue += cost;
-      } else {
-        stats.pendingRevenue += cost;
-      }
-    });
-
-    setStats(stats);
   };
 
   const applyFilters = () => {
@@ -280,35 +308,35 @@ const PaymentManagementDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Stats - Current Month */}
+      {/* Stats - Current Month (1st November to Today) */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Revenue"
-          value={`£${stats.totalRevenue.toFixed(2)}`}
+          value={`£${currentMonthStats.totalRevenue.toFixed(2)}`}
           icon={DollarSign}
           color="text-primary"
-          subtitle={`${stats.paidBookings} paid bookings`}
+          subtitle={`${currentMonthStats.paidBookings} paid bookings (this month)`}
         />
         <StatCard
           title="Pending Revenue"
-          value={`£${stats.pendingRevenue.toFixed(2)}`}
+          value={`£${currentMonthStats.pendingRevenue.toFixed(2)}`}
           icon={Clock}
           color="text-yellow-600"
-          subtitle={`${stats.unpaidBookings + stats.failedBookings} bookings`}
+          subtitle={`${currentMonthStats.unpaidBookings + currentMonthStats.failedBookings} bookings (this month)`}
         />
         <StatCard
           title="Failed Payments"
-          value={stats.failedBookings}
+          value={currentMonthStats.failedBookings}
           icon={AlertCircle}
           color="text-red-600"
-          subtitle="Require attention"
+          subtitle="Require attention (this month)"
         />
         <StatCard
           title="Total Bookings"
-          value={stats.totalBookings}
+          value={currentMonthStats.totalBookings}
           icon={CheckCircle}
           color="text-primary"
-          subtitle="This period"
+          subtitle="This month"
         />
       </div>
 
@@ -368,8 +396,8 @@ const PaymentManagementDashboard = () => {
                 onClick={() => {
                   setSearchTerm('');
                   setStatusFilter('all');
-                  setStartDate(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
-                  setEndDate(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
+                  setStartDate('');
+                  setEndDate('');
                 }}
                 variant="outline"
                 className="w-full"
