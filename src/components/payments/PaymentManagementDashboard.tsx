@@ -27,6 +27,8 @@ import BulkInvoiceDialog from './BulkInvoiceDialog';
 import { EmailSentLogsDialog } from './EmailSentLogsDialog';
 import EmailStatusIndicator from './EmailStatusIndicator';
 import { useSendPaymentSMS } from '@/hooks/useSendPaymentSMS';
+import { useManualEmailNotification } from '@/hooks/useManualEmailNotification';
+import MessagePreviewDialog from './MessagePreviewDialog';
 
 interface Booking {
   id: number;
@@ -81,6 +83,9 @@ const PaymentManagementDashboard = () => {
   const [bulkInvoiceDialogOpen, setBulkInvoiceDialogOpen] = useState(false);
   const [emailLogsDialogOpen, setEmailLogsDialogOpen] = useState(false);
   const [selectedCustomerEmail, setSelectedCustomerEmail] = useState<string | undefined>(undefined);
+  const [messagePreviewOpen, setMessagePreviewOpen] = useState(false);
+  const [previewMessageType, setPreviewMessageType] = useState<'email' | 'sms'>('email');
+  const [previewBooking, setPreviewBooking] = useState<Booking | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [startDate, setStartDate] = useState('');
@@ -98,6 +103,7 @@ const PaymentManagementDashboard = () => {
   });
   const { toast } = useToast();
   const { sendPaymentSMS, isLoading: isSendingSMS } = useSendPaymentSMS();
+  const { sendManualEmail, isLoading: isSendingEmail } = useManualEmailNotification();
 
   useEffect(() => {
     fetchBookings();
@@ -302,6 +308,68 @@ const PaymentManagementDashboard = () => {
     }
     
     setBulkInvoiceDialogOpen(true);
+  };
+
+  const handleEmailPreview = (booking: Booking) => {
+    setPreviewBooking(booking);
+    setPreviewMessageType('email');
+    setMessagePreviewOpen(true);
+  };
+
+  const handleSmsPreview = (booking: Booking) => {
+    setPreviewBooking(booking);
+    setPreviewMessageType('sms');
+    setMessagePreviewOpen(true);
+  };
+
+  const getPreviewMessage = () => {
+    if (!previewBooking) return '';
+    
+    const amount = typeof previewBooking.total_cost === 'string' 
+      ? parseFloat(previewBooking.total_cost) || 0 
+      : previewBooking.total_cost;
+    
+    if (previewMessageType === 'email') {
+      return `Hi ${previewBooking.first_name},
+
+This is a payment reminder for your booking on ${format(new Date(previewBooking.date_time), 'dd MMM yyyy HH:mm')}.
+
+Amount due: £${amount.toFixed(2)}
+Address: ${previewBooking.address}
+
+Please complete your payment at your earliest convenience.
+
+Best regards,
+SN Cleaning Team`;
+    } else {
+      return `Hi ${previewBooking.first_name}, invoice for £${amount.toFixed(2)} sent by email from SN Cleaning. Check spam folder.
+
+SN Cleaning Team`;
+    }
+  };
+
+  const handleSendPreviewMessage = async (editedMessage: string) => {
+    if (!previewBooking) return;
+    
+    const amount = typeof previewBooking.total_cost === 'string' 
+      ? parseFloat(previewBooking.total_cost) || 0 
+      : previewBooking.total_cost;
+
+    if (previewMessageType === 'email') {
+      await sendManualEmail({
+        bookingId: previewBooking.id,
+        emailType: 'payment_reminder',
+        customerName: previewBooking.first_name,
+        additionalVariables: { custom_message: editedMessage },
+      });
+    } else {
+      await sendPaymentSMS({
+        bookingId: previewBooking.id,
+        phoneNumber: previewBooking.phone_number,
+        customerName: previewBooking.first_name,
+        amount: amount,
+      });
+    }
   };
 
   if (loading) {
@@ -550,7 +618,7 @@ const PaymentManagementDashboard = () => {
                   <TableHead className="font-bold text-slate-700">Address</TableHead>
                   <TableHead className="font-bold text-slate-700">Amount</TableHead>
                   <TableHead className="font-bold text-slate-700">Payment</TableHead>
-                  <TableHead className="font-bold text-slate-700">Status</TableHead>
+                  <TableHead className="font-bold text-slate-700">Communications</TableHead>
                   <TableHead className="font-bold text-slate-700">Cleaner</TableHead>
                   <TableHead className="font-bold text-slate-700">Actions</TableHead>
                 </TableRow>
@@ -594,7 +662,12 @@ const PaymentManagementDashboard = () => {
                       <TableCell className="max-w-xs truncate text-slate-600">{booking.address}</TableCell>
                       <TableCell className="font-bold text-slate-900">£{(typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost).toFixed(2)}</TableCell>
                       <TableCell>
-                        <PaymentStatusIndicator status={booking.payment_status} paymentMethod={booking.payment_method} />
+                        <PaymentStatusIndicator 
+                          status={booking.payment_status} 
+                          paymentMethod={booking.payment_method} 
+                          onClick={() => handlePaymentAction(booking)}
+                          isClickable={true}
+                        />
                       </TableCell>
                       <TableCell>
                         <EmailStatusIndicator 
@@ -604,6 +677,8 @@ const PaymentManagementDashboard = () => {
                             setSelectedCustomerEmail(booking.email);
                             setEmailLogsDialogOpen(true);
                           }}
+                          onEmailClick={() => handleEmailPreview(booking)}
+                          onSmsClick={() => handleSmsPreview(booking)}
                         />
                       </TableCell>
                       <TableCell className="text-slate-700">
@@ -614,26 +689,16 @@ const PaymentManagementDashboard = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => handlePaymentAction(booking)}
-                            className="rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
-                          >
-                            <DollarSign className="h-4 w-4 mr-1" />
-                            Manage
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleSendPaymentSMS(booking)}
-                            disabled={isSendingSMS}
-                            className="rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
-                          >
-                            <MessageSquare className="h-4 w-4 mr-1" />
-                            SMS
-                          </Button>
-                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleSendPaymentSMS(booking)}
+                          disabled={isSendingSMS}
+                          className="rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
+                        >
+                          <MessageSquare className="h-4 w-4 mr-1" />
+                          SMS
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))
@@ -670,6 +735,18 @@ const PaymentManagementDashboard = () => {
         onOpenChange={setEmailLogsDialogOpen}
         customerEmail={selectedCustomerEmail}
       />
+
+      {previewBooking && (
+        <MessagePreviewDialog
+          open={messagePreviewOpen}
+          onOpenChange={setMessagePreviewOpen}
+          messageType={previewMessageType}
+          defaultMessage={getPreviewMessage()}
+          recipientName={`${previewBooking.first_name} ${previewBooking.last_name}`}
+          recipientContact={previewMessageType === 'email' ? previewBooking.email : previewBooking.phone_number}
+          onSend={handleSendPreviewMessage}
+        />
+      )}
     </div>
   );
 };

@@ -7,6 +7,8 @@ interface EmailStatusIndicatorProps {
   customerEmail: string;
   phoneNumber?: string;
   onClick?: () => void;
+  onEmailClick?: () => void;
+  onSmsClick?: () => void;
 }
 
 interface NotificationStats {
@@ -17,7 +19,7 @@ interface NotificationStats {
   hasSms: boolean;
 }
 
-const EmailStatusIndicator = ({ customerEmail, phoneNumber, onClick }: EmailStatusIndicatorProps) => {
+const EmailStatusIndicator = ({ customerEmail, phoneNumber, onClick, onEmailClick, onSmsClick }: EmailStatusIndicatorProps) => {
   const [stats, setStats] = useState<NotificationStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -74,36 +76,48 @@ const EmailStatusIndicator = ({ customerEmail, phoneNumber, onClick }: EmailStat
   if (loading) {
     return (
       <div className="flex gap-2">
-        <Mail className="h-4 w-4 text-muted-foreground animate-pulse" />
+        <Mail className="h-4 w-4 text-gray-300 animate-pulse" />
       </div>
     );
   }
 
-  if (!stats || (!stats.hasEmail && !stats.hasSms)) {
-    return null;
-  }
+  // Always show icons in light gray, colored only if there are notifications
+  const hasAnyNotifications = stats && (stats.hasEmail || stats.hasSms);
 
   return (
-    <div 
-      className="flex gap-2 cursor-pointer hover:opacity-80 transition-opacity"
-      onClick={onClick}
-    >
-      {stats.hasEmail && (
-        <Mail 
-          className={cn(
-            "h-4 w-4",
-            stats.emailNegative ? "text-destructive" : stats.emailPositive ? "text-green-500" : "text-primary"
-          )} 
-        />
-      )}
-      {stats.hasSms && (
-        <MessageSquare 
-          className={cn(
-            "h-4 w-4",
-            stats.smsPositive ? "text-green-500" : "text-muted-foreground"
-          )} 
-        />
-      )}
+    <div className="flex gap-2">
+      <Mail 
+        className={cn(
+          "h-4 w-4 cursor-pointer hover:opacity-70 transition-opacity",
+          hasAnyNotifications && stats.hasEmail
+            ? (stats.emailNegative ? "text-destructive" : stats.emailPositive ? "text-green-500" : "text-primary")
+            : "text-gray-300"
+        )}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (onEmailClick) {
+            onEmailClick();
+          } else if (onClick) {
+            onClick();
+          }
+        }}
+      />
+      <MessageSquare 
+        className={cn(
+          "h-4 w-4 cursor-pointer hover:opacity-70 transition-opacity",
+          hasAnyNotifications && stats.hasSms && stats.smsPositive
+            ? "text-green-500"
+            : "text-gray-300"
+        )}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (onSmsClick) {
+            onSmsClick();
+          } else if (onClick) {
+            onClick();
+          }
+        }}
+      />
     </div>
   );
 };
