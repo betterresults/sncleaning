@@ -13,11 +13,13 @@ import {
   Search,
   FileText,
   TrendingUp,
-  Wallet
+  Wallet,
+  Calendar
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { Switch } from '@/components/ui/switch';
 import PaymentStatusIndicator from './PaymentStatusIndicator';
 import ManualPaymentDialog from './ManualPaymentDialog';
 import BulkInvoiceDialog from './BulkInvoiceDialog';
@@ -79,6 +81,7 @@ const PaymentManagementDashboard = () => {
   const [endDate, setEndDate] = useState('');
   const [selectedBookingIds, setSelectedBookingIds] = useState<Set<number>>(new Set());
   const [availableStatuses, setAvailableStatuses] = useState<string[]>([]);
+  const [showUpcoming, setShowUpcoming] = useState(false);
   const [currentMonthStats, setCurrentMonthStats] = useState<PaymentStats>({
     totalBookings: 0,
     paidBookings: 0,
@@ -92,7 +95,7 @@ const PaymentManagementDashboard = () => {
   useEffect(() => {
     fetchBookings();
     fetchCurrentMonthStats();
-  }, [startDate, endDate]);
+  }, [startDate, endDate, showUpcoming]);
 
   useEffect(() => {
     applyFilters();
@@ -113,6 +116,16 @@ const PaymentManagementDashboard = () => {
           )
         `);
 
+      const now = new Date().toISOString();
+      
+      // Default to past bookings, unless showUpcoming is true
+      if (showUpcoming) {
+        query = query.gte('date_time', now);
+      } else {
+        query = query.lt('date_time', now);
+      }
+
+      // Apply additional date filters if set
       if (startDate) {
         query = query.gte('date_time', startDate);
       }
@@ -353,7 +366,35 @@ const PaymentManagementDashboard = () => {
       {/* Filters */}
       <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0">
         <CardContent className="p-6">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          <div className="space-y-4">
+            {/* Booking Type Toggle */}
+            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/5 to-blue-50/50 rounded-2xl border border-primary/10">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white rounded-xl shadow-sm">
+                  <Calendar className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-900">
+                    {showUpcoming ? 'Upcoming Bookings' : 'Past Bookings'}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {showUpcoming ? 'Services scheduled for the future' : 'Completed services requiring payment'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-slate-600">Past</span>
+                <Switch 
+                  checked={showUpcoming} 
+                  onCheckedChange={setShowUpcoming}
+                  className="data-[state=checked]:bg-blue-600"
+                />
+                <span className="text-sm font-medium text-slate-600">Upcoming</span>
+              </div>
+            </div>
+
+            {/* Filter Inputs */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             <div>
               <Label htmlFor="search" className="text-sm font-medium mb-2 block">Search</Label>
               <div className="relative">
@@ -418,6 +459,7 @@ const PaymentManagementDashboard = () => {
               </Button>
             </div>
           </div>
+        </div>
         </CardContent>
       </Card>
 
