@@ -342,7 +342,7 @@ Postcode: ${booking.postcode || 'N/A'}`;
           const customerName = booking.first_name || 'Customer';
           const amount = parseFloat(booking.total_cost || 0);
           
-          // Send immediate SMS
+          // Send immediate SMS with payment link
           const smsResponse = await fetch(`${supabaseUrl}/functions/v1/send-payment-sms`, {
             method: 'POST',
             headers: {
@@ -354,6 +354,7 @@ Postcode: ${booking.postcode || 'N/A'}`;
               phoneNumber: booking.phone_number,
               customerName,
               amount,
+              paymentLink: invoice.url,
             }),
           });
 
@@ -369,6 +370,7 @@ Postcode: ${booking.postcode || 'N/A'}`;
               phone_number: booking.phone_number,
               customer_name: customerName,
               amount,
+              payment_link: invoice.url,
               send_at: sendAt.toISOString(),
               status: 'pending',
             });
