@@ -6,9 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CreditCard, FileText, Users, Link2, Split } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface Booking {
   id: number;
@@ -317,89 +318,227 @@ const BulkInvoiceDialog = ({ open, onOpenChange, selectedBookings, onSuccess }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>{invoiceMethod === 'stripe' ? 'Send Bulk Payment Link' : 'Send Invoiless Invoices'}</DialogTitle>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="space-y-2">
+          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            Send Payment Links
+          </DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            Send payment links or invoices to your customers
+          </p>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div>
-            <Label>Invoice Method</Label>
-            <RadioGroup value={invoiceMethod} onValueChange={(value: 'stripe' | 'invoiless') => setInvoiceMethod(value)} className="flex gap-4 mt-2">
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="stripe" id="stripe" />
-                <Label htmlFor="stripe" className="font-normal cursor-pointer">Stripe Payment Link</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="invoiless" id="invoiless" />
-                <Label htmlFor="invoiless" className="font-normal cursor-pointer">Invoiless Invoice</Label>
-              </div>
-            </RadioGroup>
-            <p className="text-sm text-muted-foreground mt-2">{invoiceMethod === 'stripe' ? (stripeMode === 'combined' ? 'Sends one email with a single payment link covering all selected services.' : 'Sends individual payment links for each selected booking (same as Completed Bookings).') : 'Creates and emails separate Invoiless invoices for each selected service.'}</p>
+        <div className="space-y-6 py-4">
+          {/* Invoice Method Selection - Card Style */}
+          <div className="space-y-3">
+            <Label className="text-base font-semibold">Choose Payment Method</Label>
+            <div className="grid grid-cols-2 gap-4">
+              {/* Stripe Option */}
+              <button
+                type="button"
+                onClick={() => setInvoiceMethod('stripe')}
+                className={cn(
+                  "relative p-6 rounded-xl border-2 transition-all duration-200 text-left group hover:shadow-lg",
+                  invoiceMethod === 'stripe'
+                    ? "border-primary bg-primary/5 shadow-md"
+                    : "border-border hover:border-primary/50 bg-card"
+                )}
+              >
+                <div className="flex items-start gap-4">
+                  <div className={cn(
+                    "p-3 rounded-lg transition-colors",
+                    invoiceMethod === 'stripe'
+                      ? "bg-primary/10 text-primary"
+                      : "bg-muted text-muted-foreground group-hover:text-primary"
+                  )}>
+                    <CreditCard className="h-6 w-6" />
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <div className="font-semibold text-base">Stripe Payment Link</div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Secure payment processing with card details saved for future bookings
+                    </p>
+                  </div>
+                </div>
+                {invoiceMethod === 'stripe' && (
+                  <div className="absolute top-3 right-3">
+                    <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center">
+                      <div className="h-2 w-2 rounded-full bg-primary-foreground" />
+                    </div>
+                  </div>
+                )}
+              </button>
+
+              {/* Invoiless Option */}
+              <button
+                type="button"
+                onClick={() => setInvoiceMethod('invoiless')}
+                className={cn(
+                  "relative p-6 rounded-xl border-2 transition-all duration-200 text-left group hover:shadow-lg",
+                  invoiceMethod === 'invoiless'
+                    ? "border-primary bg-primary/5 shadow-md"
+                    : "border-border hover:border-primary/50 bg-card"
+                )}
+              >
+                <div className="flex items-start gap-4">
+                  <div className={cn(
+                    "p-3 rounded-lg transition-colors",
+                    invoiceMethod === 'invoiless'
+                      ? "bg-primary/10 text-primary"
+                      : "bg-muted text-muted-foreground group-hover:text-primary"
+                  )}>
+                    <FileText className="h-6 w-6" />
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <div className="font-semibold text-base">Invoiless Invoice</div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Professional invoices sent individually for each service
+                    </p>
+                  </div>
+                </div>
+                {invoiceMethod === 'invoiless' && (
+                  <div className="absolute top-3 right-3">
+                    <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center">
+                      <div className="h-2 w-2 rounded-full bg-primary-foreground" />
+                    </div>
+                  </div>
+                )}
+              </button>
+            </div>
           </div>
 
+          {/* Stripe Mode Selection */}
           {invoiceMethod === 'stripe' && (
-            <div>
-              <Label>Stripe Mode</Label>
-              <RadioGroup value={stripeMode} onValueChange={(v: 'combined' | 'individual') => setStripeMode(v)} className="flex gap-4 mt-2">
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="individual" id="stripe-individual" />
-                  <Label htmlFor="stripe-individual" className="font-normal cursor-pointer">Individual links</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="combined" id="stripe-combined" />
-                  <Label htmlFor="stripe-combined" className="font-normal cursor-pointer">Single combined link</Label>
-                </div>
-              </RadioGroup>
+            <div className="space-y-3 animate-in fade-in duration-300">
+              <Label className="text-base font-semibold">Delivery Mode</Label>
+              <div className="grid grid-cols-2 gap-4">
+                {/* Individual Mode */}
+                <button
+                  type="button"
+                  onClick={() => setStripeMode('individual')}
+                  className={cn(
+                    "relative p-5 rounded-lg border-2 transition-all duration-200 text-left hover:shadow-md",
+                    stripeMode === 'individual'
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50 bg-card"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <Split className={cn(
+                      "h-5 w-5",
+                      stripeMode === 'individual' ? "text-primary" : "text-muted-foreground"
+                    )} />
+                    <div>
+                      <div className="font-medium">Individual Links</div>
+                      <p className="text-xs text-muted-foreground">Separate link per booking</p>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Combined Mode */}
+                <button
+                  type="button"
+                  onClick={() => setStripeMode('combined')}
+                  className={cn(
+                    "relative p-5 rounded-lg border-2 transition-all duration-200 text-left hover:shadow-md",
+                    stripeMode === 'combined'
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50 bg-card"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <Link2 className={cn(
+                      "h-5 w-5",
+                      stripeMode === 'combined' ? "text-primary" : "text-muted-foreground"
+                    )} />
+                    <div>
+                      <div className="font-medium">Combined Link</div>
+                      <p className="text-xs text-muted-foreground">One link for all bookings</p>
+                    </div>
+                  </div>
+                </button>
+              </div>
             </div>
           )}
 
-          <div>
-            <Label>Selected Bookings ({selectedBookings.length})</Label>
-            <div className="mt-2 max-h-48 overflow-y-auto border rounded-md p-3 space-y-2">
-              {selectedBookings.map(booking => {
-                const cost = typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost;
-                return (
-                  <div key={booking.id} className="flex justify-between items-center text-sm">
-                    <div>
-                      <div className="font-medium">{booking.first_name} {booking.last_name}</div>
-                      <div className="text-muted-foreground text-xs">{booking.address}</div>
+          {/* Selected Bookings */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <Label className="text-base font-semibold">
+                Selected Bookings ({selectedBookings.length})
+              </Label>
+            </div>
+            <div className="border rounded-lg bg-muted/30 overflow-hidden">
+              <div className="max-h-56 overflow-y-auto p-4 space-y-3">
+                {selectedBookings.map((booking, index) => {
+                  const cost = typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost;
+                  return (
+                    <div 
+                      key={booking.id} 
+                      className="flex justify-between items-center p-3 bg-card rounded-lg border border-border/50 hover:border-primary/30 transition-colors"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm">
+                          {booking.first_name} {booking.last_name}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {booking.address}
+                        </div>
+                      </div>
+                      <div className="ml-4 font-semibold text-sm whitespace-nowrap">
+                        £{cost.toFixed(2)}
+                      </div>
                     </div>
-                    <div className="font-medium">£{cost.toFixed(2)}</div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+              {/* Total Amount Bar */}
+              <div className="bg-primary/10 border-t border-primary/20 p-4 flex justify-between items-center">
+                <span className="font-semibold text-sm">Total Amount</span>
+                <span className="font-bold text-lg text-primary">
+                  £{totalAmount.toFixed(2)}
+                </span>
+              </div>
             </div>
           </div>
 
-          <div>
-            <Label>Total Amount</Label>
-            <Input 
-              value={`£${totalAmount.toFixed(2)}`}
-              disabled
-              className="font-bold text-lg"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="description">Additional Notes (Optional)</Label>
+          {/* Additional Notes */}
+          <div className="space-y-3">
+            <Label htmlFor="description" className="text-base font-semibold">
+              Additional Notes <span className="text-muted-foreground font-normal">(Optional)</span>
+            </Label>
             <Textarea
               id="description"
               placeholder="Add any additional notes for the customer..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
+              className="resize-none"
             />
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+        <DialogFooter className="gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)} 
+            disabled={loading}
+            className="min-w-[100px]"
+          >
             Cancel
           </Button>
-          <Button onClick={handleSendBulkInvoice} disabled={loading}>
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {invoiceMethod === 'stripe' ? (stripeMode === 'individual' ? 'Send Payment Links' : 'Send Payment Link') : 'Send Invoiless Invoices'}
+          <Button 
+            onClick={handleSendBulkInvoice} 
+            disabled={loading}
+            className="min-w-[140px] gap-2"
+          >
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+            {!loading && <CreditCard className="h-4 w-4" />}
+            {invoiceMethod === 'stripe' 
+              ? (stripeMode === 'individual' ? 'Send Links' : 'Send Link')
+              : 'Send Invoices'
+            }
           </Button>
         </DialogFooter>
       </DialogContent>
