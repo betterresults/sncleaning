@@ -10,13 +10,14 @@ import {
   DollarSign, 
   AlertCircle, 
   CheckCircle, 
-  Clock, 
   Search,
-  FileText
+  FileText,
+  TrendingUp,
+  Wallet
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { format } from 'date-fns';
 import PaymentStatusIndicator from './PaymentStatusIndicator';
 import ManualPaymentDialog from './ManualPaymentDialog';
 import BulkInvoiceDialog from './BulkInvoiceDialog';
@@ -68,14 +69,6 @@ interface PaymentStats {
 const PaymentManagementDashboard = () => {
   const [allBookings, setAllBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
-  const [stats, setStats] = useState<PaymentStats>({
-    totalBookings: 0,
-    paidBookings: 0,
-    unpaidBookings: 0,
-    failedBookings: 0,
-    totalRevenue: 0,
-    cleanerExpenses: 0,
-  });
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<NormalizedBooking | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
@@ -120,7 +113,6 @@ const PaymentManagementDashboard = () => {
           )
         `);
 
-      // Only apply date filters if they are set
       if (startDate) {
         query = query.gte('date_time', startDate);
       }
@@ -147,14 +139,16 @@ const PaymentManagementDashboard = () => {
 
   const fetchCurrentMonthStats = async () => {
     try {
-      const monthStart = format(startOfMonth(new Date()), 'yyyy-MM-dd');
-      const today = format(new Date(), 'yyyy-MM-dd');
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthStartStr = format(monthStart, 'yyyy-MM-dd');
+      const todayStr = format(now, 'yyyy-MM-dd');
       
       const { data, error } = await supabase
         .from('bookings')
-        .select('total_cost, payment_status, cleaner_pay')
-        .gte('date_time', monthStart)
-        .lte('date_time', today + 'T23:59:59');
+        .select('total_cost, payment_status, cleaner_pay, date_time')
+        .gte('date_time', monthStartStr + 'T00:00:00')
+        .lte('date_time', todayStr + 'T23:59:59');
 
       if (error) throw error;
 
@@ -173,13 +167,9 @@ const PaymentManagementDashboard = () => {
           : (booking.total_cost || 0);
         
         const cleanerPay = booking.cleaner_pay || 0;
-        
         const status = booking.payment_status?.toLowerCase();
         
-        // Add to total revenue regardless of status
         stats.totalRevenue += cost;
-        
-        // Add to cleaner expenses
         stats.cleanerExpenses += cleanerPay;
         
         if (status === 'paid') {
@@ -260,7 +250,6 @@ const PaymentManagementDashboard = () => {
   const handleBulkInvoice = () => {
     const selectedBookings = filteredBookings.filter(b => selectedBookingIds.has(b.id));
     
-    // Check if all selected bookings have the same customer email
     const emails = new Set(selectedBookings.map(b => b.email));
     if (emails.size > 1) {
       toast({
@@ -274,81 +263,101 @@ const PaymentManagementDashboard = () => {
     setBulkInvoiceDialogOpen(true);
   };
 
-  const StatCard = ({ 
-    title, 
-    value, 
-    icon: Icon, 
-    color, 
-    subtitle 
-  }: { 
-    title: string; 
-    value: number | string; 
-    icon: any; 
-    color: string; 
-    subtitle: string;
-  }) => (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className={`h-4 w-4 ${color}`} />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
-      </CardContent>
-    </Card>
-  );
-
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-lg">Loading payment data...</div>
+      <div className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0 bg-gradient-to-br from-gray-50 to-gray-100">
+              <CardContent className="p-6">
+                <div className="animate-pulse">
+                  <div className="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>
+                  <div className="h-7 bg-gray-200 rounded w-3/4"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
 
   const selectedBookings = filteredBookings.filter(b => selectedBookingIds.has(b.id));
+  const netProfit = currentMonthStats.totalRevenue - currentMonthStats.cleanerExpenses;
 
   return (
     <div className="space-y-6">
-      {/* Stats - Current Month (1st November to Today) */}
+      {/* Modern Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Total Revenue"
-          value={`£${currentMonthStats.totalRevenue.toFixed(2)}`}
-          icon={DollarSign}
-          color="text-primary"
-          subtitle={`All bookings this month`}
-        />
-        <StatCard
-          title="Cleaner Expenses"
-          value={`£${currentMonthStats.cleanerExpenses.toFixed(2)}`}
-          icon={Clock}
-          color="text-orange-600"
-          subtitle={`Total cleaner pay this month`}
-        />
-        <StatCard
-          title="Failed Payments"
-          value={currentMonthStats.failedBookings}
-          icon={AlertCircle}
-          color="text-red-600"
-          subtitle="Require attention (this month)"
-        />
-        <StatCard
-          title="Total Bookings"
-          value={currentMonthStats.totalBookings}
-          icon={CheckCircle}
-          color="text-primary"
-          subtitle="This month"
-        />
+        <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0 bg-gradient-to-br from-primary/5 to-primary/10 hover:shadow-[0_8px_30px_rgb(0,0,0,0.16)] transition-all duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
+              <div className="p-2 bg-primary/10 rounded-xl">
+                <DollarSign className="h-5 w-5 text-primary" />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <p className="text-3xl font-bold text-primary">£{currentMonthStats.totalRevenue.toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground">All bookings this month</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0 bg-gradient-to-br from-orange-50 to-orange-100 hover:shadow-[0_8px_30px_rgb(0,0,0,0.16)] transition-all duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-muted-foreground">Cleaner Expenses</p>
+              <div className="p-2 bg-orange-100 rounded-xl">
+                <Wallet className="h-5 w-5 text-orange-600" />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <p className="text-3xl font-bold text-orange-600">£{currentMonthStats.cleanerExpenses.toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground">Total cleaner pay</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0 bg-gradient-to-br from-green-50 to-green-100 hover:shadow-[0_8px_30px_rgb(0,0,0,0.16)] transition-all duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-muted-foreground">Net Profit</p>
+              <div className="p-2 bg-green-100 rounded-xl">
+                <TrendingUp className="h-5 w-5 text-green-600" />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <p className="text-3xl font-bold text-green-600">£{netProfit.toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground">Revenue - Expenses</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0 bg-gradient-to-br from-blue-50 to-blue-100 hover:shadow-[0_8px_30px_rgb(0,0,0,0.16)] transition-all duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-muted-foreground">Total Bookings</p>
+              <div className="p-2 bg-blue-100 rounded-xl">
+                <CheckCircle className="h-5 w-5 text-blue-600" />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <p className="text-3xl font-bold text-blue-600">{currentMonthStats.totalBookings}</p>
+              <p className="text-xs text-muted-foreground">
+                {currentMonthStats.paidBookings} paid • {currentMonthStats.unpaidBookings} unpaid • {currentMonthStats.failedBookings} failed
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0">
         <CardContent className="p-6">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             <div>
-              <Label htmlFor="search">Search</Label>
+              <Label htmlFor="search" className="text-sm font-medium mb-2 block">Search</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -356,14 +365,14 @@ const PaymentManagementDashboard = () => {
                   placeholder="Name, email, address..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
+                  className="pl-9 rounded-xl border-gray-200"
                 />
               </div>
             </div>
             <div>
-              <Label htmlFor="status-filter">Payment Status</Label>
+              <Label htmlFor="status-filter" className="text-sm font-medium mb-2 block">Payment Status</Label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="rounded-xl border-gray-200">
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
@@ -377,21 +386,23 @@ const PaymentManagementDashboard = () => {
               </Select>
             </div>
             <div>
-              <Label htmlFor="start-date">Start Date</Label>
+              <Label htmlFor="start-date" className="text-sm font-medium mb-2 block">Start Date</Label>
               <Input
                 id="start-date"
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
+                className="rounded-xl border-gray-200"
               />
             </div>
             <div>
-              <Label htmlFor="end-date">End Date</Label>
+              <Label htmlFor="end-date" className="text-sm font-medium mb-2 block">End Date</Label>
               <Input
                 id="end-date"
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
+                className="rounded-xl border-gray-200"
               />
             </div>
             <div className="flex items-end">
@@ -403,7 +414,7 @@ const PaymentManagementDashboard = () => {
                   setEndDate('');
                 }}
                 variant="outline"
-                className="w-full"
+                className="w-full rounded-xl"
               >
                 Clear Filters
               </Button>
@@ -414,18 +425,20 @@ const PaymentManagementDashboard = () => {
 
       {/* Bulk Actions */}
       {selectedBookingIds.size > 0 && (
-        <Card className="border-primary">
+        <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
-                <span className="font-medium">{selectedBookingIds.size} booking{selectedBookingIds.size > 1 ? 's' : ''} selected</span>
+                <div className="p-2 bg-primary/10 rounded-xl">
+                  <FileText className="h-5 w-5 text-primary" />
+                </div>
+                <span className="font-semibold text-primary">{selectedBookingIds.size} booking{selectedBookingIds.size > 1 ? 's' : ''} selected</span>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setSelectedBookingIds(new Set())}>
+                <Button variant="outline" onClick={() => setSelectedBookingIds(new Set())} className="rounded-xl">
                   Clear Selection
                 </Button>
-                <Button onClick={handleBulkInvoice}>
+                <Button onClick={handleBulkInvoice} className="rounded-xl">
                   Send Bulk Invoice
                 </Button>
               </div>
@@ -435,82 +448,87 @@ const PaymentManagementDashboard = () => {
       )}
 
       {/* Bookings Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Bookings</span>
-            <span className="text-sm font-normal text-muted-foreground">
+      <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0 overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 border-b">
+          <CardTitle className="flex items-center justify-between text-lg">
+            <span className="font-semibold">Payment Management</span>
+            <span className="text-sm font-normal text-muted-foreground bg-white px-3 py-1 rounded-full">
               {filteredBookings.length} result{filteredBookings.length !== 1 ? 's' : ''}
             </span>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">
-                  <Checkbox
-                    checked={selectedBookingIds.size === filteredBookings.length && filteredBookings.length > 0}
-                    onCheckedChange={handleSelectAll}
-                  />
-                </TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Date & Time</TableHead>
-                <TableHead>Address</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Cleaner</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredBookings.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    No bookings found
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent border-b">
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={selectedBookingIds.size === filteredBookings.length && filteredBookings.length > 0}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </TableHead>
+                  <TableHead className="font-semibold">Customer</TableHead>
+                  <TableHead className="font-semibold">Date & Time</TableHead>
+                  <TableHead className="font-semibold">Address</TableHead>
+                  <TableHead className="font-semibold">Amount</TableHead>
+                  <TableHead className="font-semibold">Status</TableHead>
+                  <TableHead className="font-semibold">Cleaner</TableHead>
+                  <TableHead className="font-semibold">Actions</TableHead>
                 </TableRow>
-              ) : (
-                filteredBookings.map((booking) => (
-                  <TableRow key={booking.id}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedBookingIds.has(booking.id)}
-                        onCheckedChange={() => handleSelectBooking(booking.id)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{booking.first_name} {booking.last_name}</div>
-                        <div className="text-sm text-muted-foreground">{booking.email}</div>
+              </TableHeader>
+              <TableBody>
+                {filteredBookings.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-12">
+                      <div className="flex flex-col items-center gap-2">
+                        <AlertCircle className="h-12 w-12 text-muted-foreground/50" />
+                        <p className="text-muted-foreground">No bookings found</p>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      {format(new Date(booking.date_time), 'dd MMM yyyy HH:mm')}
-                    </TableCell>
-                    <TableCell className="max-w-xs truncate">{booking.address}</TableCell>
-                    <TableCell>£{(typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost).toFixed(2)}</TableCell>
-                    <TableCell>
-                      <PaymentStatusIndicator status={booking.payment_status} paymentMethod={booking.payment_method} />
-                    </TableCell>
-                    <TableCell>
-                      {booking.cleaners ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}` : 'Unassigned'}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        size="sm"
-                        onClick={() => handlePaymentAction(booking)}
-                        className="flex items-center gap-1"
-                      >
-                        <DollarSign className="h-4 w-4" />
-                        Manage
-                      </Button>
-                    </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  filteredBookings.map((booking) => (
+                    <TableRow key={booking.id} className="hover:bg-primary/5">
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedBookingIds.has(booking.id)}
+                          onCheckedChange={() => handleSelectBooking(booking.id)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{booking.first_name} {booking.last_name}</div>
+                          <div className="text-sm text-muted-foreground">{booking.email}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {format(new Date(booking.date_time), 'dd MMM yyyy HH:mm')}
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">{booking.address}</TableCell>
+                      <TableCell className="font-semibold">£{(typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost).toFixed(2)}</TableCell>
+                      <TableCell>
+                        <PaymentStatusIndicator status={booking.payment_status} paymentMethod={booking.payment_method} />
+                      </TableCell>
+                      <TableCell>
+                        {booking.cleaners ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}` : 'Unassigned'}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          onClick={() => handlePaymentAction(booking)}
+                          className="rounded-xl"
+                        >
+                          <DollarSign className="h-4 w-4 mr-1" />
+                          Manage
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -518,7 +536,10 @@ const PaymentManagementDashboard = () => {
         isOpen={paymentDialogOpen}
         onClose={() => setPaymentDialogOpen(false)}
         booking={selectedBooking}
-        onSuccess={fetchBookings}
+        onSuccess={() => {
+          fetchBookings();
+          fetchCurrentMonthStats();
+        }}
       />
 
       <BulkInvoiceDialog
@@ -528,6 +549,7 @@ const PaymentManagementDashboard = () => {
         onSuccess={() => {
           setSelectedBookingIds(new Set());
           fetchBookings();
+          fetchCurrentMonthStats();
         }}
       />
     </div>
