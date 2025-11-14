@@ -112,6 +112,41 @@ serve(async (req) => {
       }
 
       console.log(`Updated payment status to: ${newPaymentStatus}`);
+
+      // Cancel pending SMS reminders if payment is made
+      if (newPaymentStatus === 'Paid') {
+        console.log('Cancelling pending SMS reminders for invoice:', invoiceData.id);
+        
+        // Get booking IDs from both tables
+        const { data: bookings } = await supabaseClient
+          .from('bookings')
+          .select('id')
+          .eq('invoice_id', invoiceData.id);
+        
+        const { data: pastBookings } = await supabaseClient
+          .from('past_bookings')
+          .select('id')
+          .eq('invoice_id', invoiceData.id);
+
+        const bookingIds = [
+          ...(bookings || []).map(b => b.id),
+          ...(pastBookings || []).map(b => b.id)
+        ];
+
+        if (bookingIds.length > 0) {
+          const { error: cancelError } = await supabaseClient
+            .from('sms_reminders_queue')
+            .update({ status: 'cancelled' })
+            .in('booking_id', bookingIds)
+            .eq('status', 'pending');
+
+          if (cancelError) {
+            console.error('Error cancelling SMS reminders:', cancelError);
+          } else {
+            console.log('SMS reminders cancelled for booking IDs:', bookingIds);
+          }
+        }
+      }
     }
 
     return new Response(JSON.stringify({ received: true }), {
