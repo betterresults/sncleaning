@@ -92,7 +92,7 @@ const EmailStatusIndicator = ({ customerEmail, phoneNumber, onClick }: EmailStat
         <Mail 
           className={cn(
             "h-4 w-4",
-            stats.emailNegative ? "text-destructive" : stats.emailPositive ? "text-green-500" : "text-muted-foreground"
+            stats.emailNegative ? "text-destructive" : stats.emailPositive ? "text-green-500" : "text-primary"
           )} 
         />
       )}
