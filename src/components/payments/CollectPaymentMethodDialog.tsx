@@ -304,21 +304,47 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
         body: {
           recipient_email: customer.email,
           recipient_name: `${customer.first_name} ${customer.last_name}`.trim(),
-          custom_subject: `Payment Request - £${amount}`,
+          custom_subject: `Service Payment - £${amount}`,
           custom_content: `
-            <h2>Payment Request</h2>
-            <p>Dear ${customer.first_name},</p>
-            <p>You have a payment request for <strong>£${amount}</strong>.</p>
-            <p><strong>Description:</strong> ${description}</p>
-            ${collectForFuture ? '<p>This payment will also save your card details for future invoices.</p>' : ''}
-            <p>Please click the button below to complete your payment securely:</p>
-            <p style="margin: 30px 0;">
-              <a href="${linkData.payment_link_url}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Pay Now</a>
-            </p>
-            <p>Or copy and paste this link into your browser:</p>
-            <p style="word-break: break-all;">${linkData.payment_link_url}</p>
-            <p>If you have any questions, please don't hesitate to contact us.</p>
-            <p>Best regards,<br>SN Cleaning Services</p>
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; max-width: 600px; margin: 0 auto; background-color: #fafafa; padding: 40px 20px;">
+              <div style="background-color: white; border-radius: 8px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <div style="text-align: center; margin-bottom: 32px;">
+                  <h1 style="color: hsl(180, 75%, 37%); margin: 0; font-size: 28px;">SN Cleaning Services</h1>
+                </div>
+                
+                <h2 style="color: hsl(196, 62%, 25%); font-size: 24px; margin-bottom: 16px;">Service Payment</h2>
+                
+                <p style="color: hsl(210, 20%, 15%); font-size: 16px; line-height: 1.6;">Dear ${customer.first_name},</p>
+                
+                <p style="color: hsl(210, 20%, 15%); font-size: 16px; line-height: 1.6;">Please complete your payment of <strong style="color: hsl(180, 75%, 37%);">£${amount}</strong> for the following service:</p>
+                
+                <div style="background-color: hsl(0, 0%, 96%); border-left: 4px solid hsl(180, 75%, 37%); padding: 16px; margin: 24px 0; border-radius: 4px;">
+                  <p style="margin: 0; color: hsl(210, 20%, 15%); font-size: 15px;"><strong>Service:</strong> ${description}</p>
+                </div>
+                
+                ${collectForFuture ? `
+                  <div style="background-color: hsl(180, 75%, 95%); border: 1px solid hsl(180, 75%, 37%); border-radius: 8px; padding: 20px; margin: 24px 0;">
+                    <p style="margin: 0 0 12px 0; color: hsl(196, 62%, 25%); font-size: 15px; font-weight: 600;">✨ Automated Payment System</p>
+                    <p style="margin: 0; color: hsl(210, 20%, 15%); font-size: 14px; line-height: 1.6;">We've upgraded to automated payments! Your card details will be securely saved. For future bookings, we'll place a hold on your card 24 hours before the service and charge it after the service is completed.</p>
+                  </div>
+                ` : ''}
+                
+                <div style="text-align: center; margin: 32px 0;">
+                  <a href="${linkData.payment_link_url}" style="background-color: hsl(180, 75%, 37%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600; font-size: 16px;">Complete Payment</a>
+                </div>
+                
+                <p style="color: hsl(210, 15%, 35%); font-size: 13px; text-align: center; margin: 20px 0;">Or copy and paste this link into your browser:</p>
+                <p style="word-break: break-all; background-color: hsl(0, 0%, 96%); padding: 12px; border-radius: 4px; font-size: 12px; color: hsl(210, 20%, 15%);">${linkData.payment_link_url}</p>
+                
+                <hr style="border: none; border-top: 1px solid hsl(0, 0%, 87%); margin: 32px 0;">
+                
+                <p style="color: hsl(210, 15%, 35%); font-size: 14px; line-height: 1.6;">If you have any questions, please don't hesitate to contact us.</p>
+                
+                <p style="color: hsl(210, 20%, 15%); font-size: 14px; margin-top: 24px;">Best regards,<br><strong style="color: hsl(180, 75%, 37%);">SN Cleaning Services Team</strong></p>
+              </div>
+              
+              <p style="text-align: center; color: hsl(210, 15%, 35%); font-size: 12px; margin-top: 24px;">© 2024 SN Cleaning Services. All rights reserved.</p>
+            </div>
           `
         }
       });
@@ -327,7 +353,7 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
 
       toast({
         title: 'Payment Email Sent',
-        description: `Payment request for £${amount} sent to ${customer.email}${collectForFuture ? '. Card will be saved for future use.' : ''}.`,
+        description: `Service payment of £${amount} emailed to ${customer.email}${collectForFuture ? '. Automated payments enabled.' : ''}.`,
       });
       
       onOpenChange(false);
