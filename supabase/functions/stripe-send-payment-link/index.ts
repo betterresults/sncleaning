@@ -27,6 +27,10 @@ const handler = async (req: Request): Promise<Response> => {
       apiVersion: '2023-10-16',
     });
 
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
     const { 
       customer_id, 
       email, 
@@ -105,6 +109,12 @@ const handler = async (req: Request): Promise<Response> => {
 
       console.log('Created checkout session with card saving:', session.id);
 
+      // Persist link for this booking (both current and past tables)
+      if (booking_id && session.url) {
+        await supabase.from('bookings').update({ invoice_link: session.url }).eq('id', booking_id);
+        await supabase.from('past_bookings').update({ invoice_link: session.url }).eq('id', booking_id);
+      }
+
       return new Response(JSON.stringify({
         success: true,
         payment_link_url: session.url,
@@ -148,6 +158,12 @@ const handler = async (req: Request): Promise<Response> => {
       });
 
       console.log('Created payment link:', paymentLink.id);
+
+      // Persist link for this booking (both current and past tables)
+      if (booking_id && paymentLink.url) {
+        await supabase.from('bookings').update({ invoice_link: paymentLink.url }).eq('id', booking_id);
+        await supabase.from('past_bookings').update({ invoice_link: paymentLink.url }).eq('id', booking_id);
+      }
 
       return new Response(JSON.stringify({
         success: true,
