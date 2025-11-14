@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 
 interface EmailStatusIndicatorProps {
   customerEmail: string;
+  phoneNumber?: string;
   onClick?: () => void;
 }
 
@@ -16,35 +17,50 @@ interface NotificationStats {
   hasSms: boolean;
 }
 
-const EmailStatusIndicator = ({ customerEmail, onClick }: EmailStatusIndicatorProps) => {
+const EmailStatusIndicator = ({ customerEmail, phoneNumber, onClick }: EmailStatusIndicatorProps) => {
   const [stats, setStats] = useState<NotificationStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchNotificationStats();
-  }, [customerEmail]);
+  }, [customerEmail, phoneNumber]);
 
   const fetchNotificationStats = async () => {
     try {
       const { data, error } = await supabase
         .from('notification_logs')
-        .select('status')
+        .select('status, recipient_email')
         .eq('recipient_email', customerEmail);
 
       if (error) throw error;
 
-      if (!data || data.length === 0) {
+      let smsData: any[] = [];
+      
+      // Also check for SMS notifications by phone number if provided
+      if (phoneNumber) {
+        const { data: smsResult } = await supabase
+          .from('notification_logs')
+          .select('status, recipient_email')
+          .eq('recipient_email', phoneNumber);
+        
+        smsData = smsResult || [];
+      }
+
+      if ((!data || data.length === 0) && smsData.length === 0) {
         setStats(null);
         setLoading(false);
         return;
       }
 
+      const emailLogs = data || [];
+      const smsLogs = smsData;
+
       const stats: NotificationStats = {
-        hasEmail: data.length > 0,
-        hasSms: false, // SMS tracking to be added later
-        emailPositive: data.some(log => log.status === 'opened' || log.status === 'delivered'),
-        emailNegative: data.some(log => log.status === 'bounced' || log.status === 'failed'),
-        smsPositive: false,
+        hasEmail: emailLogs.length > 0,
+        hasSms: smsLogs.length > 0,
+        emailPositive: emailLogs.some(log => log.status === 'opened' || log.status === 'delivered'),
+        emailNegative: emailLogs.some(log => log.status === 'bounced' || log.status === 'failed'),
+        smsPositive: smsLogs.some(log => log.status === 'sent' || log.status === 'delivered'),
       };
 
       setStats(stats);
