@@ -1,31 +1,30 @@
 import React, { useEffect, useState } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Mail, MailOpen, MailX } from 'lucide-react';
+import { Mail, MessageSquare } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
 
 interface EmailStatusIndicatorProps {
   customerEmail: string;
   onClick?: () => void;
 }
 
-interface EmailStats {
-  total: number;
-  sent: number;
-  delivered: number;
-  opened: number;
-  bounced: number;
-  failed: number;
+interface NotificationStats {
+  emailPositive: boolean;
+  emailNegative: boolean;
+  smsPositive: boolean;
+  hasEmail: boolean;
+  hasSms: boolean;
 }
 
 const EmailStatusIndicator = ({ customerEmail, onClick }: EmailStatusIndicatorProps) => {
-  const [stats, setStats] = useState<EmailStats | null>(null);
+  const [stats, setStats] = useState<NotificationStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchEmailStats();
+    fetchNotificationStats();
   }, [customerEmail]);
 
-  const fetchEmailStats = async () => {
+  const fetchNotificationStats = async () => {
     try {
       const { data, error } = await supabase
         .from('notification_logs')
@@ -40,72 +39,56 @@ const EmailStatusIndicator = ({ customerEmail, onClick }: EmailStatusIndicatorPr
         return;
       }
 
-      const stats: EmailStats = {
-        total: data.length,
-        sent: data.filter(log => log.status === 'sent').length,
-        delivered: data.filter(log => log.status === 'delivered').length,
-        opened: data.filter(log => log.status === 'opened').length,
-        bounced: data.filter(log => log.status === 'bounced').length,
-        failed: data.filter(log => log.status === 'failed').length,
+      const stats: NotificationStats = {
+        hasEmail: data.length > 0,
+        hasSms: false, // SMS tracking to be added later
+        emailPositive: data.some(log => log.status === 'opened' || log.status === 'delivered'),
+        emailNegative: data.some(log => log.status === 'bounced' || log.status === 'failed'),
+        smsPositive: false,
       };
 
       setStats(stats);
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching email stats:', error);
+      console.error('Error fetching notification stats:', error);
       setLoading(false);
     }
   };
 
   if (loading) {
     return (
-      <Badge variant="outline" className="cursor-default">
-        <Mail className="h-3 w-3 mr-1" />
-        Loading...
-      </Badge>
+      <div className="flex gap-2">
+        <Mail className="h-4 w-4 text-muted-foreground animate-pulse" />
+      </div>
     );
   }
 
-  if (!stats || stats.total === 0) {
+  if (!stats || (!stats.hasEmail && !stats.hasSms)) {
     return null;
   }
 
-  // Determine status based on priority: bounced > failed > opened > delivered > sent
-  let variant: 'default' | 'secondary' | 'destructive' | 'outline' = 'default';
-  let icon = <Mail className="h-3 w-3 mr-1" />;
-  let text = '';
-
-  if (stats.bounced > 0) {
-    variant = 'destructive';
-    icon = <MailX className="h-3 w-3 mr-1" />;
-    text = `${stats.bounced} Bounced`;
-  } else if (stats.failed > 0) {
-    variant = 'destructive';
-    icon = <MailX className="h-3 w-3 mr-1" />;
-    text = `${stats.failed} Failed`;
-  } else if (stats.opened > 0) {
-    variant = 'default';
-    icon = <MailOpen className="h-3 w-3 mr-1" />;
-    text = `${stats.opened} Opened`;
-  } else if (stats.delivered > 0) {
-    variant = 'secondary';
-    icon = <Mail className="h-3 w-3 mr-1" />;
-    text = `${stats.delivered} Delivered`;
-  } else if (stats.sent > 0) {
-    variant = 'outline';
-    icon = <Mail className="h-3 w-3 mr-1" />;
-    text = `${stats.sent} Sent`;
-  }
-
   return (
-    <Badge 
-      variant={variant} 
-      className="cursor-pointer hover:opacity-80 transition-opacity"
+    <div 
+      className="flex gap-2 cursor-pointer hover:opacity-80 transition-opacity"
       onClick={onClick}
     >
-      {icon}
-      {text}
-    </Badge>
+      {stats.hasEmail && (
+        <Mail 
+          className={cn(
+            "h-4 w-4",
+            stats.emailNegative ? "text-destructive" : stats.emailPositive ? "text-green-500" : "text-muted-foreground"
+          )} 
+        />
+      )}
+      {stats.hasSms && (
+        <MessageSquare 
+          className={cn(
+            "h-4 w-4",
+            stats.smsPositive ? "text-green-500" : "text-muted-foreground"
+          )} 
+        />
+      )}
+    </div>
   );
 };
 
