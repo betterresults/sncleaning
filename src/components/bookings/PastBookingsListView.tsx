@@ -827,9 +827,17 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
 
             {/* Mobile & Tablet Layout */}
             <div className="lg:hidden p-4 space-y-3">
-              {/* Row 1: Time, Customer, Actions */}
+              {/* Row 1: Checkbox, Time, Customer, Actions */}
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
+                  {/* Checkbox */}
+                  <input
+                    type="checkbox"
+                    checked={selectedBookingIds.has(booking.id)}
+                    onChange={() => handleToggleBookingSelection(booking.id)}
+                    className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer flex-shrink-0"
+                  />
+                  
                   {/* Time Box - Compact */}
                   <div className="bg-primary/10 rounded-xl px-3 py-2 min-w-[70px]">
                     <div className="text-center">
