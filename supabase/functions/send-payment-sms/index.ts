@@ -33,11 +33,34 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Twilio credentials not configured');
     }
 
-    // Use provided payment link or generate fallback link
-    const finalPaymentLink = paymentLink || `https://dkomihipebixlegygnoy.supabase.co/functions/v1/create-payment-link?booking_id=${bookingId}`;
+    // Init Supabase client for lookups/logs
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Resolve payment link: prefer provided, else fetch from DB
+    let finalPaymentLink = paymentLink || '';
+    if (!finalPaymentLink) {
+      const { data: bookingRow } = await supabase
+        .from('bookings')
+        .select('invoice_link')
+        .eq('id', bookingId)
+        .single();
+      if (bookingRow?.invoice_link) finalPaymentLink = bookingRow.invoice_link;
+    }
+    if (!finalPaymentLink) {
+      const { data: pastRow } = await supabase
+        .from('past_bookings')
+        .select('invoice_link')
+        .eq('id', bookingId)
+        .single();
+      if (pastRow?.invoice_link) finalPaymentLink = pastRow.invoice_link;
+    }
 
     // Create concise SMS message
-    const message = `Hi ${customerName}, invoice for £${amount.toFixed(2)} sent by email from SN Cleaning. Check spam folder. Alternatively, you can pay here: ${finalPaymentLink} Thanks.`;
+    const message = finalPaymentLink
+      ? `Hi ${customerName}, invoice for £${amount.toFixed(2)} sent by email from SN Cleaning. Check spam folder. Alternatively, you can pay here: ${finalPaymentLink} Thanks.`
+      : `Hi ${customerName}, invoice for £${amount.toFixed(2)} sent by email from SN Cleaning. Please check your email (and spam). Thanks.`;
 
     console.log('SMS message:', message);
 
@@ -68,9 +91,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('SMS sent successfully:', twilioData.sid);
 
     // Log the notification in the database
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Supabase client already initialized above
 
     // Insert notification log with notification_type
     await supabase.from('notification_logs').insert({
