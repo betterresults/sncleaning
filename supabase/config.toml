@@ -1,5 +1,8 @@
 project_id = "dkomihipebixlegygnoy"
 
+[functions.send-payment-sms]
+verify_jwt = false
+
 [functions.resend-webhook]
 verify_jwt = false
 

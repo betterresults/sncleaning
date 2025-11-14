@@ -14,7 +14,8 @@ import {
   FileText,
   TrendingUp,
   Wallet,
-  Calendar
+  Calendar,
+  MessageSquare
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +26,7 @@ import ManualPaymentDialog from './ManualPaymentDialog';
 import BulkInvoiceDialog from './BulkInvoiceDialog';
 import { EmailSentLogsDialog } from './EmailSentLogsDialog';
 import EmailStatusIndicator from './EmailStatusIndicator';
+import { useSendPaymentSMS } from '@/hooks/useSendPaymentSMS';
 
 interface Booking {
   id: number;
@@ -95,6 +97,7 @@ const PaymentManagementDashboard = () => {
     cleanerExpenses: 0,
   });
   const { toast } = useToast();
+  const { sendPaymentSMS, isLoading: isSendingSMS } = useSendPaymentSMS();
 
   useEffect(() => {
     fetchBookings();
@@ -252,6 +255,19 @@ const PaymentManagementDashboard = () => {
     };
     setSelectedBooking(normalizedBooking);
     setPaymentDialogOpen(true);
+  };
+
+  const handleSendPaymentSMS = async (booking: Booking) => {
+    const amount = typeof booking.total_cost === 'string' 
+      ? parseFloat(booking.total_cost) || 0 
+      : booking.total_cost;
+
+    await sendPaymentSMS({
+      bookingId: booking.id,
+      phoneNumber: booking.phone_number,
+      customerName: booking.first_name,
+      amount: amount,
+    });
   };
 
   const handleSelectBooking = (bookingId: number) => {
@@ -583,6 +599,7 @@ const PaymentManagementDashboard = () => {
                       <TableCell>
                         <EmailStatusIndicator 
                           customerEmail={booking.email}
+                          phoneNumber={booking.phone_number}
                           onClick={() => {
                             setSelectedCustomerEmail(booking.email);
                             setEmailLogsDialogOpen(true);
@@ -597,14 +614,26 @@ const PaymentManagementDashboard = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Button
-                          size="sm"
-                          onClick={() => handlePaymentAction(booking)}
-                          className="rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
-                        >
-                          <DollarSign className="h-4 w-4 mr-1" />
-                          Manage
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handlePaymentAction(booking)}
+                            className="rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
+                          >
+                            <DollarSign className="h-4 w-4 mr-1" />
+                            Manage
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSendPaymentSMS(booking)}
+                            disabled={isSendingSMS}
+                            className="rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
+                          >
+                            <MessageSquare className="h-4 w-4 mr-1" />
+                            SMS
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
