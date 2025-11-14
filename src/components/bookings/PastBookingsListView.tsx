@@ -20,6 +20,7 @@ import DuplicateBookingDialog from '../dashboard/DuplicateBookingDialog';
 import ConvertToRecurringDialog from '../dashboard/ConvertToRecurringDialog';
 import ManualEmailDialog from '../dashboard/ManualEmailDialog';
 import PhotoManagementDialog from '../dashboard/PhotoManagementDialog';
+import { CombinedPaymentDialog } from '@/components/payments/CombinedPaymentDialog';
 import { useServiceTypes, useCleaningTypes, getServiceTypeBadgeColor as getBadgeColor } from '@/hooks/useCompanySettings';
 
 interface Booking {
