@@ -62,7 +62,7 @@ interface PaymentStats {
   unpaidBookings: number;
   failedBookings: number;
   totalRevenue: number;
-  pendingRevenue: number;
+  cleanerExpenses: number;
 }
 
 const PaymentManagementDashboard = () => {
@@ -74,7 +74,7 @@ const PaymentManagementDashboard = () => {
     unpaidBookings: 0,
     failedBookings: 0,
     totalRevenue: 0,
-    pendingRevenue: 0,
+    cleanerExpenses: 0,
   });
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<NormalizedBooking | null>(null);
@@ -92,7 +92,7 @@ const PaymentManagementDashboard = () => {
     unpaidBookings: 0,
     failedBookings: 0,
     totalRevenue: 0,
-    pendingRevenue: 0,
+    cleanerExpenses: 0,
   });
   const { toast } = useToast();
 
@@ -152,7 +152,7 @@ const PaymentManagementDashboard = () => {
       
       const { data, error } = await supabase
         .from('bookings')
-        .select('total_cost, payment_status')
+        .select('total_cost, payment_status, cleaner_pay')
         .gte('date_time', monthStart)
         .lte('date_time', today + 'T23:59:59');
 
@@ -164,27 +164,30 @@ const PaymentManagementDashboard = () => {
         unpaidBookings: 0,
         failedBookings: 0,
         totalRevenue: 0,
-        pendingRevenue: 0,
+        cleanerExpenses: 0,
       };
 
       data?.forEach(booking => {
         const cost = typeof booking.total_cost === 'string' 
           ? parseFloat(booking.total_cost) || 0 
-          : booking.total_cost || 0;
+          : (booking.total_cost || 0);
+        
+        const cleanerPay = booking.cleaner_pay || 0;
         
         const status = booking.payment_status?.toLowerCase();
         
+        // Add to total revenue regardless of status
+        stats.totalRevenue += cost;
+        
+        // Add to cleaner expenses
+        stats.cleanerExpenses += cleanerPay;
+        
         if (status === 'paid') {
           stats.paidBookings++;
-          stats.totalRevenue += cost;
         } else if (['failed', 'authorization_failed', 'capture_failed'].includes(status)) {
           stats.failedBookings++;
-          stats.pendingRevenue += cost;
         } else if (['unpaid', 'not paid', ''].includes(status) || !status) {
           stats.unpaidBookings++;
-          stats.pendingRevenue += cost;
-        } else {
-          stats.pendingRevenue += cost;
         }
       });
 
@@ -315,14 +318,14 @@ const PaymentManagementDashboard = () => {
           value={`£${currentMonthStats.totalRevenue.toFixed(2)}`}
           icon={DollarSign}
           color="text-primary"
-          subtitle={`${currentMonthStats.paidBookings} paid bookings (this month)`}
+          subtitle={`All bookings this month`}
         />
         <StatCard
-          title="Pending Revenue"
-          value={`£${currentMonthStats.pendingRevenue.toFixed(2)}`}
+          title="Cleaner Expenses"
+          value={`£${currentMonthStats.cleanerExpenses.toFixed(2)}`}
           icon={Clock}
-          color="text-yellow-600"
-          subtitle={`${currentMonthStats.unpaidBookings + currentMonthStats.failedBookings} bookings (this month)`}
+          color="text-orange-600"
+          subtitle={`Total cleaner pay this month`}
         />
         <StatCard
           title="Failed Payments"
