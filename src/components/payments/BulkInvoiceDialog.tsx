@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 interface Booking {
   id: number;
@@ -29,6 +30,7 @@ interface BulkInvoiceDialogProps {
 const BulkInvoiceDialog = ({ open, onOpenChange, selectedBookings, onSuccess }: BulkInvoiceDialogProps) => {
   const [loading, setLoading] = useState(false);
   const [description, setDescription] = useState('');
+  const [invoiceMethod, setInvoiceMethod] = useState<'stripe' | 'invoiless'>('stripe');
   const { toast } = useToast();
 
   const totalAmount = selectedBookings.reduce((sum, booking) => {
@@ -46,11 +48,67 @@ const BulkInvoiceDialog = ({ open, onOpenChange, selectedBookings, onSuccess }: 
       return;
     }
 
-    // Get the first booking's customer email
+    setLoading(true);
+    try {
+      if (invoiceMethod === 'invoiless') {
+        await handleInvoilessInvoices();
+      } else {
+        await handleStripePaymentLink();
+      }
+    } catch (error: any) {
+      console.error('Bulk invoice error:', error);
+      toast({
+        title: 'Failed to send bulk invoice',
+        description: error.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInvoilessInvoices = async () => {
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const booking of selectedBookings) {
+      try {
+        const cost = typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost;
+        
+        const { data, error } = await supabase.functions.invoke('invoiless-auto-invoice', {
+          body: {
+            bookingId: booking.id,
+            bookingType: 'past',
+            isResend: false
+          }
+        });
+
+        if (error) throw error;
+        
+        successCount++;
+      } catch (error) {
+        console.error(`Failed to send invoice for booking ${booking.id}:`, error);
+        failCount++;
+      }
+    }
+
+    if (successCount > 0) {
+      toast({
+        title: 'Invoices sent',
+        description: `${successCount} invoice${successCount > 1 ? 's' : ''} sent successfully${failCount > 0 ? `, ${failCount} failed` : ''}`
+      });
+    }
+
+    if (successCount > 0) {
+      onSuccess();
+      onOpenChange(false);
+    }
+  };
+
+  const handleStripePaymentLink = async () => {
     const customerEmail = selectedBookings[0].email;
     const customerName = `${selectedBookings[0].first_name} ${selectedBookings[0].last_name}`.trim();
 
-    setLoading(true);
     try {
       // Generate itemized service list
       const serviceItems = selectedBookings.map(booking => {
@@ -128,15 +186,8 @@ const BulkInvoiceDialog = ({ open, onOpenChange, selectedBookings, onSuccess }: 
 
       onSuccess();
       onOpenChange(false);
-    } catch (error: any) {
-      console.error('Bulk invoice error:', error);
-      toast({
-        title: 'Failed to send bulk invoice',
-        description: error.message,
-        variant: 'destructive'
-      });
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      throw error;
     }
   };
 
@@ -148,6 +199,20 @@ const BulkInvoiceDialog = ({ open, onOpenChange, selectedBookings, onSuccess }: 
         </DialogHeader>
 
         <div className="space-y-4">
+          <div>
+            <Label>Invoice Method</Label>
+            <RadioGroup value={invoiceMethod} onValueChange={(value: 'stripe' | 'invoiless') => setInvoiceMethod(value)} className="flex gap-4 mt-2">
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="stripe" id="stripe" />
+                <Label htmlFor="stripe" className="font-normal cursor-pointer">Stripe Payment Link</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="invoiless" id="invoiless" />
+                <Label htmlFor="invoiless" className="font-normal cursor-pointer">Invoiless Invoice</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
           <div>
             <Label>Selected Bookings ({selectedBookings.length})</Label>
             <div className="mt-2 max-h-48 overflow-y-auto border rounded-md p-3 space-y-2">
