@@ -534,7 +534,7 @@ const PaymentManagementDashboard = () => {
                   <TableHead className="font-bold text-slate-700">Address</TableHead>
                   <TableHead className="font-bold text-slate-700">Amount</TableHead>
                   <TableHead className="font-bold text-slate-700">Payment</TableHead>
-                  <TableHead className="font-bold text-slate-700">Email</TableHead>
+                  <TableHead className="font-bold text-slate-700">Status</TableHead>
                   <TableHead className="font-bold text-slate-700">Cleaner</TableHead>
                   <TableHead className="font-bold text-slate-700">Actions</TableHead>
                 </TableRow>
