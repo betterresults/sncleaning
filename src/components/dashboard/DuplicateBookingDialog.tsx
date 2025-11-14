@@ -42,6 +42,7 @@ interface Booking {
   extras?: string;
   linens?: string;
   ironing?: string;
+  photos?: any;
   parking_details?: string;
   key_collection?: string;
   access?: string;
@@ -177,6 +178,7 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
         frontly_id,
         cleaners,
         customers,
+        photos, // Exclude this - not a column in bookings table
         cleaner_pay_status, // Exclude this - only exists in past_bookings table
         ...bookingData 
       } = booking;
