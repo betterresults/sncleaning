@@ -59,6 +59,7 @@ interface Booking {
   cleaner_pay?: number;
   cleaner_rate?: number;
   cleaner_percentage?: number;
+  cleaner_pay_status?: string; // Only exists in past_bookings table
   booking_status?: string;
   frontly_id?: number;
   cleaners?: {
@@ -176,6 +177,7 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
         frontly_id,
         cleaners,
         customers,
+        cleaner_pay_status, // Exclude this - only exists in past_bookings table
         ...bookingData 
       } = booking;
       
