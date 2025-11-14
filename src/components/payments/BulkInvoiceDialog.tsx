@@ -147,6 +147,19 @@ const BulkInvoiceDialog = ({ open, onOpenChange, selectedBookings, onSuccess }: 
                     <div style="background-color: white; border-radius: 8px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
                       <h2 style="color: hsl(196, 62%, 25%); font-size: 22px; margin: 0 0 16px;">Complete Your Payment</h2>
                       <p style="color: hsl(210, 20%, 15%); font-size: 16px;">Please complete your payment of <strong>£${(typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost).toFixed(2)}</strong> for your cleaning service on ${format(new Date(booking.date_time), 'dd MMM yyyy')}.</p>
+                      
+                      <div style="background-color: hsl(45, 100%, 96%); border-left: 4px solid hsl(45, 100%, 51%); padding: 16px; margin: 20px 0; border-radius: 4px;">
+                        <h3 style="color: hsl(45, 100%, 35%); margin: 0 0 10px 0; font-size: 16px;">🔔 Important: We've Moved to Automatic Invoices</h3>
+                        <p style="color: hsl(210, 20%, 15%); font-size: 13px; line-height: 1.6; margin: 0;">
+                          We are no longer sending invoices after each service. Instead, your payment details will be securely saved on file and used automatically for all future services. Here's how it works:
+                        </p>
+                        <ul style="color: hsl(210, 20%, 15%); font-size: 13px; line-height: 1.7; margin: 10px 0 0 0; padding-left: 18px;">
+                          <li><strong>24 Hours Before Service:</strong> We'll place a hold on your card for the service amount</li>
+                          <li><strong>After Service Completion:</strong> The actual charge will be processed automatically</li>
+                          <li><strong>No More Manual Invoices:</strong> Everything happens seamlessly in the background</li>
+                        </ul>
+                      </div>
+                      
                       <div style="text-align: center; margin: 24px 0;">
                         <a href="${data.payment_link_url}" style="background-color: hsl(180, 75%, 37%); color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600;">Pay Now</a>
                       </div>
@@ -236,6 +249,18 @@ const BulkInvoiceDialog = ({ open, onOpenChange, selectedBookings, onSuccess }: 
                 <div style="background-color: hsl(0, 0%, 98%); border-left: 4px solid hsl(180, 75%, 37%); padding: 16px; margin: 24px 0; border-radius: 4px;">
                   <h3 style="color: hsl(196, 62%, 25%); margin: 0 0 12px 0; font-size: 18px;">Services Provided:</h3>
                   <pre style="color: hsl(210, 20%, 15%); font-size: 14px; line-height: 1.8; margin: 0; font-family: inherit; white-space: pre-wrap;">${serviceItems}</pre>
+                </div>
+
+                <div style="background-color: hsl(45, 100%, 96%); border-left: 4px solid hsl(45, 100%, 51%); padding: 20px; margin: 24px 0; border-radius: 4px;">
+                  <h3 style="color: hsl(45, 100%, 35%); margin: 0 0 12px 0; font-size: 18px;">🔔 Important: We've Moved to Automatic Invoices</h3>
+                  <p style="color: hsl(210, 20%, 15%); font-size: 14px; line-height: 1.7; margin: 0;">
+                    We are no longer sending invoices after each service. Instead, your payment details will be securely saved on file and used automatically for all future services. Here's how it works:
+                  </p>
+                  <ul style="color: hsl(210, 20%, 15%); font-size: 14px; line-height: 1.8; margin: 12px 0 0 0; padding-left: 20px;">
+                    <li><strong>24 Hours Before Service:</strong> We'll place a hold on your card for the service amount</li>
+                    <li><strong>After Service Completion:</strong> The actual charge will be processed automatically</li>
+                    <li><strong>No More Manual Invoices:</strong> Everything happens seamlessly in the background</li>
+                  </ul>
                 </div>
 
                 ${description ? `
