@@ -14,7 +14,8 @@ import {
   FileText,
   TrendingUp,
   Wallet,
-  Calendar
+  Calendar,
+  Mail
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -23,6 +24,7 @@ import { Switch } from '@/components/ui/switch';
 import PaymentStatusIndicator from './PaymentStatusIndicator';
 import ManualPaymentDialog from './ManualPaymentDialog';
 import BulkInvoiceDialog from './BulkInvoiceDialog';
+import { EmailSentLogsDialog } from './EmailSentLogsDialog';
 
 interface Booking {
   id: number;
@@ -75,6 +77,8 @@ const PaymentManagementDashboard = () => {
   const [selectedBooking, setSelectedBooking] = useState<NormalizedBooking | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [bulkInvoiceDialogOpen, setBulkInvoiceDialogOpen] = useState(false);
+  const [emailLogsDialogOpen, setEmailLogsDialogOpen] = useState(false);
+  const [selectedCustomerEmail, setSelectedCustomerEmail] = useState<string | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [startDate, setStartDate] = useState('');
@@ -507,10 +511,23 @@ const PaymentManagementDashboard = () => {
               </div>
               <h2 className="text-xl font-bold text-white">Payment Management</h2>
             </div>
-            <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full">
-              <span className="text-sm font-semibold text-slate-800">
-                {filteredBookings.length} result{filteredBookings.length !== 1 ? 's' : ''}
-              </span>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={() => {
+                  setSelectedCustomerEmail(undefined);
+                  setEmailLogsDialogOpen(true);
+                }}
+                variant="outline"
+                className="bg-white/10 text-white border-white/20 hover:bg-white/20"
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                Email Logs
+              </Button>
+              <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full">
+                <span className="text-sm font-semibold text-slate-800">
+                  {filteredBookings.length} result{filteredBookings.length !== 1 ? 's' : ''}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -583,14 +600,28 @@ const PaymentManagementDashboard = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Button
-                          size="sm"
-                          onClick={() => handlePaymentAction(booking)}
-                          className="rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
-                        >
-                          <DollarSign className="h-4 w-4 mr-1" />
-                          Manage
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handlePaymentAction(booking)}
+                            className="rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
+                          >
+                            <DollarSign className="h-4 w-4 mr-1" />
+                            Manage
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedCustomerEmail(booking.email);
+                              setEmailLogsDialogOpen(true);
+                            }}
+                            className="rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
+                          >
+                            <Mail className="h-4 w-4 mr-1" />
+                            Emails
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -620,6 +651,12 @@ const PaymentManagementDashboard = () => {
           fetchBookings();
           fetchCurrentMonthStats();
         }}
+      />
+
+      <EmailSentLogsDialog
+        open={emailLogsDialogOpen}
+        onOpenChange={setEmailLogsDialogOpen}
+        customerEmail={selectedCustomerEmail}
       />
     </div>
   );
