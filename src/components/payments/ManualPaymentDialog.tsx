@@ -164,7 +164,7 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
           body: {
             recipient_email: booking.email,
             recipient_name: `${booking.first_name} ${booking.last_name}`.trim(),
-            custom_subject: `Service Payment - £${amount}`,
+            custom_subject: `Cleaning Services Invoice - £${amount}`,
             custom_content: `
               <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; max-width: 600px; margin: 0 auto; background-color: #fafafa; padding: 40px 20px;">
                 <div style="background-color: white; border-radius: 8px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
@@ -172,7 +172,7 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
                     <h1 style="color: hsl(180, 75%, 37%); margin: 0; font-size: 28px;">SN Cleaning Services</h1>
                   </div>
                   
-                  <h2 style="color: hsl(196, 62%, 25%); font-size: 24px; margin-bottom: 16px;">Service Payment</h2>
+                  <h2 style="color: hsl(196, 62%, 25%); font-size: 24px; margin-bottom: 16px;">Cleaning Services Invoice</h2>
                   
                   <p style="color: hsl(210, 20%, 15%); font-size: 16px; line-height: 1.6;">Dear ${booking.first_name},</p>
                   
