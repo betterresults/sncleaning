@@ -39,7 +39,7 @@ interface Booking {
   cleaners?: {
     first_name: string;
     last_name: string;
-  } | null;
+  } | null | Array<{first_name: string; last_name: string}>;
 }
 
 interface NormalizedBooking {
@@ -106,23 +106,22 @@ const PaymentManagementDashboard = () => {
     try {
       setLoading(true);
       
+      const tableName = showUpcoming ? 'bookings' : 'past_bookings';
+      
       let query = supabase
-        .from('bookings')
+        .from(tableName)
         .select(`
           *,
-          cleaners!bookings_cleaner_fkey (
+          cleaners!${tableName}_cleaner_fkey (
             first_name,
             last_name
           )
         `);
 
-      const now = new Date().toISOString();
-      
-      // Default to past bookings, unless showUpcoming is true
+      // For upcoming bookings, filter for future dates
       if (showUpcoming) {
+        const now = new Date().toISOString();
         query = query.gte('date_time', now);
-      } else {
-        query = query.lt('date_time', now);
       }
 
       // Apply additional date filters if set
@@ -137,7 +136,15 @@ const PaymentManagementDashboard = () => {
 
       if (error) throw error;
 
-      setAllBookings(data || []);
+      // Normalize the cleaners data structure
+      const normalizedData = (data || []).map(booking => ({
+        ...booking,
+        cleaners: Array.isArray(booking.cleaners) && booking.cleaners.length > 0 
+          ? booking.cleaners[0] 
+          : booking.cleaners
+      }));
+
+      setAllBookings(normalizedData as Booking[]);
     } catch (error: any) {
       console.error('Error fetching bookings:', error);
       toast({
@@ -156,7 +163,7 @@ const PaymentManagementDashboard = () => {
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       
       const { data, error } = await supabase
-        .from('bookings')
+        .from('past_bookings')
         .select('total_cost, payment_status, cleaner_pay, date_time')
         .gte('date_time', monthStart.toISOString())
         .lte('date_time', now.toISOString());
@@ -234,7 +241,10 @@ const PaymentManagementDashboard = () => {
       ...booking,
       total_cost: typeof booking.total_cost === 'string' 
         ? parseFloat(booking.total_cost) || 0 
-        : booking.total_cost
+        : booking.total_cost,
+      cleaners: Array.isArray(booking.cleaners) && booking.cleaners.length > 0 
+        ? booking.cleaners[0] 
+        : (booking.cleaners as {first_name: string; last_name: string} | null)
     };
     setSelectedBooking(normalizedBooking);
     setPaymentDialogOpen(true);
@@ -566,7 +576,9 @@ const PaymentManagementDashboard = () => {
                         <PaymentStatusIndicator status={booking.payment_status} paymentMethod={booking.payment_method} />
                       </TableCell>
                       <TableCell className="text-slate-700">
-                        {booking.cleaners ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}` : (
+                        {booking.cleaners && typeof booking.cleaners === 'object' && !Array.isArray(booking.cleaners)
+                          ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}` 
+                          : (
                           <span className="text-slate-400 italic">Unassigned</span>
                         )}
                       </TableCell>
