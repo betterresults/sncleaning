@@ -63,8 +63,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Create concise SMS message
     const message = finalPaymentLink
-      ? `Hi ${customerName}, invoice for £${amount.toFixed(2)} sent by email from SN Cleaning. Check spam folder. Alternatively, you can pay here: ${finalPaymentLink} Thanks.`
-      : `Hi ${customerName}, invoice for £${amount.toFixed(2)} sent by email from SN Cleaning. Please check your email (and spam). Thanks.`;
+      ? `Hi ${customerName}, invoice for £${amount.toFixed(2)} sent by email from SN Cleaning. Check spam folder. Alternatively, you can pay here: ${finalPaymentLink}\n\nSN Cleaning Services team`
+      : `Hi ${customerName}, invoice for £${amount.toFixed(2)} sent by email from SN Cleaning. Please check your email (and spam).\n\nSN Cleaning Services team`;
 
     console.log('SMS message:', message);
 
