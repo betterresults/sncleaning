@@ -142,11 +142,6 @@ export const adminNavigation = [
     icon: CreditCard,
     subItems: [
       {
-        title: "Stripe Dashboard",
-        url: "/admin-stripe-payments",
-        icon: CreditCard,
-      },
-      {
         title: "Payment Management",
         url: "/admin-payment-management",
         icon: Settings,
