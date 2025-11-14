@@ -14,8 +14,7 @@ import {
   FileText,
   TrendingUp,
   Wallet,
-  Calendar,
-  Mail
+  Calendar
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +24,7 @@ import PaymentStatusIndicator from './PaymentStatusIndicator';
 import ManualPaymentDialog from './ManualPaymentDialog';
 import BulkInvoiceDialog from './BulkInvoiceDialog';
 import { EmailSentLogsDialog } from './EmailSentLogsDialog';
+import EmailStatusIndicator from './EmailStatusIndicator';
 
 interface Booking {
   id: number;
@@ -511,23 +511,10 @@ const PaymentManagementDashboard = () => {
               </div>
               <h2 className="text-xl font-bold text-white">Payment Management</h2>
             </div>
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={() => {
-                  setSelectedCustomerEmail(undefined);
-                  setEmailLogsDialogOpen(true);
-                }}
-                variant="outline"
-                className="bg-white/10 text-white border-white/20 hover:bg-white/20"
-              >
-                <Mail className="h-4 w-4 mr-2" />
-                Email Logs
-              </Button>
-              <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full">
-                <span className="text-sm font-semibold text-slate-800">
-                  {filteredBookings.length} result{filteredBookings.length !== 1 ? 's' : ''}
-                </span>
-              </div>
+            <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full">
+              <span className="text-sm font-semibold text-slate-800">
+                {filteredBookings.length} result{filteredBookings.length !== 1 ? 's' : ''}
+              </span>
             </div>
           </div>
         </div>
@@ -546,7 +533,8 @@ const PaymentManagementDashboard = () => {
                   <TableHead className="font-bold text-slate-700">Date & Time</TableHead>
                   <TableHead className="font-bold text-slate-700">Address</TableHead>
                   <TableHead className="font-bold text-slate-700">Amount</TableHead>
-                  <TableHead className="font-bold text-slate-700">Status</TableHead>
+                  <TableHead className="font-bold text-slate-700">Payment</TableHead>
+                  <TableHead className="font-bold text-slate-700">Email</TableHead>
                   <TableHead className="font-bold text-slate-700">Cleaner</TableHead>
                   <TableHead className="font-bold text-slate-700">Actions</TableHead>
                 </TableRow>
@@ -554,7 +542,7 @@ const PaymentManagementDashboard = () => {
               <TableBody>
                 {filteredBookings.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-16">
+                    <TableCell colSpan={9} className="text-center py-16">
                       <div className="flex flex-col items-center gap-3">
                         <div className="p-4 bg-slate-100 rounded-2xl">
                           <AlertCircle className="h-12 w-12 text-slate-400" />
@@ -592,6 +580,15 @@ const PaymentManagementDashboard = () => {
                       <TableCell>
                         <PaymentStatusIndicator status={booking.payment_status} paymentMethod={booking.payment_method} />
                       </TableCell>
+                      <TableCell>
+                        <EmailStatusIndicator 
+                          customerEmail={booking.email}
+                          onClick={() => {
+                            setSelectedCustomerEmail(booking.email);
+                            setEmailLogsDialogOpen(true);
+                          }}
+                        />
+                      </TableCell>
                       <TableCell className="text-slate-700">
                         {booking.cleaners && typeof booking.cleaners === 'object' && !Array.isArray(booking.cleaners)
                           ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}` 
@@ -600,28 +597,14 @@ const PaymentManagementDashboard = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => handlePaymentAction(booking)}
-                            className="rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
-                          >
-                            <DollarSign className="h-4 w-4 mr-1" />
-                            Manage
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedCustomerEmail(booking.email);
-                              setEmailLogsDialogOpen(true);
-                            }}
-                            className="rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
-                          >
-                            <Mail className="h-4 w-4 mr-1" />
-                            Emails
-                          </Button>
-                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => handlePaymentAction(booking)}
+                          className="rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
+                        >
+                          <DollarSign className="h-4 w-4 mr-1" />
+                          Manage
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))
