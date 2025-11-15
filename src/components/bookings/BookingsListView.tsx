@@ -351,8 +351,15 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
   const handlePaymentAction = (booking: Booking) => {
     const paymentMethod = booking.payment_method?.toLowerCase() || '';
     if (paymentMethod.includes('invoiless') || paymentMethod.includes('invoice')) {
-      setSelectedBookingForInvoiless(booking);
-      setInvoilessDialogOpen(true);
+      // If no invoice exists yet, open the invoice creation dialog
+      // If invoice already exists, open the management dialog
+      if (!booking.invoice_id) {
+        setSelectedBookingForInvoiceSend(booking);
+        setInvoiceSendDialogOpen(true);
+      } else {
+        setSelectedBookingForInvoiless(booking);
+        setInvoilessDialogOpen(true);
+      }
     } else {
       setSelectedBookingForPayment(booking);
       setPaymentDialogOpen(true);
