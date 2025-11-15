@@ -104,6 +104,8 @@ const BulkEditBookings = () => {
     customerSearch: '',
   });
   const [sendingPaymentLinks, setSendingPaymentLinks] = useState(false);
+  const [availablePaymentStatuses, setAvailablePaymentStatuses] = useState<string[]>([]);
+  const [availableBookingStatuses, setAvailableBookingStatuses] = useState<string[]>([]);
 
   const handleSignOut = async () => {
     try {
@@ -121,6 +123,24 @@ const BulkEditBookings = () => {
     fetchBookings();
     fetchCleaners();
   }, [bookingType]);
+
+  useEffect(() => {
+    // Extract unique payment and booking statuses from bookings
+    const paymentStatuses = new Set<string>();
+    const bookingStatuses = new Set<string>();
+    
+    bookings.forEach(booking => {
+      if (booking.payment_status) {
+        paymentStatuses.add(booking.payment_status);
+      }
+      if (booking.booking_status) {
+        bookingStatuses.add(booking.booking_status);
+      }
+    });
+    
+    setAvailablePaymentStatuses(Array.from(paymentStatuses).sort());
+    setAvailableBookingStatuses(Array.from(bookingStatuses).sort());
+  }, [bookings]);
 
   useEffect(() => {
     applyFilters();
@@ -753,12 +773,9 @@ const BulkEditBookings = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="all">All</SelectItem>
-                            <SelectItem value="Paid">Paid</SelectItem>
-                            <SelectItem value="Unpaid">Unpaid</SelectItem>
-                            <SelectItem value="Not Paid">Not Paid</SelectItem>
-                            <SelectItem value="Pending">Pending</SelectItem>
-                            <SelectItem value="Partially Paid">Partially Paid</SelectItem>
-                            <SelectItem value="Refunded">Refunded</SelectItem>
+                            {availablePaymentStatuses.map(status => (
+                              <SelectItem key={status} value={status}>{status}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -771,10 +788,9 @@ const BulkEditBookings = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="all">All</SelectItem>
-                            <SelectItem value="Confirmed">Confirmed</SelectItem>
-                            <SelectItem value="Pending">Pending</SelectItem>
-                            <SelectItem value="Cancelled">Cancelled</SelectItem>
-                            <SelectItem value="Completed">Completed</SelectItem>
+                            {availableBookingStatuses.map(status => (
+                              <SelectItem key={status} value={status}>{status}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
