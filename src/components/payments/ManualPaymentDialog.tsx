@@ -321,7 +321,9 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
   const handleQuickStatusUpdate = async (status: string) => {
     if (!booking || !status) return;
 
+    console.log('Updating status to:', status);
     setLoading(true);
+    
     try {
       // Try updating bookings table first
       const { error: bookingsError } = await supabase
@@ -330,6 +332,7 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
         .eq('id', booking.id);
 
       if (bookingsError) {
+        console.log('Not in bookings, trying past_bookings');
         // If not in bookings, try past_bookings
         const { error: pastBookingsError } = await supabase
           .from('past_bookings')
@@ -339,6 +342,7 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
         if (pastBookingsError) throw pastBookingsError;
       }
 
+      console.log('Status updated successfully');
       setNewPaymentStatus(status);
       setStatusPopoverOpen(false);
 
@@ -436,19 +440,24 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
                         {newPaymentStatus || booking.payment_status || 'Unknown'}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-48 p-2" align="end">
+                    <PopoverContent className="w-48 p-2" align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
                       <div className="space-y-1">
                         {['Paid', 'Unpaid', 'authorized', 'failed', 'Processing'].map((status) => (
-                          <button
+                          <Button
                             key={status}
-                            onClick={() => handleQuickStatusUpdate(status)}
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleQuickStatusUpdate(status);
+                            }}
                             disabled={loading}
-                            className={`w-full text-left px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                            className={`w-full justify-start px-3 py-2 rounded-lg text-sm font-semibold h-auto ${
                               getStatusColor(status)
-                            } ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                            }`}
                           >
                             {status}
-                          </button>
+                          </Button>
                         ))}
                       </div>
                     </PopoverContent>
