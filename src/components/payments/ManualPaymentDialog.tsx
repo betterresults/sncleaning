@@ -52,11 +52,13 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
   const [paymentMode, setPaymentMode] = useState<'existing' | 'collect_only' | 'payment_link'>('existing');
   const [paymentLinkDescription, setPaymentLinkDescription] = useState('');
   const [collectForFuture, setCollectForFuture] = useState(true);
+  const [newPaymentStatus, setNewPaymentStatus] = useState<string>('');
   const { toast } = useToast();
 
   useEffect(() => {
     if (booking) {
       setAmount(booking.total_cost || 0);
+      setNewPaymentStatus(booking.payment_status || '');
       const cleaningDate = new Date(booking.date_time).toLocaleDateString('en-GB');
       setPaymentLinkDescription(`Cleaning Service - ${cleaningDate} - ${booking.address}`);
       fetchPaymentMethods();
@@ -314,6 +316,46 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
     }
   };
 
+  const handleQuickStatusUpdate = async () => {
+    if (!booking || !newPaymentStatus) return;
+
+    setLoading(true);
+    try {
+      // Try updating bookings table first
+      const { error: bookingsError } = await supabase
+        .from('bookings')
+        .update({ payment_status: newPaymentStatus })
+        .eq('id', booking.id);
+
+      if (bookingsError) {
+        // If not in bookings, try past_bookings
+        const { error: pastBookingsError } = await supabase
+          .from('past_bookings')
+          .update({ payment_status: newPaymentStatus })
+          .eq('id', booking.id);
+
+        if (pastBookingsError) throw pastBookingsError;
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Payment status updated successfully',
+      });
+
+      onSuccess();
+      onClose();
+    } catch (error: any) {
+      console.error('Status update error:', error);
+      toast({
+        title: 'Update Failed',
+        description: error.message || 'Failed to update payment status',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!booking) return null;
 
   const hasPaymentMethods = paymentMethods.length > 0;
@@ -347,6 +389,38 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
               </div>
             </CardContent>
           </Card>
+
+          {/* Quick Status Update */}
+          <Card className="border-primary/20">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <Label htmlFor="payment-status" className="mb-2 block">Quick Payment Status Update</Label>
+                  <Select value={newPaymentStatus} onValueChange={setNewPaymentStatus}>
+                    <SelectTrigger id="payment-status">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Paid">Paid</SelectItem>
+                      <SelectItem value="Unpaid">Unpaid</SelectItem>
+                      <SelectItem value="authorized">Authorized</SelectItem>
+                      <SelectItem value="failed">Failed</SelectItem>
+                      <SelectItem value="Processing">Processing</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button 
+                  onClick={handleQuickStatusUpdate} 
+                  disabled={loading || !newPaymentStatus || newPaymentStatus === booking.payment_status}
+                  className="mt-6"
+                >
+                  {loading ? 'Updating...' : 'Update Status'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Separator />
 
           {/* Payment Method Tabs */}
           <Tabs value={paymentMode} onValueChange={(value: any) => setPaymentMode(value)} className="w-full">
