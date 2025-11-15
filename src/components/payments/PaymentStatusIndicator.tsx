@@ -101,6 +101,7 @@ const PaymentStatusIndicator = ({ status, paymentMethod, onClick, size = 'md', i
   if (isClickable && onClick) {
     return (
       <Button
+        type="button"
         onClick={onClick}
         className={`${config.className} ${buttonSize} p-0 rounded-full border-0 shadow-sm transition-all duration-200 hover:scale-110`}
         variant="default"
