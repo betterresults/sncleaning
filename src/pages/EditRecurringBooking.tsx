@@ -11,7 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus } from "lucide-react";
 import CreateCustomerDialog from "@/components/booking/CreateCustomerDialog";
 import CreateCleanerDialog from "@/components/booking/CreateCleanerDialog";
-import { useServiceTypes, useCleaningTypes } from "@/hooks/useCompanySettings";
+import { useServiceTypes, useCleaningTypes, usePaymentMethods } from "@/hooks/useCompanySettings";
 import UpdateBookingsCleanerDialog from "@/components/recurring/UpdateBookingsCleanerDialog";
 
 interface Customer {
@@ -64,9 +64,10 @@ export default function EditRecurringBooking() {
   const [pendingCleanerId, setPendingCleanerId] = useState<string>('');
   const [pendingSubmit, setPendingSubmit] = useState(false);
   
-  // Fetch dynamic service types and cleaning types
+  // Fetch dynamic service types, cleaning types, and payment methods
   const { data: serviceTypes } = useServiceTypes();
   const { data: cleaningTypes } = useCleaningTypes();
+  const { data: paymentMethods } = usePaymentMethods();
 
   const [formData, setFormData] = useState({
     client: '',
@@ -81,7 +82,7 @@ export default function EditRecurringBooking() {
     hours: '',
     cost_per_hour: '',
     total_cost: '',
-    payment_method: 'Stripe',
+    payment_method: '',
     start_date: '',
     start_time: '',
     postponed: false,
@@ -537,9 +538,11 @@ export default function EditRecurringBooking() {
                   <SelectValue placeholder="Select payment method" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Stripe">Stripe</SelectItem>
-                  <SelectItem value="Invoiless">Invoiless</SelectItem>
-                  <SelectItem value="Cash">Cash</SelectItem>
+                  {paymentMethods?.map((method) => (
+                    <SelectItem key={method.key} value={method.key}>
+                      {method.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
