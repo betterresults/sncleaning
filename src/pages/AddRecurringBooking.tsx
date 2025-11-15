@@ -15,7 +15,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import CreateCustomerDialog from "@/components/booking/CreateCustomerDialog";
 import CreateCleanerDialog from "@/components/booking/CreateCleanerDialog";
-import { useServiceTypes, useCleaningTypes } from "@/hooks/useCompanySettings";
+import { useServiceTypes, useCleaningTypes, usePaymentMethods } from "@/hooks/useCompanySettings";
 
 interface Customer {
   id: number;
@@ -67,9 +67,10 @@ export default function AddRecurringBooking() {
   const [selectedPeriod, setSelectedPeriod] = useState('AM');
   const [selectedTime, setSelectedTime] = useState('09:00 AM');
   
-  // Fetch dynamic service types and cleaning types
+  // Fetch dynamic service types, cleaning types, and payment methods
   const { data: serviceTypes } = useServiceTypes();
   const { data: cleaningTypes } = useCleaningTypes();
+  const { data: paymentMethods } = usePaymentMethods();
 
   const [formData, setFormData] = useState({
     client: '',
@@ -87,7 +88,7 @@ export default function AddRecurringBooking() {
     hours: '',
     cost_per_hour: '',
     total_cost: '',
-    payment_method: 'Stripe',
+    payment_method: '',
     start_date: '',
     start_time: '',
     postponed: false,
@@ -788,9 +789,11 @@ export default function AddRecurringBooking() {
                     <SelectValue placeholder="Select payment method" />
                   </SelectTrigger>
                    <SelectContent>
-                     <SelectItem value="Stripe">Stripe</SelectItem>
-                     <SelectItem value="Invoiless">Invoiless</SelectItem>
-                     <SelectItem value="Cash">Cash</SelectItem>
+                     {paymentMethods?.map((method) => (
+                       <SelectItem key={method.key} value={method.key}>
+                         {method.label}
+                       </SelectItem>
+                     ))}
                    </SelectContent>
                 </Select>
               </div>
