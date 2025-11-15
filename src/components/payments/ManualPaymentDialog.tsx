@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { CreditCard, DollarSign, Clock, Zap, RotateCcw, Mail, Link } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -431,37 +431,30 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
                 </div>
                 <div>
                   <p className="text-muted-foreground mb-1">Status</p>
-                  <Popover open={statusPopoverOpen} onOpenChange={setStatusPopoverOpen}>
-                    <PopoverTrigger asChild>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
                       <Button 
                         variant="outline"
-                        className={`w-full justify-start h-9 rounded-xl font-semibold border-2 ${getStatusColor(newPaymentStatus || booking.payment_status)}`}
+                        className={`w-full justify-center h-9 rounded-xl font-semibold border-2 ${getStatusColor(newPaymentStatus || booking.payment_status)}`}
                       >
                         {newPaymentStatus || booking.payment_status || 'Unknown'}
                       </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-48 p-2" align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
-                      <div className="space-y-1">
-                        {['Paid', 'Unpaid', 'authorized', 'failed', 'Processing'].map((status) => (
-                          <Button
-                            key={status}
-                            variant="ghost"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleQuickStatusUpdate(status);
-                            }}
-                            disabled={loading}
-                            className={`w-full justify-start px-3 py-2 rounded-lg text-sm font-semibold h-auto ${
-                              getStatusColor(status)
-                            }`}
-                          >
-                            {status}
-                          </Button>
-                        ))}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48 p-1">
+                      {['Paid', 'Unpaid', 'Authorized', 'Failed', 'Processing'].map((status) => (
+                        <DropdownMenuItem
+                          key={status}
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            handleQuickStatusUpdate(status);
+                          }}
+                          className={`rounded-md font-medium ${getStatusColor(status)}`}
+                        >
+                          {status}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </CardContent>
