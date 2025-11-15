@@ -321,14 +321,15 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
   const handleQuickStatusUpdate = async (status: string) => {
     if (!booking || !status) return;
 
-    console.log('Updating status to:', status);
+    const normalized = status.toLowerCase();
+    console.log('Updating status to:', normalized);
     setLoading(true);
     
     try {
       // Try updating bookings table first
       const { error: bookingsError } = await supabase
         .from('bookings')
-        .update({ payment_status: status })
+        .update({ payment_status: normalized })
         .eq('id', booking.id);
 
       if (bookingsError) {
@@ -336,14 +337,14 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
         // If not in bookings, try past_bookings
         const { error: pastBookingsError } = await supabase
           .from('past_bookings')
-          .update({ payment_status: status })
+          .update({ payment_status: normalized })
           .eq('id', booking.id);
 
         if (pastBookingsError) throw pastBookingsError;
       }
 
       console.log('Status updated successfully');
-      setNewPaymentStatus(status);
+      setNewPaymentStatus(normalized);
       setStatusPopoverOpen(false);
 
       toast({
@@ -444,10 +445,7 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
                       {['Paid', 'Unpaid', 'Authorized', 'Failed', 'Processing'].map((status) => (
                         <DropdownMenuItem
                           key={status}
-                          onSelect={(e) => {
-                            e.preventDefault();
-                            handleQuickStatusUpdate(status);
-                          }}
+                          onClick={() => handleQuickStatusUpdate(status)}
                           className={`rounded-md font-medium ${getStatusColor(status)}`}
                         >
                           {status}
