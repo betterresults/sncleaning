@@ -363,18 +363,18 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'paid':
-        return 'bg-green-100 text-green-800 hover:bg-green-200';
+        return 'bg-green-100 text-green-800 hover:bg-green-200 border-green-200';
       case 'authorized':
-        return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
+        return 'bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200';
       case 'failed':
-        return 'bg-red-100 text-red-800 hover:bg-red-200';
+        return 'bg-red-100 text-red-800 hover:bg-red-200 border-red-200';
       case 'unpaid':
       case 'not paid':
-        return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200';
+        return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-200';
       case 'processing':
-        return 'bg-purple-100 text-purple-800 hover:bg-purple-200';
+        return 'bg-purple-100 text-purple-800 hover:bg-purple-200 border-purple-200';
       default:
-        return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
+        return 'bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200';
     }
   };
 
@@ -426,11 +426,12 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
                   <p className="font-bold text-lg">£{Number(booking.total_cost || 0).toFixed(2)}</p>
                 </div>
                 <div>
+                  <p className="text-muted-foreground mb-1">Status</p>
                   <Popover open={statusPopoverOpen} onOpenChange={setStatusPopoverOpen}>
                     <PopoverTrigger asChild>
                       <Button 
-                        variant="ghost"
-                        className={`h-auto py-2 px-3 rounded-xl font-semibold ${getStatusColor(newPaymentStatus || booking.payment_status)}`}
+                        variant="outline"
+                        className={`w-full justify-start h-9 rounded-xl font-semibold border-2 ${getStatusColor(newPaymentStatus || booking.payment_status)}`}
                       >
                         {newPaymentStatus || booking.payment_status || 'Unknown'}
                       </Button>
@@ -442,9 +443,9 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
                             key={status}
                             onClick={() => handleQuickStatusUpdate(status)}
                             disabled={loading}
-                            className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            className={`w-full text-left px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
                               getStatusColor(status)
-                            } ${loading ? 'opacity-50' : ''}`}
+                            } ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                           >
                             {status}
                           </button>
