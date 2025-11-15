@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CreditCard, DollarSign, Clock, Zap, RotateCcw, Mail, Link } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -53,6 +54,7 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
   const [paymentLinkDescription, setPaymentLinkDescription] = useState('');
   const [collectForFuture, setCollectForFuture] = useState(true);
   const [newPaymentStatus, setNewPaymentStatus] = useState<string>('');
+  const [statusPopoverOpen, setStatusPopoverOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -316,26 +318,29 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
     }
   };
 
-  const handleQuickStatusUpdate = async () => {
-    if (!booking || !newPaymentStatus) return;
+  const handleQuickStatusUpdate = async (status: string) => {
+    if (!booking || !status) return;
 
     setLoading(true);
     try {
       // Try updating bookings table first
       const { error: bookingsError } = await supabase
         .from('bookings')
-        .update({ payment_status: newPaymentStatus })
+        .update({ payment_status: status })
         .eq('id', booking.id);
 
       if (bookingsError) {
         // If not in bookings, try past_bookings
         const { error: pastBookingsError } = await supabase
           .from('past_bookings')
-          .update({ payment_status: newPaymentStatus })
+          .update({ payment_status: status })
           .eq('id', booking.id);
 
         if (pastBookingsError) throw pastBookingsError;
       }
+
+      setNewPaymentStatus(status);
+      setStatusPopoverOpen(false);
 
       toast({
         title: 'Success',
@@ -343,7 +348,6 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
       });
 
       onSuccess();
-      onClose();
     } catch (error: any) {
       console.error('Status update error:', error);
       toast({
@@ -353,6 +357,24 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'paid':
+        return 'bg-green-100 text-green-800 hover:bg-green-200';
+      case 'authorized':
+        return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
+      case 'failed':
+        return 'bg-red-100 text-red-800 hover:bg-red-200';
+      case 'unpaid':
+      case 'not paid':
+        return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200';
+      case 'processing':
+        return 'bg-purple-100 text-purple-800 hover:bg-purple-200';
+      default:
+        return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
     }
   };
 
@@ -404,27 +426,32 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
                   <p className="font-bold text-lg">£{Number(booking.total_cost || 0).toFixed(2)}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground mb-1">Status</p>
-                  <Select value={newPaymentStatus} onValueChange={setNewPaymentStatus}>
-                    <SelectTrigger className="rounded-xl h-8">
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Paid">Paid</SelectItem>
-                      <SelectItem value="Unpaid">Unpaid</SelectItem>
-                      <SelectItem value="authorized">Authorized</SelectItem>
-                      <SelectItem value="failed">Failed</SelectItem>
-                      <SelectItem value="Processing">Processing</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button 
-                    onClick={handleQuickStatusUpdate} 
-                    disabled={loading || !newPaymentStatus || newPaymentStatus === booking.payment_status}
-                    className="rounded-xl h-7 text-xs mt-1 w-full"
-                    size="sm"
-                  >
-                    {loading ? 'Updating...' : 'Update'}
-                  </Button>
+                  <Popover open={statusPopoverOpen} onOpenChange={setStatusPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button 
+                        variant="ghost"
+                        className={`h-auto py-2 px-3 rounded-xl font-semibold ${getStatusColor(newPaymentStatus || booking.payment_status)}`}
+                      >
+                        {newPaymentStatus || booking.payment_status || 'Unknown'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-48 p-2" align="end">
+                      <div className="space-y-1">
+                        {['Paid', 'Unpaid', 'authorized', 'failed', 'Processing'].map((status) => (
+                          <button
+                            key={status}
+                            onClick={() => handleQuickStatusUpdate(status)}
+                            disabled={loading}
+                            className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                              getStatusColor(status)
+                            } ${loading ? 'opacity-50' : ''}`}
+                          >
+                            {status}
+                          </button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
             </CardContent>
