@@ -257,7 +257,6 @@ const BookingsTable = () => {
           ...bookingData,
           payment_status: 'Unpaid',
           booking_status: null,
-          cleaner_pay: null,
           invoice_id: null,
           invoice_link: null,
           invoice_term: null,

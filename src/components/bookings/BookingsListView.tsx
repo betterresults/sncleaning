@@ -9,6 +9,7 @@ import { Edit, Trash2, Copy, X, UserPlus, DollarSign, Repeat, MoreHorizontal, Cl
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import { InvoilessPaymentDialog } from '@/components/payments/InvoilessPaymentDialog';
+import InvoilessInvoiceDialog from '@/components/payments/InvoilessInvoiceDialog';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -122,6 +123,8 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
   const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<Booking | null>(null);
   const [invoilessDialogOpen, setInvoilessDialogOpen] = useState(false);
   const [selectedBookingForInvoiless, setSelectedBookingForInvoiless] = useState<Booking | null>(null);
+  const [invoiceSendDialogOpen, setInvoiceSendDialogOpen] = useState(false);
+  const [selectedBookingForInvoiceSend, setSelectedBookingForInvoiceSend] = useState<Booking | null>(null);
   const { toast } = useToast();
   
   // Fetch service/cleaning types for labels and badge colors
@@ -354,6 +357,11 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
       setSelectedBookingForPayment(booking);
       setPaymentDialogOpen(true);
     }
+  };
+
+  const handleSendInvoice = (booking: Booking) => {
+    setSelectedBookingForInvoiceSend(booking);
+    setInvoiceSendDialogOpen(true);
   };
 
   const handleCancel = (bookingId: number) => {
@@ -775,6 +783,12 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
                       <DollarSign className="w-4 h-4 mr-2" />
                       {booking.payment_method === 'Invoiless' ? 'Manage Invoice' : 'Manage Payment'}
                     </DropdownMenuItem>
+                    {booking.payment_method === 'Invoiless' && (
+                      <DropdownMenuItem onClick={() => handleSendInvoice(booking)}>
+                        <Send className="w-4 h-4 mr-2" />
+                        Send Invoice
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => handleCancel(booking.id)} className="text-orange-600">
                       <X className="w-4 h-4 mr-2" />
@@ -915,6 +929,12 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
                       <DollarSign className="w-4 h-4 mr-2" />
                       {booking.payment_method === 'Invoiless' ? 'Manage Invoice' : 'Manage Payment'}
                     </DropdownMenuItem>
+                    {booking.payment_method === 'Invoiless' && (
+                      <DropdownMenuItem onClick={() => handleSendInvoice(booking)}>
+                        <Send className="w-4 h-4 mr-2" />
+                        Send Invoice
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => handleCancel(booking.id)} className="text-orange-600">
                       <X className="w-4 h-4 mr-2" />
@@ -1108,6 +1128,20 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
           fetchData();
           setInvoilessDialogOpen(false);
           setSelectedBookingForInvoiless(null);
+        }}
+      />
+
+      <InvoilessInvoiceDialog
+        booking={selectedBookingForInvoiceSend}
+        isOpen={invoiceSendDialogOpen}
+        onClose={() => {
+          setInvoiceSendDialogOpen(false);
+          setSelectedBookingForInvoiceSend(null);
+        }}
+        onSuccess={() => {
+          fetchData();
+          setInvoiceSendDialogOpen(false);
+          setSelectedBookingForInvoiceSend(null);
         }}
       />
 
