@@ -533,6 +533,7 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
                     min="0"
                     value={amount}
                     onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
+                    onFocus={(e) => e.target.select()}
                     placeholder="Amount"
                     className="rounded-xl"
                   />
@@ -613,6 +614,7 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
                     min="0"
                     value={amount}
                     onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
+                    onFocus={(e) => e.target.select()}
                     placeholder="Amount"
                     className="rounded-xl"
                   />
