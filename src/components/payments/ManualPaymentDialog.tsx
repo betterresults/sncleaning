@@ -324,23 +324,39 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
     const normalized = status.toLowerCase();
     console.log('Updating status to:', normalized);
     setLoading(true);
-    
+
     try {
-      // Try updating bookings table first
-      const { error: bookingsError } = await supabase
+      // 1) Try updating bookings and check affected rows
+      const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
         .update({ payment_status: normalized })
-        .eq('id', booking.id);
+        .eq('id', booking.id)
+        .select('id');
 
+      let updated = false;
       if (bookingsError) {
-        console.log('Not in bookings, trying past_bookings');
-        // If not in bookings, try past_bookings
-        const { error: pastBookingsError } = await supabase
+        console.warn('Bookings update error, will try past_bookings:', bookingsError.message);
+      } else if (Array.isArray(bookingsData) && bookingsData.length > 0) {
+        updated = true;
+      }
+
+      // 2) If not updated in bookings, try past_bookings and check affected rows
+      if (!updated) {
+        const { data: pastData, error: pastBookingsError } = await supabase
           .from('past_bookings')
           .update({ payment_status: normalized })
-          .eq('id', booking.id);
+          .eq('id', booking.id)
+          .select('id');
 
-        if (pastBookingsError) throw pastBookingsError;
+        if (pastBookingsError) {
+          console.error('Past bookings update error:', pastBookingsError.message);
+        } else if (Array.isArray(pastData) && pastData.length > 0) {
+          updated = true;
+        }
+      }
+
+      if (!updated) {
+        throw new Error('No rows were updated. You may not have permission or the record was not found.');
       }
 
       console.log('Status updated successfully');
@@ -364,7 +380,6 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
       setLoading(false);
     }
   };
-
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'paid':
