@@ -253,7 +253,15 @@ const BookingsTable = () => {
       const { id, ...bookingData } = booking;
       const { error } = await supabase
         .from('bookings')
-        .insert([bookingData]);
+        .insert([{
+          ...bookingData,
+          payment_status: 'Unpaid',
+          booking_status: null,
+          cleaner_pay: null,
+          invoice_id: null,
+          invoice_link: null,
+          invoice_term: null,
+        }]);
 
       if (error) {
         console.error('Error duplicating booking:', error);
