@@ -123,6 +123,7 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
           title: 'Email Sent Successfully',
           description: `Payment method collection link sent to ${booking.email}. Customer can securely add their card details.`,
         });
+        onSuccess();
         onClose();
       }
     } catch (error: any) {
@@ -220,6 +221,7 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
           title: 'Payment Email Sent',
           description: `Service payment of £${amount} emailed to ${booking.email}${collectForFuture ? '. Automated payments enabled.' : ''}.`,
         });
+        onSuccess();
         onClose();
       }
     } catch (error: any) {
