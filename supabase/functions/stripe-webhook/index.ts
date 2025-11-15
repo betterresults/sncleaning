@@ -86,6 +86,56 @@ const handler = async (req: Request): Promise<Response> => {
         if (session.payment_method && session.customer) {
           await syncPaymentMethodToDatabase(stripe, supabaseAdmin, session.customer, session.payment_method);
         }
+
+        // Mark booking as paid when session completes (for checkout sessions)
+        if (session.payment_status === 'paid') {
+          try {
+            const sessionId = session.id;
+            const amountPaid = (session.amount_total || 0) / 100;
+
+            // Try upcoming bookings by session ID
+            const { data: upcoming, error: upErr } = await supabaseAdmin
+              .from('bookings')
+              .select('id, total_cost, payment_status')
+              .eq('invoice_id', sessionId)
+              .single();
+
+            if (!upErr && upcoming?.id) {
+              console.log(`[stripe-webhook] Found upcoming booking ${upcoming.id} for session ${sessionId}. Marking as paid.`);
+              await supabaseAdmin
+                .from('bookings')
+                .update({ 
+                  payment_status: 'paid',
+                  additional_details: `Payment captured via Stripe webhook: £${amountPaid} (Session: ${sessionId})` 
+                })
+                .eq('id', upcoming.id);
+              break;
+            }
+
+            // Try past bookings by session ID
+            const { data: past, error: pastErr } = await supabaseAdmin
+              .from('past_bookings')
+              .select('id, total_cost, payment_status')
+              .eq('invoice_id', sessionId)
+              .single();
+
+            if (!pastErr && past?.id) {
+              console.log(`[stripe-webhook] Found past booking ${past.id} for session ${sessionId}. Marking as paid.`);
+              await supabaseAdmin
+                .from('past_bookings')
+                .update({ 
+                  payment_status: 'paid',
+                  additional_details: `Payment captured via Stripe webhook: £${amountPaid} (Session: ${sessionId})` 
+                })
+                .eq('id', past.id);
+              break;
+            }
+
+            console.log(`[stripe-webhook] No booking found matching session ${sessionId}`);
+          } catch (error) {
+            console.error('[stripe-webhook] Error marking booking as paid from session:', error);
+          }
+        }
         break;
       }
 

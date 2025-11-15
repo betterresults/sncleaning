@@ -111,10 +111,16 @@ const handler = async (req: Request): Promise<Response> => {
 
       console.log('Created checkout session with card saving:', session.id);
 
-      // Persist link for the related booking(s)
+      // Persist link and session ID for webhook matching
       if (booking_id && session.url) {
-        await supabase.from('bookings').update({ invoice_link: session.url }).eq('id', booking_id);
-        await supabase.from('past_bookings').update({ invoice_link: session.url }).eq('id', booking_id);
+        await supabase.from('bookings').update({ 
+          invoice_link: session.url,
+          invoice_id: session.id  // Store session ID for webhook matching
+        }).eq('id', booking_id);
+        await supabase.from('past_bookings').update({ 
+          invoice_link: session.url,
+          invoice_id: session.id  // Store session ID for webhook matching
+        }).eq('id', booking_id);
       }
       if (Array.isArray(booking_ids) && booking_ids.length > 0 && session.url) {
         await supabase.from('bookings').update({ invoice_link: session.url }).in('id', booking_ids);
