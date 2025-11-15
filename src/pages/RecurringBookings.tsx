@@ -300,7 +300,10 @@ export default function RecurringBookings() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-xl font-bold text-foreground tracking-tight">{service.cleaning_type}</h3>
                     <Badge className={getFrequencyBadgeColor(service.frequently)}>
-                      {service.frequently}
+                      {service.frequently === 'weekly' ? 'Weekly' : 
+                       service.frequently === 'bi-weekly' ? 'Bi-Weekly' : 
+                       service.frequently === 'monthly' ? 'Monthly' : 
+                       service.frequently}
                     </Badge>
                     {service.postponed && (
                       <Badge variant="outline" className="border-orange-300 text-orange-700 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400">

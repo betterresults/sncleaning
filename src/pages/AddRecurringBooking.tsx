@@ -353,7 +353,7 @@ export default function AddRecurringBooking() {
       
       // Determine interval based on frequency
       let interval = '7'; // Default to weekly
-      if (formData.frequently === 'fortnightly') interval = '14';
+      if (formData.frequently === 'bi-weekly') interval = '14';
       if (formData.frequently === 'monthly') interval = '30';
       
       const submitData = {
