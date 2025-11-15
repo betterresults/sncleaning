@@ -8,7 +8,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Edit, Trash2, Copy, X, UserPlus, DollarSign, Repeat, MoreHorizontal, Clock, MapPin, User, Mail, Phone, Send, Calendar, Camera } from 'lucide-react';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
-import { InvoilessPaymentDialog } from '@/components/payments/InvoilessPaymentDialog';
 import InvoilessInvoiceDialog from '@/components/payments/InvoilessInvoiceDialog';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -121,8 +120,6 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
   const [bookingToCancel, setBookingToCancel] = useState<number | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<Booking | null>(null);
-  const [invoilessDialogOpen, setInvoilessDialogOpen] = useState(false);
-  const [selectedBookingForInvoiless, setSelectedBookingForInvoiless] = useState<Booking | null>(null);
   const [invoiceSendDialogOpen, setInvoiceSendDialogOpen] = useState(false);
   const [selectedBookingForInvoiceSend, setSelectedBookingForInvoiceSend] = useState<Booking | null>(null);
   const { toast } = useToast();
@@ -351,17 +348,12 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
   const handlePaymentAction = (booking: Booking) => {
     const paymentMethod = booking.payment_method?.toLowerCase() || '';
     if (paymentMethod.includes('invoiless') || paymentMethod.includes('invoice')) {
-      setSelectedBookingForInvoiless(booking);
-      setInvoilessDialogOpen(true);
+      setSelectedBookingForInvoiceSend(booking);
+      setInvoiceSendDialogOpen(true);
     } else {
       setSelectedBookingForPayment(booking);
       setPaymentDialogOpen(true);
     }
-  };
-
-  const handleSendInvoice = (booking: Booking) => {
-    setSelectedBookingForInvoiceSend(booking);
-    setInvoiceSendDialogOpen(true);
   };
 
   const handleCancel = (bookingId: number) => {
@@ -783,12 +775,6 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
                       <DollarSign className="w-4 h-4 mr-2" />
                       {booking.payment_method === 'Invoiless' ? 'Manage Invoice' : 'Manage Payment'}
                     </DropdownMenuItem>
-                    {booking.payment_method === 'Invoiless' && (
-                      <DropdownMenuItem onClick={() => handleSendInvoice(booking)}>
-                        <Send className="w-4 h-4 mr-2" />
-                        Send Invoice
-                      </DropdownMenuItem>
-                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => handleCancel(booking.id)} className="text-orange-600">
                       <X className="w-4 h-4 mr-2" />
@@ -929,12 +915,6 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
                       <DollarSign className="w-4 h-4 mr-2" />
                       {booking.payment_method === 'Invoiless' ? 'Manage Invoice' : 'Manage Payment'}
                     </DropdownMenuItem>
-                    {booking.payment_method === 'Invoiless' && (
-                      <DropdownMenuItem onClick={() => handleSendInvoice(booking)}>
-                        <Send className="w-4 h-4 mr-2" />
-                        Send Invoice
-                      </DropdownMenuItem>
-                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => handleCancel(booking.id)} className="text-orange-600">
                       <X className="w-4 h-4 mr-2" />
@@ -1113,21 +1093,6 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
           fetchData();
           setPaymentDialogOpen(false);
           setSelectedBookingForPayment(null);
-        }}
-      />
-
-      <InvoilessPaymentDialog
-        booking={selectedBookingForInvoiless || {} as any}
-        isOpen={invoilessDialogOpen}
-        bookingType="upcoming"
-        onClose={() => {
-          setInvoilessDialogOpen(false);
-          setSelectedBookingForInvoiless(null);
-        }}
-        onSuccess={() => {
-          fetchData();
-          setInvoilessDialogOpen(false);
-          setSelectedBookingForInvoiless(null);
         }}
       />
 
