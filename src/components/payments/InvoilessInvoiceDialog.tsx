@@ -36,13 +36,37 @@ const InvoilessInvoiceDialog = ({ booking, isOpen, onClose, onSuccess }: Invoile
 
   useEffect(() => {
     if (booking) {
-      // Set default due date to booking date or 7 days from today
       const bookingDate = new Date(booking.date_time);
-      const defaultDueDate = bookingDate > new Date() ? bookingDate : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-      setDueDate(format(defaultDueDate, 'yyyy-MM-dd'));
-      setInvoiceTerm(booking.invoice_term || 7);
+      const term = booking.invoice_term || 7;
+      setInvoiceTerm(term);
+      
+      // Calculate due date based on invoice term
+      const calculatedDueDate = new Date(bookingDate);
+      calculatedDueDate.setDate(calculatedDueDate.getDate() + term);
+      setDueDate(format(calculatedDueDate, 'yyyy-MM-dd'));
     }
   }, [booking]);
+
+  const handleDueDateChange = (newDate: string) => {
+    setDueDate(newDate);
+    if (newDate && booking) {
+      const bookingDate = new Date(booking.date_time);
+      const due = new Date(newDate);
+      const diffTime = due.getTime() - bookingDate.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      setInvoiceTerm(diffDays > 0 ? diffDays : 0);
+    }
+  };
+
+  const handleInvoiceTermChange = (term: number) => {
+    setInvoiceTerm(term);
+    if (booking) {
+      const bookingDate = new Date(booking.date_time);
+      const calculatedDueDate = new Date(bookingDate);
+      calculatedDueDate.setDate(calculatedDueDate.getDate() + term);
+      setDueDate(format(calculatedDueDate, 'yyyy-MM-dd'));
+    }
+  };
 
   const handleSendInvoice = async () => {
     if (!booking) return;
@@ -176,7 +200,7 @@ const InvoilessInvoiceDialog = ({ booking, isOpen, onClose, onSuccess }: Invoile
                     id="dueDate"
                     type="date"
                     value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
+                    onChange={(e) => handleDueDateChange(e.target.value)}
                     className="h-12 rounded-xl pl-11 text-base"
                     min={format(new Date(), 'yyyy-MM-dd')}
                   />
@@ -202,10 +226,10 @@ const InvoilessInvoiceDialog = ({ booking, isOpen, onClose, onSuccess }: Invoile
                     id="invoiceTerm"
                     type="number"
                     value={invoiceTerm}
-                    onChange={(e) => setInvoiceTerm(parseInt(e.target.value) || 7)}
+                    onChange={(e) => handleInvoiceTermChange(parseInt(e.target.value) || 0)}
                     className="h-12 rounded-xl pl-11 text-base"
-                    min="1"
-                    max="90"
+                    min="0"
+                    max="365"
                   />
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 </div>
