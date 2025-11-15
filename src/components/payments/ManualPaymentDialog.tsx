@@ -404,7 +404,7 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
   const isFailedPayment = booking.payment_status?.toLowerCase() === 'failed';
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="max-w-[100vw] max-h-[100vh] w-full h-full p-0 m-0 rounded-none">
         {/* Header with Back Button */}
         <div className="bg-gradient-to-br from-slate-600 via-slate-700 to-slate-800 p-6">
