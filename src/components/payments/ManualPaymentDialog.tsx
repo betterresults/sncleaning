@@ -55,6 +55,7 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
   const [collectForFuture, setCollectForFuture] = useState(true);
   const [newPaymentStatus, setNewPaymentStatus] = useState<string>('');
   const [statusPopoverOpen, setStatusPopoverOpen] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -323,7 +324,7 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
 
     const normalized = status.toLowerCase();
     console.log('Updating status to:', normalized);
-    setLoading(true);
+    setStatusLoading(true);
 
     try {
       // 1) Try updating bookings and check affected rows
@@ -367,8 +368,6 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
         title: 'Success',
         description: 'Payment status updated successfully',
       });
-
-      onSuccess();
     } catch (error: any) {
       console.error('Status update error:', error);
       toast({
@@ -377,7 +376,7 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
         variant: 'destructive',
       });
     } finally {
-      setLoading(false);
+      setStatusLoading(false);
     }
   };
   const getStatusColor = (status: string) => {
@@ -451,9 +450,17 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
                     <DropdownMenuTrigger asChild>
                       <Button 
                         variant="outline"
+                        disabled={statusLoading}
                         className={`w-full justify-center h-9 rounded-xl font-semibold border-2 ${getStatusColor(newPaymentStatus || booking.payment_status)}`}
                       >
-                        {newPaymentStatus || booking.payment_status || 'Unknown'}
+                        {statusLoading ? (
+                          <div className="flex items-center gap-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                            Updating...
+                          </div>
+                        ) : (
+                          newPaymentStatus || booking.payment_status || 'Unknown'
+                        )}
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48 p-1">
