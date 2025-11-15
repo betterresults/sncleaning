@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { usePaymentMethods } from '@/hooks/useCompanySettings';
 
 interface PastBooking {
   id: number;
@@ -51,7 +52,9 @@ const EditPastBookingDialog: React.FC<EditPastBookingDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState('');
-  const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
+  
+  // Fetch dynamic payment methods from company settings
+  const { data: paymentMethods } = usePaymentMethods();
   
   const [formData, setFormData] = useState({
     first_name: '',
@@ -70,29 +73,6 @@ const EditPastBookingDialog: React.FC<EditPastBookingDialogProps> = ({
     booking_status: ''
   });
 
-  // Fetch available payment methods from database
-  const fetchPaymentMethods = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('past_bookings')
-        .select('payment_method')
-        .not('payment_method', 'is', null)
-        .neq('payment_method', '');
-
-      if (error) throw error;
-
-      const uniqueMethods = [...new Set(data.map(item => item.payment_method).filter(Boolean))];
-      setPaymentMethods(uniqueMethods.sort());
-    } catch (error) {
-      console.error('Error fetching payment methods:', error);
-    }
-  };
-
-  useEffect(() => {
-    if (open) {
-      fetchPaymentMethods();
-    }
-  }, [open]);
 
   useEffect(() => {
     if (booking && open) {
@@ -323,11 +303,14 @@ const EditPastBookingDialog: React.FC<EditPastBookingDialogProps> = ({
                   className="w-full p-2 border border-input rounded-md bg-background"
                 >
                   <option value="">Select Payment Method</option>
-                  {paymentMethods.map(method => (
-                    <option key={method} value={method}>
-                      {method}
+                  {paymentMethods?.map(method => (
+                    <option key={method.key} value={method.key}>
+                      {method.label}
                     </option>
                   ))}
+                  {(!paymentMethods || paymentMethods.length === 0) && (
+                    <option value="" disabled>No payment methods configured</option>
+                  )}
                 </select>
               </div>
             </div>

@@ -17,7 +17,7 @@ import { User, Calendar, MapPin, CreditCard, UserCheck, Clock, Home, Phone, Mail
 import { EmailNotificationConfirmDialog } from '@/components/notifications/EmailNotificationConfirmDialog';
 import { useBookingEmailPrompt } from '@/hooks/useBookingEmailPrompt';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useServiceTypes, useCleaningTypes } from '@/hooks/useCompanySettings';
+import { useServiceTypes, useCleaningTypes, usePaymentMethods } from '@/hooks/useCompanySettings';
 
 interface EditBookingDialogProps {
   booking: any;
@@ -40,9 +40,10 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [isSameDayCleaning, setIsSameDayCleaning] = useState(false);
   
-  // Fetch dynamic service types and cleaning types
+  // Fetch dynamic service types, cleaning types, and payment methods
   const { data: serviceTypes } = useServiceTypes();
   const { data: cleaningTypes } = useCleaningTypes();
+  const { data: paymentMethods } = usePaymentMethods();
   
   const {
     showConfirmDialog,
@@ -669,9 +670,14 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Stripe">Stripe</SelectItem>
-                            <SelectItem value="Invoiless">Invoiless</SelectItem>
-                            <SelectItem value="Cash">Cash</SelectItem>
+                            {paymentMethods?.map((method) => (
+                              <SelectItem key={method.key} value={method.key}>
+                                {method.label}
+                              </SelectItem>
+                            ))}
+                            {(!paymentMethods || paymentMethods.length === 0) && (
+                              <SelectItem value="none" disabled>No payment methods configured</SelectItem>
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
