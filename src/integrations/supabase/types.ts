@@ -1303,6 +1303,7 @@ export type Database = {
           entity_type: string | null
           error_message: string | null
           id: string
+          notification_type: string
           opened_at: string | null
           recipient_email: string
           recipient_type: string
@@ -1321,6 +1322,7 @@ export type Database = {
           entity_type?: string | null
           error_message?: string | null
           id?: string
+          notification_type?: string
           opened_at?: string | null
           recipient_email: string
           recipient_type: string
@@ -1339,6 +1341,7 @@ export type Database = {
           entity_type?: string | null
           error_message?: string | null
           id?: string
+          notification_type?: string
           opened_at?: string | null
           recipient_email?: string
           recipient_type?: string
@@ -2064,6 +2067,56 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      sms_reminders_queue: {
+        Row: {
+          amount: number
+          booking_id: number
+          created_at: string
+          customer_name: string
+          error_message: string | null
+          id: string
+          payment_link: string
+          phone_number: string
+          send_at: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          amount: number
+          booking_id: number
+          created_at?: string
+          customer_name: string
+          error_message?: string | null
+          id?: string
+          payment_link: string
+          phone_number: string
+          send_at: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          booking_id?: number
+          created_at?: string
+          customer_name?: string
+          error_message?: string | null
+          id?: string
+          payment_link?: string
+          phone_number?: string
+          send_at?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_booking_id"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sms_templates: {
         Row: {
