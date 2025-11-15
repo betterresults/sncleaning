@@ -337,7 +337,10 @@ export default function RecurringBookings() {
                         day: 'numeric', 
                         month: 'short', 
                         year: 'numeric' 
-                      })} at {service.start_time}
+                      })} at {service.start_time ? new Date(`2000-01-01T${service.start_time}`).toLocaleTimeString('en-GB', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }) : 'Not set'}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
