@@ -203,6 +203,9 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
         date_only: dateOnly,
         time_only: timeOnly,
         payment_status: 'Unpaid', // Reset payment status for new booking
+        invoice_id: null, // Reset invoice data
+        invoice_link: null, // Reset invoice data
+        invoice_term: null, // Reset invoice data
         cleaner: assignedCleaner, // Use determined cleaner assignment
         cleaner_pay: null, // Reset cleaner pay
         booking_status: null, // Reset booking status
