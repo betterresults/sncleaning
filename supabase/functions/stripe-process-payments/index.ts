@@ -32,13 +32,14 @@ serve(async (req) => {
     let readyToCapture = [] // Initialize here for scope
 
     // 1. Find bookings that need payment authorization (within next 24 hours, including 2hrs buffer for missed ones)
-    // CRITICAL: Only include bookings that are truly unpaid to prevent double charging
+    // CRITICAL: Only include bookings that are truly unpaid AND don't already have an invoice_id to prevent double charging
     const { data: bookingsToAuthorize, error: authorizeError } = await supabaseClient
       .from('bookings')
-      .select('id, date_time, total_cost, customer, payment_status')
+      .select('id, date_time, total_cost, customer, payment_status, invoice_id')
       .gte('date_time', authorizationWindowStart.toISOString())
       .lte('date_time', authorizationWindowEnd.toISOString())
       .in('payment_status', ['Unpaid', 'pending', 'failed']) // ONLY truly unpaid bookings
+      .is('invoice_id', null) // Skip bookings that already have an invoice/payment intent
       .not('customer', 'is', null)
 
     if (authorizeError) {
@@ -100,6 +101,8 @@ serve(async (req) => {
       .select('id, date_time, invoice_id, total_hours, payment_status')
       .eq('payment_status', 'authorized')
       .not('invoice_id', 'is', null)
+      .order('date_time', { ascending: false })
+      .limit(50) // Limit to prevent processing too many at once
 
     if (pastCaptureError) {
       console.error('Error fetching past bookings to capture:', pastCaptureError)
