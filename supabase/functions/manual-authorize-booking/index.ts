@@ -26,18 +26,6 @@ serve(async (req) => {
 
     console.log(`Manual authorization request for booking ${bookingId}`)
 
-    // Reset payment status to Unpaid first
-    const { error: resetError } = await supabaseClient
-      .from('bookings')
-      .update({ payment_status: 'Unpaid' })
-      .eq('id', bookingId)
-
-    if (resetError) {
-      console.error('Error resetting payment status:', resetError)
-    } else {
-      console.log(`Reset payment status to Unpaid for booking ${bookingId}`)
-    }
-
     // Call the stripe-authorize-payment function
     const { data: authResult, error: authError } = await supabaseClient.functions.invoke('stripe-authorize-payment', {
       body: { bookingId: bookingId }
