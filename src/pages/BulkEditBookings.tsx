@@ -24,6 +24,8 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { adminNavigation } from '@/lib/navigationItems';
+import BookingsPagination from '@/components/cleaner/BookingsPagination';
+import TableControls from '@/components/cleaner/TableControls';
 
 interface Booking {
   id: number;
@@ -93,6 +95,9 @@ const BulkEditBookings = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [selectedBookings, setSelectedBookings] = useState<number[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [editType, setEditType] = useState<string>('total_cost');
   const [newValue, setNewValue] = useState<string>('');
@@ -971,27 +976,18 @@ const BulkEditBookings = () => {
                   </CardContent>
                 </Card>
 
-                {/* Results Summary */}
-                <div className="flex items-center justify-between px-1">
-                  <div className="text-sm text-muted-foreground">
-                    Showing {filteredBookings.length} of {bookings.length} bookings
-                    {filteredBookings.length !== bookings.length && (
-                      <Button
-                        variant="link"
-                        size="sm"
-                        onClick={clearFilters}
-                        className="p-0 h-auto ml-2"
-                      >
-                        Clear filters
-                      </Button>
-                    )}
-                  </div>
-                  {selectedBookings.length > 0 && (
-                    <div className="text-sm font-medium text-primary">
-                      {selectedBookings.length} booking{selectedBookings.length !== 1 ? 's' : ''} selected
-                    </div>
-                  )}
-                </div>
+                {/* Table Controls */}
+                <TableControls
+                  itemsPerPage={itemsPerPage}
+                  onItemsPerPageChange={(value) => {
+                    setItemsPerPage(value);
+                    setCurrentPage(1);
+                  }}
+                  sortOrder={sortOrder}
+                  onSortOrderChange={setSortOrder}
+                  startIndex={(currentPage - 1) * itemsPerPage}
+                  totalBookings={filteredBookings.length}
+                />
 
                 {/* Bookings Table Card */}
                 <Card className="shadow-md border-0">
@@ -1024,7 +1020,20 @@ const BulkEditBookings = () => {
                               </TableCell>
                             </TableRow>
                           ) : (
-                            filteredBookings.map((booking) => (
+                            (() => {
+                              // Sort bookings
+                              const sortedBookings = [...filteredBookings].sort((a, b) => {
+                                const dateA = new Date(a.date_time).getTime();
+                                const dateB = new Date(b.date_time).getTime();
+                                return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+                              });
+                              
+                              // Paginate bookings
+                              const startIndex = (currentPage - 1) * itemsPerPage;
+                              const endIndex = startIndex + itemsPerPage;
+                              const paginatedBookings = sortedBookings.slice(startIndex, endIndex);
+                              
+                              return paginatedBookings.map((booking) => (
                               <TableRow key={booking.id} className="hover:bg-muted/50">
                                 <TableCell>
                                   <Checkbox
@@ -1064,13 +1073,23 @@ const BulkEditBookings = () => {
                                   </TableCell>
                                 )}
                               </TableRow>
-                            ))
+                              ));
+                            })()
                           )}
                         </TableBody>
                       </Table>
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Pagination */}
+                {filteredBookings.length > 0 && (
+                  <BookingsPagination
+                    currentPage={currentPage}
+                    totalPages={Math.ceil(filteredBookings.length / itemsPerPage)}
+                    onPageChange={setCurrentPage}
+                  />
+                )}
               </div>
             </main>
           </SidebarInset>
