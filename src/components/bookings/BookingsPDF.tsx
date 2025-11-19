@@ -99,9 +99,12 @@ interface BookingsPDFProps {
 }
 
 export const BookingsPDF: React.FC<BookingsPDFProps> = ({ bookings, title = "Bookings Report" }) => {
-  const totalCost = bookings.reduce((sum, booking) => sum + (booking.total_cost || 0), 0);
-  const paidCount = bookings.filter(b => b.payment_status === 'Paid').length;
-  const unpaidCount = bookings.filter(b => b.payment_status !== 'Paid').length;
+  const totalCost = bookings.reduce((sum, booking) => {
+    const cost = typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) : booking.total_cost;
+    return sum + (cost || 0);
+  }, 0);
+  const paidCount = bookings.filter(b => b.payment_status === 'Paid' || b.payment_status === 'paid').length;
+  const unpaidCount = bookings.filter(b => b.payment_status !== 'Paid' && b.payment_status !== 'paid').length;
 
   return (
     <Document>
@@ -140,7 +143,11 @@ export const BookingsPDF: React.FC<BookingsPDFProps> = ({ bookings, title = "Boo
               <Text style={styles.col5}>
                 {booking.address}, {booking.postcode}
               </Text>
-              <Text style={styles.col6}>£{booking.total_cost?.toFixed(2) || '0.00'}</Text>
+              <Text style={styles.col6}>
+                £{typeof booking.total_cost === 'string' 
+                  ? parseFloat(booking.total_cost).toFixed(2) 
+                  : (booking.total_cost?.toFixed(2) || '0.00')}
+              </Text>
             </View>
           ))}
         </View>
