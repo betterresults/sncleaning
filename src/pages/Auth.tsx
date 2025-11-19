@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import InstallPrompt from '@/components/InstallPrompt';
 import PWAInstallButton from '@/components/PWAInstallButton';
+import { isCapacitor } from '@/utils/capacitor';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -91,10 +92,12 @@ const Auth = () => {
       return <Navigate to="/customer-dashboard" replace />;
     }
     
-    // Redirect cleaners to cleaner dashboard
-    if (userRole === 'user' && cleanerId) {
-      return <Navigate to="/cleaner-dashboard" replace />;
-    }
+  // Redirect cleaners to mobile or desktop view
+  if (userRole === 'user' && cleanerId) {
+    const isMobileWeb = typeof window !== 'undefined' && window.innerWidth < 768;
+    const redirectPath = (isCapacitor() || isMobileWeb) ? '/cleaner-today' : '/cleaner-dashboard';
+    return <Navigate to={redirectPath} replace />;
+  }
     
     // Redirect customers to customer dashboard  
     if (userRole === 'guest' && customerId) {
