@@ -16,8 +16,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { LinenUsageEditor } from '@/components/dashboard/LinenUsageEditor';
-import { CreditCard } from 'lucide-react';
+import { CreditCard, Download } from 'lucide-react';
 import { useServiceTypes, useCleaningTypes, ServiceType, CleaningType } from '@/hooks/useCompanySettings';
+import { pdf } from '@react-pdf/renderer';
+import { BookingsPDF } from '@/components/bookings/BookingsPDF';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
@@ -386,6 +388,40 @@ const BulkEditBookings = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (selectedBookings.length === 0) {
+      toast({
+        title: "No Selection",
+        description: "Please select at least one booking to download PDF.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const selectedBookingsData = bookings.filter(b => selectedBookings.includes(b.id));
+      const blob = await pdf(<BookingsPDF bookings={selectedBookingsData} title="Past Bookings Report" />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `past-bookings-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "PDF Downloaded",
+        description: `Successfully downloaded ${selectedBookings.length} booking${selectedBookings.length !== 1 ? 's' : ''}.`,
+      });
+    } catch (error: any) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "PDF Generation Failed",
+        description: error.message || "Failed to generate PDF.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -897,22 +933,41 @@ const BulkEditBookings = () => {
                     </div>
 
                     {/* Stripe Payment Links Section */}
-                    <div className="mt-6 pt-6 border-t">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h3 className="font-semibold text-foreground">Stripe Payment & Card Collection</h3>
-                          <p className="text-sm text-muted-foreground mt-1">Send payment links and collect card details for future bookings</p>
+                    {bookingType === 'past' ? (
+                      <div className="mt-6 pt-6 border-t">
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <h3 className="font-semibold text-foreground">Export Bookings</h3>
+                            <p className="text-sm text-muted-foreground mt-1">Download selected bookings as a PDF report</p>
+                          </div>
                         </div>
+                        <Button 
+                          onClick={handleDownloadPDF}
+                          disabled={selectedBookings.length === 0}
+                          className="w-full bg-primary hover:bg-primary/90"
+                        >
+                          <Download className="mr-2 h-4 w-4" />
+                          Download PDF ({selectedBookings.length} booking{selectedBookings.length !== 1 ? 's' : ''})
+                        </Button>
                       </div>
-                      <Button 
-                        onClick={handleBulkSendPaymentLinks}
-                        disabled={sendingPaymentLinks || selectedBookings.length === 0}
-                        className="w-full bg-primary hover:bg-primary/90"
-                      >
-                        <CreditCard className="mr-2 h-4 w-4" />
-                        {sendingPaymentLinks ? 'Sending...' : `Send Payment Links (${selectedBookings.length} booking${selectedBookings.length !== 1 ? 's' : ''})`}
-                      </Button>
-                    </div>
+                    ) : (
+                      <div className="mt-6 pt-6 border-t">
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <h3 className="font-semibold text-foreground">Stripe Payment & Card Collection</h3>
+                            <p className="text-sm text-muted-foreground mt-1">Send payment links and collect card details for future bookings</p>
+                          </div>
+                        </div>
+                        <Button 
+                          onClick={handleBulkSendPaymentLinks}
+                          disabled={sendingPaymentLinks || selectedBookings.length === 0}
+                          className="w-full bg-primary hover:bg-primary/90"
+                        >
+                          <CreditCard className="mr-2 h-4 w-4" />
+                          {sendingPaymentLinks ? 'Sending...' : `Send Payment Links (${selectedBookings.length} booking${selectedBookings.length !== 1 ? 's' : ''})`}
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
