@@ -775,6 +775,8 @@ interface FileUploadSectionProps {
 }
 
 const FileUploadSection = ({ title, color, files, onFileSelect, onRemove, disabled }: FileUploadSectionProps) => {
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  
   const colorClasses = {
     blue: 'from-blue-50 to-blue-100 border-blue-200',
     green: 'from-green-50 to-green-100 border-green-200',
@@ -787,6 +789,39 @@ const FileUploadSection = ({ title, color, files, onFileSelect, onRemove, disabl
     orange: 'bg-orange-500',
   };
 
+  const handleNativePhotoPicker = async () => {
+    if (disabled) return;
+    
+    try {
+      const { Capacitor } = await import('@capacitor/core');
+      
+      if (Capacitor.isNativePlatform()) {
+        // Use native picker on mobile apps
+        const { pickFilesNative } = await import('@/utils/nativeFilePicker');
+        const nativeFiles = await pickFilesNative({ multiple: true });
+        
+        if (nativeFiles.length > 0) {
+          // Create a synthetic event to pass to onFileSelect
+          const dataTransfer = new DataTransfer();
+          nativeFiles.forEach(file => dataTransfer.items.add(file));
+          
+          const syntheticEvent = {
+            target: { files: dataTransfer.files }
+          } as React.ChangeEvent<HTMLInputElement>;
+          
+          onFileSelect(syntheticEvent);
+        }
+      } else {
+        // Fall back to regular file input on web
+        fileInputRef.current?.click();
+      }
+    } catch (error) {
+      console.error('Error picking files:', error);
+      // Fall back to regular file input
+      fileInputRef.current?.click();
+    }
+  };
+
   return (
     <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] p-6">
       <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
@@ -794,18 +829,22 @@ const FileUploadSection = ({ title, color, files, onFileSelect, onRemove, disabl
         {title}
       </h3>
       
-      <div className={`relative border-2 border-dashed rounded-2xl p-6 bg-gradient-to-br ${colorClasses[color]} mb-4 transition-all hover:shadow-md`}>
+      <div 
+        className={`relative border-2 border-dashed rounded-2xl p-6 bg-gradient-to-br ${colorClasses[color]} mb-4 transition-all hover:shadow-md cursor-pointer`}
+        onClick={handleNativePhotoPicker}
+      >
         <input
+          ref={fileInputRef}
           type="file"
           multiple
           accept="image/*,.pdf"
           onChange={onFileSelect}
           disabled={disabled}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          className="hidden"
         />
         <div className="text-center">
           <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-          <p className="text-sm font-medium text-foreground">Click to upload</p>
+          <p className="text-sm font-medium text-foreground">Tap to select photos</p>
           <p className="text-xs text-muted-foreground mt-1">Images or PDF files</p>
         </div>
       </div>
