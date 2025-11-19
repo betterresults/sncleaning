@@ -8,9 +8,14 @@ import { cleanerNavigation } from '@/lib/navigationItems';
 import { useAdminCleaner } from '@/contexts/AdminCleanerContext';
 import AdminCleanerSelector from '@/components/admin/AdminCleanerSelector';
 import CleanerAvailableBookings from '@/components/cleaner/CleanerAvailableBookings';
+import CleanerBottomNav from '@/components/cleaner/CleanerBottomNav';
+import { isCapacitor } from '@/utils/capacitor';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const CleanerAvailableBookingsPage = () => {
   const { user, userRole, cleanerId, loading, signOut } = useAuth();
+  const isMobile = useIsMobile();
+  const isMobileView = isCapacitor() || isMobile;
 
   const handleSignOut = async () => {
     try {
@@ -33,6 +38,31 @@ const CleanerAvailableBookingsPage = () => {
     return <Navigate to="/auth" replace />;
   }
 
+  // Mobile/App view with bottom navigation
+  if (isMobileView) {
+    return (
+      <div className="min-h-screen bg-background content-bottom-spacer">
+        {/* Header - hidden in mobile view */}
+        {!isMobileView && (
+          <div className="sticky top-0 z-40 bg-background border-b border-border">
+            <div className="px-4 py-4">
+              <h1 className="text-2xl font-bold text-foreground">Available Jobs</h1>
+            </div>
+          </div>
+        )}
+
+        {/* Content */}
+        <div className="p-4">
+          {userRole === 'admin' && <AdminCleanerSelector />}
+          <CleanerAvailableBookings />
+        </div>
+
+        <CleanerBottomNav />
+      </div>
+    );
+  }
+
+  // Desktop view with sidebar
   return (
     <SidebarProvider>
       <div className="min-h-screen flex flex-col w-full bg-gray-50">
