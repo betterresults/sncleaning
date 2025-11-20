@@ -11,10 +11,10 @@ export const compressImage = async (
   customOptions?: CompressionOptions
 ): Promise<File> => {
   const options = {
-    maxSizeMB: customOptions?.maxSizeMB ?? 2,
-    maxWidthOrHeight: customOptions?.maxWidthOrHeight ?? 1920,
+    maxSizeMB: customOptions?.maxSizeMB ?? 0.8,
+    maxWidthOrHeight: customOptions?.maxWidthOrHeight ?? 1600,
     useWebWorker: true,
-    initialQuality: customOptions?.initialQuality ?? 0.8,
+    initialQuality: customOptions?.initialQuality ?? 0.70,
   };
   
   try {

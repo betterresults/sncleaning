@@ -13,6 +13,10 @@ import { Upload, X, Camera, AlertTriangle, Trash2, Eye, Download, CheckSquare, S
 import { compressImage } from '@/utils/imageCompression';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { isCapacitor } from '@/utils/capacitor';
+import { savePhotoLocally, initPhotoStorage } from '@/utils/photoStorage';
+import { addToQueue } from '@/utils/photoQueue';
+import { startBackgroundSync, syncPhotos } from '@/utils/syncQueue';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -72,6 +76,12 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
     if (open) {
       fetchPhotos();
     }
+
+    // Initialize offline-first photo system on native platform
+    if (isCapacitor()) {
+      initPhotoStorage();
+      startBackgroundSync();
+    }
   }, [open, booking.id]);
 
   const fetchPhotos = async () => {
@@ -130,9 +140,63 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
     setTotalToUpload(allFiles.length);
     setUploadedCount(0);
 
-    const filePaths: string[] = [];
-
     try {
+      // LOCAL-FIRST APPROACH FOR NATIVE APP
+      if (isCapacitor()) {
+        console.log(`Saving ${allFiles.length} photos locally...`);
+        
+        // Save all photos locally and add to queue
+        for (let i = 0; i < allFiles.length; i++) {
+          const { file, type } = allFiles[i];
+          
+          // Compress image first
+          let fileToUpload = file;
+          const isImage = file.type.startsWith('image/');
+          if (isImage) {
+            try {
+              fileToUpload = await compressImage(file, {
+                maxSizeMB: 0.8,
+                maxWidthOrHeight: 1600,
+                initialQuality: 0.70,
+              });
+            } catch (error) {
+              console.error('Compression failed, using original:', error);
+            }
+          }
+
+          // Save to local storage
+          const localPhoto = await savePhotoLocally(fileToUpload, booking.id, type);
+          
+          // Add to upload queue
+          await addToQueue(localPhoto);
+          
+          setUploadedCount(i + 1);
+        }
+
+        // Trigger background sync
+        syncPhotos();
+
+        toast({
+          title: 'Photos saved!',
+          description: `${allFiles.length} photos saved locally and will sync in background`,
+        });
+
+        // Clear files and close
+        setBeforeFiles([]);
+        setAfterFiles([]);
+        setAdditionalFiles([]);
+        setAdditionalDetails('');
+        
+        // Refresh photos
+        await fetchPhotos();
+        
+        setUploading(false);
+        return;
+      }
+
+      // ORIGINAL CLOUD-UPLOAD APPROACH FOR WEB
+      const filePaths: string[] = [];
+
       for (let i = 0; i < allFiles.length; i++) {
         const { file, type } = allFiles[i];
         

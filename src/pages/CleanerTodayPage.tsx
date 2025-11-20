@@ -7,12 +7,16 @@ import { isCapacitor } from '@/utils/capacitor';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdminCleaner } from '@/contexts/AdminCleanerContext';
+import { usePhotoSync } from '@/hooks/usePhotoSync';
 
 const CleanerTodayPage = () => {
   const { user, userRole, cleanerId, loading } = useAuth();
   const { selectedCleanerId } = useAdminCleaner();
   const navigate = useNavigate();
   const [checkingBookings, setCheckingBookings] = useState(true);
+
+  // Initialize offline-first photo system
+  usePhotoSync();
 
   const effectiveCleanerId = userRole === 'admin' ? selectedCleanerId : cleanerId;
 
