@@ -2,6 +2,7 @@ import { Calendar, DollarSign, User, Briefcase } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useAvailableBookingsCount } from '@/hooks/useAvailableBookingsCount';
 import { cn } from '@/lib/utils';
+import SyncStatusBadge from './SyncStatusBadge';
 
 const CleanerBottomNav = () => {
   const { data: availableCount } = useAvailableBookingsCount();
@@ -31,8 +32,16 @@ const CleanerBottomNav = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50 pb-safe">
-      <div className="flex items-center justify-around h-16 max-w-screen-xl mx-auto">
+    <>
+      {/* Sync Status Badge - floating above nav */}
+      <div className="fixed bottom-20 left-0 right-0 flex justify-center z-40 px-4 pointer-events-none">
+        <div className="pointer-events-auto">
+          <SyncStatusBadge />
+        </div>
+      </div>
+
+      <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50 pb-safe">
+        <div className="flex items-center justify-around h-16 max-w-screen-xl mx-auto">
         {navItems.map((item) => (
           <NavLink
             key={item.path}
@@ -57,8 +66,9 @@ const CleanerBottomNav = () => {
             <span className="text-xs mt-1">{item.label}</span>
           </NavLink>
         ))}
-      </div>
-    </nav>
+        </div>
+      </nav>
+    </>
   );
 };
 
