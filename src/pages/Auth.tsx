@@ -93,7 +93,7 @@ const Auth = () => {
     }
     
   // Redirect cleaners to mobile or desktop view
-  if (userRole === 'user' && cleanerId) {
+  if (userRole === 'cleaner' && cleanerId) {
     const isMobileWeb = typeof window !== 'undefined' && window.innerWidth < 768;
     const redirectPath = (isCapacitor() || isMobileWeb) ? '/cleaner-today' : '/cleaner-dashboard';
     return <Navigate to={redirectPath} replace />;
