@@ -30,7 +30,7 @@ const CleanerTodayPage = () => {
     );
   }
 
-  if (!user || (userRole !== 'user' && userRole !== 'admin') || (userRole === 'user' && !cleanerId)) {
+  if (!user || (userRole !== 'cleaner' && userRole !== 'admin') || (userRole === 'cleaner' && !cleanerId)) {
     return <Navigate to="/auth" replace />;
   }
 
