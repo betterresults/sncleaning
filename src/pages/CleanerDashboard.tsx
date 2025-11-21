@@ -9,6 +9,7 @@ import { useAdminCleaner } from '@/contexts/AdminCleanerContext';
 import AdminCleanerSelector from '@/components/admin/AdminCleanerSelector';
 import CleanerUpcomingBookings from '@/components/cleaner/CleanerUpcomingBookings';
 import CleanerBottomNav from '@/components/cleaner/CleanerBottomNav';
+import CleanerTopNav from '@/components/cleaner/CleanerTopNav';
 import { isCapacitor } from '@/utils/capacitor';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -42,15 +43,20 @@ const CleanerDashboard = () => {
 
   if (isMobileView) {
     return (
-      <div className="min-h-screen bg-background content-bottom-spacer">
-        <div className="p-4">
-          {userRole === 'admin' && (
-            <div className="mb-4">
-              <AdminCleanerSelector />
-            </div>
-          )}
-          <CleanerUpcomingBookings />
-        </div>
+      <div className="min-h-screen bg-background">
+        <CleanerTopNav />
+        
+        <main className="pt-16 pb-20 content-bottom-spacer">
+          <div className="p-4">
+            {userRole === 'admin' && (
+              <div className="mb-4">
+                <AdminCleanerSelector />
+              </div>
+            )}
+            <CleanerUpcomingBookings />
+          </div>
+        </main>
+        
         <CleanerBottomNav />
       </div>
     );

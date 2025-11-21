@@ -13,6 +13,7 @@ import { Lock, User, Eye, EyeOff, LogOut } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import CleanerBottomNav from '@/components/cleaner/CleanerBottomNav';
+import CleanerTopNav from '@/components/cleaner/CleanerTopNav';
 import { isCapacitor } from '@/utils/capacitor';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -119,9 +120,11 @@ const CleanerSettings = () => {
   // Mobile view for native app and mobile browsers
   if (isMobileView) {
     return (
-      <div className="min-h-screen bg-background content-bottom-spacer">
-        {/* Content */}
-        <div className="p-4 space-y-4">
+      <div className="min-h-screen bg-background">
+        <CleanerTopNav />
+        
+        <main className="pt-16 pb-20 content-bottom-spacer">
+          <div className="p-4 space-y-4">
           {/* Account Information */}
           <Card>
             <CardHeader>
@@ -238,7 +241,8 @@ const CleanerSettings = () => {
               </Button>
             </CardContent>
           </Card>
-        </div>
+          </div>
+        </main>
 
         <CleanerBottomNav />
       </div>
