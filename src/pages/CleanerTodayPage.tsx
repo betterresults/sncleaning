@@ -17,6 +17,8 @@ const CleanerTodayPage = () => {
   const { data: todayCount, isLoading: countLoading } = useTodayBookingsCount();
   const navigate = useNavigate();
 
+  console.log('CleanerTodayPage state', { userRole, cleanerId, loading, todayCount, countLoading });
+
   // Initialize offline-first photo system
   usePhotoSync();
 

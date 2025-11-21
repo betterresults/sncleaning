@@ -44,6 +44,28 @@ serve(async (req) => {
       throw new Error('Booking not found')
     }
 
+    // Safety guard: avoid creating duplicate authorizations for the same booking
+    if (booking.invoice_id && ['authorized', 'Authorized', 'collecting', 'processing', 'requires_action'].includes(booking.payment_status || '')) {
+      console.log('Booking already has active Stripe intent, skipping new authorization', {
+        bookingId,
+        payment_status: booking.payment_status,
+        invoice_id: booking.invoice_id,
+      });
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          alreadyAuthorized: true,
+          paymentIntentId: booking.invoice_id,
+          status: booking.payment_status,
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        },
+      );
+    }
+
     // Get customer's payment methods (try default first, then any available)
     const { data: defaultPaymentMethods } = await supabaseClient
       .from('customer_payment_methods')
