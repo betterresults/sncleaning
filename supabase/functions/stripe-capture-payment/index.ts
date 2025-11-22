@@ -76,6 +76,19 @@ serve(async (req) => {
         throw new Error(`Database update error: ${updateError.message}`)
       }
 
+      // Log payment capture activity
+      await supabaseClient.rpc('log_activity', {
+        p_user_id: null,
+        p_action_type: 'payment_captured',
+        p_entity_type: 'payment',
+        p_entity_id: paymentIntent.id,
+        p_details: {
+          booking_id: bookingId,
+          amount: (paymentIntent.amount_received / 100).toFixed(2),
+          payment_intent_id: paymentIntent.id
+        }
+      })
+
       console.log('Payment captured for booking:', bookingId, 'Payment Intent:', paymentIntent.id)
 
       return new Response(
@@ -162,6 +175,21 @@ serve(async (req) => {
             console.error('Error updating booking payment status:', bookingError)
           } else {
             console.log('Updated payment status for bookings:', booking_ids)
+            
+            // Log payment capture activity
+            await supabaseClient.rpc('log_activity', {
+              p_user_id: null,
+              p_action_type: 'payment_captured',
+              p_entity_type: 'payment',
+              p_entity_id: paymentIntent.id,
+              p_details: {
+                booking_ids: booking_ids,
+                linen_order_ids: linen_order_ids,
+                amount: (amount / 100).toFixed(2),
+                payment_intent_id: paymentIntent.id,
+                description: description
+              }
+            })
           }
         }
 
@@ -201,6 +229,26 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error processing payment:', error)
+    
+    // Log payment failure
+    try {
+      const supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      )
+      
+      await supabaseClient.rpc('log_activity', {
+        p_user_id: null,
+        p_action_type: 'payment_failed',
+        p_entity_type: 'payment',
+        p_entity_id: null,
+        p_details: {
+          error_message: error.message
+        }
+      })
+    } catch (logError) {
+      console.error('Failed to log payment error:', logError)
+    }
     
     return new Response(
       JSON.stringify({ 

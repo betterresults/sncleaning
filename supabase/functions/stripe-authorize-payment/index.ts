@@ -133,6 +133,24 @@ serve(async (req) => {
       throw new Error(`Database update error: ${updateError.message}`)
     }
 
+    // Log activity for payment authorization
+    await supabaseClient.rpc('log_activity', {
+      p_user_id: null,
+      p_action_type: 'payment_authorized',
+      p_entity_type: 'payment',
+      p_entity_id: paymentIntent.id,
+      p_details: {
+        booking_id: bookingId,
+        customer_name: booking.customer?.first_name && booking.customer?.last_name 
+          ? `${booking.customer.first_name} ${booking.customer.last_name}`
+          : undefined,
+        customer_email: booking.customer?.email,
+        amount: (booking.total_cost || 0).toFixed(2),
+        payment_intent_id: paymentIntent.id,
+        booking_date: booking.date_only
+      }
+    })
+
     console.log('Payment authorized for booking:', bookingId, 'Payment Intent:', paymentIntent.id)
 
     return new Response(
@@ -164,6 +182,18 @@ serve(async (req) => {
           .from('bookings')
           .update({ payment_status: 'failed' })
           .eq('id', bookingId)
+        
+        // Log payment authorization failure
+        await supabaseClient.rpc('log_activity', {
+          p_user_id: null,
+          p_action_type: 'payment_authorization_failed',
+          p_entity_type: 'payment',
+          p_entity_id: bookingId.toString(),
+          p_details: {
+            booking_id: bookingId,
+            error_message: error.message
+          }
+        })
         
         // Get booking details for email notification
         const { data: booking } = await supabaseClient
