@@ -45,23 +45,45 @@ export const useNotifications = () => {
     const dismissed = getDismissedNotifications();
     if (dismissed.includes(log.id)) return null;
 
+    // Filter out automatic system deletions (when bookings move to past_bookings)
+    if (log.action_type === 'booking_deleted' && log.user_role === 'system') {
+      return null;
+    }
+
+    // Helper to get date from log details
+    const getDateString = (details: any): string => {
+      const dateValue = details?.booking_date || details?.date_time;
+      if (dateValue) {
+        try {
+          return new Date(dateValue).toLocaleDateString('en-GB', { 
+            day: '2-digit', 
+            month: 'short', 
+            year: 'numeric' 
+          });
+        } catch {
+          return 'unknown date';
+        }
+      }
+      return 'unknown date';
+    };
+
     let message = '';
     let type: Notification['type'] = 'system';
     let severity: Notification['severity'] = 'info';
 
     switch (log.action_type) {
       case 'booking_created':
-        message = `New booking - ${log.details?.customer_name || log.details?.customer_email || 'customer'} on ${log.details?.booking_date ? new Date(log.details.booking_date).toLocaleDateString('en-GB') : 'unknown date'}`;
+        message = `New booking - ${log.details?.customer_name || log.details?.customer_email || 'customer'} on ${getDateString(log.details)}`;
         type = 'booking';
         severity = 'success';
         break;
       case 'booking_cancelled':
-        message = `Booking cancelled - ${log.details?.customer_name || log.details?.customer_email || 'customer'} on ${log.details?.booking_date ? new Date(log.details.booking_date).toLocaleDateString('en-GB') : 'unknown date'}`;
+        message = `Booking cancelled - ${log.details?.customer_name || log.details?.customer_email || 'customer'} on ${getDateString(log.details)}`;
         type = 'booking';
         severity = 'warning';
         break;
       case 'booking_deleted':
-        message = `Booking #${log.details?.booking_id} deleted - ${log.details?.customer_name || 'customer'} on ${log.details?.booking_date ? new Date(log.details.booking_date).toLocaleDateString('en-GB') : 'unknown date'}`;
+        message = `Booking #${log.details?.booking_id || 'N/A'} deleted - ${log.details?.customer_name || log.details?.customer_email || 'customer'} on ${getDateString(log.details)}`;
         type = 'booking';
         severity = 'error';
         break;
@@ -75,20 +97,40 @@ export const useNotifications = () => {
         type = 'payment';
         severity = 'info';
         break;
+      case 'payment_authorized':
+        message = `Payment authorized - ${log.details?.customer_name || log.details?.customer_email || 'booking'} £${log.details?.amount || '0'}`;
+        type = 'payment';
+        severity = 'success';
+        break;
+      case 'payment_captured':
+        message = `Payment charged - ${log.details?.customer_name || log.details?.customer_email || 'booking'} £${log.details?.amount || '0'}`;
+        type = 'payment';
+        severity = 'success';
+        break;
+      case 'payment_failed':
+        message = `Payment failed - ${log.details?.customer_name || log.details?.customer_email || 'booking'} £${log.details?.amount || '0'}`;
+        type = 'payment';
+        severity = 'error';
+        break;
+      case 'payment_authorization_failed':
+        message = `Payment authorization failed - ${log.details?.customer_name || log.details?.customer_email || 'booking'}`;
+        type = 'payment';
+        severity = 'error';
+        break;
       case 'booking_status_changed':
         if (log.details?.new_status === 'completed') {
-          message = `Booking completed - ${log.details?.customer_name || log.details?.customer_email || 'customer'} on ${log.details?.booking_date ? new Date(log.details.booking_date).toLocaleDateString('en-GB') : 'unknown date'}`;
+          message = `Booking completed - ${log.details?.customer_name || log.details?.customer_email || 'customer'} on ${getDateString(log.details)}`;
           type = 'booking';
           severity = 'success';
         } else {
-          message = `Booking status: ${log.details?.new_status} - ${log.details?.customer_name || log.details?.customer_email || 'customer'} on ${log.details?.booking_date ? new Date(log.details.booking_date).toLocaleDateString('en-GB') : 'unknown date'}`;
+          message = `Booking status: ${log.details?.new_status} - ${log.details?.customer_name || log.details?.customer_email || 'customer'} on ${getDateString(log.details)}`;
           type = 'booking';
           severity = 'info';
         }
         break;
       case 'file_upload':
         if (log.details?.file_type?.includes('image')) {
-          message = `Photos uploaded - ${log.details?.customer_name || 'booking'} on ${log.details?.booking_date ? new Date(log.details.booking_date).toLocaleDateString('en-GB') : 'unknown date'}`;
+          message = `Photos uploaded - ${log.details?.customer_name || 'booking'} on ${getDateString(log.details)}`;
           type = 'booking';
           severity = 'info';
         }
