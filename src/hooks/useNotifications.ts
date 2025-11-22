@@ -12,6 +12,7 @@ export interface Notification {
   entityType?: string;
   actionType: string;
   dismissed?: boolean;
+  bookingTime?: string; // The actual booking time if available
 }
 
 export const useNotifications = () => {
@@ -141,6 +142,9 @@ export const useNotifications = () => {
 
     if (!message) return null;
 
+    // Extract booking time from details if available
+    const bookingTime = log.details?.date_time || log.details?.booking_date;
+
     return {
       id: log.id,
       message,
@@ -150,7 +154,8 @@ export const useNotifications = () => {
       entityId: log.entity_id,
       entityType: log.entity_type,
       actionType: log.action_type,
-      dismissed: false
+      dismissed: false,
+      bookingTime: bookingTime ? new Date(bookingTime).toISOString() : undefined
     };
   };
 

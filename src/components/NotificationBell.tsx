@@ -44,7 +44,9 @@ const NotificationBell = () => {
     }
   };
 
-  const getTimeLabel = (timestamp: string) => {
+  const getTimeLabel = (notification: Notification) => {
+    // Use booking time if available, otherwise use log timestamp
+    const timestamp = notification.bookingTime || notification.timestamp;
     const date = new Date(timestamp);
     if (isToday(date)) {
       return format(date, 'HH:mm');
@@ -129,7 +131,7 @@ const NotificationBell = () => {
                           {notification.type}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
-                          {getTimeLabel(notification.timestamp)}
+                          {getTimeLabel(notification)}
                         </span>
                       </div>
                     </div>
