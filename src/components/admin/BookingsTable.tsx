@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Edit, Trash2, Filter, Search, Settings, Copy, X } from 'lucide-react';
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 import DashboardStats from './DashboardStats';
 import EditBookingDialog from '../dashboard/EditBookingDialog';
 
@@ -61,6 +62,7 @@ interface Filters {
 
 const BookingsTable = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
@@ -275,9 +277,13 @@ const BookingsTable = () => {
 
   const handleCancel = async (bookingId: number) => {
     try {
+      // Update booking status to 'cancelled' - the database trigger will automatically:
+      // 1. Cancel the Stripe authorization if payment_status is 'authorized'
+      // 2. Move the booking to past_bookings table
+      // 3. Delete it from the bookings table
       const { error } = await supabase
         .from('bookings')
-        .update({ booking_status: 'Cancelled' })
+        .update({ booking_status: 'cancelled' })
         .eq('id', bookingId);
 
       if (error) {
@@ -285,6 +291,13 @@ const BookingsTable = () => {
         return;
       }
 
+      toast({
+        title: "Success",
+        description: "Booking cancelled successfully. Payment authorization has been released.",
+      });
+
+      // Wait a moment for the trigger to complete before refreshing
+      await new Promise(resolve => setTimeout(resolve, 1000));
       fetchData();
     } catch (error) {
       console.error('Error cancelling booking:', error);
