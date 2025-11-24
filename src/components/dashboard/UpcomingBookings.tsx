@@ -413,60 +413,26 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
     try {
       console.log('UpcomingBookings - Attempting to cancel booking...');
       
-      // First, get the booking data
-      const { data: bookingData, error: fetchError } = await supabase
-        .from('bookings')
-        .select('*')
-        .eq('id', bookingToCancel)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      // Update booking status to Cancelled
+      // Update booking status to 'cancelled' - the database trigger will automatically:
+      // 1. Cancel the Stripe authorization if payment_status is 'authorized'
+      // 2. Move the booking to past_bookings table
+      // 3. Delete it from the bookings table
       const { error: updateError } = await supabase
         .from('bookings')
-        .update({ booking_status: 'Cancelled' })
+        .update({ booking_status: 'cancelled' })
         .eq('id', bookingToCancel);
 
       if (updateError) throw updateError;
 
-      // Copy to past_bookings (only copy the fields that exist in past_bookings)
-      const { error: insertError } = await supabase
-        .from('past_bookings')
-        .insert([{
-          id: bookingData.id,
-          first_name: bookingData.first_name,
-          last_name: bookingData.last_name,
-          phone_number: bookingData.phone_number,
-          email: bookingData.email,
-          date_time: bookingData.date_time,
-          address: bookingData.address,
-          postcode: bookingData.postcode,
-          service_type: bookingData.service_type,
-          cleaning_type: bookingData.cleaning_type,
-          total_cost: String(bookingData.total_cost),
-          cleaner: bookingData.cleaner,
-          cleaner_pay: bookingData.cleaner_pay,
-          customer: bookingData.customer,
-          payment_status: bookingData.payment_status,
-          payment_method: bookingData.payment_method,
-          booking_status: 'Cancelled',
-          has_photos: bookingData.has_photos,
-          additional_details: bookingData.additional_details
-        }]);
-
-      if (insertError) {
-        console.error('Error copying to past_bookings:', insertError);
-        // Don't fail the whole operation if copy fails
-      }
-
-      console.log('UpcomingBookings - Booking cancelled and moved to past bookings');
+      console.log('UpcomingBookings - Booking cancelled, trigger will handle Stripe and moving to past_bookings');
 
       toast({
         title: "Booking cancelled",
-        description: "The booking has been successfully cancelled.",
+        description: "The booking has been successfully cancelled. Payment authorization has been released.",
       });
 
+      // Wait a moment for the trigger to complete before refreshing
+      await new Promise(resolve => setTimeout(resolve, 1000));
       fetchData();
     } catch (error) {
       console.error('Error cancelling booking:', error);
