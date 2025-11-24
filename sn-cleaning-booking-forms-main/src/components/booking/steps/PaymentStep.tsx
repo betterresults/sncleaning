@@ -962,34 +962,36 @@ useEffect(() => {
         </div>
       )}
 
-      {/* Cleaner Selection - Available for everyone */}
-      <div className="space-y-6">
-        <h3 className="text-2xl font-bold text-[#185166] mb-4 flex items-center gap-2">
-          <User className="h-6 w-6" />
-          Assign Cleaner (Optional)
-        </h3>
-        
-        <Select
-          value={data.cleanerId?.toString() || ''}
-          onValueChange={(value) => onUpdate({ cleanerId: value ? parseInt(value) : undefined })}
-        >
-          <SelectTrigger className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white">
-            <SelectValue placeholder="Select a cleaner (optional)..." />
-          </SelectTrigger>
-          <SelectContent className="bg-white z-50">
-            <SelectItem value="">No cleaner assigned</SelectItem>
-            {cleaners.map((cleaner) => (
-              <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
-                {cleaner.full_name || `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim()}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        
-        <p className="text-sm text-gray-600">
-          You can assign a cleaner now or leave it unassigned and assign later.
-        </p>
-      </div>
+      {/* Cleaner Selection - ADMIN ONLY */}
+      {isAdminMode && (
+        <div className="space-y-6">
+          <h3 className="text-2xl font-bold text-[#185166] mb-4 flex items-center gap-2">
+            <User className="h-6 w-6" />
+            Assign Cleaner (Optional)
+          </h3>
+          
+          <Select
+            value={data.cleanerId?.toString() || ''}
+            onValueChange={(value) => onUpdate({ cleanerId: value ? parseInt(value) : undefined })}
+          >
+            <SelectTrigger className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white">
+              <SelectValue placeholder="Select a cleaner (optional)..." />
+            </SelectTrigger>
+            <SelectContent className="bg-white z-50">
+              <SelectItem value="">No cleaner assigned</SelectItem>
+              {cleaners.map((cleaner) => (
+                <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
+                  {cleaner.full_name || `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim()}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <p className="text-sm text-gray-600">
+            You can assign a cleaner now or leave it unassigned and assign later.
+          </p>
+        </div>
+      )}
 
       {/* ADMIN MODE: Payment Method Selection */}
       {isAdminMode && data.customerId && !checkingPaymentMethods && (
