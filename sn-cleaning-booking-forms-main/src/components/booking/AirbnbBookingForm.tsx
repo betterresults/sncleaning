@@ -98,6 +98,7 @@ export interface BookingData {
   addressId?: string;
   selectedAddress?: any;
   paymentMethod?: string;
+  cleanerId?: number; // Cleaner assignment
 }
 
 const steps = [

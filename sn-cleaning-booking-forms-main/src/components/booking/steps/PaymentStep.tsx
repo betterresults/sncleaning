@@ -16,6 +16,7 @@ import { usePaymentMethodCheck } from '@/hooks/usePaymentMethodCheck';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { User } from 'lucide-react';
 
 // Simple auth check without using AuthContext
 const useSimpleAuth = () => {
@@ -94,7 +95,8 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   const [companyPaymentMethods, setCompanyPaymentMethods] = useState<string[]>([]);
   const [selectedAdminPaymentMethod, setSelectedAdminPaymentMethod] = useState<string>('');
   const [adminCustomerPaymentMethods, setAdminCustomerPaymentMethods] = useState<any[]>([]);
-const [editDetails, setEditDetails] = useState(false);
+  const [editDetails, setEditDetails] = useState(false);
+  const [cleaners, setCleaners] = useState<any[]>([]);
   
 // Use admin-selected customerId or logged-in/selected customerId
 const { selectedCustomerId } = useAdminCustomer();
@@ -210,6 +212,21 @@ useEffect(() => {
       fetchCompanyPaymentMethods();
     }
   }, [isAdminMode]);
+
+  // Fetch cleaners list
+  useEffect(() => {
+    const fetchCleaners = async () => {
+      const { data: cleanersData, error } = await supabase
+        .from('cleaners')
+        .select('id, first_name, last_name, full_name')
+        .order('first_name', { ascending: true });
+      
+      if (!error && cleanersData) {
+        setCleaners(cleanersData);
+      }
+    };
+    fetchCleaners();
+  }, []);
 
   // Get default payment method if available (only for logged-in customers or admin-selected)
   const defaultPaymentMethod = effectiveCustomerId && paymentMethods.length > 0 
@@ -393,7 +410,8 @@ useEffect(() => {
           
           // Notes
           notes: data.notes,
-          additionalDetails: data
+          additionalDetails: data,
+          cleanerId: data.cleanerId // Include cleaner assignment
         }, true);
 
         if (!result.success || !result.bookingId) {
@@ -473,7 +491,8 @@ useEffect(() => {
         totalHours: data.totalHours,
         hourlyRate: data.hourlyRate,
         notes: data.notes,
-        additionalDetails: data
+        additionalDetails: data,
+        cleanerId: data.cleanerId // Include cleaner assignment
       };
 
       // Check if using a saved payment method (customer's or admin-selected)
@@ -942,6 +961,35 @@ useEffect(() => {
           </div>
         </div>
       )}
+
+      {/* Cleaner Selection - Available for everyone */}
+      <div className="space-y-6">
+        <h3 className="text-2xl font-bold text-[#185166] mb-4 flex items-center gap-2">
+          <User className="h-6 w-6" />
+          Assign Cleaner (Optional)
+        </h3>
+        
+        <Select
+          value={data.cleanerId?.toString() || ''}
+          onValueChange={(value) => onUpdate({ cleanerId: value ? parseInt(value) : undefined })}
+        >
+          <SelectTrigger className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white">
+            <SelectValue placeholder="Select a cleaner (optional)..." />
+          </SelectTrigger>
+          <SelectContent className="bg-white z-50">
+            <SelectItem value="">No cleaner assigned</SelectItem>
+            {cleaners.map((cleaner) => (
+              <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
+                {cleaner.full_name || `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim()}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        
+        <p className="text-sm text-gray-600">
+          You can assign a cleaner now or leave it unassigned and assign later.
+        </p>
+      </div>
 
       {/* ADMIN MODE: Payment Method Selection */}
       {isAdminMode && data.customerId && !checkingPaymentMethods && (
