@@ -492,7 +492,8 @@ useEffect(() => {
         hourlyRate: data.hourlyRate,
         notes: data.notes,
         additionalDetails: data,
-        cleanerId: data.cleanerId // Include cleaner assignment
+        cleanerId: data.cleanerId, // Include cleaner assignment
+        paymentMethod: selectedAdminPaymentMethod || (defaultPaymentMethod ? 'Stripe' : null) // Include payment method
       };
 
       // Check if using a saved payment method (customer's or admin-selected)

@@ -69,6 +69,7 @@ interface BookingSubmission {
   notes: string;
   additionalDetails?: any;
   cleanerId?: number; // Cleaner assignment
+  paymentMethod?: string; // Payment method
 }
 
 // Helper function to build property_details JSON
@@ -201,10 +202,20 @@ export const useAirbnbBookingSubmit = () => {
 
       // Step 1: Check if customer exists or create new one
       let customerId: number;
+      let hasPaymentMethods = false;
       
       // If customerId is provided (admin mode), use it directly
       if (bookingData.customerId) {
         customerId = bookingData.customerId;
+        
+        // Check if customer has saved payment methods
+        const { data: paymentMethods } = await supabase
+          .from('customer_payment_methods')
+          .select('id')
+          .eq('customer_id', customerId)
+          .limit(1);
+        
+        hasPaymentMethods = (paymentMethods && paymentMethods.length > 0);
       } else {
         // Check if customer exists by email
         const { data: existingCustomer } = await supabase
@@ -215,6 +226,15 @@ export const useAirbnbBookingSubmit = () => {
 
         if (existingCustomer) {
           customerId = existingCustomer.id;
+          
+          // Check if customer has saved payment methods
+          const { data: paymentMethods } = await supabase
+            .from('customer_payment_methods')
+            .select('id')
+            .eq('customer_id', customerId)
+            .limit(1);
+          
+          hasPaymentMethods = (paymentMethods && paymentMethods.length > 0);
         } else {
           // Create new customer
           const { data: newCustomer, error: customerError } = await supabase
@@ -405,8 +425,8 @@ export const useAirbnbBookingSubmit = () => {
         cleaning_cost_per_hour: bookingData.hourlyRate,
         total_cost: bookingData.totalCost,
         
-        // Payment
-        payment_method: 'Stripe',
+        // Payment - use Stripe if customer has saved cards, otherwise use provided method or null
+        payment_method: bookingData.paymentMethod || (hasPaymentMethods ? 'Stripe' : null),
         payment_status: 'Unpaid',
         booking_status: 'active',
         
