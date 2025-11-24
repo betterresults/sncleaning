@@ -68,6 +68,7 @@ interface BookingSubmission {
   // Notes
   notes: string;
   additionalDetails?: any;
+  cleanerId?: number; // Cleaner assignment
 }
 
 // Helper function to build property_details JSON
@@ -409,7 +410,8 @@ export const useAirbnbBookingSubmit = () => {
         payment_status: 'Unpaid',
         booking_status: 'active',
         
-        // Cleaner - only add if not set (no default value)
+        // Cleaner - set if provided, otherwise null (no default value)
+        cleaner: bookingData.cleanerId || null,
         cleaner_percentage: null,
         
         // Access

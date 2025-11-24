@@ -220,7 +220,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
               onCheckedChange={(checked) => 
                 onUpdate({ 
                   flexibility: checked ? 'flexible-time' : 'not-flexible',
-                  selectedTime: checked ? undefined : data.selectedTime
+                  selectedTime: checked ? '' : data.selectedTime
                 })
               }
             />

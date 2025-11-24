@@ -191,20 +191,23 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
     }
   }, [data.serviceType, data.alreadyCleaned, data.cleaningProducts]);
 
-  // Reset estimatedHours to null when key property fields change (so it recalculates)
+  // Update estimatedHours when recommendedHours changes ONLY if user hasn't manually set a value
+  // Track if this is the first render to avoid resetting on navigation
+  const [hasInitialized, setHasInitialized] = React.useState(false);
+  
   React.useEffect(() => {
-    // Only reset if user has manually changed estimatedHours AND core fields changed
-    if (data.estimatedHours !== null) {
-      onUpdate({ estimatedHours: null });
+    // Only update if recommendedHours is valid and we haven't set an initial value yet
+    if (recommendedHours > 0 && !hasInitialized) {
+      if (data.estimatedHours === null || data.estimatedHours === 0) {
+        onUpdate({ estimatedHours: recommendedHours });
+        setHasInitialized(true);
+      } else if (data.estimatedHours !== recommendedHours) {
+        // If estimatedHours differs from recommended, user has manually adjusted it
+        // Keep their manual value
+        setHasInitialized(true);
+      }
     }
-  }, [data.propertyType, data.bedrooms, data.bathrooms, data.serviceType]);
-
-  // Update estimatedHours when recommendedHours (baseTime) changes
-  React.useEffect(() => {
-    if (recommendedHours > 0 && data.estimatedHours === null) {
-      onUpdate({ estimatedHours: recommendedHours });
-    }
-  }, [recommendedHours, data.estimatedHours]);
+  }, [recommendedHours]);
 
   return (
     <div className="space-y-6">
