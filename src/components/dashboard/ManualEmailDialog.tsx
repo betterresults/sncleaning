@@ -78,6 +78,7 @@ const ManualEmailDialog = ({ open, onOpenChange, booking }: ManualEmailDialogPro
     if (selectedTemplate) {
       // Initialize variables with booking data
       const bookingVariables: Record<string, string> = {
+        booking_id: booking.id.toString(),
         customer_name: `${booking.first_name || booking.customers?.first_name || ''} ${booking.last_name || booking.customers?.last_name || ''}`.trim() || 'Customer',
         customer_email: booking.email || '',
         booking_date: booking.date_time ? new Date(booking.date_time).toLocaleDateString() : '',
