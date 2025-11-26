@@ -183,6 +183,7 @@ const handler = async (req: Request): Promise<Response> => {
     let htmlContent = custom_content || template.html_content;
 
     console.log("Processing variables:", Object.keys(variables));
+    console.log("Variables object:", JSON.stringify(variables, null, 2));
     
     // Process Handlebars conditionals first
     const hasBookingData = variables.booking_date || variables.address || variables.total_cost;
@@ -218,7 +219,8 @@ const handler = async (req: Request): Promise<Response> => {
       htmlContent = htmlContent.replace(regex, value || '');
     });
 
-    console.log("Final subject:", subject);
+    console.log("Final subject after variable replacement:", subject);
+    console.log("Booking ID in variables:", variables.booking_id);
     console.log("Sending email to:", recipient_email);
 
     // Convert recipient_email to array if it's not already
