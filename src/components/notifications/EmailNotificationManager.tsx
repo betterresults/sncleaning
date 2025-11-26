@@ -299,6 +299,13 @@ const EmailNotificationManager = () => {
     }
   };
 
+  const formatServiceType = (raw?: string) => {
+    if (!raw) return '';
+    const normalized = raw.trim().toLowerCase();
+    if (normalized === 'airbnb') return 'Airbnb Cleaning';
+    return `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)} Cleaning`;
+  };
+
   const processTemplateVariables = (content: string, clientData?: any) => {
     let processedContent = content;
     
@@ -362,8 +369,8 @@ const EmailNotificationManager = () => {
       
       if (selectedClientData.service_type) {
         processedContent = processedContent.replace(
-          /\{\{service_type\}\}/g, 
-          selectedClientData.service_type
+          /\{\{service_type\}\}/g,
+          formatServiceType(selectedClientData.service_type)
         );
       }
       
@@ -378,6 +385,13 @@ const EmailNotificationManager = () => {
         processedContent = processedContent.replace(
           /\{\{total_cost\}\}/g, 
           selectedClientData.total_cost
+        );
+      }
+      
+      if (selectedClientData.booking_id) {
+        processedContent = processedContent.replace(
+          /\{\{booking_id\}\}/g,
+          selectedClientData.booking_id
         );
       }
     }
@@ -489,6 +503,7 @@ const EmailNotificationManager = () => {
           // Create enhanced client data with booking info
           const enhancedClientData = {
             ...client,
+            booking_id: booking.id.toString(),
             booking_date: booking.date_only || new Date(booking.date_time).toLocaleDateString(),
             booking_time: booking.time_only || new Date(booking.date_time).toLocaleTimeString(),
             address: booking.address,
