@@ -195,6 +195,10 @@ const ManualEmailDialog = ({ open, onOpenChange, booking }: ManualEmailDialogPro
     try {
       setLoading(true);
       
+      // Replace variables in subject and content before sending
+      const processedSubject = replaceVariables(subject, variables);
+      const processedContent = replaceVariables(emailContent, variables);
+      
       // Send email to each recipient
       for (const recipientEmail of validRecipients) {
         await supabase.functions.invoke('send-notification-email', {
@@ -202,8 +206,8 @@ const ManualEmailDialog = ({ open, onOpenChange, booking }: ManualEmailDialogPro
             template_id: selectedTemplate.id,
             recipient_email: recipientEmail,
             variables: variables,
-            custom_subject: subject !== selectedTemplate.subject ? subject : undefined,
-            custom_content: emailContent !== selectedTemplate.html_content ? emailContent : undefined,
+            custom_subject: processedSubject !== selectedTemplate.subject ? processedSubject : undefined,
+            custom_content: processedContent !== selectedTemplate.html_content ? processedContent : undefined,
           }
         });
       }
