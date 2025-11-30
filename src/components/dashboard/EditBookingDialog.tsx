@@ -494,7 +494,8 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                     
                     
                     {/* Same Day Cleaning Option for Airbnb */}
-                    {formData.cleaningType?.toLowerCase().includes('airbnb') && (
+                    {(formData.cleaningType?.toLowerCase().includes('airbnb') || 
+                      booking?.service_type?.toLowerCase().includes('airbnb')) && (
                       <div className="md:col-span-2">
                         <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
                           <Checkbox
