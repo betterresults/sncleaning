@@ -153,7 +153,8 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         linenUsed: booking.linen_used || [],
         frequently: frequently
       });
-      setIsSameDayCleaning(frequently === 'Same Day');
+      const isAirbnb = booking.service_type?.toLowerCase().includes('airbnb');
+      setIsSameDayCleaning(isAirbnb && frequently === 'Same Day');
     }
   }, [booking, open]);
 
@@ -230,9 +231,10 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
 
       // Determine frequently value for Airbnb bookings
       let frequently = formData.frequently;
-      if (formData.cleaningType === 'Air BnB' && isSameDayCleaning) {
+      const isAirbnb = formData.cleaningType?.toLowerCase().includes('airbnb');
+      if (isAirbnb && isSameDayCleaning) {
         frequently = 'Same Day';
-      } else if (formData.cleaningType === 'Air BnB' && !isSameDayCleaning) {
+      } else if (isAirbnb && !isSameDayCleaning) {
         // Reset to empty if unchecked for Airbnb
         frequently = '';
       }
@@ -492,7 +494,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                     
                     
                     {/* Same Day Cleaning Option for Airbnb */}
-                    {formData.cleaningType === 'Air BnB' && (
+                    {formData.cleaningType?.toLowerCase().includes('airbnb') && (
                       <div className="md:col-span-2">
                         <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
                           <Checkbox
@@ -502,7 +504,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                             className="border-2 border-blue-300 data-[state=checked]:bg-blue-600"
                           />
                           <Label htmlFor="isSameDayCleaning" className="text-sm font-medium text-gray-700 cursor-pointer">
-                            Same Day Cleaning (Airbnb)
+                            Same Day Check-in/Check-out Cleaning
                           </Label>
                         </div>
                       </div>

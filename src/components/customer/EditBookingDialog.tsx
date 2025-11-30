@@ -110,7 +110,8 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       setTotalHours(booking.total_hours || 0);
       setTotalCost(booking.total_cost || 0);
       // Only allow same_day for Airbnb bookings
-      const isAirbnbBooking = booking.service_type === 'Air BnB' || booking.cleaning_type === 'Air BnB';
+      const isAirbnbBooking = booking.service_type?.toLowerCase().includes('airbnb') || 
+                              booking.cleaning_type?.toLowerCase().includes('airbnb');
       setIsSameDay(isAirbnbBooking && (booking.same_day === true || booking.same_day === 'true'));
       
       // Find matching address
@@ -187,7 +188,8 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       newDateTime.setHours(parseInt(selectedHour), parseInt(selectedMinute), 0, 0);
 
       // Ensure same_day is only saved for Airbnb bookings
-      const isAirbnbBooking = booking.service_type === 'Air BnB' || booking.cleaning_type === 'Air BnB';
+      const isAirbnbBooking = booking.service_type?.toLowerCase().includes('airbnb') || 
+                              booking.cleaning_type?.toLowerCase().includes('airbnb');
       const finalSameDay = isAirbnbBooking ? isSameDay : false;
 
       const { error } = await supabase
@@ -299,7 +301,8 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
           </div>
 
           {/* Same Day Cleaning Option - Only for Airbnb */}
-          {(booking.service_type === 'Air BnB' || booking.cleaning_type === 'Air BnB') && (
+          {(booking.service_type?.toLowerCase().includes('airbnb') || 
+            booking.cleaning_type?.toLowerCase().includes('airbnb')) && (
             <div className="space-y-3 p-4 border border-orange-200 rounded-lg bg-orange-50/50">
               <div className="flex items-start gap-3">
                 <Checkbox
@@ -310,7 +313,7 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                 />
                 <div className="flex-1">
                   <Label htmlFor="same-day" className="text-sm font-semibold text-[#185166] cursor-pointer">
-                    Same Day Cleaning (+£3 per hour)
+                    Same Day Check-in/Check-out Cleaning (+£3 per hour)
                   </Label>
                   {isSameDay && (
                     <div className="flex items-start gap-2 mt-2">
