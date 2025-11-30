@@ -56,6 +56,7 @@ interface Booking {
   linen_management?: boolean;
   additional_details?: string;
   frequently?: string;
+  same_day?: boolean; // Same-day Airbnb turnover flag
   cleaners?: {
     id: number;
     first_name: string;
