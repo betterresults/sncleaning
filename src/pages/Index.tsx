@@ -37,7 +37,7 @@ const Index = () => {
     console.log('Index - Redirecting authenticated user:', { userRole, cleanerId, customerId });
     
     // Redirect cleaners to mobile or desktop view
-    if (userRole === 'cleaner' && cleanerId) {
+    if (userRole === 'user' && cleanerId) {
       const isMobileWeb = typeof window !== 'undefined' && window.innerWidth < 768;
       const redirectPath = (isCapacitor() || isMobileWeb) ? '/cleaner-today' : '/cleaner-dashboard';
       console.log(`Index - Redirecting cleaner to ${redirectPath}`);
