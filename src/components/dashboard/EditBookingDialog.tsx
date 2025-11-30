@@ -144,8 +144,8 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         paymentMethod: booking.payment_method || 'Cash',
         paymentStatus: booking.payment_status || 'Unpaid',
         bookingStatus: booking.booking_status || 'Confirmed',
-        cleaningType: booking.service_type || '',
-        formName: booking.cleaning_type || '',
+        cleaningType: booking.cleaning_type || '',
+        formName: booking.service_type || '',
         additionalDetails: booking.additional_details || '',
         propertyDetails: booking.property_details || '',
         deposit: booking.deposit || 0,
@@ -153,7 +153,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         linenUsed: booking.linen_used || [],
         frequently: frequently
       });
-      const isAirbnb = booking.service_type?.toLowerCase().includes('airbnb');
+      const isAirbnb = booking.service_type?.toLowerCase() === 'airbnb';
       setIsSameDayCleaning(isAirbnb && frequently === 'Same Day');
     }
   }, [booking, open]);
@@ -231,7 +231,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
 
       // Determine frequently value for Airbnb bookings
       let frequently = formData.frequently;
-      const isAirbnb = formData.cleaningType?.toLowerCase().includes('airbnb');
+      const isAirbnb = formData.formName?.toLowerCase() === 'airbnb';
       if (isAirbnb && isSameDayCleaning) {
         frequently = 'Same Day';
       } else if (isAirbnb && !isSameDayCleaning) {
@@ -259,8 +259,8 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
           payment_method: formData.paymentMethod,
           payment_status: formData.paymentStatus,
           booking_status: formData.bookingStatus,
-          service_type: formData.cleaningType,
-          cleaning_type: formData.formName,
+          service_type: formData.formName,
+          cleaning_type: formData.cleaningType,
           additional_details: formData.additionalDetails,
           property_details: formData.propertyDetails,
           deposit: formData.deposit,
@@ -465,7 +465,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                       <Label htmlFor="formName" className="text-sm font-medium">Service Type</Label>
                       <Select value={formData.formName} onValueChange={(value) => handleInputChange('formName', value)}>
                         <SelectTrigger className="mt-1">
-                          <SelectValue />
+                          <SelectValue placeholder="Select service type" />
                         </SelectTrigger>
                         <SelectContent>
                           {serviceTypes?.map((type) => (
@@ -477,10 +477,10 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="cleaningType" className="text-sm font-medium">Property Type</Label>
+                      <Label htmlFor="cleaningType" className="text-sm font-medium">Cleaning Type</Label>
                       <Select value={formData.cleaningType} onValueChange={(value) => handleInputChange('cleaningType', value)}>
                         <SelectTrigger className="mt-1">
-                          <SelectValue />
+                          <SelectValue placeholder="Select cleaning type" />
                         </SelectTrigger>
                         <SelectContent>
                           {cleaningTypes?.map((type) => (
@@ -494,8 +494,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                     
                     
                     {/* Same Day Cleaning Option for Airbnb */}
-                    {(formData.cleaningType?.toLowerCase().includes('airbnb') || 
-                      formData.formName?.toLowerCase().includes('airbnb')) && (
+                    {formData.formName?.toLowerCase() === 'airbnb' && (
                       <div className="md:col-span-2">
                         <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
                           <Checkbox
