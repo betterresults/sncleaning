@@ -281,7 +281,8 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
           deposit: formData.deposit,
           linen_management: formData.linenManagement,
           linen_used: formData.linenUsed,
-          frequently: frequently
+          frequently: frequently,
+          same_day: isSameDayCleaning
         })
         .eq('id', booking.id);
 
