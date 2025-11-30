@@ -561,7 +561,11 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
         return (
           <div
             key={booking.id} 
-            className={`bg-card rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.18)] hover:-translate-y-1 transition-all duration-200 border-none overflow-hidden ${booking.same_day ? 'ring-2 ring-orange-300/80 ring-offset-2 ring-offset-background' : ''}`}
+            className={`rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.18)] hover:-translate-y-1 transition-all duration-200 border-none overflow-hidden ${
+              booking.same_day
+                ? 'bg-gradient-to-br from-orange-50 to-red-50'
+                : 'bg-card'
+            }`}
           >
             {/* Desktop Layout */}
             <div className="hidden lg:grid lg:grid-cols-[100px_1fr_2fr_15%_16%_15%_40px] items-center gap-3 p-0">
@@ -575,13 +579,6 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
                   {booking.total_hours && (
                     <div className="text-sm font-semibold text-muted-foreground mt-1">
                       {booking.total_hours}h
-                    </div>
-                  )}
-                  {booking.same_day && (
-                    <div className="mt-2">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
-                        Same Day
-                      </span>
                     </div>
                   )}
                 </div>
