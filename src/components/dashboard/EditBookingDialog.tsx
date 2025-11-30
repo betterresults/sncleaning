@@ -17,6 +17,7 @@ import { User, Calendar, MapPin, CreditCard, UserCheck, Clock, Home, Phone, Mail
 import { EmailNotificationConfirmDialog } from '@/components/notifications/EmailNotificationConfirmDialog';
 import { useBookingEmailPrompt } from '@/hooks/useBookingEmailPrompt';
 import { Checkbox } from '@/components/ui/checkbox';
+import { formatPropertyDetails, formatAdditionalDetails } from '@/utils/bookingFormatters';
 import { useServiceTypes, useCleaningTypes, usePaymentMethods } from '@/hooks/useCompanySettings';
 
 interface EditBookingDialogProps {
@@ -127,6 +128,20 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
     if (booking && open) {
       console.log('Setting form data for booking:', booking);
       const frequently = booking.frequently || '';
+      
+      // Format property_details and additional_details if they're JSON
+      const formatIfJSON = (value: string | null | undefined): string => {
+        if (!value) return '';
+        try {
+          // Check if it's JSON
+          const parsed = JSON.parse(value);
+          return value; // Keep as JSON for now - admin can edit if needed
+        } catch {
+          // Not JSON, return as is
+          return value;
+        }
+      };
+      
       setFormData({
         firstName: booking.first_name || '',
         lastName: booking.last_name || '',
@@ -533,24 +548,55 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                     </div>
                     <div className="md:col-span-2">
                       <Label htmlFor="propertyDetails" className="text-sm font-medium">Property Details</Label>
-                      <Textarea
-                        id="propertyDetails"
-                        value={formData.propertyDetails}
-                        onChange={(e) => handleInputChange('propertyDetails', e.target.value)}
-                        className="mt-1"
-                        rows={3}
-                        placeholder="e.g., 2 bedroom apartment, 1 bathroom, pets, special requirements"
-                      />
+                      {(() => {
+                        const formatted = formatPropertyDetails(formData.propertyDetails);
+                        if (formatted && formData.propertyDetails) {
+                          return (
+                            <div className="mt-1 space-y-2">
+                              <div className="text-sm bg-gray-50 p-3 rounded border border-gray-200 whitespace-pre-wrap">
+                                {formatted}
+                              </div>
+                              <p className="text-xs text-muted-foreground">Property details are displayed in a formatted view. Raw editing not supported.</p>
+                            </div>
+                          );
+                        }
+                        return (
+                          <Textarea
+                            id="propertyDetails"
+                            value={formData.propertyDetails}
+                            onChange={(e) => handleInputChange('propertyDetails', e.target.value)}
+                            className="mt-1"
+                            rows={3}
+                            placeholder="e.g., 2 bedroom apartment, 1 bathroom, pets, special requirements"
+                          />
+                        );
+                      })()}
                     </div>
                     <div className="md:col-span-2">
                       <Label htmlFor="additionalDetails" className="text-sm font-medium">Additional Details</Label>
-                      <Textarea
-                        id="additionalDetails"
-                        value={formData.additionalDetails}
-                        onChange={(e) => handleInputChange('additionalDetails', e.target.value)}
-                        className="mt-1"
-                        rows={3}
-                      />
+                      {(() => {
+                        const formatted = formatAdditionalDetails(formData.additionalDetails);
+                        if (formatted && formData.additionalDetails) {
+                          return (
+                            <div className="mt-1 space-y-2">
+                              <div className="text-sm bg-gray-50 p-3 rounded border border-gray-200 whitespace-pre-wrap">
+                                {formatted}
+                              </div>
+                              <p className="text-xs text-muted-foreground">Additional details are displayed in a formatted view. Raw editing not supported.</p>
+                            </div>
+                          );
+                        }
+                        return (
+                          <Textarea
+                            id="additionalDetails"
+                            value={formData.additionalDetails}
+                            onChange={(e) => handleInputChange('additionalDetails', e.target.value)}
+                            className="mt-1"
+                            rows={3}
+                            placeholder="e.g., Special instructions, parking, access code"
+                          />
+                        );
+                      })()}
                     </div>
                   </div>
                 </AccordionContent>
