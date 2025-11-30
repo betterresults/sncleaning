@@ -495,9 +495,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                     
                     {/* Same Day Cleaning Option for Airbnb */}
                     {(formData.cleaningType?.toLowerCase().includes('airbnb') || 
-                      formData.formName?.toLowerCase().includes('airbnb') ||
-                      booking?.service_type?.toLowerCase().includes('airbnb') ||
-                      booking?.cleaning_type?.toLowerCase().includes('airbnb')) && (
+                      formData.formName?.toLowerCase().includes('airbnb')) && (
                       <div className="md:col-span-2">
                         <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
                           <Checkbox
@@ -542,6 +540,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                         onChange={(e) => handleInputChange('propertyDetails', e.target.value)}
                         className="mt-1"
                         rows={3}
+                        placeholder="e.g., 2 bedroom apartment, 1 bathroom, pets, special requirements"
                       />
                     </div>
                     <div className="md:col-span-2">
