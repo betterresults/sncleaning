@@ -685,9 +685,11 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
       console.log('NewBookingForm: Booking created successfully:', data);
 
       // Send confirmation email if enabled and not in customer view
+      let emailSent = false;
       if (!isCustomerView && formData.sendConfirmationEmail && formData.email) {
         try {
-          await supabase.functions.invoke('send-notification-email', {
+          console.log('NewBookingForm: Attempting to send confirmation email to:', formData.email);
+          const { data: emailData, error: emailError } = await supabase.functions.invoke('send-notification-email', {
             body: {
               recipient_email: formData.email,
               template: 'booking_created',
@@ -703,15 +705,25 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
               }
             }
           });
-        } catch (emailError) {
-          console.log('Note: Email sending failed, but booking was created successfully:', emailError);
-          // Don't show error to user as booking was successful
+          
+          console.log('NewBookingForm: Email response:', { emailData, emailError });
+          
+          if (emailError) {
+            console.error('NewBookingForm: Email edge function error:', emailError);
+          } else if (emailData?.error) {
+            console.error('NewBookingForm: Email sending error:', emailData.error);
+          } else if (emailData?.success) {
+            emailSent = true;
+            console.log('NewBookingForm: Email sent successfully, message_id:', emailData.message_id);
+          }
+        } catch (emailErr) {
+          console.error('NewBookingForm: Email exception:', emailErr);
         }
       }
 
       toast({
         title: "Success",
-        description: `Booking created successfully!${!isCustomerView && formData.sendConfirmationEmail && formData.email ? ' Confirmation email sent.' : ''}`,
+        description: `Booking created successfully!${emailSent ? ' Confirmation email sent.' : (formData.sendConfirmationEmail && formData.email ? ' Email could not be sent - check logs.' : '')}`,
       });
 
       onBookingCreated();
