@@ -142,6 +142,10 @@ serve(async (req) => {
         customer: paymentMethods.stripe_customer_id,
         capture_method: 'manual',
         confirm: true,
+        automatic_payment_methods: {
+          enabled: true,
+          allow_redirects: 'never'
+        },
         description: `Reauthorization for Booking #${bookingId} - ${reason}`,
         metadata: {
           booking_id: bookingId.toString(),
@@ -256,9 +260,11 @@ serve(async (req) => {
       customer: paymentMethods.stripe_customer_id,
       payment_method: paymentMethods.stripe_payment_method_id,
       capture_method: 'manual', // Authorize only, capture later
-      confirmation_method: 'manual',
       confirm: true,
-      return_url: 'https://your-return-url.com', // Required for some payment methods
+      automatic_payment_methods: {
+        enabled: true,
+        allow_redirects: 'never'
+      },
       metadata: {
         booking_id: bookingId.toString(),
         adjustment_reason: reason || 'Additional amount authorization',
