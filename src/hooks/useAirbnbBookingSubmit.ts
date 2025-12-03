@@ -540,7 +540,7 @@ export const useAirbnbBookingSubmit = () => {
         const { data: template } = await supabase
           .from('email_notification_templates')
           .select('id')
-          .eq('name', 'booking_confirmation')
+          .eq('name', 'booking_created')
           .eq('is_active', true)
           .single();
 

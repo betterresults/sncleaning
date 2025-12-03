@@ -689,9 +689,8 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
         try {
           await supabase.functions.invoke('send-notification-email', {
             body: {
-              to: formData.email,
-              subject: `Booking Confirmation - ${formName}`,
-              template: 'booking_confirmation',
+              recipient_email: formData.email,
+              template: 'booking_created',
               variables: {
                 customer_name: `${formData.firstName} ${formData.lastName}`,
                 booking_date: format(formData.selectedDate!, 'dd/MM/yyyy'),
