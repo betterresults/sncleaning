@@ -299,6 +299,8 @@ export const useAirbnbBookingSubmit = () => {
       });
 
       let bookingDateTime = null;
+      let time24ForDB: string | null = null; // Store the converted 24-hour time for database
+      
       if (bookingData.selectedDate && bookingData.selectedTime) {
         try {
           // Handle both Date objects and string dates
@@ -355,6 +357,9 @@ export const useAirbnbBookingSubmit = () => {
             
             console.log('[useAirbnbBookingSubmit] Converted time:', bookingData.selectedTime, '->', time24);
             
+            // Store the converted time for database
+            time24ForDB = time24;
+            
             bookingDateTime = new Date(`${dateStr}T${time24}:00`);
             
             console.log('[useAirbnbBookingSubmit] Created booking datetime:', bookingDateTime.toISOString());
@@ -363,6 +368,7 @@ export const useAirbnbBookingSubmit = () => {
             if (isNaN(bookingDateTime.getTime())) {
               console.error('Invalid datetime created:', { dateStr, time: time24 });
               bookingDateTime = null;
+              time24ForDB = null;
             }
           } else {
             console.error('Invalid date object:', bookingData.selectedDate);
@@ -370,6 +376,7 @@ export const useAirbnbBookingSubmit = () => {
         } catch (error) {
           console.error('Error creating booking datetime:', error);
           bookingDateTime = null;
+          time24ForDB = null;
         }
       } else {
         console.warn('[useAirbnbBookingSubmit] Missing selectedDate or selectedTime:', {
@@ -417,7 +424,7 @@ export const useAirbnbBookingSubmit = () => {
         date_only: bookingData.selectedDate ? bookingData.selectedDate.toISOString().split('T')[0] : null,
         time_only: (bookingData.flexibility === 'flexible-time' || !bookingData.selectedTime) 
           ? null 
-          : bookingData.selectedTime, // Will be the converted 24-hour time from processing above
+          : time24ForDB, // Use the converted 24-hour format for DB TIME field
         
         // Hours
         hours_required: bookingData.estimatedHours || 0, // system calculated
@@ -525,6 +532,44 @@ export const useAirbnbBookingSubmit = () => {
       } catch (logError) {
         console.error('Failed to log booking creation:', logError);
         // Don't fail the booking if logging fails
+      }
+
+      // Step 2.5: Send confirmation email to customer
+      try {
+        // Get booking_confirmation template
+        const { data: template } = await supabase
+          .from('email_notification_templates')
+          .select('id')
+          .eq('name', 'booking_confirmation')
+          .eq('is_active', true)
+          .single();
+
+        if (template && bookingData.email) {
+          const bookingDate = bookingDateTime 
+            ? bookingDateTime.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })
+            : 'TBC';
+          const bookingTime = time24ForDB || 'Flexible';
+
+          await supabase.functions.invoke('send-notification-email', {
+            body: {
+              template_id: template.id,
+              recipient_email: bookingData.email,
+              variables: {
+                customer_name: `${bookingData.firstName} ${bookingData.lastName}`.trim() || 'Valued Customer',
+                booking_id: booking.id.toString(),
+                booking_date: bookingDate,
+                booking_time: bookingTime,
+                service_type: 'Airbnb Cleaning',
+                address: `${addressForBooking}, ${postcodeForBooking}`,
+                total_cost: bookingData.totalCost?.toFixed(2) || '0.00'
+              }
+            }
+          });
+          console.log('[useAirbnbBookingSubmit] Confirmation email sent to:', bookingData.email);
+        }
+      } catch (emailError) {
+        console.error('Failed to send confirmation email:', emailError);
+        // Don't fail the booking if email fails
       }
 
       // Step 3: Authorize payment only if not skipped (for non-urgent bookings)
