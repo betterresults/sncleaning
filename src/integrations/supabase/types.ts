@@ -250,6 +250,7 @@ export type Database = {
           days: string | null
           days_number: string | null
           deposit: number | null
+          discount: number | null
           edit_admin: string | null
           edit_client: string | null
           email: string | null
@@ -323,6 +324,7 @@ export type Database = {
           days?: string | null
           days_number?: string | null
           deposit?: number | null
+          discount?: number | null
           edit_admin?: string | null
           edit_client?: string | null
           email?: string | null
@@ -396,6 +398,7 @@ export type Database = {
           days?: string | null
           days_number?: string | null
           deposit?: number | null
+          discount?: number | null
           edit_admin?: string | null
           edit_client?: string | null
           email?: string | null
@@ -1532,6 +1535,7 @@ export type Database = {
           days: string | null
           days_number: string | null
           deposit: string | null
+          discount: number | null
           edit_admin: string | null
           email: string | null
           exclude_areas: string | null
@@ -1597,6 +1601,7 @@ export type Database = {
           days?: string | null
           days_number?: string | null
           deposit?: string | null
+          discount?: number | null
           edit_admin?: string | null
           email?: string | null
           exclude_areas?: string | null
@@ -1662,6 +1667,7 @@ export type Database = {
           days?: string | null
           days_number?: string | null
           deposit?: string | null
+          discount?: number | null
           edit_admin?: string | null
           email?: string | null
           exclude_areas?: string | null
