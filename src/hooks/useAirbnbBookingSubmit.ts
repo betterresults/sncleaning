@@ -548,7 +548,24 @@ export const useAirbnbBookingSubmit = () => {
           const bookingDate = bookingDateTime 
             ? bookingDateTime.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })
             : 'TBC';
-          const bookingTime = time24ForDB || 'Flexible';
+          
+          // Only show "Flexible timing" if user explicitly chose flexible time option
+          // Otherwise show the selected time or the original selectedTime value
+          let bookingTime: string;
+          if (bookingData.flexibility === 'flexible-time') {
+            bookingTime = 'Flexible timing';
+          } else if (time24ForDB) {
+            // Convert 24h time to 12h format for display
+            const [hours, minutes] = time24ForDB.split(':').map(Number);
+            const period = hours >= 12 ? 'PM' : 'AM';
+            const displayHour = hours % 12 || 12;
+            bookingTime = `${displayHour}:${minutes.toString().padStart(2, '0')} ${period}`;
+          } else if (bookingData.selectedTime) {
+            // Fallback to original selected time string
+            bookingTime = bookingData.selectedTime;
+          } else {
+            bookingTime = 'Time to be confirmed';
+          }
 
           await supabase.functions.invoke('send-notification-email', {
             body: {
