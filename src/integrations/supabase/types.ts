@@ -1466,7 +1466,9 @@ export type Database = {
           id: string
           is_enabled: boolean
           name: string
+          notification_channel: string | null
           recipient_types: string[]
+          sms_template_id: string | null
           template_id: string | null
           timing_offset: number | null
           timing_unit: string | null
@@ -1479,7 +1481,9 @@ export type Database = {
           id?: string
           is_enabled?: boolean
           name: string
+          notification_channel?: string | null
           recipient_types?: string[]
+          sms_template_id?: string | null
           template_id?: string | null
           timing_offset?: number | null
           timing_unit?: string | null
@@ -1492,7 +1496,9 @@ export type Database = {
           id?: string
           is_enabled?: boolean
           name?: string
+          notification_channel?: string | null
           recipient_types?: string[]
+          sms_template_id?: string | null
           template_id?: string | null
           timing_offset?: number | null
           timing_unit?: string | null
@@ -1500,6 +1506,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "notification_triggers_sms_template_id_fkey"
+            columns: ["sms_template_id"]
+            isOneToOne: false
+            referencedRelation: "sms_templates"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "notification_triggers_template_id_fkey"
             columns: ["template_id"]

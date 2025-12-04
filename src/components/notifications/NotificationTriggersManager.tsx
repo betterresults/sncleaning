@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Clock, Users, Mail, Zap } from "lucide-react";
+import { Plus, Edit, Trash2, Clock, Users, Mail, Zap, MessageSquare } from "lucide-react";
 
 interface EmailTemplate {
   id: string;
@@ -18,11 +18,19 @@ interface EmailTemplate {
   subject: string;
 }
 
+interface SmsTemplate {
+  id: string;
+  name: string;
+  content: string;
+}
+
 interface NotificationTrigger {
   id: string;
   name: string;
   trigger_event: string;
   template_id: string;
+  sms_template_id?: string;
+  notification_channel?: string;
   is_enabled: boolean;
   timing_offset: number;
   timing_unit: string;
@@ -31,6 +39,7 @@ interface NotificationTrigger {
   created_at: string;
   updated_at: string;
   email_notification_templates?: EmailTemplate;
+  sms_templates?: SmsTemplate;
 }
 
 const TRIGGER_EVENTS = [
@@ -58,9 +67,16 @@ const TIMING_UNITS = [
   { value: 'days', label: 'Days' },
 ];
 
+const NOTIFICATION_CHANNELS = [
+  { value: 'email', label: 'Email Only' },
+  { value: 'sms', label: 'SMS Only' },
+  { value: 'both', label: 'Email & SMS' },
+];
+
 export const NotificationTriggersManager = () => {
   const [triggers, setTriggers] = useState<NotificationTrigger[]>([]);
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [smsTemplates, setSmsTemplates] = useState<SmsTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingTrigger, setEditingTrigger] = useState<NotificationTrigger | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -72,7 +88,7 @@ export const NotificationTriggersManager = () => {
 
   const fetchData = async () => {
     try {
-      const [triggersResult, templatesResult] = await Promise.all([
+      const [triggersResult, templatesResult, smsTemplatesResult] = await Promise.all([
         supabase
           .from('notification_triggers')
           .select(`
@@ -81,6 +97,11 @@ export const NotificationTriggersManager = () => {
               id,
               name,
               subject
+            ),
+            sms_templates (
+              id,
+              name,
+              content
             )
           `)
           .order('created_at', { ascending: false }),
@@ -88,14 +109,21 @@ export const NotificationTriggersManager = () => {
           .from('email_notification_templates')
           .select('id, name, subject')
           .eq('is_active', true)
+          .order('name', { ascending: true }),
+        supabase
+          .from('sms_templates')
+          .select('id, name, content')
+          .eq('is_active', true)
           .order('name', { ascending: true })
       ]);
 
       if (triggersResult.error) throw triggersResult.error;
       if (templatesResult.error) throw templatesResult.error;
+      if (smsTemplatesResult.error) throw smsTemplatesResult.error;
 
       setTriggers(triggersResult.data || []);
       setTemplates(templatesResult.data || []);
+      setSmsTemplates(smsTemplatesResult.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -228,6 +256,7 @@ export const NotificationTriggersManager = () => {
             <TriggerEditor
               trigger={editingTrigger}
               templates={templates}
+              smsTemplates={smsTemplates}
               onSave={handleSaveTrigger}
               onCancel={() => {
                 setIsDialogOpen(false);
@@ -275,10 +304,21 @@ export const NotificationTriggersManager = () => {
                         <Users className="h-3.5 w-3.5" />
                         <span>{trigger.recipient_types.join(', ')}</span>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <Mail className="h-3.5 w-3.5" />
-                        <span className="truncate max-w-[150px]">{trigger.email_notification_templates?.name || 'No template'}</span>
-                      </div>
+                      {(trigger.notification_channel === 'email' || trigger.notification_channel === 'both' || !trigger.notification_channel) && (
+                        <div className="flex items-center gap-1.5">
+                          <Mail className="h-3.5 w-3.5" />
+                          <span className="truncate max-w-[120px]">{trigger.email_notification_templates?.name || 'No email'}</span>
+                        </div>
+                      )}
+                      {(trigger.notification_channel === 'sms' || trigger.notification_channel === 'both') && (
+                        <div className="flex items-center gap-1.5">
+                          <MessageSquare className="h-3.5 w-3.5" />
+                          <span className="truncate max-w-[120px]">{trigger.sms_templates?.name || 'No SMS'}</span>
+                        </div>
+                      )}
+                      <Badge variant="outline" className="text-xs">
+                        {trigger.notification_channel === 'both' ? 'Email+SMS' : trigger.notification_channel === 'sms' ? 'SMS' : 'Email'}
+                      </Badge>
                     </div>
                     
                     <div className="flex items-center gap-2">
@@ -320,6 +360,7 @@ export const NotificationTriggersManager = () => {
 interface TriggerEditorProps {
   trigger: NotificationTrigger | null;
   templates: EmailTemplate[];
+  smsTemplates: SmsTemplate[];
   onSave: (data: Partial<NotificationTrigger>) => void;
   onCancel: () => void;
 }
@@ -327,6 +368,7 @@ interface TriggerEditorProps {
 const TriggerEditor: React.FC<TriggerEditorProps> = ({
   trigger,
   templates,
+  smsTemplates,
   onSave,
   onCancel,
 }) => {
@@ -339,6 +381,8 @@ const TriggerEditor: React.FC<TriggerEditorProps> = ({
     name: trigger?.name || '',
     trigger_event: trigger?.trigger_event || '',
     template_id: trigger?.template_id || '',
+    sms_template_id: trigger?.sms_template_id || '',
+    notification_channel: trigger?.notification_channel || 'email',
     is_enabled: trigger?.is_enabled ?? true,
     timing_value: existingAbsValue,
     timing_direction: existingDirection,
@@ -361,7 +405,9 @@ const TriggerEditor: React.FC<TriggerEditorProps> = ({
     onSave({
       name: formData.name,
       trigger_event: formData.trigger_event,
-      template_id: formData.template_id,
+      template_id: formData.template_id || null,
+      sms_template_id: formData.sms_template_id || null,
+      notification_channel: formData.notification_channel,
       is_enabled: formData.is_enabled,
       timing_offset,
       timing_unit: formData.timing_unit,
@@ -429,23 +475,65 @@ const TriggerEditor: React.FC<TriggerEditorProps> = ({
         </div>
 
         <div>
-          <Label htmlFor="template_id">Email Template</Label>
+          <Label>Notification Channel</Label>
           <Select
-            value={formData.template_id}
-            onValueChange={(value) => setFormData(prev => ({ ...prev, template_id: value }))}
+            value={formData.notification_channel}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, notification_channel: value }))}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select email template to send" />
+              <SelectValue placeholder="Select channel" />
             </SelectTrigger>
             <SelectContent>
-              {templates.map((template) => (
-                <SelectItem key={template.id} value={template.id}>
-                  {template.name}
+              {NOTIFICATION_CHANNELS.map((channel) => (
+                <SelectItem key={channel.value} value={channel.value}>
+                  {channel.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
+
+        {(formData.notification_channel === 'email' || formData.notification_channel === 'both') && (
+          <div>
+            <Label htmlFor="template_id">Email Template</Label>
+            <Select
+              value={formData.template_id}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, template_id: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select email template" />
+              </SelectTrigger>
+              <SelectContent>
+                {templates.map((template) => (
+                  <SelectItem key={template.id} value={template.id}>
+                    {template.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {(formData.notification_channel === 'sms' || formData.notification_channel === 'both') && (
+          <div>
+            <Label htmlFor="sms_template_id">SMS Template</Label>
+            <Select
+              value={formData.sms_template_id}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, sms_template_id: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select SMS template" />
+              </SelectTrigger>
+              <SelectContent>
+                {smsTemplates.map((template) => (
+                  <SelectItem key={template.id} value={template.id}>
+                    {template.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       {/* Timing Section */}
