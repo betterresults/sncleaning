@@ -191,7 +191,7 @@ serve(async (req: Request) => {
               
               const { error: smsError } = await supabase.functions.invoke('send-sms-notification', {
                 body: {
-                  phone_number: phoneNumber,
+                  to: phoneNumber,
                   message: smsContent,
                 }
               });
