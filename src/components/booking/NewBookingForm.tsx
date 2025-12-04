@@ -563,6 +563,10 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
       dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
       
       const localDateTime = dateTime;
+      
+      // Format date_only and time_only for database
+      const dateOnly = formData.selectedDate.toISOString().split('T')[0];
+      const timeOnly = `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
 
       // Determine form_name based on service type and sub type
       let formName = '';
@@ -640,6 +644,8 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
         email: formData.email,
         phone_number: formData.phoneNumber,
         date_time: localDateTime.toISOString(),
+        date_only: dateOnly,
+        time_only: timeOnly,
         address: formData.address,
         postcode: formData.postcode,
         total_hours: requiresHours ? formData.totalHours : null,
@@ -717,7 +723,7 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
                 booking_id: data[0].id,
                 customer_name: `${formData.firstName} ${formData.lastName}`,
                 booking_date: format(formData.selectedDate!, 'dd/MM/yyyy'),
-                booking_time: formData.selectedTime,
+                booking_time: formData.selectedTime || `${formData.selectedHour}:${formData.selectedMinute} ${formData.selectedPeriod}`,
                 service_type: formName,
                 address: `${formData.address}, ${formData.postcode}`,
                 total_cost: `£${formData.totalCost}`,
