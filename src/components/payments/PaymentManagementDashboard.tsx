@@ -177,9 +177,10 @@ const PaymentManagementDashboard = () => {
       
       const { data, error } = await supabase
         .from('past_bookings')
-        .select('total_cost, payment_status, cleaner_pay, date_time')
+        .select('total_cost, payment_status, cleaner_pay, date_time, booking_status')
         .gte('date_time', monthStart.toISOString())
-        .lte('date_time', now.toISOString());
+        .lte('date_time', now.toISOString())
+        .neq('booking_status', 'cancelled');
 
       if (error) throw error;
 
