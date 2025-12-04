@@ -20,6 +20,7 @@ import {
   Copy,
   CheckCircle
 } from 'lucide-react';
+import { VariablePicker, getVariableExample } from './VariablePicker';
 import {
   Dialog,
   DialogContent,
@@ -268,16 +269,7 @@ const SMSTemplateManager = () => {
   };
 
   const getSampleValue = (variable: string): string => {
-    const samples: { [key: string]: string } = {
-      'customer_name': 'John Smith',
-      'booking_date': '15th December 2024',
-      'booking_time': '10:00 AM',
-      'address': '123 Main Street, London',
-      'cleaner_name': 'Sarah Johnson',
-      'amount': '75.00',
-      'photo_link': 'https://example.com/photos'
-    };
-    return samples[variable] || `[${variable}]`;
+    return getVariableExample(variable);
   };
 
   return (
@@ -347,7 +339,15 @@ const SMSTemplateManager = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="template-content">SMS Content</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="template-content">SMS Content</Label>
+                  <VariablePicker 
+                    onInsert={(variable) => setFormData(prev => ({ 
+                      ...prev, 
+                      content: prev.content + variable 
+                    }))} 
+                  />
+                </div>
                 <Textarea
                   id="template-content"
                   placeholder="Hi {{customer_name}}! Your booking is confirmed for {{booking_date}}..."
@@ -356,7 +356,7 @@ const SMSTemplateManager = () => {
                   rows={4}
                 />
                 <div className="text-sm text-muted-foreground">
-                  Use {"{{variable_name}}"} for dynamic content. Character count: {formData.content.length}/160
+                  Click "Insert Variable" above to add dynamic content. Character count: {formData.content.length}/160
                 </div>
               </div>
 

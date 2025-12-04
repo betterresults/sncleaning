@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Eye, Trash2, Send, Mail } from "lucide-react";
+import { VariablePicker, getVariableExample } from "./VariablePicker";
 
 interface EmailTemplate {
   id: string;
@@ -561,13 +562,22 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
 
           <div>
             <Label htmlFor="subject">Subject</Label>
-            <Input
-              id="subject"
-              value={formData.subject}
-              onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))}
-              required
-              placeholder="Use {{variable_name}} for dynamic content"
-            />
+            <div className="flex gap-2">
+              <Input
+                id="subject"
+                value={formData.subject}
+                onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))}
+                required
+                placeholder="Use {{variable_name}} for dynamic content"
+                className="flex-1"
+              />
+              <VariablePicker 
+                onInsert={(variable) => setFormData(prev => ({ 
+                  ...prev, 
+                  subject: prev.subject + variable 
+                }))} 
+              />
+            </div>
           </div>
 
           <div>
@@ -578,10 +588,21 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
               onChange={(e) => setFormData(prev => ({ ...prev, variables: e.target.value }))}
               placeholder="customer_name, booking_date, total_cost"
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              Variables used in your template will be auto-detected when you use the picker
+            </p>
           </div>
 
           <div>
-            <Label htmlFor="html_content">HTML Content</Label>
+            <div className="flex items-center justify-between mb-2">
+              <Label htmlFor="html_content">HTML Content</Label>
+              <VariablePicker 
+                onInsert={(variable) => setFormData(prev => ({ 
+                  ...prev, 
+                  html_content: prev.html_content + variable 
+                }))} 
+              />
+            </div>
             <Textarea
               id="html_content"
               rows={12}
