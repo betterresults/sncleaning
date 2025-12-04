@@ -45,11 +45,9 @@ export const ProfitTrackingDashboard = () => {
         cleaner,
         customer,
         booking_status
-      `);
-
-    // Only filter by completed status if there are bookings with that status
-    // For now, let's get all past bookings to see what data is available
-    // .eq('booking_status', 'completed');
+      `)
+      // Exclude cancelled bookings from profit calculation
+      .neq('booking_status', 'cancelled');
 
     if (dateRange.from) {
       query = query.gte('date_time', dateRange.from.toISOString());
