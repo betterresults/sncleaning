@@ -212,11 +212,12 @@ const handler = async (req: Request): Promise<Response> => {
       }
     });
     
-    // Replace simple variables
+    // Replace simple variables - ensure all values are converted to strings
     Object.entries(variables).forEach(([key, value]) => {
       const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-      subject = subject.replace(regex, value || '');
-      htmlContent = htmlContent.replace(regex, value || '');
+      const stringValue = value !== null && value !== undefined ? String(value) : '';
+      subject = subject.replace(regex, stringValue);
+      htmlContent = htmlContent.replace(regex, stringValue);
     });
 
     console.log("Final subject after variable replacement:", subject);
