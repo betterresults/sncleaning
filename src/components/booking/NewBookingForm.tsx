@@ -710,6 +710,7 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
               recipient_email: formData.email,
               template: 'booking_created',
               variables: {
+                booking_id: data[0].id,
                 customer_name: `${formData.firstName} ${formData.lastName}`,
                 booking_date: format(formData.selectedDate!, 'dd/MM/yyyy'),
                 booking_time: formData.selectedTime,
