@@ -41,7 +41,8 @@ serve(async (req: Request) => {
           template_id,
           sms_template_id,
           notification_channel,
-          recipient_types
+          recipient_types,
+          conditions
         )
       `)
       .eq('status', 'scheduled')
@@ -110,6 +111,17 @@ serve(async (req: Request) => {
           console.log(`Booking ${bookingData.id} is cancelled, skipping notification`);
           await markNotificationCancelled(supabase, notification.id, 'Booking cancelled');
           continue;
+        }
+
+        // Check conditions if any are configured
+        const conditions = trigger.conditions || [];
+        if (conditions.length > 0) {
+          const conditionsResult = await checkConditions(supabase, conditions, bookingData, customerData);
+          if (!conditionsResult.passed) {
+            console.log(`Conditions not met for notification ${notification.id}: ${conditionsResult.reason}`);
+            await markNotificationSkipped(supabase, notification.id, conditionsResult.reason);
+            continue;
+          }
         }
 
         // Prepare notification variables
@@ -250,4 +262,85 @@ async function markNotificationCancelled(supabase: any, id: string, reason: stri
       updated_at: new Date().toISOString()
     })
     .eq('id', id);
+}
+
+async function markNotificationSkipped(supabase: any, id: string, reason: string) {
+  await supabase
+    .from('notification_schedules')
+    .update({ 
+      status: 'skipped', 
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id);
+}
+
+async function checkConditions(
+  supabase: any, 
+  conditions: string[], 
+  bookingData: any, 
+  customerData: any
+): Promise<{ passed: boolean; reason: string }> {
+  
+  for (const condition of conditions) {
+    switch (condition) {
+      case 'no_payment_method': {
+        // Check if customer has any payment methods
+        if (customerData?.id) {
+          const { data: paymentMethods } = await supabase
+            .from('customer_payment_methods')
+            .select('id')
+            .eq('customer_id', customerData.id)
+            .limit(1);
+          
+          if (paymentMethods && paymentMethods.length > 0) {
+            return { passed: false, reason: 'Customer has payment method on file' };
+          }
+        }
+        break;
+      }
+      
+      case 'payment_status_unpaid': {
+        const status = bookingData.payment_status?.toLowerCase() || '';
+        if (!['unpaid', 'pending', ''].includes(status)) {
+          return { passed: false, reason: `Payment status is ${bookingData.payment_status || 'not unpaid'}` };
+        }
+        break;
+      }
+      
+      case 'payment_status_failed': {
+        const status = bookingData.payment_status?.toLowerCase() || '';
+        if (status !== 'failed') {
+          return { passed: false, reason: `Payment status is ${bookingData.payment_status || 'not failed'}` };
+        }
+        break;
+      }
+      
+      case 'has_cleaner_assigned': {
+        if (!bookingData.cleaner) {
+          return { passed: false, reason: 'No cleaner assigned' };
+        }
+        break;
+      }
+      
+      case 'no_cleaner_assigned': {
+        if (bookingData.cleaner) {
+          return { passed: false, reason: 'Cleaner is already assigned' };
+        }
+        break;
+      }
+      
+      case 'payment_method_card': {
+        const method = bookingData.payment_method?.toLowerCase() || '';
+        if (!['card', 'stripe', 'automatic'].includes(method)) {
+          return { passed: false, reason: `Payment method is ${bookingData.payment_method || 'not card'}` };
+        }
+        break;
+      }
+      
+      default:
+        console.warn(`Unknown condition: ${condition}`);
+    }
+  }
+  
+  return { passed: true, reason: '' };
 }

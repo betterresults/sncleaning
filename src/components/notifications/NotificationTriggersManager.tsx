@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Clock, Users, Mail, Zap, MessageSquare } from "lucide-react";
+import { Plus, Edit, Trash2, Clock, Users, Mail, Zap, MessageSquare, Filter } from "lucide-react";
 
 interface EmailTemplate {
   id: string;
@@ -48,9 +48,11 @@ const TRIGGER_EVENTS = [
   { value: 'booking_completed', label: 'Booking Completed', description: 'When a booking is marked complete' },
   { value: 'booking_cancelled', label: 'Booking Cancelled', description: 'When a booking is cancelled' },
   { value: 'payment_reminder', label: 'Payment Reminder', description: 'Reminder for unpaid bookings' },
+  { value: 'payment_collection', label: 'Payment Collection Request', description: 'Request customer to add payment card' },
   { value: 'photos_uploaded', label: 'Photos Uploaded', description: 'When cleaner uploads photos' },
   { value: 'payment_received', label: 'Payment Received', description: 'When payment is confirmed' },
   { value: 'payment_failed', label: 'Payment Failed', description: 'When payment fails' },
+  { value: 'payment_authorization_failed', label: 'Payment Authorization Failed', description: 'When payment authorization fails' },
   { value: 'customer_created', label: 'Customer Created', description: 'When a new customer is created' },
   { value: 'cleaner_assigned', label: 'Cleaner Assigned', description: 'When a cleaner is assigned' },
 ];
@@ -71,6 +73,39 @@ const NOTIFICATION_CHANNELS = [
   { value: 'email', label: 'Email Only' },
   { value: 'sms', label: 'SMS Only' },
   { value: 'both', label: 'Email & SMS' },
+];
+
+const CONDITION_OPTIONS = [
+  { 
+    value: 'no_payment_method', 
+    label: 'No Payment Card on File', 
+    description: 'Only send if customer has no saved payment method'
+  },
+  { 
+    value: 'payment_status_unpaid', 
+    label: 'Payment Status is Unpaid', 
+    description: 'Only send if booking payment is unpaid or pending'
+  },
+  { 
+    value: 'payment_status_failed', 
+    label: 'Payment Status is Failed', 
+    description: 'Only send if payment authorization failed'
+  },
+  { 
+    value: 'has_cleaner_assigned', 
+    label: 'Has Cleaner Assigned', 
+    description: 'Only send if a cleaner is assigned to the booking'
+  },
+  { 
+    value: 'no_cleaner_assigned', 
+    label: 'No Cleaner Assigned', 
+    description: 'Only send if no cleaner is assigned yet'
+  },
+  { 
+    value: 'payment_method_card', 
+    label: 'Payment Method is Card', 
+    description: 'Only send if booking payment method is Card/Stripe'
+  },
 ];
 
 export const NotificationTriggersManager = () => {
@@ -319,6 +354,12 @@ export const NotificationTriggersManager = () => {
                       <Badge variant="outline" className="text-xs">
                         {trigger.notification_channel === 'both' ? 'Email+SMS' : trigger.notification_channel === 'sms' ? 'SMS' : 'Email'}
                       </Badge>
+                      {Array.isArray(trigger.conditions) && trigger.conditions.length > 0 && (
+                        <div className="flex items-center gap-1.5">
+                          <Filter className="h-3.5 w-3.5 text-amber-500" />
+                          <span className="text-xs text-amber-600">{trigger.conditions.length} condition{trigger.conditions.length > 1 ? 's' : ''}</span>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="flex items-center gap-2">
@@ -388,7 +429,7 @@ const TriggerEditor: React.FC<TriggerEditorProps> = ({
     timing_direction: existingDirection,
     timing_unit: trigger?.timing_unit || 'hours',
     recipient_types: trigger?.recipient_types || ['customer'],
-    conditions: trigger?.conditions || null,
+    conditions: Array.isArray(trigger?.conditions) ? trigger.conditions : [],
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -422,6 +463,15 @@ const TriggerEditor: React.FC<TriggerEditorProps> = ({
       recipient_types: checked
         ? [...prev.recipient_types, type]
         : prev.recipient_types.filter(t => t !== type)
+    }));
+  };
+
+  const handleConditionChange = (condition: string, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      conditions: checked
+        ? [...(prev.conditions || []), condition]
+        : (prev.conditions || []).filter((c: string) => c !== condition)
     }));
   };
 
@@ -616,6 +666,34 @@ const TriggerEditor: React.FC<TriggerEditorProps> = ({
                 onCheckedChange={(checked) => handleRecipientTypeChange(type.value, checked as boolean)}
               />
               <Label htmlFor={type.value} className="cursor-pointer">{type.label}</Label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Conditions */}
+      <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+        <h4 className="font-medium flex items-center gap-2">
+          <Filter className="h-4 w-4" />
+          Conditions (Optional)
+        </h4>
+        <p className="text-sm text-muted-foreground">
+          Only send notification if these conditions are met:
+        </p>
+        <div className="grid gap-3">
+          {CONDITION_OPTIONS.map((condition) => (
+            <div key={condition.value} className="flex items-start space-x-3">
+              <Checkbox
+                id={`condition-${condition.value}`}
+                checked={formData.conditions?.includes(condition.value) || false}
+                onCheckedChange={(checked) => handleConditionChange(condition.value, checked as boolean)}
+              />
+              <div className="grid gap-0.5">
+                <Label htmlFor={`condition-${condition.value}`} className="cursor-pointer font-medium">
+                  {condition.label}
+                </Label>
+                <p className="text-xs text-muted-foreground">{condition.description}</p>
+              </div>
             </div>
           ))}
         </div>
