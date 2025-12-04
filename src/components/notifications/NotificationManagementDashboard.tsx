@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmailTemplateManager } from "./EmailTemplateManager";
 import { NotificationTriggersManager } from "./NotificationTriggersManager";
 import { NotificationLogsViewer } from "./NotificationLogsViewer";
@@ -16,134 +15,89 @@ export const NotificationManagementDashboard = () => {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
-          <TabsTrigger value="templates" className="flex items-center gap-2">
-            <Mail className="h-4 w-4" />
-            Email Templates
-          </TabsTrigger>
-          <TabsTrigger value="sms-templates" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            SMS Templates
-          </TabsTrigger>
-          <TabsTrigger value="triggers" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Triggers
-          </TabsTrigger>
-          <TabsTrigger value="email" className="flex items-center gap-2">
-            <Send className="h-4 w-4" />
-            Send Email
-          </TabsTrigger>
-          <TabsTrigger value="sms" className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" />
-            Send SMS
-          </TabsTrigger>
-          <TabsTrigger value="logs" className="flex items-center gap-2">
-            <Activity className="h-4 w-4" />
-            Logs
-          </TabsTrigger>
-          <TabsTrigger value="test" className="flex items-center gap-2">
-            <TestTube className="h-4 w-4" />
-            Test
-          </TabsTrigger>
-        </TabsList>
+        <div className="border-b border-border bg-card rounded-t-lg">
+          <TabsList className="h-auto p-1 bg-transparent gap-1 flex-wrap justify-start">
+            <TabsTrigger 
+              value="templates" 
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-4 py-2.5 rounded-md transition-all"
+            >
+              <Mail className="h-4 w-4 mr-2" />
+              Email Templates
+            </TabsTrigger>
+            <TabsTrigger 
+              value="sms-templates" 
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-4 py-2.5 rounded-md transition-all"
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              SMS Templates
+            </TabsTrigger>
+            <TabsTrigger 
+              value="triggers" 
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-4 py-2.5 rounded-md transition-all"
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Triggers
+            </TabsTrigger>
+            <TabsTrigger 
+              value="email" 
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-4 py-2.5 rounded-md transition-all"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              Send Email
+            </TabsTrigger>
+            <TabsTrigger 
+              value="sms" 
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-4 py-2.5 rounded-md transition-all"
+            >
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Send SMS
+            </TabsTrigger>
+            <TabsTrigger 
+              value="logs" 
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-4 py-2.5 rounded-md transition-all"
+            >
+              <Activity className="h-4 w-4 mr-2" />
+              Logs
+            </TabsTrigger>
+            <TabsTrigger 
+              value="test" 
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-4 py-2.5 rounded-md transition-all"
+            >
+              <TestTube className="h-4 w-4 mr-2" />
+              Test
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-        <TabsContent value="templates" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Email Templates</CardTitle>
-              <CardDescription>
-                Create and manage email templates with dynamic variables
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <EmailTemplateManager />
-            </CardContent>
-          </Card>
-        </TabsContent>
+        <div className="bg-card border border-t-0 border-border rounded-b-lg p-6">
+          <TabsContent value="templates" className="mt-0">
+            <EmailTemplateManager />
+          </TabsContent>
 
-        <TabsContent value="sms-templates" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>SMS Templates</CardTitle>
-              <CardDescription>
-                Create and manage reusable SMS templates with dynamic variables
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <SMSTemplateManager />
-            </CardContent>
-          </Card>
-        </TabsContent>
+          <TabsContent value="sms-templates" className="mt-0">
+            <SMSTemplateManager />
+          </TabsContent>
 
-        <TabsContent value="triggers" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notification Triggers</CardTitle>
-              <CardDescription>
-                Configure when and how notifications are sent
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <NotificationTriggersManager />
-            </CardContent>
-          </Card>
-        </TabsContent>
+          <TabsContent value="triggers" className="mt-0">
+            <NotificationTriggersManager />
+          </TabsContent>
 
-        <TabsContent value="email" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Email Notifications</CardTitle>
-              <CardDescription>
-                Send email messages to customers and cleaners
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <EmailNotificationManager />
-            </CardContent>
-          </Card>
-        </TabsContent>
+          <TabsContent value="email" className="mt-0">
+            <EmailNotificationManager />
+          </TabsContent>
 
-        <TabsContent value="sms" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>SMS Notifications</CardTitle>
-              <CardDescription>
-                Send SMS messages to customers and cleaners via Twilio
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <SMSNotificationManager />
-            </CardContent>
-          </Card>
-        </TabsContent>
+          <TabsContent value="sms" className="mt-0">
+            <SMSNotificationManager />
+          </TabsContent>
 
-        <TabsContent value="logs" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notification Logs</CardTitle>
-              <CardDescription>
-                View delivery status and history of sent notifications
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <NotificationLogsViewer />
-            </CardContent>
-          </Card>
-        </TabsContent>
+          <TabsContent value="logs" className="mt-0">
+            <NotificationLogsViewer />
+          </TabsContent>
 
-        <TabsContent value="test" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Test Notifications</CardTitle>
-              <CardDescription>
-                Send test emails to verify templates and delivery
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <NotificationTestInterface />
-            </CardContent>
-          </Card>
-        </TabsContent>
+          <TabsContent value="test" className="mt-0">
+            <NotificationTestInterface />
+          </TabsContent>
+        </div>
       </Tabs>
     </div>
   );

@@ -32,12 +32,6 @@ const AdminNotificationManagement = () => {
             <div className="flex-1 flex flex-col">
               <main className="flex-1 overflow-auto">
                 <div className="container mx-auto p-6">
-                  <div className="mb-6">
-                    <h1 className="text-3xl font-bold text-foreground">Email Notification Management</h1>
-                    <p className="text-muted-foreground mt-2">
-                      Configure and manage all email notifications in your system
-                    </p>
-                  </div>
                   <NotificationManagementDashboard />
                 </div>
               </main>
