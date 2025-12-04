@@ -85,6 +85,7 @@ interface BookingData {
   // Cost and payment
   totalCost: number;
   discount: number;
+  discountType: 'fixed' | 'percentage';
   cleanerPay: number;
   paymentMethod: string;
   paymentStatus: string;
@@ -141,6 +142,7 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
     keyCollectionNotes: '',
     totalCost: 0,
     discount: 0,
+    discountType: 'fixed',
     cleanerPay: 0,
     paymentMethod: 'Stripe',
     paymentStatus: 'Unpaid',
@@ -476,17 +478,27 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
     return accessDetails || null;
   };
 
+  // Helper to calculate discount amount
+  const calculateDiscountAmount = (baseCost: number) => {
+    if (!formData.discount || formData.discount <= 0) return 0;
+    if (formData.discountType === 'percentage') {
+      return (baseCost * formData.discount) / 100;
+    }
+    return formData.discount;
+  };
+
   // Calculate total cost for hourly services (before discount)
   useEffect(() => {
     if (requiresHours && formData.totalHours > 0 && formData.costPerHour > 0) {
       const baseCost = formData.totalHours * formData.costPerHour;
-      const finalCost = Math.max(0, baseCost - (formData.discount || 0));
+      const discountAmount = calculateDiscountAmount(baseCost);
+      const finalCost = Math.max(0, baseCost - discountAmount);
       setFormData(prev => ({
         ...prev,
         totalCost: finalCost
       }));
     }
-  }, [formData.totalHours, formData.costPerHour, formData.discount, requiresHours]);
+  }, [formData.totalHours, formData.costPerHour, formData.discount, formData.discountType, requiresHours]);
 
   const calculateCleanerPay = () => {
     let cleanerPay = 0;
@@ -1339,27 +1351,43 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
           </CardHeader>
           <CardContent className="space-y-6 p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {requiresHours && (
-                <div className="space-y-2">
-                  <Label htmlFor="discount" className="text-sm font-semibold text-gray-700">
-                    Discount (£)
-                  </Label>
-                  <Input
-                    id="discount"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.discount || ''}
-                    onChange={(e) => handleInputChange('discount', parseFloat(e.target.value) || 0)}
-                    placeholder="0.00"
-                    className="border-2 border-gray-200 focus:border-green-500 transition-colors"
-                  />
-                </div>
-              )}
+              {/* Discount Section */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-gray-700">Discount Type</Label>
+                <Select 
+                  value={formData.discountType} 
+                  onValueChange={(value: 'fixed' | 'percentage') => handleInputChange('discountType', value)}
+                >
+                  <SelectTrigger className="border-2 border-gray-200 focus:border-green-500">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fixed">Fixed Amount (£)</SelectItem>
+                    <SelectItem value="percentage">Percentage (%)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="discount" className="text-sm font-semibold text-gray-700">
+                  Discount {formData.discountType === 'percentage' ? '(%)' : '(£)'}
+                </Label>
+                <Input
+                  id="discount"
+                  type="number"
+                  step={formData.discountType === 'percentage' ? '1' : '0.01'}
+                  min="0"
+                  max={formData.discountType === 'percentage' ? '100' : undefined}
+                  value={formData.discount || ''}
+                  onChange={(e) => handleInputChange('discount', parseFloat(e.target.value) || 0)}
+                  placeholder={formData.discountType === 'percentage' ? '0' : '0.00'}
+                  className="border-2 border-gray-200 focus:border-green-500 transition-colors"
+                />
+              </div>
               
               <div className="space-y-2">
                 <Label htmlFor="totalCost" className="text-sm font-semibold text-gray-700">
-                  Total Cost (£) {requiresHours ? '(After discount)' : '*'}
+                  Total Cost (£) {formData.discount > 0 ? '(After discount)' : requiresHours ? '' : '*'}
                 </Label>
                 <Input
                   id="totalCost"
@@ -1375,9 +1403,9 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
                   readOnly={requiresHours}
                   required={!requiresHours}
                 />
-                {requiresHours && formData.discount > 0 && (
+                {formData.discount > 0 && requiresHours && (
                   <p className="text-xs text-green-600">
-                    Original: £{(formData.totalHours * formData.costPerHour).toFixed(2)} - Discount: £{formData.discount.toFixed(2)}
+                    Original: £{(formData.totalHours * formData.costPerHour).toFixed(2)} - Discount: {formData.discountType === 'percentage' ? `${formData.discount}%` : `£${formData.discount.toFixed(2)}`}
                   </p>
                 )}
               </div>
