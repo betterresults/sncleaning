@@ -25,6 +25,7 @@ interface Booking {
   cleaning_type: string;
   service_type?: string;
   total_cost: number;
+  discount?: number;
   payment_status: string;
   cleaner: number | null;
   customer: number;
@@ -104,15 +105,27 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSameDayCleaning, setIsSameDayCleaning] = useState(false);
+  
+  // Editable booking details
+  const [totalCost, setTotalCost] = useState<number>(0);
+  const [discount, setDiscount] = useState<number>(0);
+  const [totalHours, setTotalHours] = useState<number>(0);
+  const [paymentMethod, setPaymentMethod] = useState<string>('');
+  
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Fetch cleaners when dialog opens
+  // Fetch cleaners and initialize editable fields when dialog opens
   React.useEffect(() => {
-    if (open) {
+    if (open && booking) {
       fetchCleaners();
+      // Initialize editable fields from booking
+      setTotalCost(booking.total_cost || 0);
+      setDiscount(booking.discount || 0);
+      setTotalHours(booking.total_hours || 0);
+      setPaymentMethod(booking.payment_method || 'Cash');
     }
-  }, [open]);
+  }, [open, booking]);
 
   const fetchCleaners = async () => {
     try {
@@ -202,6 +215,11 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
         date_time: newDateTime.toISOString(),
         date_only: dateOnly,
         time_only: timeOnly,
+        // Use editable values
+        total_cost: totalCost,
+        discount: discount,
+        total_hours: totalHours,
+        payment_method: paymentMethod,
         payment_status: 'Unpaid', // Reset payment status for new booking
         invoice_id: null, // Reset invoice data
         invoice_link: null, // Reset invoice data
@@ -242,6 +260,10 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
       setCleanerOption('same');
       setSelectedCleaner(null);
       setIsSameDayCleaning(false);
+      setTotalCost(0);
+      setDiscount(0);
+      setTotalHours(0);
+      setPaymentMethod('');
       
       // Navigate to upcoming bookings
       setTimeout(() => {
@@ -372,7 +394,62 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
             </div>
           </div>
 
-          {/* Airbnb Same Day Option */}
+          {/* Editable Booking Details */}
+          <div className="p-4 bg-white rounded-xl shadow-sm border border-gray-200">
+            <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+              Booking Details (Edit for New Booking)
+            </h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-600">Total Cost (£)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={totalCost}
+                  onChange={(e) => setTotalCost(parseFloat(e.target.value) || 0)}
+                  className="h-10 border-2 border-gray-200 rounded-lg"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-600">Discount (%)</Label>
+                <Input
+                  type="number"
+                  step="1"
+                  min="0"
+                  max="100"
+                  value={discount}
+                  onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+                  className="h-10 border-2 border-gray-200 rounded-lg"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-600">Total Hours</Label>
+                <Input
+                  type="number"
+                  step="0.5"
+                  value={totalHours}
+                  onChange={(e) => setTotalHours(parseFloat(e.target.value) || 0)}
+                  className="h-10 border-2 border-gray-200 rounded-lg"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-600">Payment Method</Label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger className="h-10 border-2 border-gray-200 rounded-lg">
+                    <SelectValue placeholder="Select method" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border-2 border-gray-200 rounded-lg shadow-lg">
+                    <SelectItem value="Cash">Cash</SelectItem>
+                    <SelectItem value="Stripe">Stripe</SelectItem>
+                    <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                    <SelectItem value="Invoiless">Invoiless</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
           {isAirbnbBooking && (
             <div className="p-4 bg-white rounded-xl shadow-sm border border-gray-200">
               <div className="flex items-center space-x-3">
