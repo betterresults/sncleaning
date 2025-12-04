@@ -46,6 +46,7 @@ interface BookingData {
   
   // Cleaner info
   cleanerId: number | null;
+  cleanerName: string;
   
   // Booking details
   selectedDate: Date | undefined;
@@ -117,6 +118,7 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
     email: '',
     phoneNumber: '',
     cleanerId: null,
+    cleanerName: '',
     selectedDate: undefined,
     selectedTime: '09:00 AM',
     selectedHour: '09',
@@ -352,6 +354,7 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
       setFormData(prev => ({
         ...prev,
         cleanerId: cleaner.id,
+        cleanerName: cleaner.full_name || `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim() || '',
         cleanerHourlyRate: cleaner.hourly_rate || 0,
         cleanerPercentage: cleaner.presentage_rate || 70
       }));
@@ -359,6 +362,7 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
       setFormData(prev => ({
         ...prev,
         cleanerId: null,
+        cleanerName: '',
         cleanerHourlyRate: 0,
         cleanerPercentage: 70
       }));
@@ -718,7 +722,8 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
                 address: `${formData.address}, ${formData.postcode}`,
                 total_cost: `£${formData.totalCost}`,
                 total_hours: requiresHours ? `${formData.totalHours} hours` : '',
-                booking_status: 'Confirmed'
+                booking_status: 'Confirmed',
+                cleaner_name: formData.cleanerName || 'Not assigned'
               }
             }
           });
