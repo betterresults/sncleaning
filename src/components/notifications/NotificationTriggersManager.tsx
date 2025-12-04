@@ -4,13 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Clock, Users } from "lucide-react";
+import { Plus, Edit, Trash2, Clock, Users, Mail, Zap } from "lucide-react";
 
 interface EmailTemplate {
   id: string;
@@ -27,22 +27,23 @@ interface NotificationTrigger {
   timing_offset: number;
   timing_unit: string;
   recipient_types: string[];
-  conditions: any; // Json type from Supabase
+  conditions: any;
   created_at: string;
   updated_at: string;
   email_notification_templates?: EmailTemplate;
 }
 
 const TRIGGER_EVENTS = [
-  { value: 'booking_created', label: 'Booking Created' },
-  { value: 'booking_completed', label: 'Booking Completed' },
-  { value: 'booking_cancelled', label: 'Booking Cancelled' },
-  { value: 'photos_uploaded', label: 'Photos Uploaded' },
-  { value: 'payment_received', label: 'Payment Received' },
-  { value: 'payment_failed', label: 'Payment Failed' },
-  { value: 'booking_reminder', label: 'Booking Reminder' },
-  { value: 'customer_created', label: 'Customer Created' },
-  { value: 'cleaner_assigned', label: 'Cleaner Assigned' },
+  { value: 'booking_created', label: 'Booking Created', description: 'When a new booking is created' },
+  { value: 'booking_reminder', label: 'Booking Reminder', description: 'Scheduled reminder before booking date' },
+  { value: 'booking_completed', label: 'Booking Completed', description: 'When a booking is marked complete' },
+  { value: 'booking_cancelled', label: 'Booking Cancelled', description: 'When a booking is cancelled' },
+  { value: 'payment_reminder', label: 'Payment Reminder', description: 'Reminder for unpaid bookings' },
+  { value: 'photos_uploaded', label: 'Photos Uploaded', description: 'When cleaner uploads photos' },
+  { value: 'payment_received', label: 'Payment Received', description: 'When payment is confirmed' },
+  { value: 'payment_failed', label: 'Payment Failed', description: 'When payment fails' },
+  { value: 'customer_created', label: 'Customer Created', description: 'When a new customer is created' },
+  { value: 'cleaner_assigned', label: 'Cleaner Assigned', description: 'When a cleaner is assigned' },
 ];
 
 const RECIPIENT_TYPES = [
@@ -193,9 +194,9 @@ export const NotificationTriggersManager = () => {
     if (trigger.timing_offset === 0) {
       return "Immediately";
     }
-    const isAfter = trigger.timing_offset > 0;
+    const isBefore = trigger.timing_offset < 0;
     const absOffset = Math.abs(trigger.timing_offset);
-    return `${absOffset} ${trigger.timing_unit} ${isAfter ? 'after' : 'before'}`;
+    return `${absOffset} ${trigger.timing_unit} ${isBefore ? 'before' : 'after'}`;
   };
 
   if (loading) {
@@ -203,17 +204,19 @@ export const NotificationTriggersManager = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Notification Triggers ({triggers.length})</h3>
+        <p className="text-sm text-muted-foreground">
+          {triggers.length} trigger{triggers.length !== 1 ? 's' : ''} configured
+        </p>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => setEditingTrigger(null)}>
+            <Button onClick={() => setEditingTrigger(null)} className="rounded-full">
               <Plus className="h-4 w-4 mr-2" />
               Create Trigger
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingTrigger ? 'Edit Trigger' : 'Create New Trigger'}
@@ -235,70 +238,80 @@ export const NotificationTriggersManager = () => {
         </Dialog>
       </div>
 
-      <div className="grid gap-4">
-        {triggers.map((trigger) => (
-          <Card key={trigger.id}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    {trigger.name}
-                    {!trigger.is_enabled && (
-                      <Badge variant="secondary">Disabled</Badge>
-                    )}
-                  </CardTitle>
-                  <CardDescription>
-                    {TRIGGER_EVENTS.find(e => e.value === trigger.trigger_event)?.label || trigger.trigger_event}
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={trigger.is_enabled}
-                    onCheckedChange={(checked) => toggleTriggerEnabled(trigger.id, checked)}
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setEditingTrigger(trigger);
-                      setIsDialogOpen(true);
-                    }}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDeleteTrigger(trigger.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{getTimingDescription(trigger)}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <div className="flex gap-1">
-                    {trigger.recipient_types.map((type) => (
-                      <Badge key={type} variant="outline">
-                        {type}
-                      </Badge>
-                    ))}
+      <div className="grid gap-3">
+        {triggers.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            No triggers configured yet. Create your first trigger to get started.
+          </div>
+        ) : (
+          triggers.map((trigger) => (
+            <Card key={trigger.id} className="rounded-2xl border shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className={`p-2 rounded-full ${trigger.is_enabled ? 'bg-primary/10' : 'bg-muted'}`}>
+                      <Zap className={`h-4 w-4 ${trigger.is_enabled ? 'text-primary' : 'text-muted-foreground'}`} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium">{trigger.name}</h4>
+                        {!trigger.is_enabled && (
+                          <Badge variant="secondary" className="text-xs">Disabled</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {TRIGGER_EVENTS.find(e => e.value === trigger.trigger_event)?.label || trigger.trigger_event}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-6">
+                    <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span>{getTimingDescription(trigger)}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Users className="h-3.5 w-3.5" />
+                        <span>{trigger.recipient_types.join(', ')}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Mail className="h-3.5 w-3.5" />
+                        <span className="truncate max-w-[150px]">{trigger.email_notification_templates?.name || 'No template'}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={trigger.is_enabled}
+                        onCheckedChange={(checked) => toggleTriggerEnabled(trigger.id, checked)}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => {
+                          setEditingTrigger(trigger);
+                          setIsDialogOpen(true);
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => handleDeleteTrigger(trigger.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Template: {trigger.email_notification_templates?.name || 'Unknown'}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
     </div>
   );
@@ -317,19 +330,44 @@ const TriggerEditor: React.FC<TriggerEditorProps> = ({
   onSave,
   onCancel,
 }) => {
+  // Parse existing timing_offset to get direction and absolute value
+  const existingOffset = trigger?.timing_offset || 0;
+  const existingDirection = existingOffset < 0 ? 'before' : existingOffset > 0 ? 'after' : 'immediate';
+  const existingAbsValue = Math.abs(existingOffset);
+
   const [formData, setFormData] = useState({
     name: trigger?.name || '',
     trigger_event: trigger?.trigger_event || '',
     template_id: trigger?.template_id || '',
     is_enabled: trigger?.is_enabled ?? true,
-    timing_offset: trigger?.timing_offset || 0,
-    timing_unit: trigger?.timing_unit || 'minutes',
+    timing_value: existingAbsValue,
+    timing_direction: existingDirection,
+    timing_unit: trigger?.timing_unit || 'hours',
     recipient_types: trigger?.recipient_types || ['customer'],
+    conditions: trigger?.conditions || null,
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    
+    // Calculate timing_offset based on direction
+    let timing_offset = formData.timing_value;
+    if (formData.timing_direction === 'before') {
+      timing_offset = -Math.abs(timing_offset);
+    } else if (formData.timing_direction === 'immediate') {
+      timing_offset = 0;
+    }
+
+    onSave({
+      name: formData.name,
+      trigger_event: formData.trigger_event,
+      template_id: formData.template_id,
+      is_enabled: formData.is_enabled,
+      timing_offset,
+      timing_unit: formData.timing_unit,
+      recipient_types: formData.recipient_types,
+      conditions: formData.conditions,
+    });
   };
 
   const handleRecipientTypeChange = (type: string, checked: boolean) => {
@@ -341,90 +379,68 @@ const TriggerEditor: React.FC<TriggerEditorProps> = ({
     }));
   };
 
+  const isScheduledTrigger = ['booking_reminder', 'payment_reminder'].includes(formData.trigger_event);
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="name">Trigger Name</Label>
-          <Input
-            id="name"
-            value={formData.name}
-            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-            required
-          />
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Basic Info */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex-1 mr-4">
+            <Label htmlFor="name">Trigger Name</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="e.g., Payment Reminder 48h"
+              required
+            />
+          </div>
+          <div className="flex items-center space-x-2 pt-6">
+            <Switch
+              id="is_enabled"
+              checked={formData.is_enabled}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_enabled: checked }))}
+            />
+            <Label htmlFor="is_enabled">Active</Label>
+          </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="is_enabled"
-            checked={formData.is_enabled}
-            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_enabled: checked }))}
-          />
-          <Label htmlFor="is_enabled">Enabled</Label>
-        </div>
-      </div>
 
-      <div>
-        <Label htmlFor="trigger_event">Trigger Event</Label>
-        <Select
-          value={formData.trigger_event}
-          onValueChange={(value) => setFormData(prev => ({ ...prev, trigger_event: value }))}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select an event" />
-          </SelectTrigger>
-          <SelectContent>
-            {TRIGGER_EVENTS.map((event) => (
-              <SelectItem key={event.value} value={event.value}>
-                {event.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div>
-        <Label htmlFor="template_id">Email Template</Label>
-        <Select
-          value={formData.template_id}
-          onValueChange={(value) => setFormData(prev => ({ ...prev, template_id: value }))}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select a template" />
-          </SelectTrigger>
-          <SelectContent>
-            {templates.map((template) => (
-              <SelectItem key={template.id} value={template.id}>
-                {template.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="timing_offset">Timing Offset</Label>
-          <Input
-            id="timing_offset"
-            type="number"
-            value={formData.timing_offset}
-            onChange={(e) => setFormData(prev => ({ ...prev, timing_offset: parseInt(e.target.value) || 0 }))}
-            placeholder="0 for immediate"
-          />
-        </div>
-        <div>
-          <Label htmlFor="timing_unit">Timing Unit</Label>
+          <Label htmlFor="trigger_event">Trigger Event</Label>
           <Select
-            value={formData.timing_unit}
-            onValueChange={(value) => setFormData(prev => ({ ...prev, timing_unit: value }))}
+            value={formData.trigger_event}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, trigger_event: value }))}
           >
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder="Select when this trigger fires" />
             </SelectTrigger>
             <SelectContent>
-              {TIMING_UNITS.map((unit) => (
-                <SelectItem key={unit.value} value={unit.value}>
-                  {unit.label}
+              {TRIGGER_EVENTS.map((event) => (
+                <SelectItem key={event.value} value={event.value}>
+                  <div>
+                    <div>{event.label}</div>
+                    <div className="text-xs text-muted-foreground">{event.description}</div>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="template_id">Email Template</Label>
+          <Select
+            value={formData.template_id}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, template_id: value }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select email template to send" />
+            </SelectTrigger>
+            <SelectContent>
+              {templates.map((template) => (
+                <SelectItem key={template.id} value={template.id}>
+                  {template.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -432,9 +448,78 @@ const TriggerEditor: React.FC<TriggerEditorProps> = ({
         </div>
       </div>
 
-      <div>
-        <Label>Recipients</Label>
-        <div className="space-y-2 mt-2">
+      {/* Timing Section */}
+      <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+        <h4 className="font-medium flex items-center gap-2">
+          <Clock className="h-4 w-4" />
+          Timing
+        </h4>
+        
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <Label>When to Send</Label>
+            <Select
+              value={formData.timing_direction}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, timing_direction: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="immediate">Immediately</SelectItem>
+                <SelectItem value="before">Before event</SelectItem>
+                <SelectItem value="after">After event</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {formData.timing_direction !== 'immediate' && (
+            <>
+              <div>
+                <Label>Amount</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={formData.timing_value}
+                  onChange={(e) => setFormData(prev => ({ ...prev, timing_value: parseInt(e.target.value) || 1 }))}
+                />
+              </div>
+              <div>
+                <Label>Unit</Label>
+                <Select
+                  value={formData.timing_unit}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, timing_unit: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TIMING_UNITS.map((unit) => (
+                      <SelectItem key={unit.value} value={unit.value}>
+                        {unit.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
+        </div>
+
+        {isScheduledTrigger && formData.timing_direction === 'before' && (
+          <p className="text-sm text-muted-foreground">
+            This notification will be sent {formData.timing_value} {formData.timing_unit} before the booking date/time.
+          </p>
+        )}
+      </div>
+
+      {/* Recipients */}
+      <div className="space-y-3">
+        <Label className="flex items-center gap-2">
+          <Users className="h-4 w-4" />
+          Recipients
+        </Label>
+        <div className="flex flex-wrap gap-4">
           {RECIPIENT_TYPES.map((type) => (
             <div key={type.value} className="flex items-center space-x-2">
               <Checkbox
@@ -442,13 +527,14 @@ const TriggerEditor: React.FC<TriggerEditorProps> = ({
                 checked={formData.recipient_types.includes(type.value)}
                 onCheckedChange={(checked) => handleRecipientTypeChange(type.value, checked as boolean)}
               />
-              <Label htmlFor={type.value}>{type.label}</Label>
+              <Label htmlFor={type.value} className="cursor-pointer">{type.label}</Label>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="flex justify-end gap-2">
+      {/* Actions */}
+      <div className="flex justify-end gap-3 pt-4 border-t">
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
