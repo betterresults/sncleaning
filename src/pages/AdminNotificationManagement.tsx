@@ -1,6 +1,6 @@
 import React from "react";
 import AdminGuard from "@/components/AdminGuard";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { UnifiedSidebar } from "@/components/UnifiedSidebar";
 import { UnifiedHeader } from "@/components/UnifiedHeader";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,7 +15,7 @@ const AdminNotificationManagement = () => {
   return (
     <AdminGuard>
       <SidebarProvider>
-        <div className="min-h-screen flex flex-col w-full bg-background">
+        <div className="min-h-screen flex flex-col w-full bg-gray-50">
           <UnifiedHeader 
             title=""
             user={user}
@@ -29,13 +29,11 @@ const AdminNotificationManagement = () => {
               userRole={userRole}
               onSignOut={signOut}
             />
-            <div className="flex-1 flex flex-col">
-              <main className="flex-1 overflow-auto">
-                <div className="container mx-auto p-6">
-                  <NotificationManagementDashboard />
-                </div>
+            <SidebarInset className="flex-1 flex flex-col p-0 m-0 overflow-x-hidden">
+              <main className="flex-1 bg-gray-50 m-0 px-4 md:px-6 py-4 md:py-6 w-full">
+                <NotificationManagementDashboard />
               </main>
-            </div>
+            </SidebarInset>
           </div>
         </div>
       </SidebarProvider>
