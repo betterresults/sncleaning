@@ -84,6 +84,7 @@ interface BookingData {
   
   // Cost and payment
   totalCost: number;
+  discount: number;
   cleanerPay: number;
   paymentMethod: string;
   paymentStatus: string;
@@ -139,6 +140,7 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
     useClientAddressForKeys: false,
     keyCollectionNotes: '',
     totalCost: 0,
+    discount: 0,
     cleanerPay: 0,
     paymentMethod: 'Stripe',
     paymentStatus: 'Unpaid',
@@ -474,16 +476,17 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
     return accessDetails || null;
   };
 
-  // Calculate total cost for hourly services
+  // Calculate total cost for hourly services (before discount)
   useEffect(() => {
     if (requiresHours && formData.totalHours > 0 && formData.costPerHour > 0) {
-      const calculatedCost = formData.totalHours * formData.costPerHour;
+      const baseCost = formData.totalHours * formData.costPerHour;
+      const finalCost = Math.max(0, baseCost - (formData.discount || 0));
       setFormData(prev => ({
         ...prev,
-        totalCost: calculatedCost
+        totalCost: finalCost
       }));
     }
-  }, [formData.totalHours, formData.costPerHour, requiresHours]);
+  }, [formData.totalHours, formData.costPerHour, formData.discount, requiresHours]);
 
   const calculateCleanerPay = () => {
     let cleanerPay = 0;
@@ -626,6 +629,7 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
         total_hours: requiresHours ? formData.totalHours : null,
         cleaning_time: requiresCleaningTime ? parseFloat(formData.cleaningTime) || null : null,
         total_cost: formData.totalCost,
+        discount: formData.discount || 0,
         cleaner_pay: formData.cleanerPay,
         cleaner_rate: formData.cleanerHourlyRate || null,
         cleaner_percentage: formData.cleanerPercentage || null,
@@ -1334,10 +1338,28 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6 p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {requiresHours && (
+                <div className="space-y-2">
+                  <Label htmlFor="discount" className="text-sm font-semibold text-gray-700">
+                    Discount (£)
+                  </Label>
+                  <Input
+                    id="discount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.discount || ''}
+                    onChange={(e) => handleInputChange('discount', parseFloat(e.target.value) || 0)}
+                    placeholder="0.00"
+                    className="border-2 border-gray-200 focus:border-green-500 transition-colors"
+                  />
+                </div>
+              )}
+              
               <div className="space-y-2">
                 <Label htmlFor="totalCost" className="text-sm font-semibold text-gray-700">
-                  Total Cost (£) {requiresHours ? '(Auto-calculated)' : '*'}
+                  Total Cost (£) {requiresHours ? '(After discount)' : '*'}
                 </Label>
                 <Input
                   id="totalCost"
@@ -1353,6 +1375,11 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
                   readOnly={requiresHours}
                   required={!requiresHours}
                 />
+                {requiresHours && formData.discount > 0 && (
+                  <p className="text-xs text-green-600">
+                    Original: £{(formData.totalHours * formData.costPerHour).toFixed(2)} - Discount: £{formData.discount.toFixed(2)}
+                  </p>
+                )}
               </div>
               
               {/* Payment Method - Show dropdown for admin when customer has no payment methods */}
