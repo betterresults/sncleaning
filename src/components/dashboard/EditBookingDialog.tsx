@@ -70,6 +70,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
     dateTime: '',
     totalHours: 0,
     totalCost: 0,
+    discount: 0,
     cleanerPay: 0,
     cleanerId: null as number | null,
     cleanerRate: 0,
@@ -152,6 +153,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         dateTime: formatDateTimeForInput(booking.date_time),
         totalHours: booking.total_hours || 0,
         totalCost: booking.total_cost || 0,
+        discount: booking.discount || 0,
         cleanerPay: booking.cleaner_pay || 0,
         cleanerId: booking.cleaner || null,
         cleanerRate: booking.cleaner_rate || 0,
@@ -267,6 +269,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
           date_time: convertToISOString(formData.dateTime),
           total_hours: formData.totalHours,
           total_cost: formData.totalCost,
+          discount: formData.discount,
           cleaner_pay: formData.cleanerPay,
           cleaner: formData.cleanerId,
           cleaner_rate: formData.cleanerRate,
@@ -690,7 +693,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                       <CreditCard className="h-4 w-4" />
                       Client Payment Details
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                       <div>
                         <Label htmlFor="totalCost" className="text-sm font-medium">Total Cost (£)</Label>
                         <Input
@@ -699,6 +702,19 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                           step="0.01"
                           value={formData.totalCost}
                           onChange={(e) => handleInputChange('totalCost', parseFloat(e.target.value) || 0)}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="discount" className="text-sm font-medium">Discount (%)</Label>
+                        <Input
+                          id="discount"
+                          type="number"
+                          step="1"
+                          min="0"
+                          max="100"
+                          value={formData.discount}
+                          onChange={(e) => handleInputChange('discount', parseFloat(e.target.value) || 0)}
                           className="mt-1"
                         />
                       </div>
