@@ -248,6 +248,11 @@ export default function EditRecurringBooking() {
   const performUpdate = async () => {
     setLoading(true);
     try {
+      // Determine interval based on frequency
+      let interval = '7'; // Default to weekly
+      if (formData.frequently === 'bi-weekly') interval = '14';
+      if (formData.frequently === 'monthly') interval = '30';
+
       const submitData = {
         customer: parseInt(formData.client),
         address: formData.address,
@@ -255,6 +260,7 @@ export default function EditRecurringBooking() {
         cleaner_rate: formData.cleaner_rate ? parseFloat(formData.cleaner_rate) : null,
         cleaning_type: formData.cleaning_type,
         frequently: formData.frequently,
+        interval: interval,
         days_of_the_week: formData.days_of_the_week || null,
         hours: formData.hours,
         cost_per_hour: formData.cost_per_hour ? parseFloat(formData.cost_per_hour) : null,
