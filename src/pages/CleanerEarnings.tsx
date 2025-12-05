@@ -15,6 +15,10 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 const CleanerEarningsPage = () => {
   const { user, userRole, cleanerId, loading, signOut } = useAuth();
+  const isMobile = useIsMobile();
+  
+  // Determine mobile view BEFORE any conditional returns
+  const isMobileView = isCapacitor() || isMobile;
 
   const handleSignOut = async () => {
     try {
@@ -36,9 +40,6 @@ const CleanerEarningsPage = () => {
   if (!user || (userRole !== 'user' && userRole !== 'admin') || (userRole === 'user' && !cleanerId)) {
     return <Navigate to="/auth" replace />;
   }
-
-  const isMobile = useIsMobile();
-  const isMobileView = isCapacitor() || isMobile;
 
   // Mobile view for native app and mobile browsers
   if (isMobileView) {
