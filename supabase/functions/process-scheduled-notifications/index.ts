@@ -125,15 +125,47 @@ serve(async (req: Request) => {
         }
 
         // Prepare notification variables
+        const customerId = customerData?.id || bookingData.customer;
         const variables = {
+          // Customer variables
           customer_name: customerData ? `${customerData.first_name || ''} ${customerData.last_name || ''}`.trim() : bookingData.first_name || 'Customer',
-          booking_date: bookingData.date_time ? new Date(bookingData.date_time).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'TBC',
-          booking_time: bookingData.time_only || 'TBC',
-          service_type: bookingData.service_type || 'Cleaning Service',
-          address: bookingData.address || 'Address not specified',
-          cleaner_name: cleanerData ? `${cleanerData.first_name || ''} ${cleanerData.last_name || ''}`.trim() : 'To be assigned',
-          total_cost: bookingData.total_cost?.toString() || '0',
+          first_name: customerData?.first_name || bookingData.first_name || '',
+          last_name: customerData?.last_name || bookingData.last_name || '',
+          customer_phone: customerData?.phone || bookingData.phone_number || '',
+          customer_email: customerData?.email || bookingData.email || '',
+          
+          // Booking variables
           booking_id: bookingData.id?.toString() || '',
+          booking_date: bookingData.date_time ? new Date(bookingData.date_time).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'TBC',
+          booking_time: bookingData.time_only || (bookingData.date_time ? new Date(bookingData.date_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'TBC'),
+          service_type: bookingData.service_type || 'Cleaning Service',
+          cleaning_type: bookingData.cleaning_type || '',
+          address: bookingData.address || 'Address not specified',
+          postcode: bookingData.postcode || '',
+          total_cost: bookingData.total_cost ? `£${bookingData.total_cost.toFixed(2)}` : '£0.00',
+          total_hours: bookingData.total_hours?.toString() || '',
+          booking_status: bookingData.booking_status || '',
+          
+          // Cleaner variables
+          cleaner_name: cleanerData ? `${cleanerData.first_name || ''} ${cleanerData.last_name || ''}`.trim() : 'To be assigned',
+          cleaner_phone: cleanerData?.phone?.toString() || '',
+          
+          // Payment variables
+          payment_status: bookingData.payment_status || '',
+          payment_method: bookingData.payment_method || '',
+          amount: bookingData.total_cost ? `£${bookingData.total_cost.toFixed(2)}` : '£0.00',
+          payment_link: bookingData.invoice_link || '',
+          invoice_link: bookingData.invoice_link || '',
+          
+          // Account/Link variables - these are the critical missing ones!
+          add_card_link: customerId ? `https://dkomihipebixlegygnoy.supabase.co/functions/v1/redirect-to-payment-collection?customer_id=${customerId}` : '',
+          login_link: 'https://account.sncleaningservices.co.uk/auth',
+          dashboard_link: 'https://account.sncleaningservices.co.uk/dashboard',
+          
+          // Company variables
+          company_name: 'SN Cleaning Services',
+          company_email: 'sales@sncleaningservices.co.uk',
+          company_phone: '020 1234 5678',
         };
 
         const channel = trigger.notification_channel || 'email';
