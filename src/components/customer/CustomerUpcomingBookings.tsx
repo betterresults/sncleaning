@@ -108,7 +108,7 @@ const CustomerUpcomingBookings = () => {
         .eq('customer', activeCustomerId)
         .eq('id', booking.id)
         .gte('date_time', new Date().toISOString())
-        .neq('booking_status', 'cancelled');
+        .or('booking_status.is.null,booking_status.neq.cancelled');
 
       if (updatedBookings.data && updatedBookings.data.length === 0) {
         // Booking successfully cancelled and moved/hidden
@@ -161,7 +161,7 @@ const CustomerUpcomingBookings = () => {
         currentTime: new Date().toISOString()
       });
 
-      // Fetch upcoming bookings - exclude cancelled bookings
+      // Fetch upcoming bookings - exclude cancelled bookings (handle NULL booking_status)
       const { data, error } = await supabase
         .from('bookings')
         .select(`
@@ -192,7 +192,7 @@ const CustomerUpcomingBookings = () => {
         `)
         .eq('customer', activeCustomerId)
         .gte('date_time', new Date().toISOString())
-        .neq('booking_status', 'cancelled')
+        .or('booking_status.is.null,booking_status.neq.cancelled')
         .order('date_time', { ascending: true });
 
       console.log('CustomerUpcomingBookings - Raw query result:', {

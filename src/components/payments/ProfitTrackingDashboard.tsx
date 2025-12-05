@@ -46,8 +46,8 @@ export const ProfitTrackingDashboard = () => {
         customer,
         booking_status
       `)
-      // Exclude cancelled bookings from profit calculation
-      .neq('booking_status', 'cancelled');
+      // Exclude cancelled bookings from profit calculation (handle NULL status)
+      .or('booking_status.is.null,booking_status.neq.cancelled');
 
     if (dateRange.from) {
       query = query.gte('date_time', dateRange.from.toISOString());
