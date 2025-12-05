@@ -59,6 +59,7 @@ import AdminNotificationManagement from "./pages/AdminNotificationManagement";
 import InvoilessAPITest from "./pages/InvoilessAPITest";
 import AdminAirbnbFormSettings from "./pages/AdminAirbnbFormSettings";
 import AdminCustomerPricing from "./pages/AdminCustomerPricing";
+import CustomerWelcome from "./pages/CustomerWelcome";
 import NotFound from "./pages/NotFound";
 import { AdminCustomerProvider } from "./contexts/AdminCustomerContext";
 import { AdminCleanerProvider } from "./contexts/AdminCleanerContext";
@@ -79,6 +80,7 @@ const App = () => (
             <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/welcome" element={<CustomerWelcome />} />
             <Route path="/choose-service" element={<PublicServiceSelection />} />
             <Route path="/airbnb" element={<AirbnbBooking />} />
             <Route path="/linen-order" element={<LinenOrder />} />

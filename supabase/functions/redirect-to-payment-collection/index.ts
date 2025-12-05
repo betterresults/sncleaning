@@ -35,7 +35,7 @@ const handler = async (req: Request): Promise<Response> => {
         customer_id: parseInt(customerId),
         email: customer.email,
         name: `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 'Customer',
-        return_url: `https://account.sncleaningservices.co.uk/auth?payment_setup=success&redirect=customer`,
+        return_url: `https://account.sncleaningservices.co.uk/welcome?customer_id=${customerId}&payment_setup=success`,
         collect_only: true
       }
     });
