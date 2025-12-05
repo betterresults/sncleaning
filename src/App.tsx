@@ -56,6 +56,7 @@ import AdminLinenManagement from "./pages/AdminLinenManagement";
 import AdminProfitTracking from "./pages/AdminProfitTracking";
 import AdminActivityLogs from "./pages/AdminActivityLogs";
 import AdminNotificationManagement from "./pages/AdminNotificationManagement";
+import ApplyToWork from "./pages/ApplyToWork";
 import InvoilessAPITest from "./pages/InvoilessAPITest";
 import AdminAirbnbFormSettings from "./pages/AdminAirbnbFormSettings";
 import AdminCustomerPricing from "./pages/AdminCustomerPricing";
@@ -85,6 +86,7 @@ const App = () => (
             <Route path="/airbnb" element={<AirbnbBooking />} />
             <Route path="/linen-order" element={<LinenOrder />} />
             <Route path="/booking-confirmation" element={<BookingConfirmation />} />
+            <Route path="/apply" element={<ApplyToWork />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/upcoming-bookings" element={<UpcomingBookings />} />
             <Route path="/bulk-edit-bookings" element={<BulkEditBookings />} />
