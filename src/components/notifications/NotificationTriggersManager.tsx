@@ -171,18 +171,105 @@ export const NotificationTriggersManager = () => {
     }
   };
 
+  // Reschedule all pending notifications when trigger timing changes
+  const reschedulePendingNotifications = async (
+    triggerId: string,
+    newTimingOffset: number,
+    newTimingUnit: string
+  ) => {
+    try {
+      // Get all pending notifications for this trigger
+      const { data: pendingNotifications, error: fetchError } = await supabase
+        .from('notification_schedules')
+        .select('id, entity_id, entity_type')
+        .eq('trigger_id', triggerId)
+        .eq('status', 'scheduled');
+
+      if (fetchError) throw fetchError;
+
+      if (!pendingNotifications || pendingNotifications.length === 0) {
+        console.log('No pending notifications to reschedule');
+        return;
+      }
+
+      // Calculate the interval in minutes
+      let intervalMinutes = newTimingOffset;
+      if (newTimingUnit === 'hours') {
+        intervalMinutes = newTimingOffset * 60;
+      } else if (newTimingUnit === 'days') {
+        intervalMinutes = newTimingOffset * 60 * 24;
+      }
+
+      // For each pending notification, recalculate scheduled_for based on booking date
+      for (const notification of pendingNotifications) {
+        if (notification.entity_type === 'booking') {
+          // Get the booking's date_time
+          const { data: booking, error: bookingError } = await supabase
+            .from('bookings')
+            .select('date_time, date_submited')
+            .eq('id', parseInt(notification.entity_id))
+            .single();
+
+          if (bookingError || !booking) {
+            console.error('Could not find booking for notification:', notification.id);
+            continue;
+          }
+
+          // Determine base time based on trigger event (booking_created uses date_submited, others use date_time)
+          const baseTime = booking.date_submited || booking.date_time;
+          if (!baseTime) continue;
+
+          const newScheduledFor = new Date(baseTime);
+          newScheduledFor.setMinutes(newScheduledFor.getMinutes() + intervalMinutes);
+
+          // Update the notification schedule
+          await supabase
+            .from('notification_schedules')
+            .update({ scheduled_for: newScheduledFor.toISOString() })
+            .eq('id', notification.id);
+        }
+      }
+
+      console.log(`Rescheduled ${pendingNotifications.length} pending notifications`);
+    } catch (error) {
+      console.error('Error rescheduling notifications:', error);
+      toast({
+        title: "Warning",
+        description: "Trigger updated but some notifications may not have been rescheduled",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSaveTrigger = async (triggerData: Partial<NotificationTrigger>) => {
     try {
       if (editingTrigger) {
+        // Check if timing changed to reschedule pending notifications
+        const timingChanged = 
+          triggerData.timing_offset !== editingTrigger.timing_offset ||
+          triggerData.timing_unit !== editingTrigger.timing_unit;
+
         const { error } = await supabase
           .from('notification_triggers')
           .update(triggerData)
           .eq('id', editingTrigger.id);
 
         if (error) throw error;
+
+        // If timing changed, reschedule all pending notifications for this trigger
+        if (timingChanged && triggerData.timing_offset !== undefined && triggerData.timing_unit) {
+          await reschedulePendingNotifications(
+            editingTrigger.id,
+            triggerData.timing_offset,
+            triggerData.timing_unit
+          );
+        }
+
         toast({
           title: "Success",
-          description: "Trigger updated successfully",
+          description: timingChanged 
+            ? "Trigger updated and pending notifications rescheduled" 
+            : "Trigger updated successfully",
         });
       } else {
         const { error } = await supabase
