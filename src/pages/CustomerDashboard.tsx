@@ -4,7 +4,7 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Clock, MapPin, CreditCard } from 'lucide-react';
+import { Calendar, Clock, MapPin, CreditCard, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCustomerLinenAccess } from '@/hooks/useCustomerLinenAccess';
@@ -14,12 +14,13 @@ import CustomerUpcomingBookings from '@/components/customer/CustomerUpcomingBook
 import { BulkPaymentDialog } from '@/components/customer/BulkPaymentDialog';
 import { useCustomerUnpaidBookings } from '@/hooks/useCustomerUnpaidBookings';
 import { AlertTriangle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const CustomerDashboard = () => {
-  const { user, userRole, customerId, cleanerId, signOut } = useAuth();
+  const { user, userRole, customerId, cleanerId, signOut, loading } = useAuth();
   const { selectedCustomerId } = useAdminCustomer();
   const { hasLinenAccess, loading: linenLoading } = useCustomerLinenAccess();
   const { unpaidBookings, loading: paymentsLoading, refetch: refetchPayments } = useCustomerUnpaidBookings();
@@ -28,7 +29,37 @@ const CustomerDashboard = () => {
   const [showBulkPayment, setShowBulkPayment] = useState(false);
   const [isBusinessClient, setIsBusinessClient] = useState(false);
   const [overdueInvoices, setOverdueInvoices] = useState([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { toast } = useToast();
   const isAdminViewing = userRole === 'admin';
+
+  // Handle payment_setup success parameter
+  useEffect(() => {
+    if (searchParams.get('payment_setup') === 'success') {
+      toast({
+        title: "Payment method added",
+        description: "Your payment method has been successfully saved.",
+      });
+      // Clean up the URL
+      searchParams.delete('payment_setup');
+      setSearchParams(searchParams, { replace: true });
+      // Refresh payment methods
+      fetchPaymentMethods();
+    }
+  }, [searchParams]);
+
+  // Redirect to auth if not logged in
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
   
   // Use selected customer ID if admin is viewing, otherwise use the logged-in user's customer ID  
   const activeCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
