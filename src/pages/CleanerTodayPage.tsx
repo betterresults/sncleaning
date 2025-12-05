@@ -16,6 +16,10 @@ const CleanerTodayPage = () => {
   const { user, userRole, cleanerId, loading } = useAuth();
   const { data: todayCount, isLoading: countLoading } = useTodayBookingsCount();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  
+  // Determine mobile view BEFORE any conditional returns
+  const isMobileView = isCapacitor() || isMobile;
 
   console.log('CleanerTodayPage state', { userRole, cleanerId, loading, todayCount, countLoading });
 
@@ -30,13 +34,12 @@ const CleanerTodayPage = () => {
     );
   }
 
-  if (!user || (userRole !== 'cleaner' && userRole !== 'admin') || (userRole === 'cleaner' && !cleanerId)) {
+  // Allow 'user' role with cleanerId or admin
+  if (!user || (userRole !== 'user' && userRole !== 'admin') || (userRole === 'user' && !cleanerId)) {
     return <Navigate to="/auth" replace />;
   }
 
   const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Cleaner';
-  const isMobile = useIsMobile();
-  const isMobileView = isCapacitor() || isMobile;
 
   return (
     <div className="min-h-screen bg-background">
