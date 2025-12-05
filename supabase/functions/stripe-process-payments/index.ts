@@ -33,14 +33,16 @@ serve(async (req) => {
 
     // 1. Find bookings that need payment authorization (within next 24 hours, including 2hrs buffer for missed ones)
     // CRITICAL: Only include bookings that are truly unpaid AND don't already have an invoice_id to prevent double charging
+    // CRITICAL: Exclude cancelled bookings to prevent charging for cancelled services
     const { data: bookingsToAuthorize, error: authorizeError } = await supabaseClient
       .from('bookings')
-      .select('id, date_time, total_cost, customer, payment_status, invoice_id')
+      .select('id, date_time, total_cost, customer, payment_status, invoice_id, booking_status')
       .gte('date_time', authorizationWindowStart.toISOString())
       .lte('date_time', authorizationWindowEnd.toISOString())
       .in('payment_status', ['Unpaid', 'pending', 'failed']) // ONLY truly unpaid bookings
       .is('invoice_id', null) // Skip bookings that already have an invoice/payment intent
       .not('customer', 'is', null)
+      .not('booking_status', 'ilike', '%cancelled%') // Skip cancelled bookings
 
     if (authorizeError) {
       console.error('Error fetching bookings to authorize:', authorizeError)
@@ -96,11 +98,13 @@ serve(async (req) => {
 
     // 2. Find completed bookings that need payment capture (ONLY in past_bookings with 'authorized' status)
     // CRITICAL: Only process bookings that are NOT already paid to prevent double charging
+    // CRITICAL: Exclude cancelled bookings
     const { data: pastBookingsToCapture, error: pastCaptureError } = await supabaseClient
       .from('past_bookings')
-      .select('id, date_time, invoice_id, total_hours, payment_status')
+      .select('id, date_time, invoice_id, total_hours, payment_status, booking_status')
       .eq('payment_status', 'authorized')
       .not('invoice_id', 'is', null)
+      .not('booking_status', 'ilike', '%cancelled%') // Skip cancelled bookings
       .order('date_time', { ascending: false })
       .limit(50) // Limit to prevent processing too many at once
 
