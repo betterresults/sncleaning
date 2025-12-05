@@ -534,60 +534,8 @@ export const useAirbnbBookingSubmit = () => {
         // Don't fail the booking if logging fails
       }
 
-      // Step 2.5: Send confirmation email to customer
-      try {
-        // Get booking_confirmation template
-        const { data: template } = await supabase
-          .from('email_notification_templates')
-          .select('id')
-          .eq('name', 'booking_created')
-          .eq('is_active', true)
-          .single();
-
-        if (template && bookingData.email) {
-          const bookingDate = bookingDateTime 
-            ? bookingDateTime.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })
-            : 'TBC';
-          
-          // Only show "Flexible timing" if user explicitly chose flexible time option
-          // Otherwise show the selected time or the original selectedTime value
-          let bookingTime: string;
-          if (bookingData.flexibility === 'flexible-time') {
-            bookingTime = 'Flexible timing';
-          } else if (time24ForDB) {
-            // Convert 24h time to 12h format for display
-            const [hours, minutes] = time24ForDB.split(':').map(Number);
-            const period = hours >= 12 ? 'PM' : 'AM';
-            const displayHour = hours % 12 || 12;
-            bookingTime = `${displayHour}:${minutes.toString().padStart(2, '0')} ${period}`;
-          } else if (bookingData.selectedTime) {
-            // Fallback to original selected time string
-            bookingTime = bookingData.selectedTime;
-          } else {
-            bookingTime = 'Time to be confirmed';
-          }
-
-          await supabase.functions.invoke('send-notification-email', {
-            body: {
-              template_id: template.id,
-              recipient_email: bookingData.email,
-              variables: {
-                customer_name: `${bookingData.firstName} ${bookingData.lastName}`.trim() || 'Valued Customer',
-                booking_id: booking.id.toString(),
-                booking_date: bookingDate,
-                booking_time: bookingTime,
-                service_type: 'Airbnb Cleaning',
-                address: `${addressForBooking}, ${postcodeForBooking}`,
-                total_cost: bookingData.totalCost?.toFixed(2) || '0.00'
-              }
-            }
-          });
-          console.log('[useAirbnbBookingSubmit] Confirmation email sent to:', bookingData.email);
-        }
-      } catch (emailError) {
-        console.error('Failed to send confirmation email:', emailError);
-        // Don't fail the booking if email fails
-      }
+      // Note: Confirmation email is now handled automatically by the notification trigger system
+      // (trigger_event: 'booking_created') to avoid duplicate emails
 
       // Step 3: Authorize payment only if not skipped (for non-urgent bookings)
       if (!skipPaymentAuth) {
