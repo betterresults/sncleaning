@@ -101,6 +101,25 @@ serve(async (req) => {
       throw new Error('Booking not found in either upcoming or completed bookings')
     }
 
+    // CRITICAL: Check if booking is cancelled - skip payment processing for cancelled bookings
+    const bookingStatus = booking.booking_status?.toLowerCase() || '';
+    if (bookingStatus.includes('cancelled') || bookingStatus.includes('canceled')) {
+      console.log(`Booking ${bookingId} is cancelled - skipping payment processing`)
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          action: 'skipped',
+          message: 'Booking is cancelled - payment processing skipped',
+          bookingId,
+          bookingStatus: booking.booking_status
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      )
+    }
+
     // Get customer's payment methods
     const { data: paymentMethods, error: pmError } = await supabaseClient
       .from('customer_payment_methods')
