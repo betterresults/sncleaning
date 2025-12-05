@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { MessageSquare, Send, Phone, Users, Clock, FileText, Wand2, Check, ChevronsUpDown } from 'lucide-react';
+import { MessageSquare, Send, Phone, Users, Clock, FileText, Wand2, Check, ChevronsUpDown, Calendar, Search } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -17,6 +17,7 @@ interface SMSRecipient {
   name: string;
   phone: string;
   type: 'customer' | 'cleaner';
+  customerId?: number;
 }
 
 interface SMSTemplate {
@@ -26,14 +27,30 @@ interface SMSTemplate {
   variables: string[];
 }
 
+interface Booking {
+  id: number;
+  date_time: string;
+  service_type: string;
+  address: string;
+  total_cost: number;
+  customer: number;
+  cleaner?: number;
+  first_name?: string;
+  last_name?: string;
+  phone_number?: string;
+}
+
 const SMSNotificationManager = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [recipients, setRecipients] = useState<SMSRecipient[]>([]);
   const [templates, setTemplates] = useState<SMSTemplate[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
   const [selectedClient, setSelectedClient] = useState<string>('manual');
+  const [selectedBooking, setSelectedBooking] = useState<string>('');
+  const [bookingSearch, setBookingSearch] = useState('');
   const [clientComboOpen, setClientComboOpen] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [message, setMessage] = useState('');
@@ -64,7 +81,8 @@ const SMSNotificationManager = () => {
         id: `customer_${customer.id}`,
         name: `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 'Unnamed Customer',
         phone: customer.phone,
-        type: 'customer'
+        type: 'customer',
+        customerId: customer.id
       }));
 
       const cleanerRecipients: SMSRecipient[] = (cleaners || []).map(cleaner => ({
@@ -82,6 +100,22 @@ const SMSNotificationManager = () => {
         description: 'Failed to load SMS recipients',
         variant: 'destructive'
       });
+    }
+  };
+
+  // Load bookings
+  const loadBookings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('id, date_time, service_type, address, total_cost, customer, cleaner, first_name, last_name, phone_number')
+        .order('date_time', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      setBookings(data || []);
+    } catch (error) {
+      console.error('Error loading bookings:', error);
     }
   };
 
@@ -116,6 +150,7 @@ const SMSNotificationManager = () => {
   React.useEffect(() => {
     loadRecipients();
     loadTemplates();
+    loadBookings();
   }, []);
 
   const sendSMS = async (to: string, recipientName?: string) => {
@@ -215,12 +250,17 @@ const SMSNotificationManager = () => {
     }
   };
 
-  const processTemplateVariables = (content: string, clientData?: any) => {
+  const processTemplateVariables = (content: string, clientData?: any, bookingData?: Booking) => {
     let processedContent = content;
     
     // Get selected client data - use provided clientData or find from selectedClient
     const selectedClientData = clientData || (selectedClient !== 'manual' 
       ? recipients.find(r => r.id === selectedClient)
+      : null);
+    
+    // Get selected booking data
+    const booking = bookingData || (selectedBooking 
+      ? bookings.find(b => b.id.toString() === selectedBooking)
       : null);
     
     if (selectedClientData) {
@@ -254,6 +294,44 @@ const SMSNotificationManager = () => {
       );
     }
     
+    // Replace booking-related variables if booking is selected
+    if (booking) {
+      const bookingDate = booking.date_time ? new Date(booking.date_time) : null;
+      
+      processedContent = processedContent.replace(
+        /\{\{booking_date\}\}/g, 
+        bookingDate ? bookingDate.toLocaleDateString() : ''
+      );
+      processedContent = processedContent.replace(
+        /\{\{booking_time\}\}/g, 
+        bookingDate ? bookingDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''
+      );
+      processedContent = processedContent.replace(
+        /\{\{service_type\}\}/g, 
+        booking.service_type || ''
+      );
+      processedContent = processedContent.replace(
+        /\{\{address\}\}/g, 
+        booking.address || ''
+      );
+      processedContent = processedContent.replace(
+        /\{\{total_cost\}\}/g, 
+        booking.total_cost?.toString() || ''
+      );
+      processedContent = processedContent.replace(
+        /\{\{booking_id\}\}/g, 
+        booking.id.toString()
+      );
+      
+      // If no client selected but booking has customer name, use that
+      if (!selectedClientData && booking.first_name) {
+        processedContent = processedContent.replace(
+          /\{\{customer_name\}\}/g, 
+          `${booking.first_name} ${booking.last_name || ''}`.trim()
+        );
+      }
+    }
+    
     return processedContent;
   };
 
@@ -273,7 +351,8 @@ const SMSNotificationManager = () => {
       if (selectedTemplate && message) {
         const template = templates.find(t => t.id === selectedTemplate);
         if (template) {
-          setMessage(template.content); // Reset to original template content
+          const booking = selectedBooking ? bookings.find(b => b.id.toString() === selectedBooking) : undefined;
+          setMessage(processTemplateVariables(template.content, undefined, booking));
         }
       }
       return;
@@ -288,7 +367,8 @@ const SMSNotificationManager = () => {
       if (selectedTemplate && message) {
         const template = templates.find(t => t.id === selectedTemplate);
         if (template) {
-          const processedContent = processTemplateVariables(template.content, client);
+          const booking = selectedBooking ? bookings.find(b => b.id.toString() === selectedBooking) : undefined;
+          const processedContent = processTemplateVariables(template.content, client, booking);
           setMessage(processedContent);
         }
       }
@@ -301,7 +381,52 @@ const SMSNotificationManager = () => {
   const clearTemplate = () => {
     setSelectedTemplate('');
     setMessage('');
+    setSelectedBooking('');
   };
+
+  const handleBookingSelect = (bookingId: string) => {
+    setSelectedBooking(bookingId);
+    const booking = bookings.find(b => b.id.toString() === bookingId);
+    
+    if (booking) {
+      // Auto-select client if booking has customer
+      if (booking.customer) {
+        const clientId = `customer_${booking.customer}`;
+        const client = recipients.find(r => r.id === clientId);
+        if (client) {
+          setSelectedClient(clientId);
+          setPhoneNumber(client.phone);
+        } else if (booking.phone_number) {
+          // Use booking's phone number if client not in recipients list
+          setPhoneNumber(booking.phone_number);
+          setSelectedClient('manual');
+        }
+      }
+      
+      // Re-process template if one is selected
+      if (selectedTemplate) {
+        const template = templates.find(t => t.id === selectedTemplate);
+        if (template) {
+          const client = selectedClient !== 'manual' ? recipients.find(r => r.id === selectedClient) : undefined;
+          const processedContent = processTemplateVariables(template.content, client, booking);
+          setMessage(processedContent);
+        }
+      }
+    }
+  };
+
+  // Filter bookings based on search
+  const filteredBookings = bookings.filter(booking => {
+    if (!bookingSearch.trim()) return true;
+    const searchLower = bookingSearch.toLowerCase();
+    const customerName = `${booking.first_name || ''} ${booking.last_name || ''}`.toLowerCase();
+    return (
+      booking.id.toString().includes(searchLower) ||
+      customerName.includes(searchLower) ||
+      booking.address?.toLowerCase().includes(searchLower) ||
+      new Date(booking.date_time).toLocaleDateString().includes(searchLower)
+    );
+  });
 
   const toggleRecipient = (recipientId: string) => {
     setSelectedRecipients(prev => 
@@ -544,6 +669,54 @@ const SMSNotificationManager = () => {
               {selectedTemplate && (
                 <p className="text-sm text-muted-foreground">
                   Template loaded and variables replaced with real data. You can edit the message below before sending.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Booking Selection - shown when template is selected */}
+          {selectedTemplate && bookings.length > 0 && (
+            <div className="space-y-2 p-4 border rounded-lg bg-muted/30">
+              <Label className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Select Booking (for booking-related variables)
+              </Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by ID, name, address, or date..."
+                  value={bookingSearch}
+                  onChange={(e) => setBookingSearch(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <Select value={selectedBooking} onValueChange={handleBookingSelect}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a booking to use its data..." />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  {filteredBookings.slice(0, 50).map((booking) => (
+                    <SelectItem key={booking.id} value={booking.id.toString()}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">
+                          #{booking.id} - {booking.first_name} {booking.last_name || ''}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(booking.date_time).toLocaleDateString()} - {booking.address?.substring(0, 30)}...
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                  {filteredBookings.length === 0 && (
+                    <div className="py-2 px-3 text-sm text-muted-foreground">
+                      No bookings found
+                    </div>
+                  )}
+                </SelectContent>
+              </Select>
+              {selectedBooking && (
+                <p className="text-xs text-muted-foreground">
+                  Booking data will populate variables like date, time, address, cost, etc.
                 </p>
               )}
             </div>
