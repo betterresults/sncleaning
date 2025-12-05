@@ -710,48 +710,12 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
 
       console.log('NewBookingForm: Booking created successfully:', data);
 
-      // Send confirmation email if enabled and not in customer view
-      let emailSent = false;
-      if (!isCustomerView && formData.sendConfirmationEmail && formData.email) {
-        try {
-          console.log('NewBookingForm: Attempting to send confirmation email to:', formData.email);
-          const { data: emailData, error: emailError } = await supabase.functions.invoke('send-notification-email', {
-            body: {
-              recipient_email: formData.email,
-              template: 'booking_created',
-              variables: {
-                booking_id: String(data[0].id),
-                customer_name: `${formData.firstName} ${formData.lastName}`,
-                booking_date: format(formData.selectedDate!, 'dd/MM/yyyy'),
-                booking_time: formData.selectedTime || `${formData.selectedHour}:${formData.selectedMinute} ${formData.selectedPeriod}`,
-                service_type: formName,
-                address: `${formData.address}, ${formData.postcode}`,
-                total_cost: `£${formData.totalCost}`,
-                total_hours: requiresHours ? `${formData.totalHours} hours` : '',
-                booking_status: 'Confirmed',
-                cleaner_name: formData.cleanerName || 'Not assigned'
-              }
-            }
-          });
-          
-          console.log('NewBookingForm: Email response:', { emailData, emailError });
-          
-          if (emailError) {
-            console.error('NewBookingForm: Email edge function error:', emailError);
-          } else if (emailData?.error) {
-            console.error('NewBookingForm: Email sending error:', emailData.error);
-          } else if (emailData?.success) {
-            emailSent = true;
-            console.log('NewBookingForm: Email sent successfully, message_id:', emailData.message_id);
-          }
-        } catch (emailErr) {
-          console.error('NewBookingForm: Email exception:', emailErr);
-        }
-      }
+      // Note: Confirmation email is now handled automatically by the notification trigger system
+      // (trigger_event: 'booking_created') to avoid duplicate emails
 
       toast({
         title: "Success",
-        description: `Booking created successfully!${emailSent ? ' Confirmation email sent.' : (formData.sendConfirmationEmail && formData.email ? ' Email could not be sent - check logs.' : '')}`,
+        description: "Booking created successfully! Confirmation email sent.",
       });
 
       onBookingCreated();
