@@ -343,12 +343,19 @@ const SMSNotificationManager = () => {
     // === ACCOUNT VARIABLES ===
     if (selectedClientData) {
       const customerId = selectedClientData.id.replace('customer_', '').replace('cleaner_', '');
-      const paymentLink = `https://dkomihipebixlegygnoy.supabase.co/functions/v1/redirect-to-payment-collection?customer_id=${customerId}`;
+      const addCardLink = `https://dkomihipebixlegygnoy.supabase.co/functions/v1/redirect-to-payment-collection?customer_id=${customerId}`;
       
-      processedContent = processedContent.replace(/\{\{payment_link\}\}/g, paymentLink);
+      processedContent = processedContent.replace(/\{\{add_card_link\}\}/g, addCardLink);
       processedContent = processedContent.replace(/\{\{login_link\}\}/g, 'https://account.sncleaningservices.co.uk/auth');
       processedContent = processedContent.replace(/\{\{dashboard_link\}\}/g, 'https://account.sncleaningservices.co.uk/dashboard');
       processedContent = processedContent.replace(/\{\{temp_password\}\}/g, 'TempPass123!');
+    }
+    
+    // Payment link - use invoice_link from booking if available
+    if (booking?.invoice_link) {
+      processedContent = processedContent.replace(/\{\{payment_link\}\}/g, booking.invoice_link);
+    } else {
+      processedContent = processedContent.replace(/\{\{payment_link\}\}/g, '');
     }
     
     // === COMPANY VARIABLES (always available) ===
