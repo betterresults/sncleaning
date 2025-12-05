@@ -11,6 +11,32 @@ interface SMSRequest {
   from?: string;
 }
 
+// Format phone number to E.164 international format
+function formatPhoneNumber(phone: string): string {
+  // Remove all non-digit characters except leading +
+  let cleaned = phone.replace(/[^\d+]/g, '');
+  
+  // Handle UK numbers starting with 07 (mobile) or 01/02 (landline)
+  if (cleaned.startsWith('07') || cleaned.startsWith('01') || cleaned.startsWith('02')) {
+    // Remove leading 0 and add +44
+    cleaned = '+44' + cleaned.substring(1);
+  } 
+  // Handle numbers starting with 44 (UK without +)
+  else if (cleaned.startsWith('44') && !cleaned.startsWith('+')) {
+    cleaned = '+' + cleaned;
+  }
+  // Handle numbers starting with 0044 (UK international dialing)
+  else if (cleaned.startsWith('0044')) {
+    cleaned = '+44' + cleaned.substring(4);
+  }
+  // If no + prefix, add it
+  else if (!cleaned.startsWith('+')) {
+    cleaned = '+' + cleaned;
+  }
+  
+  return cleaned;
+}
+
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -47,10 +73,12 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Format phone number (ensure it starts with + for international format)
-    const formattedTo = to.startsWith('+') ? to : `+${to}`;
+    // Format phone number to proper E.164 format
+    const formattedTo = formatPhoneNumber(to);
     const fromNumber = from || twilioPhoneNumber;
 
+    console.log(`Original phone: ${to}`);
+    console.log(`Formatted phone: ${formattedTo}`);
     console.log(`Sending SMS to ${formattedTo} from ${fromNumber}`);
     console.log(`Message: ${message}`);
 
