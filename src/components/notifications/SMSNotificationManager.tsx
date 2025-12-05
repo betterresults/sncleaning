@@ -345,14 +345,17 @@ const SMSNotificationManager = () => {
   };
 
   const handleClientSelect = (clientId: string) => {
+    // Clear booking selection when client changes - bookings are customer-specific
+    setSelectedBooking('');
+    setBookingSearch('');
+    
     if (clientId === 'manual') {
       setSelectedClient('manual');
       // Re-process template if one is selected to reset variables
       if (selectedTemplate && message) {
         const template = templates.find(t => t.id === selectedTemplate);
         if (template) {
-          const booking = selectedBooking ? bookings.find(b => b.id.toString() === selectedBooking) : undefined;
-          setMessage(processTemplateVariables(template.content, undefined, booking));
+          setMessage(processTemplateVariables(template.content, undefined, undefined));
         }
       }
       return;
@@ -363,12 +366,11 @@ const SMSNotificationManager = () => {
       setPhoneNumber(client.phone);
       setSelectedClient(clientId);
       
-      // Re-process template if one is selected
+      // Re-process template if one is selected (without booking since we cleared it)
       if (selectedTemplate && message) {
         const template = templates.find(t => t.id === selectedTemplate);
         if (template) {
-          const booking = selectedBooking ? bookings.find(b => b.id.toString() === selectedBooking) : undefined;
-          const processedContent = processTemplateVariables(template.content, client, booking);
+          const processedContent = processTemplateVariables(template.content, client, undefined);
           setMessage(processedContent);
         }
       }
@@ -415,8 +417,17 @@ const SMSNotificationManager = () => {
     }
   };
 
-  // Filter bookings based on search
+  // Filter bookings based on selected client and search
   const filteredBookings = bookings.filter(booking => {
+    // First, filter by selected customer - only show their bookings
+    if (selectedClient !== 'manual') {
+      const selectedClientData = recipients.find(r => r.id === selectedClient);
+      if (selectedClientData?.customerId && booking.customer !== selectedClientData.customerId) {
+        return false;
+      }
+    }
+    
+    // Then apply search filter
     if (!bookingSearch.trim()) return true;
     const searchLower = bookingSearch.toLowerCase();
     const customerName = `${booking.first_name || ''} ${booking.last_name || ''}`.toLowerCase();
