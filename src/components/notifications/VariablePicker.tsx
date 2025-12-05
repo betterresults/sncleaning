@@ -61,8 +61,9 @@ const AVAILABLE_VARIABLES: VariableCategory[] = [
       { name: 'payment_status', description: 'Payment status', example: 'Paid' },
       { name: 'payment_method', description: 'Payment method used', example: 'Card' },
       { name: 'amount', description: 'Payment amount', example: '150.00' },
-      { name: 'payment_link', description: 'Link to pay/add card', example: 'https://...' },
+      { name: 'payment_link', description: 'Link to pay for booking', example: 'https://...' },
       { name: 'invoice_link', description: 'Link to invoice', example: 'https://...' },
+      { name: 'add_card_link', description: 'Link to add/save payment card', example: 'https://...' },
     ]
   },
   {
