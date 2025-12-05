@@ -11,6 +11,7 @@ import PaymentMethodStatusIcon from '@/components/customer/PaymentMethodStatusBa
 import { CollectPaymentMethodDialog } from '@/components/payments/CollectPaymentMethodDialog';
 import { useCustomerPaymentMethods } from '@/hooks/useCustomerPaymentMethods';
 import { formatPhoneToInternational } from '@/utils/phoneFormatter';
+import { DeleteCustomerDialog } from '@/components/admin/DeleteCustomerDialog';
 
 interface CustomerData {
   id: number;
@@ -42,6 +43,8 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomerForPayment, setSelectedCustomerForPayment] = useState<CustomerData | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<CustomerData | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
     firstName: '',
     lastName: '',
@@ -177,33 +180,9 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
     }
   };
 
-  const deleteCustomer = async (customerId: number) => {
-    if (!confirm('Are you sure you want to delete this customer?')) {
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('customers')
-        .delete()
-        .eq('id', customerId);
-
-      if (error) throw error;
-
-      toast({
-        title: 'Success',
-        description: 'Customer deleted successfully!',
-      });
-
-      fetchCustomers();
-    } catch (error: any) {
-      console.error('Error deleting customer:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to delete customer',
-        variant: 'destructive',
-      });
-    }
+  const openDeleteDialog = (customer: CustomerData) => {
+    setCustomerToDelete(customer);
+    setShowDeleteDialog(true);
   };
 
   const startEditingCustomer = (customer: CustomerData) => {
@@ -479,7 +458,7 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
                           <span className="hidden sm:inline">Edit</span>
                         </Button>
                         <Button
-                          onClick={() => deleteCustomer(customer.id)}
+                          onClick={() => openDeleteDialog(customer)}
                           variant="destructive"
                           size="sm"
                           className="flex items-center gap-1 text-xs flex-1 sm:flex-none"
@@ -506,6 +485,13 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
           onPaymentMethodsUpdated={fetchCustomers}
         />
       )}
+
+      <DeleteCustomerDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        customer={customerToDelete}
+        onDeleted={fetchCustomers}
+      />
     </div>
   );
 };
