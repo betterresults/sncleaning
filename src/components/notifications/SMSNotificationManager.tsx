@@ -31,13 +31,23 @@ interface Booking {
   id: number;
   date_time: string;
   service_type: string;
+  cleaning_type: string;
   address: string;
+  postcode: string;
   total_cost: number;
+  total_hours: number;
+  booking_status: string;
+  payment_status: string;
+  payment_method: string;
+  invoice_link: string;
   customer: number;
   cleaner?: number;
   first_name?: string;
   last_name?: string;
   phone_number?: string;
+  email?: string;
+  cleaner_name?: string;
+  cleaner_phone?: string;
 }
 
 const SMSNotificationManager = () => {
@@ -103,17 +113,31 @@ const SMSNotificationManager = () => {
     }
   };
 
-  // Load bookings
+  // Load bookings with cleaner info
   const loadBookings = async () => {
     try {
       const { data, error } = await supabase
         .from('bookings')
-        .select('id, date_time, service_type, address, total_cost, customer, cleaner, first_name, last_name, phone_number')
+        .select(`
+          id, date_time, service_type, cleaning_type, address, postcode, 
+          total_cost, total_hours, booking_status, payment_status, payment_method,
+          invoice_link, customer, cleaner, first_name, last_name, phone_number, email,
+          cleaners (first_name, last_name, phone)
+        `)
         .order('date_time', { ascending: false })
         .limit(100);
 
       if (error) throw error;
-      setBookings(data || []);
+      
+      // Map the data to include cleaner name and phone
+      const bookingsWithCleaner = (data || []).map(booking => ({
+        ...booking,
+        cleaner_name: booking.cleaners ? 
+          `${booking.cleaners.first_name || ''} ${booking.cleaners.last_name || ''}`.trim() : undefined,
+        cleaner_phone: booking.cleaners?.phone?.toString()
+      }));
+      
+      setBookings(bookingsWithCleaner);
     } catch (error) {
       console.error('Error loading bookings:', error);
     }
@@ -263,74 +287,83 @@ const SMSNotificationManager = () => {
       ? bookings.find(b => b.id.toString() === selectedBooking)
       : null);
     
+    // === CUSTOMER VARIABLES ===
     if (selectedClientData) {
-      // Replace customer_name
-      processedContent = processedContent.replace(
-        /\{\{customer_name\}\}/g, 
-        selectedClientData.name
-      );
+      processedContent = processedContent.replace(/\{\{customer_name\}\}/g, selectedClientData.name);
       
-      // Generate payment link using Supabase edge function
-      const customerId = selectedClientData.id.replace('customer_', '').replace('cleaner_', '');
-      const paymentLink = `https://dkomihipebixlegygnoy.supabase.co/functions/v1/redirect-to-payment-collection?customer_id=${customerId}`;
-      
-      // Replace payment_link
-      processedContent = processedContent.replace(
-        /\{\{payment_link\}\}/g, 
-        paymentLink
-      );
-      
-      // Replace login_link using your domain
-      const loginLink = `https://account.sncleaningservices.co.uk/auth`;
-      processedContent = processedContent.replace(
-        /\{\{login_link\}\}/g, 
-        loginLink
-      );
-      
-      // Generate temporary password (example - in real implementation this should come from backend)
-      processedContent = processedContent.replace(
-        /\{\{temp_password\}\}/g, 
-        'TempPass123!'
-      );
+      // Split name for first_name and last_name
+      const nameParts = selectedClientData.name.split(' ');
+      processedContent = processedContent.replace(/\{\{first_name\}\}/g, nameParts[0] || '');
+      processedContent = processedContent.replace(/\{\{last_name\}\}/g, nameParts.slice(1).join(' ') || '');
+      processedContent = processedContent.replace(/\{\{customer_phone\}\}/g, selectedClientData.phone || '');
     }
     
-    // Replace booking-related variables if booking is selected
+    // === BOOKING VARIABLES ===
     if (booking) {
       const bookingDate = booking.date_time ? new Date(booking.date_time) : null;
       
-      processedContent = processedContent.replace(
-        /\{\{booking_date\}\}/g, 
-        bookingDate ? bookingDate.toLocaleDateString() : ''
-      );
-      processedContent = processedContent.replace(
-        /\{\{booking_time\}\}/g, 
-        bookingDate ? bookingDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''
-      );
-      processedContent = processedContent.replace(
-        /\{\{service_type\}\}/g, 
-        booking.service_type || ''
-      );
-      processedContent = processedContent.replace(
-        /\{\{address\}\}/g, 
-        booking.address || ''
-      );
-      processedContent = processedContent.replace(
-        /\{\{total_cost\}\}/g, 
-        booking.total_cost?.toString() || ''
-      );
-      processedContent = processedContent.replace(
-        /\{\{booking_id\}\}/g, 
-        booking.id.toString()
-      );
+      // Basic booking info
+      processedContent = processedContent.replace(/\{\{booking_id\}\}/g, booking.id.toString());
+      processedContent = processedContent.replace(/\{\{booking_date\}\}/g, bookingDate ? bookingDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '');
+      processedContent = processedContent.replace(/\{\{booking_time\}\}/g, bookingDate ? bookingDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '');
+      processedContent = processedContent.replace(/\{\{service_type\}\}/g, booking.service_type || '');
+      processedContent = processedContent.replace(/\{\{cleaning_type\}\}/g, booking.cleaning_type || '');
+      processedContent = processedContent.replace(/\{\{address\}\}/g, booking.address || '');
+      processedContent = processedContent.replace(/\{\{postcode\}\}/g, booking.postcode || '');
+      processedContent = processedContent.replace(/\{\{total_cost\}\}/g, booking.total_cost ? `£${booking.total_cost.toFixed(2)}` : '');
+      processedContent = processedContent.replace(/\{\{total_hours\}\}/g, booking.total_hours?.toString() || '');
+      processedContent = processedContent.replace(/\{\{booking_status\}\}/g, booking.booking_status || '');
       
-      // If no client selected but booking has customer name, use that
-      if (!selectedClientData && booking.first_name) {
-        processedContent = processedContent.replace(
-          /\{\{customer_name\}\}/g, 
-          `${booking.first_name} ${booking.last_name || ''}`.trim()
-        );
+      // Cleaner info from booking
+      processedContent = processedContent.replace(/\{\{cleaner_name\}\}/g, booking.cleaner_name || 'To be assigned');
+      processedContent = processedContent.replace(/\{\{cleaner_phone\}\}/g, booking.cleaner_phone || '');
+      
+      // Payment info from booking
+      processedContent = processedContent.replace(/\{\{payment_status\}\}/g, booking.payment_status || '');
+      processedContent = processedContent.replace(/\{\{payment_method\}\}/g, booking.payment_method || '');
+      processedContent = processedContent.replace(/\{\{amount\}\}/g, booking.total_cost ? `£${booking.total_cost.toFixed(2)}` : '');
+      processedContent = processedContent.replace(/\{\{invoice_link\}\}/g, booking.invoice_link || '');
+      
+      // Customer info from booking if no client selected
+      if (!selectedClientData) {
+        if (booking.first_name) {
+          processedContent = processedContent.replace(/\{\{customer_name\}\}/g, `${booking.first_name} ${booking.last_name || ''}`.trim());
+          processedContent = processedContent.replace(/\{\{first_name\}\}/g, booking.first_name);
+          processedContent = processedContent.replace(/\{\{last_name\}\}/g, booking.last_name || '');
+        }
+        if (booking.email) {
+          processedContent = processedContent.replace(/\{\{customer_email\}\}/g, booking.email);
+        }
+        if (booking.phone_number) {
+          processedContent = processedContent.replace(/\{\{customer_phone\}\}/g, booking.phone_number);
+        }
       }
     }
+    
+    // === ACCOUNT VARIABLES ===
+    if (selectedClientData) {
+      const customerId = selectedClientData.id.replace('customer_', '').replace('cleaner_', '');
+      const paymentLink = `https://dkomihipebixlegygnoy.supabase.co/functions/v1/redirect-to-payment-collection?customer_id=${customerId}`;
+      
+      processedContent = processedContent.replace(/\{\{payment_link\}\}/g, paymentLink);
+      processedContent = processedContent.replace(/\{\{login_link\}\}/g, 'https://account.sncleaningservices.co.uk/auth');
+      processedContent = processedContent.replace(/\{\{dashboard_link\}\}/g, 'https://account.sncleaningservices.co.uk/dashboard');
+      processedContent = processedContent.replace(/\{\{temp_password\}\}/g, 'TempPass123!');
+    }
+    
+    // === COMPANY VARIABLES (always available) ===
+    processedContent = processedContent.replace(/\{\{company_name\}\}/g, 'SN Cleaning Services');
+    processedContent = processedContent.replace(/\{\{company_email\}\}/g, 'sales@sncleaningservices.co.uk');
+    processedContent = processedContent.replace(/\{\{company_phone\}\}/g, '020 1234 5678');
+    
+    // === OTHER VARIABLES ===
+    // photo_link would need to be generated based on booking photos - placeholder for now
+    if (booking) {
+      processedContent = processedContent.replace(/\{\{photo_link\}\}/g, `https://account.sncleaningservices.co.uk/photos/${booking.id}`);
+    }
+    
+    // error_message is typically only used in failure notifications - leave as placeholder
+    processedContent = processedContent.replace(/\{\{error_message\}\}/g, '');
     
     return processedContent;
   };
