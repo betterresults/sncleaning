@@ -10,6 +10,7 @@ import { CustomerAccountActions } from '@/components/admin/CustomerAccountAction
 import PaymentMethodStatusIcon from '@/components/customer/PaymentMethodStatusBadge';
 import { CollectPaymentMethodDialog } from '@/components/payments/CollectPaymentMethodDialog';
 import { useCustomerPaymentMethods } from '@/hooks/useCustomerPaymentMethods';
+import { formatPhoneToInternational } from '@/utils/phoneFormatter';
 
 interface CustomerData {
   id: number;
@@ -110,7 +111,7 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
           first_name: newCustomer.firstName,
           last_name: newCustomer.lastName,
           email: newCustomer.email,
-          phone: newCustomer.phone,
+          phone: formatPhoneToInternational(newCustomer.phone),
           address: newCustomer.address,
           postcode: newCustomer.postcode,
           client_status: 'Current'
@@ -147,9 +148,13 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
 
   const updateCustomer = async (customerId: number) => {
     try {
+      const dataToUpdate = {
+        ...editCustomerData,
+        phone: editCustomerData.phone ? formatPhoneToInternational(editCustomerData.phone) : editCustomerData.phone
+      };
       const { error } = await supabase
         .from('customers')
-        .update(editCustomerData)
+        .update(dataToUpdate)
         .eq('id', customerId);
 
       if (error) throw error;

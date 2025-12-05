@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
+import { formatPhoneToInternational } from '@/utils/phoneFormatter';
 
 const PersonalInfoEditor = () => {
   const { user, customerId, userRole } = useAuth();
@@ -93,7 +94,7 @@ const PersonalInfoEditor = () => {
         if (customerData.phone !== '') {
           const { error: phoneError } = await supabase
             .from('customers')
-            .update({ phone: customerData.phone })
+            .update({ phone: formatPhoneToInternational(customerData.phone) })
             .eq('id', activeCustomerId);
           
           if (phoneError) {
@@ -108,7 +109,7 @@ const PersonalInfoEditor = () => {
             first_name: customerData.first_name,
             last_name: customerData.last_name,
             email: customerData.email,
-            phone: customerData.phone
+            phone: formatPhoneToInternational(customerData.phone)
           })
           .eq('id', activeCustomerId);
 

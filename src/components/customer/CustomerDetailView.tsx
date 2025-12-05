@@ -33,6 +33,7 @@ import {
   X as Cancel
 } from 'lucide-react';
 import CustomerDirectPaymentDialog from '@/components/payments/CustomerDirectPaymentDialog';
+import { formatPhoneToInternational } from '@/utils/phoneFormatter';
 
 interface CustomerDetailViewProps {
   open: boolean;
@@ -275,9 +276,13 @@ const CustomerDetailView = ({
 
     setUpdatingCustomer(true);
     try {
+      const dataToUpdate = {
+        ...editCustomerData,
+        phone: editCustomerData.phone ? formatPhoneToInternational(editCustomerData.phone) : editCustomerData.phone
+      };
       const { error } = await supabase
         .from('customers')
-        .update(editCustomerData)
+        .update(dataToUpdate)
         .eq('id', customerId);
 
       if (error) throw error;
