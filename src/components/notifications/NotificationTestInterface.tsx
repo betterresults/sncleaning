@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Send, TestTube, Eye } from "lucide-react";
+import { Send, TestTube, Eye, Search, Calendar } from "lucide-react";
 
 interface EmailTemplate {
   id: string;
@@ -47,6 +47,8 @@ export const NotificationTestInterface = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+  const [selectedBooking, setSelectedBooking] = useState<string>('');
+  const [bookingSearch, setBookingSearch] = useState('');
   const [testEmail, setTestEmail] = useState('');
   const [variables, setVariables] = useState<Record<string, string>>({});
   const [previewContent, setPreviewContent] = useState('');
@@ -75,17 +77,15 @@ export const NotificationTestInterface = () => {
         supabase
           .from('customers')
           .select('id, first_name, last_name, email')
-          .limit(20)
           .order('created_at', { ascending: false }),
         supabase
           .from('bookings')
           .select('id, date_time, service_type, address, total_cost, customer, cleaner')
-          .limit(10)
-          .order('date_time', { ascending: false }),
+          .order('date_time', { ascending: false })
+          .limit(100),
         supabase
           .from('cleaners')
           .select('id, first_name, last_name')
-          .limit(10)
       ]);
 
       if (templatesResult.error) throw templatesResult.error;
@@ -238,6 +238,8 @@ export const NotificationTestInterface = () => {
     
     if (!booking || !customer) return;
 
+    setSelectedBooking(bookingId || '');
+
     // Format service type properly
     const formatServiceType = (serviceType: string) => {
       switch (serviceType) {
@@ -268,6 +270,21 @@ export const NotificationTestInterface = () => {
     
     console.log('Final variables set:', actualVariables);
   };
+
+  // Filter bookings based on search
+  const filteredBookings = bookings.filter(booking => {
+    if (!bookingSearch.trim()) return true;
+    const customer = customers.find(c => c.id === booking.customer);
+    const searchLower = bookingSearch.toLowerCase();
+    return (
+      booking.id.toString().includes(searchLower) ||
+      customer?.first_name?.toLowerCase().includes(searchLower) ||
+      customer?.last_name?.toLowerCase().includes(searchLower) ||
+      customer?.email?.toLowerCase().includes(searchLower) ||
+      booking.address?.toLowerCase().includes(searchLower) ||
+      new Date(booking.date_time).toLocaleDateString().includes(searchLower)
+    );
+  });
 
   const sendTestEmail = async () => {
     if (!selectedTemplate || !testEmail) {
@@ -360,23 +377,52 @@ export const NotificationTestInterface = () => {
             </div>
 
             {bookings.length > 0 && (
-              <div>
-                <Label>Load Sample Data</Label>
-                <Select onValueChange={loadSampleData}>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Select Booking
+                </Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by ID, customer name, email, or date..."
+                    value={bookingSearch}
+                    onChange={(e) => setBookingSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Select value={selectedBooking} onValueChange={loadSampleData}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a booking for sample data" />
+                    <SelectValue placeholder="Choose a booking to send notification for" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {bookings.map((booking) => {
+                  <SelectContent className="max-h-[300px]">
+                    {filteredBookings.slice(0, 50).map((booking) => {
                       const customer = customers.find(c => c.id === booking.customer);
                       return (
                         <SelectItem key={booking.id} value={booking.id.toString()}>
-                          {customer ? `${customer.first_name} ${customer.last_name}` : 'Unknown'} - {new Date(booking.date_time).toLocaleDateString()}
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              #{booking.id} - {customer ? `${customer.first_name} ${customer.last_name}` : 'Unknown'}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(booking.date_time).toLocaleDateString()} - {booking.address?.substring(0, 30)}...
+                            </span>
+                          </div>
                         </SelectItem>
                       );
                     })}
+                    {filteredBookings.length === 0 && (
+                      <div className="py-2 px-3 text-sm text-muted-foreground">
+                        No bookings found
+                      </div>
+                    )}
                   </SelectContent>
                 </Select>
+                {selectedBooking && (
+                  <p className="text-xs text-muted-foreground">
+                    Booking data will be used to populate the template variables
+                  </p>
+                )}
               </div>
             )}
 
