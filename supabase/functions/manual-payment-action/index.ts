@@ -516,7 +516,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error:', error)
 
-    // Enhanced error handling - try to update correct table on error
+    // Enhanced error handling - try to update correct table on error and send notification
     try {
       if (parsedBookingId) {
         const supabaseClient = createClient(
@@ -542,6 +542,100 @@ serve(async (req) => {
             .eq('id', parsedBookingId)
         } catch (e) {
           // Ignore error if booking not in this table
+        }
+
+        // Send authorization failed notification
+        try {
+          // First try to get booking from upcoming bookings
+          let booking = null;
+          const { data: upcomingBooking } = await supabaseClient
+            .from('bookings')
+            .select('*, customer:customers(*)')
+            .eq('id', parsedBookingId)
+            .maybeSingle()
+          
+          if (upcomingBooking) {
+            booking = upcomingBooking;
+          } else {
+            // Try past bookings
+            const { data: pastBooking } = await supabaseClient
+              .from('past_bookings')
+              .select('*')
+              .eq('id', parsedBookingId)
+              .maybeSingle()
+            
+            if (pastBooking) {
+              const { data: customer } = await supabaseClient
+                .from('customers')
+                .select('*')
+                .eq('id', pastBooking.customer)
+                .single()
+              
+              booking = { ...pastBooking, customer };
+            }
+          }
+
+          if (booking && booking.customer) {
+            // Get notification trigger for authorization_failed
+            const { data: trigger } = await supabaseClient
+              .from('notification_triggers')
+              .select('*, template:email_notification_templates(*)')
+              .eq('trigger_event', 'authorization_failed')
+              .eq('is_enabled', true)
+              .single()
+            
+            if (trigger && trigger.template) {
+              console.log('Sending authorization_failed notification for booking:', parsedBookingId)
+              
+              // Prepare notification variables
+              const notificationVariables = {
+                customer_name: `${booking.customer.first_name || ''} ${booking.customer.last_name || ''}`.trim() || 'Valued Customer',
+                booking_date: booking.date_only || 'TBC',
+                booking_time: booking.time_only || 'TBC',
+                service_type: booking.service_type === 'Domestic' ? 'Domestic Cleaning' : (booking.service_type || 'Cleaning Service'),
+                address: booking.address || 'Address not specified',
+                total_cost: booking.total_cost?.toString() || '0',
+                booking_id: parsedBookingId.toString(),
+                error_message: error.message || 'Authorization failed'
+              }
+              
+              // Send notification to each recipient type
+              const recipientTypes = trigger.recipient_types || []
+              for (const recipientType of recipientTypes) {
+                let recipientEmail = ''
+                
+                if (recipientType === 'customer' && booking.customer.email) {
+                  recipientEmail = booking.customer.email
+                } else if (recipientType === 'admin') {
+                  recipientEmail = 'sales@sncleaningservices.co.uk'
+                }
+                
+                if (recipientEmail) {
+                  console.log(`Sending authorization_failed email to ${recipientType}: ${recipientEmail}`)
+                  
+                  // Call send-notification-email edge function
+                  const emailResponse = await fetch('https://dkomihipebixlegygnoy.supabase.co/functions/v1/send-notification-email', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`
+                    },
+                    body: JSON.stringify({
+                      template_id: trigger.template.id,
+                      recipient_email: recipientEmail,
+                      variables: notificationVariables
+                    })
+                  })
+                  
+                  console.log(`Email sent to ${recipientEmail}, status: ${emailResponse.status}`)
+                }
+              }
+            } else {
+              console.log('No authorization_failed trigger found or not enabled')
+            }
+          }
+        } catch (notifError) {
+          console.error('Error sending authorization failed notification:', notifError)
         }
       }
     } catch (updateError) {
