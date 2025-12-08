@@ -972,14 +972,14 @@ useEffect(() => {
           </h3>
           
           <Select
-            value={data.cleanerId?.toString() || ''}
-            onValueChange={(value) => onUpdate({ cleanerId: value ? parseInt(value) : undefined })}
+            value={data.cleanerId?.toString() || 'none'}
+            onValueChange={(value) => onUpdate({ cleanerId: value && value !== 'none' ? parseInt(value) : undefined })}
           >
             <SelectTrigger className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white">
               <SelectValue placeholder="Select a cleaner (optional)..." />
             </SelectTrigger>
             <SelectContent className="bg-white z-50">
-              <SelectItem value="">No cleaner assigned</SelectItem>
+              <SelectItem value="none">No cleaner assigned</SelectItem>
               {cleaners.map((cleaner) => (
                 <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
                   {cleaner.full_name || `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim()}
