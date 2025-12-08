@@ -440,10 +440,7 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
         <div className="mt-4 pt-4 border-t border-border space-y-4">
           {/* This Cleaning Total */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <PoundSterling className="w-5 h-5 text-primary" />
-              <span className="font-semibold text-foreground">This Cleaning</span>
-            </div>
+            <span className="font-semibold text-foreground">This Cleaning</span>
             <span className="text-2xl font-bold text-primary">
               £{calculateTotal().toFixed(2)}
             </span>
