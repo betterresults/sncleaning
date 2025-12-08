@@ -233,7 +233,7 @@ useEffect(() => {
     ? (paymentMethods.find((pm: any) => pm.is_default) || paymentMethods[0])
     : null;
 
-  // Calculate if booking is urgent (within 72 hours)
+  // Calculate if booking is urgent (within 48 hours)
   const isUrgentBooking = useMemo(() => {
     if (!data.selectedDate || !data.selectedTime) return false;
     
@@ -241,7 +241,7 @@ useEffect(() => {
       `${data.selectedDate.toISOString().split('T')[0]}T${data.selectedTime}:00`
     );
     const hoursUntilBooking = (bookingDateTime.getTime() - Date.now()) / (1000 * 60 * 60);
-    return hoursUntilBooking <= 72;
+    return hoursUntilBooking <= 48;
   }, [data.selectedDate, data.selectedTime]);
 
   const validateEmail = (email: string) => {
@@ -1152,8 +1152,8 @@ useEffect(() => {
                       <p className="text-lg font-bold text-gray-900">Enter Card Details</p>
                       <p className="text-sm text-gray-600">
                         {isUrgentBooking 
-                          ? `Enter your card details to pay £${data.totalCost.toFixed(2)}`
-                          : "Enter your card details. No charge will be made now."
+                          ? `We will authorise £${data.totalCost?.toFixed(2) || '0.00'} now. Payment will be taken after the service is completed.`
+                          : "We collect your payment details now. The amount will be held 48 hours before your booking, and payment taken after the service is completed."
                         }
                       </p>
                     </div>
