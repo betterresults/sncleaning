@@ -1153,7 +1153,7 @@ useEffect(() => {
                       <p className="text-sm text-gray-600">
                         {isUrgentBooking 
                           ? `We will authorise £${data.totalCost?.toFixed(2) || '0.00'} now. Payment will be taken after the service is completed.`
-                          : "We collect your payment details now. The amount will be held 48 hours before your booking, and payment taken after the service is completed."
+                          : "We only collect your payment details now. The amount will be held 48 hours before your booking, and payment taken after the service is completed."
                         }
                       </p>
                     </div>
