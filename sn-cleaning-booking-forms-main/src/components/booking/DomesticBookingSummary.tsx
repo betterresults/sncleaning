@@ -326,7 +326,7 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
           </div>
           <div>
             <p className="font-medium text-foreground">
-              {calculations.totalHours} hour{calculations.totalHours !== 1 ? 's' : ''}{getFrequencyDescription() ? `, ${getFrequencyDescription()}` : ''}
+              {calculations.totalHours} hour{calculations.totalHours !== 1 ? 's' : ''}{getFrequencyDescription() ? ` ${getFrequencyDescription()}` : ''}
             </p>
           </div>
         </div>
