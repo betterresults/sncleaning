@@ -794,24 +794,8 @@ useEffect(() => {
         </div>
       )}
 
-      {/* Customer Details - Customer mode (read-only) */}
-      {!isAdminMode && user && (
-        <div className="space-y-4">
-          <h3 className="text-2xl font-bold text-[#185166] mb-2">Your Details</h3>
-          <div className="rounded-2xl border-2 border-gray-200 bg-white p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-lg font-bold text-gray-900">{`${data.firstName || ''} ${data.lastName || ''}`.trim()}</p>
-                <p className="text-sm text-gray-600">{data.email || '—'}</p>
-                <p className="text-sm text-gray-600">{data.phone || '—'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Guest Mode - show customer details */}
-      {!isAdminMode && !user && (
+      {/* Customer/Guest Mode - show customer details */}
+      {!isAdminMode && (
         <div className="space-y-6">
           <h3 className="text-2xl font-bold text-[#185166] mb-4">
             Your Details
