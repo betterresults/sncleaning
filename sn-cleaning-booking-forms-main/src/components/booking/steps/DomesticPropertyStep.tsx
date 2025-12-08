@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { DomesticBookingData } from '../DomesticBookingForm';
 import { Home, Building, Plus, Minus, CheckCircle, Droplets, Wrench } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
@@ -379,83 +380,118 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({ data
         </div>
       </div>
 
-      {/* Oven Cleaning */}
-      <div className="p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white">
-        <h2 className="text-2xl font-bold text-slate-700 mb-4">Do you need professional oven cleaning?</h2>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {(ovenCleaningConfigs.length > 0 ? ovenCleaningConfigs : [
-            { option: 'dontneed', label: "Don't need" },
-            { option: 'single', label: 'Single Oven' },
-            { option: 'double', label: 'Double Oven' },
-            { option: 'range', label: 'Range Cooker' },
-          ]).map((opt: any) => {
-            const isSelected = data.ovenType === opt.option;
-            return (
-              <button
-                key={opt.option}
-                className={`group relative h-20 rounded-2xl border-2 transition-all duration-500 hover:scale-105 flex flex-col items-center justify-center ${
-                  isSelected
-                    ? 'border-primary bg-primary/5 shadow-xl'
-                    : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
-                }`}
-                onClick={() => onUpdate({ 
-                  ovenType: isSelected ? '' : opt.option,
-                  hasOvenCleaning: opt.option !== 'dontneed' && !isSelected
-                })}
-              >
-                {isSelected && (
-                  <CheckCircle className="h-5 w-5 text-primary mb-1" />
-                )}
-                <span className={`text-base font-bold transition-colors text-center px-2 ${
-                  isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'
-                }`}>{opt.label}</span>
-              </button>
-            );
-          })}
+      {/* Oven Cleaning - With Switch Toggle */}
+      {ovenCleaningConfigs.length > 0 && (
+        <div className="relative z-[5] p-4 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white border-2 border-border transition-shadow duration-300">
+          <div className="flex items-center justify-between mb-4 p-3 bg-muted/30 rounded-xl border border-border">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <LucideIcons.Microwave className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-700">
+                  Add professional oven cleaning
+                </h2>
+                <p className="text-sm text-slate-600 mt-1">
+                  Include professional oven cleaning service
+                </p>
+              </div>
+            </div>
+            <Switch
+              checked={data.hasOvenCleaning}
+              onCheckedChange={(checked) => {
+                onUpdate({ 
+                  hasOvenCleaning: checked,
+                  ovenType: checked ? data.ovenType : ''
+                });
+              }}
+              className={`w-16 h-7 ${!data.hasOvenCleaning ? 'border-2 border-border' : ''}`}
+            />
+          </div>
+          
+          {data.hasOvenCleaning && (
+            <div className="grid grid-cols-4 gap-4">
+              {ovenCleaningConfigs.filter((oven: any) => oven.option !== 'not-required').map((oven: any) => {
+                const isSelected = data.ovenType === oven.option;
+                const IconComponent = (LucideIcons as any)[oven.icon];
+                
+                return (
+                  <button
+                    key={oven.option}
+                    className={`group relative h-20 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+                      isSelected
+                        ? 'border-primary bg-primary/5 shadow-xl'
+                        : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                    }`}
+                    onClick={() => onUpdate({ ovenType: isSelected ? '' : oven.option as any })}
+                  >
+                    <div className="flex flex-col items-center justify-center h-full">
+                      {IconComponent && (
+                        <IconComponent className={`h-6 w-6 mb-1 transition-all duration-500 ${
+                          isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                        }`} />
+                      )}
+                      <span className={`text-base font-bold transition-colors ${
+                        isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'
+                      }`}>{oven.label}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       {/* Cleaning Supplies */}
-      <div className="p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white">
-        <h2 className="text-2xl font-bold text-slate-700 mb-4">Do you need us to bring cleaning supplies?</h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {(cleaningSuppliesConfigs.length > 0 ? cleaningSuppliesConfigs : [
-            { option: 'no', label: 'No, I have my own' },
-            { option: 'products', label: 'Yes, bring products' },
-            { option: 'equipment', label: 'Yes, bring equipment too' },
-          ]).map((opt: any) => {
-            const isSelected = data.cleaningProducts.includes(opt.option);
-            return (
-              <button
-                key={opt.option}
-                className={`group relative h-20 rounded-2xl border-2 transition-all duration-500 hover:scale-105 flex flex-col items-center justify-center ${
-                  isSelected
-                    ? 'border-primary bg-primary/5 shadow-xl'
-                    : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
-                }`}
-                onClick={() => {
-                  if (opt.option === 'no') {
-                    onUpdate({ cleaningProducts: ['no'], equipmentArrangement: null, equipmentStorageConfirmed: false });
-                  } else if (opt.option === 'equipment') {
-                    onUpdate({ cleaningProducts: ['products', 'equipment'] });
-                  } else {
-                    onUpdate({ cleaningProducts: [opt.option], equipmentArrangement: null, equipmentStorageConfirmed: false });
-                  }
-                }}
-              >
-                {isSelected && (
-                  <CheckCircle className="h-5 w-5 text-primary mb-1" />
-                )}
-                <span className={`text-base font-bold transition-colors text-center px-2 ${
-                  isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'
-                }`}>{opt.label}</span>
-              </button>
-            );
-          })}
+      {cleaningSuppliesConfigs.length > 0 && (
+        <div className="relative z-[4] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+          <h2 className="text-2xl font-bold text-slate-700 mb-2">
+            Cleaning supplies
+          </h2>
+          <p className="text-sm text-slate-600 mb-4">
+            We recommend choosing our professional cleaning products as they significantly improve cleaning quality and effectiveness compared to regular store-bought products.
+          </p>
+          
+          <div className="grid grid-cols-3 gap-4">
+            {cleaningSuppliesConfigs.map((supply: any) => {
+              const isSelected = data.cleaningProducts.includes(supply.option);
+              const IconComponent = (LucideIcons as any)[supply.icon];
+              
+              return (
+                <button
+                  key={supply.option}
+                  className={`group relative h-24 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+                    isSelected
+                      ? 'border-primary bg-primary/5 shadow-xl'
+                      : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                  }`}
+                  onClick={() => {
+                    if (supply.option === 'no') {
+                      onUpdate({ cleaningProducts: ['no'], equipmentArrangement: null, equipmentStorageConfirmed: false });
+                    } else if (supply.option === 'equipment') {
+                      onUpdate({ cleaningProducts: ['products', 'equipment'] });
+                    } else {
+                      onUpdate({ cleaningProducts: [supply.option], equipmentArrangement: null, equipmentStorageConfirmed: false });
+                    }
+                  }}
+                >
+                  <div className="flex flex-col items-center justify-center h-full">
+                    {IconComponent && (
+                      <IconComponent className={`h-6 w-6 mb-2 transition-all duration-500 ${
+                        isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                      }`} />
+                    )}
+                    <span className={`text-sm font-semibold transition-colors text-center px-2 ${
+                      isSelected ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
+                    }`}>{supply.label}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Equipment Arrangement - Only show if equipment is selected */}
       {data.cleaningProducts.includes('equipment') && (
