@@ -43,7 +43,7 @@ const getServices = (isAdminView: boolean = false) => [
     id: 'domestic-cleaning',
     title: 'Domestic Cleaning',
     icon: Home,
-    available: isAdminView, // Available only in admin view
+    available: true, // Now available for all users
     description: 'Regular home cleaning services'
   },
   {
