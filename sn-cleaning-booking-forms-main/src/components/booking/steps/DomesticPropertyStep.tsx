@@ -453,11 +453,11 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
             <div className="flex items-center bg-card border border-border rounded-2xl p-2 w-full sm:w-auto sm:max-w-[280px]">
               <Button variant="ghost" size="sm" className="h-11 w-11 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary flex-shrink-0" onClick={() => {
             const current = data.estimatedHours ?? recommendedHours;
-            const newValue = Math.max(0.5, current - 0.5);
+            const newValue = Math.max(2, current - 0.5);
             onUpdate({
               estimatedHours: newValue
             });
-          }}>
+          }} disabled={(data.estimatedHours ?? recommendedHours) <= 2}>
                 <Minus className="h-5 w-5" />
               </Button>
               <div className="flex-1 text-center min-w-[90px]">
