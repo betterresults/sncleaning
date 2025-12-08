@@ -325,9 +325,6 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
           </div>
           <div>
             <p className="font-medium text-foreground">{getPropertyDescription()}</p>
-            {getFrequencyDescription() && (
-              <p className="text-sm text-muted-foreground">{getFrequencyDescription()}</p>
-            )}
           </div>
         </div>
       )}
@@ -341,7 +338,6 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
             <p className="font-medium text-foreground">
               {calculations.totalHours} hour{calculations.totalHours !== 1 ? 's' : ''} estimated
             </p>
-            <p className="text-sm text-muted-foreground">Based on your selections</p>
           </div>
         </div>
       )}
@@ -453,20 +449,20 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
             </span>
           </div>
 
-          {/* Upcoming Regular Cleanings - only show for recurring */}
+          {/* Upcoming Cleanings - only show for recurring */}
           {data.serviceFrequency && data.serviceFrequency !== 'onetime' && (
             <div className="p-3 bg-muted/30 rounded-xl border border-border">
               <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-sm font-medium text-foreground">Upcoming Regular Cleanings</span>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {data.serviceFrequency === 'weekly' 
-                      ? `Weekly${data.daysPerWeek > 1 ? ` (${data.daysPerWeek}x per week)` : ''}`
-                      : data.serviceFrequency === 'biweekly' 
-                        ? 'Every 2 weeks' 
-                        : 'Monthly'}
-                  </p>
-                </div>
+                <span className="text-sm font-medium text-foreground">
+                  Upcoming {data.serviceFrequency === 'weekly' 
+                    ? 'Weekly' 
+                    : data.serviceFrequency === 'biweekly' 
+                      ? 'Biweekly' 
+                      : 'Monthly'} Cleanings
+                  {data.serviceFrequency === 'weekly' && data.daysPerWeek > 1 && (
+                    <span className="text-muted-foreground font-normal"> ({data.daysPerWeek}x/week)</span>
+                  )}
+                </span>
                 <span className="text-lg font-bold text-foreground">
                   £{(() => {
                     // Calculate recurring cost (exclude one-time oven cleaning if scope is 'this-booking')
