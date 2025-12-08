@@ -326,7 +326,7 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
           </div>
           <div>
             <p className="font-medium text-foreground">
-              {getFrequencyDescription() ? `${getFrequencyDescription()}, ` : ''}{calculations.totalHours} hour{calculations.totalHours !== 1 ? 's' : ''}
+              {calculations.totalHours} hour{calculations.totalHours !== 1 ? 's' : ''}{getFrequencyDescription() ? `, ${getFrequencyDescription()}` : ''}
             </p>
           </div>
         </div>
@@ -428,9 +428,9 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
       {/* Total - only show when frequency is selected */}
       {data.serviceFrequency && (
         <div className="mt-4 pt-4 border-t border-border space-y-4">
-          {/* This Cleaning Total */}
+          {/* Total */}
           <div className="flex items-center justify-between">
-            <span className="font-semibold text-foreground">This Cleaning</span>
+            <span className="text-2xl font-bold text-foreground">Total</span>
             <span className="text-2xl font-bold text-primary">
               £{calculateTotal().toFixed(2)}
             </span>
