@@ -441,18 +441,57 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
 
       {/* Total - only show when frequency is selected */}
       {data.serviceFrequency && (
-        <div className="mt-4 pt-4 border-t border-border">
+        <div className="mt-4 pt-4 border-t border-border space-y-4">
+          {/* This Cleaning Total */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <PoundSterling className="w-5 h-5 text-primary" />
-              <span className="font-semibold text-foreground">Total</span>
+              <span className="font-semibold text-foreground">This Cleaning</span>
             </div>
             <span className="text-2xl font-bold text-primary">
               £{calculateTotal().toFixed(2)}
             </span>
           </div>
+
+          {/* Upcoming Regular Cleanings - only show for recurring */}
+          {data.serviceFrequency && data.serviceFrequency !== 'onetime' && (
+            <div className="p-3 bg-muted/30 rounded-xl border border-border">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-sm font-medium text-foreground">Upcoming Regular Cleanings</span>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {data.serviceFrequency === 'weekly' 
+                      ? `Weekly${data.daysPerWeek > 1 ? ` (${data.daysPerWeek}x per week)` : ''}`
+                      : data.serviceFrequency === 'biweekly' 
+                        ? 'Every 2 weeks' 
+                        : 'Monthly'}
+                  </p>
+                </div>
+                <span className="text-lg font-bold text-foreground">
+                  £{(() => {
+                    // Calculate recurring cost (exclude one-time oven cleaning if scope is 'this-booking')
+                    let recurringTotal = calculateTotal();
+                    if (data.ovenCleaningScope === 'this-booking' && calculations.ovenCleaningCost > 0) {
+                      recurringTotal -= calculations.ovenCleaningCost;
+                    }
+                    // Also exclude equipment one-time cost from recurring
+                    if (calculations.equipmentOneTimeCost > 0) {
+                      recurringTotal -= calculations.equipmentOneTimeCost;
+                    }
+                    // Exclude short notice charge from recurring
+                    if (calculations.shortNoticeCharge > 0 && !(isAdminMode && data.adminRemoveShortNoticeCharge)) {
+                      recurringTotal -= calculations.shortNoticeCharge;
+                    }
+                    return Math.max(0, recurringTotal).toFixed(2);
+                  })()}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </Card>
   );
 };
+
+export default DomesticBookingSummary;
