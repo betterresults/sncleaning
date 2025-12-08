@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { DomesticBookingData } from './DomesticBookingForm';
-import { Home, Clock, Calendar, PoundSterling, ChevronDown, ChevronUp, Edit2, Info } from 'lucide-react';
+import { Home, Clock, Calendar, PoundSterling, ChevronDown, ChevronUp, Edit2, Info, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useDomesticHardcodedCalculations } from '@/hooks/useDomesticHardcodedCalculations';
+import { Badge } from '@/components/ui/badge';
 
 interface DomesticBookingSummaryProps {
   data: DomesticBookingData;
@@ -118,6 +119,48 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
     if (isAdminMode && data.adminDiscountAmount) {
       total -= data.adminDiscountAmount;
     }
+    
+    // Apply first-time customer 10% discount
+    if (data.isFirstTimeCustomer) {
+      total = total * 0.9;
+    }
+    
+    return Math.max(0, total);
+  };
+  
+  // Calculate subtotal before first-time discount (for display purposes)
+  const calculateSubtotalBeforeFirstTimeDiscount = () => {
+    if (isAdminMode && data.adminTotalCostOverride !== undefined && data.adminTotalCostOverride !== null) {
+      return data.adminTotalCostOverride;
+    }
+    
+    const effectiveRate = data.adminHourlyRateOverride !== undefined ? data.adminHourlyRateOverride : calculations.hourlyRate;
+    let total = (calculations.totalHours || 0) * effectiveRate;
+
+    if (!(isAdminMode && data.adminRemoveShortNoticeCharge)) {
+      total += shortNoticeInfo.charge;
+    }
+
+    total += calculations.equipmentOneTimeCost || 0;
+    total += calculations.ovenCleaningCost || 0;
+    
+    const additionalCharges = calculations.modifierDetails
+      ?.filter((m: any) => m.type === 'additional')
+      .reduce((sum: number, m: any) => sum + m.amount, 0) || 0;
+    const discounts = calculations.modifierDetails
+      ?.filter((m: any) => m.type === 'discount')
+      .reduce((sum: number, m: any) => sum + m.amount, 0) || 0;
+    
+    total += additionalCharges - discounts;
+    const subtotal = total;
+
+    if (isAdminMode && data.adminDiscountPercentage) {
+      total -= subtotal * data.adminDiscountPercentage / 100;
+    }
+    if (isAdminMode && data.adminDiscountAmount) {
+      total -= data.adminDiscountAmount;
+    }
+    
     return Math.max(0, total);
   };
 
@@ -427,13 +470,33 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
 
       {/* Total - only show when frequency is selected */}
       {data.serviceFrequency && (
-        <div className="mt-4 pt-4 border-t border-border space-y-4">
+        <div className="mt-4 pt-4 border-t border-border space-y-3">
+          {/* First-time discount banner */}
+          {data.isFirstTimeCustomer && (
+            <div className="flex items-center justify-between p-3 bg-green-50 rounded-xl border border-green-200">
+              <div className="flex items-center gap-2">
+                <Tag className="w-4 h-4 text-green-600" />
+                <span className="text-sm font-medium text-green-700">First cleaning 10% off</span>
+              </div>
+              <span className="text-sm font-bold text-green-600">
+                -£{(calculateSubtotalBeforeFirstTimeDiscount() * 0.1).toFixed(2)}
+              </span>
+            </div>
+          )}
+          
           {/* Total */}
           <div className="flex items-center justify-between">
             <span className="text-2xl font-bold text-foreground">Total</span>
-            <span className="text-2xl font-bold text-primary">
-              £{calculateTotal().toFixed(2)}
-            </span>
+            <div className="text-right">
+              {data.isFirstTimeCustomer && (
+                <span className="text-sm text-muted-foreground line-through mr-2">
+                  £{calculateSubtotalBeforeFirstTimeDiscount().toFixed(2)}
+                </span>
+              )}
+              <span className="text-2xl font-bold text-primary">
+                £{calculateTotal().toFixed(2)}
+              </span>
+            </div>
           </div>
 
           {/* Upcoming Cleanings - only show for recurring */}

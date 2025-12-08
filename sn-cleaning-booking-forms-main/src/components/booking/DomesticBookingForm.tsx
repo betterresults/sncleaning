@@ -89,6 +89,9 @@ export interface DomesticBookingData {
   selectedAddress?: any;
   paymentMethod?: string;
   cleanerId?: number;
+  
+  // First-time customer discount
+  isFirstTimeCustomer?: boolean;
 }
 
 const steps = [
@@ -147,6 +150,7 @@ const DomesticBookingForm: React.FC = () => {
     estimatedAdditionalHours: null,
     hourlyRate: 22,
     totalCost: 0,
+    isFirstTimeCustomer: true, // Default to true for new customers - will be checked against DB later
   });
 
   // Check if user is admin AND on admin route
