@@ -515,8 +515,8 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
                 </span>
                 <span className="text-lg font-bold text-foreground">
                   £{(() => {
-                    // Calculate recurring cost (exclude one-time oven cleaning if scope is 'this-booking')
-                    let recurringTotal = calculateTotal();
+                    // Use subtotal before first-time discount for recurring (discount only applies to first booking)
+                    let recurringTotal = calculateSubtotalBeforeFirstTimeDiscount();
                     if (data.ovenCleaningScope === 'this-booking' && calculations.ovenCleaningCost > 0) {
                       recurringTotal -= calculations.ovenCleaningCost;
                     }
