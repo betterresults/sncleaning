@@ -504,14 +504,11 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
             <div className="p-3 bg-muted/30 rounded-xl border border-border">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-foreground">
-                  {data.serviceFrequency === 'weekly' && data.daysPerWeek > 1 
-                    ? 'Weekly Cost'
-                    : `Upcoming ${data.serviceFrequency === 'weekly' 
-                        ? 'Weekly' 
-                        : data.serviceFrequency === 'biweekly' 
-                          ? 'Biweekly' 
-                          : 'Monthly'} Cleanings`
-                  }
+                  Upcoming {data.serviceFrequency === 'weekly' 
+                    ? 'Weekly' 
+                    : data.serviceFrequency === 'biweekly' 
+                      ? 'Biweekly' 
+                      : 'Monthly'} Cost
                   {data.serviceFrequency === 'weekly' && data.daysPerWeek > 1 && (
                     <span className="text-muted-foreground font-normal"> ({data.daysPerWeek}x/week)</span>
                   )}
