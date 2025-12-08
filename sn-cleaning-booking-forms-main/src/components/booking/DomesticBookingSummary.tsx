@@ -147,13 +147,6 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
 
   const renderSummaryContent = () => (
     <div className="space-y-3">
-      {getFrequencyDescription() && (
-        <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">{getFrequencyDescription()}</span>
-          </div>
-        </div>
-      )}
 
       {data.selectedDate && (
         <div className="space-y-3 mt-3">
@@ -333,7 +326,7 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
           </div>
           <div>
             <p className="font-medium text-foreground">
-              {calculations.totalHours} hour{calculations.totalHours !== 1 ? 's' : ''}
+              {getFrequencyDescription() ? `${getFrequencyDescription()}, ` : ''}{calculations.totalHours} hour{calculations.totalHours !== 1 ? 's' : ''}
             </p>
           </div>
         </div>
