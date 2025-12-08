@@ -75,16 +75,16 @@ interface BookingSubmission {
 // Helper function to build property_details JSON
 const buildPropertyDetails = (data: BookingSubmission) => {
   const propertyDetails: any = {
-    type: data.propertyType,
-    bedrooms: data.bedrooms,
-    bathrooms: data.bathrooms,
+    type: data.propertyType || 'flat',
+    bedrooms: data.bedrooms || '1',
+    bathrooms: data.bathrooms || '1',
   };
   
   if (data.toilets) {
     propertyDetails.toilets = data.toilets;
   }
   
-  if (data.numberOfFloors) {
+  if (data.numberOfFloors && data.numberOfFloors > 0) {
     propertyDetails.numberOfFloors = data.numberOfFloors;
   }
   
@@ -117,11 +117,11 @@ const buildAdditionalDetails = (data: BookingSubmission) => {
   }
   
   // Cleaning products & equipment
-  if (data.cleaningProducts) {
+  if (data.cleaningProducts && data.cleaningProducts !== '') {
     details.cleaningProducts = {
       type: data.cleaningProducts,
-      arrangement: data.equipmentArrangement,
-      storageConfirmed: data.equipmentStorageConfirmed
+      arrangement: data.equipmentArrangement || null,
+      storageConfirmed: data.equipmentStorageConfirmed || false
     };
   }
   
@@ -156,8 +156,8 @@ const buildAdditionalDetails = (data: BookingSubmission) => {
   
   // Access
   details.access = {
-    method: data.propertyAccess,
-    notes: data.accessNotes
+    method: data.propertyAccess || 'customer-home',
+    notes: data.accessNotes || ''
   };
   
   // General notes
@@ -403,34 +403,38 @@ export const useAirbnbBookingSubmit = () => {
         id: nextId,
         // Customer
         customer: customerId,
-        first_name: bookingData.firstName,
-        last_name: bookingData.lastName,
-        email: bookingData.email,
-        phone_number: bookingData.phone,
+        first_name: bookingData.firstName || '',
+        last_name: bookingData.lastName || '',
+        email: bookingData.email || '',
+        phone_number: bookingData.phone || '',
         
         // Address
-        address: addressForBooking,
-        postcode: postcodeForBooking,
+        address: addressForBooking || '',
+        postcode: postcodeForBooking || '',
         
         // Property details (JSON with ALL property info)
         property_details: buildPropertyDetails(bookingData),
         
         // Service
         service_type: 'airbnb', // Service type key from company_settings
-        cleaning_type: bookingData.serviceType, // checkin-checkout, midstay, etc.
+        cleaning_type: bookingData.serviceType || 'checkin-checkout', // checkin-checkout, midstay, etc.
         
         // Dates
-        date_time: bookingDateTime?.toISOString(),
-        date_only: bookingData.selectedDate ? bookingData.selectedDate.toISOString().split('T')[0] : null,
+        date_time: bookingDateTime?.toISOString() || null,
+        date_only: bookingData.selectedDate 
+          ? (bookingData.selectedDate instanceof Date 
+              ? bookingData.selectedDate.toISOString().split('T')[0] 
+              : new Date(bookingData.selectedDate).toISOString().split('T')[0])
+          : null,
         time_only: (bookingData.flexibility === 'flexible-time' || !bookingData.selectedTime) 
           ? null 
           : time24ForDB, // Use the converted 24-hour format for DB TIME field
         
         // Hours
         hours_required: bookingData.estimatedHours || 0, // system calculated
-        total_hours: totalHours, // actual hours
-        cleaning_cost_per_hour: bookingData.hourlyRate,
-        total_cost: bookingData.totalCost,
+        total_hours: totalHours || 0, // actual hours
+        cleaning_cost_per_hour: bookingData.hourlyRate || 0,
+        total_cost: bookingData.totalCost || 0,
         
         // Payment - use Stripe if customer has saved cards, otherwise use provided method or null
         payment_method: bookingData.paymentMethod || (hasPaymentMethods ? 'Stripe' : null),
@@ -438,11 +442,11 @@ export const useAirbnbBookingSubmit = () => {
         booking_status: 'active',
         
         // Cleaner - set if provided, otherwise null (no default value)
-        cleaner: bookingData.cleanerId || null,
+        cleaner: bookingData.cleanerId && bookingData.cleanerId > 0 ? bookingData.cleanerId : null,
         cleaner_percentage: null,
         
         // Access
-        access: bookingData.propertyAccess,
+        access: bookingData.propertyAccess || null,
         
         // Additional details (JSON with service, schedule, access info)
         additional_details: buildAdditionalDetails(bookingData)

@@ -50,13 +50,13 @@ interface DomesticBookingSubmission {
 
 const buildPropertyDetails = (data: DomesticBookingSubmission) => {
   const propertyDetails: any = {
-    type: data.propertyType,
-    bedrooms: data.bedrooms,
-    bathrooms: data.bathrooms,
+    type: data.propertyType || 'flat',
+    bedrooms: data.bedrooms || '1',
+    bathrooms: data.bathrooms || '1',
   };
   
   if (data.toilets) propertyDetails.toilets = data.toilets;
-  if (data.numberOfFloors) propertyDetails.numberOfFloors = data.numberOfFloors;
+  if (data.numberOfFloors && data.numberOfFloors > 0) propertyDetails.numberOfFloors = data.numberOfFloors;
   if (data.additionalRooms && Object.values(data.additionalRooms).some(v => v > 0)) {
     propertyDetails.additionalRooms = data.additionalRooms;
   }
@@ -70,24 +70,27 @@ const buildPropertyDetails = (data: DomesticBookingSubmission) => {
 const buildAdditionalDetails = (data: DomesticBookingSubmission) => {
   const details: any = {};
   
-  details.serviceFrequency = data.serviceFrequency;
+  details.serviceFrequency = data.serviceFrequency || 'onetime';
   
   if (data.ovenType && data.ovenType !== 'dontneed' && data.ovenType !== '') {
     details.ovenCleaning = { needed: true, type: data.ovenType };
   }
   
-  if (data.cleaningProducts) {
+  if (data.cleaningProducts && data.cleaningProducts !== '') {
     details.cleaningProducts = {
       type: data.cleaningProducts,
-      arrangement: data.equipmentArrangement,
-      storageConfirmed: data.equipmentStorageConfirmed
+      arrangement: data.equipmentArrangement || null,
+      storageConfirmed: data.equipmentStorageConfirmed || false
     };
   }
   
   if (data.flexibility) details.flexibility = data.flexibility;
   if (data.shortNoticeCharge && data.shortNoticeCharge > 0) details.shortNoticeCharge = data.shortNoticeCharge;
   
-  details.access = { method: data.propertyAccess, notes: data.accessNotes };
+  details.access = { 
+    method: data.propertyAccess || 'customer-home', 
+    notes: data.accessNotes || '' 
+  };
   if (data.notes) details.notes = data.notes;
   
   return JSON.stringify(details);
@@ -255,39 +258,43 @@ export const useDomesticBookingSubmit = () => {
       const bookingInsert: any = {
         id: nextId,
         customer: customerId,
-        first_name: bookingData.firstName,
-        last_name: bookingData.lastName,
-        email: bookingData.email,
-        phone_number: bookingData.phone,
+        first_name: bookingData.firstName || '',
+        last_name: bookingData.lastName || '',
+        email: bookingData.email || '',
+        phone_number: bookingData.phone || '',
         
-        address: addressForBooking,
-        postcode: postcodeForBooking,
+        address: addressForBooking || '',
+        postcode: postcodeForBooking || '',
         
         property_details: buildPropertyDetails(bookingData),
         
         service_type: 'domestic',
-        cleaning_type: bookingData.serviceFrequency,
-        frequently: bookingData.serviceFrequency,
+        cleaning_type: bookingData.serviceFrequency || 'onetime',
+        frequently: bookingData.serviceFrequency || 'onetime',
         
-        date_time: bookingDateTime?.toISOString(),
-        date_only: bookingData.selectedDate ? bookingData.selectedDate.toISOString().split('T')[0] : null,
+        date_time: bookingDateTime?.toISOString() || null,
+        date_only: bookingData.selectedDate 
+          ? (bookingData.selectedDate instanceof Date 
+              ? bookingData.selectedDate.toISOString().split('T')[0] 
+              : new Date(bookingData.selectedDate).toISOString().split('T')[0])
+          : null,
         time_only: (bookingData.flexibility === 'flexible-time' || !bookingData.selectedTime) 
           ? null 
           : time24ForDB,
         
         hours_required: bookingData.estimatedHours || 0,
-        total_hours: totalHours,
-        cleaning_cost_per_hour: bookingData.hourlyRate,
-        total_cost: bookingData.totalCost,
+        total_hours: totalHours || 0,
+        cleaning_cost_per_hour: bookingData.hourlyRate || 0,
+        total_cost: bookingData.totalCost || 0,
         
         payment_method: bookingData.paymentMethod || (hasPaymentMethods ? 'Stripe' : null),
         payment_status: 'Unpaid',
         booking_status: 'active',
         
-        cleaner: bookingData.cleanerId || null,
+        cleaner: bookingData.cleanerId && bookingData.cleanerId > 0 ? bookingData.cleanerId : null,
         cleaner_percentage: null,
         
-        access: bookingData.propertyAccess,
+        access: bookingData.propertyAccess || null,
         
         additional_details: buildAdditionalDetails(bookingData)
       };
