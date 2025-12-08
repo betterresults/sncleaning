@@ -366,7 +366,10 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({ data
                     ? 'border-primary bg-primary/5 shadow-xl'
                     : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
                 }`}
-                onClick={() => onUpdate({ serviceFrequency: isSelected ? '' : opt.option })}
+                onClick={() => onUpdate({ 
+                  serviceFrequency: isSelected ? '' : opt.option,
+                  daysPerWeek: opt.option === 'weekly' ? (data.daysPerWeek || 1) : 1
+                })}
               >
                 {isSelected && (
                   <CheckCircle className="h-5 w-5 text-primary mb-1" />
@@ -378,6 +381,36 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({ data
             );
           })}
         </div>
+
+        {/* Days per week selector - only show when weekly is selected */}
+        {data.serviceFrequency === 'weekly' && (
+          <div className="mt-4 p-4 bg-muted/30 rounded-xl border border-border">
+            <h3 className="text-lg font-semibold text-slate-700 mb-3">How many days a week?</h3>
+            <div className="grid grid-cols-5 gap-2">
+              {[1, 2, 3, 4, 5].map((days) => {
+                const isSelected = data.daysPerWeek === days;
+                return (
+                  <button
+                    key={days}
+                    className={`h-12 rounded-xl border-2 transition-all duration-300 flex items-center justify-center ${
+                      isSelected
+                        ? 'border-primary bg-primary/10 shadow-lg'
+                        : 'border-border bg-card hover:border-primary/50'
+                    }`}
+                    onClick={() => onUpdate({ daysPerWeek: days })}
+                  >
+                    <span className={`text-lg font-bold ${
+                      isSelected ? 'text-primary' : 'text-slate-500'
+                    }`}>{days}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              {data.daysPerWeek === 1 ? '1 day per week' : `${data.daysPerWeek} days per week`}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Oven Cleaning - With Switch Toggle */}
@@ -410,35 +443,72 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({ data
           </div>
           
           {data.hasOvenCleaning && (
-            <div className="grid grid-cols-4 gap-4">
-              {ovenCleaningConfigs.filter((oven: any) => oven.option !== 'not-required').map((oven: any) => {
-                const isSelected = data.ovenType === oven.option;
-                const IconComponent = (LucideIcons as any)[oven.icon];
-                
-                return (
-                  <button
-                    key={oven.option}
-                    className={`group relative h-20 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
-                      isSelected
-                        ? 'border-primary bg-primary/5 shadow-xl'
-                        : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
-                    }`}
-                    onClick={() => onUpdate({ ovenType: isSelected ? '' : oven.option as any })}
-                  >
-                    <div className="flex flex-col items-center justify-center h-full">
-                      {IconComponent && (
-                        <IconComponent className={`h-6 w-6 mb-1 transition-all duration-500 ${
-                          isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
-                        }`} />
-                      )}
-                      <span className={`text-base font-bold transition-colors ${
-                        isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'
-                      }`}>{oven.label}</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+            <>
+              <div className="grid grid-cols-4 gap-4">
+                {ovenCleaningConfigs.filter((oven: any) => oven.option !== 'not-required').map((oven: any) => {
+                  const isSelected = data.ovenType === oven.option;
+                  const IconComponent = (LucideIcons as any)[oven.icon];
+                  
+                  return (
+                    <button
+                      key={oven.option}
+                      className={`group relative h-20 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+                        isSelected
+                          ? 'border-primary bg-primary/5 shadow-xl'
+                          : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                      }`}
+                      onClick={() => onUpdate({ ovenType: isSelected ? '' : oven.option as any })}
+                    >
+                      <div className="flex flex-col items-center justify-center h-full">
+                        {IconComponent && (
+                          <IconComponent className={`h-6 w-6 mb-1 transition-all duration-500 ${
+                            isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                          }`} />
+                        )}
+                        <span className={`text-base font-bold transition-colors ${
+                          isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'
+                        }`}>{oven.label}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Oven cleaning scope - only show for recurring bookings */}
+              {data.serviceFrequency && data.serviceFrequency !== 'onetime' && data.ovenType && (
+                <div className="mt-4 p-4 bg-muted/30 rounded-xl border border-border">
+                  <h3 className="text-base font-semibold text-slate-700 mb-3">Apply oven cleaning to:</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      className={`p-3 rounded-xl border-2 transition-all duration-300 text-left ${
+                        data.ovenCleaningScope === 'this-booking'
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border bg-card hover:border-primary/50'
+                      }`}
+                      onClick={() => onUpdate({ ovenCleaningScope: 'this-booking' })}
+                    >
+                      <span className={`text-sm font-semibold ${
+                        data.ovenCleaningScope === 'this-booking' ? 'text-primary' : 'text-slate-600'
+                      }`}>This booking only</span>
+                      <p className="text-xs text-muted-foreground mt-1">One-time add-on</p>
+                    </button>
+                    <button
+                      className={`p-3 rounded-xl border-2 transition-all duration-300 text-left ${
+                        data.ovenCleaningScope === 'all-bookings'
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border bg-card hover:border-primary/50'
+                      }`}
+                      onClick={() => onUpdate({ ovenCleaningScope: 'all-bookings' })}
+                    >
+                      <span className={`text-sm font-semibold ${
+                        data.ovenCleaningScope === 'all-bookings' ? 'text-primary' : 'text-slate-600'
+                      }`}>All future bookings</span>
+                      <p className="text-xs text-muted-foreground mt-1">Recurring add-on</p>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
