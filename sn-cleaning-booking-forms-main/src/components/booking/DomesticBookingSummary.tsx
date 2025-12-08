@@ -504,11 +504,14 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
             <div className="p-3 bg-muted/30 rounded-xl border border-border">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-foreground">
-                  Upcoming {data.serviceFrequency === 'weekly' 
-                    ? 'Weekly' 
-                    : data.serviceFrequency === 'biweekly' 
-                      ? 'Biweekly' 
-                      : 'Monthly'} Cleanings
+                  {data.serviceFrequency === 'weekly' && data.daysPerWeek > 1 
+                    ? 'Weekly Cost'
+                    : `Upcoming ${data.serviceFrequency === 'weekly' 
+                        ? 'Weekly' 
+                        : data.serviceFrequency === 'biweekly' 
+                          ? 'Biweekly' 
+                          : 'Monthly'} Cleanings`
+                  }
                   {data.serviceFrequency === 'weekly' && data.daysPerWeek > 1 && (
                     <span className="text-muted-foreground font-normal"> ({data.daysPerWeek}x/week)</span>
                   )}
@@ -527,6 +530,10 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
                     // Exclude short notice charge from recurring
                     if (calculations.shortNoticeCharge > 0 && !(isAdminMode && data.adminRemoveShortNoticeCharge)) {
                       recurringTotal -= calculations.shortNoticeCharge;
+                    }
+                    // Multiply by days per week if more than 1
+                    if (data.serviceFrequency === 'weekly' && data.daysPerWeek > 1) {
+                      recurringTotal = recurringTotal * data.daysPerWeek;
                     }
                     return Math.max(0, recurringTotal).toFixed(2);
                   })()}
