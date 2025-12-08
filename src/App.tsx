@@ -87,6 +87,7 @@ const App = () => (
             <Route path="/choose-service" element={<PublicServiceSelection />} />
             <Route path="/airbnb" element={<AirbnbBooking />} />
             <Route path="/domestic" element={<DomesticBooking />} />
+            <Route path="/domestic-booking" element={<DomesticBooking />} />
             <Route path="/linen-order" element={<LinenOrder />} />
             <Route path="/booking-confirmation" element={<BookingConfirmation />} />
             <Route path="/apply" element={<ApplyToWork />} />
