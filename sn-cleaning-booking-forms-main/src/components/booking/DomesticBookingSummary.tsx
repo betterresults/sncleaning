@@ -152,7 +152,7 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">{getFrequencyDescription()}</span>
             <span className="text-foreground font-semibold whitespace-nowrap">
-              {calculations.totalHours}h × £{effectiveHourlyRate.toFixed(2)}/hr
+              {calculations.totalHours}h cleaning
             </span>
           </div>
         </div>
@@ -439,18 +439,20 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
         </div>
       )}
 
-      {/* Total */}
-      <div className="mt-4 pt-4 border-t border-border">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <PoundSterling className="w-5 h-5 text-primary" />
-            <span className="font-semibold text-foreground">Total</span>
+      {/* Total - only show when frequency is selected */}
+      {data.serviceFrequency && (
+        <div className="mt-4 pt-4 border-t border-border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <PoundSterling className="w-5 h-5 text-primary" />
+              <span className="font-semibold text-foreground">Total</span>
+            </div>
+            <span className="text-2xl font-bold text-primary">
+              £{calculateTotal().toFixed(2)}
+            </span>
           </div>
-          <span className="text-2xl font-bold text-primary">
-            £{calculateTotal().toFixed(2)}
-          </span>
         </div>
-      </div>
+      )}
     </Card>
   );
 };
