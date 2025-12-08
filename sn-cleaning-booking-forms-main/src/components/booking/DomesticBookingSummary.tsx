@@ -147,13 +147,10 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
 
   const renderSummaryContent = () => (
     <div className="space-y-3">
-      {getFrequencyDescription() && (calculations.totalHours ?? 0) > 0 && (
+      {getFrequencyDescription() && (
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">{getFrequencyDescription()}</span>
-            <span className="text-foreground font-semibold whitespace-nowrap">
-              {calculations.totalHours}h cleaning
-            </span>
           </div>
         </div>
       )}
@@ -336,7 +333,7 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
           </div>
           <div>
             <p className="font-medium text-foreground">
-              {calculations.totalHours} hour{calculations.totalHours !== 1 ? 's' : ''} estimated
+              {calculations.totalHours} hour{calculations.totalHours !== 1 ? 's' : ''}
             </p>
           </div>
         </div>
