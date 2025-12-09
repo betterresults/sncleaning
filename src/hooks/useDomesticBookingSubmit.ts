@@ -367,13 +367,12 @@ export const useDomesticBookingSubmit = () => {
           // Generate payment collection link first
           const { data: paymentLinkResult } = await supabase.functions.invoke('stripe-collect-payment-method', {
             body: {
-              customerId: customerId,
-              customerEmail: bookingData.email,
-              customerName: `${bookingData.firstName} ${bookingData.lastName}`,
-              bookingId: booking.id,
-              amount: bookingData.totalCost,
-              sendEmail: false, // We'll send SMS instead
-              collectOnly: true
+              customer_id: customerId,
+              email: bookingData.email,
+              name: `${bookingData.firstName} ${bookingData.lastName}`.trim() || 'Customer',
+              return_url: `https://account.sncleaningservices.co.uk/welcome?customer_id=${customerId}&payment_setup=success`,
+              collect_only: true,
+              send_email: false
             }
           });
 
