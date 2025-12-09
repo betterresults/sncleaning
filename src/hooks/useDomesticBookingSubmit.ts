@@ -360,47 +360,6 @@ export const useDomesticBookingSubmit = () => {
           console.error('Payment authorization error:', paymentError);
         }
       }
-      
-      // Queue SMS reminder if customer has no payment methods
-      if (!hasPaymentMethods && bookingData.totalCost > 0 && bookingData.phone) {
-        try {
-          // Generate payment collection link first
-          const { data: paymentLinkResult } = await supabase.functions.invoke('stripe-collect-payment-method', {
-            body: {
-              customer_id: customerId,
-              email: bookingData.email,
-              name: `${bookingData.firstName} ${bookingData.lastName}`.trim() || 'Customer',
-              return_url: `https://account.sncleaningservices.co.uk/welcome?customer_id=${customerId}&payment_setup=success`,
-              collect_only: true,
-              send_email: false
-            }
-          });
-
-          const paymentLink = paymentLinkResult?.checkoutUrl || paymentLinkResult?.url || '';
-          
-          if (paymentLink) {
-            // Schedule SMS for 5 minutes from now
-            const sendAt = new Date();
-            sendAt.setMinutes(sendAt.getMinutes() + 5);
-
-            await supabase.from('sms_reminders_queue').insert({
-              booking_id: booking.id,
-              phone_number: bookingData.phone,
-              customer_name: `${bookingData.firstName} ${bookingData.lastName}`,
-              amount: bookingData.totalCost,
-              payment_link: paymentLink,
-              send_at: sendAt.toISOString(),
-              status: 'pending',
-              message_type: 'payment_method_collection'
-            });
-            
-            console.log('SMS reminder queued for 5 minutes from now');
-          }
-        } catch (smsQueueError) {
-          console.error('Failed to queue SMS reminder:', smsQueueError);
-          // Don't fail the booking creation if SMS queuing fails
-        }
-      }
 
       toast({
         title: 'Booking Created!',
