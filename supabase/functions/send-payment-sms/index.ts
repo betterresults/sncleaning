@@ -12,6 +12,7 @@ interface SendSMSRequest {
   customerName: string;
   amount: number;
   paymentLink?: string;
+  messageType?: 'invoice' | 'payment_method_collection';
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -20,9 +21,9 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { bookingId, phoneNumber, customerName, amount, paymentLink }: SendSMSRequest = await req.json();
+    const { bookingId, phoneNumber, customerName, amount, paymentLink, messageType = 'invoice' }: SendSMSRequest = await req.json();
 
-    console.log(`Sending payment SMS for booking ${bookingId} to ${phoneNumber}`);
+    console.log(`Sending ${messageType} SMS for booking ${bookingId} to ${phoneNumber}`);
 
     // Get Twilio credentials from environment
     const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
@@ -38,33 +39,39 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Resolve payment link: prefer provided, else fetch from DB
+    // Resolve payment link: prefer provided, else fetch from DB (only for invoice type)
     let finalPaymentLink = paymentLink || '';
 
-    // Try bookings.invoice_link
-    if (!finalPaymentLink) {
+    if (messageType === 'invoice' && !finalPaymentLink) {
+      // Try bookings.invoice_link
       const { data: bInv } = await supabase
         .from('bookings')
         .select('invoice_link')
         .eq('id', bookingId)
         .maybeSingle();
       if (bInv?.invoice_link) finalPaymentLink = bInv.invoice_link;
+
+      // Try past_bookings.invoice_link
+      if (!finalPaymentLink) {
+        const { data: pInv } = await supabase
+          .from('past_bookings')
+          .select('invoice_link')
+          .eq('id', bookingId)
+          .maybeSingle();
+        if (pInv?.invoice_link) finalPaymentLink = pInv.invoice_link;
+      }
     }
 
-    // Try past_bookings.invoice_link
-    if (!finalPaymentLink) {
-      const { data: pInv } = await supabase
-        .from('past_bookings')
-        .select('invoice_link')
-        .eq('id', bookingId)
-        .maybeSingle();
-      if (pInv?.invoice_link) finalPaymentLink = pInv.invoice_link;
+    // Create message based on type
+    let message: string;
+    
+    if (messageType === 'payment_method_collection') {
+      message = `Hi ${customerName}, thank you for booking with SN Cleaning Services. We don't have a payment card on file for your account. Please add one so we can authorize £${amount.toFixed(2)} 48 hours before your cleaning: ${finalPaymentLink}\n\nThank you,\nSN Cleaning Team`;
+    } else {
+      message = finalPaymentLink
+        ? `Hi ${customerName}, invoice for £${amount.toFixed(2)} has been sent by email from SN Cleaning Services. If you don't see it, please check the spam folder. You can also pay here: ${finalPaymentLink}\n\nThank you,\nSN Cleaning Team`
+        : `Hi ${customerName}, invoice for £${amount.toFixed(2)} has been sent by email from SN Cleaning Services. If you don't see it, please check the spam folder.\n\nThank you,\nSN Cleaning Team`;
     }
-
-    // Create concise SMS message
-    const message = finalPaymentLink
-      ? `Hi ${customerName}, invoice for £${amount.toFixed(2)} has been sent by email from SN Cleaning Services. If you don't see it, please check the spam folder. You can also pay here: ${finalPaymentLink}\n\nThank you,\nSN Cleaning Team`
-      : `Hi ${customerName}, invoice for £${amount.toFixed(2)} has been sent by email from SN Cleaning Services. If you don't see it, please check the spam folder.\n\nThank you,\nSN Cleaning Team`;
 
     console.log('SMS message:', message);
 
