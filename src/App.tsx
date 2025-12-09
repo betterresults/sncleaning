@@ -85,7 +85,8 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/welcome" element={<CustomerWelcome />} />
-            <Route path="/choose-service" element={<ChooseService />} />
+            <Route path="/choose-service" element={<PublicServiceSelection />} />
+            <Route path="/services" element={<ChooseService />} />
             <Route path="/airbnb" element={<AirbnbBooking />} />
             <Route path="/domestic" element={<DomesticBooking />} />
             <Route path="/domestic-booking" element={<DomesticBooking />} />

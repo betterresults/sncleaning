@@ -85,14 +85,6 @@ const ChooseService = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        <Button
-          variant="outline"
-          onClick={() => navigate('/')}
-          className="mb-6 flex items-center gap-2 text-[#185166] border-[#185166] hover:bg-[#185166] hover:text-white"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
 
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl p-8">
           <div className="mb-8 text-center">
