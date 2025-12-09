@@ -86,6 +86,7 @@ const handler = async (req: Request): Promise<Response> => {
             customerName: reminder.customer_name,
             amount: reminder.amount,
             paymentLink: reminder.payment_link,
+            messageType: reminder.message_type || 'invoice',
           }),
         });
 

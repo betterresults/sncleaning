@@ -2095,6 +2095,7 @@ export type Database = {
           customer_name: string
           error_message: string | null
           id: string
+          message_type: string | null
           payment_link: string
           phone_number: string
           send_at: string
@@ -2108,6 +2109,7 @@ export type Database = {
           customer_name: string
           error_message?: string | null
           id?: string
+          message_type?: string | null
           payment_link: string
           phone_number: string
           send_at: string
@@ -2121,6 +2123,7 @@ export type Database = {
           customer_name?: string
           error_message?: string | null
           id?: string
+          message_type?: string | null
           payment_link?: string
           phone_number?: string
           send_at?: string
