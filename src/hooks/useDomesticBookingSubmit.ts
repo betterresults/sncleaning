@@ -334,7 +334,7 @@ export const useDomesticBookingSubmit = () => {
         throw new Error(bookingError?.message || 'Failed to create booking');
       }
 
-      // Handle payment authorization if needed
+      // Handle payment authorization if customer has payment methods
       if (!skipPaymentAuth && hasPaymentMethods && bookingData.totalCost > 0) {
         try {
           const { data: authResult, error: authError } = await supabase.functions.invoke('stripe-authorize-payment', {
@@ -358,6 +358,47 @@ export const useDomesticBookingSubmit = () => {
           }
         } catch (paymentError) {
           console.error('Payment authorization error:', paymentError);
+        }
+      }
+      
+      // Queue SMS reminder if customer has no payment methods
+      if (!hasPaymentMethods && bookingData.totalCost > 0 && bookingData.phone) {
+        try {
+          // Generate payment collection link first
+          const { data: paymentLinkResult } = await supabase.functions.invoke('stripe-collect-payment-method', {
+            body: {
+              customerId: customerId,
+              customerEmail: bookingData.email,
+              customerName: `${bookingData.firstName} ${bookingData.lastName}`,
+              bookingId: booking.id,
+              amount: bookingData.totalCost,
+              sendEmail: false, // We'll send SMS instead
+              collectOnly: true
+            }
+          });
+
+          const paymentLink = paymentLinkResult?.checkoutUrl || paymentLinkResult?.url || '';
+          
+          if (paymentLink) {
+            // Schedule SMS for 5 minutes from now
+            const sendAt = new Date();
+            sendAt.setMinutes(sendAt.getMinutes() + 5);
+
+            await supabase.from('sms_reminders_queue').insert({
+              booking_id: booking.id,
+              phone_number: bookingData.phone,
+              customer_name: `${bookingData.firstName} ${bookingData.lastName}`,
+              amount: bookingData.totalCost,
+              payment_link: paymentLink,
+              send_at: sendAt.toISOString(),
+              status: 'pending'
+            });
+            
+            console.log('SMS reminder queued for 5 minutes from now');
+          }
+        } catch (smsQueueError) {
+          console.error('Failed to queue SMS reminder:', smsQueueError);
+          // Don't fail the booking creation if SMS queuing fails
         }
       }
 
