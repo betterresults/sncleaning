@@ -50,14 +50,6 @@ const services = [
     available: false,
     description: 'Professional carpet deep cleaning',
     gradient: 'from-gray-400 to-gray-500'
-  },
-  {
-    id: 'commercial-cleaning',
-    title: 'Commercial Cleaning',
-    icon: Building,
-    available: false,
-    description: 'Office and business cleaning',
-    gradient: 'from-gray-400 to-gray-500'
   }
 ];
 
@@ -145,7 +137,7 @@ const ChooseService = () => {
 
                   {service.available && (
                     <div className="flex items-center gap-2 text-white/90 text-sm font-medium group-hover:text-white transition-colors">
-                      <span>Book Now</span>
+                      <span>Get Instant Quote</span>
                       <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
                     </div>
                   )}
