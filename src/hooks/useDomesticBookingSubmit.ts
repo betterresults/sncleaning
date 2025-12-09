@@ -390,7 +390,8 @@ export const useDomesticBookingSubmit = () => {
               amount: bookingData.totalCost,
               payment_link: paymentLink,
               send_at: sendAt.toISOString(),
-              status: 'pending'
+              status: 'pending',
+              message_type: 'payment_method_collection'
             });
             
             console.log('SMS reminder queued for 5 minutes from now');
