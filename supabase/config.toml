@@ -86,3 +86,6 @@ verify_jwt = false
 
 [functions.track-funnel-event]
 verify_jwt = false
+
+[functions.send-quote-email]
+verify_jwt = false
