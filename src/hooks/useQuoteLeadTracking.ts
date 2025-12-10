@@ -27,7 +27,7 @@ interface QuoteLeadData {
   postcode?: string;
   calculatedQuote?: number;
   recommendedHours?: number;
-  status?: 'viewing' | 'completed' | 'abandoned';
+  status?: 'live' | 'left' | 'completed';
   furthestStep?: string;
 }
 
@@ -76,16 +76,16 @@ export const useQuoteLeadTracking = (serviceType: string) => {
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   const hasInitialized = useRef(false);
 
-  // Initialize tracking on mount
+  // Initialize tracking on mount and handle page leave
   useEffect(() => {
     if (!hasInitialized.current) {
       hasInitialized.current = true;
       const utmParams = getUtmParams();
       
-      // Create initial record
+      // Create initial record with 'live' status
       saveQuoteLead({
         serviceType,
-        status: 'viewing',
+        status: 'live',
         furthestStep: 'started',
       }, true);
       
@@ -94,6 +94,34 @@ export const useQuoteLeadTracking = (serviceType: string) => {
         sessionStorage.setItem('quote_utm_params', JSON.stringify(utmParams));
       }
     }
+
+    // Mark as 'left' when user leaves the page
+    const handleBeforeUnload = () => {
+      const currentStep = sessionStorage.getItem('quote_furthest_step') || 'started';
+      // Use sendBeacon for reliable tracking on page unload
+      const leadData = {
+        user_id: userId.current,
+        session_id: sessionId.current,
+        service_type: serviceType,
+        status: 'left',
+        furthest_step: currentStep,
+        updated_at: new Date().toISOString(),
+      };
+      
+      navigator.sendBeacon(
+        `${SUPABASE_URL}/functions/v1/track-funnel-event`,
+        JSON.stringify({
+          table: 'quote_leads',
+          data: leadData,
+        })
+      );
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, [serviceType]);
 
   const saveQuoteLead = useCallback(async (data: QuoteLeadData, force = false) => {
@@ -184,7 +212,10 @@ export const useQuoteLeadTracking = (serviceType: string) => {
   }, [serviceType]);
 
   const trackStep = useCallback((step: string, additionalData?: Partial<QuoteLeadData>) => {
+    // Store the furthest step for use in beforeunload
+    sessionStorage.setItem('quote_furthest_step', step);
     saveQuoteLead({
+      status: 'live',
       furthestStep: step,
       ...additionalData,
     });
