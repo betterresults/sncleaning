@@ -82,8 +82,26 @@ const handler = async (req: Request): Promise<Response> => {
         console.log('Processing checkout.session.completed event');
         const session = event.data.object;
         
-        // Sync payment method if one was collected during checkout
-        if (session.payment_method && session.customer) {
+        // Handle setup mode sessions (payment method collection)
+        if (session.mode === 'setup' && session.setup_intent && session.customer) {
+          console.log('Setup mode checkout completed, retrieving SetupIntent:', session.setup_intent);
+          try {
+            // Retrieve the SetupIntent to get the payment method
+            const setupIntent = await stripe.setupIntents.retrieve(session.setup_intent);
+            console.log('SetupIntent retrieved, payment_method:', setupIntent.payment_method);
+            
+            if (setupIntent.payment_method) {
+              const paymentMethodId = typeof setupIntent.payment_method === 'string' 
+                ? setupIntent.payment_method 
+                : setupIntent.payment_method.id;
+              await syncPaymentMethodToDatabase(stripe, supabaseAdmin, session.customer, paymentMethodId);
+            }
+          } catch (setupError) {
+            console.error('Error retrieving SetupIntent:', setupError);
+          }
+        }
+        // Handle payment mode sessions
+        else if (session.payment_method && session.customer) {
           await syncPaymentMethodToDatabase(stripe, supabaseAdmin, session.customer, session.payment_method);
         }
 
