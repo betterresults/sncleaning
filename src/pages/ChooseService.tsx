@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Building, Home, Users, Droplets, HardHat, Layers, Sparkles, ArrowRight } from 'lucide-react';
+import { useFunnelTracking } from '@/hooks/useFunnelTracking';
 
 const services = [
   {
@@ -58,8 +59,18 @@ const ChooseService = () => {
   const [searchParams] = useSearchParams();
   const postcode = searchParams.get('postcode') || '';
   const email = searchParams.get('email') || '';
+  const { trackPageView, trackServiceClick } = useFunnelTracking();
+
+  // Track page view on mount
+  useEffect(() => {
+    console.log('🎯 ChooseService: Tracking page view for /services');
+    trackPageView('services_page', { postcode });
+  }, []);
 
   const handleServiceSelect = (serviceId: string) => {
+    console.log('🎯 ChooseService: Tracking service click:', serviceId);
+    trackServiceClick(serviceId, serviceId.replace(/-/g, ' '));
+    
     sessionStorage.setItem('selectedService', serviceId);
     sessionStorage.setItem('bookingPostcode', postcode);
     sessionStorage.setItem('bookingEmail', email);
