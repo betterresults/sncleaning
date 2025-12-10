@@ -1856,6 +1856,126 @@ export type Database = {
           },
         ]
       }
+      quote_leads: {
+        Row: {
+          additional_rooms: Json | null
+          bathrooms: number | null
+          bedrooms: number | null
+          calculated_quote: number | null
+          cleaning_type: string | null
+          created_at: string | null
+          email: string | null
+          first_name: string | null
+          frequency: string | null
+          furthest_step: string | null
+          id: string
+          ironing_hours: number | null
+          is_flexible: boolean | null
+          kitchen: string | null
+          last_name: string | null
+          oven_cleaning: boolean | null
+          oven_size: string | null
+          page_url: string | null
+          phone: string | null
+          postcode: string | null
+          property_type: string | null
+          reception_rooms: number | null
+          recommended_hours: number | null
+          referrer: string | null
+          selected_date: string | null
+          selected_time: string | null
+          service_type: string | null
+          session_id: string
+          status: string | null
+          toilets: number | null
+          updated_at: string | null
+          user_agent: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+        }
+        Insert: {
+          additional_rooms?: Json | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          calculated_quote?: number | null
+          cleaning_type?: string | null
+          created_at?: string | null
+          email?: string | null
+          first_name?: string | null
+          frequency?: string | null
+          furthest_step?: string | null
+          id?: string
+          ironing_hours?: number | null
+          is_flexible?: boolean | null
+          kitchen?: string | null
+          last_name?: string | null
+          oven_cleaning?: boolean | null
+          oven_size?: string | null
+          page_url?: string | null
+          phone?: string | null
+          postcode?: string | null
+          property_type?: string | null
+          reception_rooms?: number | null
+          recommended_hours?: number | null
+          referrer?: string | null
+          selected_date?: string | null
+          selected_time?: string | null
+          service_type?: string | null
+          session_id: string
+          status?: string | null
+          toilets?: number | null
+          updated_at?: string | null
+          user_agent?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Update: {
+          additional_rooms?: Json | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          calculated_quote?: number | null
+          cleaning_type?: string | null
+          created_at?: string | null
+          email?: string | null
+          first_name?: string | null
+          frequency?: string | null
+          furthest_step?: string | null
+          id?: string
+          ironing_hours?: number | null
+          is_flexible?: boolean | null
+          kitchen?: string | null
+          last_name?: string | null
+          oven_cleaning?: boolean | null
+          oven_size?: string | null
+          page_url?: string | null
+          phone?: string | null
+          postcode?: string | null
+          property_type?: string | null
+          reception_rooms?: number | null
+          recommended_hours?: number | null
+          referrer?: string | null
+          selected_date?: string | null
+          selected_time?: string | null
+          service_type?: string | null
+          session_id?: string
+          status?: string | null
+          toilets?: number | null
+          updated_at?: string | null
+          user_agent?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Relationships: []
+      }
       recurring_services: {
         Row: {
           address: string | null

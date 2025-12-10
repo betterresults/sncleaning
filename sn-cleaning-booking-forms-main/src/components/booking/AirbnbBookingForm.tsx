@@ -12,6 +12,7 @@ import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useLocation } from 'react-router-dom';
+import { useQuoteLeadTracking } from '@/hooks/useQuoteLeadTracking';
 
 export interface BookingData {
   // Property details
@@ -113,6 +114,10 @@ const AirbnbBookingForm: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [isAdminMode, setIsAdminMode] = useState(false);
+  
+  // Quote lead tracking
+  const { saveQuoteLead, trackStep, trackQuoteCalculated, markCompleted } = useQuoteLeadTracking('Air BnB');
+  
   const [bookingData, setBookingData] = useState<BookingData>({
     propertyType: '',
     bedrooms: '',
@@ -275,6 +280,32 @@ const AirbnbBookingForm: React.FC = () => {
         const extraHours = newData.extraHours ?? 0;
         const totalHours = estimatedHours + extraHours;
         newData.totalCost = totalHours * newData.hourlyRate;
+        
+        // Track quote when price is calculated
+        if (totalHours > 0 && !isAdminMode) {
+          trackQuoteCalculated(totalHours * newData.hourlyRate, totalHours, {
+            cleaningType: newData.serviceType || undefined,
+            propertyType: newData.propertyType || undefined,
+            bedrooms: newData.bedrooms ? parseInt(newData.bedrooms) : undefined,
+            bathrooms: newData.bathrooms ? parseInt(newData.bathrooms) : undefined,
+            toilets: newData.toilets ? parseInt(newData.toilets) : undefined,
+            ovenCleaning: newData.hasOvenCleaning,
+            ovenSize: newData.ovenType || undefined,
+            ironingHours: newData.ironingHours || undefined,
+            postcode: newData.postcode || undefined,
+          });
+        }
+      }
+      
+      // Track contact info updates
+      if (!isAdminMode && ('firstName' in updates || 'email' in updates || 'phone' in updates || 'postcode' in updates)) {
+        saveQuoteLead({
+          firstName: newData.firstName || undefined,
+          lastName: newData.lastName || undefined,
+          email: newData.email || undefined,
+          phone: newData.phone || undefined,
+          postcode: newData.postcode || undefined,
+        });
       }
       
       return newData;
@@ -283,6 +314,15 @@ const AirbnbBookingForm: React.FC = () => {
 
   const nextStep = () => {
     if (currentStep < steps.length) {
+      const stepName = steps[currentStep - 1]?.key || `step_${currentStep}`;
+      if (!isAdminMode) {
+        trackStep(stepName, {
+          cleaningType: bookingData.serviceType || undefined,
+          propertyType: bookingData.propertyType || undefined,
+          bedrooms: bookingData.bedrooms ? parseInt(bookingData.bedrooms) : undefined,
+          calculatedQuote: bookingData.totalCost || undefined,
+        });
+      }
       setCurrentStep(currentStep + 1);
     }
   };
