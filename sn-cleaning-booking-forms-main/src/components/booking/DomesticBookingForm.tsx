@@ -10,6 +10,7 @@ import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useLocation } from 'react-router-dom';
+import { useQuoteLeadTracking } from '@/hooks/useQuoteLeadTracking';
 
 export interface DomesticBookingData {
   // Property details
@@ -105,6 +106,10 @@ const DomesticBookingForm: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [isAdminMode, setIsAdminMode] = useState(false);
+  
+  // Quote lead tracking
+  const { saveQuoteLead, trackStep, trackQuoteCalculated, markCompleted } = useQuoteLeadTracking('Domestic');
+  
   const [bookingData, setBookingData] = useState<DomesticBookingData>({
     propertyType: '',
     bedrooms: '',
@@ -242,6 +247,31 @@ const DomesticBookingForm: React.FC = () => {
       if ('estimatedHours' in updates) {
         const estimatedHours = newData.estimatedHours ?? 0;
         newData.totalCost = estimatedHours * newData.hourlyRate;
+        
+        // Track quote when price is calculated
+        if (estimatedHours > 0 && !isAdminMode) {
+          trackQuoteCalculated(estimatedHours * newData.hourlyRate, estimatedHours, {
+            propertyType: newData.propertyType || undefined,
+            bedrooms: newData.bedrooms ? parseInt(newData.bedrooms) : undefined,
+            bathrooms: newData.bathrooms ? parseInt(newData.bathrooms) : undefined,
+            toilets: newData.toilets ? parseInt(newData.toilets) : undefined,
+            frequency: newData.serviceFrequency || undefined,
+            ovenCleaning: newData.hasOvenCleaning,
+            ovenSize: newData.ovenType || undefined,
+            postcode: newData.postcode || undefined,
+          });
+        }
+      }
+      
+      // Track contact info updates
+      if (!isAdminMode && ('firstName' in updates || 'email' in updates || 'phone' in updates || 'postcode' in updates)) {
+        saveQuoteLead({
+          firstName: newData.firstName || undefined,
+          lastName: newData.lastName || undefined,
+          email: newData.email || undefined,
+          phone: newData.phone || undefined,
+          postcode: newData.postcode || undefined,
+        });
       }
       
       return newData;
@@ -250,6 +280,14 @@ const DomesticBookingForm: React.FC = () => {
 
   const nextStep = () => {
     if (currentStep < steps.length) {
+      const stepName = steps[currentStep - 1]?.key || `step_${currentStep}`;
+      if (!isAdminMode) {
+        trackStep(stepName, {
+          propertyType: bookingData.propertyType || undefined,
+          bedrooms: bookingData.bedrooms ? parseInt(bookingData.bedrooms) : undefined,
+          calculatedQuote: bookingData.totalCost || undefined,
+        });
+      }
       setCurrentStep(currentStep + 1);
     }
   };
