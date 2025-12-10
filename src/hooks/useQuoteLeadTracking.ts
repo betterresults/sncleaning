@@ -1,12 +1,11 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+
+const SUPABASE_URL = "https://dkomihipebixlegygnoy.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrb21paGlwZWJpeGxlZ3lnbm95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA1MDEwNTMsImV4cCI6MjA0NjA3NzA1M30.z4hlXMnyyleo4sWyPnFuKFC5-tkQw4lVcDiF8TRWla4";
 
 interface QuoteLeadData {
-  // Service details
   serviceType?: string;
   cleaningType?: string;
-  
-  // Property details
   propertyType?: string;
   bedrooms?: number;
   bathrooms?: number;
@@ -14,30 +13,20 @@ interface QuoteLeadData {
   receptionRooms?: number;
   kitchen?: string;
   additionalRooms?: Record<string, number>;
-  
-  // Service options
   ovenCleaning?: boolean;
   ovenSize?: string;
   ironingHours?: number;
   frequency?: string;
-  
-  // Schedule
   selectedDate?: Date | string;
   selectedTime?: string;
   isFlexible?: boolean;
-  
-  // Contact info
   firstName?: string;
   lastName?: string;
   email?: string;
   phone?: string;
   postcode?: string;
-  
-  // Quote details
   calculatedQuote?: number;
   recommendedHours?: number;
-  
-  // Status
   status?: 'viewing' | 'completed' | 'abandoned';
   furthestStep?: string;
 }
@@ -98,7 +87,6 @@ export const useQuoteLeadTracking = (serviceType: string) => {
     
     // Debounce saves to avoid excessive API calls (minimum 2 seconds between saves)
     if (!force && now - lastSaveRef.current < 2000) {
-      // Schedule a delayed save
       if (debounceTimeout.current) {
         clearTimeout(debounceTimeout.current);
       }
@@ -152,23 +140,31 @@ export const useQuoteLeadTracking = (serviceType: string) => {
       // Remove undefined values
       const cleanedData = Object.fromEntries(
         Object.entries(leadData).filter(([_, v]) => v !== undefined)
-      ) as {
-        session_id: string;
-        [key: string]: unknown;
-      };
+      );
 
-      const { error } = await supabase
-        .from('quote_leads')
-        .upsert(cleanedData as any, { 
-          onConflict: 'session_id',
-          ignoreDuplicates: false 
-        });
+      console.log('📊 Saving quote lead:', cleanedData);
 
-      if (error) {
-        console.error('Error saving quote lead:', error);
+      // Call edge function to bypass RLS
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/track-funnel-event`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          table: 'quote_leads',
+          data: cleanedData,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('❌ Error saving quote lead:', error);
+      } else {
+        console.log('✅ Quote lead saved successfully');
       }
     } catch (err) {
-      console.error('Error in saveQuoteLead:', err);
+      console.error('❌ Error in saveQuoteLead:', err);
     }
   }, [serviceType]);
 

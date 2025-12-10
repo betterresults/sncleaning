@@ -1,5 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+
+const SUPABASE_URL = "https://dkomihipebixlegygnoy.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrb21paGlwZWJpeGxlZ3lnbm95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA1MDEwNTMsImV4cCI6MjA0NjA3NzA1M30.z4hlXMnyyleo4sWyPnFuKFC5-tkQw4lVcDiF8TRWla4";
 
 // Generate or retrieve session ID (shared with quote lead tracking)
 const getSessionId = (): string => {
@@ -49,11 +51,21 @@ export const useFunnelTracking = () => {
 
       console.log('📊 Tracking funnel event:', eventType, eventRecord);
 
-      const { error } = await supabase
-        .from('funnel_events')
-        .insert(eventRecord as any);
+      // Call edge function to bypass RLS
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/track-funnel-event`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          table: 'funnel_events',
+          data: eventRecord,
+        }),
+      });
 
-      if (error) {
+      if (!response.ok) {
+        const error = await response.json();
         console.error('❌ Error tracking funnel event:', error);
       } else {
         console.log('✅ Funnel event tracked successfully');
