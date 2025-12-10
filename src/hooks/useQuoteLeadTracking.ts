@@ -31,7 +31,20 @@ interface QuoteLeadData {
   furthestStep?: string;
 }
 
-// Generate or retrieve session ID
+// Generate or retrieve persistent user ID (stored in localStorage to persist across sessions)
+const getUserId = (): string => {
+  const storageKey = 'quote_user_id';
+  let userId = localStorage.getItem(storageKey);
+  
+  if (!userId) {
+    userId = `qu_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    localStorage.setItem(storageKey, userId);
+  }
+  
+  return userId;
+};
+
+// Generate session ID for current browsing session  
 const getSessionId = (): string => {
   const storageKey = 'quote_session_id';
   let sessionId = sessionStorage.getItem(storageKey);
