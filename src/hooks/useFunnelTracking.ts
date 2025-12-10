@@ -47,15 +47,20 @@ export const useFunnelTracking = () => {
         ...utmParams,
       };
 
-      const { error } = await supabase
+      console.log('📊 Tracking funnel event:', eventType, eventRecord);
+
+      const { data, error } = await supabase
         .from('funnel_events')
-        .insert(eventRecord as any);
+        .insert(eventRecord as any)
+        .select();
 
       if (error) {
-        console.error('Error tracking funnel event:', error);
+        console.error('❌ Error tracking funnel event:', error);
+      } else {
+        console.log('✅ Funnel event tracked successfully:', data);
       }
     } catch (err) {
-      console.error('Error in trackEvent:', err);
+      console.error('❌ Error in trackEvent:', err);
     }
   }, []);
 
