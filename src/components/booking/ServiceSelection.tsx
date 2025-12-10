@@ -11,24 +11,31 @@ interface ServiceSelectionProps {
 
 const getServices = (isAdminView: boolean = false) => [
   {
+    id: 'domestic-cleaning',
+    title: 'Domestic Cleaning',
+    icon: Home,
+    available: true,
+    description: 'Regular home cleaning services'
+  },
+  {
     id: 'airbnb-cleaning',
     title: 'Airbnb Cleaning',
     icon: Building,
-    available: true, // Always available for both admin and customer
+    available: true,
     description: 'Turnaround cleaning for short-term rentals'
   },
   {
     id: 'linen-order',
     title: 'Linen Order',
     icon: Shirt,
-    available: true, // Always available for both admin and customer
+    available: true,
     description: 'Order fresh linens for your property'
   },
   {
     id: 'end-of-tenancy',
     title: 'End Of Tenancy Cleaning',
     icon: Users,
-    available: isAdminView, // Available only in admin view
+    available: isAdminView,
     image: '/lovable-uploads/5ae020cf-fd8c-46fe-8586-933da3fa509c.png',
     description: 'Deep clean for move-out properties'
   },
@@ -36,15 +43,8 @@ const getServices = (isAdminView: boolean = false) => [
     id: 'deep-cleaning',
     title: 'Deep Cleaning',
     icon: Droplets,
-    available: isAdminView, // Available only in admin view
+    available: isAdminView,
     description: 'Thorough cleaning for all areas'
-  },
-  {
-    id: 'domestic-cleaning',
-    title: 'Domestic Cleaning',
-    icon: Home,
-    available: true, // Now available for all users
-    description: 'Regular home cleaning services'
   },
   {
     id: 'after-builders',
