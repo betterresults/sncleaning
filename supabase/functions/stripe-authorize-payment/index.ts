@@ -212,7 +212,9 @@ serve(async (req) => {
             .single()
           
           if (trigger && trigger.template) {
-            // Prepare notification variables
+            // Prepare notification variables with payment link
+            const paymentLink = `https://dkomihipebixlegygnoy.supabase.co/functions/v1/redirect-to-payment-collection?customer_id=${booking.customer}`;
+            
             const notificationVariables = {
               customer_name: `${booking.customer.first_name || ''} ${booking.customer.last_name || ''}`.trim() || 'Valued Customer',
               booking_date: booking.date_only ? new Date(booking.date_only).toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : 'TBC',
@@ -221,7 +223,8 @@ serve(async (req) => {
               address: booking.address || 'Address not specified',
               total_cost: booking.total_cost?.toString() || '0',
               booking_id: bookingId.toString(),
-              error_message: error.message || 'Authorization failed'
+              error_message: error.message || 'Authorization failed',
+              payment_link: paymentLink
             }
             
             // Send notification to each recipient type
