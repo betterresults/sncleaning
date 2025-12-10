@@ -4,11 +4,22 @@ import ServiceSelection from '@/components/booking/ServiceSelection';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
+// Prefetch form components for instant loading
+const prefetchForms = () => {
+  import('../../sn-cleaning-booking-forms-main/src/components/booking/DomesticBookingForm');
+  import('../../sn-cleaning-booking-forms-main/src/components/booking/AirbnbBookingForm');
+};
+
 const PublicServiceSelection = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [postcode, setPostcode] = useState<string>('');
   const [email, setEmail] = useState<string>('');
+
+  // Prefetch forms on mount for instant loading
+  useEffect(() => {
+    prefetchForms();
+  }, []);
 
   useEffect(() => {
     // Get postcode and email from URL parameters
