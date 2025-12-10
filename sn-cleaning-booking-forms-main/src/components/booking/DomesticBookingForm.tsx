@@ -11,6 +11,7 @@ import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useLocation } from 'react-router-dom';
 import { useQuoteLeadTracking } from '@/hooks/useQuoteLeadTracking';
+import { ExitQuotePopup } from '@/components/booking/ExitQuotePopup';
 
 export interface DomesticBookingData {
   // Property details
@@ -106,9 +107,10 @@ const DomesticBookingForm: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [isAdminMode, setIsAdminMode] = useState(false);
+  const [showExitPopup, setShowExitPopup] = useState(false);
   
   // Quote lead tracking
-  const { saveQuoteLead, trackStep, trackQuoteCalculated, markCompleted } = useQuoteLeadTracking('Domestic');
+  const { saveQuoteLead, trackStep, trackQuoteCalculated, markCompleted, sessionId } = useQuoteLeadTracking('Domestic');
   
   const [bookingData, setBookingData] = useState<DomesticBookingData>({
     propertyType: '',
@@ -286,11 +288,50 @@ const DomesticBookingForm: React.FC = () => {
     });
   };
 
+  // Handle browser back button to show exit popup
+  useEffect(() => {
+    if (isAdminMode) return;
+    
+    // Push a state so we can detect back button
+    window.history.pushState({ booking: true }, '');
+    
+    const handlePopState = (e: PopStateEvent) => {
+      if (bookingData.totalCost > 0) {
+        // Prevent immediate navigation
+        window.history.pushState({ booking: true }, '');
+        setShowExitPopup(true);
+      }
+    };
+    
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isAdminMode, bookingData.totalCost]);
+
+  // Also detect page visibility change (switching tabs/minimizing)
+  useEffect(() => {
+    if (isAdminMode) return;
+    
+    let hasShownPopup = false;
+    
+    const handleVisibilityChange = () => {
+      if (document.hidden && bookingData.totalCost > 0 && !hasShownPopup && currentStep > 1) {
+        hasShownPopup = true;
+        // We can't show popup while hidden, but when they come back...
+      }
+      if (!document.hidden && hasShownPopup && !showExitPopup) {
+        setShowExitPopup(true);
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isAdminMode, bookingData.totalCost, currentStep, showExitPopup]);
+
   const nextStep = () => {
     if (currentStep < steps.length) {
-      const stepName = steps[currentStep - 1]?.key || `step_${currentStep}`;
+      const nextStepKey = steps[currentStep]?.key || `step_${currentStep + 1}`;
       if (!isAdminMode) {
-        trackStep(stepName, {
+        trackStep(nextStepKey, {
           propertyType: bookingData.propertyType || undefined,
           bedrooms: bookingData.bedrooms ? parseInt(bookingData.bedrooms) : undefined,
           calculatedQuote: bookingData.totalCost || undefined,
@@ -428,6 +469,30 @@ const DomesticBookingForm: React.FC = () => {
           </div>
         </div>
       </main>
+      
+      {/* Exit Quote Popup */}
+      <ExitQuotePopup
+        open={showExitPopup}
+        onOpenChange={setShowExitPopup}
+        email={bookingData.email}
+        quoteData={{
+          totalCost: bookingData.totalCost,
+          estimatedHours: bookingData.estimatedHours,
+          propertyType: bookingData.propertyType,
+          bedrooms: bookingData.bedrooms,
+          bathrooms: bookingData.bathrooms,
+          serviceFrequency: bookingData.serviceFrequency,
+          hasOvenCleaning: bookingData.hasOvenCleaning,
+          ovenType: bookingData.ovenType,
+          selectedDate: bookingData.selectedDate,
+          selectedTime: bookingData.selectedTime,
+          postcode: bookingData.postcode,
+          shortNoticeCharge: bookingData.shortNoticeCharge,
+          isFirstTimeCustomer: bookingData.isFirstTimeCustomer,
+        }}
+        sessionId={sessionId}
+        serviceType="Domestic"
+      />
     </div>
   );
 };
