@@ -64,6 +64,7 @@ import InvoilessAPITest from "./pages/InvoilessAPITest";
 import AdminAirbnbFormSettings from "./pages/AdminAirbnbFormSettings";
 import AdminCustomerPricing from "./pages/AdminCustomerPricing";
 import CustomerWelcome from "./pages/CustomerWelcome";
+import AdminQuoteLeads from "./pages/AdminQuoteLeads";
 import NotFound from "./pages/NotFound";
 import { AdminCustomerProvider } from "./contexts/AdminCustomerContext";
 import { AdminCleanerProvider } from "./contexts/AdminCleanerContext";
@@ -141,6 +142,7 @@ const App = () => (
                    <Route path="/admin-linen-management" element={<AdminLinenManagement />} />
                    <Route path="/admin-profit-tracking" element={<AdminProfitTracking />} />
                    <Route path="/admin-activity-logs" element={<AdminActivityLogs />} />
+                   <Route path="/admin-quote-leads" element={<AdminQuoteLeads />} />
                     <Route path="/admin-notification-management" element={<AdminNotificationManagement />} />
                      <Route path="/invoiless-api-test" element={<InvoilessAPITest />} />
                      <Route path="/admin-airbnb-form-settings" element={<AdminAirbnbFormSettings />} />
