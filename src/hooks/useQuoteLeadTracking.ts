@@ -70,6 +70,7 @@ const getUtmParams = () => {
 };
 
 export const useQuoteLeadTracking = (serviceType: string) => {
+  const userId = useRef(getUserId());
   const sessionId = useRef(getSessionId());
   const lastSaveRef = useRef<number>(0);
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -115,6 +116,7 @@ export const useQuoteLeadTracking = (serviceType: string) => {
       const utmParams = JSON.parse(sessionStorage.getItem('quote_utm_params') || '{}');
       
       const leadData = {
+        user_id: userId.current,
         session_id: sessionId.current,
         service_type: data.serviceType || serviceType,
         cleaning_type: data.cleaningType,
@@ -210,6 +212,7 @@ export const useQuoteLeadTracking = (serviceType: string) => {
     trackStep,
     trackQuoteCalculated,
     markCompleted,
+    userId: userId.current,
     sessionId: sessionId.current,
   };
 };

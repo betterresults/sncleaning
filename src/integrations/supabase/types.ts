@@ -1124,6 +1124,7 @@ export type Database = {
           referrer: string | null
           session_id: string
           user_agent: string | null
+          user_id: string | null
           utm_campaign: string | null
           utm_content: string | null
           utm_medium: string | null
@@ -1139,6 +1140,7 @@ export type Database = {
           referrer?: string | null
           session_id: string
           user_agent?: string | null
+          user_id?: string | null
           utm_campaign?: string | null
           utm_content?: string | null
           utm_medium?: string | null
@@ -1154,6 +1156,7 @@ export type Database = {
           referrer?: string | null
           session_id?: string
           user_agent?: string | null
+          user_id?: string | null
           utm_campaign?: string | null
           utm_content?: string | null
           utm_medium?: string | null
@@ -1938,6 +1941,7 @@ export type Database = {
           toilets: number | null
           updated_at: string | null
           user_agent: string | null
+          user_id: string | null
           utm_campaign: string | null
           utm_content: string | null
           utm_medium: string | null
@@ -1977,6 +1981,7 @@ export type Database = {
           toilets?: number | null
           updated_at?: string | null
           user_agent?: string | null
+          user_id?: string | null
           utm_campaign?: string | null
           utm_content?: string | null
           utm_medium?: string | null
@@ -2016,6 +2021,7 @@ export type Database = {
           toilets?: number | null
           updated_at?: string | null
           user_agent?: string | null
+          user_id?: string | null
           utm_campaign?: string | null
           utm_content?: string | null
           utm_medium?: string | null
