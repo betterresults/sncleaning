@@ -3,7 +3,20 @@ import { useEffect, useRef, useCallback } from 'react';
 const SUPABASE_URL = "https://dkomihipebixlegygnoy.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrb21paGlwZWJpeGxlZ3lnbm95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA1MDEwNTMsImV4cCI6MjA0NjA3NzA1M30.z4hlXMnyyleo4sWyPnFuKFC5-tkQw4lVcDiF8TRWla4";
 
-// Generate or retrieve session ID (shared with quote lead tracking)
+// Generate or retrieve persistent user ID (stored in localStorage to persist across sessions)
+const getUserId = (): string => {
+  const storageKey = 'funnel_user_id';
+  let userId = localStorage.getItem(storageKey);
+  
+  if (!userId) {
+    userId = `fu_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    localStorage.setItem(storageKey, userId);
+  }
+  
+  return userId;
+};
+
+// Generate session ID for current browsing session
 const getSessionId = (): string => {
   const storageKey = 'funnel_session_id';
   let sessionId = sessionStorage.getItem(storageKey);
