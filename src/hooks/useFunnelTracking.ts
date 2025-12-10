@@ -42,6 +42,7 @@ const getUtmParams = () => {
 };
 
 export const useFunnelTracking = () => {
+  const userId = useRef(getUserId());
   const sessionId = useRef(getSessionId());
   const hasTrackedPageView = useRef(false);
 
@@ -53,6 +54,7 @@ export const useFunnelTracking = () => {
       const utmParams = getUtmParams();
       
       const eventRecord = {
+        user_id: userId.current,
         session_id: sessionId.current,
         event_type: eventType,
         event_data: eventData,
@@ -107,6 +109,7 @@ export const useFunnelTracking = () => {
     trackPageView,
     trackServiceClick,
     trackFormStart,
+    userId: userId.current,
     sessionId: sessionId.current,
   };
 };
