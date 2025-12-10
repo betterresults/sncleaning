@@ -40,11 +40,16 @@ type FunnelEventRow = {
 interface QuoteLead {
   id: string;
   session_id: string;
+  user_id: string | null;
   service_type: string | null;
   postcode: string | null;
   bedrooms: number | null;
   bathrooms: number | null;
   calculated_quote: number | null;
+  weekly_cost: number | null;
+  discount_amount: number | null;
+  short_notice_charge: number | null;
+  is_first_time_customer: boolean | null;
   first_name: string | null;
   last_name: string | null;
   email: string | null;
@@ -476,11 +481,19 @@ const QuoteLeadsView = () => {
                             </div>
                           </TableCell>
                           <TableCell>
-                            {lead.calculated_quote ? (
-                              <span className="font-semibold text-green-600">£{lead.calculated_quote.toFixed(0)}</span>
-                            ) : (
-                              <span className="text-gray-400">-</span>
-                            )}
+                            <div className="space-y-1">
+                              {lead.calculated_quote ? (
+                                <span className="font-semibold text-green-600">£{lead.calculated_quote.toFixed(0)}</span>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                              {lead.discount_amount && lead.discount_amount > 0 && (
+                                <p className="text-xs text-red-500">-£{lead.discount_amount.toFixed(0)} discount</p>
+                              )}
+                              {lead.is_first_time_customer && (
+                                <Badge className="text-xs bg-purple-100 text-purple-700">New customer</Badge>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell>
                             {getStatusBadge(lead.status)}

@@ -247,20 +247,28 @@ const DomesticBookingForm: React.FC = () => {
       if ('estimatedHours' in updates) {
         const estimatedHours = newData.estimatedHours ?? 0;
         newData.totalCost = estimatedHours * newData.hourlyRate;
+      }
+      
+      // Track when totalCost is updated (this is the FINAL calculated cost from summary)
+      if ('totalCost' in updates && updates.totalCost && updates.totalCost > 0 && !isAdminMode) {
+        // Calculate discount amount for tracking
+        const baseCost = (newData.estimatedHours ?? 0) * newData.hourlyRate;
+        const discountAmount = newData.isFirstTimeCustomer ? updates.totalCost * 0.1 / 0.9 : 0; // Reverse calculate the 10% discount
         
-        // Track quote when price is calculated
-        if (estimatedHours > 0 && !isAdminMode) {
-          trackQuoteCalculated(estimatedHours * newData.hourlyRate, estimatedHours, {
-            propertyType: newData.propertyType || undefined,
-            bedrooms: newData.bedrooms ? parseInt(newData.bedrooms) : undefined,
-            bathrooms: newData.bathrooms ? parseInt(newData.bathrooms) : undefined,
-            toilets: newData.toilets ? parseInt(newData.toilets) : undefined,
-            frequency: newData.serviceFrequency || undefined,
-            ovenCleaning: newData.hasOvenCleaning,
-            ovenSize: newData.ovenType || undefined,
-            postcode: newData.postcode || undefined,
-          });
-        }
+        trackQuoteCalculated(updates.totalCost, newData.estimatedHours ?? undefined, {
+          propertyType: newData.propertyType || undefined,
+          bedrooms: newData.bedrooms ? parseInt(newData.bedrooms) : undefined,
+          bathrooms: newData.bathrooms ? parseInt(newData.bathrooms) : undefined,
+          toilets: newData.toilets ? parseInt(newData.toilets) : undefined,
+          frequency: newData.serviceFrequency || undefined,
+          ovenCleaning: newData.hasOvenCleaning,
+          ovenSize: newData.ovenType || undefined,
+          postcode: newData.postcode || undefined,
+          weeklyCost: updates.totalCost, // This is the per-visit cost shown
+          discountAmount: discountAmount > 0 ? Math.round(discountAmount * 100) / 100 : undefined,
+          shortNoticeCharge: newData.shortNoticeCharge || undefined,
+          isFirstTimeCustomer: newData.isFirstTimeCustomer,
+        });
       }
       
       // Track contact info updates

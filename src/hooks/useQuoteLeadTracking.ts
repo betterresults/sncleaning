@@ -26,6 +26,10 @@ interface QuoteLeadData {
   phone?: string;
   postcode?: string;
   calculatedQuote?: number;
+  weeklyCost?: number;
+  discountAmount?: number;
+  shortNoticeCharge?: number;
+  isFirstTimeCustomer?: boolean;
   recommendedHours?: number;
   status?: 'live' | 'left' | 'completed';
   furthestStep?: string;
@@ -170,8 +174,12 @@ export const useQuoteLeadTracking = (serviceType: string) => {
         phone: data.phone,
         postcode: data.postcode,
         calculated_quote: data.calculatedQuote,
+        weekly_cost: data.weeklyCost,
+        discount_amount: data.discountAmount,
+        short_notice_charge: data.shortNoticeCharge,
+        is_first_time_customer: data.isFirstTimeCustomer,
         recommended_hours: data.recommendedHours,
-        status: data.status || 'viewing',
+        status: data.status || 'live',
         furthest_step: data.furthestStep,
         page_url: window.location.href,
         referrer: document.referrer || null,
