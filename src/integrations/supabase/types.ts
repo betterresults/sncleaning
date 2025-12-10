@@ -1915,12 +1915,14 @@ export type Database = {
           calculated_quote: number | null
           cleaning_type: string | null
           created_at: string | null
+          discount_amount: number | null
           email: string | null
           first_name: string | null
           frequency: string | null
           furthest_step: string | null
           id: string
           ironing_hours: number | null
+          is_first_time_customer: boolean | null
           is_flexible: boolean | null
           kitchen: string | null
           last_name: string | null
@@ -1937,6 +1939,7 @@ export type Database = {
           selected_time: string | null
           service_type: string | null
           session_id: string
+          short_notice_charge: number | null
           status: string | null
           toilets: number | null
           updated_at: string | null
@@ -1947,6 +1950,7 @@ export type Database = {
           utm_medium: string | null
           utm_source: string | null
           utm_term: string | null
+          weekly_cost: number | null
         }
         Insert: {
           additional_rooms?: Json | null
@@ -1955,12 +1959,14 @@ export type Database = {
           calculated_quote?: number | null
           cleaning_type?: string | null
           created_at?: string | null
+          discount_amount?: number | null
           email?: string | null
           first_name?: string | null
           frequency?: string | null
           furthest_step?: string | null
           id?: string
           ironing_hours?: number | null
+          is_first_time_customer?: boolean | null
           is_flexible?: boolean | null
           kitchen?: string | null
           last_name?: string | null
@@ -1977,6 +1983,7 @@ export type Database = {
           selected_time?: string | null
           service_type?: string | null
           session_id: string
+          short_notice_charge?: number | null
           status?: string | null
           toilets?: number | null
           updated_at?: string | null
@@ -1987,6 +1994,7 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
           utm_term?: string | null
+          weekly_cost?: number | null
         }
         Update: {
           additional_rooms?: Json | null
@@ -1995,12 +2003,14 @@ export type Database = {
           calculated_quote?: number | null
           cleaning_type?: string | null
           created_at?: string | null
+          discount_amount?: number | null
           email?: string | null
           first_name?: string | null
           frequency?: string | null
           furthest_step?: string | null
           id?: string
           ironing_hours?: number | null
+          is_first_time_customer?: boolean | null
           is_flexible?: boolean | null
           kitchen?: string | null
           last_name?: string | null
@@ -2017,6 +2027,7 @@ export type Database = {
           selected_time?: string | null
           service_type?: string | null
           session_id?: string
+          short_notice_charge?: number | null
           status?: string | null
           toilets?: number | null
           updated_at?: string | null
@@ -2027,6 +2038,7 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
           utm_term?: string | null
+          weekly_cost?: number | null
         }
         Relationships: []
       }
