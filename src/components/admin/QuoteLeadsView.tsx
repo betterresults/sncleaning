@@ -6,9 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
-import { RefreshCw, Eye, MousePointerClick, FileText, TrendingUp } from 'lucide-react';
+import { RefreshCw, Eye, MousePointerClick, FileText, TrendingUp, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 interface FunnelEvent {
   id: string;
@@ -61,6 +64,8 @@ const QuoteLeadsView = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [serviceFilter, setServiceFilter] = useState<string>('all');
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
 
   const fetchData = async () => {
     setRefreshing(true);
@@ -123,13 +128,79 @@ const QuoteLeadsView = () => {
   const getStatusBadge = (status: string | null) => {
     switch (status) {
       case 'completed':
-        return <Badge className="bg-green-100 text-green-800">Completed</Badge>;
-      case 'abandoned':
-        return <Badge className="bg-red-100 text-red-800">Abandoned</Badge>;
+        return <Badge className="bg-green-100 text-green-800">Booked</Badge>;
+      case 'left':
+        return <Badge className="bg-red-100 text-red-800">Left</Badge>;
+      case 'live':
+        return <Badge className="bg-blue-100 text-blue-800 animate-pulse">Live</Badge>;
       case 'viewing':
         return <Badge className="bg-yellow-100 text-yellow-800">Viewing</Badge>;
       default:
         return <Badge className="bg-gray-100 text-gray-800">{status || 'Unknown'}</Badge>;
+    }
+  };
+
+  const handleSelectLead = (leadId: string, checked: boolean) => {
+    setSelectedLeads(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(leadId);
+      } else {
+        newSet.delete(leadId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedLeads(new Set(filteredLeads.map(l => l.id)));
+    } else {
+      setSelectedLeads(new Set());
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedLeads.size === 0) return;
+    
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('quote_leads')
+        .delete()
+        .in('id', Array.from(selectedLeads));
+      
+      if (error) throw error;
+      
+      toast.success(`Deleted ${selectedLeads.size} lead(s)`);
+      setSelectedLeads(new Set());
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting leads:', error);
+      toast.error('Failed to delete leads');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('quote_leads')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+      
+      if (error) throw error;
+      
+      toast.success('All leads deleted');
+      setSelectedLeads(new Set());
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting all leads:', error);
+      toast.error('Failed to delete leads');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -263,28 +334,79 @@ const QuoteLeadsView = () => {
         <TabsContent value="leads">
           <Card className="rounded-xl border-0 shadow-sm">
             <CardHeader className="pb-4">
-              <div className="flex flex-col md:flex-row gap-4">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="viewing">Viewing</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="abandoned">Abandoned</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={serviceFilter} onValueChange={setServiceFilter}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filter by service" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Services</SelectItem>
-                    <SelectItem value="Air BnB">Air BnB</SelectItem>
-                    <SelectItem value="Domestic">Domestic</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                <div className="flex flex-wrap gap-4">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="live">Live</SelectItem>
+                      <SelectItem value="left">Left</SelectItem>
+                      <SelectItem value="completed">Booked</SelectItem>
+                      <SelectItem value="viewing">Viewing (Legacy)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={serviceFilter} onValueChange={setServiceFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Filter by service" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Services</SelectItem>
+                      <SelectItem value="Air BnB">Air BnB</SelectItem>
+                      <SelectItem value="Domestic">Domestic</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-2">
+                  {selectedLeads.size > 0 && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm" disabled={deleting}>
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete ({selectedLeads.size})
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete selected leads?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete {selectedLeads.size} selected lead(s). This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleDeleteSelected} className="bg-red-600 hover:bg-red-700">
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700" disabled={deleting || leads.length === 0}>
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete All
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete ALL leads?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently delete ALL {leads.length} leads. This is for testing cleanup only. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteAll} className="bg-red-600 hover:bg-red-700">
+                          Delete All
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -292,6 +414,12 @@ const QuoteLeadsView = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-10">
+                        <Checkbox 
+                          checked={selectedLeads.size === filteredLeads.length && filteredLeads.length > 0}
+                          onCheckedChange={handleSelectAll}
+                        />
+                      </TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Service</TableHead>
                       <TableHead>Contact</TableHead>
@@ -304,13 +432,19 @@ const QuoteLeadsView = () => {
                   <TableBody>
                     {filteredLeads.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                        <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                           No quote leads found
                         </TableCell>
                       </TableRow>
                     ) : (
                       filteredLeads.map((lead) => (
                         <TableRow key={lead.id}>
+                          <TableCell>
+                            <Checkbox 
+                              checked={selectedLeads.has(lead.id)}
+                              onCheckedChange={(checked) => handleSelectLead(lead.id, checked as boolean)}
+                            />
+                          </TableCell>
                           <TableCell className="whitespace-nowrap">
                             {lead.created_at ? format(new Date(lead.created_at), 'dd/MM/yy HH:mm') : '-'}
                           </TableCell>
