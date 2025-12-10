@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import ServiceSelection from '@/components/booking/ServiceSelection';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { useFunnelTracking } from '@/hooks/useFunnelTracking';
 
 // Prefetch form components for instant loading
 const prefetchForms = () => {
@@ -15,10 +16,12 @@ const PublicServiceSelection = () => {
   const [searchParams] = useSearchParams();
   const [postcode, setPostcode] = useState<string>('');
   const [email, setEmail] = useState<string>('');
+  const { trackPageView, trackServiceClick } = useFunnelTracking();
 
-  // Prefetch forms on mount for instant loading
+  // Prefetch forms and track page view on mount
   useEffect(() => {
     prefetchForms();
+    trackPageView('services_page', { postcode: searchParams.get('postcode') });
   }, []);
 
   useEffect(() => {
@@ -31,6 +34,9 @@ const PublicServiceSelection = () => {
   }, [searchParams]);
 
   const handleServiceSelect = (serviceType: string) => {
+    // Track service click
+    trackServiceClick(serviceType, serviceType.replace(/-/g, ' '));
+    
     // Store selected service and booking details
     sessionStorage.setItem('selectedService', serviceType);
     sessionStorage.setItem('bookingPostcode', postcode);

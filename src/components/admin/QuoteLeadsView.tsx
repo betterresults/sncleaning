@@ -4,11 +4,35 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
-import { Search, RefreshCw, TrendingUp, Users, DollarSign, Clock } from 'lucide-react';
+import { RefreshCw, Eye, MousePointerClick, FileText, TrendingUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+interface FunnelEvent {
+  id: string;
+  session_id: string;
+  event_type: string;
+  event_data: Record<string, unknown> | null;
+  page_url: string | null;
+  referrer: string | null;
+  utm_source: string | null;
+  utm_campaign: string | null;
+  created_at: string;
+}
+
+type FunnelEventRow = {
+  id: string;
+  session_id: string;
+  event_type: string;
+  event_data: unknown;
+  page_url: string | null;
+  referrer: string | null;
+  utm_source: string | null;
+  utm_campaign: string | null;
+  created_at: string;
+};
 
 interface QuoteLead {
   id: string;
@@ -32,53 +56,69 @@ interface QuoteLead {
 
 const QuoteLeadsView = () => {
   const [leads, setLeads] = useState<QuoteLead[]>([]);
+  const [events, setEvents] = useState<FunnelEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [serviceFilter, setServiceFilter] = useState<string>('all');
+  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchLeads = async () => {
-    setLoading(true);
+  const fetchData = async () => {
+    setRefreshing(true);
     try {
-      let query = supabase
-        .from('quote_leads')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
+      // Fetch both funnel events and quote leads
+      const [eventsResponse, leadsResponse] = await Promise.all([
+        supabase
+          .from('funnel_events')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(500),
+        supabase
+          .from('quote_leads')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(100)
+      ]);
 
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
-      }
+      if (eventsResponse.error) throw eventsResponse.error;
+      if (leadsResponse.error) throw leadsResponse.error;
 
-      if (serviceFilter !== 'all') {
-        query = query.eq('service_type', serviceFilter);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      setLeads(data || []);
+      setEvents((eventsResponse.data || []).map(e => ({
+        ...e,
+        event_data: e.event_data as Record<string, unknown> | null
+      })));
+      setLeads(leadsResponse.data || []);
     } catch (error) {
-      console.error('Error fetching quote leads:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
   useEffect(() => {
-    fetchLeads();
+    fetchData();
   }, [statusFilter, serviceFilter]);
 
-  const filteredLeads = leads.filter(lead => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      (lead.email?.toLowerCase().includes(searchLower) || false) ||
-      (lead.first_name?.toLowerCase().includes(searchLower) || false) ||
-      (lead.last_name?.toLowerCase().includes(searchLower) || false) ||
-      (lead.postcode?.toLowerCase().includes(searchLower) || false) ||
-      (lead.phone?.includes(searchTerm) || false)
-    );
-  });
+  // Calculate funnel stats
+  const pageViews = events.filter(e => e.event_type === 'page_view').length;
+  const serviceClicks = events.filter(e => e.event_type === 'service_click').length;
+  const formStarts = events.filter(e => e.event_type === 'form_started').length;
+  const quoteViews = leads.filter(l => l.furthest_step === 'quote_viewed' || l.status === 'completed').length;
+  const completions = leads.filter(l => l.status === 'completed').length;
+
+  // Calculate conversion rates
+  const clickRate = pageViews > 0 ? ((serviceClicks / pageViews) * 100).toFixed(1) : '0';
+  const formRate = serviceClicks > 0 ? ((formStarts / serviceClicks) * 100).toFixed(1) : '0';
+  const completionRate = leads.length > 0 ? ((completions / leads.length) * 100).toFixed(1) : '0';
+
+  // Get service click breakdown
+  const serviceBreakdown = events
+    .filter(e => e.event_type === 'service_click')
+    .reduce((acc, e) => {
+      const service = (e.event_data?.service_id as string) || 'unknown';
+      acc[service] = (acc[service] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
 
   const getStatusBadge = (status: string | null) => {
     switch (status) {
@@ -93,17 +133,17 @@ const QuoteLeadsView = () => {
     }
   };
 
-  // Calculate stats
-  const totalLeads = leads.length;
-  const completedLeads = leads.filter(l => l.status === 'completed').length;
-  const averageQuote = leads.reduce((sum, l) => sum + (l.calculated_quote || 0), 0) / (leads.filter(l => l.calculated_quote).length || 1);
-  const conversionRate = totalLeads > 0 ? ((completedLeads / totalLeads) * 100).toFixed(1) : '0';
+  const filteredLeads = leads.filter(lead => {
+    if (statusFilter !== 'all' && lead.status !== statusFilter) return false;
+    if (serviceFilter !== 'all' && lead.service_type !== serviceFilter) return false;
+    return true;
+  });
 
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => (
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          {[1, 2, 3, 4, 5].map(i => (
             <Skeleton key={i} className="h-24 rounded-xl" />
           ))}
         </div>
@@ -114,17 +154,60 @@ const QuoteLeadsView = () => {
 
   return (
     <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Funnel Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card className="rounded-xl border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 rounded-lg">
-                <Users className="h-5 w-5 text-blue-600" />
+                <Eye className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Total Leads</p>
-                <p className="text-2xl font-bold">{totalLeads}</p>
+                <p className="text-xs text-gray-500">Page Views</p>
+                <p className="text-2xl font-bold">{pageViews}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-xl border-0 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <MousePointerClick className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Service Clicks</p>
+                <p className="text-2xl font-bold">{serviceClicks}</p>
+                <p className="text-xs text-gray-400">{clickRate}% rate</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-xl border-0 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <FileText className="h-5 w-5 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Form Starts</p>
+                <p className="text-2xl font-bold">{leads.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-xl border-0 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-teal-100 rounded-lg">
+                <TrendingUp className="h-5 w-5 text-teal-600" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Quote Views</p>
+                <p className="text-2xl font-bold">{quoteViews}</p>
               </div>
             </div>
           </CardContent>
@@ -137,170 +220,220 @@ const QuoteLeadsView = () => {
                 <TrendingUp className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Conversion Rate</p>
-                <p className="text-2xl font-bold">{conversionRate}%</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-xl border-0 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <DollarSign className="h-5 w-5 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Avg Quote</p>
-                <p className="text-2xl font-bold">£{averageQuote.toFixed(0)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-xl border-0 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <Clock className="h-5 w-5 text-orange-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Completed</p>
-                <p className="text-2xl font-bold">{completedLeads}</p>
+                <p className="text-xs text-gray-500">Completed</p>
+                <p className="text-2xl font-bold">{completions}</p>
+                <p className="text-xs text-gray-400">{completionRate}% rate</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card className="rounded-xl border-0 shadow-sm">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg">Quote Leads</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search by name, email, postcode, or phone..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+      {/* Service Breakdown */}
+      {Object.keys(serviceBreakdown).length > 0 && (
+        <Card className="rounded-xl border-0 shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Service Clicks Breakdown</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(serviceBreakdown).map(([service, count]) => (
+                <Badge key={service} variant="outline" className="py-1 px-3">
+                  {service.replace(/-/g, ' ')}: <span className="font-bold ml-1">{count}</span>
+                </Badge>
+              ))}
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="viewing">Viewing</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="abandoned">Abandoned</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={serviceFilter} onValueChange={setServiceFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by service" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Services</SelectItem>
-                <SelectItem value="Air BnB">Air BnB</SelectItem>
-                <SelectItem value="Domestic">Domestic</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" onClick={fetchLeads} className="gap-2">
-              <RefreshCw className="h-4 w-4" />
-              Refresh
-            </Button>
-          </div>
+          </CardContent>
+        </Card>
+      )}
 
-          {/* Table */}
-          <div className="rounded-lg border overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Service</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Property</TableHead>
-                  <TableHead>Quote</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Source</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredLeads.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                      No quote leads found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredLeads.map((lead) => (
-                    <TableRow key={lead.id}>
-                      <TableCell className="whitespace-nowrap">
-                        {lead.created_at ? format(new Date(lead.created_at), 'dd/MM/yy HH:mm') : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{lead.service_type || '-'}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          {lead.first_name || lead.last_name ? (
-                            <p className="font-medium">{`${lead.first_name || ''} ${lead.last_name || ''}`.trim()}</p>
-                          ) : null}
-                          {lead.email && <p className="text-sm text-gray-500">{lead.email}</p>}
-                          {lead.phone && <p className="text-sm text-gray-500">{lead.phone}</p>}
-                          {!lead.first_name && !lead.email && !lead.phone && (
-                            <span className="text-gray-400">No contact info</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          {lead.postcode && <p className="font-medium">{lead.postcode}</p>}
-                          {(lead.bedrooms || lead.bathrooms) && (
-                            <p className="text-gray-500">
-                              {lead.bedrooms && `${lead.bedrooms} bed`}
-                              {lead.bedrooms && lead.bathrooms && ' / '}
-                              {lead.bathrooms && `${lead.bathrooms} bath`}
-                            </p>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {lead.calculated_quote ? (
-                          <span className="font-semibold text-green-600">£{lead.calculated_quote.toFixed(0)}</span>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {getStatusBadge(lead.status)}
-                        {lead.furthest_step && (
-                          <p className="text-xs text-gray-400 mt-1">Step: {lead.furthest_step}</p>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {lead.utm_source || lead.utm_campaign ? (
-                          <div className="text-xs">
-                            {lead.utm_source && <p>{lead.utm_source}</p>}
-                            {lead.utm_campaign && <p className="text-gray-400">{lead.utm_campaign}</p>}
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">Direct</span>
-                        )}
-                      </TableCell>
+      {/* Tabs for Events and Leads */}
+      <Tabs defaultValue="leads" className="space-y-4">
+        <div className="flex items-center justify-between">
+          <TabsList>
+            <TabsTrigger value="leads">Quote Leads ({leads.length})</TabsTrigger>
+            <TabsTrigger value="events">All Events ({events.length})</TabsTrigger>
+          </TabsList>
+          <Button variant="outline" onClick={fetchData} disabled={refreshing} className="gap-2">
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
+
+        <TabsContent value="leads">
+          <Card className="rounded-xl border-0 shadow-sm">
+            <CardHeader className="pb-4">
+              <div className="flex flex-col md:flex-row gap-4">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="viewing">Viewing</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="abandoned">Abandoned</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={serviceFilter} onValueChange={setServiceFilter}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filter by service" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Services</SelectItem>
+                    <SelectItem value="Air BnB">Air BnB</SelectItem>
+                    <SelectItem value="Domestic">Domestic</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-lg border overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Service</TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead>Property</TableHead>
+                      <TableHead>Quote</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Source</TableHead>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredLeads.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                          No quote leads found
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredLeads.map((lead) => (
+                        <TableRow key={lead.id}>
+                          <TableCell className="whitespace-nowrap">
+                            {lead.created_at ? format(new Date(lead.created_at), 'dd/MM/yy HH:mm') : '-'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{lead.service_type || '-'}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              {lead.first_name || lead.last_name ? (
+                                <p className="font-medium">{`${lead.first_name || ''} ${lead.last_name || ''}`.trim()}</p>
+                              ) : null}
+                              {lead.email && <p className="text-sm text-gray-500">{lead.email}</p>}
+                              {lead.phone && <p className="text-sm text-gray-500">{lead.phone}</p>}
+                              {!lead.first_name && !lead.email && !lead.phone && (
+                                <span className="text-gray-400">No contact info</span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              {lead.postcode && <p className="font-medium">{lead.postcode}</p>}
+                              {(lead.bedrooms || lead.bathrooms) && (
+                                <p className="text-gray-500">
+                                  {lead.bedrooms && `${lead.bedrooms} bed`}
+                                  {lead.bedrooms && lead.bathrooms && ' / '}
+                                  {lead.bathrooms && `${lead.bathrooms} bath`}
+                                </p>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {lead.calculated_quote ? (
+                              <span className="font-semibold text-green-600">£{lead.calculated_quote.toFixed(0)}</span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {getStatusBadge(lead.status)}
+                            {lead.furthest_step && (
+                              <p className="text-xs text-gray-400 mt-1">Step: {lead.furthest_step}</p>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {lead.utm_source || lead.utm_campaign ? (
+                              <div className="text-xs">
+                                {lead.utm_source && <p>{lead.utm_source}</p>}
+                                {lead.utm_campaign && <p className="text-gray-400">{lead.utm_campaign}</p>}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400">Direct</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="events">
+          <Card className="rounded-xl border-0 shadow-sm">
+            <CardContent className="pt-6">
+              <div className="rounded-lg border overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Time</TableHead>
+                      <TableHead>Event</TableHead>
+                      <TableHead>Details</TableHead>
+                      <TableHead>Session</TableHead>
+                      <TableHead>Source</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {events.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                          No events tracked yet
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      events.slice(0, 100).map((event) => (
+                        <TableRow key={event.id}>
+                          <TableCell className="whitespace-nowrap">
+                            {format(new Date(event.created_at), 'dd/MM/yy HH:mm:ss')}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={
+                              event.event_type === 'page_view' ? 'secondary' :
+                              event.event_type === 'service_click' ? 'default' : 'outline'
+                            }>
+                              {event.event_type.replace(/_/g, ' ')}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <code className="text-xs bg-gray-100 px-2 py-1 rounded">
+                              {JSON.stringify(event.event_data || {})}
+                            </code>
+                          </TableCell>
+                          <TableCell className="text-xs text-gray-500 font-mono">
+                            {event.session_id.substring(0, 12)}...
+                          </TableCell>
+                          <TableCell>
+                            {event.utm_source ? (
+                              <span className="text-xs">{event.utm_source}</span>
+                            ) : (
+                              <span className="text-gray-400 text-xs">Direct</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
