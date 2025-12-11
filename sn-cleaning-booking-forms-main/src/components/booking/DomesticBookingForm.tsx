@@ -112,7 +112,7 @@ const DomesticBookingForm: React.FC = () => {
   const [isLoadingResume, setIsLoadingResume] = useState(false);
   
   // Quote lead tracking
-  const { saveQuoteLead, trackStep, trackQuoteCalculated, markCompleted, sessionId } = useQuoteLeadTracking('Domestic');
+  const { saveQuoteLead, trackStep, trackQuoteCalculated, markCompleted, initializeFromResume, sessionId } = useQuoteLeadTracking('Domestic');
   
   const [bookingData, setBookingData] = useState<DomesticBookingData>({
     propertyType: '',
@@ -205,8 +205,8 @@ const DomesticBookingForm: React.FC = () => {
           additionalRooms: data.additional_rooms ? (typeof data.additional_rooms === 'object' ? data.additional_rooms as any : prev.additionalRooms) : prev.additionalRooms,
         }));
 
-        // Store the resume session ID so tracking continues with the same session
-        sessionStorage.setItem('quote_session_id', resumeSessionId);
+        // Use the hook's initialize function to set session ID properly in localStorage
+        initializeFromResume(resumeSessionId);
 
       } catch (err) {
         console.error('Error loading resume data:', err);
