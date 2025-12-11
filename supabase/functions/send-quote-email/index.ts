@@ -72,8 +72,9 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Sending quote email to:', email);
     console.log('Quote data:', quoteData);
 
-    // Generate booking link with session ID to resume - hardcode correct domain
-    const baseUrl = 'https://sncleaningservices.co.uk';
+    // Generate booking link with session ID to resume - get origin dynamically
+    const referer = req.headers.get('referer') || req.headers.get('origin') || '';
+    const baseUrl = referer ? new URL(referer).origin : 'https://sncleaningservices.co.uk';
     const bookingPath = serviceType === 'Domestic' ? '/domestic-booking' : '/airbnb-booking';
     const resumeLink = `${baseUrl}${bookingPath}?resume=${sessionId}`;
 
@@ -218,7 +219,7 @@ const handler = async (req: Request): Promise<Response> => {
       <p><strong>SN Cleaning Services</strong></p>
       <p>Professional cleaning you can trust</p>
       <p style="margin-top: 15px;">
-        Questions? Reply to this email or call us at <a href="tel:+447000000000">07XXX XXXXXX</a>
+        Questions? Reply to this email or call us at <a href="tel:02038355033">020 3835 5033</a>
       </p>
       <p style="font-size: 11px; margin-top: 20px; color: #94a3b8;">
         You received this email because you requested a cleaning quote from SN Cleaning Services.
