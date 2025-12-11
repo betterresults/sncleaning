@@ -162,9 +162,51 @@ const DomesticBookingForm: React.FC = () => {
     isFirstTimeCustomer: true, // Default to true for new customers - will be checked against DB later
   });
 
-  // Resume from saved quote lead
+  // Resume from saved quote lead OR prefill from URL parameters
   useEffect(() => {
     const resumeSessionId = searchParams.get('resume');
+    
+    // Check for URL parameter prefilling (from exit popup email)
+    const hasUrlPrefill = searchParams.get('propertyType') || searchParams.get('bedrooms') || searchParams.get('postcode');
+    
+    if (hasUrlPrefill) {
+      // Prefill from URL parameters (works across devices)
+      console.log('Prefilling from URL parameters');
+      
+      const propertyType = searchParams.get('propertyType') as 'flat' | 'house' | '' || '';
+      const bedrooms = searchParams.get('bedrooms') || '';
+      const bathrooms = searchParams.get('bathrooms') || '';
+      const frequency = searchParams.get('frequency') as 'weekly' | 'biweekly' | 'monthly' | 'onetime' | '' || '';
+      const postcode = searchParams.get('postcode') || '';
+      const hasOven = searchParams.get('oven') === '1';
+      const ovenType = searchParams.get('ovenType') || '';
+      const dateStr = searchParams.get('date');
+      const time = searchParams.get('time') || '';
+      const email = searchParams.get('email') || '';
+      const refSessionId = searchParams.get('ref');
+      
+      setBookingData(prev => ({
+        ...prev,
+        propertyType: propertyType || prev.propertyType,
+        bedrooms: bedrooms || prev.bedrooms,
+        bathrooms: bathrooms || prev.bathrooms,
+        serviceFrequency: frequency || prev.serviceFrequency,
+        postcode: postcode || prev.postcode,
+        hasOvenCleaning: hasOven || prev.hasOvenCleaning,
+        ovenType: ovenType || prev.ovenType,
+        selectedDate: dateStr ? new Date(dateStr) : prev.selectedDate,
+        selectedTime: time || prev.selectedTime,
+        email: email || prev.email,
+      }));
+      
+      // Initialize tracking with ref session if available
+      if (refSessionId) {
+        initializeFromResume(refSessionId);
+      }
+      
+      return;
+    }
+    
     if (!resumeSessionId) return;
 
     const loadResumeData = async () => {
