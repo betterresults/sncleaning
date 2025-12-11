@@ -9,7 +9,7 @@ import { Home, Calendar, CreditCard } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { useQuoteLeadTracking } from '@/hooks/useQuoteLeadTracking';
 import { ExitQuotePopup } from '@/components/booking/ExitQuotePopup';
 
@@ -104,10 +104,12 @@ const steps = [
 
 const DomesticBookingForm: React.FC = () => {
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [currentStep, setCurrentStep] = useState(1);
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [showExitPopup, setShowExitPopup] = useState(false);
+  const [isLoadingResume, setIsLoadingResume] = useState(false);
   
   // Quote lead tracking
   const { saveQuoteLead, trackStep, trackQuoteCalculated, markCompleted, sessionId } = useQuoteLeadTracking('Domestic');
@@ -159,6 +161,62 @@ const DomesticBookingForm: React.FC = () => {
     totalCost: 0,
     isFirstTimeCustomer: true, // Default to true for new customers - will be checked against DB later
   });
+
+  // Resume from saved quote lead
+  useEffect(() => {
+    const resumeSessionId = searchParams.get('resume');
+    if (!resumeSessionId) return;
+
+    const loadResumeData = async () => {
+      setIsLoadingResume(true);
+      try {
+        const { data, error } = await supabase
+          .from('quote_leads')
+          .select('*')
+          .eq('session_id', resumeSessionId)
+          .single();
+
+        if (error || !data) {
+          console.log('No resume data found for session:', resumeSessionId);
+          return;
+        }
+
+        console.log('Loading resume data:', data);
+
+        // Map quote_leads data to bookingData format
+        setBookingData(prev => ({
+          ...prev,
+          propertyType: (data.property_type as 'flat' | 'house' | '') || prev.propertyType,
+          bedrooms: data.bedrooms?.toString() || prev.bedrooms,
+          bathrooms: data.bathrooms?.toString() || prev.bathrooms,
+          toilets: data.toilets?.toString() || prev.toilets,
+          serviceFrequency: (data.frequency as 'weekly' | 'biweekly' | 'monthly' | 'onetime' | '') || prev.serviceFrequency,
+          hasOvenCleaning: data.oven_cleaning || prev.hasOvenCleaning,
+          ovenType: data.oven_size || prev.ovenType,
+          selectedDate: data.selected_date ? new Date(data.selected_date) : prev.selectedDate,
+          selectedTime: data.selected_time || prev.selectedTime,
+          firstName: data.first_name || prev.firstName,
+          lastName: data.last_name || prev.lastName,
+          email: data.email || prev.email,
+          phone: data.phone || prev.phone,
+          postcode: data.postcode || prev.postcode,
+          estimatedHours: data.recommended_hours || prev.estimatedHours,
+          isFirstTimeCustomer: data.is_first_time_customer ?? prev.isFirstTimeCustomer,
+          additionalRooms: data.additional_rooms ? (typeof data.additional_rooms === 'object' ? data.additional_rooms as any : prev.additionalRooms) : prev.additionalRooms,
+        }));
+
+        // Store the resume session ID so tracking continues with the same session
+        sessionStorage.setItem('quote_session_id', resumeSessionId);
+
+      } catch (err) {
+        console.error('Error loading resume data:', err);
+      } finally {
+        setIsLoadingResume(false);
+      }
+    };
+
+    loadResumeData();
+  }, [searchParams]);
 
   // Check if user is admin AND on admin route
   useEffect(() => {
@@ -456,7 +514,14 @@ const DomesticBookingForm: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
           <div className="lg:col-span-2">
             <Card className="p-4 sm:p-6 lg:p-8 bg-white transition-shadow duration-300 border border-border shadow-[0_20px_60px_rgba(0,0,0,0.18),0_2px_8px_rgba(0,0,0,0.12)]">
-              {renderStep()}
+              {isLoadingResume ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+                  <p className="text-muted-foreground">Loading your saved quote...</p>
+                </div>
+              ) : (
+                renderStep()
+              )}
             </Card>
           </div>
           
@@ -493,6 +558,10 @@ const DomesticBookingForm: React.FC = () => {
         }}
         sessionId={sessionId}
         serviceType="Domestic"
+        onSaveEmail={(email) => {
+          saveQuoteLead({ email });
+          updateBookingData({ email });
+        }}
       />
     </div>
   );
