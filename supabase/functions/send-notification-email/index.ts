@@ -11,6 +11,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface EmailAttachment {
+  filename: string;
+  content: string; // base64 encoded
+  type?: string;
+}
+
 interface NotificationRequest {
   template_id?: string;
   recipient_email?: string;
@@ -24,6 +30,8 @@ interface NotificationRequest {
   // Custom overrides
   custom_subject?: string;
   custom_content?: string;
+  // Attachments
+  attachments?: EmailAttachment[];
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -52,6 +60,13 @@ const handler = async (req: Request): Promise<Response> => {
     let is_test = requestData.is_test || false;
     let custom_subject = requestData.custom_subject || requestData.subject;
     let custom_content = requestData.custom_content || requestData.html;
+    const attachments = requestData.attachments || [];
+
+    // Convert attachments to Resend format (base64 content needs to be decoded)
+    const resendAttachments = attachments.map(att => ({
+      filename: att.filename,
+      content: Uint8Array.from(atob(att.content), c => c.charCodeAt(0)),
+    }));
 
     // Legacy format handling - if template is a string, try to find by name
     if (!template_id && requestData.template && requestData.template !== 'custom') {
@@ -109,6 +124,7 @@ const handler = async (req: Request): Promise<Response> => {
         to: recipientArray,
         subject: processedSubject,
         html: processedContent,
+        ...(resendAttachments.length > 0 && { attachments: resendAttachments }),
       });
 
       console.log("Full Resend API response:", JSON.stringify(emailResult, null, 2));
@@ -233,6 +249,7 @@ const handler = async (req: Request): Promise<Response> => {
       to: recipientArray,
       subject: subject,
       html: htmlContent,
+      ...(resendAttachments.length > 0 && { attachments: resendAttachments }),
     });
 
     console.log("Full Resend API response:", JSON.stringify(emailResult, null, 2));
