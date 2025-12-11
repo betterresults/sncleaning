@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { Resend } from "npm:resend@2.0.0";
+import { Buffer } from "node:buffer";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -62,10 +63,11 @@ const handler = async (req: Request): Promise<Response> => {
     let custom_content = requestData.custom_content || requestData.html;
     const attachments = requestData.attachments || [];
 
-    // Convert attachments to Resend format (base64 content needs to be decoded)
+    // Convert attachments to Resend format
+    // Resend accepts base64 string directly for content
     const resendAttachments = attachments.map(att => ({
       filename: att.filename,
-      content: Uint8Array.from(atob(att.content), c => c.charCodeAt(0)),
+      content: Buffer.from(att.content, 'base64'),
     }));
 
     // Legacy format handling - if template is a string, try to find by name
