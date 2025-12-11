@@ -365,18 +365,20 @@ const DomesticBookingForm: React.FC = () => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [isAdminMode, bookingData.totalCost]);
 
-  // Also detect page visibility change (switching tabs/minimizing)
+  // Also detect page visibility change (switching tabs/minimizing) - only show once per session
   useEffect(() => {
     if (isAdminMode) return;
     
-    let hasShownPopup = false;
-    
     const handleVisibilityChange = () => {
-      if (document.hidden && bookingData.totalCost > 0 && !hasShownPopup && currentStep > 1) {
-        hasShownPopup = true;
-        // We can't show popup while hidden, but when they come back...
+      const alreadyShownThisSession = sessionStorage.getItem('exit_popup_shown') === 'true';
+      const emailAlreadySent = sessionStorage.getItem('quote_email_sent') === 'true';
+      
+      if (document.hidden && bookingData.totalCost > 0 && !alreadyShownThisSession && !emailAlreadySent && currentStep > 1) {
+        sessionStorage.setItem('exit_popup_pending', 'true');
       }
-      if (!document.hidden && hasShownPopup && !showExitPopup) {
+      if (!document.hidden && sessionStorage.getItem('exit_popup_pending') === 'true' && !showExitPopup) {
+        sessionStorage.removeItem('exit_popup_pending');
+        sessionStorage.setItem('exit_popup_shown', 'true');
         setShowExitPopup(true);
       }
     };
@@ -561,6 +563,7 @@ const DomesticBookingForm: React.FC = () => {
         onSaveEmail={(email) => {
           markQuoteEmailSent(email);
           updateBookingData({ email });
+          sessionStorage.setItem('quote_email_sent', 'true');
         }}
       />
     </div>
