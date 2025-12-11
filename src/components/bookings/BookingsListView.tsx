@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Edit, Trash2, Copy, X, UserPlus, DollarSign, Repeat, MoreHorizontal, Clock, MapPin, User, Mail, Phone, Send, Calendar, Camera } from 'lucide-react';
+import { Edit, Trash2, Copy, X, UserPlus, DollarSign, Repeat, MoreHorizontal, Clock, MapPin, User, Mail, Phone, Send, Calendar, Camera, FileText } from 'lucide-react';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import InvoilessInvoiceDialog from '@/components/payments/InvoilessInvoiceDialog';
@@ -20,6 +20,7 @@ import AssignCleanerDialog from '../dashboard/AssignCleanerDialog';
 import DuplicateBookingDialog from '../dashboard/DuplicateBookingDialog';
 import ConvertToRecurringDialog from '../dashboard/ConvertToRecurringDialog';
 import ManualEmailDialog from '../dashboard/ManualEmailDialog';
+import { BookingInvoiceDialog } from '@/components/bookings/BookingInvoiceDialog';
 import { useServiceTypes, useCleaningTypes, getServiceTypeBadgeColor as getBadgeColor } from '@/hooks/useCompanySettings';
 
 interface Booking {
@@ -123,6 +124,8 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
   const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<Booking | null>(null);
   const [invoiceSendDialogOpen, setInvoiceSendDialogOpen] = useState(false);
   const [selectedBookingForInvoiceSend, setSelectedBookingForInvoiceSend] = useState<Booking | null>(null);
+  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
+  const [selectedBookingForInvoice, setSelectedBookingForInvoice] = useState<Booking | null>(null);
   const { toast } = useToast();
   
   // Fetch service/cleaning types for labels and badge colors
@@ -344,6 +347,11 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
   const handleSendEmail = (booking: Booking) => {
     setSelectedBookingForEmail(booking);
     setShowEmailDialog(true);
+  };
+
+  const handleViewInvoice = (booking: Booking) => {
+    setSelectedBookingForInvoice(booking);
+    setInvoiceDialogOpen(true);
   };
 
   const handlePaymentAction = (booking: Booking) => {
@@ -741,6 +749,10 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
                       <Send className="w-4 h-4 mr-2" />
                       Send Email
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleViewInvoice(booking)}>
+                      <FileText className="w-4 h-4 mr-2" />
+                      View Invoice
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => handlePaymentAction(booking)}>
                       <DollarSign className="w-4 h-4 mr-2" />
@@ -880,6 +892,10 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
                     <DropdownMenuItem onClick={() => handleSendEmail(booking)}>
                       <Send className="w-4 h-4 mr-2" />
                       Send Email
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleViewInvoice(booking)}>
+                      <FileText className="w-4 h-4 mr-2" />
+                      View Invoice
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => handlePaymentAction(booking)}>
@@ -1088,6 +1104,12 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
           booking={selectedBookingForEmail}
         />
       )}
+
+      <BookingInvoiceDialog
+        open={invoiceDialogOpen}
+        onOpenChange={setInvoiceDialogOpen}
+        booking={selectedBookingForInvoice}
+      />
     </div>
   );
 };
