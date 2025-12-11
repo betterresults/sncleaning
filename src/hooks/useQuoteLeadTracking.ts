@@ -355,12 +355,40 @@ export const useQuoteLeadTracking = (serviceType: string) => {
     hasRecordCreated.current = true;
   }, []);
 
+  // Mark that quote email was sent for this session
+  const markQuoteEmailSent = useCallback(async (email: string) => {
+    try {
+      await fetch(`${SUPABASE_URL}/functions/v1/track-funnel-event`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          table: 'quote_leads',
+          data: {
+            session_id: sessionId.current,
+            email,
+            quote_email_sent: true,
+            quote_email_sent_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        }),
+      });
+      hasRecordCreated.current = true;
+      console.log('✅ Quote email marked as sent');
+    } catch (err) {
+      console.error('❌ Error marking quote email sent:', err);
+    }
+  }, []);
+
   return {
     saveQuoteLead,
     trackStep,
     trackQuoteCalculated,
     markCompleted,
     initializeFromResume,
+    markQuoteEmailSent,
     userId: userId.current,
     sessionId: sessionId.current,
   };

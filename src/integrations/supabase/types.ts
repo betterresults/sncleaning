@@ -1933,6 +1933,8 @@ export type Database = {
           phone: string | null
           postcode: string | null
           property_type: string | null
+          quote_email_sent: boolean | null
+          quote_email_sent_at: string | null
           reception_rooms: number | null
           recommended_hours: number | null
           referrer: string | null
@@ -1978,6 +1980,8 @@ export type Database = {
           phone?: string | null
           postcode?: string | null
           property_type?: string | null
+          quote_email_sent?: boolean | null
+          quote_email_sent_at?: string | null
           reception_rooms?: number | null
           recommended_hours?: number | null
           referrer?: string | null
@@ -2023,6 +2027,8 @@ export type Database = {
           phone?: string | null
           postcode?: string | null
           property_type?: string | null
+          quote_email_sent?: boolean | null
+          quote_email_sent_at?: string | null
           reception_rooms?: number | null
           recommended_hours?: number | null
           referrer?: string | null
