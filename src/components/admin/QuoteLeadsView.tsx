@@ -462,6 +462,7 @@ const QuoteLeadsView = () => {
                       <TableHead>Contact</TableHead>
                       <TableHead>Property</TableHead>
                       <TableHead>Quote</TableHead>
+                      <TableHead>Quote Sent</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Source</TableHead>
                     </TableRow>
@@ -469,7 +470,7 @@ const QuoteLeadsView = () => {
                   <TableBody>
                     {filteredLeads.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                        <TableCell colSpan={9} className="text-center py-8 text-gray-500">
                           No quote leads found
                         </TableCell>
                       </TableRow>
@@ -494,12 +495,7 @@ const QuoteLeadsView = () => {
                                 <p className="font-medium">{`${lead.first_name || ''} ${lead.last_name || ''}`.trim()}</p>
                               ) : null}
                               {lead.email && (
-                                <div className="flex items-center gap-1">
-                                  <p className="text-sm text-gray-500">{lead.email}</p>
-                                  {lead.quote_email_sent && (
-                                    <Badge className="bg-purple-100 text-purple-800 text-xs">Quote Sent</Badge>
-                                  )}
-                                </div>
+                                <p className="text-sm text-gray-500">{lead.email}</p>
                               )}
                               {lead.phone && <p className="text-sm text-gray-500">{lead.phone}</p>}
                               {!lead.first_name && !lead.email && !lead.phone && (
@@ -533,6 +529,20 @@ const QuoteLeadsView = () => {
                                 <Badge className="text-xs bg-purple-100 text-purple-700">New customer</Badge>
                               )}
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            {lead.quote_email_sent ? (
+                              <div className="space-y-1">
+                                <Badge className="bg-green-100 text-green-800">Sent</Badge>
+                                {lead.quote_email_sent_at && (
+                                  <p className="text-xs text-gray-400">
+                                    {format(new Date(lead.quote_email_sent_at), 'dd/MM HH:mm')}
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <Badge variant="outline" className="text-gray-400">Not sent</Badge>
+                            )}
                           </TableCell>
                           <TableCell>
                             {getStatusBadge(lead)}
