@@ -38,6 +38,7 @@ interface ExitQuotePopupProps {
   quoteData: QuoteData;
   sessionId: string;
   serviceType: string;
+  onSaveEmail?: (email: string) => void;
 }
 
 export const ExitQuotePopup: React.FC<ExitQuotePopupProps> = ({
@@ -47,6 +48,7 @@ export const ExitQuotePopup: React.FC<ExitQuotePopupProps> = ({
   quoteData,
   sessionId,
   serviceType,
+  onSaveEmail,
 }) => {
   const [email, setEmail] = useState(initialEmail);
   const [isSending, setIsSending] = useState(false);
@@ -89,6 +91,11 @@ export const ExitQuotePopup: React.FC<ExitQuotePopupProps> = ({
       });
 
       if (error) throw error;
+
+      // Save the email to the quote lead session
+      if (onSaveEmail) {
+        onSaveEmail(email);
+      }
 
       toast({
         title: "Quote Sent!",
