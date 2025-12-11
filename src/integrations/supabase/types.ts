@@ -1925,6 +1925,7 @@ export type Database = {
           is_first_time_customer: boolean | null
           is_flexible: boolean | null
           kitchen: string | null
+          last_heartbeat: string | null
           last_name: string | null
           oven_cleaning: boolean | null
           oven_size: string | null
@@ -1969,6 +1970,7 @@ export type Database = {
           is_first_time_customer?: boolean | null
           is_flexible?: boolean | null
           kitchen?: string | null
+          last_heartbeat?: string | null
           last_name?: string | null
           oven_cleaning?: boolean | null
           oven_size?: string | null
@@ -2013,6 +2015,7 @@ export type Database = {
           is_first_time_customer?: boolean | null
           is_flexible?: boolean | null
           kitchen?: string | null
+          last_heartbeat?: string | null
           last_name?: string | null
           oven_cleaning?: boolean | null
           oven_size?: string | null

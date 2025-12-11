@@ -3,6 +3,11 @@ import { useEffect, useRef, useCallback } from 'react';
 const SUPABASE_URL = "https://dkomihipebixlegygnoy.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrb21paGlwZWJpeGxlZ3lnbm95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA1MDEwNTMsImV4cCI6MjA0NjA3NzA1M30.z4hlXMnyyleo4sWyPnFuKFC5-tkQw4lVcDiF8TRWla4";
 
+// Heartbeat interval - send every 30 seconds to indicate browser is still open
+const HEARTBEAT_INTERVAL = 30 * 1000;
+// Session reuse window - reuse session if created within last 30 minutes
+const SESSION_REUSE_WINDOW = 30 * 60 * 1000;
+
 interface QuoteLeadData {
   serviceType?: string;
   cleaningType?: string;
@@ -31,7 +36,7 @@ interface QuoteLeadData {
   shortNoticeCharge?: number;
   isFirstTimeCustomer?: boolean;
   recommendedHours?: number;
-  status?: 'live' | 'left' | 'completed';
+  status?: 'live' | 'idle' | 'left' | 'completed';
   furthestStep?: string;
 }
 
@@ -48,15 +53,31 @@ const getUserId = (): string => {
   return userId;
 };
 
-// Generate session ID for current browsing session  
+// Generate or retrieve session ID with reuse logic
 const getSessionId = (): string => {
   const storageKey = 'quote_session_id';
-  let sessionId = sessionStorage.getItem(storageKey);
+  const timestampKey = 'quote_session_timestamp';
   
-  if (!sessionId) {
-    sessionId = `qs_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-    sessionStorage.setItem(storageKey, sessionId);
+  let sessionId = localStorage.getItem(storageKey);
+  const sessionTimestamp = localStorage.getItem(timestampKey);
+  
+  // Check if we should reuse existing session
+  if (sessionId && sessionTimestamp) {
+    const timestamp = parseInt(sessionTimestamp, 10);
+    const age = Date.now() - timestamp;
+    
+    // Reuse session if it's recent enough
+    if (age < SESSION_REUSE_WINDOW) {
+      console.log('📊 Reusing existing session:', sessionId);
+      return sessionId;
+    }
   }
+  
+  // Create new session
+  sessionId = `qs_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+  localStorage.setItem(storageKey, sessionId);
+  localStorage.setItem(timestampKey, Date.now().toString());
+  console.log('📊 Created new session:', sessionId);
   
   return sessionId;
 };
@@ -78,31 +99,94 @@ export const useQuoteLeadTracking = (serviceType: string) => {
   const sessionId = useRef(getSessionId());
   const lastSaveRef = useRef<number>(0);
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
-  const hasInitialized = useRef(false);
+  const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
+  const hasRecordCreated = useRef(false);
+  const hasTrackedLanding = useRef(false);
 
-  // Initialize tracking on mount and handle page leave
-  useEffect(() => {
-    if (!hasInitialized.current) {
-      hasInitialized.current = true;
-      const utmParams = getUtmParams();
-      
-      // Create initial record with 'live' status
-      saveQuoteLead({
-        serviceType,
-        status: 'live',
-        furthestStep: 'started',
-      }, true);
-      
-      // Store UTM params separately if they exist
-      if (Object.values(utmParams).some(v => v)) {
-        sessionStorage.setItem('quote_utm_params', JSON.stringify(utmParams));
-      }
+  // Track page landing separately (in funnel_events, not quote_leads)
+  const trackLanding = useCallback(async () => {
+    if (hasTrackedLanding.current) return;
+    hasTrackedLanding.current = true;
+    
+    const utmParams = getUtmParams();
+    
+    try {
+      await fetch(`${SUPABASE_URL}/functions/v1/track-funnel-event`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          table: 'funnel_events',
+          data: {
+            user_id: userId.current,
+            session_id: sessionId.current,
+            event_type: 'quote_page_view',
+            event_data: { service_type: serviceType },
+            page_url: window.location.href,
+            referrer: document.referrer || null,
+            user_agent: navigator.userAgent,
+            ...utmParams,
+          },
+        }),
+      });
+      console.log('📊 Tracked page landing');
+    } catch (err) {
+      console.error('❌ Error tracking landing:', err);
     }
+  }, [serviceType]);
+
+  // Send heartbeat to indicate browser is still open
+  const sendHeartbeat = useCallback(async () => {
+    if (!hasRecordCreated.current) return;
+    
+    try {
+      await fetch(`${SUPABASE_URL}/functions/v1/track-funnel-event`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          table: 'quote_leads',
+          data: {
+            session_id: sessionId.current,
+            status: 'live',
+            last_heartbeat: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        }),
+      });
+      console.log('💓 Heartbeat sent');
+    } catch (err) {
+      console.error('❌ Heartbeat error:', err);
+    }
+  }, []);
+
+  // Initialize tracking on mount
+  useEffect(() => {
+    // Track page landing (separate from quote_leads)
+    trackLanding();
+    
+    // Store UTM params for later use
+    const utmParams = getUtmParams();
+    if (Object.values(utmParams).some(v => v)) {
+      localStorage.setItem('quote_utm_params', JSON.stringify(utmParams));
+    }
+
+    // Start heartbeat interval (only if record exists)
+    heartbeatInterval.current = setInterval(() => {
+      if (hasRecordCreated.current) {
+        sendHeartbeat();
+      }
+    }, HEARTBEAT_INTERVAL);
 
     // Mark as 'left' when user leaves the page
     const handleBeforeUnload = () => {
-      const currentStep = sessionStorage.getItem('quote_furthest_step') || 'started';
-      // Use sendBeacon for reliable tracking on page unload
+      if (!hasRecordCreated.current) return;
+      
+      const currentStep = localStorage.getItem('quote_furthest_step') || 'started';
       const leadData = {
         user_id: userId.current,
         session_id: sessionId.current,
@@ -125,8 +209,11 @@ export const useQuoteLeadTracking = (serviceType: string) => {
     
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (heartbeatInterval.current) {
+        clearInterval(heartbeatInterval.current);
+      }
     };
-  }, [serviceType]);
+  }, [serviceType, trackLanding, sendHeartbeat]);
 
   const saveQuoteLead = useCallback(async (data: QuoteLeadData, force = false) => {
     const now = Date.now();
@@ -145,7 +232,7 @@ export const useQuoteLeadTracking = (serviceType: string) => {
     lastSaveRef.current = now;
 
     try {
-      const utmParams = JSON.parse(sessionStorage.getItem('quote_utm_params') || '{}');
+      const utmParams = JSON.parse(localStorage.getItem('quote_utm_params') || '{}');
       
       const leadData = {
         user_id: userId.current,
@@ -184,6 +271,7 @@ export const useQuoteLeadTracking = (serviceType: string) => {
         page_url: window.location.href,
         referrer: document.referrer || null,
         user_agent: navigator.userAgent,
+        last_heartbeat: new Date().toISOString(),
         ...utmParams,
         updated_at: new Date().toISOString(),
       };
@@ -195,7 +283,6 @@ export const useQuoteLeadTracking = (serviceType: string) => {
 
       console.log('📊 Saving quote lead:', cleanedData);
 
-      // Call edge function to bypass RLS
       const response = await fetch(`${SUPABASE_URL}/functions/v1/track-funnel-event`, {
         method: 'POST',
         headers: {
@@ -212,6 +299,7 @@ export const useQuoteLeadTracking = (serviceType: string) => {
         const error = await response.json();
         console.error('❌ Error saving quote lead:', error);
       } else {
+        hasRecordCreated.current = true;
         console.log('✅ Quote lead saved successfully');
       }
     } catch (err) {
@@ -219,14 +307,27 @@ export const useQuoteLeadTracking = (serviceType: string) => {
     }
   }, [serviceType]);
 
+  // Only create record when meaningful data is entered
   const trackStep = useCallback((step: string, additionalData?: Partial<QuoteLeadData>) => {
     // Store the furthest step for use in beforeunload
-    sessionStorage.setItem('quote_furthest_step', step);
-    saveQuoteLead({
-      status: 'live',
-      furthestStep: step,
-      ...additionalData,
-    });
+    localStorage.setItem('quote_furthest_step', step);
+    
+    // Only save if we have meaningful data
+    const hasMeaningfulData = additionalData && (
+      additionalData.propertyType ||
+      additionalData.cleaningType ||
+      additionalData.bedrooms ||
+      additionalData.postcode ||
+      additionalData.email
+    );
+    
+    if (hasMeaningfulData || hasRecordCreated.current) {
+      saveQuoteLead({
+        status: 'live',
+        furthestStep: step,
+        ...additionalData,
+      });
+    }
   }, [saveQuoteLead]);
 
   const trackQuoteCalculated = useCallback((quote: number, hours?: number, data?: Partial<QuoteLeadData>) => {
@@ -246,11 +347,20 @@ export const useQuoteLeadTracking = (serviceType: string) => {
     }, true);
   }, [saveQuoteLead]);
 
+  // Force create a record (used when resuming from email)
+  const initializeFromResume = useCallback((resumeSessionId: string) => {
+    sessionId.current = resumeSessionId;
+    localStorage.setItem('quote_session_id', resumeSessionId);
+    localStorage.setItem('quote_session_timestamp', Date.now().toString());
+    hasRecordCreated.current = true;
+  }, []);
+
   return {
     saveQuoteLead,
     trackStep,
     trackQuoteCalculated,
     markCompleted,
+    initializeFromResume,
     userId: userId.current,
     sessionId: sessionId.current,
   };

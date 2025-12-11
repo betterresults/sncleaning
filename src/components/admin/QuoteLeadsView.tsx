@@ -60,7 +60,20 @@ interface QuoteLead {
   utm_campaign: string | null;
   created_at: string | null;
   updated_at: string | null;
+  last_heartbeat: string | null;
 }
+
+// Check if a lead is idle (no heartbeat in last 2 minutes means browser likely closed)
+const isLeadIdle = (lead: QuoteLead): boolean => {
+  if (lead.status !== 'live') return false;
+  if (!lead.last_heartbeat) return true;
+  
+  const heartbeatTime = new Date(lead.last_heartbeat).getTime();
+  const now = Date.now();
+  const twoMinutes = 2 * 60 * 1000;
+  
+  return (now - heartbeatTime) > twoMinutes;
+};
 
 const QuoteLeadsView = () => {
   const [leads, setLeads] = useState<QuoteLead[]>([]);
@@ -130,7 +143,14 @@ const QuoteLeadsView = () => {
       return acc;
     }, {} as Record<string, number>);
 
-  const getStatusBadge = (status: string | null) => {
+  const getStatusBadge = (lead: QuoteLead) => {
+    const status = lead.status;
+    
+    // Check if live but idle (no recent heartbeat)
+    if (status === 'live' && isLeadIdle(lead)) {
+      return <Badge className="bg-yellow-100 text-yellow-800">Idle</Badge>;
+    }
+    
     switch (status) {
       case 'completed':
         return <Badge className="bg-green-100 text-green-800">Booked</Badge>;
@@ -138,6 +158,8 @@ const QuoteLeadsView = () => {
         return <Badge className="bg-red-100 text-red-800">Left</Badge>;
       case 'live':
         return <Badge className="bg-blue-100 text-blue-800 animate-pulse">Live</Badge>;
+      case 'idle':
+        return <Badge className="bg-yellow-100 text-yellow-800">Idle</Badge>;
       case 'viewing':
         return <Badge className="bg-yellow-100 text-yellow-800">Viewing</Badge>;
       default:
@@ -210,7 +232,15 @@ const QuoteLeadsView = () => {
   };
 
   const filteredLeads = leads.filter(lead => {
-    if (statusFilter !== 'all' && lead.status !== statusFilter) return false;
+    // Handle idle filter - computed status
+    if (statusFilter === 'idle') {
+      if (!isLeadIdle(lead)) return false;
+    } else if (statusFilter === 'live') {
+      // Live means currently active (not idle)
+      if (lead.status !== 'live' || isLeadIdle(lead)) return false;
+    } else if (statusFilter !== 'all' && lead.status !== statusFilter) {
+      return false;
+    }
     if (serviceFilter !== 'all' && lead.service_type !== serviceFilter) return false;
     return true;
   });
@@ -347,10 +377,10 @@ const QuoteLeadsView = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Statuses</SelectItem>
-                      <SelectItem value="live">Live</SelectItem>
+                      <SelectItem value="live">Live (active)</SelectItem>
+                      <SelectItem value="idle">Idle (tab open but inactive)</SelectItem>
                       <SelectItem value="left">Left</SelectItem>
                       <SelectItem value="completed">Booked</SelectItem>
-                      <SelectItem value="viewing">Viewing (Legacy)</SelectItem>
                     </SelectContent>
                   </Select>
                   <Select value={serviceFilter} onValueChange={setServiceFilter}>
@@ -496,7 +526,7 @@ const QuoteLeadsView = () => {
                             </div>
                           </TableCell>
                           <TableCell>
-                            {getStatusBadge(lead.status)}
+                            {getStatusBadge(lead)}
                             {lead.furthest_step && (
                               <p className="text-xs text-gray-400 mt-1">Step: {lead.furthest_step}</p>
                             )}
