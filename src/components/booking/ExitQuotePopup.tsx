@@ -53,6 +53,16 @@ export const ExitQuotePopup: React.FC<ExitQuotePopupProps> = ({
   const [email, setEmail] = useState(initialEmail);
   const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
+  
+  // Check if email is already provided (valid email)
+  const hasValidEmail = initialEmail && initialEmail.includes('@');
+  
+  // Sync email state when initialEmail changes
+  React.useEffect(() => {
+    if (initialEmail) {
+      setEmail(initialEmail);
+    }
+  }, [initialEmail]);
 
   const handleSendQuote = async () => {
     if (!email || !email.includes('@')) {
@@ -120,25 +130,30 @@ export const ExitQuotePopup: React.FC<ExitQuotePopupProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Mail className="w-5 h-5 text-primary" />
-            Save Your Quote?
+            {hasValidEmail ? 'Send Your Quote?' : 'Save Your Quote?'}
           </DialogTitle>
           <DialogDescription>
-            Don't lose your quote! We can email it to you with a link to complete your booking anytime.
+            {hasValidEmail 
+              ? `We'll send your quote to ${initialEmail} with a link to complete your booking anytime.`
+              : "Don't lose your quote! We can email it to you with a link to complete your booking anytime."
+            }
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="quote-email">Email Address</Label>
-            <Input
-              id="quote-email"
-              type="email"
-              placeholder="your@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoFocus
-            />
-          </div>
+          {!hasValidEmail && (
+            <div className="space-y-2">
+              <Label htmlFor="quote-email">Email Address</Label>
+              <Input
+                id="quote-email"
+                type="email"
+                placeholder="your@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoFocus
+              />
+            </div>
+          )}
           
         {quoteData.totalCost > 0 && (
             <div className="bg-muted/50 rounded-lg p-4 space-y-2">
