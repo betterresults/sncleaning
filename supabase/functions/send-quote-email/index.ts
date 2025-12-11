@@ -72,11 +72,34 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Sending quote email to:', email);
     console.log('Quote data:', quoteData);
 
-    // Generate booking link with session ID to resume - get origin dynamically
+    // Generate booking link with URL parameters to prefill the form
+    // This allows the link to work across different devices
     const referer = req.headers.get('referer') || req.headers.get('origin') || '';
     const baseUrl = referer ? new URL(referer).origin : 'https://sncleaningservices.co.uk';
     const bookingPath = serviceType === 'Domestic' ? '/domestic-booking' : '/airbnb-booking';
-    const resumeLink = `${baseUrl}${bookingPath}?resume=${sessionId}`;
+    
+    // Build URL parameters for prefilling
+    const params = new URLSearchParams();
+    params.set('utm_source', 'exit-popup');
+    params.set('utm_medium', 'email');
+    params.set('utm_campaign', 'quote-recovery');
+    
+    // Add quote data as prefill parameters
+    if (quoteData.propertyType) params.set('propertyType', quoteData.propertyType);
+    if (quoteData.bedrooms) params.set('bedrooms', quoteData.bedrooms);
+    if (quoteData.bathrooms) params.set('bathrooms', quoteData.bathrooms);
+    if (quoteData.serviceFrequency) params.set('frequency', quoteData.serviceFrequency);
+    if (quoteData.postcode) params.set('postcode', quoteData.postcode);
+    if (quoteData.hasOvenCleaning) params.set('oven', '1');
+    if (quoteData.ovenType) params.set('ovenType', quoteData.ovenType);
+    if (quoteData.selectedDate) params.set('date', quoteData.selectedDate.split('T')[0]);
+    if (quoteData.selectedTime) params.set('time', quoteData.selectedTime);
+    if (email) params.set('email', email);
+    
+    // Also include session ID for tracking purposes
+    params.set('ref', sessionId);
+    
+    const resumeLink = `${baseUrl}${bookingPath}?${params.toString()}`;
 
     // Calculate base cost before discount
     const baseCost = quoteData.isFirstTimeCustomer 

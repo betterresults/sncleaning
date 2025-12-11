@@ -125,17 +125,17 @@ export const ExitQuotePopup: React.FC<ExitQuotePopupProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md border-0 p-0 overflow-hidden">
-        {/* Header with brand color */}
-        <div className="bg-[#18A5A5] px-6 pt-6 pb-4">
+      <DialogContent className="sm:max-w-md rounded-2xl border-0 p-0 overflow-hidden shadow-2xl">
+        {/* Header with softer gradient */}
+        <div className="bg-gradient-to-br from-slate-700 to-slate-800 px-6 pt-6 pb-5">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white text-xl">
-              <div className="w-10 h-10 rounded-full bg-[#185166] flex items-center justify-center">
+            <DialogTitle className="flex items-center gap-3 text-white text-xl font-light tracking-wide">
+              <div className="w-11 h-11 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center">
                 <Mail className="w-5 h-5 text-white" />
               </div>
               {hasValidEmail ? 'Send Your Quote?' : 'Save Your Quote?'}
             </DialogTitle>
-            <DialogDescription className="text-white/90">
+            <DialogDescription className="text-white/80 font-light mt-2 leading-relaxed">
               {hasValidEmail 
                 ? `We'll send your quote to ${initialEmail} with a link to complete your booking anytime.`
                 : "Don't lose your quote! We can email it to you with a link to complete your booking anytime."
@@ -144,10 +144,10 @@ export const ExitQuotePopup: React.FC<ExitQuotePopupProps> = ({
           </DialogHeader>
         </div>
         
-        <div className="px-6 py-4 space-y-4">
+        <div className="px-6 py-5 space-y-4 bg-white">
           {!hasValidEmail && (
             <div className="space-y-2">
-              <Label htmlFor="quote-email" className="text-sm font-medium">Email Address</Label>
+              <Label htmlFor="quote-email" className="text-sm font-medium text-slate-700">Email Address</Label>
               <Input
                 id="quote-email"
                 type="email"
@@ -155,26 +155,26 @@ export const ExitQuotePopup: React.FC<ExitQuotePopupProps> = ({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoFocus
-                className="border-[#18A5A5]/30 focus:border-[#18A5A5] focus:ring-[#18A5A5]"
+                className="rounded-xl border-slate-200 focus:border-slate-400 focus:ring-slate-400 h-12"
               />
             </div>
           )}
           
           {quoteData.totalCost > 0 && (
-            <div className="bg-[#18A5A5]/10 rounded-lg p-4 space-y-2 border border-[#18A5A5]/20">
-              <p className="text-sm font-semibold text-[#185166]">Your Quote Summary</p>
+            <div className="bg-slate-50 rounded-xl p-4 space-y-2 border border-slate-100">
+              <p className="text-sm font-medium text-slate-600">Your Quote Summary</p>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">First Cleaning Cost:</span>
-                <span className="font-bold text-[#185166]">£{quoteData.totalCost.toFixed(2)}</span>
+                <span className="text-slate-500">First Cleaning Cost:</span>
+                <span className="font-semibold text-slate-800">£{quoteData.totalCost.toFixed(2)}</span>
               </div>
               {quoteData.estimatedHours && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Duration:</span>
-                  <span className="font-medium">{quoteData.estimatedHours} hours</span>
+                  <span className="text-slate-500">Duration:</span>
+                  <span className="font-medium text-slate-700">{quoteData.estimatedHours} hours</span>
                 </div>
               )}
               {quoteData.isFirstTimeCustomer && quoteData.discountAmount && quoteData.discountAmount > 0 && (
-                <p className="text-xs text-green-600 font-medium">
+                <p className="text-xs text-emerald-600 font-medium">
                   Includes 10% first-time customer discount!
                 </p>
               )}
@@ -184,7 +184,7 @@ export const ExitQuotePopup: React.FC<ExitQuotePopupProps> = ({
           <Button
             onClick={handleSendQuote}
             disabled={isSending || !email}
-            className="w-full bg-[#18A5A5] hover:bg-[#158f8f] text-white font-semibold py-3"
+            className="w-full bg-slate-800 hover:bg-slate-700 text-white font-medium py-3 rounded-xl h-12 transition-all"
             size="lg"
           >
             <Mail className="w-4 h-4 mr-2" />
