@@ -7,7 +7,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { CreditCard, Link, Mail, Search, Check, X } from 'lucide-react';
+import { CreditCard, Link, Mail, Search, Check, X, AlertTriangle } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { EmailSentLogsDialog } from './EmailSentLogsDialog';
 
 interface CollectPaymentMethodDialogProps {
@@ -48,6 +58,7 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
   const [searchCompleted, setSearchCompleted] = useState(false);
   const [emailPreview, setEmailPreview] = useState<{subject: string, content: string} | null>(null);
   const [showEmailLogs, setShowEmailLogs] = useState(false);
+  const [showPaymentConfirm, setShowPaymentConfirm] = useState(false);
 
   const handleSearchStripe = async () => {
     setSearching(true);
@@ -385,41 +396,43 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
             <p className="text-sm text-muted-foreground">{customer.email}</p>
           </div>
 
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <Button
               variant={mode === 'search' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setMode('search')}
+              className="flex-col h-auto py-2"
             >
-              <Search className="h-4 w-4 mr-1" />
-              Search Stripe
+              <Search className="h-4 w-4 mb-1" />
+              <span className="text-xs">Search Stripe</span>
             </Button>
             <Button
               variant={mode === 'collect_only' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setMode('collect_only')}
+              className={`flex-col h-auto py-2 ${mode === 'collect_only' ? 'bg-green-600 hover:bg-green-700' : 'border-green-500 text-green-700 hover:bg-green-50'}`}
             >
-              <CreditCard className="h-4 w-4 mr-1" />
-              Collect New
+              <CreditCard className="h-4 w-4 mb-1" />
+              <span className="text-xs">💳 Save Card</span>
+              <span className="text-[10px] opacity-75">No Charge</span>
             </Button>
             <Button
               variant={mode === 'payment_link' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setMode('payment_link')}
+              className={`flex-col h-auto py-2 ${mode === 'payment_link' ? 'bg-orange-600 hover:bg-orange-700' : 'border-orange-500 text-orange-700 hover:bg-orange-50'}`}
             >
-              <Link className="h-4 w-4 mr-1" />
-              Payment Link
+              <Mail className="h-4 w-4 mb-1" />
+              <span className="text-xs">💰 Send Invoice</span>
+              <span className="text-[10px] opacity-75">Charges £</span>
             </Button>
-            {mode === 'preview' && (
-              <Button
-                variant="default"
-                size="sm"
-                disabled
-              >
-                📧 Email Preview
-              </Button>
-            )}
           </div>
+          
+          {mode === 'preview' && (
+            <div className="bg-blue-50 dark:bg-blue-950 p-2 rounded text-center">
+              <span className="text-sm font-medium text-blue-800 dark:text-blue-200">📧 Email Preview</span>
+            </div>
+          )}
 
           {mode === 'search' && (
             <div className="space-y-4">
@@ -502,8 +515,25 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
 
           {mode === 'payment_link' && (
             <>
+              {/* Warning Banner */}
+              <div className="bg-orange-100 dark:bg-orange-950 border border-orange-300 dark:border-orange-700 p-3 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-orange-800 dark:text-orange-200">
+                      ⚠️ This will CHARGE the customer!
+                    </p>
+                    <p className="text-xs text-orange-700 dark:text-orange-300 mt-1">
+                      The customer will receive an invoice and pay £{amount || '0'} immediately.
+                      <br />
+                      <strong>To save card WITHOUT charging, use "💳 Save Card" instead.</strong>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="amount">Amount (£)</Label>
+                <Label htmlFor="amount">Amount to Charge (£)</Label>
                 <Input
                   id="amount"
                   type="number"
@@ -512,11 +542,12 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="0.00"
+                  className="border-orange-300 focus:border-orange-500"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">Invoice Description</Label>
                 <Textarea
                   id="description"
                   value={description}
@@ -528,9 +559,9 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label className="text-sm">Also collect payment method for future use</Label>
+                  <Label className="text-sm">Also save card for future payments</Label>
                   <p className="text-xs text-muted-foreground">
-                    Customer will also set up their card for future payments
+                    Customer's card will be saved after payment
                   </p>
                 </div>
                 <Switch
@@ -539,6 +570,24 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
                 />
               </div>
             </>
+          )}
+
+          {mode === 'collect_only' && (
+            <div className="bg-green-50 dark:bg-green-950 border border-green-300 dark:border-green-700 p-3 rounded-lg">
+              <div className="flex items-start gap-2">
+                <CreditCard className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-green-800 dark:text-green-200">
+                    ✅ Save Card Only - NO Charge
+                  </p>
+                  <p className="text-xs text-green-700 dark:text-green-300 mt-1">
+                    Customer will add their card securely. <strong>They will NOT be charged.</strong>
+                    <br />
+                    Card will be saved for future authorized payments.
+                  </p>
+                </div>
+              </div>
+            </div>
           )}
 
           {mode === 'preview' && emailPreview && (
@@ -596,23 +645,23 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
               <Button
                 onClick={
                   mode === 'collect_only' ? handleCollectPaymentMethod : 
-                  mode === 'payment_link' ? handleSendPaymentLink : 
+                  mode === 'payment_link' ? () => setShowPaymentConfirm(true) : 
                   handleSearchStripe
                 }
                 disabled={loading || searching || (mode === 'search' && !searchCompleted && stripeCustomers.length === 0)}
-                className="flex-1"
+                className={`flex-1 ${mode === 'collect_only' ? 'bg-green-600 hover:bg-green-700' : mode === 'payment_link' ? 'bg-orange-600 hover:bg-orange-700' : ''}`}
               >
                 {loading || searching ? (
                   'Processing...'
                 ) : mode === 'collect_only' ? (
                   <>
                     <CreditCard className="h-4 w-4 mr-1" />
-                    Collect Card
+                    💳 Send Save Card Email
                   </>
                 ) : mode === 'payment_link' ? (
                   <>
                     <Mail className="h-4 w-4 mr-1" />
-                    Send Payment Link
+                    💰 Send Invoice £{amount || '0'}
                   </>
                 ) : (
                   <>
@@ -658,6 +707,41 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
         onOpenChange={setShowEmailLogs}
         customerEmail={customer.email}
       />
+
+      {/* Payment Confirmation Dialog */}
+      <AlertDialog open={showPaymentConfirm} onOpenChange={setShowPaymentConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-orange-600">
+              <AlertTriangle className="h-5 w-5" />
+              Confirm Payment Invoice
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                You are about to send an <strong>invoice</strong> to <strong>{customer.first_name} {customer.last_name}</strong>.
+              </p>
+              <p className="text-lg font-bold text-orange-600">
+                Amount: £{amount}
+              </p>
+              <p className="text-sm">
+                The customer will be <strong>CHARGED</strong> this amount when they click the link.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                If you only want to save their card without charging, cancel and use "💳 Save Card" instead.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleSendPaymentLink}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              Yes, Send Invoice £{amount}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 };
