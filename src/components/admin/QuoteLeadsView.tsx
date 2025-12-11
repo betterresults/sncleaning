@@ -86,6 +86,7 @@ const QuoteLeadsView = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   const fetchData = async () => {
     setRefreshing(true);
@@ -213,6 +214,8 @@ const QuoteLeadsView = () => {
   };
 
   const handleDeleteAll = async () => {
+    if (deleteConfirmText !== 'DELETE') return;
+    
     setDeleting(true);
     try {
       const { error } = await supabase
@@ -224,6 +227,7 @@ const QuoteLeadsView = () => {
       
       toast.success('All leads deleted');
       setSelectedLeads(new Set());
+      setDeleteConfirmText('');
       fetchData();
     } catch (error) {
       console.error('Error deleting all leads:', error);
@@ -421,7 +425,7 @@ const QuoteLeadsView = () => {
                       </AlertDialogContent>
                     </AlertDialog>
                   )}
-                  <AlertDialog>
+                  <AlertDialog onOpenChange={(open) => !open && setDeleteConfirmText('')}>
                     <AlertDialogTrigger asChild>
                       <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700" disabled={deleting || leads.length === 0}>
                         <Trash2 className="h-4 w-4 mr-1" />
@@ -430,14 +434,26 @@ const QuoteLeadsView = () => {
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Delete ALL leads?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will permanently delete ALL {leads.length} leads. This is for testing cleanup only. This action cannot be undone.
+                        <AlertDialogTitle className="text-red-600">⚠️ Delete ALL leads?</AlertDialogTitle>
+                        <AlertDialogDescription className="space-y-3">
+                          <span className="block">This will permanently delete <strong>ALL {leads.length} leads</strong>. This action <strong>cannot be undone</strong>.</span>
+                          <span className="block font-medium">Type <code className="bg-red-100 px-2 py-0.5 rounded text-red-700">DELETE</code> to confirm:</span>
+                          <input 
+                            type="text"
+                            value={deleteConfirmText}
+                            onChange={(e) => setDeleteConfirmText(e.target.value)}
+                            placeholder="Type DELETE to confirm"
+                            className="w-full px-3 py-2 border rounded-md text-sm"
+                          />
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteAll} className="bg-red-600 hover:bg-red-700">
+                        <AlertDialogAction 
+                          onClick={handleDeleteAll} 
+                          className="bg-red-600 hover:bg-red-700"
+                          disabled={deleteConfirmText !== 'DELETE'}
+                        >
                           Delete All
                         </AlertDialogAction>
                       </AlertDialogFooter>
