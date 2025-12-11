@@ -489,6 +489,7 @@ const DomesticBookingForm: React.FC = () => {
           postcode: bookingData.postcode,
           shortNoticeCharge: bookingData.shortNoticeCharge,
           isFirstTimeCustomer: bookingData.isFirstTimeCustomer,
+          discountAmount: bookingData.isFirstTimeCustomer ? bookingData.totalCost * 0.1 / 0.9 : 0,
         }}
         sessionId={sessionId}
         serviceType="Domestic"

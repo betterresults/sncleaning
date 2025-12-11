@@ -133,11 +133,11 @@ export const ExitQuotePopup: React.FC<ExitQuotePopupProps> = ({
             />
           </div>
           
-          {quoteData.totalCost > 0 && (
+        {quoteData.totalCost > 0 && (
             <div className="bg-muted/50 rounded-lg p-4 space-y-2">
               <p className="text-sm font-medium">Your Quote Summary</p>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Estimated Cost:</span>
+                <span className="text-muted-foreground">First Cleaning Cost:</span>
                 <span className="font-semibold">£{quoteData.totalCost.toFixed(2)}</span>
               </div>
               {quoteData.estimatedHours && (
@@ -146,7 +146,7 @@ export const ExitQuotePopup: React.FC<ExitQuotePopupProps> = ({
                   <span>{quoteData.estimatedHours} hours</span>
                 </div>
               )}
-              {quoteData.isFirstTimeCustomer && (
+              {quoteData.isFirstTimeCustomer && quoteData.discountAmount && quoteData.discountAmount > 0 && (
                 <p className="text-xs text-green-600 font-medium">
                   Includes 10% first-time customer discount!
                 </p>

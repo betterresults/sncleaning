@@ -185,7 +185,8 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
     data.adminDiscountPercentage,
     data.adminDiscountAmount,
     data.adminRemoveShortNoticeCharge,
-    shortNoticeInfo.charge
+    shortNoticeInfo.charge,
+    data.isFirstTimeCustomer
   ]);
 
   const renderSummaryContent = () => (
