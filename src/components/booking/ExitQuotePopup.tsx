@@ -5,12 +5,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, X } from "lucide-react";
+import { Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -126,24 +125,29 @@ export const ExitQuotePopup: React.FC<ExitQuotePopupProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Mail className="w-5 h-5 text-primary" />
-            {hasValidEmail ? 'Send Your Quote?' : 'Save Your Quote?'}
-          </DialogTitle>
-          <DialogDescription>
-            {hasValidEmail 
-              ? `We'll send your quote to ${initialEmail} with a link to complete your booking anytime.`
-              : "Don't lose your quote! We can email it to you with a link to complete your booking anytime."
-            }
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-md border-0 p-0 overflow-hidden">
+        {/* Header with brand color */}
+        <div className="bg-[#18A5A5] px-6 pt-6 pb-4">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white text-xl">
+              <div className="w-10 h-10 rounded-full bg-[#185166] flex items-center justify-center">
+                <Mail className="w-5 h-5 text-white" />
+              </div>
+              {hasValidEmail ? 'Send Your Quote?' : 'Save Your Quote?'}
+            </DialogTitle>
+            <DialogDescription className="text-white/90">
+              {hasValidEmail 
+                ? `We'll send your quote to ${initialEmail} with a link to complete your booking anytime.`
+                : "Don't lose your quote! We can email it to you with a link to complete your booking anytime."
+              }
+            </DialogDescription>
+          </DialogHeader>
+        </div>
         
-        <div className="space-y-4 py-4">
+        <div className="px-6 py-4 space-y-4">
           {!hasValidEmail && (
             <div className="space-y-2">
-              <Label htmlFor="quote-email">Email Address</Label>
+              <Label htmlFor="quote-email" className="text-sm font-medium">Email Address</Label>
               <Input
                 id="quote-email"
                 type="email"
@@ -151,21 +155,22 @@ export const ExitQuotePopup: React.FC<ExitQuotePopupProps> = ({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoFocus
+                className="border-[#18A5A5]/30 focus:border-[#18A5A5] focus:ring-[#18A5A5]"
               />
             </div>
           )}
           
-        {quoteData.totalCost > 0 && (
-            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-              <p className="text-sm font-medium">Your Quote Summary</p>
+          {quoteData.totalCost > 0 && (
+            <div className="bg-[#18A5A5]/10 rounded-lg p-4 space-y-2 border border-[#18A5A5]/20">
+              <p className="text-sm font-semibold text-[#185166]">Your Quote Summary</p>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">First Cleaning Cost:</span>
-                <span className="font-semibold">£{quoteData.totalCost.toFixed(2)}</span>
+                <span className="font-bold text-[#185166]">£{quoteData.totalCost.toFixed(2)}</span>
               </div>
               {quoteData.estimatedHours && (
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Duration:</span>
-                  <span>{quoteData.estimatedHours} hours</span>
+                  <span className="font-medium">{quoteData.estimatedHours} hours</span>
                 </div>
               )}
               {quoteData.isFirstTimeCustomer && quoteData.discountAmount && quoteData.discountAmount > 0 && (
@@ -175,26 +180,17 @@ export const ExitQuotePopup: React.FC<ExitQuotePopupProps> = ({
               )}
             </div>
           )}
-        </div>
-        
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="w-full sm:w-auto"
-          >
-            <X className="w-4 h-4 mr-2" />
-            No Thanks
-          </Button>
+          
           <Button
             onClick={handleSendQuote}
             disabled={isSending || !email}
-            className="w-full sm:w-auto"
+            className="w-full bg-[#18A5A5] hover:bg-[#158f8f] text-white font-semibold py-3"
+            size="lg"
           >
             <Mail className="w-4 h-4 mr-2" />
             {isSending ? 'Sending...' : 'Send My Quote'}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
