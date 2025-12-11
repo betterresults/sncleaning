@@ -72,8 +72,8 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Sending quote email to:', email);
     console.log('Quote data:', quoteData);
 
-    // Generate booking link with session ID to resume
-    const baseUrl = Deno.env.get('SITE_URL') || 'https://sncleaningservices.co.uk';
+    // Generate booking link with session ID to resume - hardcode correct domain
+    const baseUrl = 'https://sncleaningservices.co.uk';
     const bookingPath = serviceType === 'Domestic' ? '/domestic-booking' : '/airbnb-booking';
     const resumeLink = `${baseUrl}${bookingPath}?resume=${sessionId}`;
 
