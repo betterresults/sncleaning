@@ -44,8 +44,9 @@ const InstallPrompt = () => {
     localStorage.setItem('pwa-install-dismissed', 'true');
   };
 
-  // Don't show on /choose-service page
-  if (location.pathname === '/choose-service') {
+  // Don't show on services and booking form pages
+  const excludedPaths = ['/choose-service', '/services', '/domestic-booking', '/airbnb-booking', '/end-of-tenancy-booking'];
+  if (excludedPaths.some(path => location.pathname.startsWith(path))) {
     return null;
   }
 
