@@ -112,7 +112,7 @@ const DomesticBookingForm: React.FC = () => {
   const [isLoadingResume, setIsLoadingResume] = useState(false);
   
   // Quote lead tracking
-  const { saveQuoteLead, trackStep, trackQuoteCalculated, markCompleted, initializeFromResume, sessionId } = useQuoteLeadTracking('Domestic');
+  const { saveQuoteLead, trackStep, trackQuoteCalculated, markCompleted, initializeFromResume, markQuoteEmailSent, sessionId } = useQuoteLeadTracking('Domestic');
   
   const [bookingData, setBookingData] = useState<DomesticBookingData>({
     propertyType: '',
@@ -559,7 +559,7 @@ const DomesticBookingForm: React.FC = () => {
         sessionId={sessionId}
         serviceType="Domestic"
         onSaveEmail={(email) => {
-          saveQuoteLead({ email });
+          markQuoteEmailSent(email);
           updateBookingData({ email });
         }}
       />

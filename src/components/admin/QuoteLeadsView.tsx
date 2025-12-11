@@ -61,6 +61,8 @@ interface QuoteLead {
   created_at: string | null;
   updated_at: string | null;
   last_heartbeat: string | null;
+  quote_email_sent: boolean | null;
+  quote_email_sent_at: string | null;
 }
 
 // Check if a lead is idle (no heartbeat in last 2 minutes means browser likely closed)
@@ -491,7 +493,14 @@ const QuoteLeadsView = () => {
                               {lead.first_name || lead.last_name ? (
                                 <p className="font-medium">{`${lead.first_name || ''} ${lead.last_name || ''}`.trim()}</p>
                               ) : null}
-                              {lead.email && <p className="text-sm text-gray-500">{lead.email}</p>}
+                              {lead.email && (
+                                <div className="flex items-center gap-1">
+                                  <p className="text-sm text-gray-500">{lead.email}</p>
+                                  {lead.quote_email_sent && (
+                                    <Badge className="bg-purple-100 text-purple-800 text-xs">Quote Sent</Badge>
+                                  )}
+                                </div>
+                              )}
                               {lead.phone && <p className="text-sm text-gray-500">{lead.phone}</p>}
                               {!lead.first_name && !lead.email && !lead.phone && (
                                 <span className="text-gray-400">No contact info</span>
