@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
-import { RefreshCw, Eye, MousePointerClick, FileText, TrendingUp, Trash2 } from 'lucide-react';
+import { RefreshCw, Eye, MousePointerClick, FileText, TrendingUp, Trash2, Sparkles, Mail } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -478,15 +478,14 @@ const QuoteLeadsView = () => {
                       <TableHead>Contact</TableHead>
                       <TableHead>Property</TableHead>
                       <TableHead>Quote</TableHead>
-                      <TableHead>Quote Sent</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>Progress</TableHead>
                       <TableHead>Source</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredLeads.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                           No quote leads found
                         </TableCell>
                       </TableRow>
@@ -499,8 +498,13 @@ const QuoteLeadsView = () => {
                               onCheckedChange={(checked) => handleSelectLead(lead.id, checked as boolean)}
                             />
                           </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            {lead.created_at ? format(new Date(lead.created_at), 'dd/MM/yy HH:mm') : '-'}
+                          <TableCell>
+                            {lead.created_at ? (
+                              <div className="text-sm">
+                                <p className="font-medium">{format(new Date(lead.created_at), 'dd MMM')}</p>
+                                <p className="text-muted-foreground text-xs">{format(new Date(lead.created_at), 'HH:mm')}</p>
+                              </div>
+                            ) : '-'}
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline">{lead.service_type || '-'}</Badge>
@@ -511,11 +515,11 @@ const QuoteLeadsView = () => {
                                 <p className="font-medium">{`${lead.first_name || ''} ${lead.last_name || ''}`.trim()}</p>
                               ) : null}
                               {lead.email && (
-                                <p className="text-sm text-gray-500">{lead.email}</p>
+                                <p className="text-sm text-muted-foreground">{lead.email}</p>
                               )}
-                              {lead.phone && <p className="text-sm text-gray-500">{lead.phone}</p>}
+                              {lead.phone && <p className="text-sm text-muted-foreground">{lead.phone}</p>}
                               {!lead.first_name && !lead.email && !lead.phone && (
-                                <span className="text-gray-400">No contact info</span>
+                                <span className="text-muted-foreground">No contact info</span>
                               )}
                             </div>
                           </TableCell>
@@ -523,7 +527,7 @@ const QuoteLeadsView = () => {
                             <div className="text-sm">
                               {lead.postcode && <p className="font-medium">{lead.postcode}</p>}
                               {(lead.bedrooms || lead.bathrooms) && (
-                                <p className="text-gray-500">
+                                <p className="text-muted-foreground">
                                   {lead.bedrooms && `${lead.bedrooms} bed`}
                                   {lead.bedrooms && lead.bathrooms && ' / '}
                                   {lead.bathrooms && `${lead.bathrooms} bath`}
@@ -532,48 +536,49 @@ const QuoteLeadsView = () => {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="space-y-1">
+                            <div className="flex items-center gap-2">
                               {lead.calculated_quote ? (
                                 <span className="font-semibold text-green-600">£{lead.calculated_quote.toFixed(0)}</span>
                               ) : (
-                                <span className="text-gray-400">-</span>
-                              )}
-                              {lead.discount_amount && lead.discount_amount > 0 && (
-                                <p className="text-xs text-red-500">-£{lead.discount_amount.toFixed(0)} discount</p>
+                                <span className="text-muted-foreground">-</span>
                               )}
                               {lead.is_first_time_customer && (
-                                <Badge className="text-xs bg-purple-100 text-purple-700">New customer</Badge>
+                                <Sparkles className="h-4 w-4 text-purple-500" />
                               )}
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            {lead.quote_email_sent ? (
-                              <div className="space-y-1">
-                                <Badge className="bg-green-100 text-green-800">Sent</Badge>
-                                {lead.quote_email_sent_at && (
-                                  <p className="text-xs text-gray-400">
-                                    {format(new Date(lead.quote_email_sent_at), 'dd/MM HH:mm')}
-                                  </p>
-                                )}
-                              </div>
-                            ) : (
-                              <Badge variant="outline" className="text-gray-400">Not sent</Badge>
+                            {lead.discount_amount && lead.discount_amount > 0 && (
+                              <p className="text-xs text-red-500">-£{lead.discount_amount.toFixed(0)}</p>
                             )}
                           </TableCell>
                           <TableCell>
-                            {getStatusBadge(lead)}
-                            {lead.furthest_step && (
-                              <p className="text-xs text-gray-400 mt-1">Step: {lead.furthest_step}</p>
-                            )}
+                            <div className="space-y-1.5">
+                              {lead.furthest_step && (
+                                <div className="flex items-center gap-1.5">
+                                  <div className={`h-2 w-2 rounded-full ${
+                                    lead.furthest_step === 'quote' ? 'bg-green-500' :
+                                    lead.furthest_step === 'datetime' ? 'bg-blue-500' :
+                                    lead.furthest_step === 'extras' ? 'bg-yellow-500' :
+                                    'bg-gray-300'
+                                  }`} />
+                                  <span className="text-xs capitalize">{lead.furthest_step.replace(/_/g, ' ')}</span>
+                                </div>
+                              )}
+                              {lead.quote_email_sent && (
+                                <div className="flex items-center gap-1 text-green-600">
+                                  <Mail className="h-3 w-3" />
+                                  <span className="text-xs">Sent</span>
+                                </div>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell>
                             {lead.utm_source || lead.utm_campaign ? (
                               <div className="text-xs">
                                 {lead.utm_source && <p>{lead.utm_source}</p>}
-                                {lead.utm_campaign && <p className="text-gray-400">{lead.utm_campaign}</p>}
+                                {lead.utm_campaign && <p className="text-muted-foreground">{lead.utm_campaign}</p>}
                               </div>
                             ) : (
-                              <span className="text-gray-400">Direct</span>
+                              <span className="text-muted-foreground text-xs">Direct</span>
                             )}
                           </TableCell>
                         </TableRow>
