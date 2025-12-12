@@ -677,7 +677,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
           </div>
           
           {data.hasOvenCleaning && (
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {ovenCleaningConfigs.filter((oven: any) => oven.option !== 'not-required').map((oven: any) => {
                   const isSelected = data.ovenType === oven.option;
                   const IconComponent = (LucideIcons as any)[oven.icon];
@@ -861,7 +861,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div className="flex-1">
               <h2 className="text-2xl font-bold text-slate-700">Estimated Cleaning Time</h2>
-              <p className="text-xs text-muted-foreground mt-1">This is an estimate based on your selections. You can adjust it.</p>
+              <p className="text-xs text-muted-foreground mt-1">This is calculated based on your property size. You know your home best, so feel free to adjust the hours if needed.</p>
             </div>
             <div className="flex items-center bg-card border border-border rounded-2xl p-2 w-full sm:w-auto sm:max-w-[280px]">
               <Button
