@@ -6,12 +6,31 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
-import { RefreshCw, Eye, MousePointerClick, FileText, TrendingUp, Trash2, Sparkles, Mail } from 'lucide-react';
+import { RefreshCw, Eye, MousePointerClick, FileText, TrendingUp, Trash2, Sparkles, Mail, Settings2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
+type ColumnKey = 'date' | 'service' | 'contact' | 'property' | 'quote' | 'progress' | 'status' | 'source' | 'frequency' | 'cleaningType' | 'extras';
+
+const ALL_COLUMNS: { key: ColumnKey; label: string }[] = [
+  { key: 'date', label: 'Date' },
+  { key: 'service', label: 'Service' },
+  { key: 'contact', label: 'Contact' },
+  { key: 'property', label: 'Property' },
+  { key: 'quote', label: 'Quote' },
+  { key: 'progress', label: 'Progress' },
+  { key: 'status', label: 'Status' },
+  { key: 'source', label: 'Source' },
+  { key: 'frequency', label: 'Frequency' },
+  { key: 'cleaningType', label: 'Cleaning Type' },
+  { key: 'extras', label: 'Extras' },
+];
+
+const DEFAULT_VISIBLE_COLUMNS: ColumnKey[] = ['date', 'service', 'contact', 'property', 'quote', 'progress', 'status'];
 
 interface FunnelEvent {
   id: string;
@@ -63,6 +82,11 @@ interface QuoteLead {
   last_heartbeat: string | null;
   quote_email_sent: boolean | null;
   quote_email_sent_at: string | null;
+  frequency: string | null;
+  cleaning_type: string | null;
+  oven_cleaning: boolean | null;
+  oven_size: string | null;
+  ironing_hours: number | null;
 }
 
 // Check if a lead is idle (no heartbeat in last 2 minutes means browser likely closed)
@@ -87,6 +111,17 @@ const QuoteLeadsView = () => {
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [visibleColumns, setVisibleColumns] = useState<ColumnKey[]>(DEFAULT_VISIBLE_COLUMNS);
+
+  const toggleColumn = (column: ColumnKey) => {
+    setVisibleColumns(prev => 
+      prev.includes(column) 
+        ? prev.filter(c => c !== column)
+        : [...prev, column]
+    );
+  };
+
+  const isColumnVisible = (column: ColumnKey) => visibleColumns.includes(column);
 
   const fetchData = async () => {
     setRefreshing(true);
@@ -459,6 +494,29 @@ const QuoteLeadsView = () => {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                  
+                  {/* Column visibility toggle */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Settings2 className="h-4 w-4 mr-1" />
+                        Columns
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-48 p-2" align="end">
+                      <p className="text-sm font-medium mb-2 px-2">Show columns</p>
+                      {ALL_COLUMNS.map(col => (
+                        <div 
+                          key={col.key}
+                          className="flex items-center gap-2 px-2 py-1.5 hover:bg-muted rounded cursor-pointer"
+                          onClick={() => toggleColumn(col.key)}
+                        >
+                          <Checkbox checked={isColumnVisible(col.key)} />
+                          <span className="text-sm">{col.label}</span>
+                        </div>
+                      ))}
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
             </CardHeader>
@@ -473,19 +531,23 @@ const QuoteLeadsView = () => {
                           onCheckedChange={handleSelectAll}
                         />
                       </TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Service</TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead>Property</TableHead>
-                      <TableHead>Quote</TableHead>
-                      <TableHead>Progress</TableHead>
-                      <TableHead>Source</TableHead>
+                      {isColumnVisible('date') && <TableHead>Date</TableHead>}
+                      {isColumnVisible('service') && <TableHead>Service</TableHead>}
+                      {isColumnVisible('contact') && <TableHead>Contact</TableHead>}
+                      {isColumnVisible('property') && <TableHead>Property</TableHead>}
+                      {isColumnVisible('quote') && <TableHead>Quote</TableHead>}
+                      {isColumnVisible('progress') && <TableHead>Progress</TableHead>}
+                      {isColumnVisible('status') && <TableHead>Status</TableHead>}
+                      {isColumnVisible('frequency') && <TableHead>Frequency</TableHead>}
+                      {isColumnVisible('cleaningType') && <TableHead>Cleaning Type</TableHead>}
+                      {isColumnVisible('extras') && <TableHead>Extras</TableHead>}
+                      {isColumnVisible('source') && <TableHead>Source</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredLeads.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
                           No quote leads found
                         </TableCell>
                       </TableRow>
@@ -498,96 +560,147 @@ const QuoteLeadsView = () => {
                               onCheckedChange={(checked) => handleSelectLead(lead.id, checked as boolean)}
                             />
                           </TableCell>
-                          <TableCell>
-                            <div className="flex items-start gap-2">
-                              <div className={`mt-1 h-2 w-2 rounded-full flex-shrink-0 ${
-                                lead.status === 'completed' ? 'bg-green-500' :
-                                isLeadIdle(lead) ? 'bg-yellow-500' :
-                                'bg-blue-500 animate-pulse'
-                              }`} title={lead.status === 'completed' ? 'Completed' : isLeadIdle(lead) ? 'Idle' : 'Live'} />
+                          
+                          {isColumnVisible('date') && (
+                            <TableCell>
                               {lead.created_at ? (
                                 <div className="text-sm">
                                   <p className="font-medium">{format(new Date(lead.created_at), 'dd MMM')}</p>
                                   <p className="text-muted-foreground text-xs">{format(new Date(lead.created_at), 'HH:mm')}</p>
                                 </div>
                               ) : '-'}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{lead.service_type || '-'}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="space-y-1">
-                              {lead.first_name || lead.last_name ? (
-                                <p className="font-medium">{`${lead.first_name || ''} ${lead.last_name || ''}`.trim()}</p>
-                              ) : null}
-                              {lead.email && (
-                                <p className="text-sm text-muted-foreground">{lead.email}</p>
-                              )}
-                              {lead.phone && <p className="text-sm text-muted-foreground">{lead.phone}</p>}
-                              {!lead.first_name && !lead.email && !lead.phone && (
-                                <span className="text-muted-foreground">No contact info</span>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm">
-                              {lead.postcode && <p className="font-medium">{lead.postcode}</p>}
-                              {(lead.bedrooms || lead.bathrooms) && (
-                                <p className="text-muted-foreground">
-                                  {lead.bedrooms && `${lead.bedrooms} bed`}
-                                  {lead.bedrooms && lead.bathrooms && ' / '}
-                                  {lead.bathrooms && `${lead.bathrooms} bath`}
-                                </p>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              {lead.calculated_quote ? (
-                                <span className="font-semibold text-green-600">£{lead.calculated_quote.toFixed(0)}</span>
-                              ) : (
-                                <span className="text-muted-foreground">-</span>
-                              )}
-                              {lead.is_first_time_customer && (
-                                <Sparkles className="h-4 w-4 text-purple-500" />
-                              )}
-                            </div>
-                            {lead.discount_amount && lead.discount_amount > 0 && (
-                              <p className="text-xs text-red-500">-£{lead.discount_amount.toFixed(0)}</p>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="space-y-1.5">
-                              {lead.furthest_step && (
-                                <div className="flex items-center gap-1.5">
-                                  <div className={`h-2 w-2 rounded-full ${
-                                    lead.furthest_step === 'quote' ? 'bg-green-500' :
-                                    lead.furthest_step === 'datetime' ? 'bg-blue-500' :
-                                    lead.furthest_step === 'extras' ? 'bg-yellow-500' :
-                                    'bg-gray-300'
-                                  }`} />
-                                  <span className="text-xs capitalize">{lead.furthest_step.replace(/_/g, ' ')}</span>
-                                </div>
-                              )}
-                              {lead.quote_email_sent && (
-                                <div className="flex items-center gap-1 text-green-600">
-                                  <Mail className="h-3 w-3" />
-                                  <span className="text-xs">Sent</span>
-                                </div>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {lead.utm_source || lead.utm_campaign ? (
-                              <div className="text-xs">
-                                {lead.utm_source && <p>{lead.utm_source}</p>}
-                                {lead.utm_campaign && <p className="text-muted-foreground">{lead.utm_campaign}</p>}
+                            </TableCell>
+                          )}
+                          
+                          {isColumnVisible('service') && (
+                            <TableCell>
+                              <Badge variant="outline">{lead.service_type || '-'}</Badge>
+                            </TableCell>
+                          )}
+                          
+                          {isColumnVisible('contact') && (
+                            <TableCell>
+                              <div className="space-y-1">
+                                {lead.first_name || lead.last_name ? (
+                                  <p className="font-medium">{`${lead.first_name || ''} ${lead.last_name || ''}`.trim()}</p>
+                                ) : null}
+                                {lead.email && (
+                                  <p className="text-sm text-muted-foreground">{lead.email}</p>
+                                )}
+                                {lead.phone && <p className="text-sm text-muted-foreground">{lead.phone}</p>}
+                                {!lead.first_name && !lead.email && !lead.phone && (
+                                  <span className="text-muted-foreground">No contact info</span>
+                                )}
                               </div>
-                            ) : (
-                              <span className="text-muted-foreground text-xs">Direct</span>
-                            )}
-                          </TableCell>
+                            </TableCell>
+                          )}
+                          
+                          {isColumnVisible('property') && (
+                            <TableCell>
+                              <div className="text-sm">
+                                {lead.postcode && <p className="font-medium">{lead.postcode}</p>}
+                                {(lead.bedrooms || lead.bathrooms) && (
+                                  <p className="text-muted-foreground">
+                                    {lead.bedrooms && `${lead.bedrooms} bed`}
+                                    {lead.bedrooms && lead.bathrooms && ' / '}
+                                    {lead.bathrooms && `${lead.bathrooms} bath`}
+                                  </p>
+                                )}
+                              </div>
+                            </TableCell>
+                          )}
+                          
+                          {isColumnVisible('quote') && (
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                {lead.calculated_quote ? (
+                                  <span className="font-semibold text-green-600">£{lead.calculated_quote.toFixed(0)}</span>
+                                ) : (
+                                  <span className="text-muted-foreground">-</span>
+                                )}
+                                {lead.is_first_time_customer && (
+                                  <Sparkles className="h-4 w-4 text-purple-500" />
+                                )}
+                              </div>
+                              {lead.discount_amount && lead.discount_amount > 0 && (
+                                <p className="text-xs text-red-500">-£{lead.discount_amount.toFixed(0)}</p>
+                              )}
+                            </TableCell>
+                          )}
+                          
+                          {isColumnVisible('progress') && (
+                            <TableCell>
+                              <div className="space-y-1.5">
+                                {lead.furthest_step && (
+                                  <div className="flex items-center gap-1.5">
+                                    <div className={`h-2 w-2 rounded-full ${
+                                      lead.furthest_step === 'quote' ? 'bg-green-500' :
+                                      lead.furthest_step === 'datetime' ? 'bg-blue-500' :
+                                      lead.furthest_step === 'extras' ? 'bg-yellow-500' :
+                                      'bg-gray-300'
+                                    }`} />
+                                    <span className="text-xs capitalize">{lead.furthest_step.replace(/_/g, ' ')}</span>
+                                  </div>
+                                )}
+                                {lead.quote_email_sent && (
+                                  <div className="flex items-center gap-1 text-green-600">
+                                    <Mail className="h-3 w-3" />
+                                    <span className="text-xs">Sent</span>
+                                  </div>
+                                )}
+                              </div>
+                            </TableCell>
+                          )}
+                          
+                          {isColumnVisible('status') && (
+                            <TableCell>
+                              <Badge 
+                                variant="outline" 
+                                className={
+                                  lead.status === 'completed' ? 'bg-green-100 text-green-700 border-green-200' :
+                                  isLeadIdle(lead) ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                                  'bg-blue-100 text-blue-700 border-blue-200'
+                                }
+                              >
+                                {lead.status === 'completed' ? 'Completed' : isLeadIdle(lead) ? 'Idle' : 'Live'}
+                              </Badge>
+                            </TableCell>
+                          )}
+                          
+                          {isColumnVisible('frequency') && (
+                            <TableCell>
+                              <span className="text-sm">{lead.frequency || '-'}</span>
+                            </TableCell>
+                          )}
+                          
+                          {isColumnVisible('cleaningType') && (
+                            <TableCell>
+                              <span className="text-sm">{lead.cleaning_type || '-'}</span>
+                            </TableCell>
+                          )}
+                          
+                          {isColumnVisible('extras') && (
+                            <TableCell>
+                              <div className="text-xs space-y-0.5">
+                                {lead.oven_cleaning && <p>Oven: {lead.oven_size}</p>}
+                                {lead.ironing_hours && lead.ironing_hours > 0 && <p>Ironing: {lead.ironing_hours}h</p>}
+                                {!lead.oven_cleaning && !lead.ironing_hours && <span className="text-muted-foreground">-</span>}
+                              </div>
+                            </TableCell>
+                          )}
+                          
+                          {isColumnVisible('source') && (
+                            <TableCell>
+                              {lead.utm_source || lead.utm_campaign ? (
+                                <div className="text-xs">
+                                  {lead.utm_source && <p>{lead.utm_source}</p>}
+                                  {lead.utm_campaign && <p className="text-muted-foreground">{lead.utm_campaign}</p>}
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground text-xs">Direct</span>
+                              )}
+                            </TableCell>
+                          )}
                         </TableRow>
                       ))
                     )}
