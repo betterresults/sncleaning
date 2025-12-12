@@ -5,20 +5,20 @@ import { useFunnelTracking } from '@/hooks/useFunnelTracking';
 
 const services = [
   {
-    id: 'airbnb-cleaning',
-    title: 'Airbnb Cleaning',
-    icon: Building,
-    available: true,
-    description: 'Turnaround cleaning for short-term rentals',
-    gradient: 'from-[#18A5A5] to-[#185166]'
-  },
-  {
     id: 'domestic-cleaning',
     title: 'Domestic Cleaning',
     icon: Home,
     available: true,
     description: 'Regular home cleaning services',
     gradient: 'from-[#185166] to-[#0f3a4a]'
+  },
+  {
+    id: 'airbnb-cleaning',
+    title: 'Airbnb Cleaning',
+    icon: Building,
+    available: true,
+    description: 'Turnaround cleaning for short-term rentals',
+    gradient: 'from-[#18A5A5] to-[#185166]'
   },
   {
     id: 'end-of-tenancy',
