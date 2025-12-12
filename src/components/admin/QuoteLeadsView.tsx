@@ -658,11 +658,14 @@ const QuoteLeadsView = () => {
                                 variant="outline" 
                                 className={
                                   lead.status === 'completed' ? 'bg-green-100 text-green-700 border-green-200' :
+                                  lead.status === 'left' ? 'bg-red-100 text-red-700 border-red-200' :
                                   isLeadIdle(lead) ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
                                   'bg-blue-100 text-blue-700 border-blue-200'
                                 }
                               >
-                                {lead.status === 'completed' ? 'Completed' : isLeadIdle(lead) ? 'Idle' : 'Live'}
+                                {lead.status === 'completed' ? 'Completed' : 
+                                 lead.status === 'left' ? 'Left' :
+                                 isLeadIdle(lead) ? 'Idle' : 'Live'}
                               </Badge>
                             </TableCell>
                           )}
