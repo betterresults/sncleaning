@@ -188,6 +188,10 @@ export const useDomesticHardcodedCalculations = (bookingData: DomesticBookingDat
     // SHORT NOTICE CHARGE
     const shortNoticeCharge = bookingData.shortNoticeCharge || 0;
 
+    // REGULAR CLEANING DISCOUNT (15% for recurring bookings)
+    const isRegularCleaning = bookingData.serviceFrequency && bookingData.serviceFrequency !== 'onetime';
+    const regularCleaningDiscountPercent = isRegularCleaning ? 15 : 0;
+
     // SCHEDULING MODIFIERS
     let additionalCharge = 0;
     let discount = 0;
@@ -248,7 +252,11 @@ export const useDomesticHardcodedCalculations = (bookingData: DomesticBookingDat
       }
     }
 
-    const totalCost = cleaningCost + shortNoticeCharge + equipmentOneTimeCost + ovenCleaningCost + additionalCharge - discount;
+    // Calculate regular cleaning discount
+    const subtotalBeforeRegularDiscount = cleaningCost + shortNoticeCharge + equipmentOneTimeCost + ovenCleaningCost + additionalCharge - discount;
+    const regularCleaningDiscountAmount = isRegularCleaning ? (cleaningCost * regularCleaningDiscountPercent) / 100 : 0;
+    
+    const totalCost = subtotalBeforeRegularDiscount - regularCleaningDiscountAmount;
 
     return {
       baseTime,
@@ -264,6 +272,9 @@ export const useDomesticHardcodedCalculations = (bookingData: DomesticBookingDat
       modifierDetails,
       totalCost,
       isUserOverride,
+      regularCleaningDiscountPercent,
+      regularCleaningDiscountAmount,
+      isRegularCleaning,
     };
   }, [
     bookingData.propertyType,
