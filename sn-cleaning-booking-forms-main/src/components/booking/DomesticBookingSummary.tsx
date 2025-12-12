@@ -120,9 +120,9 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
       total -= data.adminDiscountAmount;
     }
     
-    // Apply first-time customer 10% discount
+    // Apply new client 15% discount
     if (data.isFirstTimeCustomer) {
-      total = total * 0.9;
+      total = total * 0.85;
     }
     
     return Math.max(0, total);
@@ -477,10 +477,10 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
             <div className="flex items-center justify-between p-3 bg-green-50 rounded-xl border border-green-200">
               <div className="flex items-center gap-2">
                 <Tag className="w-4 h-4 text-green-600" />
-                <span className="text-sm font-medium text-green-700">First cleaning 10% off</span>
+                <span className="text-sm font-medium text-green-700">New clients 15% off</span>
               </div>
               <span className="text-sm font-bold text-green-600">
-                -£{(calculateSubtotalBeforeFirstTimeDiscount() * 0.1).toFixed(2)}
+                -£{(calculateSubtotalBeforeFirstTimeDiscount() * 0.15).toFixed(2)}
               </span>
             </div>
           )}
@@ -516,7 +516,7 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
                 </span>
                 <span className="text-lg font-bold text-foreground">
                   £{(() => {
-                    // Use subtotal before first-time discount for recurring (discount only applies to first booking)
+                    // Start with subtotal before first-time discount
                     let recurringTotal = calculateSubtotalBeforeFirstTimeDiscount();
                     if (data.ovenCleaningScope === 'this-booking' && calculations.ovenCleaningCost > 0) {
                       recurringTotal -= calculations.ovenCleaningCost;
@@ -528,6 +528,10 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
                     // Exclude short notice charge from recurring
                     if (calculations.shortNoticeCharge > 0 && !(isAdminMode && data.adminRemoveShortNoticeCharge)) {
                       recurringTotal -= calculations.shortNoticeCharge;
+                    }
+                    // Apply new client 15% discount to recurring as well
+                    if (data.isFirstTimeCustomer) {
+                      recurringTotal = recurringTotal * 0.85;
                     }
                     // Multiply by days per week if more than 1
                     if (data.serviceFrequency === 'weekly' && data.daysPerWeek > 1) {
