@@ -396,6 +396,13 @@ const DomesticBookingForm: React.FC = () => {
     window.history.pushState({ booking: true }, '');
     
     const handlePopState = (e: PopStateEvent) => {
+      const emailAlreadySent = sessionStorage.getItem('quote_email_sent') === 'true';
+      
+      // If quote was already sent, allow navigation
+      if (emailAlreadySent) {
+        return;
+      }
+      
       if (bookingData.totalCost > 0) {
         // Prevent immediate navigation
         window.history.pushState({ booking: true }, '');
