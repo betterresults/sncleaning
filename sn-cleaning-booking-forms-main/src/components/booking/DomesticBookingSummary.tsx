@@ -113,12 +113,6 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
     total += additionalCharges - discounts;
     const subtotal = total;
 
-    // Apply regular cleaning 15% discount (for recurring bookings)
-    if (calculations.isRegularCleaning) {
-      const cleaningCostForDiscount = (calculations.totalHours || 0) * effectiveRate;
-      total -= (cleaningCostForDiscount * 15) / 100;
-    }
-
     if (isAdminMode && data.adminDiscountPercentage) {
       total -= subtotal * data.adminDiscountPercentage / 100;
     }
@@ -159,12 +153,6 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
     
     total += additionalCharges - discounts;
     const subtotal = total;
-
-    // Apply regular cleaning 15% discount (for recurring bookings)
-    if (calculations.isRegularCleaning) {
-      const cleaningCostForDiscount = (calculations.totalHours || 0) * effectiveRate;
-      total -= (cleaningCostForDiscount * 15) / 100;
-    }
 
     if (isAdminMode && data.adminDiscountPercentage) {
       total -= subtotal * data.adminDiscountPercentage / 100;
@@ -328,28 +316,6 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
             </span>
           </div>
         ))}
-      
-      {/* Regular cleaning 15% discount display */}
-      {calculations.isRegularCleaning && (
-        <div className="flex justify-between items-center text-green-600">
-          <div className="flex items-center gap-2">
-            <span>Regular cleaning discount (15%)</span>
-            <Popover>
-              <PopoverTrigger asChild>
-                <button type="button" aria-label="Regular cleaning discount info" className="focus:outline-none">
-                  <Info className="w-4 h-4 cursor-pointer" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto max-w-xs">
-                <p className="text-sm font-medium">15% discount applied to all recurring cleaning bookings</p>
-              </PopoverContent>
-            </Popover>
-          </div>
-          <span className="font-semibold">
-            -£{(((calculations.totalHours || 0) * (data.adminHourlyRateOverride !== undefined ? data.adminHourlyRateOverride : calculations.hourlyRate) * 15) / 100).toFixed(2)}
-          </span>
-        </div>
-      )}
       
       {isAdminMode && data.adminDiscountPercentage && data.adminDiscountPercentage > 0 && (
         <div className="flex justify-between items-center text-red-600">
