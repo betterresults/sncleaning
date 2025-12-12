@@ -499,12 +499,19 @@ const QuoteLeadsView = () => {
                             />
                           </TableCell>
                           <TableCell>
-                            {lead.created_at ? (
-                              <div className="text-sm">
-                                <p className="font-medium">{format(new Date(lead.created_at), 'dd MMM')}</p>
-                                <p className="text-muted-foreground text-xs">{format(new Date(lead.created_at), 'HH:mm')}</p>
-                              </div>
-                            ) : '-'}
+                            <div className="flex items-start gap-2">
+                              <div className={`mt-1 h-2 w-2 rounded-full flex-shrink-0 ${
+                                lead.status === 'completed' ? 'bg-green-500' :
+                                isLeadIdle(lead) ? 'bg-yellow-500' :
+                                'bg-blue-500 animate-pulse'
+                              }`} title={lead.status === 'completed' ? 'Completed' : isLeadIdle(lead) ? 'Idle' : 'Live'} />
+                              {lead.created_at ? (
+                                <div className="text-sm">
+                                  <p className="font-medium">{format(new Date(lead.created_at), 'dd MMM')}</p>
+                                  <p className="text-muted-foreground text-xs">{format(new Date(lead.created_at), 'HH:mm')}</p>
+                                </div>
+                              ) : '-'}
+                            </div>
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline">{lead.service_type || '-'}</Badge>
