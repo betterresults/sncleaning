@@ -56,8 +56,8 @@ const handler = async (req: Request): Promise<Response> => {
         .replace(/\{\{amount\}\}/g, amount.toFixed(2))
         .replace(/\{\{booking_id\}\}/g, bookingId.toString());
     } else {
-      // Fallback message
-      message = `Hi ${customerName}, thank you for booking with SN Cleaning Services. To secure your booking for ${bookingDate}, please transfer £${amount.toFixed(2)} at least 48 hours before your appointment. Bank Details: Sort Code: 20-00-00, Account: 12345678, Ref: SN${bookingId}. Thank you!`;
+      // Fallback message - simplified without redundant intro
+      message = `Hi ${customerName}, to secure your booking for ${bookingDate}, please transfer £${amount.toFixed(2)} at least 48 hours before your appointment. Bank Details: Sort Code: 20-00-00, Account: 12345678, Ref: ${bookingId}. Thank you!`;
     }
 
     console.log('Bank transfer SMS message:', message);
