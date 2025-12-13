@@ -509,7 +509,8 @@ const DomesticBookingForm: React.FC = () => {
               </Button>
             )}
             <h1 className={`text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700 ${!isAdminMode && bookingData.customerId ? '' : 'mx-auto'}`}>
-              Domestic Cleaning Booking Form
+              <span className="sm:hidden">Domestic Cleaning</span>
+              <span className="hidden sm:inline">Domestic Cleaning Booking Form</span>
             </h1>
             {!isAdminMode && bookingData.customerId && <div className="w-[140px]" />}
           </div>
