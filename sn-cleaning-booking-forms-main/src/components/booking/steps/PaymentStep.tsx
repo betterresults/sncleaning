@@ -521,11 +521,7 @@ useEffect(() => {
           // Don't fail the booking if SMS fails
         }
 
-        toast({
-          title: "Booking Created!",
-          description: "You will receive an SMS with bank transfer details shortly."
-        });
-
+        // Navigate to confirmation page (no toast needed as confirmation page shows the details)
         navigate('/booking-confirmation', { state: { bookingId: result.bookingId, paymentMethod: 'bank-transfer' } });
         return;
       } catch (error: any) {
