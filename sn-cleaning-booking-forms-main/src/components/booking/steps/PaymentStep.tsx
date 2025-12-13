@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '../../../../phone-input';
 import { BookingData } from '../AirbnbBookingForm';
-import { CreditCard, Shield, Loader2, AlertTriangle } from 'lucide-react';
+import { CreditCard, Shield, Loader2, AlertTriangle, Building2, Clock } from 'lucide-react';
 import { useAirbnbBookingSubmit } from '@/hooks/useAirbnbBookingSubmit';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -97,6 +97,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   const [adminCustomerPaymentMethods, setAdminCustomerPaymentMethods] = useState<any[]>([]);
   const [editDetails, setEditDetails] = useState(false);
   const [cleaners, setCleaners] = useState<any[]>([]);
+  const [paymentType, setPaymentType] = useState<'card' | 'bank-transfer'>('card');
   
 // Use admin-selected customerId or logged-in/selected customerId
 const { selectedCustomerId } = useAdminCustomer();
@@ -243,6 +244,9 @@ useEffect(() => {
     const hoursUntilBooking = (bookingDateTime.getTime() - Date.now()) / (1000 * 60 * 60);
     return hoursUntilBooking <= 48;
   }, [data.selectedDate, data.selectedTime]);
+
+  // Bank transfer is only allowed if booking is more than 48 hours away
+  const canUseBankTransfer = !isUrgentBooking && !isAdminMode;
 
   const validateEmail = (email: string) => {
     if (!email) {
@@ -428,6 +432,101 @@ useEffect(() => {
         } else {
           navigate('/booking-confirmation', { state: { bookingId: result.bookingId } });
         }
+        return;
+      } catch (error: any) {
+        console.error('Booking error:', error);
+        toast({
+          title: "Booking Error",
+          description: error.message || "Failed to create booking",
+          variant: "destructive"
+        });
+        setProcessing(false);
+        return;
+      }
+    }
+
+    // Bank transfer mode - create booking and send SMS with bank details
+    if (paymentType === 'bank-transfer' && canUseBankTransfer) {
+      try {
+        setProcessing(true);
+        
+        const result = await submitBooking({
+          customerId: data.customerId,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          phone: data.phone,
+          addressId: data.addressId,
+          houseNumber: data.houseNumber,
+          street: data.street,
+          postcode: data.postcode,
+          city: data.city,
+          propertyType: data.propertyType,
+          bedrooms: data.bedrooms,
+          bathrooms: data.bathrooms,
+          toilets: data.toilets,
+          numberOfFloors: data.numberOfFloors,
+          additionalRooms: data.additionalRooms,
+          propertyFeatures: data.propertyFeatures,
+          serviceType: data.serviceType,
+          alreadyCleaned: data.alreadyCleaned,
+          ovenType: data.ovenType,
+          cleaningProducts: data.cleaningProducts?.join(',') || '',
+          equipmentArrangement: data.equipmentArrangement,
+          equipmentStorageConfirmed: data.equipmentStorageConfirmed,
+          linensHandling: data.linensHandling,
+          needsIroning: data.needsIroning,
+          ironingHours: data.ironingHours,
+          linenPackages: data.linenPackages,
+          extraHours: data.extraHours,
+          selectedDate: data.selectedDate,
+          selectedTime: data.selectedTime,
+          flexibility: data.flexibility,
+          sameDayTurnaround: data.sameDayTurnaround,
+          shortNoticeCharge: data.shortNoticeCharge,
+          propertyAccess: data.propertyAccess,
+          accessNotes: data.accessNotes,
+          totalCost: data.totalCost,
+          estimatedHours: data.estimatedHours,
+          totalHours: data.totalHours,
+          hourlyRate: data.hourlyRate,
+          notes: data.notes,
+          additionalDetails: data,
+          paymentMethod: 'Bank Transfer'
+        }, true); // Skip payment auth for bank transfer
+
+        if (!result.success || !result.bookingId) {
+          throw new Error('Failed to create booking');
+        }
+
+        // Send SMS with bank transfer details
+        try {
+          const bookingDate = data.selectedDate 
+            ? new Date(data.selectedDate).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+            : 'your scheduled date';
+          
+          await supabase.functions.invoke('send-bank-transfer-sms', {
+            body: {
+              bookingId: result.bookingId,
+              phoneNumber: data.phone,
+              customerName: data.firstName,
+              amount: data.totalCost,
+              bookingDate: bookingDate
+            }
+          });
+          
+          console.log('Bank transfer SMS sent successfully');
+        } catch (smsError) {
+          console.error('Failed to send bank transfer SMS:', smsError);
+          // Don't fail the booking if SMS fails
+        }
+
+        toast({
+          title: "Booking Created!",
+          description: "You will receive an SMS with bank transfer details shortly."
+        });
+
+        navigate('/booking-confirmation', { state: { bookingId: result.bookingId, paymentMethod: 'bank-transfer' } });
         return;
       } catch (error: any) {
         console.error('Booking error:', error);
@@ -677,6 +776,9 @@ useEffect(() => {
   };
 
   const canContinue = data.firstName && data.lastName && data.email && data.phone && data.street && data.postcode;
+  
+  // Check if payment requirements are met
+  const paymentRequirementsMet = paymentType === 'bank-transfer' || hasPaymentMethods || adminTestMode || (stripe && cardComplete);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1104,8 +1206,83 @@ useEffect(() => {
             Payment Details
           </h3>
           
+          {/* Payment Type Selection - Only show if bank transfer is available */}
+          {canUseBankTransfer && (
+            <div className="space-y-3 mb-6">
+              <p className="text-sm font-medium text-gray-700">Choose payment method:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPaymentType('card')}
+                  className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
+                    paymentType === 'card' 
+                      ? 'border-primary bg-primary/5' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    paymentType === 'card' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    <CreditCard className="h-5 w-5" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-semibold text-gray-900">Pay by Card</p>
+                    <p className="text-xs text-gray-500">Secure card payment</p>
+                  </div>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => setPaymentType('bank-transfer')}
+                  className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
+                    paymentType === 'bank-transfer' 
+                      ? 'border-primary bg-primary/5' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    paymentType === 'bank-transfer' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    <Building2 className="h-5 w-5" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-semibold text-gray-900">Bank Transfer</p>
+                    <p className="text-xs text-gray-500">Pay via bank</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
+          
           <div className="space-y-4">
-            {hasPaymentMethods ? (
+            {/* Bank Transfer Selected */}
+            {paymentType === 'bank-transfer' && canUseBankTransfer ? (
+              <div className="rounded-2xl border-2 border-amber-200 bg-amber-50 p-6">
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                    <Clock className="h-6 w-6 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-amber-900">Bank Transfer Payment</p>
+                    <p className="text-sm text-amber-700 mt-1">
+                      Payment must be received at least <strong>48 hours before</strong> your booking date to secure your appointment.
+                    </p>
+                  </div>
+                </div>
+                <div className="bg-white rounded-lg p-4 border border-amber-200">
+                  <p className="text-sm text-gray-700 mb-2">
+                    📲 You will receive an SMS with our bank account details after completing your booking.
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Please use your booking reference number when making the transfer so we can match your payment.
+                  </p>
+                </div>
+                <div className="mt-4 flex items-center gap-2 text-sm text-amber-700">
+                  <Shield className="h-4 w-4" />
+                  <span>Your booking will be confirmed once payment is received</span>
+                </div>
+              </div>
+            ) : hasPaymentMethods ? (
               // Customer has saved payment method (may be limited info in view-as-client)
               <div className="space-y-4">
                 <div className="rounded-2xl border-2 border-primary/20 bg-gradient-to-br from-white to-primary/5 p-6 shadow-lg">
@@ -1140,7 +1317,7 @@ useEffect(() => {
                   Need to use a different card? You can update it during checkout.
                 </p>
               </div>
-            ) : (
+            ) : paymentType === 'card' ? (
               // No saved payment method - show CardElement directly
               <div className="rounded-2xl border-2 border-gray-200 bg-white p-8">
                 <div className="space-y-6">
@@ -1194,7 +1371,7 @@ useEffect(() => {
                   </div>
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       )}
@@ -1213,7 +1390,7 @@ useEffect(() => {
             processing ||
             submitting ||
             !canContinue ||
-            (!hasPaymentMethods && !adminTestMode && (!stripe || !cardComplete))
+            !paymentRequirementsMet
           }
         >
           {(processing || submitting) ? (
@@ -1223,6 +1400,8 @@ useEffect(() => {
             </>
           ) : adminTestMode ? (
             'Create Test Booking (No Payment)'
+          ) : paymentType === 'bank-transfer' ? (
+            'Complete Booking (Bank Transfer)'
           ) : customerId && defaultPaymentMethod && isUrgentBooking ? (
             `Pay £${data.totalCost.toFixed(2)} & Confirm`
           ) : customerId && defaultPaymentMethod ? (
