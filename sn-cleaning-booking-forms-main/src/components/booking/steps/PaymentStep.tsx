@@ -245,8 +245,8 @@ useEffect(() => {
     return hoursUntilBooking <= 48;
   }, [data.selectedDate, data.selectedTime]);
 
-  // Bank transfer is only allowed if booking is more than 48 hours away
-  const canUseBankTransfer = !isUrgentBooking && !isAdminMode;
+  // Bank transfer is always available for non-admin users
+  const canUseBankTransfer = !isAdminMode;
 
   const validateEmail = (email: string) => {
     if (!email) {
@@ -1257,19 +1257,23 @@ useEffect(() => {
           <div className="space-y-4">
             {/* Bank Transfer Selected */}
             {paymentType === 'bank-transfer' && canUseBankTransfer ? (
-              <div className="rounded-2xl border-2 border-amber-200 bg-amber-50 p-6">
+              <div className={`rounded-2xl border-2 p-6 ${isUrgentBooking ? 'border-orange-300 bg-orange-50' : 'border-amber-200 bg-amber-50'}`}>
                 <div className="flex items-start gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-                    <Clock className="h-6 w-6 text-amber-600" />
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${isUrgentBooking ? 'bg-orange-100' : 'bg-amber-100'}`}>
+                    <Clock className={`h-6 w-6 ${isUrgentBooking ? 'text-orange-600' : 'text-amber-600'}`} />
                   </div>
                   <div>
-                    <p className="text-lg font-bold text-amber-900">Bank Transfer Payment</p>
-                    <p className="text-sm text-amber-700 mt-1">
-                      Payment must be received at least <strong>48 hours before</strong> your booking date to secure your appointment.
+                    <p className={`text-lg font-bold ${isUrgentBooking ? 'text-orange-900' : 'text-amber-900'}`}>Bank Transfer Payment</p>
+                    <p className={`text-sm mt-1 ${isUrgentBooking ? 'text-orange-700' : 'text-amber-700'}`}>
+                      {isUrgentBooking ? (
+                        <>Payment must be made <strong>immediately</strong> to confirm your booking as it's within 48 hours.</>
+                      ) : (
+                        <>Payment must be received at least <strong>48 hours before</strong> your booking date to secure your appointment.</>
+                      )}
                     </p>
                   </div>
                 </div>
-                <div className="bg-white rounded-lg p-4 border border-amber-200">
+                <div className={`bg-white rounded-lg p-4 border ${isUrgentBooking ? 'border-orange-200' : 'border-amber-200'}`}>
                   <p className="text-sm text-gray-700 mb-2">
                     📲 You will receive an SMS with our bank account details after completing your booking.
                   </p>
@@ -1277,7 +1281,7 @@ useEffect(() => {
                     Please use your booking reference number when making the transfer so we can match your payment.
                   </p>
                 </div>
-                <div className="mt-4 flex items-center gap-2 text-sm text-amber-700">
+                <div className={`mt-4 flex items-center gap-2 text-sm ${isUrgentBooking ? 'text-orange-700' : 'text-amber-700'}`}>
                   <Shield className="h-4 w-4" />
                   <span>Your booking will be confirmed once payment is received</span>
                 </div>
