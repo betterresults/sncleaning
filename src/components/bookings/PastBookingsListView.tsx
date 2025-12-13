@@ -15,7 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { PastBookingsFilters } from '@/components/bookings/PastBookingsFilters';
 
 import EditPastBookingDialog from '../dashboard/EditPastBookingDialog';
-import AssignCleanerDialog from '../dashboard/AssignCleanerDialog';
+import AssignCleanerToPastBookingDialog from '../dashboard/AssignCleanerToPastBookingDialog';
 import DuplicateBookingDialog from '../dashboard/DuplicateBookingDialog';
 import ConvertToRecurringDialog from '../dashboard/ConvertToRecurringDialog';
 import ManualEmailDialog from '../dashboard/ManualEmailDialog';
@@ -678,27 +678,33 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
                 </Badge>
               </div>
 
-              {/* Cleaner Info */}
+              {/* Cleaner Info - Clickable */}
               <div className="py-4">
-                {!isUnsigned ? (
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-gray-400 flex items-center justify-center flex-shrink-0">
-                        <User className="w-4 h-4 text-white" />
+                <button
+                  onClick={() => handleAssignCleaner(booking.id)}
+                  className="w-full text-left hover:bg-accent/50 rounded-lg p-2 -m-2 transition-colors cursor-pointer"
+                  title="Click to assign/change cleaner and pay"
+                >
+                  {!isUnsigned ? (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-gray-400 flex items-center justify-center flex-shrink-0">
+                          <User className="w-4 h-4 text-white" />
+                        </div>
+                        <span className="font-medium truncate hover:text-primary">{cleanerName}</span>
                       </div>
-                      <span className="font-medium truncate">{cleanerName}</span>
+                      {booking.cleaner_pay && (
+                        <p className="text-sm font-medium text-muted-foreground pl-9">
+                          £{booking.cleaner_pay.toFixed(2)}
+                        </p>
+                      )}
                     </div>
-                    {booking.cleaner_pay && (
-                      <p className="text-sm font-medium text-muted-foreground pl-9">
-                        £{booking.cleaner_pay.toFixed(2)}
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <Badge variant="destructive" className="text-sm font-medium px-3 py-1.5">
-                    Unassigned
-                  </Badge>
-                )}
+                  ) : (
+                    <Badge variant="destructive" className="text-sm font-medium px-3 py-1.5">
+                      Unassigned
+                    </Badge>
+                  )}
+                </button>
               </div>
 
               {/* Payment Status & Total Cost */}
@@ -906,18 +912,29 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
                   {serviceLabel} - {cleaningLabel}
                 </Badge>
                 
-                {!isUnsigned ? (
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="w-6 h-6 rounded-full bg-gray-400 flex items-center justify-center">
-                      <User className="w-3 h-3 text-white" />
+                <button
+                  onClick={() => handleAssignCleaner(booking.id)}
+                  className="hover:bg-accent/50 rounded-lg px-2 py-1 transition-colors cursor-pointer"
+                  title="Click to assign/change cleaner and pay"
+                >
+                  {!isUnsigned ? (
+                    <div className="flex items-center gap-2 text-sm">
+                      <div className="w-6 h-6 rounded-full bg-gray-400 flex items-center justify-center">
+                        <User className="w-3 h-3 text-white" />
+                      </div>
+                      <span className="font-medium hover:text-primary">{cleanerName}</span>
+                      {booking.cleaner_pay && (
+                        <span className="text-xs text-muted-foreground">
+                          £{booking.cleaner_pay.toFixed(2)}
+                        </span>
+                      )}
                     </div>
-                    <span className="font-medium">{cleanerName}</span>
-                  </div>
-                ) : (
-                  <Badge variant="destructive" className="text-xs px-2 py-1">
-                    Unassigned
-                  </Badge>
-                )}
+                  ) : (
+                    <Badge variant="destructive" className="text-xs px-2 py-1">
+                      Unassigned
+                    </Badge>
+                  )}
+                </button>
               </div>
 
               {/* Row 4: Payment & Cost */}
@@ -978,8 +995,8 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
         onBookingUpdated={fetchData}
       />
 
-      <AssignCleanerDialog
-        bookingId={selectedBookingId as any}
+      <AssignCleanerToPastBookingDialog
+        bookingId={selectedBookingId}
         open={assignCleanerOpen}
         onOpenChange={setAssignCleanerOpen}
         onSuccess={fetchData}
