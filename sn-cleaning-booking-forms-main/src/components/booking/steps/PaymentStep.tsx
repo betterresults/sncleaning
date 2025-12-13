@@ -522,6 +522,7 @@ useEffect(() => {
         }
 
         // Navigate to confirmation page (no toast needed as confirmation page shows the details)
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         navigate('/booking-confirmation', { state: { bookingId: result.bookingId, paymentMethod: 'bank-transfer' } });
         return;
       } catch (error: any) {
