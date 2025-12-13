@@ -1278,7 +1278,7 @@ useEffect(() => {
                     📲 You will receive an SMS with our bank account details after completing your booking.
                   </p>
                   <p className="text-sm text-gray-600">
-                    Please use your booking reference number when making the transfer so we can match your payment.
+                    Please use your booking reference or postcode when making the transfer so we can match your payment.
                   </p>
                 </div>
                 <div className={`mt-4 flex items-center gap-2 text-sm ${isUrgentBooking ? 'text-orange-700' : 'text-amber-700'}`}>
@@ -1405,7 +1405,7 @@ useEffect(() => {
           ) : adminTestMode ? (
             'Create Test Booking (No Payment)'
           ) : paymentType === 'bank-transfer' ? (
-            'Complete Booking (Bank Transfer)'
+            'Complete Booking'
           ) : customerId && defaultPaymentMethod && isUrgentBooking ? (
             `Pay £${data.totalCost.toFixed(2)} & Confirm`
           ) : customerId && defaultPaymentMethod ? (
