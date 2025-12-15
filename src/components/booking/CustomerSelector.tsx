@@ -1,17 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Plus, Check, ChevronsUpDown, X } from 'lucide-react';
+import { Plus, Check, ChevronsUpDown, X, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 import { cn } from '@/lib/utils';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
 import {
   Popover,
   PopoverContent,
@@ -39,6 +33,7 @@ const CustomerSelector = ({ onCustomerSelect, selectedCustomer: externalSelected
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(externalSelectedCustomer || null);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchCustomers = async () => {
     try {
@@ -70,9 +65,32 @@ const CustomerSelector = ({ onCustomerSelect, selectedCustomer: externalSelected
     setSelectedCustomer(externalSelectedCustomer || null);
   }, [externalSelectedCustomer]);
 
+  // Filter customers based on search query
+  const filteredCustomers = useMemo(() => {
+    if (!searchQuery.trim()) return customers;
+    
+    const query = searchQuery.toLowerCase().trim();
+    return customers.filter((customer) => {
+      const firstName = (customer.first_name || '').toLowerCase();
+      const lastName = (customer.last_name || '').toLowerCase();
+      const email = (customer.email || '').toLowerCase();
+      const phone = (customer.phone || '').toLowerCase();
+      const fullName = `${firstName} ${lastName}`;
+      
+      return (
+        firstName.includes(query) ||
+        lastName.includes(query) ||
+        fullName.includes(query) ||
+        email.includes(query) ||
+        phone.includes(query)
+      );
+    });
+  }, [customers, searchQuery]);
+
   const handleCustomerSelect = (customer: Customer) => {
     setSelectedCustomer(customer);
     setOpen(false);
+    setSearchQuery('');
     onCustomerSelect(customer);
   };
 
@@ -82,13 +100,16 @@ const CustomerSelector = ({ onCustomerSelect, selectedCustomer: externalSelected
   };
 
   const getCustomerDisplayText = (customer: Customer) => {
-    return `${customer.first_name} ${customer.last_name} - ${customer.email}`;
+    return `${customer.first_name || ''} ${customer.last_name || ''} - ${customer.email || ''}`.trim();
   };
 
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
-        <Popover open={open} onOpenChange={setOpen} modal>
+        <Popover open={open} onOpenChange={(isOpen) => {
+          setOpen(isOpen);
+          if (!isOpen) setSearchQuery('');
+        }} modal>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
@@ -103,42 +124,53 @@ const CustomerSelector = ({ onCustomerSelect, selectedCustomer: externalSelected
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-[520px] p-0 bg-white pointer-events-auto z-50" side="bottom" align="start">
-            <Command className="bg-white">
-              <CommandInput placeholder="Search customers by name or email..." className="h-12" />
-              <CommandList className="max-h-72 overflow-y-auto pointer-events-auto">
-                <CommandEmpty>No customers found.</CommandEmpty>
-                <CommandGroup>
-                  {customers.map((customer) => (
-                    <CommandItem
+            <div className="p-3 border-b">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search by name, email or phone..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 h-10"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <ScrollArea className="h-72">
+              {filteredCustomers.length === 0 ? (
+                <div className="py-6 text-center text-sm text-gray-500">
+                  No customers found.
+                </div>
+              ) : (
+                <div className="p-1">
+                  {filteredCustomers.map((customer) => (
+                    <div
                       key={customer.id}
-                      value={getCustomerDisplayText(customer)}
-                      onSelect={() => handleCustomerSelect(customer)}
-                      className="cursor-pointer hover:bg-gray-100 py-3"
+                      onClick={() => handleCustomerSelect(customer)}
+                      className="flex items-center gap-2 px-3 py-3 cursor-pointer hover:bg-gray-100 rounded-md"
                     >
                       <Check
                         className={cn(
-                          "mr-2 h-4 w-4",
+                          "h-4 w-4 flex-shrink-0",
                           selectedCustomer?.id === customer.id ? "opacity-100" : "opacity-0"
                         )}
                       />
-                      <div className="flex flex-col">
-                        <span className="font-medium">
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-medium truncate">
                           {customer.first_name} {customer.last_name}
                         </span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-gray-500 truncate">
                           {customer.email}
-                          {customer.client_type && (
-                            <span className="ml-2 px-1 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">
-                              {customer.client_type}
-                            </span>
+                          {customer.phone && (
+                            <span className="ml-2">• {customer.phone}</span>
                           )}
                         </span>
                       </div>
-                    </CommandItem>
+                    </div>
                   ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
+                </div>
+              )}
+            </ScrollArea>
           </PopoverContent>
         </Popover>
         
