@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Plus, Check, ChevronsUpDown, Search } from 'lucide-react';
+import { Plus, Check, ChevronsUpDown } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import {
@@ -17,6 +17,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import CreateCustomerDialog from './CreateCustomerDialog';
 
 interface Customer {
   id: number;
@@ -137,18 +138,16 @@ const CustomerSelector = ({ onCustomerSelect }: CustomerSelectorProps) => {
           </PopoverContent>
         </Popover>
         
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="h-16 w-16 rounded-2xl border-2 border-gray-200 hover:bg-gray-50"
-          onClick={() => {
-            setSelectedCustomer(null);
-            onCustomerSelect(null);
-          }}
-        >
-          <Plus className="h-5 w-5" />
-        </Button>
+        <CreateCustomerDialog onCustomerCreated={handleCustomerCreated}>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-16 w-16 rounded-2xl border-2 border-gray-200 hover:bg-gray-50"
+          >
+            <Plus className="h-5 w-5" />
+          </Button>
+        </CreateCustomerDialog>
       </div>
     </div>
   );
