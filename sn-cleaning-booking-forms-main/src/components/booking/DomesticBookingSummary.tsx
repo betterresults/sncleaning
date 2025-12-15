@@ -101,16 +101,17 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
         total -= calculations.shortNoticeCharge || 0;
       }
       
+      // Apply new client 10% discount FIRST (before admin adjustments)
+      if (data.isFirstTimeCustomer) {
+        total = total * 0.90;
+      }
+      
+      // Apply admin discounts AFTER the first-time discount (so admin sees £X and subtracts £Y to get £X-Y)
       if (isAdminMode && data.adminDiscountPercentage) {
         total -= total * data.adminDiscountPercentage / 100;
       }
       if (isAdminMode && data.adminDiscountAmount) {
         total -= data.adminDiscountAmount;
-      }
-      
-      // Apply new client 10% discount
-      if (data.isFirstTimeCustomer) {
-        total = total * 0.90;
       }
       
       return Math.max(0, total);
@@ -134,26 +135,31 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
       .reduce((sum: number, m: any) => sum + m.amount, 0) || 0;
     
     total += additionalCharges - discounts;
-    const subtotal = total;
-
+    
+    // Apply new client 10% discount FIRST (before admin adjustments)
+    if (data.isFirstTimeCustomer) {
+      total = total * 0.90;
+    }
+    
+    // Apply admin discounts AFTER the first-time discount (so admin sees £X and subtracts £Y to get £X-Y)
+    const subtotalAfterFirstTime = total;
     if (isAdminMode && data.adminDiscountPercentage) {
-      total -= subtotal * data.adminDiscountPercentage / 100;
+      total -= subtotalAfterFirstTime * data.adminDiscountPercentage / 100;
     }
     if (isAdminMode && data.adminDiscountAmount) {
       total -= data.adminDiscountAmount;
-    }
-    
-    // Apply new client 10% discount
-    if (data.isFirstTimeCustomer) {
-      total = total * 0.90;
     }
     
     return Math.max(0, total);
   };
   
   // Calculate subtotal before first-time discount (for display purposes)
+  // This shows the price BEFORE the 10% first-time customer discount
+  // Admin discounts are applied AFTER first-time discount, so they're not included here
   const calculateSubtotalBeforeFirstTimeDiscount = () => {
     if (isAdminMode && data.adminTotalCostOverride !== undefined && data.adminTotalCostOverride !== null) {
+      // When total is overridden, we can't show a meaningful "before discount" price
+      // Return the override value (the 10% banner won't show in this case anyway due to override)
       return data.adminTotalCostOverride;
     }
     
@@ -165,13 +171,7 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
         total -= calculations.shortNoticeCharge || 0;
       }
       
-      if (isAdminMode && data.adminDiscountPercentage) {
-        total -= total * data.adminDiscountPercentage / 100;
-      }
-      if (isAdminMode && data.adminDiscountAmount) {
-        total -= data.adminDiscountAmount;
-      }
-      
+      // Don't include admin discounts here - they're applied after first-time discount
       return Math.max(0, total);
     }
     
@@ -193,15 +193,8 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
       .reduce((sum: number, m: any) => sum + m.amount, 0) || 0;
     
     total += additionalCharges - discounts;
-    const subtotal = total;
-
-    if (isAdminMode && data.adminDiscountPercentage) {
-      total -= subtotal * data.adminDiscountPercentage / 100;
-    }
-    if (isAdminMode && data.adminDiscountAmount) {
-      total -= data.adminDiscountAmount;
-    }
     
+    // Don't include admin discounts here - they're applied after first-time discount
     return Math.max(0, total);
   };
 
