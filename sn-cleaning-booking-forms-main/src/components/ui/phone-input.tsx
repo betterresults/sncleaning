@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Phone } from 'lucide-react';
 import { z } from 'zod';
@@ -14,19 +14,36 @@ interface PhoneInputProps {
   className?: string;
 }
 
+const parsePhoneToDisplay = (value: string): string => {
+  if (!value) return '';
+  // Remove spaces and non-digits first
+  let cleaned = value.replace(/\s/g, '');
+  // If it starts with +44, remove it
+  if (cleaned.startsWith('+44')) {
+    cleaned = cleaned.substring(3);
+  }
+  // Remove any remaining non-digits
+  cleaned = cleaned.replace(/\D/g, '');
+  // Remove leading zeros (convert 07xxx to 7xxx)
+  cleaned = cleaned.replace(/^0+/, '');
+  // Limit to 10 digits
+  return cleaned.substring(0, 10);
+};
+
 export const PhoneInput: React.FC<PhoneInputProps> = ({
   value,
   onChange,
   placeholder = "7123 456 789",
   className = ""
 }) => {
-  const [displayValue, setDisplayValue] = useState(() => {
-    // Initialize with digits only (no +44 shown)
-    if (!value) return '';
-    if (value.startsWith('+44')) return value.substring(3);
-    return value;
-  });
+  const [displayValue, setDisplayValue] = useState(() => parsePhoneToDisplay(value));
   const [error, setError] = useState<string>('');
+
+  // Sync displayValue when value prop changes (e.g., when customer is selected)
+  useEffect(() => {
+    const newDisplay = parsePhoneToDisplay(value);
+    setDisplayValue(newDisplay);
+  }, [value]);
 
   const formatPhoneNumber = (input: string) => {
     // Remove all non-digit characters
