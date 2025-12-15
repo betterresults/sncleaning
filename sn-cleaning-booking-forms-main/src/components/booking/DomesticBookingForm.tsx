@@ -81,6 +81,7 @@ export interface DomesticBookingData {
   adminHourlyRateOverride?: number;
   adminTotalCostOverride?: number;
   adminRemoveShortNoticeCharge?: boolean;
+  adminApplyDiscountToRecurring?: boolean;
   
   // Admin payment control
   stripeChargeTiming?: 'immediate' | 'authorize' | 'none';

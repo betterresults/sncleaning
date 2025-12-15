@@ -508,6 +508,20 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
               placeholder="Leave empty for calculated total"
             />
           </div>
+          {data.serviceFrequency && data.serviceFrequency !== 'onetime' && (data.adminDiscountAmount || data.adminDiscountPercentage) && (
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="apply-discount-recurring"
+                checked={data.adminApplyDiscountToRecurring || false}
+                onChange={(e) => onUpdate({ adminApplyDiscountToRecurring: e.target.checked })}
+                className="rounded border-gray-300"
+              />
+              <Label htmlFor="apply-discount-recurring" className="text-sm cursor-pointer">
+                Apply discount to recurring bookings
+              </Label>
+            </div>
+          )}
         </div>
       )}
 
@@ -567,6 +581,15 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
                       if (data.isFirstTimeCustomer) {
                         recurringTotal = recurringTotal * 0.90;
                       }
+                      // Apply admin discounts to recurring if option is checked
+                      if (isAdminMode && data.adminApplyDiscountToRecurring) {
+                        if (data.adminDiscountPercentage) {
+                          recurringTotal -= recurringTotal * data.adminDiscountPercentage / 100;
+                        }
+                        if (data.adminDiscountAmount) {
+                          recurringTotal -= data.adminDiscountAmount;
+                        }
+                      }
                       // Multiply by days per week if more than 1
                       if (data.serviceFrequency === 'weekly' && data.daysPerWeek > 1) {
                         recurringTotal = recurringTotal * data.daysPerWeek;
@@ -590,6 +613,15 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
                     // Apply new client 10% discount to recurring as well
                     if (data.isFirstTimeCustomer) {
                       recurringTotal = recurringTotal * 0.90;
+                    }
+                    // Apply admin discounts to recurring if option is checked
+                    if (isAdminMode && data.adminApplyDiscountToRecurring) {
+                      if (data.adminDiscountPercentage) {
+                        recurringTotal -= recurringTotal * data.adminDiscountPercentage / 100;
+                      }
+                      if (data.adminDiscountAmount) {
+                        recurringTotal -= data.adminDiscountAmount;
+                      }
                     }
                     // Multiply by days per week if more than 1
                     if (data.serviceFrequency === 'weekly' && data.daysPerWeek > 1) {
