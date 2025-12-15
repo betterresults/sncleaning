@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Plus, Check, ChevronsUpDown } from 'lucide-react';
+import { Plus, Check, ChevronsUpDown, X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import {
@@ -17,7 +17,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import CreateCustomerDialog from './CreateCustomerDialog';
 
 interface Customer {
   id: number;
@@ -32,11 +31,12 @@ interface Customer {
 
 interface CustomerSelectorProps {
   onCustomerSelect: (customer: Customer | null) => void;
+  selectedCustomer?: Customer | null;
 }
 
-const CustomerSelector = ({ onCustomerSelect }: CustomerSelectorProps) => {
+const CustomerSelector = ({ onCustomerSelect, selectedCustomer: externalSelectedCustomer }: CustomerSelectorProps) => {
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(externalSelectedCustomer || null);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
 
@@ -65,16 +65,20 @@ const CustomerSelector = ({ onCustomerSelect }: CustomerSelectorProps) => {
     fetchCustomers();
   }, []);
 
+  // Sync with external selected customer
+  useEffect(() => {
+    setSelectedCustomer(externalSelectedCustomer || null);
+  }, [externalSelectedCustomer]);
+
   const handleCustomerSelect = (customer: Customer) => {
     setSelectedCustomer(customer);
     setOpen(false);
     onCustomerSelect(customer);
   };
 
-  const handleCustomerCreated = (newCustomer: Customer) => {
-    setCustomers(prev => [...prev, newCustomer]);
-    setSelectedCustomer(newCustomer);
-    onCustomerSelect(newCustomer);
+  const handleClearCustomer = () => {
+    setSelectedCustomer(null);
+    onCustomerSelect(null);
   };
 
   const getCustomerDisplayText = (customer: Customer) => {
@@ -138,16 +142,29 @@ const CustomerSelector = ({ onCustomerSelect }: CustomerSelectorProps) => {
           </PopoverContent>
         </Popover>
         
-        <CreateCustomerDialog onCustomerCreated={handleCustomerCreated}>
+        {selectedCustomer ? (
           <Button
             type="button"
             variant="outline"
             size="icon"
-            className="h-16 w-16 rounded-2xl border-2 border-gray-200 hover:bg-gray-50"
+            className="h-16 w-16 rounded-2xl border-2 border-gray-200 hover:bg-red-50 hover:border-red-200"
+            onClick={handleClearCustomer}
+            title="Clear selection and create new customer"
           >
-            <Plus className="h-5 w-5" />
+            <X className="h-5 w-5 text-red-500" />
           </Button>
-        </CreateCustomerDialog>
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-16 w-16 rounded-2xl border-2 border-green-200 bg-green-50 hover:bg-green-100"
+            onClick={handleClearCustomer}
+            title="Create new customer"
+          >
+            <Plus className="h-5 w-5 text-green-600" />
+          </Button>
+        )}
       </div>
     </div>
   );
