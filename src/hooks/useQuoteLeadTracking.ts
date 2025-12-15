@@ -94,6 +94,40 @@ const getUtmParams = () => {
   };
 };
 
+// Determine source based on UTM params or referrer
+const determineSource = (): string => {
+  const params = new URLSearchParams(window.location.search);
+  const utmSource = params.get('utm_source');
+  
+  // If UTM source is present, use it
+  if (utmSource) {
+    return utmSource;
+  }
+  
+  // Otherwise try to determine from referrer
+  const referrer = document.referrer;
+  if (!referrer) return 'direct';
+  
+  try {
+    const referrerUrl = new URL(referrer);
+    const hostname = referrerUrl.hostname.toLowerCase();
+    
+    if (hostname.includes('google')) return 'google';
+    if (hostname.includes('facebook') || hostname.includes('fb.com')) return 'facebook';
+    if (hostname.includes('instagram')) return 'instagram';
+    if (hostname.includes('tiktok')) return 'tiktok';
+    if (hostname.includes('twitter') || hostname.includes('x.com')) return 'twitter';
+    if (hostname.includes('linkedin')) return 'linkedin';
+    if (hostname.includes('bing')) return 'bing';
+    if (hostname.includes('yahoo')) return 'yahoo';
+    
+    // Return the domain as source if not matched
+    return hostname.replace('www.', '');
+  } catch {
+    return 'unknown';
+  }
+};
+
 export const useQuoteLeadTracking = (serviceType: string) => {
   const userId = useRef(getUserId());
   const sessionId = useRef(getSessionId());
@@ -169,10 +203,15 @@ export const useQuoteLeadTracking = (serviceType: string) => {
     // Track page landing (separate from quote_leads)
     trackLanding();
     
-    // Store UTM params for later use
+    // Store UTM params and source for later use
     const utmParams = getUtmParams();
     if (Object.values(utmParams).some(v => v)) {
       localStorage.setItem('quote_utm_params', JSON.stringify(utmParams));
+    }
+    
+    // Store source (only on first visit to preserve original source)
+    if (!localStorage.getItem('quote_source')) {
+      localStorage.setItem('quote_source', determineSource());
     }
 
     // Start heartbeat interval (only if record exists)
@@ -233,6 +272,7 @@ export const useQuoteLeadTracking = (serviceType: string) => {
 
     try {
       const utmParams = JSON.parse(localStorage.getItem('quote_utm_params') || '{}');
+      const source = localStorage.getItem('quote_source') || determineSource();
       
       const leadData = {
         user_id: userId.current,
@@ -268,6 +308,7 @@ export const useQuoteLeadTracking = (serviceType: string) => {
         recommended_hours: data.recommendedHours,
         status: data.status || 'live',
         furthest_step: data.furthestStep,
+        source: source,
         page_url: window.location.href,
         referrer: document.referrer || null,
         user_agent: navigator.userAgent,
