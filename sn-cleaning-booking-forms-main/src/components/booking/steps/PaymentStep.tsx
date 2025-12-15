@@ -537,6 +537,154 @@ useEffect(() => {
       }
     }
 
+    // Admin mode - No payment selected (customer will add card later via notification)
+    if (isAdminMode && selectedAdminPaymentMethod === 'no-payment') {
+      try {
+        setProcessing(true);
+        
+        const result = await submitBooking({
+          customerId: data.customerId,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          phone: data.phone,
+          addressId: data.addressId,
+          houseNumber: data.houseNumber,
+          street: data.street,
+          postcode: data.postcode,
+          city: data.city,
+          propertyType: data.propertyType,
+          bedrooms: data.bedrooms,
+          bathrooms: data.bathrooms,
+          toilets: data.toilets,
+          numberOfFloors: data.numberOfFloors,
+          additionalRooms: data.additionalRooms,
+          propertyFeatures: data.propertyFeatures,
+          serviceType: data.serviceType,
+          alreadyCleaned: data.alreadyCleaned,
+          ovenType: data.ovenType,
+          cleaningProducts: data.cleaningProducts.join(','),
+          equipmentArrangement: data.equipmentArrangement,
+          equipmentStorageConfirmed: data.equipmentStorageConfirmed,
+          linensHandling: data.linensHandling,
+          needsIroning: data.needsIroning,
+          ironingHours: data.ironingHours,
+          linenPackages: data.linenPackages,
+          extraHours: data.extraHours,
+          selectedDate: data.selectedDate,
+          selectedTime: data.selectedTime,
+          flexibility: data.flexibility,
+          sameDayTurnaround: data.sameDayTurnaround,
+          shortNoticeCharge: data.shortNoticeCharge,
+          propertyAccess: data.propertyAccess,
+          accessNotes: data.accessNotes,
+          totalCost: data.totalCost,
+          estimatedHours: data.estimatedHours,
+          totalHours: data.totalHours,
+          hourlyRate: data.hourlyRate,
+          notes: data.notes,
+          additionalDetails: data,
+          cleanerId: data.cleanerId,
+          paymentMethod: 'no-payment'
+        }, true);
+
+        if (!result.success || !result.bookingId) {
+          throw new Error('Failed to create booking');
+        }
+
+        toast({
+          title: "Booking Created",
+          description: "Customer will receive notification to add payment method.",
+        });
+
+        navigate('/upcoming-bookings', { replace: true });
+        return;
+      } catch (error: any) {
+        console.error('Booking error:', error);
+        toast({
+          title: "Booking Error",
+          description: error.message || "Failed to create booking",
+          variant: "destructive"
+        });
+        setProcessing(false);
+        return;
+      }
+    }
+
+    // Admin mode - Bank transfer selected
+    if (isAdminMode && selectedAdminPaymentMethod === 'bank-transfer') {
+      try {
+        setProcessing(true);
+        
+        const result = await submitBooking({
+          customerId: data.customerId,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          phone: data.phone,
+          addressId: data.addressId,
+          houseNumber: data.houseNumber,
+          street: data.street,
+          postcode: data.postcode,
+          city: data.city,
+          propertyType: data.propertyType,
+          bedrooms: data.bedrooms,
+          bathrooms: data.bathrooms,
+          toilets: data.toilets,
+          numberOfFloors: data.numberOfFloors,
+          additionalRooms: data.additionalRooms,
+          propertyFeatures: data.propertyFeatures,
+          serviceType: data.serviceType,
+          alreadyCleaned: data.alreadyCleaned,
+          ovenType: data.ovenType,
+          cleaningProducts: data.cleaningProducts.join(','),
+          equipmentArrangement: data.equipmentArrangement,
+          equipmentStorageConfirmed: data.equipmentStorageConfirmed,
+          linensHandling: data.linensHandling,
+          needsIroning: data.needsIroning,
+          ironingHours: data.ironingHours,
+          linenPackages: data.linenPackages,
+          extraHours: data.extraHours,
+          selectedDate: data.selectedDate,
+          selectedTime: data.selectedTime,
+          flexibility: data.flexibility,
+          sameDayTurnaround: data.sameDayTurnaround,
+          shortNoticeCharge: data.shortNoticeCharge,
+          propertyAccess: data.propertyAccess,
+          accessNotes: data.accessNotes,
+          totalCost: data.totalCost,
+          estimatedHours: data.estimatedHours,
+          totalHours: data.totalHours,
+          hourlyRate: data.hourlyRate,
+          notes: data.notes,
+          additionalDetails: data,
+          cleanerId: data.cleanerId,
+          paymentMethod: 'bank-transfer'
+        }, true);
+
+        if (!result.success || !result.bookingId) {
+          throw new Error('Failed to create booking');
+        }
+
+        toast({
+          title: "Booking Created",
+          description: "Bank transfer details will be sent to customer.",
+        });
+
+        navigate('/upcoming-bookings', { replace: true });
+        return;
+      } catch (error: any) {
+        console.error('Booking error:', error);
+        toast({
+          title: "Booking Error",
+          description: error.message || "Failed to create booking",
+          variant: "destructive"
+        });
+        setProcessing(false);
+        return;
+      }
+    }
+
     // Normal payment flow - use existing payment system
     try {
       setProcessing(true);
