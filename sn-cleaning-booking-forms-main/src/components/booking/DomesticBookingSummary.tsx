@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { DomesticBookingData } from './DomesticBookingForm';
-import { Home, Clock, Calendar, PoundSterling, ChevronDown, ChevronUp, Edit2, Info, Tag, Sparkles } from 'lucide-react';
+import { Home, Clock, Calendar, PoundSterling, ChevronDown, ChevronUp, Edit2, Info, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -413,11 +413,9 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
           </div>
           <div>
             {calculations.wantsFirstDeepClean ? (
-              <>
-                <p className="font-medium text-foreground">
-                  <span className="text-amber-600">{calculations.firstDeepCleanHours}h</span> first clean (deep), then {calculations.totalHours}h {getFrequencyDescription().toLowerCase() || 'per visit'}
-                </p>
-              </>
+              <p className="font-medium text-foreground">
+                {calculations.firstDeepCleanHours}h first clean, then {calculations.totalHours}h {getFrequencyDescription().toLowerCase() || 'per visit'}
+              </p>
             ) : (
               <p className="font-medium text-foreground">
                 {calculations.totalHours} hour{calculations.totalHours !== 1 ? 's' : ''}{getFrequencyDescription() ? ` ${getFrequencyDescription()}` : ''}
@@ -522,15 +520,13 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
 
       {data.serviceFrequency && (
         <div className="mt-4 pt-4 border-t border-border space-y-3">
-          {/* First Deep Clean Banner */}
+          {/* First Clean Cost - show for deep clean option */}
           {calculations.wantsFirstDeepClean && (
-            <div className="flex items-center justify-between p-3 bg-amber-50 rounded-xl border border-amber-200">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-amber-600" />
-                <span className="text-sm font-medium text-amber-700">First Deep Clean</span>
-                <span className="text-xs text-amber-600">({calculations.firstDeepCleanHours}h @ £{calculations.oneTimeRate}/hr)</span>
-              </div>
-              <span className="text-sm font-bold text-amber-700">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">
+                First clean ({calculations.firstDeepCleanHours}h @ £{calculations.oneTimeRate}/hr)
+              </span>
+              <span className="text-sm font-semibold text-foreground">
                 £{calculations.firstDeepCleanCost.toFixed(2)}
               </span>
             </div>
@@ -571,11 +567,11 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
             <div className="p-3 bg-muted/30 rounded-xl border border-border">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-foreground">
-                  {calculations.wantsFirstDeepClean ? 'Regular Cleans' : 'Upcoming'} ({data.serviceFrequency === 'weekly' 
+                  {calculations.wantsFirstDeepClean ? 'Regular' : 'Upcoming'} {data.serviceFrequency === 'weekly' 
                     ? 'Weekly' 
                     : data.serviceFrequency === 'biweekly' 
                       ? 'Biweekly' 
-                      : 'Monthly'})
+                      : 'Monthly'} Cleans
                   {data.serviceFrequency === 'weekly' && data.daysPerWeek > 1 && (
                     <span className="text-muted-foreground font-normal"> ({data.daysPerWeek}x/week)</span>
                   )}
