@@ -357,7 +357,7 @@ const DomesticBookingForm: React.FC = () => {
       if ('totalCost' in updates && updates.totalCost && updates.totalCost > 0 && !isAdminMode) {
         // Calculate discount amount for tracking
         const baseCost = (newData.estimatedHours ?? 0) * newData.hourlyRate;
-        const discountAmount = newData.isFirstTimeCustomer ? updates.totalCost * 0.15 / 0.85 : 0; // Reverse calculate the 15% discount
+        const discountAmount = newData.isFirstTimeCustomer ? updates.totalCost * 0.10 / 0.90 : 0; // Reverse calculate the 10% discount
         
         trackQuoteCalculated(updates.totalCost, newData.estimatedHours ?? undefined, {
           propertyType: newData.propertyType || undefined,
@@ -617,7 +617,7 @@ const DomesticBookingForm: React.FC = () => {
           postcode: bookingData.postcode,
           shortNoticeCharge: bookingData.shortNoticeCharge,
           isFirstTimeCustomer: bookingData.isFirstTimeCustomer,
-          discountAmount: bookingData.isFirstTimeCustomer ? bookingData.totalCost * 0.15 / 0.85 : 0,
+          discountAmount: bookingData.isFirstTimeCustomer ? bookingData.totalCost * 0.10 / 0.90 : 0,
         }}
         sessionId={sessionId}
         serviceType="Domestic"
