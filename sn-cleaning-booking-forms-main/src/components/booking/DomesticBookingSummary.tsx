@@ -379,7 +379,7 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
   );
 
   return (
-    <Card className="p-4 sm:p-5 lg:p-6 bg-white sticky top-4 shadow-[0_20px_60px_rgba(0,0,0,0.18),0_2px_8px_rgba(0,0,0,0.12)]">
+    <Card className="p-4 sm:p-5 lg:p-6 bg-white sticky top-4 border border-border">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-foreground">Booking Summary</h3>
         {isAdminMode && (

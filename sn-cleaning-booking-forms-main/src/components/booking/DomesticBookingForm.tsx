@@ -571,7 +571,7 @@ const DomesticBookingForm: React.FC = () => {
       <main className="container mx-auto px-2 sm:px-4 py-2 max-w-[1400px]">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
           <div className="lg:col-span-2">
-            <Card className="p-4 sm:p-6 lg:p-8 bg-white transition-shadow duration-300 border border-border shadow-[0_20px_60px_rgba(0,0,0,0.18),0_2px_8px_rgba(0,0,0,0.12)]">
+            <Card className="p-4 sm:p-6 lg:p-8 bg-white border border-border">
               {isLoadingResume ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
