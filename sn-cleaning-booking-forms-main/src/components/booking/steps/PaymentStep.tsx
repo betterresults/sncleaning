@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PhoneInput } from '../../../../phone-input';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { BookingData } from '../AirbnbBookingForm';
 import { CreditCard, Shield, Loader2, AlertTriangle, Building2, Clock } from 'lucide-react';
 import { useAirbnbBookingSubmit } from '@/hooks/useAirbnbBookingSubmit';
