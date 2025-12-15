@@ -979,22 +979,27 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                              )}
                            </TableCell>
                               <TableCell>
-                                {isCustomerView && (user.business_id || user.id) ? (
-                                  <PaymentMethodStatusIcon
-                                    paymentMethodCount={paymentData[user.business_id || user.id]?.payment_method_count || 0}
-                                    hasStripeAccount={paymentData[user.business_id || user.id]?.has_stripe_account || false}
-                                    onClick={() => {
-                                      setSelectedCustomerForPayment(user);
-                                      // If customer has payment methods, open direct payment dialog
-                                      if (paymentData[user.business_id || user.id]?.payment_method_count > 0) {
-                                        setShowDirectPaymentDialog(true);
-                                      } else {
-                                        // If no payment methods, open payment methods management
-                                        setShowPaymentDialog(true);
-                                      }
-                                    }}
-                                  />
-                                ) : (
+                                {isCustomerView && user.type === 'business_customer' ? (() => {
+                                  const customerId = Number(user.business_id);
+                                  const customerPaymentData = paymentData[customerId];
+                                  const paymentCount = customerPaymentData?.payment_method_count || 0;
+                                  const hasStripe = customerPaymentData?.has_stripe_account || false;
+                                  
+                                  return (
+                                    <PaymentMethodStatusIcon
+                                      paymentMethodCount={paymentCount}
+                                      hasStripeAccount={hasStripe}
+                                      onClick={() => {
+                                        setSelectedCustomerForPayment(user);
+                                        if (paymentCount > 0) {
+                                          setShowDirectPaymentDialog(true);
+                                        } else {
+                                          setShowPaymentDialog(true);
+                                        }
+                                      }}
+                                    />
+                                  );
+                                })() : (
                                   <span className="text-sm text-muted-foreground">–</span>
                                 )}
                               </TableCell>
