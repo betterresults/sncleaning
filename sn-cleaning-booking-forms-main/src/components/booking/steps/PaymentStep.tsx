@@ -600,7 +600,7 @@ useEffect(() => {
           notes: data.notes,
           additionalDetails: data,
           cleanerId: data.cleanerId,
-          paymentMethod: 'no-payment'
+          paymentMethod: 'card' // Save as 'card' to trigger payment collection notification
         }, true);
 
         if (!result.success || !result.bookingId) {
