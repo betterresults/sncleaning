@@ -1910,13 +1910,20 @@ export type Database = {
       quote_leads: {
         Row: {
           additional_rooms: Json | null
+          address: string | null
           bathrooms: number | null
           bedrooms: number | null
           calculated_quote: number | null
           cleaning_type: string | null
+          confirmation_sent_at: string | null
+          confirmation_token: string | null
+          confirmed_at: string | null
+          converted_booking_id: number | null
           created_at: string | null
+          created_by_admin_id: string | null
           discount_amount: number | null
           email: string | null
+          expires_at: string | null
           first_name: string | null
           frequency: string | null
           furthest_step: string | null
@@ -1943,6 +1950,7 @@ export type Database = {
           service_type: string | null
           session_id: string
           short_notice_charge: number | null
+          source: string | null
           status: string | null
           toilets: number | null
           updated_at: string | null
@@ -1957,13 +1965,20 @@ export type Database = {
         }
         Insert: {
           additional_rooms?: Json | null
+          address?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
           calculated_quote?: number | null
           cleaning_type?: string | null
+          confirmation_sent_at?: string | null
+          confirmation_token?: string | null
+          confirmed_at?: string | null
+          converted_booking_id?: number | null
           created_at?: string | null
+          created_by_admin_id?: string | null
           discount_amount?: number | null
           email?: string | null
+          expires_at?: string | null
           first_name?: string | null
           frequency?: string | null
           furthest_step?: string | null
@@ -1990,6 +2005,7 @@ export type Database = {
           service_type?: string | null
           session_id: string
           short_notice_charge?: number | null
+          source?: string | null
           status?: string | null
           toilets?: number | null
           updated_at?: string | null
@@ -2004,13 +2020,20 @@ export type Database = {
         }
         Update: {
           additional_rooms?: Json | null
+          address?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
           calculated_quote?: number | null
           cleaning_type?: string | null
+          confirmation_sent_at?: string | null
+          confirmation_token?: string | null
+          confirmed_at?: string | null
+          converted_booking_id?: number | null
           created_at?: string | null
+          created_by_admin_id?: string | null
           discount_amount?: number | null
           email?: string | null
+          expires_at?: string | null
           first_name?: string | null
           frequency?: string | null
           furthest_step?: string | null
@@ -2037,6 +2060,7 @@ export type Database = {
           service_type?: string | null
           session_id?: string
           short_notice_charge?: number | null
+          source?: string | null
           status?: string | null
           toilets?: number | null
           updated_at?: string | null
