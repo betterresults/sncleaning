@@ -775,7 +775,8 @@ useEffect(() => {
   const canContinue = data.firstName && data.lastName && data.email && data.phone && data.street && data.postcode;
   
   // Check if payment requirements are met
-  const paymentRequirementsMet = paymentType === 'bank-transfer' || hasPaymentMethods || adminTestMode || (stripe && cardComplete);
+  // For admin mode: allow if a payment method is selected (including company methods) or has saved payment methods
+  const paymentRequirementsMet = paymentType === 'bank-transfer' || hasPaymentMethods || adminTestMode || (stripe && cardComplete) || (isAdminMode && selectedAdminPaymentMethod);
 
   return (
     <div className="space-y-8">
@@ -1076,8 +1077,8 @@ useEffect(() => {
         </div>
       )}
 
-      {/* ADMIN MODE: Payment Method Selection */}
-      {isAdminMode && data.customerId && !checkingPaymentMethods && (
+      {/* ADMIN MODE: Payment Method Selection - show for existing or new customers */}
+      {isAdminMode && !checkingPaymentMethods && (
         <div className="space-y-6">
           <h3 className="text-2xl font-bold text-[#185166] mb-4">
             Payment Method
