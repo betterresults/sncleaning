@@ -174,7 +174,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
 
   return (
     <div className="space-y-4">
-      <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+      <div>
         <h2 className="text-2xl font-bold text-[#185166] mb-4">
           Cleaning Schedule
         </h2>
@@ -315,17 +315,17 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
       )}
 
       {/* Property Access Section */}
-      <div className="mt-8 p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+      <div className="mt-8">
         <h2 className="text-2xl font-bold text-slate-700 mb-4">
           How will we access the property?
         </h2>
         
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <button
-            className={`group relative h-24 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+            className={`group relative h-24 rounded-2xl border transition-all duration-300 ${
               data.propertyAccess === 'meet'
-                ? 'border-primary bg-primary/5 shadow-xl'
-                : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                ? 'border-primary bg-primary/5'
+                : 'border-border bg-card hover:border-primary/50'
             }`}
             onClick={() => onUpdate({ propertyAccess: 'meet' })}
           >
@@ -342,10 +342,10 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
           </button>
           
           <button
-            className={`group relative h-24 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+            className={`group relative h-24 rounded-2xl border transition-all duration-300 ${
               data.propertyAccess === 'collect'
-                ? 'border-primary bg-primary/5 shadow-xl'
-                : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                ? 'border-primary bg-primary/5'
+                : 'border-border bg-card hover:border-primary/50'
             }`}
             onClick={() => onUpdate({ propertyAccess: 'collect' })}
           >
@@ -364,10 +364,10 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
           </button>
           
           <button
-            className={`group relative h-24 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+            className={`group relative h-24 rounded-2xl border transition-all duration-300 ${
               data.propertyAccess === 'keybox'
-                ? 'border-primary bg-primary/5 shadow-xl'
-                : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                ? 'border-primary bg-primary/5'
+                : 'border-border bg-card hover:border-primary/50'
             }`}
             onClick={() => onUpdate({ propertyAccess: 'keybox' })}
           >
@@ -386,10 +386,10 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
           </button>
           
           <button
-            className={`group relative h-24 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+            className={`group relative h-24 rounded-2xl border transition-all duration-300 ${
               data.propertyAccess === 'other'
-                ? 'border-primary bg-primary/5 shadow-xl'
-                : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                ? 'border-primary bg-primary/5'
+                : 'border-border bg-card hover:border-primary/50'
             }`}
             onClick={() => onUpdate({ propertyAccess: 'other' })}
           >

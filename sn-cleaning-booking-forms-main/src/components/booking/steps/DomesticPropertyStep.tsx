@@ -138,7 +138,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
         }]).map((opt: any) => {
           const isSelected = data.propertyType === opt.option;
           const isHouse = opt.option === 'house';
-          return <button key={opt.option} className={`group relative h-16 rounded-2xl border-2 transition-all duration-500 hover:scale-105 justify-start gap-3 p-4 flex items-center ${isSelected ? 'border-primary bg-primary/5 shadow-xl' : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'}`} onClick={() => onUpdate({
+          return <button key={opt.option} className={`group relative h-16 rounded-2xl border transition-all duration-300 justify-start gap-3 p-4 flex items-center ${isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'}`} onClick={() => onUpdate({
             propertyType: isSelected ? '' : opt.option
           })}>
                 {isHouse ? <Home className={`h-6 w-6 transition-all duration-500 ${isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'}`} /> : <Building className={`h-6 w-6 transition-all duration-500 ${isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'}`} />}
@@ -156,7 +156,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
           {/* Bedrooms */}
           <div>
             <div className="flex items-center justify-center">
-              <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${data.bedrooms ? 'bg-primary/5 border-2 border-primary shadow-lg' : 'bg-card border-2 border-border'}`}>
+              <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${data.bedrooms ? 'bg-primary/5 border border-primary' : 'bg-card border border-border'}`}>
                 <Button variant="ghost" size="sm" className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary" onClick={decrementBedrooms} disabled={!data.bedrooms || data.bedrooms === 'studio'}>
                   <Minus className="h-5 w-5" />
                 </Button>
@@ -175,7 +175,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
           {/* Bathrooms */}
           <div>
             <div className="flex items-center justify-center">
-              <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${data.bathrooms ? 'bg-primary/5 border-2 border-primary shadow-lg' : 'bg-card border-2 border-border'}`}>
+              <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${data.bathrooms ? 'bg-primary/5 border border-primary' : 'bg-card border border-border'}`}>
                 <Button variant="ghost" size="sm" className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary" onClick={decrementBathrooms} disabled={!data.bathrooms || data.bathrooms === '1'}>
                   <Minus className="h-5 w-5" />
                 </Button>
@@ -202,7 +202,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
           const currentCount = data.additionalRooms[room.option as keyof typeof data.additionalRooms] || 0;
           const maxValue = room.max_value || 6;
           const IconComponent = (LucideIcons as any)[room.icon];
-          return <button key={room.option} className={`group relative ${currentCount > 0 ? 'h-32' : 'h-24'} rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${currentCount > 0 ? 'border-primary bg-primary/5 shadow-xl' : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'}`} onClick={() => {
+          return <button key={room.option} className={`group relative ${currentCount > 0 ? 'h-32' : 'h-24'} rounded-2xl border transition-all duration-300 ${currentCount > 0 ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'}`} onClick={() => {
             if (currentCount === 0) {
               onUpdate({
                 additionalRooms: {
@@ -280,7 +280,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
           label: 'One-time'
         }]).map((opt: any) => {
           const isSelected = data.serviceFrequency === opt.option;
-          return <button key={opt.option} className={`group relative h-20 rounded-2xl border-2 transition-all duration-500 hover:scale-105 flex flex-col items-center justify-center ${isSelected ? 'border-primary bg-primary/5 shadow-xl' : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'}`} onClick={() => onUpdate({
+          return <button key={opt.option} className={`group relative h-20 rounded-2xl border transition-all duration-300 flex flex-col items-center justify-center ${isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'}`} onClick={() => onUpdate({
             serviceFrequency: isSelected ? '' : opt.option,
             daysPerWeek: opt.option === 'weekly' ? data.daysPerWeek || 1 : 1,
             wantsFirstDeepClean: opt.option === 'onetime' ? false : data.wantsFirstDeepClean
@@ -297,7 +297,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
             <div className="grid grid-cols-5 gap-2">
               {[1, 2, 3, 4, 5].map(days => {
             const isSelected = data.daysPerWeek === days;
-            return <button key={days} className={`h-12 rounded-xl border-2 transition-all duration-300 flex items-center justify-center ${isSelected ? 'border-primary bg-primary/10 shadow-lg' : 'border-border bg-card hover:border-primary/50'}`} onClick={() => onUpdate({
+            return <button key={days} className={`h-12 rounded-xl border transition-all duration-300 flex items-center justify-center ${isSelected ? 'border-primary bg-primary/10' : 'border-border bg-card hover:border-primary/50'}`} onClick={() => onUpdate({
               daysPerWeek: days
             })}>
                     <span className={`text-lg font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>{days}</span>
@@ -309,7 +309,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
 
         {/* First Deep Clean Option - only show for recurring bookings */}
         {data.serviceFrequency && data.serviceFrequency !== 'onetime' && (
-          <div className="mt-4 p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border-2 border-amber-200">
+          <div className="mt-4 p-4 bg-muted/30 rounded-xl border border-border">
             <div className="flex items-start gap-3">
               <div className="p-2 bg-amber-100 rounded-lg mt-0.5">
                 <LucideIcons.Sparkles className="h-5 w-5 text-amber-600" />
@@ -321,9 +321,9 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <button
-                    className={`p-3 rounded-xl border-2 transition-all duration-300 text-center ${
+                    className={`p-3 rounded-xl border transition-all duration-300 text-center ${
                       data.wantsFirstDeepClean
-                        ? 'border-amber-500 bg-amber-100 shadow-lg'
+                        ? 'border-amber-500 bg-amber-100'
                         : 'border-border bg-white hover:border-amber-300'
                     }`}
                     onClick={() => onUpdate({ wantsFirstDeepClean: true })}
@@ -338,9 +338,9 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
                     )}
                   </button>
                   <button
-                    className={`p-3 rounded-xl border-2 transition-all duration-300 text-center ${
+                    className={`p-3 rounded-xl border transition-all duration-300 text-center ${
                       !data.wantsFirstDeepClean
-                        ? 'border-primary bg-primary/10 shadow-lg'
+                        ? 'border-primary bg-primary/10'
                         : 'border-border bg-white hover:border-primary/30'
                     }`}
                     onClick={() => onUpdate({ wantsFirstDeepClean: false })}
@@ -423,7 +423,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
                 {ovenCleaningConfigs.filter((oven: any) => oven.option !== 'not-required').map((oven: any) => {
             const isSelected = data.ovenType === oven.option;
             const IconComponent = (LucideIcons as any)[oven.icon];
-            return <button key={oven.option} className={`group relative h-20 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${isSelected ? 'border-primary bg-primary/5 shadow-xl' : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'}`} onClick={() => onUpdate({
+            return <button key={oven.option} className={`group relative h-20 rounded-2xl border transition-all duration-300 ${isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'}`} onClick={() => onUpdate({
               ovenType: isSelected ? '' : oven.option as any
             })}>
                       <div className="flex flex-col items-center justify-center h-full">
@@ -468,7 +468,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
             {cleaningSuppliesConfigs.map((supply: any) => {
           const isSelected = data.cleaningProducts.includes(supply.option);
           const IconComponent = (LucideIcons as any)[supply.icon];
-          return <button key={supply.option} className={`group relative h-24 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${isSelected ? 'border-primary bg-primary/5 shadow-xl' : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'}`} onClick={() => {
+          return <button key={supply.option} className={`group relative h-24 rounded-2xl border transition-all duration-300 ${isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'}`} onClick={() => {
             if (supply.option === 'no') {
               onUpdate({
                 cleaningProducts: ['no'],
@@ -509,7 +509,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
           label: 'Leave at property'
         }]).map((opt: any) => {
           const isSelected = data.equipmentArrangement === opt.option;
-          return <button key={opt.option} className={`group relative h-20 rounded-2xl border-2 transition-all duration-500 hover:scale-105 flex flex-col items-center justify-center ${isSelected ? 'border-primary bg-primary/5 shadow-xl' : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'}`} onClick={() => onUpdate({
+          return <button key={opt.option} className={`group relative h-20 rounded-2xl border transition-all duration-300 flex flex-col items-center justify-center ${isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'}`} onClick={() => onUpdate({
             equipmentArrangement: opt.option
           })}>
                   {isSelected && <CheckCircle className="h-5 w-5 text-primary mb-1" />}
@@ -553,7 +553,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
           });
         }
         onNext();
-      }} disabled={!canContinue} className="px-8 py-3 text-lg font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all">
+      }} disabled={!canContinue} className="px-8 py-3 text-lg font-semibold rounded-2xl transition-all">
           Continue
         </Button>
       </div>
