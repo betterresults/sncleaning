@@ -259,8 +259,8 @@ export const useDomesticHardcodedCalculations = (bookingData: DomesticBookingDat
     // Get one-time rate for first deep clean pricing
     const oneTimeRate = getConfigValue('domestic service frequency', 'onetime') || 22;
     
-    // First deep clean: 1.5x the hours at one-time rate
-    const firstDeepCleanHours = wantsFirstDeepClean ? Math.round(baseTime * 1.5 * 2) / 2 : 0; // Round to nearest 0.5
+    // First deep clean: 1.5x the user-selected hours at one-time rate
+    const firstDeepCleanHours = wantsFirstDeepClean ? Math.round(totalHours * 1.5 * 2) / 2 : 0; // Round to nearest 0.5
     const firstDeepCleanCost = wantsFirstDeepClean 
       ? (firstDeepCleanHours * oneTimeRate) + equipmentOneTimeCost + ovenCleaningCost + shortNoticeCharge + additionalCharge - discount
       : 0;
