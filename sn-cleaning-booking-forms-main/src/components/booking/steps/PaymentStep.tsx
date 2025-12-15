@@ -804,6 +804,7 @@ useEffect(() => {
           </h3>
           
           <CustomerSelector 
+            selectedCustomer={data.selectedCustomer}
             onCustomerSelect={(customer) => {
               if (customer) {
                 onUpdate({ 
@@ -840,8 +841,8 @@ useEffect(() => {
         </div>
       )}
 
-      {/* Customer Details - Admin (editable when a customer is selected) */}
-      {isAdminMode && data.customerId && (
+      {/* Customer Details - Admin (editable - shown for existing or new customer) */}
+      {isAdminMode && (
         <div className="space-y-6">
           <h3 className="text-2xl font-bold text-[#185166] mb-4">
             Customer Details
