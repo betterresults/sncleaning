@@ -108,9 +108,9 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
         total -= data.adminDiscountAmount;
       }
       
-      // Apply new client 15% discount
+      // Apply new client 10% discount
       if (data.isFirstTimeCustomer) {
-        total = total * 0.85;
+        total = total * 0.90;
       }
       
       return Math.max(0, total);
@@ -143,9 +143,9 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
       total -= data.adminDiscountAmount;
     }
     
-    // Apply new client 15% discount
+    // Apply new client 10% discount
     if (data.isFirstTimeCustomer) {
-      total = total * 0.85;
+      total = total * 0.90;
     }
     
     return Math.max(0, total);
@@ -519,17 +519,17 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
       )}
 
       {data.serviceFrequency && (
-        <div className="mt-4 pt-4 border-t border-border space-y-3">
+        <div className="mt-4 space-y-3">
           
           {/* First-time discount banner */}
           {data.isFirstTimeCustomer && (
             <div className="flex items-center justify-between p-3 bg-green-50 rounded-xl border border-green-200">
               <div className="flex items-center gap-2">
                 <Tag className="w-4 h-4 text-green-600" />
-                <span className="text-sm font-medium text-green-700">New clients 15% off</span>
+                <span className="text-sm font-medium text-green-700">New clients 10% off</span>
               </div>
               <span className="text-sm font-bold text-green-600">
-                -£{(calculateSubtotalBeforeFirstTimeDiscount() * 0.15).toFixed(2)}
+                -£{(calculateSubtotalBeforeFirstTimeDiscount() * 0.10).toFixed(2)}
               </span>
             </div>
           )}
@@ -572,7 +572,7 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
                       let recurringTotal = calculations.regularRecurringCost;
                       // Apply first-time discount to recurring
                       if (data.isFirstTimeCustomer) {
-                        recurringTotal = recurringTotal * 0.85;
+                        recurringTotal = recurringTotal * 0.90;
                       }
                       // Multiply by days per week if more than 1
                       if (data.serviceFrequency === 'weekly' && data.daysPerWeek > 1) {
@@ -594,9 +594,9 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
                     if (calculations.shortNoticeCharge > 0 && !(isAdminMode && data.adminRemoveShortNoticeCharge)) {
                       recurringTotal -= calculations.shortNoticeCharge;
                     }
-                    // Apply new client 15% discount to recurring as well
+                    // Apply new client 10% discount to recurring as well
                     if (data.isFirstTimeCustomer) {
-                      recurringTotal = recurringTotal * 0.85;
+                      recurringTotal = recurringTotal * 0.90;
                     }
                     // Multiply by days per week if more than 1
                     if (data.serviceFrequency === 'weekly' && data.daysPerWeek > 1) {
