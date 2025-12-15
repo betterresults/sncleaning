@@ -106,11 +106,6 @@ const CONDITION_OPTIONS = [
     label: 'Payment Method is Card', 
     description: 'Only send if booking payment method is Card/Stripe'
   },
-  { 
-    value: 'payment_method_not_cash', 
-    label: 'Payment Method is NOT Cash', 
-    description: 'Only send if payment method requires card (not cash)'
-  },
 ];
 
 export const NotificationTriggersManager = () => {
