@@ -369,6 +369,15 @@ async function checkConditions(
         break;
       }
       
+      case 'payment_method_not_cash': {
+        const method = bookingData.payment_method?.toLowerCase() || '';
+        // Pass if payment method is NOT cash - meaning customer needs to add card
+        if (method === 'cash') {
+          return { passed: false, reason: 'Payment method is cash - no card needed' };
+        }
+        break;
+      }
+      
       default:
         console.warn(`Unknown condition: ${condition}`);
     }
