@@ -1071,9 +1071,6 @@ useEffect(() => {
             </SelectContent>
           </Select>
           
-          <p className="text-sm text-gray-600">
-            You can assign a cleaner now or leave it unassigned and assign later.
-          </p>
         </div>
       )}
 
@@ -1084,115 +1081,158 @@ useEffect(() => {
             Payment Method
           </h3>
           
-          <div className="space-y-4">
-            <Select
-              value={selectedAdminPaymentMethod || data.paymentMethod || ''}
-              onValueChange={(value) => {
-                setSelectedAdminPaymentMethod(value);
-                onUpdate({ paymentMethod: value });
+          {/* Payment Type Selection for Admin */}
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedAdminPaymentMethod('no-payment');
+                onUpdate({ paymentMethod: 'no-payment' });
               }}
+              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                selectedAdminPaymentMethod === 'no-payment'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
             >
-              <SelectTrigger className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white">
-                <SelectValue placeholder="Choose payment method..." />
-              </SelectTrigger>
-              <SelectContent className="bg-white z-50">
-                {/* Saved Customer Cards */}
-                {hasPaymentMethods && paymentMethods.length > 0 && (
-                  <>
-                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                      Saved Cards
-                    </div>
-                    {paymentMethods.map((pm: any) => (
-                      <SelectItem key={pm.stripe_payment_method_id} value={`stripe:${pm.stripe_payment_method_id}`}>
-                        {pm.card_brand?.toUpperCase?.()} •••• {pm.card_last4} (Exp: {pm.card_exp_month}/{pm.card_exp_year})
-                        {pm.is_default && ' ⭐'}
-                      </SelectItem>
-                    ))}
-                    {companyPaymentMethods.length > 0 && (
-                      <div className="border-t my-1" />
-                    )}
-                  </>
-                )}
-                
-                {/* Company Payment Methods */}
-                {companyPaymentMethods.length > 0 && (
-                  <>
-                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                      Other Methods
-                    </div>
-                    {companyPaymentMethods.map((method) => (
-                      <SelectItem key={method} value={method}>
-                        {method}
-                      </SelectItem>
-                    ))}
-                  </>
-                )}
-              </SelectContent>
-            </Select>
-            
-            {hasPaymentMethods ? (
-              <p className="text-sm text-gray-600">
-                💳 Customer has {paymentMethods.length} saved card{paymentMethods.length !== 1 ? 's' : ''}. Select preferred payment method above.
-              </p>
-            ) : (
-              <p className="text-sm text-gray-600">
-                ⚠️ Customer has no saved payment methods. Please select payment method above.
-              </p>
-            )}
-            
-            {/* Stripe Charge Timing - Only show when Stripe payment method is selected */}
-            {selectedAdminPaymentMethod && selectedAdminPaymentMethod.startsWith('stripe:') && (
-              <div className="mt-6 p-4 bg-blue-50 rounded-xl border-2 border-blue-200">
-                <h4 className="text-sm font-bold text-blue-900 mb-3">Stripe Payment Timing</h4>
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors">
-                    <input
-                      type="radio"
-                      name="stripeTiming"
-                      value="immediate"
-                      checked={data.stripeChargeTiming === 'immediate'}
-                      onChange={(e) => onUpdate({ stripeChargeTiming: 'immediate' })}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                    />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Charge Now</p>
-                      <p className="text-xs text-gray-600">Immediately charge the full amount</p>
-                    </div>
-                  </label>
-                  
-                  <label className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors">
-                    <input
-                      type="radio"
-                      name="stripeTiming"
-                      value="authorize"
-                      checked={data.stripeChargeTiming === 'authorize' || !data.stripeChargeTiming}
-                      onChange={(e) => onUpdate({ stripeChargeTiming: 'authorize' })}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                    />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Authorize Only (Default)</p>
-                      <p className="text-xs text-gray-600">Hold funds, capture later (standard flow)</p>
-                    </div>
-                  </label>
-                  
-                  <label className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors">
-                    <input
-                      type="radio"
-                      name="stripeTiming"
-                      value="none"
-                      checked={data.stripeChargeTiming === 'none'}
-                      onChange={(e) => onUpdate({ stripeChargeTiming: 'none' })}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                    />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">No Charge</p>
-                      <p className="text-xs text-gray-600">Save card only, manual payment later</p>
-                    </div>
-                  </label>
-                </div>
-              </div>
-            )}
+              <Clock className="h-6 w-6" />
+              <span className="text-sm font-medium">No Payment</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedAdminPaymentMethod('bank-transfer');
+                onUpdate({ paymentMethod: 'bank-transfer' });
+              }}
+              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                selectedAdminPaymentMethod === 'bank-transfer'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <Building2 className="h-6 w-6" />
+              <span className="text-sm font-medium">Bank Transfer</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedAdminPaymentMethod('add-card');
+                onUpdate({ paymentMethod: 'add-card' });
+              }}
+              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                selectedAdminPaymentMethod === 'add-card'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <CreditCard className="h-6 w-6" />
+              <span className="text-sm font-medium">Add Card</span>
+            </button>
           </div>
+
+          {/* Show saved cards if customer has them */}
+          {hasPaymentMethods && paymentMethods.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-gray-700">Or use saved card:</p>
+              {paymentMethods.map((pm: any) => (
+                <button
+                  key={pm.stripe_payment_method_id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedAdminPaymentMethod(`stripe:${pm.stripe_payment_method_id}`);
+                    onUpdate({ paymentMethod: `stripe:${pm.stripe_payment_method_id}` });
+                  }}
+                  className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
+                    selectedAdminPaymentMethod === `stripe:${pm.stripe_payment_method_id}`
+                      ? 'border-primary bg-primary/5'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <CreditCard className="h-5 w-5" />
+                  <span className="font-medium">
+                    {pm.card_brand?.toUpperCase?.()} •••• {pm.card_last4}
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    Exp: {pm.card_exp_month}/{pm.card_exp_year}
+                  </span>
+                  {pm.is_default && <span className="ml-auto text-yellow-500">⭐</span>}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Card Element for adding new card */}
+          {selectedAdminPaymentMethod === 'add-card' && (
+            <div className="rounded-2xl border-2 border-gray-200 bg-white p-6 mt-4">
+              <p className="text-sm font-medium text-gray-700 mb-4">Enter card details:</p>
+              <CardElement
+                options={{
+                  style: {
+                    base: {
+                      fontSize: '16px',
+                      color: '#424770',
+                      '::placeholder': { color: '#aab7c4' },
+                    },
+                    invalid: { color: '#9e2146' },
+                  },
+                }}
+                onChange={(e) => setCardComplete(e.complete)}
+              />
+            </div>
+          )}
+
+          {/* Stripe Charge Timing - Only show when Stripe payment method is selected */}
+          {selectedAdminPaymentMethod && selectedAdminPaymentMethod.startsWith('stripe:') && (
+            <div className="mt-6 p-4 bg-blue-50 rounded-xl border-2 border-blue-200">
+              <h4 className="text-sm font-bold text-blue-900 mb-3">Stripe Payment Timing</h4>
+              <div className="space-y-2">
+                <label className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors">
+                  <input
+                    type="radio"
+                    name="stripeTiming"
+                    value="immediate"
+                    checked={data.stripeChargeTiming === 'immediate'}
+                    onChange={(e) => onUpdate({ stripeChargeTiming: 'immediate' })}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                  />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Charge Now</p>
+                    <p className="text-xs text-gray-600">Immediately charge the full amount</p>
+                  </div>
+                </label>
+                
+                <label className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors">
+                  <input
+                    type="radio"
+                    name="stripeTiming"
+                    value="authorize"
+                    checked={data.stripeChargeTiming === 'authorize' || !data.stripeChargeTiming}
+                    onChange={(e) => onUpdate({ stripeChargeTiming: 'authorize' })}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                  />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Authorize Only (Default)</p>
+                    <p className="text-xs text-gray-600">Hold funds, capture later (standard flow)</p>
+                  </div>
+                </label>
+                
+                <label className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors">
+                  <input
+                    type="radio"
+                    name="stripeTiming"
+                    value="none"
+                    checked={data.stripeChargeTiming === 'none'}
+                    onChange={(e) => onUpdate({ stripeChargeTiming: 'none' })}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                  />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">No Charge</p>
+                    <p className="text-xs text-gray-600">Save card only, manual payment later</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
