@@ -778,9 +778,7 @@ useEffect(() => {
   const paymentRequirementsMet = paymentType === 'bank-transfer' || hasPaymentMethods || adminTestMode || (stripe && cardComplete);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Main Form - Takes 2 columns */}
-      <div className="lg:col-span-2 space-y-8">
+    <div className="space-y-8">
       {/* Admin Test Mode Warning */}
       {adminTestMode && (
         <div className="bg-orange-50 border-2 border-orange-500 rounded-xl p-6">
@@ -1414,12 +1412,6 @@ useEffect(() => {
             'Complete Booking'
           )}
         </Button>
-      </div>
-      </div>
-
-      {/* Sidebar - Booking Summary */}
-      <div className="lg:col-span-1">
-        {bookingSummary}
       </div>
     </div>
   );
