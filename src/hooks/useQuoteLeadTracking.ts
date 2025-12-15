@@ -94,6 +94,40 @@ const getUtmParams = () => {
   };
 };
 
+// Extract source from referrer URL
+const getSourceFromReferrer = (referrer: string | null): string | null => {
+  if (!referrer) return null;
+  
+  try {
+    const referrerUrl = new URL(referrer);
+    const hostname = referrerUrl.hostname.toLowerCase();
+    
+    // Skip self-referrals and lovable preview links
+    if (hostname.includes('sncleaningservices') || 
+        hostname.includes('lovable') || 
+        hostname.includes('lovableproject')) {
+      return null;
+    }
+    
+    if (hostname.includes('google')) return 'google';
+    if (hostname.includes('facebook') || hostname.includes('fb.com') || hostname.includes('m.facebook')) return 'facebook';
+    if (hostname.includes('instagram')) return 'instagram';
+    if (hostname.includes('tiktok')) return 'tiktok';
+    if (hostname.includes('twitter') || hostname.includes('x.com')) return 'twitter';
+    if (hostname.includes('linkedin')) return 'linkedin';
+    if (hostname.includes('bing')) return 'bing';
+    if (hostname.includes('yahoo')) return 'yahoo';
+    if (hostname.includes('pinterest')) return 'pinterest';
+    if (hostname.includes('youtube')) return 'youtube';
+    if (hostname.includes('nextdoor')) return 'nextdoor';
+    
+    // Return the cleaned domain as source
+    return hostname.replace('www.', '').replace('m.', '');
+  } catch {
+    return null;
+  }
+};
+
 // Determine source based on UTM params or referrer
 const determineSource = (): string => {
   const params = new URLSearchParams(window.location.search);
@@ -104,28 +138,13 @@ const determineSource = (): string => {
     return utmSource;
   }
   
-  // Otherwise try to determine from referrer
-  const referrer = document.referrer;
-  if (!referrer) return 'direct';
-  
-  try {
-    const referrerUrl = new URL(referrer);
-    const hostname = referrerUrl.hostname.toLowerCase();
-    
-    if (hostname.includes('google')) return 'google';
-    if (hostname.includes('facebook') || hostname.includes('fb.com')) return 'facebook';
-    if (hostname.includes('instagram')) return 'instagram';
-    if (hostname.includes('tiktok')) return 'tiktok';
-    if (hostname.includes('twitter') || hostname.includes('x.com')) return 'twitter';
-    if (hostname.includes('linkedin')) return 'linkedin';
-    if (hostname.includes('bing')) return 'bing';
-    if (hostname.includes('yahoo')) return 'yahoo';
-    
-    // Return the domain as source if not matched
-    return hostname.replace('www.', '');
-  } catch {
-    return 'unknown';
+  // Try to determine from referrer
+  const referrerSource = getSourceFromReferrer(document.referrer);
+  if (referrerSource) {
+    return referrerSource;
   }
+  
+  return 'direct';
 };
 
 export const useQuoteLeadTracking = (serviceType: string) => {
