@@ -55,6 +55,7 @@ interface BookingSubmission {
   flexibility?: string;
   sameDayTurnaround?: boolean;
   shortNoticeCharge?: number;
+  serviceFrequency?: string; // weekly, biweekly, monthly, onetime
   
   // Access
   propertyAccess: string;
@@ -419,6 +420,7 @@ export const useAirbnbBookingSubmit = () => {
         // Service
         service_type: bookingData.subServiceType || 'airbnb', // Service type key from company_settings (airbnb, domestic, commercial)
         cleaning_type: bookingData.serviceType || 'checkin-checkout', // checkin-checkout, midstay, etc.
+        frequently: bookingData.serviceFrequency || null, // weekly, biweekly, monthly, onetime
         
         // Dates
         date_time: bookingDateTime?.toISOString() || null,
