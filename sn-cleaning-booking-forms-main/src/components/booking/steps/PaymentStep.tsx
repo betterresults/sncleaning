@@ -5,7 +5,7 @@ import { PhoneInput } from '@/components/ui/phone-input';
 import { BookingData } from '../AirbnbBookingForm';
 import { CreditCard, Shield, Loader2, AlertTriangle, Building2, Clock } from 'lucide-react';
 import { useAirbnbBookingSubmit } from '@/hooks/useAirbnbBookingSubmit';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
@@ -98,7 +98,16 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   const [editDetails, setEditDetails] = useState(false);
   const [cleaners, setCleaners] = useState<any[]>([]);
   const [paymentType, setPaymentType] = useState<'card' | 'bank-transfer'>('card');
-  
+  const location = useLocation();
+
+  // Determine subServiceType based on current route
+  const subServiceType = useMemo(() => {
+    const path = location.pathname.toLowerCase();
+    if (path.includes('/domestic')) return 'domestic';
+    if (path.includes('/commercial')) return 'commercial';
+    return 'airbnb'; // default
+  }, [location.pathname]);
+
 // Use admin-selected customerId or logged-in/selected customerId
 const { selectedCustomerId } = useAdminCustomer();
 const effectiveCustomerId = isAdminMode ? data.customerId : (customerId || selectedCustomerId || null);
@@ -381,6 +390,7 @@ useEffect(() => {
           propertyFeatures: data.propertyFeatures,
           
           // Service details
+          subServiceType: subServiceType,
           serviceType: data.serviceType,
           alreadyCleaned: data.alreadyCleaned,
           ovenType: data.ovenType,
@@ -468,6 +478,7 @@ useEffect(() => {
           numberOfFloors: data.numberOfFloors,
           additionalRooms: data.additionalRooms,
           propertyFeatures: data.propertyFeatures,
+          subServiceType: subServiceType,
           serviceType: data.serviceType,
           alreadyCleaned: data.alreadyCleaned,
           ovenType: data.ovenType,
@@ -560,6 +571,7 @@ useEffect(() => {
           numberOfFloors: data.numberOfFloors,
           additionalRooms: data.additionalRooms,
           propertyFeatures: data.propertyFeatures,
+          subServiceType: subServiceType,
           serviceType: data.serviceType,
           alreadyCleaned: data.alreadyCleaned,
           ovenType: data.ovenType,
@@ -634,6 +646,7 @@ useEffect(() => {
           numberOfFloors: data.numberOfFloors,
           additionalRooms: data.additionalRooms,
           propertyFeatures: data.propertyFeatures,
+          subServiceType: subServiceType,
           serviceType: data.serviceType,
           alreadyCleaned: data.alreadyCleaned,
           ovenType: data.ovenType,
@@ -708,6 +721,7 @@ useEffect(() => {
           numberOfFloors: data.numberOfFloors,
           additionalRooms: data.additionalRooms,
           propertyFeatures: data.propertyFeatures,
+          subServiceType: subServiceType,
           serviceType: data.serviceType,
           alreadyCleaned: data.alreadyCleaned,
           ovenType: data.ovenType,
@@ -786,6 +800,7 @@ useEffect(() => {
         numberOfFloors: data.numberOfFloors,
         additionalRooms: data.additionalRooms,
         propertyFeatures: data.propertyFeatures,
+        subServiceType: subServiceType,
         serviceType: data.serviceType,
         alreadyCleaned: data.alreadyCleaned,
         ovenType: data.ovenType,

@@ -34,6 +34,7 @@ interface BookingSubmission {
   propertyFeatures?: Record<string, boolean>;
   
   // Service details
+  subServiceType?: string; // service_type in DB (airbnb, domestic, commercial)
   serviceType: string; // cleaning_type in DB (checkin-checkout, midstay, light, deep)
   alreadyCleaned?: boolean | null;
   ovenType?: string;
@@ -416,7 +417,7 @@ export const useAirbnbBookingSubmit = () => {
         property_details: buildPropertyDetails(bookingData),
         
         // Service
-        service_type: 'airbnb', // Service type key from company_settings
+        service_type: bookingData.subServiceType || 'airbnb', // Service type key from company_settings (airbnb, domestic, commercial)
         cleaning_type: bookingData.serviceType || 'checkin-checkout', // checkin-checkout, midstay, etc.
         
         // Dates
