@@ -262,7 +262,7 @@ const DomesticBookingForm: React.FC = () => {
     loadResumeData();
   }, [searchParams]);
 
-  // Check if user is admin AND on admin route
+  // Check if user is admin AND on admin route, and determine if first-time customer
   useEffect(() => {
     const checkAdminAndLoadCustomer = async () => {
       const isAdminRoute = location.pathname.includes('/admin/');
@@ -305,14 +305,35 @@ const DomesticBookingForm: React.FC = () => {
           }
           
           if (customerId) {
+            // Check if customer has any past bookings
+            const { data: pastBookings } = await supabase
+              .from('past_bookings')
+              .select('id')
+              .eq('customer', customerId)
+              .limit(1);
+            
+            const { data: currentBookings } = await supabase
+              .from('bookings')
+              .select('id')
+              .eq('customer', customerId)
+              .limit(1);
+            
+            const hasPreviousBookings = (pastBookings && pastBookings.length > 0) || (currentBookings && currentBookings.length > 0);
+            
             setBookingData(prev => ({
               ...prev,
-              customerId: customerId
+              customerId: customerId,
+              isFirstTimeCustomer: !hasPreviousBookings // Not first time if they have previous bookings
             }));
           }
         }
       } else {
+        // Not logged in = new customer, eligible for discount
         setIsAdminMode(false);
+        setBookingData(prev => ({
+          ...prev,
+          isFirstTimeCustomer: true
+        }));
       }
     };
     checkAdminAndLoadCustomer();
