@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { DomesticBookingData } from './DomesticBookingForm';
-import { Home, Clock, Calendar, PoundSterling, ChevronDown, ChevronUp, Edit2, Info, Tag } from 'lucide-react';
+import { Home, Clock, Calendar, PoundSterling, ChevronDown, ChevronUp, Edit2, Info, Tag, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -93,6 +93,29 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
       return data.adminTotalCostOverride;
     }
     
+    // If first deep clean is selected, use the first deep clean cost for the first booking
+    if (calculations.wantsFirstDeepClean) {
+      let total = calculations.firstDeepCleanCost;
+      
+      if (isAdminMode && data.adminRemoveShortNoticeCharge) {
+        total -= calculations.shortNoticeCharge || 0;
+      }
+      
+      if (isAdminMode && data.adminDiscountPercentage) {
+        total -= total * data.adminDiscountPercentage / 100;
+      }
+      if (isAdminMode && data.adminDiscountAmount) {
+        total -= data.adminDiscountAmount;
+      }
+      
+      // Apply new client 15% discount
+      if (data.isFirstTimeCustomer) {
+        total = total * 0.85;
+      }
+      
+      return Math.max(0, total);
+    }
+    
     const effectiveRate = data.adminHourlyRateOverride !== undefined ? data.adminHourlyRateOverride : calculations.hourlyRate;
     let total = (calculations.totalHours || 0) * effectiveRate;
 
@@ -132,6 +155,24 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
   const calculateSubtotalBeforeFirstTimeDiscount = () => {
     if (isAdminMode && data.adminTotalCostOverride !== undefined && data.adminTotalCostOverride !== null) {
       return data.adminTotalCostOverride;
+    }
+    
+    // If first deep clean is selected, use the first deep clean cost
+    if (calculations.wantsFirstDeepClean) {
+      let total = calculations.firstDeepCleanCost;
+      
+      if (isAdminMode && data.adminRemoveShortNoticeCharge) {
+        total -= calculations.shortNoticeCharge || 0;
+      }
+      
+      if (isAdminMode && data.adminDiscountPercentage) {
+        total -= total * data.adminDiscountPercentage / 100;
+      }
+      if (isAdminMode && data.adminDiscountAmount) {
+        total -= data.adminDiscountAmount;
+      }
+      
+      return Math.max(0, total);
     }
     
     const effectiveRate = data.adminHourlyRateOverride !== undefined ? data.adminHourlyRateOverride : calculations.hourlyRate;
@@ -186,7 +227,9 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
     data.adminDiscountAmount,
     data.adminRemoveShortNoticeCharge,
     shortNoticeInfo.charge,
-    data.isFirstTimeCustomer
+    data.isFirstTimeCustomer,
+    calculations.wantsFirstDeepClean,
+    calculations.firstDeepCleanCost,
   ]);
 
   const renderSummaryContent = () => (
@@ -369,9 +412,17 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
             <Clock className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <p className="font-medium text-foreground">
-              {calculations.totalHours} hour{calculations.totalHours !== 1 ? 's' : ''}{getFrequencyDescription() ? ` ${getFrequencyDescription()}` : ''}
-            </p>
+            {calculations.wantsFirstDeepClean ? (
+              <>
+                <p className="font-medium text-foreground">
+                  <span className="text-amber-600">{calculations.firstDeepCleanHours}h</span> first clean (deep), then {calculations.totalHours}h {getFrequencyDescription().toLowerCase() || 'per visit'}
+                </p>
+              </>
+            ) : (
+              <p className="font-medium text-foreground">
+                {calculations.totalHours} hour{calculations.totalHours !== 1 ? 's' : ''}{getFrequencyDescription() ? ` ${getFrequencyDescription()}` : ''}
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -469,9 +520,22 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
         </div>
       )}
 
-      {/* Total - only show when frequency is selected */}
       {data.serviceFrequency && (
         <div className="mt-4 pt-4 border-t border-border space-y-3">
+          {/* First Deep Clean Banner */}
+          {calculations.wantsFirstDeepClean && (
+            <div className="flex items-center justify-between p-3 bg-amber-50 rounded-xl border border-amber-200">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-600" />
+                <span className="text-sm font-medium text-amber-700">First Deep Clean</span>
+                <span className="text-xs text-amber-600">({calculations.firstDeepCleanHours}h @ £{calculations.oneTimeRate}/hr)</span>
+              </div>
+              <span className="text-sm font-bold text-amber-700">
+                £{calculations.firstDeepCleanCost.toFixed(2)}
+              </span>
+            </div>
+          )}
+          
           {/* First-time discount banner */}
           {data.isFirstTimeCustomer && (
             <div className="flex items-center justify-between p-3 bg-green-50 rounded-xl border border-green-200">
@@ -487,7 +551,9 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
           
           {/* Total */}
           <div className="flex items-center justify-between">
-            <span className="text-2xl font-bold text-foreground">Total</span>
+            <span className="text-2xl font-bold text-foreground">
+              {calculations.wantsFirstDeepClean ? 'First Clean' : 'Total'}
+            </span>
             <div className="text-right">
               {data.isFirstTimeCustomer && (
                 <span className="text-sm text-muted-foreground line-through mr-2">
@@ -505,18 +571,32 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
             <div className="p-3 bg-muted/30 rounded-xl border border-border">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-foreground">
-                  Upcoming {data.serviceFrequency === 'weekly' 
+                  {calculations.wantsFirstDeepClean ? 'Regular Cleans' : 'Upcoming'} ({data.serviceFrequency === 'weekly' 
                     ? 'Weekly' 
                     : data.serviceFrequency === 'biweekly' 
                       ? 'Biweekly' 
-                      : 'Monthly'} Cost
+                      : 'Monthly'})
                   {data.serviceFrequency === 'weekly' && data.daysPerWeek > 1 && (
                     <span className="text-muted-foreground font-normal"> ({data.daysPerWeek}x/week)</span>
                   )}
                 </span>
                 <span className="text-lg font-bold text-foreground">
                   £{(() => {
-                    // Start with subtotal before first-time discount
+                    // For first deep clean, use the regular recurring cost from calculations
+                    if (calculations.wantsFirstDeepClean) {
+                      let recurringTotal = calculations.regularRecurringCost;
+                      // Apply first-time discount to recurring
+                      if (data.isFirstTimeCustomer) {
+                        recurringTotal = recurringTotal * 0.85;
+                      }
+                      // Multiply by days per week if more than 1
+                      if (data.serviceFrequency === 'weekly' && data.daysPerWeek > 1) {
+                        recurringTotal = recurringTotal * data.daysPerWeek;
+                      }
+                      return Math.max(0, recurringTotal).toFixed(2);
+                    }
+                    
+                    // Original logic for non-deep-clean bookings
                     let recurringTotal = calculateSubtotalBeforeFirstTimeDiscount();
                     if (data.ovenCleaningScope === 'this-booking' && calculations.ovenCleaningCost > 0) {
                       recurringTotal -= calculations.ovenCleaningCost;
