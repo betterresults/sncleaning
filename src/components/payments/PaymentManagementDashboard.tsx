@@ -105,6 +105,23 @@ const PaymentManagementDashboard = () => {
   const { sendPaymentSMS, isLoading: isSendingSMS } = useSendPaymentSMS();
   const { sendManualEmail, isLoading: isSendingEmail } = useManualEmailNotification();
 
+  // Auto-sync payment methods from Stripe on component mount
+  useEffect(() => {
+    const autoSyncPaymentMethods = async () => {
+      try {
+        console.log('Auto-syncing payment methods from Stripe...');
+        await supabase.functions.invoke('sync-customer-stripe-accounts', {
+          body: {}
+        });
+        console.log('Auto-sync completed');
+      } catch (error) {
+        console.error('Auto-sync failed:', error);
+      }
+    };
+    
+    autoSyncPaymentMethods();
+  }, []);
+
   useEffect(() => {
     fetchBookings();
     fetchCurrentMonthStats();
