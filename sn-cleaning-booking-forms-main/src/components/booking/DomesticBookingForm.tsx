@@ -502,7 +502,7 @@ const DomesticBookingForm: React.FC = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-white py-4 mb-3 border-b border-border shadow-[0_10px_30px_rgba(0,0,0,0.14)]">
+      <header className="bg-white py-4 mb-3 border-b border-border">
         <div className="container mx-auto px-2 sm:px-4">
           <div className="flex items-center justify-between mb-4">
             {!isAdminMode && bookingData.customerId && (
