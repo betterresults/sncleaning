@@ -115,7 +115,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
     }
   }, [recommendedHours]);
   return <div className="space-y-6">
-      {isLoadingConfigs && <div className="p-6 rounded-2xl border border-border bg-white">
+      {isLoadingConfigs && <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-muted rounded w-1/3"></div>
             <div className="grid grid-cols-2 gap-4">
@@ -125,11 +125,9 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
           </div>
         </div>}
 
-      {/* Main Card - Contains Property Details, Size, Frequency, and Oven Cleaning */}
-      <div className="p-6 rounded-2xl border border-border bg-white space-y-6">
-        {/* Property Type */}
-        <div>
-          <h2 className="text-2xl font-bold text-slate-700 mb-4">Property Details</h2>
+      {/* Property Type */}
+      <div className="relative z-10 p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+        <h2 className="text-2xl font-bold text-slate-700 mb-4">Property Details</h2>
           <div className="grid grid-cols-2 gap-4">
             {(propertyTypeConfigs.length > 0 ? propertyTypeConfigs : [{
             option: 'flat',
@@ -147,12 +145,12 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
                   <span className={`text-base font-bold transition-colors ${isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'}`}>{opt.label}</span>
                 </button>;
           })}
-          </div>
         </div>
+      </div>
 
-        {/* Property Size */}
-        <div>
-          <h2 className="text-2xl font-bold text-slate-700 mb-4">Size of the property</h2>
+      {/* Property Size */}
+      <div className="relative z-[9] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+        <h2 className="text-2xl font-bold text-slate-700 mb-4">Size of the property</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Bedrooms */}
@@ -190,14 +188,14 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
                     <Plus className="h-5 w-5" />
                   </Button>
                 </div>
-              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Additional Rooms */}
-        {data.bedrooms && !['studio', '1'].includes(data.bedrooms) && additionalRoomsConfigs.length > 0 && <div>
-            <h2 className="text-2xl font-bold text-slate-700 mb-4">Additional rooms</h2>
+      {/* Additional Rooms */}
+      {data.bedrooms && !['studio', '1'].includes(data.bedrooms) && additionalRoomsConfigs.length > 0 && <div className="relative z-[8] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+        <h2 className="text-2xl font-bold text-slate-700 mb-4">Additional rooms</h2>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {additionalRoomsConfigs.map((room: any) => {
@@ -260,12 +258,12 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
                       </div>}
                   </button>;
           })}
-            </div>
-          </div>}
+        </div>
+      </div>}
 
-        {/* Service Frequency */}
-        <div>
-          <h2 className="text-2xl font-bold text-slate-700 mb-4">How often do you need cleaning?</h2>
+      {/* Service Frequency */}
+      <div className="relative z-[7] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+        <h2 className="text-2xl font-bold text-slate-700 mb-4">How often do you need cleaning?</h2>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {(serviceFrequencyConfigs.length > 0 ? serviceFrequencyConfigs : [{
@@ -355,10 +353,10 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
               </div>
             </div>
           )}
-        </div>
+      </div>
 
-        {/* Oven Cleaning - With Switch Toggle */}
-        {ovenCleaningConfigs.length > 0 && <div>
+      {/* Oven Cleaning - With Switch Toggle */}
+      {ovenCleaningConfigs.length > 0 && <div className="relative z-[6] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
             <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl border border-border">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-primary/10 rounded-lg">
@@ -416,8 +414,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
                     </div>
                   </div>}
               </>}
-          </div>}
-      </div>
+      </div>}
 
       {/* Estimated Cleaning Time - Show as soon as hours are calculated (same as summary) */}
       {(calculations.totalHours ?? 0) > 0 && <div className="relative z-[3] p-4 rounded-2xl border-2 border-primary/30 shadow-[0_12px_32px_rgba(0,0,0,0.2)] bg-gradient-to-br from-white to-primary/5 transition-all duration-300 hover:shadow-[0_16px_40px_rgba(0,0,0,0.25)] hover:border-primary/50">
