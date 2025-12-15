@@ -13,12 +13,14 @@ export const useCustomerPaymentMethods = (customerIds: number[]) => {
 
   const fetchPaymentData = async () => {
     if (customerIds.length === 0) {
+      console.log('[useCustomerPaymentMethods] No customer IDs provided, skipping fetch');
       setLoading(false);
       return;
     }
 
     try {
       setLoading(true);
+      console.log('[useCustomerPaymentMethods] Fetching payment methods for customer IDs:', customerIds);
       
       // Fetch payment method counts
       const { data: paymentMethods, error } = await supabase
@@ -26,7 +28,12 @@ export const useCustomerPaymentMethods = (customerIds: number[]) => {
         .select('customer_id, stripe_customer_id')
         .in('customer_id', customerIds);
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useCustomerPaymentMethods] Error fetching:', error);
+        throw error;
+      }
+
+      console.log('[useCustomerPaymentMethods] Raw payment methods from DB:', paymentMethods);
 
       // Process data to get counts and Stripe status
       const processedData: { [key: number]: CustomerPaymentData } = {};
@@ -40,6 +47,7 @@ export const useCustomerPaymentMethods = (customerIds: number[]) => {
         };
       });
 
+      console.log('[useCustomerPaymentMethods] Processed payment data:', processedData);
       setPaymentData(processedData);
     } catch (error) {
       console.error('Error fetching payment data:', error);
