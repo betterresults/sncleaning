@@ -115,7 +115,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
     }
   }, [recommendedHours]);
   return <div className="space-y-6">
-      {isLoadingConfigs && <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+      {isLoadingConfigs && <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-muted rounded w-1/3"></div>
             <div className="grid grid-cols-2 gap-4">
@@ -126,295 +126,235 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
         </div>}
 
       {/* Property Type */}
-      <div className="relative z-10 p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+      <div className="relative z-10 p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white">
         <h2 className="text-2xl font-bold text-slate-700 mb-4">Property Details</h2>
-          <div className="grid grid-cols-2 gap-4">
-            {(propertyTypeConfigs.length > 0 ? propertyTypeConfigs : [{
-            option: 'flat',
-            label: 'Flat'
-          }, {
-            option: 'house',
-            label: 'House'
-          }]).map((opt: any) => {
-            const isSelected = data.propertyType === opt.option;
-            const isHouse = opt.option === 'house';
-            return <button key={opt.option} className={`group relative h-16 rounded-2xl border-2 transition-all duration-500 hover:scale-105 justify-start gap-3 p-4 flex items-center ${isSelected ? 'border-primary bg-primary/5 shadow-xl' : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'}`} onClick={() => onUpdate({
-              propertyType: isSelected ? '' : opt.option
-            })}>
-                  {isHouse ? <Home className={`h-6 w-6 transition-all duration-500 ${isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'}`} /> : <Building className={`h-6 w-6 transition-all duration-500 ${isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'}`} />}
-                  <span className={`text-base font-bold transition-colors ${isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'}`}>{opt.label}</span>
-                </button>;
-          })}
+        <div className="grid grid-cols-2 gap-4">
+          {(propertyTypeConfigs.length > 0 ? propertyTypeConfigs : [{
+          option: 'flat',
+          label: 'Flat'
+        }, {
+          option: 'house',
+          label: 'House'
+        }]).map((opt: any) => {
+          const isSelected = data.propertyType === opt.option;
+          const isHouse = opt.option === 'house';
+          return <button key={opt.option} className={`group relative h-16 rounded-2xl border-2 transition-all duration-500 hover:scale-105 justify-start gap-3 p-4 flex items-center ${isSelected ? 'border-primary bg-primary/5 shadow-xl' : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'}`} onClick={() => onUpdate({
+            propertyType: isSelected ? '' : opt.option
+          })}>
+                {isHouse ? <Home className={`h-6 w-6 transition-all duration-500 ${isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'}`} /> : <Building className={`h-6 w-6 transition-all duration-500 ${isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'}`} />}
+                <span className={`text-base font-bold transition-colors ${isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'}`}>{opt.label}</span>
+              </button>;
+        })}
         </div>
       </div>
 
       {/* Property Size */}
-      <div className="relative z-[9] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+      <div className="relative z-[9] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white">
         <h2 className="text-2xl font-bold text-slate-700 mb-4">Size of the property</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Bedrooms */}
-            <div>
-              <div className="flex items-center justify-center">
-                <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${data.bedrooms ? 'bg-primary/5 border-2 border-primary shadow-lg' : 'bg-card border-2 border-border'}`}>
-                  <Button variant="ghost" size="sm" className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary" onClick={decrementBedrooms} disabled={!data.bedrooms || data.bedrooms === 'studio'}>
-                    <Minus className="h-5 w-5" />
-                  </Button>
-                  <div className="flex-1 text-center">
-                    <div className={`text-base font-bold transition-colors ${data.bedrooms ? 'text-primary' : 'text-slate-400'}`}>
-                      {data.bedrooms ? getBedroomLabel(data.bedrooms) : 'Bedrooms'}
-                    </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+          {/* Bedrooms */}
+          <div>
+            <div className="flex items-center justify-center">
+              <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${data.bedrooms ? 'bg-primary/5 border-2 border-primary shadow-lg' : 'bg-card border-2 border-border'}`}>
+                <Button variant="ghost" size="sm" className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary" onClick={decrementBedrooms} disabled={!data.bedrooms || data.bedrooms === 'studio'}>
+                  <Minus className="h-5 w-5" />
+                </Button>
+                <div className="flex-1 text-center">
+                  <div className={`text-base font-bold transition-colors ${data.bedrooms ? 'text-primary' : 'text-slate-400'}`}>
+                    {data.bedrooms ? getBedroomLabel(data.bedrooms) : 'Bedrooms'}
                   </div>
-                  <Button variant="ghost" size="sm" className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary" onClick={incrementBedrooms} disabled={data.bedrooms === '6+'}>
-                    <Plus className="h-5 w-5" />
-                  </Button>
                 </div>
+                <Button variant="ghost" size="sm" className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary" onClick={incrementBedrooms} disabled={data.bedrooms === '6+'}>
+                  <Plus className="h-5 w-5" />
+                </Button>
               </div>
             </div>
+          </div>
 
-            {/* Bathrooms */}
-            <div>
-              <div className="flex items-center justify-center">
-                <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${data.bathrooms ? 'bg-primary/5 border-2 border-primary shadow-lg' : 'bg-card border-2 border-border'}`}>
-                  <Button variant="ghost" size="sm" className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary" onClick={decrementBathrooms} disabled={!data.bathrooms || data.bathrooms === '1'}>
-                    <Minus className="h-5 w-5" />
-                  </Button>
-                  <div className="flex-1 text-center">
-                    <div className={`text-base font-bold transition-colors ${data.bathrooms ? 'text-primary' : 'text-slate-400'}`}>
-                      {data.bathrooms ? `${data.bathrooms} Bathroom${data.bathrooms !== '1' && data.bathrooms !== '6+' && parseInt(data.bathrooms) > 1 ? 's' : data.bathrooms === '6+' ? 's' : ''}` : 'Bathrooms'}
-                    </div>
+          {/* Bathrooms */}
+          <div>
+            <div className="flex items-center justify-center">
+              <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${data.bathrooms ? 'bg-primary/5 border-2 border-primary shadow-lg' : 'bg-card border-2 border-border'}`}>
+                <Button variant="ghost" size="sm" className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary" onClick={decrementBathrooms} disabled={!data.bathrooms || data.bathrooms === '1'}>
+                  <Minus className="h-5 w-5" />
+                </Button>
+                <div className="flex-1 text-center">
+                  <div className={`text-base font-bold transition-colors ${data.bathrooms ? 'text-primary' : 'text-slate-400'}`}>
+                    {data.bathrooms ? `${data.bathrooms} Bathroom${data.bathrooms !== '1' && data.bathrooms !== '6+' && parseInt(data.bathrooms) > 1 ? 's' : data.bathrooms === '6+' ? 's' : ''}` : 'Bathrooms'}
                   </div>
-                  <Button variant="ghost" size="sm" className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary" onClick={incrementBathrooms} disabled={data.bathrooms === '6+'}>
-                    <Plus className="h-5 w-5" />
-                  </Button>
                 </div>
+                <Button variant="ghost" size="sm" className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary" onClick={incrementBathrooms} disabled={data.bathrooms === '6+'}>
+                  <Plus className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Additional Rooms */}
-      {data.bedrooms && !['studio', '1'].includes(data.bedrooms) && additionalRoomsConfigs.length > 0 && <div className="relative z-[8] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-        <h2 className="text-2xl font-bold text-slate-700 mb-4">Additional rooms</h2>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {additionalRoomsConfigs.map((room: any) => {
-            const currentCount = data.additionalRooms[room.option as keyof typeof data.additionalRooms] || 0;
-            const maxValue = room.max_value || 6;
-            const IconComponent = (LucideIcons as any)[room.icon];
-            return <button key={room.option} className={`group relative ${currentCount > 0 ? 'h-32' : 'h-24'} rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${currentCount > 0 ? 'border-primary bg-primary/5 shadow-xl' : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'}`} onClick={() => {
-              if (currentCount === 0) {
-                onUpdate({
-                  additionalRooms: {
-                    ...data.additionalRooms,
-                    [room.option]: 1
+      {data.bedrooms && !['studio', '1'].includes(data.bedrooms) && additionalRoomsConfigs.length > 0 && <div className="p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white">
+          <h2 className="text-2xl font-bold text-slate-700 mb-4">Additional rooms</h2>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
+            {additionalRoomsConfigs.map((room: any) => {
+          const currentCount = data.additionalRooms[room.option as keyof typeof data.additionalRooms] || 0;
+          const maxValue = room.max_value || 6;
+          const IconComponent = (LucideIcons as any)[room.icon];
+          return <button key={room.option} className={`group relative ${currentCount > 0 ? 'h-32' : 'h-24'} rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${currentCount > 0 ? 'border-primary bg-primary/5 shadow-xl' : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'}`} onClick={() => {
+            if (currentCount === 0) {
+              onUpdate({
+                additionalRooms: {
+                  ...data.additionalRooms,
+                  [room.option]: 1
+                }
+              });
+            }
+          }}>
+                  {currentCount === 0 ? <div className="flex flex-col items-center justify-center h-full">
+                      {IconComponent && <IconComponent className="h-6 w-6 mb-2 text-muted-foreground group-hover:text-primary transition-all duration-500" />}
+                      <span className="text-base font-bold text-slate-500 group-hover:text-primary">
+                        {room.label}
+                      </span>
+                    </div> : <div className="flex flex-col items-center justify-center h-full p-2">
+                      {IconComponent && <IconComponent className="h-5 w-5 mb-1 text-primary" />}
+                      <span className="text-xs font-bold text-primary mb-2">
+                        {room.label}
+                      </span>
+                      <div className="flex items-center w-full">
+                        <Button variant="ghost" size="sm" className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary" onClick={e => {
+                  e.stopPropagation();
+                  if (currentCount > 0) {
+                    onUpdate({
+                      additionalRooms: {
+                        ...data.additionalRooms,
+                        [room.option]: currentCount - 1
+                      }
+                    });
                   }
-                });
-              }
-            }}>
-                    {currentCount === 0 ? <div className="flex flex-col items-center justify-center h-full">
-                        {IconComponent && <IconComponent className="h-6 w-6 mb-2 text-muted-foreground group-hover:text-primary transition-all duration-500" />}
-                        <span className="text-base font-bold text-slate-500 group-hover:text-primary">
-                          {room.label}
-                        </span>
-                      </div> : <div className="flex flex-col items-center justify-center h-full p-2">
-                        {IconComponent && <IconComponent className="h-5 w-5 mb-1 text-primary" />}
-                        <span className="text-xs font-bold text-primary mb-2">
-                          {room.label}
-                        </span>
-                        <div className="flex items-center w-full">
-                          <Button variant="ghost" size="sm" className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary" onClick={e => {
-                    e.stopPropagation();
-                    if (currentCount > 0) {
-                      onUpdate({
-                        additionalRooms: {
-                          ...data.additionalRooms,
-                          [room.option]: currentCount - 1
-                        }
-                      });
-                    }
-                  }}>
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <div className="flex-1 text-center mx-1">
-                            <div className="text-lg font-bold text-primary">
-                              {currentCount}
-                            </div>
+                }}>
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <div className="flex-1 text-center mx-1">
+                          <div className="text-lg font-bold text-primary">
+                            {currentCount}
                           </div>
-                          <Button variant="ghost" size="sm" className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary" onClick={e => {
-                    e.stopPropagation();
-                    if (currentCount < maxValue) {
-                      onUpdate({
-                        additionalRooms: {
-                          ...data.additionalRooms,
-                          [room.option]: currentCount + 1
-                        }
-                      });
-                    }
-                  }} disabled={currentCount >= maxValue}>
-                            <Plus className="h-3 w-3" />
-                          </Button>
                         </div>
-                      </div>}
-                  </button>;
-          })}
-        </div>
-      </div>}
+                        <Button variant="ghost" size="sm" className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary" onClick={e => {
+                  e.stopPropagation();
+                  if (currentCount < maxValue) {
+                    onUpdate({
+                      additionalRooms: {
+                        ...data.additionalRooms,
+                        [room.option]: currentCount + 1
+                      }
+                    });
+                  }
+                }} disabled={currentCount >= maxValue}>
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>}
+                </button>;
+        })}
+          </div>
+        </div>}
 
       {/* Service Frequency */}
-      <div className="relative z-[7] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+      <div className="p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white">
         <h2 className="text-2xl font-bold text-slate-700 mb-4">How often do you need cleaning?</h2>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {(serviceFrequencyConfigs.length > 0 ? serviceFrequencyConfigs : [{
-            option: 'weekly',
-            label: 'Weekly'
-          }, {
-            option: 'biweekly',
-            label: 'Biweekly'
-          }, {
-            option: 'monthly',
-            label: 'Monthly'
-          }, {
-            option: 'onetime',
-            label: 'One-time'
-          }]).map((opt: any) => {
-            const isSelected = data.serviceFrequency === opt.option;
-            return <button key={opt.option} className={`group relative h-20 rounded-2xl border-2 transition-all duration-500 hover:scale-105 flex flex-col items-center justify-center ${isSelected ? 'border-primary bg-primary/5 shadow-xl' : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'}`} onClick={() => onUpdate({
-              serviceFrequency: isSelected ? '' : opt.option,
-              daysPerWeek: opt.option === 'weekly' ? data.daysPerWeek || 1 : 1,
-              wantsFirstDeepClean: opt.option === 'onetime' ? false : data.wantsFirstDeepClean
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {(serviceFrequencyConfigs.length > 0 ? serviceFrequencyConfigs : [{
+          option: 'weekly',
+          label: 'Weekly'
+        }, {
+          option: 'biweekly',
+          label: 'Biweekly'
+        }, {
+          option: 'monthly',
+          label: 'Monthly'
+        }, {
+          option: 'onetime',
+          label: 'One-time'
+        }]).map((opt: any) => {
+          const isSelected = data.serviceFrequency === opt.option;
+          return <button key={opt.option} className={`group relative h-20 rounded-2xl border-2 transition-all duration-500 hover:scale-105 flex flex-col items-center justify-center ${isSelected ? 'border-primary bg-primary/5 shadow-xl' : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'}`} onClick={() => onUpdate({
+            serviceFrequency: isSelected ? '' : opt.option,
+            daysPerWeek: opt.option === 'weekly' ? data.daysPerWeek || 1 : 1,
+            wantsFirstDeepClean: opt.option === 'onetime' ? false : data.wantsFirstDeepClean
+          })}>
+                {isSelected && <CheckCircle className="h-5 w-5 text-primary mb-1" />}
+                <span className={`text-base font-bold transition-colors ${isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'}`}>{opt.label}</span>
+              </button>;
+        })}
+        </div>
+
+        {/* Days per week selector - only show when weekly is selected */}
+        {data.serviceFrequency === 'weekly' && <div className="mt-4 p-4 bg-muted/30 rounded-xl border border-border">
+            <h3 className="text-lg font-semibold text-slate-700 mb-3">How many days a week?</h3>
+            <div className="grid grid-cols-5 gap-2">
+              {[1, 2, 3, 4, 5].map(days => {
+            const isSelected = data.daysPerWeek === days;
+            return <button key={days} className={`h-12 rounded-xl border-2 transition-all duration-300 flex items-center justify-center ${isSelected ? 'border-primary bg-primary/10 shadow-lg' : 'border-border bg-card hover:border-primary/50'}`} onClick={() => onUpdate({
+              daysPerWeek: days
             })}>
-                  {isSelected && <CheckCircle className="h-5 w-5 text-primary mb-1" />}
-                  <span className={`text-base font-bold transition-colors ${isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'}`}>{opt.label}</span>
-                </button>;
+                    <span className={`text-lg font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>{days}</span>
+                  </button>;
           })}
-          </div>
-
-          {/* Days per week selector - only show when weekly is selected */}
-          {data.serviceFrequency === 'weekly' && <div className="mt-4 p-4 bg-muted/30 rounded-xl border border-border">
-              <h3 className="text-lg font-semibold text-slate-700 mb-3">How many days a week?</h3>
-              <div className="grid grid-cols-5 gap-2">
-                {[1, 2, 3, 4, 5].map(days => {
-              const isSelected = data.daysPerWeek === days;
-              return <button key={days} className={`h-12 rounded-xl border-2 transition-all duration-300 flex items-center justify-center ${isSelected ? 'border-primary bg-primary/10 shadow-lg' : 'border-border bg-card hover:border-primary/50'}`} onClick={() => onUpdate({
-                daysPerWeek: days
-              })}>
-                      <span className={`text-lg font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>{days}</span>
-                    </button>;
-            })}
-              </div>
-            </div>}
-
-          {/* First Deep Clean Option - only show for recurring bookings */}
-          {data.serviceFrequency && data.serviceFrequency !== 'onetime' && (
-            <div className="mt-4 p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border-2 border-amber-200">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-amber-100 rounded-lg mt-0.5">
-                  <LucideIcons.Sparkles className="h-5 w-5 text-amber-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold text-slate-700">Start with a Deep Clean?</h3>
-                  <p className="text-sm text-slate-600 mt-1 mb-3">
-                    A deep clean takes 50% longer but ensures your home is thoroughly cleaned before regular maintenance begins. Great for first-time customers!
-                  </p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      className={`p-3 rounded-xl border-2 transition-all duration-300 text-center ${
-                        data.wantsFirstDeepClean
-                          ? 'border-amber-500 bg-amber-100 shadow-lg'
-                          : 'border-border bg-white hover:border-amber-300'
-                      }`}
-                      onClick={() => onUpdate({ wantsFirstDeepClean: true })}
-                    >
-                      <span className={`text-sm font-bold ${data.wantsFirstDeepClean ? 'text-amber-700' : 'text-slate-600'}`}>
-                        Yes, deep clean first
-                      </span>
-                      {calculations.firstDeepCleanHours > 0 && data.wantsFirstDeepClean && (
-                        <p className="text-xs text-amber-600 mt-1">
-                          {calculations.firstDeepCleanHours}h @ £{calculations.oneTimeRate}/hr
-                        </p>
-                      )}
-                    </button>
-                    <button
-                      className={`p-3 rounded-xl border-2 transition-all duration-300 text-center ${
-                        !data.wantsFirstDeepClean
-                          ? 'border-primary bg-primary/10 shadow-lg'
-                          : 'border-border bg-white hover:border-primary/30'
-                      }`}
-                      onClick={() => onUpdate({ wantsFirstDeepClean: false })}
-                    >
-                      <span className={`text-sm font-bold ${!data.wantsFirstDeepClean ? 'text-primary' : 'text-slate-600'}`}>
-                        No, regular clean
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-      </div>
-
-      {/* Oven Cleaning - With Switch Toggle */}
-      {ovenCleaningConfigs.length > 0 && <div className="relative z-[6] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl border border-border">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <LucideIcons.Microwave className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-slate-700">
-                    Add professional oven cleaning
-                  </h2>
-                  <p className="text-sm text-slate-600 mt-1">
-                    Include professional oven cleaning service
-                  </p>
-                </div>
-              </div>
-              <Switch checked={data.hasOvenCleaning} onCheckedChange={checked => {
-            onUpdate({
-              hasOvenCleaning: checked,
-              ovenType: checked ? data.ovenType : ''
-            });
-          }} className={`w-16 h-7 ${!data.hasOvenCleaning ? 'border-2 border-border' : ''}`} />
             </div>
             
-            {data.hasOvenCleaning && <>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
-                  {ovenCleaningConfigs.filter((oven: any) => oven.option !== 'not-required').map((oven: any) => {
-              const isSelected = data.ovenType === oven.option;
-              const IconComponent = (LucideIcons as any)[oven.icon];
-              return <button key={oven.option} className={`group relative h-20 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${isSelected ? 'border-primary bg-primary/5 shadow-xl' : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'}`} onClick={() => onUpdate({
-                ovenType: isSelected ? '' : oven.option as any
-              })}>
-                        <div className="flex flex-col items-center justify-center h-full">
-                          {IconComponent && <IconComponent className={`h-6 w-6 mb-1 transition-all duration-500 ${isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'}`} />}
-                          <span className={`text-base font-bold transition-colors ${isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'}`}>{oven.label}</span>
-                        </div>
-                      </button>;
-            })}
-                </div>
+          </div>}
 
-                {/* Oven cleaning scope - only show for recurring bookings */}
-                {data.serviceFrequency && data.serviceFrequency !== 'onetime' && data.ovenType && <div className="mt-4 p-4 bg-muted/30 rounded-xl border border-border">
-                    <h3 className="text-base font-semibold text-slate-700 mb-3">Apply oven cleaning to:</h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button className={`p-3 rounded-xl border-2 transition-all duration-300 text-left ${data.ovenCleaningScope === 'this-booking' ? 'border-primary bg-primary/10' : 'border-border bg-card hover:border-primary/50'}`} onClick={() => onUpdate({
-                ovenCleaningScope: 'this-booking'
-              })}>
-                        <span className={`text-sm font-semibold ${data.ovenCleaningScope === 'this-booking' ? 'text-primary' : 'text-slate-600'}`}>This booking only</span>
-                        <p className="text-xs text-muted-foreground mt-1">One-time add-on</p>
-                      </button>
-                      <button className={`p-3 rounded-xl border-2 transition-all duration-300 text-left ${data.ovenCleaningScope === 'all-bookings' ? 'border-primary bg-primary/10' : 'border-border bg-card hover:border-primary/50'}`} onClick={() => onUpdate({
-                ovenCleaningScope: 'all-bookings'
-              })}>
-                        <span className={`text-sm font-semibold ${data.ovenCleaningScope === 'all-bookings' ? 'text-primary' : 'text-slate-600'}`}>All future bookings</span>
-                        <p className="text-xs text-muted-foreground mt-1">Recurring add-on</p>
-                      </button>
-                    </div>
-                  </div>}
-              </>}
-      </div>}
+        {/* First Deep Clean Option - only show for recurring bookings */}
+        {data.serviceFrequency && data.serviceFrequency !== 'onetime' && (
+          <div className="mt-4 p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border-2 border-amber-200">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-amber-100 rounded-lg mt-0.5">
+                <LucideIcons.Sparkles className="h-5 w-5 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-slate-700">Start with a Deep Clean?</h3>
+                <p className="text-sm text-slate-600 mt-1 mb-3">
+                  A deep clean takes 50% longer but ensures your home is thoroughly cleaned before regular maintenance begins. Great for first-time customers!
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    className={`p-3 rounded-xl border-2 transition-all duration-300 text-center ${
+                      data.wantsFirstDeepClean
+                        ? 'border-amber-500 bg-amber-100 shadow-lg'
+                        : 'border-border bg-white hover:border-amber-300'
+                    }`}
+                    onClick={() => onUpdate({ wantsFirstDeepClean: true })}
+                  >
+                    <span className={`text-sm font-bold ${data.wantsFirstDeepClean ? 'text-amber-700' : 'text-slate-600'}`}>
+                      Yes, deep clean first
+                    </span>
+                    {calculations.firstDeepCleanHours > 0 && data.wantsFirstDeepClean && (
+                      <p className="text-xs text-amber-600 mt-1">
+                        {calculations.firstDeepCleanHours}h @ £{calculations.oneTimeRate}/hr
+                      </p>
+                    )}
+                  </button>
+                  <button
+                    className={`p-3 rounded-xl border-2 transition-all duration-300 text-center ${
+                      !data.wantsFirstDeepClean
+                        ? 'border-primary bg-primary/10 shadow-lg'
+                        : 'border-border bg-white hover:border-primary/30'
+                    }`}
+                    onClick={() => onUpdate({ wantsFirstDeepClean: false })}
+                  >
+                    <span className={`text-sm font-bold ${!data.wantsFirstDeepClean ? 'text-primary' : 'text-slate-600'}`}>
+                      No, regular clean
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Estimated Cleaning Time - Show as soon as hours are calculated (same as summary) */}
       {(calculations.totalHours ?? 0) > 0 && <div className="relative z-[3] p-4 rounded-2xl border-2 border-primary/30 shadow-[0_12px_32px_rgba(0,0,0,0.2)] bg-gradient-to-br from-white to-primary/5 transition-all duration-300 hover:shadow-[0_16px_40px_rgba(0,0,0,0.25)] hover:border-primary/50">
@@ -452,6 +392,67 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
               </Button>
             </div>
           </div>
+        </div>}
+
+      {/* Oven Cleaning - With Switch Toggle */}
+      {ovenCleaningConfigs.length > 0 && <div className="relative z-[5] p-4 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white border-2 border-border transition-shadow duration-300">
+          <div className="flex items-center justify-between mb-4 p-3 bg-muted/30 rounded-xl border border-border">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <LucideIcons.Microwave className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-700">
+                  Add professional oven cleaning
+                </h2>
+                <p className="text-sm text-slate-600 mt-1">
+                  Include professional oven cleaning service
+                </p>
+              </div>
+            </div>
+            <Switch checked={data.hasOvenCleaning} onCheckedChange={checked => {
+          onUpdate({
+            hasOvenCleaning: checked,
+            ovenType: checked ? data.ovenType : ''
+          });
+        }} className={`w-16 h-7 ${!data.hasOvenCleaning ? 'border-2 border-border' : ''}`} />
+          </div>
+          
+          {data.hasOvenCleaning && <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {ovenCleaningConfigs.filter((oven: any) => oven.option !== 'not-required').map((oven: any) => {
+            const isSelected = data.ovenType === oven.option;
+            const IconComponent = (LucideIcons as any)[oven.icon];
+            return <button key={oven.option} className={`group relative h-20 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${isSelected ? 'border-primary bg-primary/5 shadow-xl' : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'}`} onClick={() => onUpdate({
+              ovenType: isSelected ? '' : oven.option as any
+            })}>
+                      <div className="flex flex-col items-center justify-center h-full">
+                        {IconComponent && <IconComponent className={`h-6 w-6 mb-1 transition-all duration-500 ${isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'}`} />}
+                        <span className={`text-base font-bold transition-colors ${isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'}`}>{oven.label}</span>
+                      </div>
+                    </button>;
+          })}
+              </div>
+
+              {/* Oven cleaning scope - only show for recurring bookings */}
+              {data.serviceFrequency && data.serviceFrequency !== 'onetime' && data.ovenType && <div className="mt-4 p-4 bg-muted/30 rounded-xl border border-border">
+                  <h3 className="text-base font-semibold text-slate-700 mb-3">Apply oven cleaning to:</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button className={`p-3 rounded-xl border-2 transition-all duration-300 text-left ${data.ovenCleaningScope === 'this-booking' ? 'border-primary bg-primary/10' : 'border-border bg-card hover:border-primary/50'}`} onClick={() => onUpdate({
+              ovenCleaningScope: 'this-booking'
+            })}>
+                      <span className={`text-sm font-semibold ${data.ovenCleaningScope === 'this-booking' ? 'text-primary' : 'text-slate-600'}`}>This booking only</span>
+                      <p className="text-xs text-muted-foreground mt-1">One-time add-on</p>
+                    </button>
+                    <button className={`p-3 rounded-xl border-2 transition-all duration-300 text-left ${data.ovenCleaningScope === 'all-bookings' ? 'border-primary bg-primary/10' : 'border-border bg-card hover:border-primary/50'}`} onClick={() => onUpdate({
+              ovenCleaningScope: 'all-bookings'
+            })}>
+                      <span className={`text-sm font-semibold ${data.ovenCleaningScope === 'all-bookings' ? 'text-primary' : 'text-slate-600'}`}>All future bookings</span>
+                      <p className="text-xs text-muted-foreground mt-1">Recurring add-on</p>
+                    </button>
+                  </div>
+                </div>}
+            </>}
         </div>}
 
       {/* Cleaning Supplies */}
@@ -496,7 +497,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
         </div>}
 
       {/* Equipment Arrangement - Only show if equipment is selected */}
-      {data.cleaningProducts.includes('equipment') && <div className="relative z-[3] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+      {data.cleaningProducts.includes('equipment') && <div className="p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white">
           <h2 className="text-2xl font-bold text-slate-700 mb-4">Equipment arrangement</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
