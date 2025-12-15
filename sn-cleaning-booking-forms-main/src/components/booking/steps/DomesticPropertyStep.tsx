@@ -115,7 +115,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
     }
   }, [recommendedHours]);
   return <div className="space-y-6">
-      {isLoadingConfigs && <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white">
+      {isLoadingConfigs && <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-muted rounded w-1/3"></div>
             <div className="grid grid-cols-2 gap-4">
@@ -126,7 +126,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
         </div>}
 
       {/* Property Type */}
-      <div className="relative z-10 p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white">
+      <div className="relative z-10 p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
         <h2 className="text-2xl font-bold text-slate-700 mb-4">Property Details</h2>
         <div className="grid grid-cols-2 gap-4">
           {(propertyTypeConfigs.length > 0 ? propertyTypeConfigs : [{
@@ -149,7 +149,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
       </div>
 
       {/* Property Size */}
-      <div className="relative z-[9] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white">
+      <div className="relative z-[9] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
         <h2 className="text-2xl font-bold text-slate-700 mb-4">Size of the property</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
@@ -194,7 +194,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
       </div>
 
       {/* Additional Rooms */}
-      {data.bedrooms && !['studio', '1'].includes(data.bedrooms) && additionalRoomsConfigs.length > 0 && <div className="p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white">
+      {data.bedrooms && !['studio', '1'].includes(data.bedrooms) && additionalRoomsConfigs.length > 0 && <div className="p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
           <h2 className="text-2xl font-bold text-slate-700 mb-4">Additional rooms</h2>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
@@ -262,7 +262,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
         </div>}
 
       {/* Service Frequency */}
-      <div className="p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white">
+      <div className="p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
         <h2 className="text-2xl font-bold text-slate-700 mb-4">How often do you need cleaning?</h2>
         
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -497,7 +497,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
         </div>}
 
       {/* Equipment Arrangement - Only show if equipment is selected */}
-      {data.cleaningProducts.includes('equipment') && <div className="p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white">
+      {data.cleaningProducts.includes('equipment') && <div className="p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
           <h2 className="text-2xl font-bold text-slate-700 mb-4">Equipment arrangement</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
