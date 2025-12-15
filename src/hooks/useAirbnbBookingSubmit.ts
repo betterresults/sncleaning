@@ -434,7 +434,7 @@ export const useAirbnbBookingSubmit = () => {
         hours_required: bookingData.estimatedHours || 0, // system calculated
         total_hours: totalHours || 0, // actual hours
         cleaning_cost_per_hour: bookingData.hourlyRate || 0,
-        total_cost: bookingData.totalCost || 0,
+        total_cost: Math.round((bookingData.totalCost || 0) * 100) / 100, // Round to 2 decimal places
         
         // Payment - use Stripe if customer has saved cards, otherwise use provided method or null
         payment_method: bookingData.paymentMethod || (hasPaymentMethods ? 'Stripe' : null),

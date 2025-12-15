@@ -685,6 +685,80 @@ useEffect(() => {
       }
     }
 
+    // Admin mode without specific payment selection - default to no-payment
+    if (isAdminMode && (!selectedAdminPaymentMethod || selectedAdminPaymentMethod === '')) {
+      try {
+        setProcessing(true);
+        
+        const result = await submitBooking({
+          customerId: data.customerId,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          phone: data.phone,
+          addressId: data.addressId,
+          houseNumber: data.houseNumber,
+          street: data.street,
+          postcode: data.postcode,
+          city: data.city,
+          propertyType: data.propertyType,
+          bedrooms: data.bedrooms,
+          bathrooms: data.bathrooms,
+          toilets: data.toilets,
+          numberOfFloors: data.numberOfFloors,
+          additionalRooms: data.additionalRooms,
+          propertyFeatures: data.propertyFeatures,
+          serviceType: data.serviceType,
+          alreadyCleaned: data.alreadyCleaned,
+          ovenType: data.ovenType,
+          cleaningProducts: data.cleaningProducts.join(','),
+          equipmentArrangement: data.equipmentArrangement,
+          equipmentStorageConfirmed: data.equipmentStorageConfirmed,
+          linensHandling: data.linensHandling,
+          needsIroning: data.needsIroning,
+          ironingHours: data.ironingHours,
+          linenPackages: data.linenPackages,
+          extraHours: data.extraHours,
+          selectedDate: data.selectedDate,
+          selectedTime: data.selectedTime,
+          flexibility: data.flexibility,
+          sameDayTurnaround: data.sameDayTurnaround,
+          shortNoticeCharge: data.shortNoticeCharge,
+          propertyAccess: data.propertyAccess,
+          accessNotes: data.accessNotes,
+          totalCost: data.totalCost,
+          estimatedHours: data.estimatedHours,
+          totalHours: data.totalHours,
+          hourlyRate: data.hourlyRate,
+          notes: data.notes,
+          additionalDetails: data,
+          cleanerId: data.cleanerId,
+          paymentMethod: null
+        }, true);
+
+        if (!result.success || !result.bookingId) {
+          throw new Error('Failed to create booking');
+        }
+
+        toast({
+          title: "Booking Created",
+          description: "Booking created successfully.",
+        });
+
+        navigate('/upcoming-bookings', { replace: true });
+        return;
+      } catch (error: any) {
+        console.error('Booking error:', error);
+        toast({
+          title: "Booking Error",
+          description: error.message || "Failed to create booking",
+          variant: "destructive"
+        });
+        setProcessing(false);
+        return;
+      }
+    }
+
     // Normal payment flow - use existing payment system
     try {
       setProcessing(true);
