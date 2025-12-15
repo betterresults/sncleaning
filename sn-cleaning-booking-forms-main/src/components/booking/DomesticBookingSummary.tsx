@@ -380,7 +380,7 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
 
   return (
     <Card className="p-4 sm:p-5 lg:p-6 bg-white sticky top-4 border border-border">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
         <h3 className="text-lg font-semibold text-foreground">Booking Summary</h3>
         {isAdminMode && (
           <Button
@@ -414,7 +414,7 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
           <div>
             {calculations.wantsFirstDeepClean ? (
               <p className="font-medium text-foreground">
-                {calculations.firstDeepCleanHours}h first clean, then {calculations.totalHours}h {getFrequencyDescription().toLowerCase() || 'per visit'}
+                {calculations.firstDeepCleanHours}h first clean, then {calculations.totalHours}h {data.serviceFrequency} cleans
               </p>
             ) : (
               <p className="font-medium text-foreground">
@@ -520,17 +520,6 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
 
       {data.serviceFrequency && (
         <div className="mt-4 pt-4 border-t border-border space-y-3">
-          {/* First Clean Cost - show for deep clean option */}
-          {calculations.wantsFirstDeepClean && (
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">
-                First clean ({calculations.firstDeepCleanHours}h @ £{calculations.oneTimeRate}/hr)
-              </span>
-              <span className="text-sm font-semibold text-foreground">
-                £{calculations.firstDeepCleanCost.toFixed(2)}
-              </span>
-            </div>
-          )}
           
           {/* First-time discount banner */}
           {data.isFirstTimeCustomer && (
