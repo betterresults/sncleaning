@@ -39,7 +39,6 @@ export interface DomesticBookingData {
   // Service details - Domestic specific
   serviceFrequency: 'weekly' | 'biweekly' | 'monthly' | 'onetime' | '';
   daysPerWeek: number;
-  wantsFirstDeepClean: boolean;
   hasOvenCleaning: boolean;
   ovenType: string;
   ovenCleaningScope: 'this-booking' | 'all-bookings';
@@ -134,7 +133,6 @@ const DomesticBookingForm: React.FC = () => {
     numberOfFloors: 0,
     serviceFrequency: '',
     daysPerWeek: 1,
-    wantsFirstDeepClean: false,
     hasOvenCleaning: false,
     ovenType: '',
     ovenCleaningScope: 'this-booking',

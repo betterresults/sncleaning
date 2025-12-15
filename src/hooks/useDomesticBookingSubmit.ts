@@ -24,7 +24,6 @@ interface DomesticBookingSubmission {
   propertyFeatures?: Record<string, boolean>;
   
   serviceFrequency: string;
-  wantsFirstDeepClean?: boolean;
   ovenType?: string;
   cleaningProducts?: string;
   equipmentArrangement?: string | null;
@@ -42,11 +41,6 @@ interface DomesticBookingSubmission {
   estimatedHours: number | null;
   totalHours?: number;
   hourlyRate: number;
-  
-  // First deep clean fields
-  firstDeepCleanHours?: number;
-  firstDeepCleanCost?: number;
-  regularRecurringCost?: number;
   
   notes: string;
   additionalDetails?: any;
@@ -77,16 +71,6 @@ const buildAdditionalDetails = (data: DomesticBookingSubmission) => {
   const details: any = {};
   
   details.serviceFrequency = data.serviceFrequency || 'onetime';
-  
-  // First deep clean info
-  if (data.wantsFirstDeepClean) {
-    details.firstDeepClean = {
-      enabled: true,
-      hours: data.firstDeepCleanHours || 0,
-      cost: data.firstDeepCleanCost || 0,
-      regularRecurringCost: data.regularRecurringCost || 0,
-    };
-  }
   
   if (data.ovenType && data.ovenType !== 'dontneed' && data.ovenType !== '') {
     details.ovenCleaning = { needed: true, type: data.ovenType };

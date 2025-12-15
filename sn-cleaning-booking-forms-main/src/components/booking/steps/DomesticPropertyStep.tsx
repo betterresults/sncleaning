@@ -282,8 +282,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
           const isSelected = data.serviceFrequency === opt.option;
           return <button key={opt.option} className={`group relative h-20 rounded-2xl border-2 transition-all duration-500 hover:scale-105 flex flex-col items-center justify-center ${isSelected ? 'border-primary bg-primary/5 shadow-xl' : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'}`} onClick={() => onUpdate({
             serviceFrequency: isSelected ? '' : opt.option,
-            daysPerWeek: opt.option === 'weekly' ? data.daysPerWeek || 1 : 1,
-            wantsFirstDeepClean: opt.option === 'onetime' ? false : data.wantsFirstDeepClean
+            daysPerWeek: opt.option === 'weekly' ? data.daysPerWeek || 1 : 1
           })}>
                 {isSelected && <CheckCircle className="h-5 w-5 text-primary mb-1" />}
                 <span className={`text-base font-bold transition-colors ${isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'}`}>{opt.label}</span>
@@ -306,54 +305,6 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
             </div>
             
           </div>}
-
-        {/* First Deep Clean Option - only show for recurring bookings */}
-        {data.serviceFrequency && data.serviceFrequency !== 'onetime' && (
-          <div className="mt-4 p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border-2 border-amber-200">
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-amber-100 rounded-lg mt-0.5">
-                <LucideIcons.Sparkles className="h-5 w-5 text-amber-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-slate-700">Start with a Deep Clean?</h3>
-                <p className="text-sm text-slate-600 mt-1 mb-3">
-                  A deep clean takes 50% longer but ensures your home is thoroughly cleaned before regular maintenance begins. Great for first-time customers!
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    className={`p-3 rounded-xl border-2 transition-all duration-300 text-center ${
-                      data.wantsFirstDeepClean
-                        ? 'border-amber-500 bg-amber-100 shadow-lg'
-                        : 'border-border bg-white hover:border-amber-300'
-                    }`}
-                    onClick={() => onUpdate({ wantsFirstDeepClean: true })}
-                  >
-                    <span className={`text-sm font-bold ${data.wantsFirstDeepClean ? 'text-amber-700' : 'text-slate-600'}`}>
-                      Yes, deep clean first
-                    </span>
-                    {calculations.firstDeepCleanHours > 0 && data.wantsFirstDeepClean && (
-                      <p className="text-xs text-amber-600 mt-1">
-                        {calculations.firstDeepCleanHours}h @ £{calculations.oneTimeRate}/hr
-                      </p>
-                    )}
-                  </button>
-                  <button
-                    className={`p-3 rounded-xl border-2 transition-all duration-300 text-center ${
-                      !data.wantsFirstDeepClean
-                        ? 'border-primary bg-primary/10 shadow-lg'
-                        : 'border-border bg-white hover:border-primary/30'
-                    }`}
-                    onClick={() => onUpdate({ wantsFirstDeepClean: false })}
-                  >
-                    <span className={`text-sm font-bold ${!data.wantsFirstDeepClean ? 'text-primary' : 'text-slate-600'}`}>
-                      No, regular clean
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Estimated Cleaning Time - Show as soon as hours are calculated (same as summary) */}
