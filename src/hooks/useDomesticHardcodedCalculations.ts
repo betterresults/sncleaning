@@ -11,8 +11,10 @@ interface DomesticBookingData {
   propertyFeatures?: Record<string, boolean>;
   numberOfFloors?: number;
   serviceFrequency: string;
+  wantsFirstDeepClean?: boolean;
   hasOvenCleaning?: boolean;
   ovenType: string;
+  ovenCleaningScope?: 'this-booking' | 'all-bookings';
   cleaningProducts: string[];
   equipmentArrangement: string | null;
   selectedDate?: Date | null;
@@ -250,6 +252,24 @@ export const useDomesticHardcodedCalculations = (bookingData: DomesticBookingDat
 
     const totalCost = cleaningCost + shortNoticeCharge + equipmentOneTimeCost + ovenCleaningCost + additionalCharge - discount;
 
+    // First deep clean calculations for recurring bookings
+    const isRecurring = ['weekly', 'biweekly', 'monthly'].includes(bookingData.serviceFrequency);
+    const wantsFirstDeepClean = bookingData.wantsFirstDeepClean && isRecurring;
+    
+    // Get one-time rate for first deep clean pricing
+    const oneTimeRate = getConfigValue('domestic service frequency', 'onetime') || 22;
+    
+    // First deep clean: 1.5x the hours at one-time rate
+    const firstDeepCleanHours = wantsFirstDeepClean ? Math.round(baseTime * 1.5 * 2) / 2 : 0; // Round to nearest 0.5
+    const firstDeepCleanCost = wantsFirstDeepClean 
+      ? (firstDeepCleanHours * oneTimeRate) + equipmentOneTimeCost + ovenCleaningCost + shortNoticeCharge + additionalCharge - discount
+      : 0;
+    
+    // Regular recurring cost (without one-time charges like equipment delivery, short notice)
+    const regularRecurringCost = isRecurring 
+      ? (totalHours * hourlyRate) + (bookingData.ovenCleaningScope === 'all-bookings' ? ovenCleaningCost : 0)
+      : 0;
+
     return {
       baseTime,
       totalHours,
@@ -264,6 +284,13 @@ export const useDomesticHardcodedCalculations = (bookingData: DomesticBookingDat
       modifierDetails,
       totalCost,
       isUserOverride,
+      // First deep clean fields
+      isRecurring,
+      wantsFirstDeepClean,
+      firstDeepCleanHours,
+      firstDeepCleanCost,
+      oneTimeRate,
+      regularRecurringCost,
     };
   }, [
     bookingData.propertyType,
@@ -274,6 +301,7 @@ export const useDomesticHardcodedCalculations = (bookingData: DomesticBookingDat
     bookingData.propertyFeatures,
     bookingData.numberOfFloors,
     bookingData.serviceFrequency,
+    bookingData.wantsFirstDeepClean,
     bookingData.hasOvenCleaning,
     bookingData.ovenType,
     bookingData.cleaningProducts,
