@@ -75,6 +75,8 @@ interface QuoteLead {
   phone: string | null;
   status: string | null;
   furthest_step: string | null;
+  source: string | null;
+  referrer: string | null;
   utm_source: string | null;
   utm_campaign: string | null;
   created_at: string | null;
@@ -694,14 +696,16 @@ const QuoteLeadsView = () => {
                           
                           {isColumnVisible('source') && (
                             <TableCell>
-                              {lead.utm_source || lead.utm_campaign ? (
-                                <div className="text-xs">
-                                  {lead.utm_source && <p>{lead.utm_source}</p>}
-                                  {lead.utm_campaign && <p className="text-muted-foreground">{lead.utm_campaign}</p>}
-                                </div>
-                              ) : (
-                                <span className="text-muted-foreground text-xs">Direct</span>
-                              )}
+                              <div className="text-xs">
+                                {lead.source && lead.source !== 'direct' && lead.source !== 'website' ? (
+                                  <Badge variant="outline" className="capitalize">{lead.source}</Badge>
+                                ) : lead.utm_source ? (
+                                  <Badge variant="outline" className="capitalize">{lead.utm_source}</Badge>
+                                ) : (
+                                  <span className="text-muted-foreground">Direct</span>
+                                )}
+                                {lead.utm_campaign && <p className="text-muted-foreground mt-1">{lead.utm_campaign}</p>}
+                              </div>
                             </TableCell>
                           )}
                         </TableRow>
