@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { CreditCard, DollarSign, Clock, Zap, RotateCcw, Mail, Link } from 'lucide-react';
+import { CreditCard, DollarSign, Clock, Zap, RotateCcw, Mail, Link, Copy, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -56,6 +56,8 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
   const [newPaymentStatus, setNewPaymentStatus] = useState<string>('');
   const [statusPopoverOpen, setStatusPopoverOpen] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
+  const [generatedLink, setGeneratedLink] = useState<string>('');
+  const [linkCopied, setLinkCopied] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -102,29 +104,40 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
     }
   };
 
-  const handleCollectPaymentMethod = async () => {
+  const handleCollectPaymentMethod = async (sendEmail: boolean = true) => {
     if (!booking) return;
 
     setLoading(true);
+    setGeneratedLink('');
     try {
       const { data, error } = await supabase.functions.invoke('stripe-collect-payment-method', {
         body: {
           customer_id: booking.customer,
           email: booking.email,
           name: `${booking.first_name} ${booking.last_name}`.trim(),
-          return_url: `https://account.sncleaningservices.co.uk/payment-method-success`
+          return_url: `https://account.sncleaningservices.co.uk/payment-method-success`,
+          send_email: sendEmail
         }
       });
 
       if (error) throw error;
 
       if (data.checkout_url) {
-        toast({
-          title: 'Email Sent Successfully',
-          description: `Payment method collection link sent to ${booking.email}. Customer can securely add their card details.`,
-        });
-        onSuccess();
-        onClose();
+        if (sendEmail) {
+          toast({
+            title: 'Email Sent Successfully',
+            description: `Payment method collection link sent to ${booking.email}. Customer can securely add their card details.`,
+          });
+          onSuccess();
+          onClose();
+        } else {
+          // Just generate the link for copying
+          setGeneratedLink(data.checkout_url);
+          toast({
+            title: 'Link Generated',
+            description: 'Card collection link ready to copy',
+          });
+        }
       }
     } catch (error: any) {
       console.error('Error collecting payment method:', error);
@@ -135,6 +148,72 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGeneratePaymentLink = async () => {
+    if (!booking || !amount || amount <= 0) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a valid amount',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setLoading(true);
+    setGeneratedLink('');
+    try {
+      const { data, error } = await supabase.functions.invoke('stripe-send-payment-link', {
+        body: {
+          customer_id: booking.customer,
+          email: booking.email,
+          name: `${booking.first_name} ${booking.last_name}`.trim(),
+          amount: amount,
+          description: paymentLinkDescription,
+          booking_id: booking.id,
+          collect_payment_method: collectForFuture
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.payment_link_url) {
+        setGeneratedLink(data.payment_link_url);
+        toast({
+          title: 'Link Generated',
+          description: 'Payment link ready to copy',
+        });
+      }
+    } catch (error: any) {
+      console.error('Error generating payment link:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to generate payment link',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyLinkToClipboard = async () => {
+    if (!generatedLink) return;
+    
+    try {
+      await navigator.clipboard.writeText(generatedLink);
+      setLinkCopied(true);
+      toast({
+        title: 'Copied!',
+        description: 'Link copied to clipboard',
+      });
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to copy link',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -618,14 +697,47 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
               {/* Collect Payment Method Content */}
               {paymentMode === 'collect_only' && (
                 <div className="space-y-3">
-                  <Button
-                    onClick={handleCollectPaymentMethod}
-                    disabled={loading}
-                    className="w-full rounded-xl flex items-center justify-center gap-2"
-                  >
-                    <CreditCard className="h-4 w-4" />
-                    {loading ? 'Creating...' : 'Collect Card Details'}
-                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      onClick={() => handleCollectPaymentMethod(false)}
+                      disabled={loading}
+                      variant="outline"
+                      className="rounded-xl flex items-center justify-center gap-2"
+                    >
+                      <Link className="h-4 w-4" />
+                      {loading ? 'Creating...' : 'Generate Link'}
+                    </Button>
+                    <Button
+                      onClick={() => handleCollectPaymentMethod(true)}
+                      disabled={loading}
+                      className="rounded-xl flex items-center justify-center gap-2"
+                    >
+                      <Mail className="h-4 w-4" />
+                      {loading ? 'Sending...' : 'Send via Email'}
+                    </Button>
+                  </div>
+                  
+                  {generatedLink && paymentMode === 'collect_only' && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 p-3 bg-muted rounded-xl">
+                        <input 
+                          type="text" 
+                          value={generatedLink} 
+                          readOnly 
+                          className="flex-1 bg-transparent text-sm truncate outline-none"
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={copyLinkToClipboard}
+                          className="shrink-0"
+                        >
+                          {linkCopied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Copy this link and send it to the customer via WhatsApp, SMS, etc.</p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -659,14 +771,47 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
                     />
                   </div>
 
-                  <Button
-                    onClick={handleSendPaymentLink}
-                    disabled={loading || !amount}
-                    className="w-full rounded-xl flex items-center justify-center gap-2"
-                  >
-                    <Mail className="h-4 w-4" />
-                    {loading ? 'Creating...' : 'Send Payment Link'}
-                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      onClick={handleGeneratePaymentLink}
+                      disabled={loading || !amount}
+                      variant="outline"
+                      className="rounded-xl flex items-center justify-center gap-2"
+                    >
+                      <Link className="h-4 w-4" />
+                      {loading ? 'Creating...' : 'Generate Link'}
+                    </Button>
+                    <Button
+                      onClick={handleSendPaymentLink}
+                      disabled={loading || !amount}
+                      className="rounded-xl flex items-center justify-center gap-2"
+                    >
+                      <Mail className="h-4 w-4" />
+                      {loading ? 'Sending...' : 'Send via Email'}
+                    </Button>
+                  </div>
+                  
+                  {generatedLink && paymentMode === 'payment_link' && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 p-3 bg-muted rounded-xl">
+                        <input 
+                          type="text" 
+                          value={generatedLink} 
+                          readOnly 
+                          className="flex-1 bg-transparent text-sm truncate outline-none"
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={copyLinkToClipboard}
+                          className="shrink-0"
+                        >
+                          {linkCopied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Copy this link and send it to the customer via WhatsApp, SMS, etc.</p>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
