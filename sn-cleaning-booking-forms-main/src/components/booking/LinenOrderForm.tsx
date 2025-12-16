@@ -513,10 +513,22 @@ const LinenOrderForm: React.FC = () => {
             </Card>
           </div>
         </div> :
-      // Step 2: Payment Step
-      <Elements stripe={stripePromise}>
-            <PaymentStep data={orderData as any} onUpdate={updateOrderData} onBack={prevStep} isAdminMode={isAdminMode} formType="linen" bookingSummary={<LinenOrderSummary data={orderData} linenProducts={linenPackages} />} />
-          </Elements>}
+      // Step 2: Payment Step - Same 2-column layout as Airbnb/Domestic
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+        {/* Payment Form - Takes 2 columns */}
+        <div className="lg:col-span-2">
+          <Card className="p-4 sm:p-6 lg:p-8 bg-white transition-shadow duration-300 border border-border shadow-[0_20px_60px_rgba(0,0,0,0.18),0_2px_8px_rgba(0,0,0,0.12)]">
+            <Elements stripe={stripePromise}>
+              <PaymentStep data={orderData as any} onUpdate={updateOrderData} onBack={prevStep} isAdminMode={isAdminMode} formType="linen" />
+            </Elements>
+          </Card>
+        </div>
+        
+        {/* Order Summary - Takes 1 column, always visible */}
+        <div className="lg:col-span-1">
+          <LinenOrderSummary data={orderData} linenProducts={linenPackages} />
+        </div>
+      </div>}
       </main>
     </div>;
 };

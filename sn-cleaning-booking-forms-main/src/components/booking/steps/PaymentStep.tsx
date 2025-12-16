@@ -1023,12 +1023,6 @@ useEffect(() => {
 
   return (
     <div className="space-y-8">
-      {/* Booking Summary - rendered if provided */}
-      {bookingSummary && (
-        <div className="mb-8">
-          {bookingSummary}
-        </div>
-      )}
       {/* Admin Test Mode Warning */}
       {adminTestMode && (
         <div className="bg-orange-50 border-2 border-orange-500 rounded-xl p-6">
