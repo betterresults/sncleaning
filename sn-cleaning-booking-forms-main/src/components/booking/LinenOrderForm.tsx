@@ -86,8 +86,8 @@ const LinenOrderForm: React.FC = () => {
         const {
           data: role
         } = await supabase.from('user_roles').select('role').eq('user_id', session.user.id).single();
-        const isAdmin = role?.role === 'admin';
-        setIsAdminMode(isAdmin && isAdminRoute);
+        const isAdminOrSalesAgent = role?.role === 'admin' || role?.role === 'sales_agent';
+        setIsAdminMode(isAdminOrSalesAgent && isAdminRoute);
         if (!isAdminRoute) {
           const {
             data: profile
