@@ -2563,7 +2563,7 @@ export type Database = {
       chat_type: "customer_office" | "customer_cleaner" | "office_cleaner"
       message_type: "text" | "image" | "file"
       sender_type: "customer" | "cleaner" | "admin"
-      user_role: "admin" | "user" | "guest"
+      user_role: "admin" | "user" | "guest" | "sales_agent"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2705,7 +2705,7 @@ export const Constants = {
       chat_type: ["customer_office", "customer_cleaner", "office_cleaner"],
       message_type: ["text", "image", "file"],
       sender_type: ["customer", "cleaner", "admin"],
-      user_role: ["admin", "user", "guest"],
+      user_role: ["admin", "user", "guest", "sales_agent"],
     },
   },
 } as const
