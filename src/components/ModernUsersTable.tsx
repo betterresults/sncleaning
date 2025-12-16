@@ -364,12 +364,16 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
 
       console.log('Error message extracted:', errorMessage);
 
-      // Check if user already exists
-      if (errorMessage && (
-        errorMessage.includes('already been registered') || 
-        errorMessage.includes('email_exists') ||
-        errorMessage.includes('already registered')
-      )) {
+      // Check if user already exists (case-insensitive)
+      const errorLower = (errorMessage || '').toLowerCase();
+      const isEmailExists = errorLower.includes('already') && (
+        errorLower.includes('registered') || 
+        errorLower.includes('exists')
+      );
+      
+      console.log('Is email exists error:', isEmailExists);
+
+      if (isEmailExists) {
         console.log('Email already exists, showing role change dialog');
         setExistingUserEmail(newUserData.email);
         setShowAddUserForm(false);
@@ -430,7 +434,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         .from('profiles')
         .select('user_id')
         .eq('email', existingUserEmail)
-        .single();
+        .maybeSingle();
 
       if (profileError || !profileData) {
         throw new Error('User not found');
@@ -441,7 +445,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         .from('user_roles')
         .select('role')
         .eq('user_id', profileData.user_id)
-        .single();
+        .maybeSingle();
 
       // Delete existing role if exists
       if (existingRole) {
