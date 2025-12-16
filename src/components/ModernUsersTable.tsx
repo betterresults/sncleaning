@@ -78,7 +78,7 @@ interface UserData {
 }
 
 interface ModernUsersTableProps {
-  userType?: 'all' | 'admin' | 'cleaner' | 'customer';
+  userType?: 'all' | 'admin' | 'cleaner' | 'customer' | 'office';
 }
 
 const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
@@ -97,7 +97,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   const [addressFilter, setAddressFilter] = useState<'all' | 'with-addresses' | 'no-addresses'>('all');
   
   // Add new user state
-  const [showAddUserDialog, setShowAddUserDialog] = useState(false);
+  const [showAddUserForm, setShowAddUserForm] = useState(false);
   const [newUserData, setNewUserData] = useState({
     first_name: '',
     last_name: '',
@@ -107,7 +107,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       ? 'guest' 
       : userType === 'cleaner' 
         ? 'user' 
-        : userType === 'admin'
+        : userType === 'admin' || userType === 'office'
           ? 'admin'
           : 'guest'
   });
@@ -222,11 +222,13 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         processedUsers = allAuthUsers;
         
       } else {
-        // For admins/cleaners: only show auth users with matching roles
+        // For admins/cleaners/office: only show auth users with matching roles
         processedUsers = (data.authUsers || []).filter(user => {
           switch (userType) {
             case 'admin':
               return user.role === 'admin';
+            case 'office':
+              return user.role === 'admin' || user.role === 'sales_agent';
             case 'cleaner':
               return user.role === 'user';
             default:
@@ -338,7 +340,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           password: newUserData.password,
           firstName: newUserData.first_name,
           lastName: newUserData.last_name,
-          role: userType === 'admin' ? 'admin' : newUserData.role
+          role: (userType === 'admin' || userType === 'office') ? newUserData.role : newUserData.role
         }
       });
 
@@ -349,7 +351,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         description: 'User created successfully'
       });
 
-      setShowAddUserDialog(false);
+      setShowAddUserForm(false);
       setNewUserData({
         first_name: '',
         last_name: '',
@@ -359,7 +361,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           ? 'guest' 
           : userType === 'cleaner' 
             ? 'user' 
-            : userType === 'admin'
+            : userType === 'admin' || userType === 'office'
               ? 'admin'
               : 'guest'
       });
@@ -370,7 +372,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       // Check if it's an "email already exists" error
       if (error.message && error.message.includes('already been registered')) {
         setExistingUserEmail(newUserData.email);
-        setShowAddUserDialog(false);
+        setShowAddUserForm(false);
         setShowRoleChangeDialog(true);
       } else {
         toast({
@@ -633,6 +635,13 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
             Admin
           </Badge>
         );
+      case 'sales_agent':
+        return (
+          <Badge variant="default" className="gap-1 bg-blue-600">
+            <UserCheck className="h-3 w-3" />
+            Sales Agent
+          </Badge>
+        );
       case 'user':
         return (
           <Badge variant="default" className="gap-1 bg-primary">
@@ -668,12 +677,29 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
     switch (userType) {
       case 'admin':
         return 'Admin Users';
+      case 'office':
+        return 'Office Staff';
       case 'cleaner':
         return 'Cleaner Users';
       case 'customer':
         return 'Customers';
       default:
         return 'All Users';
+    }
+  };
+
+  const getAddButtonText = () => {
+    switch (userType) {
+      case 'office':
+        return 'Add Office Staff';
+      case 'customer':
+        return 'Add Customer';
+      case 'cleaner':
+        return 'Add Cleaner';
+      case 'admin':
+        return 'Add Admin';
+      default:
+        return 'Add User';
     }
   };
 
@@ -765,12 +791,100 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           <CardTitle className="flex items-center justify-between">
             <span>{getTypeTitle()} ({filteredUsers.length})</span>
             <div className="flex gap-2">
-              <Button onClick={() => setShowAddUserDialog(true)} size="sm">
-                <UserPlus className="h-4 w-4 mr-2" />
-                Add {userType === 'customer' ? 'Customer' : userType === 'cleaner' ? 'Cleaner' : userType === 'admin' ? 'Admin' : 'User'}
+              <Button onClick={() => setShowAddUserForm(!showAddUserForm)} size="sm" variant={showAddUserForm ? "outline" : "default"}>
+                {showAddUserForm ? (
+                  <>
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    {getAddButtonText()}
+                  </>
+                )}
               </Button>
             </div>
           </CardTitle>
+
+          {/* Inline Add User Form */}
+          {showAddUserForm && (
+            <div className="mt-4 p-4 border rounded-lg bg-muted/30 space-y-4">
+              <h3 className="font-medium">{getAddButtonText()}</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="firstName">First Name *</Label>
+                  <Input
+                    id="firstName"
+                    value={newUserData.first_name}
+                    onChange={(e) => setNewUserData({...newUserData, first_name: e.target.value})}
+                    placeholder="Enter first name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="lastName">Last Name *</Label>
+                  <Input
+                    id="lastName"
+                    value={newUserData.last_name}
+                    onChange={(e) => setNewUserData({...newUserData, last_name: e.target.value})}
+                    placeholder="Enter last name"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={newUserData.email}
+                    onChange={(e) => setNewUserData({...newUserData, email: e.target.value})}
+                    placeholder="Enter email address"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="password">Password *</Label>
+                  <PasswordInput
+                    id="password"
+                    value={newUserData.password}
+                    onChange={(e) => setNewUserData({...newUserData, password: e.target.value})}
+                    placeholder="Enter password"
+                  />
+                </div>
+              </div>
+              {(userType === 'all' || userType === 'office') && (
+                <div className="max-w-xs">
+                  <Label htmlFor="role">Role *</Label>
+                  <Select value={newUserData.role} onValueChange={(value) => setNewUserData({...newUserData, role: value})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {userType === 'office' ? (
+                        <>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="sales_agent">Sales Agent</SelectItem>
+                        </>
+                      ) : (
+                        <>
+                          <SelectItem value="guest">Customer</SelectItem>
+                          <SelectItem value="user">Cleaner</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setShowAddUserForm(false)}>Cancel</Button>
+                <Button onClick={handleAddUser} disabled={addingUser}>
+                  {addingUser ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  {getAddButtonText()}
+                </Button>
+              </div>
+            </div>
+          )}
         
         {/* Search and Filters */}
         <div className="space-y-4">
@@ -1166,77 +1280,6 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         )}
       </CardContent>
       
-      {/* Add User Dialog */}
-      <Dialog open={showAddUserDialog} onOpenChange={setShowAddUserDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New {userType === 'customer' ? 'Customer' : userType === 'cleaner' ? 'Cleaner' : userType === 'admin' ? 'Admin' : 'User'}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="firstName">First Name *</Label>
-                <Input
-                  id="firstName"
-                  value={newUserData.first_name}
-                  onChange={(e) => setNewUserData({...newUserData, first_name: e.target.value})}
-                  placeholder="Enter first name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="lastName">Last Name *</Label>
-                <Input
-                  id="lastName"
-                  value={newUserData.last_name}
-                  onChange={(e) => setNewUserData({...newUserData, last_name: e.target.value})}
-                  placeholder="Enter last name"
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="email">Email *</Label>
-              <Input
-                id="email"
-                type="email"
-                value={newUserData.email}
-                onChange={(e) => setNewUserData({...newUserData, email: e.target.value})}
-                placeholder="Enter email address"
-              />
-            </div>
-            <div>
-              <Label htmlFor="password">Password *</Label>
-              <PasswordInput
-                id="password"
-                value={newUserData.password}
-                onChange={(e) => setNewUserData({...newUserData, password: e.target.value})}
-                placeholder="Enter password"
-              />
-            </div>
-            {userType === 'all' && (
-              <div>
-                <Label htmlFor="role">Role</Label>
-                <Select value={newUserData.role} onValueChange={(value) => setNewUserData({...newUserData, role: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="guest">Customer</SelectItem>
-                    <SelectItem value="user">Cleaner</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowAddUserDialog(false)}>Cancel</Button>
-              <Button onClick={handleAddUser} disabled={addingUser}>
-                {addingUser ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                Add {userType === 'customer' ? 'Customer' : userType === 'cleaner' ? 'Cleaner' : userType === 'admin' ? 'Admin' : 'User'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Change User Role Dialog */}
       <AlertDialog open={showRoleChangeDialog} onOpenChange={setShowRoleChangeDialog}>
