@@ -344,17 +344,31 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         }
       });
 
-      // Check for error in response data (edge function returns errors this way)
-      const errorMessage = error?.message || data?.error;
-      if (errorMessage) {
-        // Check if it's an "email already exists" error
-        if (errorMessage.includes('already been registered') || errorMessage.includes('email_exists')) {
-          setExistingUserEmail(newUserData.email);
-          setShowAddUserForm(false);
-          setShowRoleChangeDialog(true);
-          return;
-        }
-        throw new Error(errorMessage);
+      console.log('Create user response:', { data, error });
+
+      // Check for error - could be in multiple places
+      const errorMessage = 
+        error?.message || 
+        data?.error || 
+        (typeof error === 'string' ? error : null) ||
+        (error?.context?.error) ||
+        null;
+      
+      const isEmailExistsError = errorMessage && (
+        errorMessage.includes('already been registered') || 
+        errorMessage.includes('email_exists') ||
+        errorMessage.includes('already registered')
+      );
+
+      if (isEmailExistsError) {
+        setExistingUserEmail(newUserData.email);
+        setShowAddUserForm(false);
+        setShowRoleChangeDialog(true);
+        return;
+      }
+
+      if (error || data?.error) {
+        throw new Error(errorMessage || 'Failed to create user');
       }
 
       toast({
@@ -381,8 +395,8 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       console.error('Error creating user:', error);
       
       // Check if it's an "email already exists" error
-      const errorMsg = error?.message || '';
-      if (errorMsg.includes('already been registered') || errorMsg.includes('email_exists')) {
+      const errorMsg = error?.message || String(error) || '';
+      if (errorMsg.includes('already been registered') || errorMsg.includes('email_exists') || errorMsg.includes('already registered')) {
         setExistingUserEmail(newUserData.email);
         setShowAddUserForm(false);
         setShowRoleChangeDialog(true);
