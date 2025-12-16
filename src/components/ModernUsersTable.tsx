@@ -344,14 +344,24 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         }
       });
 
-      console.log('Create user full response:', response);
-      
       const { data, error } = response;
 
-      // Check for error message from various sources
-      // The edge function returns {error: "message"} in the response body
-      const errorMessage = data?.error || error?.message || null;
+      // Extract error message - for FunctionsHttpError, the body is in error.context
+      let errorMessage = data?.error || null;
       
+      // If there's a FunctionsHttpError, try to get the message from context
+      if (error && !errorMessage) {
+        try {
+          // error.context is a Response object, we need to parse its JSON
+          if (error.context && typeof error.context.json === 'function') {
+            const errorBody = await error.context.json();
+            errorMessage = errorBody?.error || null;
+          }
+        } catch (e) {
+          console.log('Could not parse error context:', e);
+        }
+      }
+
       console.log('Error message extracted:', errorMessage);
 
       // Check if user already exists
