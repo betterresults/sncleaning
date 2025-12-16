@@ -436,8 +436,22 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         .eq('email', existingUserEmail)
         .maybeSingle();
 
-      if (profileError || !profileData) {
-        throw new Error('User not found');
+      if (profileError) {
+        console.error('Profile query error:', profileError);
+        throw new Error('Failed to find user profile');
+      }
+      
+      if (!profileData) {
+        // Profile doesn't exist but auth user does (orphaned user)
+        // Suggest deleting the orphaned auth user or contact admin
+        toast({
+          title: 'Profile Not Found',
+          description: 'The user exists in authentication but has no profile. Please delete the orphaned user from Supabase Auth and try again.',
+          variant: 'destructive'
+        });
+        setShowRoleChangeDialog(false);
+        setAddingUser(false);
+        return;
       }
 
       // Get existing role
@@ -465,9 +479,13 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
 
       if (roleError) throw roleError;
 
+      const roleDisplay = newUserData.role === 'admin' ? 'Admin' : 
+                          newUserData.role === 'user' ? 'Cleaner' : 
+                          newUserData.role === 'sales_agent' ? 'Sales Agent' : 'Customer';
+      
       toast({
         title: 'Success',
-        description: `User role updated to ${newUserData.role === 'admin' ? 'Admin' : newUserData.role === 'user' ? 'Cleaner' : 'Customer'}`
+        description: `User role updated to ${roleDisplay}`
       });
 
       setShowRoleChangeDialog(false);
@@ -1322,13 +1340,22 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       
 
       {/* Change User Role Dialog */}
-      <AlertDialog open={showRoleChangeDialog} onOpenChange={setShowRoleChangeDialog}>
+      <AlertDialog open={showRoleChangeDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowRoleChangeDialog(false);
+          setExistingUserEmail('');
+        }
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>User Already Exists</AlertDialogTitle>
             <AlertDialogDescription>
-              A user with email <strong>{existingUserEmail}</strong> already exists in the system. 
-              Would you like to change their role to <strong>{newUserData.role === 'admin' ? 'Admin' : newUserData.role === 'user' ? 'Cleaner' : 'Customer'}</strong> instead?
+              A user with email <strong>{existingUserEmail || 'unknown'}</strong> already exists in the system. 
+              Would you like to change their role to <strong>
+                {newUserData.role === 'admin' ? 'Admin' : 
+                 newUserData.role === 'user' ? 'Cleaner' : 
+                 newUserData.role === 'sales_agent' ? 'Sales Agent' : 'Customer'}
+              </strong> instead?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
