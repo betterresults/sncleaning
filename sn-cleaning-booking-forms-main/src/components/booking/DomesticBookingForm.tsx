@@ -276,8 +276,8 @@ const DomesticBookingForm: React.FC = () => {
           .eq('user_id', session.user.id)
           .single();
         
-        const isAdmin = role?.role === 'admin';
-        setIsAdminMode(isAdmin && isAdminRoute);
+        const isAdminOrSalesAgent = role?.role === 'admin' || role?.role === 'sales_agent';
+        setIsAdminMode(isAdminOrSalesAgent && isAdminRoute);
         
         if (!isAdminRoute) {
           const { data: profile } = await supabase

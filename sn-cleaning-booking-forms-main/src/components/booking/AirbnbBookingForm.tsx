@@ -186,8 +186,8 @@ const AirbnbBookingForm: React.FC = () => {
           .eq('user_id', session.user.id)
           .single();
         
-        const isAdmin = role?.role === 'admin';
-        setIsAdminMode(isAdmin && isAdminRoute);
+        const isAdminOrSalesAgent = role?.role === 'admin' || role?.role === 'sales_agent';
+        setIsAdminMode(isAdminOrSalesAgent && isAdminRoute);
         
         // If not on admin route (customer booking), always load customer profile
         if (!isAdminRoute) {
