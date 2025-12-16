@@ -4,7 +4,7 @@ import { Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { adminNavigation } from '@/lib/navigationItems';
+import { adminNavigation, salesAgentNavigation } from '@/lib/navigationItems';
 import UpcomingBookings from '@/components/dashboard/UpcomingBookings';
 
 const UpcomingBookingsPage = () => {
@@ -35,6 +35,13 @@ const UpcomingBookingsPage = () => {
     return <Navigate to="/cleaner-dashboard" replace />;
   }
 
+  // Allow admin and sales_agent
+  if (userRole !== 'admin' && userRole !== 'sales_agent') {
+    return <Navigate to="/auth" replace />;
+  }
+
+  const navigation = userRole === 'sales_agent' ? salesAgentNavigation : adminNavigation;
+
   // No date filter means show ALL future bookings
   const noDateFilter = undefined;
 
@@ -49,7 +56,7 @@ const UpcomingBookingsPage = () => {
         />
         <div className="flex flex-1 w-full">
           <UnifiedSidebar 
-            navigationItems={adminNavigation}
+            navigationItems={navigation}
             user={user}
             onSignOut={handleSignOut}
           />

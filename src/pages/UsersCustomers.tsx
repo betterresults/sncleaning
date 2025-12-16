@@ -4,7 +4,7 @@ import { Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { adminNavigation } from '@/lib/navigationItems';
+import { adminNavigation, salesAgentNavigation } from '@/lib/navigationItems';
 import ModernUsersTable from '@/components/ModernUsersTable';
 
 const UsersCustomers = () => {
@@ -18,9 +18,12 @@ const UsersCustomers = () => {
     }
   };
 
-  if (!user || userRole !== 'admin') {
+  // Allow admin and sales_agent
+  if (!user || (userRole !== 'admin' && userRole !== 'sales_agent')) {
     return <Navigate to="/auth" replace />;
   }
+
+  const navigation = userRole === 'sales_agent' ? salesAgentNavigation : adminNavigation;
 
   return (
     <SidebarProvider>
@@ -33,7 +36,7 @@ const UsersCustomers = () => {
         />
         <div className="flex flex-1 w-full">
           <UnifiedSidebar 
-            navigationItems={adminNavigation}
+            navigationItems={navigation}
             user={user}
             onSignOut={handleSignOut}
           />

@@ -5,13 +5,13 @@ import { Button } from '@/components/ui/button';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { adminNavigation } from '@/lib/navigationItems';
+import { adminNavigation, salesAgentNavigation } from '@/lib/navigationItems';
 import DashboardStats from '@/components/admin/DashboardStats';
 import BookingsListView from '@/components/bookings/BookingsListView';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import PerformanceChart from '@/components/dashboard/PerformanceChart';
 import { Calendar, Plus } from 'lucide-react';
-import AdminGuard from '@/components/AdminGuard';
+import StaffGuard from '@/components/StaffGuard';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
@@ -52,9 +52,12 @@ const Dashboard = () => {
   const todayRange = getTodayRange();
   const next7DaysRange = getNext7DaysRange();
 
-  // This dashboard is ADMIN-ONLY - wrap everything in AdminGuard
+  // Determine which navigation to use based on role
+  const navigation = userRole === 'sales_agent' ? salesAgentNavigation : adminNavigation;
+
+  // This dashboard is accessible by admin and sales_agent - wrap in StaffGuard
   return (
-    <AdminGuard>
+    <StaffGuard>
       <SidebarProvider>
         <div className="min-h-screen flex flex-col w-full bg-gray-50">
           <UnifiedHeader 
@@ -65,15 +68,15 @@ const Dashboard = () => {
           />
           <div className="flex flex-1 w-full">
             <UnifiedSidebar 
-              navigationItems={adminNavigation}
+              navigationItems={navigation}
               user={user}
               userRole={userRole}
               onSignOut={handleSignOut}
             />
             <SidebarInset className="flex-1 flex flex-col p-0 m-0 overflow-x-hidden">
               <main className="flex-1 bg-gray-50 m-0 px-4 md:px-6 py-4 md:py-6 space-y-6 w-full">
-                {/* Statistics - Last 30 Days */}
-                <DashboardStats />
+                {/* Statistics - Last 30 Days - ONLY for admins */}
+                {userRole === 'admin' && <DashboardStats />}
                 
                 {/* Today's Bookings */}
                 <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0">
@@ -110,34 +113,36 @@ const Dashboard = () => {
                   />
                 </div>
 
-                {/* Activity and Stats Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Recent Activity */}
-                  <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-xl font-semibold">Recent Activity</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4 sm:p-6 pt-0">
-                      <RecentActivity />
-                    </CardContent>
-                  </Card>
+                {/* Activity and Stats Grid - ONLY for admins */}
+                {userRole === 'admin' && (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Recent Activity */}
+                    <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-xl font-semibold">Recent Activity</CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4 sm:p-6 pt-0">
+                        <RecentActivity />
+                      </CardContent>
+                    </Card>
 
-                  {/* Performance Stats */}
-                  <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-xl font-semibold">Performance</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4 sm:p-6 pt-0">
-                      <PerformanceChart />
-                    </CardContent>
-                  </Card>
-                </div>
+                    {/* Performance Stats */}
+                    <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-xl font-semibold">Performance</CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4 sm:p-6 pt-0">
+                        <PerformanceChart />
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
               </main>
             </SidebarInset>
           </div>
         </div>
       </SidebarProvider>
-    </AdminGuard>
+    </StaffGuard>
   );
 };
 

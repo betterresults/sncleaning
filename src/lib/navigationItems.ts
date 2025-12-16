@@ -42,6 +42,67 @@ export const cleanerNavigation = [
   },
 ];
 
+// Sales Agent Navigation - restricted access (no financial data)
+export const salesAgentNavigation = [
+  {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: Home,
+  },
+  {
+    title: "Bookings",
+    icon: Calendar,
+    subItems: [
+      {
+        title: "Add New Booking",
+        url: "/admin-add-booking",
+        icon: Plus,
+      },
+      {
+        title: "Upcoming Bookings",
+        url: "/upcoming-bookings",
+        icon: BarChart3,
+      },
+      {
+        title: "Completed Bookings",
+        url: "/past-bookings",
+        icon: History,
+      },
+      {
+        title: "Recurring Bookings",
+        url: "/recurring-bookings",
+        icon: Repeat,
+      },
+    ],
+  },
+  {
+    title: "Users",
+    icon: Users,
+    subItems: [
+      {
+        title: "Cleaners",
+        url: "/users/cleaners",
+        icon: UserCheck,
+      },
+      {
+        title: "Customers",
+        url: "/users/customers",
+        icon: UserPlus,
+      },
+    ],
+  },
+  {
+    title: "Chat Management",
+    url: "/admin-chat-management",
+    icon: MessageCircle,
+  },
+  {
+    title: "Quote Leads",
+    url: "/admin-quote-leads",
+    icon: Target,
+  },
+];
+
 export const getCustomerNavigation = (hasLinenAccess: boolean = false) => [
   {
     title: "Dashboard",
