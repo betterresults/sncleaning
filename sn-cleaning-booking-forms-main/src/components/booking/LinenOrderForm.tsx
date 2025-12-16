@@ -446,6 +446,19 @@ const LinenOrderForm: React.FC = () => {
                 </div>
               </div>
             </Card>
+
+            {/* Continue Button - in main form area */}
+            <div className="mt-6">
+              <Button onClick={nextStep} disabled={!canContinueToPayment} className="w-full bg-[#18A5A5] hover:bg-[#185166] text-white py-6 text-lg font-semibold">
+                Continue to Payment
+              </Button>
+              {!orderData.deliveryTiming && linenTotal > 0 && <p className="text-xs text-center text-gray-500 mt-2">
+                  Please select delivery timing to continue
+                </p>}
+              {!hasReachedMinimum && orderData.deliveryTiming && <p className="text-xs text-center text-gray-500 mt-2">
+                  £150 minimum order required
+                </p>}
+            </div>
           </div>
 
           {/* Order Summary - Takes 1 column */}
@@ -496,19 +509,6 @@ const LinenOrderForm: React.FC = () => {
                         ✓ Minimum order met
                       </Badge>}
                   </div>
-
-                  {/* Continue Button */}
-                  <Button onClick={nextStep} disabled={!canContinueToPayment} className="w-full bg-[#18A5A5] hover:bg-[#185166] text-white py-6 text-lg font-semibold">
-                    Continue to Payment
-                  </Button>
-
-                  {!orderData.deliveryTiming && linenTotal > 0 && <p className="text-xs text-center text-gray-500">
-                      Please select delivery timing to continue
-                    </p>}
-                  
-                  {!hasReachedMinimum && orderData.deliveryTiming && <p className="text-xs text-center text-gray-500">
-                      £150 minimum order required
-                    </p>}
                 </div>}
             </Card>
           </div>
