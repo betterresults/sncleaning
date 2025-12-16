@@ -344,7 +344,18 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         }
       });
 
-      if (error) throw error;
+      // Check for error in response data (edge function returns errors this way)
+      const errorMessage = error?.message || data?.error;
+      if (errorMessage) {
+        // Check if it's an "email already exists" error
+        if (errorMessage.includes('already been registered') || errorMessage.includes('email_exists')) {
+          setExistingUserEmail(newUserData.email);
+          setShowAddUserForm(false);
+          setShowRoleChangeDialog(true);
+          return;
+        }
+        throw new Error(errorMessage);
+      }
 
       toast({
         title: 'Success',
@@ -370,14 +381,15 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       console.error('Error creating user:', error);
       
       // Check if it's an "email already exists" error
-      if (error.message && error.message.includes('already been registered')) {
+      const errorMsg = error?.message || '';
+      if (errorMsg.includes('already been registered') || errorMsg.includes('email_exists')) {
         setExistingUserEmail(newUserData.email);
         setShowAddUserForm(false);
         setShowRoleChangeDialog(true);
       } else {
         toast({
           title: 'Error',
-          description: error.message || 'Failed to create user',
+          description: errorMsg || 'Failed to create user',
           variant: 'destructive'
         });
       }
