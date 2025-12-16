@@ -334,7 +334,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
 
     setAddingUser(true);
     try {
-      const { data, error } = await supabase.functions.invoke('create-user', {
+      const response = await supabase.functions.invoke('create-user', {
         body: {
           email: newUserData.email,
           password: newUserData.password,
@@ -344,33 +344,42 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         }
       });
 
-      console.log('Create user response:', { data, error });
-
-      // Check for error - could be in multiple places
-      const errorMessage = 
-        error?.message || 
-        data?.error || 
-        (typeof error === 'string' ? error : null) ||
-        (error?.context?.error) ||
-        null;
+      console.log('Create user full response:', response);
       
-      const isEmailExistsError = errorMessage && (
+      const { data, error } = response;
+
+      // Check for error message from various sources
+      // The edge function returns {error: "message"} in the response body
+      const errorMessage = data?.error || error?.message || null;
+      
+      console.log('Error message extracted:', errorMessage);
+
+      // Check if user already exists
+      if (errorMessage && (
         errorMessage.includes('already been registered') || 
         errorMessage.includes('email_exists') ||
         errorMessage.includes('already registered')
-      );
-
-      if (isEmailExistsError) {
+      )) {
+        console.log('Email already exists, showing role change dialog');
         setExistingUserEmail(newUserData.email);
         setShowAddUserForm(false);
         setShowRoleChangeDialog(true);
+        setAddingUser(false);
         return;
       }
 
-      if (error || data?.error) {
-        throw new Error(errorMessage || 'Failed to create user');
+      // If there's any other error
+      if (errorMessage || error) {
+        toast({
+          title: 'Error',
+          description: errorMessage || 'Failed to create user',
+          variant: 'destructive'
+        });
+        setAddingUser(false);
+        return;
       }
 
+      // Success case
       toast({
         title: 'Success',
         description: 'User created successfully'
@@ -392,21 +401,12 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       });
       fetchUsers();
     } catch (error: any) {
-      console.error('Error creating user:', error);
-      
-      // Check if it's an "email already exists" error
-      const errorMsg = error?.message || String(error) || '';
-      if (errorMsg.includes('already been registered') || errorMsg.includes('email_exists') || errorMsg.includes('already registered')) {
-        setExistingUserEmail(newUserData.email);
-        setShowAddUserForm(false);
-        setShowRoleChangeDialog(true);
-      } else {
-        toast({
-          title: 'Error',
-          description: errorMsg || 'Failed to create user',
-          variant: 'destructive'
-        });
-      }
+      console.error('Error creating user (caught):', error);
+      toast({
+        title: 'Error',
+        description: error?.message || 'Failed to create user',
+        variant: 'destructive'
+      });
     } finally {
       setAddingUser(false);
     }
