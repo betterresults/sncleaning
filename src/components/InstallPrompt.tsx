@@ -44,9 +44,18 @@ const InstallPrompt = () => {
     localStorage.setItem('pwa-install-dismissed', 'true');
   };
 
-  // Don't show on services and booking form pages
-  const excludedPaths = ['/choose-service', '/services', '/domestic-booking', '/airbnb-booking', '/end-of-tenancy-booking'];
-  if (excludedPaths.some(path => location.pathname.startsWith(path))) {
+  // Don't show on services and booking form pages - these affect conversion rates
+  const excludedPaths = [
+    '/choose-service', 
+    '/services', 
+    '/domestic-booking', 
+    '/airbnb-booking', 
+    '/end-of-tenancy-booking',
+    '/booking',
+    '/quote',
+    '/book'
+  ];
+  if (excludedPaths.some(path => location.pathname.startsWith(path)) || location.pathname.includes('booking') || location.pathname.includes('form')) {
     return null;
   }
 
