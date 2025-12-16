@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Package2, BedDouble, BedSingle, Bath, Shirt, UtensilsCrossed } from 'lucide-react';
+import { Package2, BedDouble, BedSingle, Bath, Shirt, UtensilsCrossed, ShoppingCart } from 'lucide-react';
 
 interface LinenOrderData {
   linenPackages: Record<string, number>;
@@ -116,6 +116,3 @@ export const LinenOrderSummary: React.FC<LinenOrderSummaryProps> = ({ data, line
     </Card>
   );
 };
-
-// Missing import
-import { ShoppingCart } from 'lucide-react';
