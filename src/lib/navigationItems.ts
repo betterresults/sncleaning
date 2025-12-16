@@ -172,32 +172,11 @@ export const adminNavigation = [
       },
     ],
   },
-    {
-      title: "Users",
-      icon: Users,
-      subItems: [
-        {
-          title: "All Users",
-          url: "/users",
-          icon: Users,
-        },
-        {
-          title: "Admins",
-          url: "/users/admins",
-          icon: Shield,
-        },
-        {
-          title: "Cleaners",
-          url: "/users/cleaners",
-          icon: UserCheck,
-        },
-        {
-          title: "Customers",
-          url: "/users/customers",
-          icon: UserPlus,
-        },
-      ],
-    },
+  {
+    title: "Users",
+    url: "/users",
+    icon: Users,
+  },
   {
     title: "Payments",
     icon: CreditCard,
