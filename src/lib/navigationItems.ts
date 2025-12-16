@@ -91,16 +91,6 @@ export const salesAgentNavigation = [
       },
     ],
   },
-  {
-    title: "Chat Management",
-    url: "/admin-chat-management",
-    icon: MessageCircle,
-  },
-  {
-    title: "Quote Leads",
-    url: "/admin-quote-leads",
-    icon: Target,
-  },
 ];
 
 export const getCustomerNavigation = (hasLinenAccess: boolean = false) => [
