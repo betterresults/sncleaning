@@ -57,7 +57,7 @@ const Users = () => {
                     </TabsList>
                     
                     <TabsContent value="office">
-                      <ModernUsersTable userType="admin" />
+                      <ModernUsersTable userType="office" />
                     </TabsContent>
                     
                     <TabsContent value="cleaners">
