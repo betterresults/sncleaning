@@ -1289,8 +1289,8 @@ useEffect(() => {
         </div>
       )}
 
-      {/* Cleaner Selection - ADMIN ONLY */}
-      {isAdminMode && (
+      {/* Cleaner Selection - ADMIN ONLY, NOT FOR LINEN ORDERS */}
+      {isAdminMode && formType !== 'linen' && (
         <div className="space-y-6">
           <h3 className="text-2xl font-bold text-[#185166] mb-4 flex items-center gap-2">
             <User className="h-6 w-6" />
