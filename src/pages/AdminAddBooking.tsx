@@ -30,6 +30,9 @@ const AdminAddBooking = () => {
     } else if (serviceType === 'domestic-cleaning') {
       // Navigate to dedicated admin Domestic booking page
       navigate('/admin/domestic');
+    } else if (serviceType === 'linen-order') {
+      // Navigate to linen order form
+      navigate('/admin/linen');
     } else {
       // For all other services, show the form inline
       setSelectedService(serviceType);
