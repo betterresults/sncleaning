@@ -105,9 +105,9 @@ const Auth = () => {
       return <Navigate to="/customer-dashboard" replace />;
     }
     
-    // Redirect admins to dashboard
-    if (userRole === 'admin') {
-      console.log('AUTH DEBUG - Redirecting admin user to dashboard:', { userRole });
+    // Redirect admins and sales agents to dashboard
+    if (userRole === 'admin' || userRole === 'sales_agent') {
+      console.log('AUTH DEBUG - Redirecting staff user to dashboard:', { userRole });
       return <Navigate to="/dashboard" replace />;
     }
     
