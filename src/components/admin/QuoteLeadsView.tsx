@@ -77,6 +77,7 @@ interface QuoteLead {
   furthest_step: string | null;
   source: string | null;
   referrer: string | null;
+  page_url: string | null;
   utm_source: string | null;
   utm_medium: string | null;
   utm_campaign: string | null;
@@ -710,6 +711,17 @@ const QuoteLeadsView = () => {
                                 )}
                                 {lead.utm_campaign && (
                                   <p className="text-muted-foreground">{lead.utm_campaign}</p>
+                                )}
+                                {lead.page_url && (
+                                  <a 
+                                    href={lead.page_url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:underline block truncate max-w-[200px]"
+                                    title={lead.page_url}
+                                  >
+                                    {lead.page_url}
+                                  </a>
                                 )}
                               </div>
                             </TableCell>
