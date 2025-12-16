@@ -2559,7 +2559,7 @@ export type Database = {
         | "cleaners.read"
         | "cleaners.write"
         | "admin.access"
-      app_role: "admin" | "user" | "guest"
+      app_role: "admin" | "user" | "guest" | "sales_agent"
       chat_type: "customer_office" | "customer_cleaner" | "office_cleaner"
       message_type: "text" | "image" | "file"
       sender_type: "customer" | "cleaner" | "admin"
@@ -2701,7 +2701,7 @@ export const Constants = {
         "cleaners.write",
         "admin.access",
       ],
-      app_role: ["admin", "user", "guest"],
+      app_role: ["admin", "user", "guest", "sales_agent"],
       chat_type: ["customer_office", "customer_cleaner", "office_cleaner"],
       message_type: ["text", "image", "file"],
       sender_type: ["customer", "cleaner", "admin"],
