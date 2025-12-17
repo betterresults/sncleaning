@@ -111,6 +111,7 @@ const DomesticBookingForm: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [isAdminMode, setIsAdminMode] = useState(false);
+  const [adminUserId, setAdminUserId] = useState<string | null>(null);
   const [showExitPopup, setShowExitPopup] = useState(false);
   const [isLoadingResume, setIsLoadingResume] = useState(false);
   const [showQuoteDialog, setShowQuoteDialog] = useState(false);
@@ -279,7 +280,11 @@ const DomesticBookingForm: React.FC = () => {
           .single();
         
         const isAdminOrSalesAgent = role?.role === 'admin' || role?.role === 'sales_agent';
-        setIsAdminMode(isAdminOrSalesAgent && isAdminRoute);
+        const adminMode = isAdminOrSalesAgent && isAdminRoute;
+        setIsAdminMode(adminMode);
+        if (adminMode) {
+          setAdminUserId(session.user.id);
+        }
         
         if (!isAdminRoute) {
           const { data: profile } = await supabase
@@ -378,7 +383,7 @@ const DomesticBookingForm: React.FC = () => {
       }
       
       // Track when totalCost is updated (this is the FINAL calculated cost from summary)
-      if ('totalCost' in updates && updates.totalCost && updates.totalCost > 0 && !isAdminMode) {
+      if ('totalCost' in updates && updates.totalCost && updates.totalCost > 0) {
         // Calculate discount amount for tracking
         const baseCost = (newData.estimatedHours ?? 0) * newData.hourlyRate;
         const discountAmount = newData.isFirstTimeCustomer ? updates.totalCost * 0.10 / 0.90 : 0; // Reverse calculate the 10% discount
@@ -396,17 +401,23 @@ const DomesticBookingForm: React.FC = () => {
           discountAmount: discountAmount > 0 ? Math.round(discountAmount * 100) / 100 : undefined,
           shortNoticeCharge: newData.shortNoticeCharge || undefined,
           isFirstTimeCustomer: newData.isFirstTimeCustomer,
+          // Include admin info if in admin mode
+          adminId: isAdminMode && adminUserId ? adminUserId : undefined,
+          isAdminCreated: isAdminMode,
         });
       }
       
       // Track contact info updates
-      if (!isAdminMode && ('firstName' in updates || 'email' in updates || 'phone' in updates || 'postcode' in updates)) {
+      if ('firstName' in updates || 'email' in updates || 'phone' in updates || 'postcode' in updates) {
         saveQuoteLead({
           firstName: newData.firstName || undefined,
           lastName: newData.lastName || undefined,
           email: newData.email || undefined,
           phone: newData.phone || undefined,
           postcode: newData.postcode || undefined,
+          // Include admin info if in admin mode
+          adminId: isAdminMode && adminUserId ? adminUserId : undefined,
+          isAdminCreated: isAdminMode,
         });
       }
       
@@ -465,13 +476,13 @@ const DomesticBookingForm: React.FC = () => {
   const nextStep = () => {
     if (currentStep < steps.length) {
       const nextStepKey = steps[currentStep]?.key || `step_${currentStep + 1}`;
-      if (!isAdminMode) {
-        trackStep(nextStepKey, {
-          propertyType: bookingData.propertyType || undefined,
-          bedrooms: bookingData.bedrooms ? parseInt(bookingData.bedrooms) : undefined,
-          calculatedQuote: bookingData.totalCost || undefined,
-        });
-      }
+      trackStep(nextStepKey, {
+        propertyType: bookingData.propertyType || undefined,
+        bedrooms: bookingData.bedrooms ? parseInt(bookingData.bedrooms) : undefined,
+        calculatedQuote: bookingData.totalCost || undefined,
+        adminId: isAdminMode && adminUserId ? adminUserId : undefined,
+        isAdminCreated: isAdminMode,
+      });
       setCurrentStep(currentStep + 1);
       // Scroll to top on step change
       window.scrollTo({ top: 0, behavior: 'smooth' });
