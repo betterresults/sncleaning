@@ -2095,6 +2095,8 @@ export type Database = {
           cleaning_type: string | null
           cost_per_hour: number | null
           created_at: string
+          created_by_source: string | null
+          created_by_user_id: string | null
           customer: number | null
           days_of_the_week: string | null
           frequently: string | null
@@ -2118,6 +2120,8 @@ export type Database = {
           cleaning_type?: string | null
           cost_per_hour?: number | null
           created_at?: string
+          created_by_source?: string | null
+          created_by_user_id?: string | null
           customer?: number | null
           days_of_the_week?: string | null
           frequently?: string | null
@@ -2141,6 +2145,8 @@ export type Database = {
           cleaning_type?: string | null
           cost_per_hour?: number | null
           created_at?: string
+          created_by_source?: string | null
+          created_by_user_id?: string | null
           customer?: number | null
           days_of_the_week?: string | null
           frequently?: string | null
