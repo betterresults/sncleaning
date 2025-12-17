@@ -251,6 +251,11 @@ const DomesticBookingForm: React.FC = () => {
           estimatedHours: data.recommended_hours || prev.estimatedHours,
           isFirstTimeCustomer: data.is_first_time_customer ?? prev.isFirstTimeCustomer,
           additionalRooms: data.additional_rooms ? (typeof data.additional_rooms === 'object' ? data.additional_rooms as any : prev.additionalRooms) : prev.additionalRooms,
+          // Load the exact quoted price if available (from admin quotes)
+          totalCost: data.calculated_quote || prev.totalCost,
+          adminDiscountAmount: data.discount_amount || prev.adminDiscountAmount,
+          // Override total cost if this is an admin quote
+          adminTotalCostOverride: data.source === 'admin' && data.calculated_quote ? data.calculated_quote : prev.adminTotalCostOverride,
         }));
 
         // Use the hook's initialize function to set session ID properly in localStorage
@@ -377,7 +382,8 @@ const DomesticBookingForm: React.FC = () => {
         newData.estimatedHours = null;
       }
       
-      if ('estimatedHours' in updates) {
+      // Only recalculate totalCost from hours if there's no admin override (preserves quoted prices)
+      if ('estimatedHours' in updates && !newData.adminTotalCostOverride) {
         const estimatedHours = newData.estimatedHours ?? 0;
         newData.totalCost = estimatedHours * newData.hourlyRate;
       }

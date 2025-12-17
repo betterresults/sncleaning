@@ -17,11 +17,13 @@ interface AdminQuoteData {
   cleaningType: string;
   totalHours: number | null;
   totalCost: number;
+  hourlyRate: number;
   discount: number;
   selectedDate: string | null;
   selectedTime: string;
   additionalDetails: string;
   propertyDetails: string;
+  quoteSessionId?: string; // Session ID to resume the exact quote
 }
 
 const formatDate = (dateStr: string | null): string => {
@@ -75,13 +77,20 @@ const handler = async (req: Request): Promise<Response> => {
       bookingPath = '/airbnb-booking';
     }
 
-    // Build URL parameters for prefilling
+    // Build URL parameters for prefilling - use resume param if session ID provided
     const params = new URLSearchParams();
     params.set('utm_source', 'admin-quote');
     params.set('utm_medium', 'email');
     params.set('utm_campaign', 'admin-quote');
-    if (quoteData.postcode) params.set('postcode', quoteData.postcode);
-    if (quoteData.customerEmail) params.set('email', quoteData.customerEmail);
+    
+    // If we have a session ID, use resume to load the exact quote
+    if (quoteData.quoteSessionId) {
+      params.set('resume', quoteData.quoteSessionId);
+    } else {
+      // Fallback to basic prefill (less reliable)
+      if (quoteData.postcode) params.set('postcode', quoteData.postcode);
+      if (quoteData.customerEmail) params.set('email', quoteData.customerEmail);
+    }
     
     const bookingLink = `${baseUrl}${bookingPath}?${params.toString()}`;
 
