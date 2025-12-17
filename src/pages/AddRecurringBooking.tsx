@@ -355,6 +355,25 @@ export default function AddRecurringBooking() {
       let interval = '7'; // Default to weekly
       if (formData.frequently === 'bi-weekly') interval = '14';
       if (formData.frequently === 'monthly') interval = '30';
+
+      // Get current user and their role for tracking
+      const { data: { user } } = await supabase.auth.getUser();
+      let createdBySource = 'website';
+      if (user) {
+        const { data: userRole } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (userRole?.role === 'admin') {
+          createdBySource = 'admin';
+        } else if (userRole?.role === 'sales_agent') {
+          createdBySource = 'sales_agent';
+        } else {
+          createdBySource = 'customer';
+        }
+      }
       
       const submitData = {
         customer: parseInt(formData.client),
@@ -373,6 +392,9 @@ export default function AddRecurringBooking() {
         postponed: formData.postponed,
         interval: interval,
         recurring_group_id: recurringGroupId,
+        // Tracking - who created this recurring service
+        created_by_user_id: user?.id || null,
+        created_by_source: createdBySource
       };
 
       console.log('Submitting recurring service with data:', submitData);
