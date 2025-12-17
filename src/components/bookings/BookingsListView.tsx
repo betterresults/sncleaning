@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Edit, Trash2, Copy, X, UserPlus, DollarSign, Repeat, MoreHorizontal, Clock, MapPin, User, Mail, Phone, Send, Calendar, Camera, FileText } from 'lucide-react';
+import { Edit, Trash2, Copy, X, UserPlus, DollarSign, Repeat, MoreHorizontal, Clock, MapPin, User, Mail, Phone, Send, Calendar, Camera, FileText, CreditCard } from 'lucide-react';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import InvoilessInvoiceDialog from '@/components/payments/InvoilessInvoiceDialog';
@@ -91,6 +91,7 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
+  const [customersWithPaymentMethods, setCustomersWithPaymentMethods] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -212,6 +213,28 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
     }
   };
 
+  // Fetch payment methods for customers in bookings
+  const fetchPaymentMethods = async (customerIds: number[]) => {
+    if (customerIds.length === 0) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('customer_payment_methods')
+        .select('customer_id')
+        .in('customer_id', customerIds);
+      
+      if (error) {
+        console.error('Error fetching payment methods:', error);
+        return;
+      }
+      
+      const customersWithCards = new Set(data?.map(pm => pm.customer_id) || []);
+      setCustomersWithPaymentMethods(customersWithCards);
+    } catch (error) {
+      console.error('Error fetching payment methods:', error);
+    }
+  };
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await fetchData();
@@ -298,6 +321,14 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
   useEffect(() => {
     applyFilters();
   }, [bookings, filters]);
+
+  // Fetch payment methods when bookings change
+  useEffect(() => {
+    const customerIds = [...new Set(bookings.map(b => b.customer).filter(Boolean))];
+    if (customerIds.length > 0) {
+      fetchPaymentMethods(customerIds);
+    }
+  }, [bookings]);
 
   // Refresh data when page becomes visible again (e.g., after navigating back)
   useEffect(() => {
@@ -599,6 +630,11 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
                     {booking.first_name} {booking.last_name}
                   </h3>
                   <Camera className={`h-4 w-4 ${booking.has_photos ? 'text-green-600' : 'text-gray-400'}`} />
+                  {customersWithPaymentMethods.has(booking.customer) && (
+                    <span title="Payment method on file">
+                      <CreditCard className="h-4 w-4 text-green-600" />
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 mt-2">
                   <Popover>
@@ -807,6 +843,11 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
                         {booking.first_name} {booking.last_name}
                       </h3>
                       <Camera className={`h-4 w-4 ${booking.has_photos ? 'text-green-600' : 'text-gray-400'}`} />
+                      {customersWithPaymentMethods.has(booking.customer) && (
+                        <span title="Payment method on file">
+                          <CreditCard className="h-4 w-4 text-green-600" />
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <Popover>
