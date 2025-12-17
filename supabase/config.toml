@@ -98,3 +98,6 @@ verify_jwt = false
 
 [functions.send-admin-quote-email]
 verify_jwt = false
+
+[functions.seed-coverage-data]
+verify_jwt = false
