@@ -206,8 +206,25 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
   useEffect(() => {
     if (onUpdate && calculations.totalHours > 0) {
       const calculatedTotal = calculateTotal();
+      const updates: Partial<DomesticBookingData> = {};
+      
+      // Sync totalCost if changed
       if (calculatedTotal !== data.totalCost) {
-        onUpdate({ totalCost: calculatedTotal });
+        updates.totalCost = calculatedTotal;
+      }
+      
+      // CRITICAL: Sync estimatedHours so it's available for quote emails
+      if (calculations.totalHours !== data.estimatedHours) {
+        updates.estimatedHours = calculations.totalHours;
+      }
+      
+      // Sync shortNoticeCharge if changed
+      if (shortNoticeInfo.charge !== data.shortNoticeCharge) {
+        updates.shortNoticeCharge = shortNoticeInfo.charge;
+      }
+      
+      if (Object.keys(updates).length > 0) {
+        onUpdate(updates);
       }
     }
   }, [
