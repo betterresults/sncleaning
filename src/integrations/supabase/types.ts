@@ -577,6 +577,42 @@ export type Database = {
           },
         ]
       }
+      cleaner_coverage_areas: {
+        Row: {
+          borough_id: string
+          cleaner_id: number
+          created_at: string
+          id: string
+        }
+        Insert: {
+          borough_id: string
+          cleaner_id: number
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          borough_id?: string
+          cleaner_id?: number
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaner_coverage_areas_borough_id_fkey"
+            columns: ["borough_id"]
+            isOneToOne: false
+            referencedRelation: "coverage_boroughs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cleaner_coverage_areas_cleaner_id_fkey"
+            columns: ["cleaner_id"]
+            isOneToOne: false
+            referencedRelation: "cleaners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cleaner_recurring_rates: {
         Row: {
           cleaner_id: number
@@ -944,6 +980,71 @@ export type Database = {
           setting_key?: string
           setting_value?: Json
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      coverage_boroughs: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          region_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          region_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          region_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coverage_boroughs_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "coverage_regions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coverage_regions: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1850,6 +1951,50 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      postcode_prefixes: {
+        Row: {
+          airbnb_cleaning: boolean | null
+          borough_id: string
+          created_at: string
+          domestic_cleaning: boolean | null
+          end_of_tenancy: boolean | null
+          id: string
+          is_active: boolean | null
+          prefix: string
+          updated_at: string
+        }
+        Insert: {
+          airbnb_cleaning?: boolean | null
+          borough_id: string
+          created_at?: string
+          domestic_cleaning?: boolean | null
+          end_of_tenancy?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          prefix: string
+          updated_at?: string
+        }
+        Update: {
+          airbnb_cleaning?: boolean | null
+          borough_id?: string
+          created_at?: string
+          domestic_cleaning?: boolean | null
+          end_of_tenancy?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          prefix?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "postcode_prefixes_borough_id_fkey"
+            columns: ["borough_id"]
+            isOneToOne: false
+            referencedRelation: "coverage_boroughs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
