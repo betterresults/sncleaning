@@ -7,13 +7,14 @@ import { LinensStep } from './steps/LinensStep';
 import { ScheduleStep } from './steps/ScheduleStep';
 import { BookingSummary } from './AirbnbBookingSummary';
 import { PaymentStep } from './steps/PaymentStep';
-import { Home, Brush, Calendar, User, CreditCard, Package2 } from 'lucide-react';
+import { Home, Brush, Calendar, User, CreditCard, Package2, ArrowLeft, Mail, Loader2 } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useQuoteLeadTracking } from '@/hooks/useQuoteLeadTracking';
-
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 export interface BookingData {
   // Property details
   propertyType: 'flat' | 'house' | '';
@@ -111,9 +112,13 @@ const steps = [
 
 const AirbnbBookingForm: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [isAdminMode, setIsAdminMode] = useState(false);
+  const [showQuoteDialog, setShowQuoteDialog] = useState(false);
+  const [sendingQuote, setSendingQuote] = useState(false);
   
   // Quote lead tracking
   const { saveQuoteLead, trackStep, trackQuoteCalculated, markCompleted } = useQuoteLeadTracking('Air BnB');
@@ -335,6 +340,55 @@ const AirbnbBookingForm: React.FC = () => {
 
   const progress = (currentStep / steps.length) * 100;
 
+  const handleSendQuote = async () => {
+    const email = bookingData.email || bookingData.selectedCustomer?.email;
+    if (!email || !email.includes('@')) {
+      toast({
+        title: "Email Required",
+        description: "Please enter a valid customer email address to send the quote.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSendingQuote(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-admin-quote-email', {
+        body: {
+          customerName: `${bookingData.firstName || bookingData.selectedCustomer?.first_name || ''} ${bookingData.lastName || bookingData.selectedCustomer?.last_name || ''}`.trim() || 'Valued Customer',
+          customerEmail: email,
+          serviceType: 'Air BnB',
+          cleaningType: bookingData.serviceType,
+          propertyDetails: `${bookingData.bedrooms} bed, ${bookingData.bathrooms} bath`,
+          address: bookingData.selectedAddress?.address || `${bookingData.houseNumber} ${bookingData.street}, ${bookingData.postcode}`,
+          selectedDate: bookingData.selectedDate?.toISOString(),
+          selectedTime: bookingData.selectedTime,
+          totalCost: bookingData.totalCost,
+          estimatedHours: bookingData.estimatedHours,
+          hourlyRate: bookingData.hourlyRate,
+          referrer: window.location.href,
+        },
+      });
+
+      if (error) throw error;
+
+      setShowQuoteDialog(false);
+      toast({
+        title: "Quote Sent!",
+        description: `Quote email sent successfully to ${email}`,
+      });
+    } catch (error: any) {
+      console.error('Error sending quote email:', error);
+      toast({
+        title: "Failed to Send Quote",
+        description: error.message || "There was an issue sending the quote email.",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingQuote(false);
+    }
+  };
+
   const renderStep = () => {
     switch (currentStep) {
       case 1:
@@ -387,19 +441,97 @@ const AirbnbBookingForm: React.FC = () => {
       <header className="bg-white py-4 mb-3 border-b border-border shadow-[0_10px_30px_rgba(0,0,0,0.14)]">
         <div className="container mx-auto px-2 sm:px-4">
           <div className="flex items-center justify-between mb-4">
-            {!isAdminMode && bookingData.customerId && (
-              <Button
-                variant="outline"
-                onClick={() => window.location.href = '/'}
-                className="text-sm font-medium hover:bg-accent/50 transition-all duration-200 shadow-sm"
-              >
-                ← Back to Account
-              </Button>
+            {isAdminMode ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate('/admin-add-booking')}
+                  className="text-sm font-medium hover:bg-accent/50 transition-all duration-200 shadow-sm"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Services
+                </Button>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700">
+                  Airbnb Cleaning Booking Form
+                </h1>
+                <Dialog open={showQuoteDialog} onOpenChange={setShowQuoteDialog}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="text-sm font-medium border-amber-500 text-amber-600 hover:bg-amber-50 transition-all duration-200 shadow-sm"
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      Send as Quote
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <Mail className="h-5 w-5 text-amber-600" />
+                        Send Quote to Customer
+                      </DialogTitle>
+                      <DialogDescription>
+                        Send this booking as a quote email to the customer. They can review and book later.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="bg-amber-50 p-4 rounded-lg">
+                        <p className="text-sm text-amber-800">
+                          A quote email will be sent to: <strong>{bookingData.email || bookingData.selectedCustomer?.email || 'No email set'}</strong>
+                        </p>
+                        <p className="text-sm text-amber-700 mt-2">
+                          Total: <strong>£{bookingData.totalCost?.toFixed(2) || '0.00'}</strong>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-3">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setShowQuoteDialog(false)}
+                        disabled={sendingQuote}
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={handleSendQuote}
+                        disabled={sendingQuote}
+                        className="bg-amber-600 hover:bg-amber-700 text-white"
+                      >
+                        {sendingQuote ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Sending...
+                          </>
+                        ) : (
+                          <>
+                            <Mail className="mr-2 h-4 w-4" />
+                            Send Quote
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </>
+            ) : bookingData.customerId ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.href = '/'}
+                  className="text-sm font-medium hover:bg-accent/50 transition-all duration-200 shadow-sm"
+                >
+                  ← Back to Account
+                </Button>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700">
+                  Airbnb Cleaning Booking Form
+                </h1>
+                <div className="w-[140px]" />
+              </>
+            ) : (
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700 mx-auto">
+                Airbnb Cleaning Booking Form
+              </h1>
             )}
-            <h1 className={`text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700 ${!isAdminMode && bookingData.customerId ? '' : 'mx-auto'}`}>
-              Airbnb Cleaning Booking Form
-            </h1>
-            {!isAdminMode && bookingData.customerId && <div className="w-[140px]" />}
           </div>
           
           {/* Step Navigation - Mobile Optimized */}
