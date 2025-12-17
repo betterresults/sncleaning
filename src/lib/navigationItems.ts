@@ -89,12 +89,12 @@ export const salesAgentNavigation = [
         url: "/users/customers",
         icon: UserPlus,
       },
-      {
-        title: "Coverage",
-        url: "/coverage",
-        icon: Map,
-      },
     ],
+  },
+  {
+    title: "Coverage",
+    url: "/coverage",
+    icon: Map,
   },
 ];
 
