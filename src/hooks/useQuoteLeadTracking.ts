@@ -243,6 +243,12 @@ export const useQuoteLeadTracking = (serviceType: string, options?: TrackingOpti
       localStorage.setItem('quote_source', determineSource());
     }
 
+    // Store original landing URL (only on first visit - this is the services page URL with all tracking params)
+    // document.referrer when on the booking form is the page they came from (services page with UTM params)
+    if (!localStorage.getItem('quote_original_landing_url') && document.referrer) {
+      localStorage.setItem('quote_original_landing_url', document.referrer);
+    }
+
     // Start heartbeat interval (only if record exists)
     heartbeatInterval.current = setInterval(() => {
       if (hasRecordCreated.current) {
@@ -340,7 +346,8 @@ export const useQuoteLeadTracking = (serviceType: string, options?: TrackingOpti
         furthest_step: data.furthestStep,
         source: source,
         page_url: window.location.href,
-        referrer: document.referrer || null,
+        // Use stored original landing URL if available (this is the URL with all tracking params from the services page)
+        referrer: localStorage.getItem('quote_original_landing_url') || document.referrer || null,
         user_agent: navigator.userAgent,
         last_heartbeat: new Date().toISOString(),
         ...utmParams,
