@@ -5,15 +5,13 @@ import { DomesticPropertyStep } from './steps/DomesticPropertyStep';
 import { ScheduleStep } from './steps/ScheduleStep';
 import { DomesticBookingSummary } from './DomesticBookingSummary';
 import { PaymentStep } from './steps/PaymentStep';
-import { Home, Calendar, CreditCard, ArrowLeft, Mail, Loader2 } from 'lucide-react';
+import { Home, Calendar, CreditCard, ArrowLeft, Mail } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuoteLeadTracking } from '@/hooks/useQuoteLeadTracking';
 import { ExitQuotePopup } from '@/components/booking/ExitQuotePopup';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
 
 export interface DomesticBookingData {
   // Property details
@@ -109,7 +107,6 @@ const steps = [
 const DomesticBookingForm: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const [currentStep, setCurrentStep] = useState(1);
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
@@ -117,7 +114,6 @@ const DomesticBookingForm: React.FC = () => {
   const [showExitPopup, setShowExitPopup] = useState(false);
   const [isLoadingResume, setIsLoadingResume] = useState(false);
   const [showQuoteDialog, setShowQuoteDialog] = useState(false);
-  const [sendingQuote, setSendingQuote] = useState(false);
   
   // Quote lead tracking
   const { saveQuoteLead, trackStep, trackQuoteCalculated, markCompleted, initializeFromResume, markQuoteEmailSent, sessionId } = useQuoteLeadTracking('Domestic');
@@ -490,55 +486,6 @@ const DomesticBookingForm: React.FC = () => {
     }
   };
 
-  const handleSendQuote = async () => {
-    const email = bookingData.email || bookingData.selectedCustomer?.email;
-    if (!email || !email.includes('@')) {
-      toast({
-        title: "Email Required",
-        description: "Please enter a valid customer email address to send the quote.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setSendingQuote(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('send-admin-quote-email', {
-        body: {
-          customerName: `${bookingData.firstName || bookingData.selectedCustomer?.first_name || ''} ${bookingData.lastName || bookingData.selectedCustomer?.last_name || ''}`.trim() || 'Valued Customer',
-          customerEmail: email,
-          serviceType: 'Domestic',
-          cleaningType: bookingData.serviceFrequency,
-          propertyDetails: `${bookingData.bedrooms} bed, ${bookingData.bathrooms} bath`,
-          address: bookingData.selectedAddress?.address || `${bookingData.houseNumber} ${bookingData.street}, ${bookingData.postcode}`,
-          selectedDate: bookingData.selectedDate?.toISOString(),
-          selectedTime: bookingData.selectedTime,
-          totalCost: bookingData.totalCost,
-          estimatedHours: bookingData.estimatedHours,
-          hourlyRate: bookingData.hourlyRate,
-          referrer: window.location.href,
-        },
-      });
-
-      if (error) throw error;
-
-      setShowQuoteDialog(false);
-      toast({
-        title: "Quote Sent!",
-        description: `Quote email sent successfully to ${email}`,
-      });
-    } catch (error: any) {
-      console.error('Error sending quote email:', error);
-      toast({
-        title: "Failed to Send Quote",
-        description: error.message || "There was an issue sending the quote email.",
-        variant: "destructive",
-      });
-    } finally {
-      setSendingQuote(false);
-    }
-  };
-
   const renderStep = () => {
     switch (currentStep) {
       case 1:
@@ -596,64 +543,14 @@ const DomesticBookingForm: React.FC = () => {
                   <span className="sm:hidden">Domestic Cleaning</span>
                   <span className="hidden sm:inline">Domestic Cleaning Booking Form</span>
                 </h1>
-                <Dialog open={showQuoteDialog} onOpenChange={setShowQuoteDialog}>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="text-sm font-medium border-amber-500 text-amber-600 hover:bg-amber-50 transition-all duration-200 shadow-sm"
-                    >
-                      <Mail className="h-4 w-4 mr-2" />
-                      Send as Quote
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle className="flex items-center gap-2">
-                        <Mail className="h-5 w-5 text-amber-600" />
-                        Send Quote to Customer
-                      </DialogTitle>
-                      <DialogDescription>
-                        Send this booking as a quote email to the customer. They can review and book later.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="bg-amber-50 p-4 rounded-lg">
-                        <p className="text-sm text-amber-800">
-                          A quote email will be sent to: <strong>{bookingData.email || bookingData.selectedCustomer?.email || 'No email set'}</strong>
-                        </p>
-                        <p className="text-sm text-amber-700 mt-2">
-                          Total: <strong>£{bookingData.totalCost?.toFixed(2) || '0.00'}</strong>
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex justify-end gap-3">
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setShowQuoteDialog(false)}
-                        disabled={sendingQuote}
-                      >
-                        Cancel
-                      </Button>
-                      <Button 
-                        onClick={handleSendQuote}
-                        disabled={sendingQuote}
-                        className="bg-amber-600 hover:bg-amber-700 text-white"
-                      >
-                        {sendingQuote ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Sending...
-                          </>
-                        ) : (
-                          <>
-                            <Mail className="mr-2 h-4 w-4" />
-                            Send Quote
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowQuoteDialog(true)}
+                  className="text-sm font-medium border-amber-500 text-amber-600 hover:bg-amber-50 transition-all duration-200 shadow-sm"
+                >
+                  <Mail className="h-4 w-4 mr-2" />
+                  Send as Quote
+                </Button>
               </>
             ) : bookingData.customerId ? (
               <>
@@ -755,6 +652,31 @@ const DomesticBookingForm: React.FC = () => {
         </div>
       </main>
       
+      {/* Admin Quote Popup */}
+      {isAdminMode && (
+        <ExitQuotePopup
+          open={showQuoteDialog}
+          onOpenChange={setShowQuoteDialog}
+          email={bookingData.email || bookingData.selectedCustomer?.email || ''}
+          quoteData={{
+            totalCost: bookingData.totalCost,
+            estimatedHours: bookingData.estimatedHours,
+            propertyType: bookingData.propertyType,
+            bedrooms: bookingData.bedrooms,
+            bathrooms: bookingData.bathrooms,
+            serviceFrequency: bookingData.serviceFrequency,
+            hasOvenCleaning: bookingData.hasOvenCleaning,
+            ovenType: bookingData.ovenType,
+            selectedDate: bookingData.selectedDate,
+            selectedTime: bookingData.selectedTime,
+            postcode: bookingData.postcode,
+            shortNoticeCharge: bookingData.shortNoticeCharge,
+          }}
+          sessionId={sessionId}
+          serviceType="Domestic"
+        />
+      )}
+
       {/* Exit Quote Popup */}
       <ExitQuotePopup
         open={showExitPopup}
