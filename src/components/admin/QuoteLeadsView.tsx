@@ -323,8 +323,12 @@ const QuoteLeadsView = () => {
   };
 
   const filteredLeads = leads.filter(lead => {
+    // Handle email_sent filter
+    if (statusFilter === 'email_sent') {
+      if (!lead.quote_email_sent) return false;
+    }
     // Handle idle filter - computed status
-    if (statusFilter === 'idle') {
+    else if (statusFilter === 'idle') {
       if (!isLeadIdle(lead)) return false;
     } else if (statusFilter === 'live') {
       // Live means currently active (not idle)
@@ -468,6 +472,7 @@ const QuoteLeadsView = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="email_sent">Email Sent</SelectItem>
                       <SelectItem value="live">Live (active)</SelectItem>
                       <SelectItem value="idle">Idle (tab open but inactive)</SelectItem>
                       <SelectItem value="left">Left</SelectItem>
