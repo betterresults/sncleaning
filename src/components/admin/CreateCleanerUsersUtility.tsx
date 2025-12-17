@@ -24,7 +24,11 @@ interface ProcessResult {
   message: string;
 }
 
-const CreateCleanerUsersUtility = () => {
+interface CreateCleanerUsersUtilityProps {
+  readOnly?: boolean;
+}
+
+const CreateCleanerUsersUtility = ({ readOnly = false }: CreateCleanerUsersUtilityProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -224,6 +228,7 @@ const CreateCleanerUsersUtility = () => {
                     <CleanerAccountActions 
                       cleaner={cleaner}
                       onAccountCreated={fetchCleaners}
+                      readOnly={readOnly}
                     />
                   </div>
                 ))}
@@ -231,57 +236,61 @@ const CreateCleanerUsersUtility = () => {
             )}
           </div>
 
-          <hr className="my-6" />
+          {!readOnly && (
+            <>
+              <hr className="my-6" />
 
-          {/* Bulk Operations */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Bulk Operations</h3>
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800">
-                This utility will create user accounts for all cleaners with email addresses. 
-                Cleaners will receive login credentials to access their dashboard.
-              </p>
-            </div>
-
-            <Button 
-              onClick={processAllCleaners} 
-              disabled={loading}
-              className="w-full"
-            >
-              {loading ? 'Processing...' : 'Create User Accounts for All Cleaners'}
-            </Button>
-
-            {loading && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Creating accounts...</span>
-                  <span>{Math.round(progress)}%</span>
+              {/* Bulk Operations */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Bulk Operations</h3>
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    This utility will create user accounts for all cleaners with email addresses. 
+                    Cleaners will receive login credentials to access their dashboard.
+                  </p>
                 </div>
-                <Progress value={progress} className="w-full" />
-              </div>
-            )}
 
-            {results.length > 0 && (
-              <div className="space-y-3">
-                <h4 className="font-semibold">Bulk Operation Results:</h4>
-                <div className="max-h-60 overflow-y-auto space-y-2">
-                  {results.map((result, index) => (
-                    <div key={index} className="flex items-center gap-2 p-2 border rounded">
-                      <div className="flex-1">
-                        <div className="font-medium">
-                          {result.cleaner.first_name} {result.cleaner.last_name}
-                        </div>
-                        <div className="text-sm text-gray-500">{result.cleaner.email}</div>
-                      </div>
-                      <Badge variant={result.status === 'success' ? 'default' : result.status === 'exists' ? 'secondary' : 'destructive'}>
-                        {result.message}
-                      </Badge>
+                <Button 
+                  onClick={processAllCleaners} 
+                  disabled={loading}
+                  className="w-full"
+                >
+                  {loading ? 'Processing...' : 'Create User Accounts for All Cleaners'}
+                </Button>
+
+                {loading && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Creating accounts...</span>
+                      <span>{Math.round(progress)}%</span>
                     </div>
-                  ))}
-                </div>
+                    <Progress value={progress} className="w-full" />
+                  </div>
+                )}
+
+                {results.length > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="font-semibold">Bulk Operation Results:</h4>
+                    <div className="max-h-60 overflow-y-auto space-y-2">
+                      {results.map((result, index) => (
+                        <div key={index} className="flex items-center gap-2 p-2 border rounded">
+                          <div className="flex-1">
+                            <div className="font-medium">
+                              {result.cleaner.first_name} {result.cleaner.last_name}
+                            </div>
+                            <div className="text-sm text-gray-500">{result.cleaner.email}</div>
+                          </div>
+                          <Badge variant={result.status === 'success' ? 'default' : result.status === 'exists' ? 'secondary' : 'destructive'}>
+                            {result.message}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

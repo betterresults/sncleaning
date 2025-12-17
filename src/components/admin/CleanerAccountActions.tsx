@@ -27,9 +27,10 @@ interface Cleaner {
 interface CleanerAccountActionsProps {
   cleaner: Cleaner;
   onAccountCreated?: () => void;
+  readOnly?: boolean;
 }
 
-export const CleanerAccountActions = ({ cleaner, onAccountCreated }: CleanerAccountActionsProps) => {
+export const CleanerAccountActions = ({ cleaner, onAccountCreated, readOnly = false }: CleanerAccountActionsProps) => {
   const [hasAccount, setHasAccount] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
@@ -156,68 +157,72 @@ export const CleanerAccountActions = ({ cleaner, onAccountCreated }: CleanerAcco
             <CheckCircle className="h-3 w-3" />
             Has Account
           </Badge>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" size="sm" disabled={resetLoading}>
-                {resetLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <RotateCcw className="h-4 w-4" />
-                )}
-                Reset Password
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Send Password Reset Email?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will send a password reset email to <strong>{cleaner.email}</strong>.
-                  They'll receive a secure link to reset their password.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handlePasswordReset}>
-                  <Mail className="h-4 w-4 mr-2" />
-                  Send Reset Email
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {!readOnly && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" disabled={resetLoading}>
+                  {resetLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RotateCcw className="h-4 w-4" />
+                  )}
+                  Reset Password
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Send Password Reset Email?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will send a password reset email to <strong>{cleaner.email}</strong>.
+                    They'll receive a secure link to reset their password.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handlePasswordReset}>
+                    <Mail className="h-4 w-4 mr-2" />
+                    Send Reset Email
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </>
       ) : (
         <>
           <Badge variant="outline" className="text-orange-600 border-orange-300">
             No Account
           </Badge>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="default" size="sm" disabled={loading}>
-                {loading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <UserPlus className="h-4 w-4" />
-                )}
-                Create Account
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Create Cleaner Account?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will create a login account for <strong>{cleanerName}</strong> 
-                  and send a beautiful welcome email to <strong>{cleaner.email}</strong> with their login credentials.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleCreateAccount}>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Create Account & Send Email
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {!readOnly && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="default" size="sm" disabled={loading}>
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <UserPlus className="h-4 w-4" />
+                  )}
+                  Create Account
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Create Cleaner Account?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will create a login account for <strong>{cleanerName}</strong> 
+                    and send a beautiful welcome email to <strong>{cleaner.email}</strong> with their login credentials.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleCreateAccount}>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Create Account & Send Email
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </>
       )}
     </div>

@@ -32,9 +32,10 @@ interface CleanersSectionProps {
   hideCreateButton?: boolean;
   showCreateForm?: boolean;
   onCreateSuccess?: () => void;
+  readOnly?: boolean;
 }
 
-const CleanersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }: CleanersSectionProps) => {
+const CleanersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess, readOnly = false }: CleanersSectionProps) => {
   const [cleaners, setCleaners] = useState<CleanerData[]>([]);
   const [filteredCleaners, setFilteredCleaners] = useState<CleanerData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -386,27 +387,30 @@ const CleanersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }: 
                       <CleanerAccountActions 
                         cleaner={cleaner}
                         onAccountCreated={fetchCleaners}
+                        readOnly={readOnly}
                       />
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => startEditingCleaner(cleaner)}
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-1 text-xs flex-1 sm:flex-none"
-                        >
-                          <Edit className="h-3 w-3" />
-                          <span className="hidden sm:inline">Edit</span>
-                        </Button>
-                        <Button
-                          onClick={() => deleteCleaner(cleaner.id)}
-                          variant="destructive"
-                          size="sm"
-                          className="flex items-center gap-1 text-xs flex-1 sm:flex-none"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                          <span className="hidden sm:inline">Delete</span>
-                        </Button>
-                      </div>
+                      {!readOnly && (
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => startEditingCleaner(cleaner)}
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-1 text-xs flex-1 sm:flex-none"
+                          >
+                            <Edit className="h-3 w-3" />
+                            <span className="hidden sm:inline">Edit</span>
+                          </Button>
+                          <Button
+                            onClick={() => deleteCleaner(cleaner.id)}
+                            variant="destructive"
+                            size="sm"
+                            className="flex items-center gap-1 text-xs flex-1 sm:flex-none"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            <span className="hidden sm:inline">Delete</span>
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

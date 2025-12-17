@@ -31,9 +31,10 @@ interface CustomersSectionProps {
   hideCreateButton?: boolean;
   showCreateForm?: boolean;
   onCreateSuccess?: () => void;
+  readOnly?: boolean;
 }
 
-const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }: CustomersSectionProps) => {
+const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess, readOnly = false }: CustomersSectionProps) => {
   const [customers, setCustomers] = useState<CustomerData[]>([]);
   const [filteredCustomers, setFilteredCustomers] = useState<CustomerData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -438,35 +439,38 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess }:
                       <CustomerAccountActions 
                         customer={customer}
                         onAccountCreated={fetchCustomers}
+                        readOnly={readOnly}
                       />
-                      <div className="flex gap-2">
-                        <PaymentMethodStatusIcon
-                          paymentMethodCount={paymentData[customer.id]?.payment_method_count || 0}
-                          hasStripeAccount={paymentData[customer.id]?.has_stripe_account || false}
-                          onClick={() => {
-                            setSelectedCustomerForPayment(customer);
-                            setShowPaymentDialog(true);
-                          }}
-                        />
-                        <Button
-                          onClick={() => startEditingCustomer(customer)}
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-1 text-xs flex-1 sm:flex-none"
-                        >
-                          <Edit className="h-3 w-3" />
-                          <span className="hidden sm:inline">Edit</span>
-                        </Button>
-                        <Button
-                          onClick={() => openDeleteDialog(customer)}
-                          variant="destructive"
-                          size="sm"
-                          className="flex items-center gap-1 text-xs flex-1 sm:flex-none"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                          <span className="hidden sm:inline">Delete</span>
-                        </Button>
-                      </div>
+                      {!readOnly && (
+                        <div className="flex gap-2">
+                          <PaymentMethodStatusIcon
+                            paymentMethodCount={paymentData[customer.id]?.payment_method_count || 0}
+                            hasStripeAccount={paymentData[customer.id]?.has_stripe_account || false}
+                            onClick={() => {
+                              setSelectedCustomerForPayment(customer);
+                              setShowPaymentDialog(true);
+                            }}
+                          />
+                          <Button
+                            onClick={() => startEditingCustomer(customer)}
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-1 text-xs flex-1 sm:flex-none"
+                          >
+                            <Edit className="h-3 w-3" />
+                            <span className="hidden sm:inline">Edit</span>
+                          </Button>
+                          <Button
+                            onClick={() => openDeleteDialog(customer)}
+                            variant="destructive"
+                            size="sm"
+                            className="flex items-center gap-1 text-xs flex-1 sm:flex-none"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            <span className="hidden sm:inline">Delete</span>
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

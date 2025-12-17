@@ -19,9 +19,11 @@ const CreateCustomerAccounts = () => {
     }
   };
 
-  if (!user || userRole !== 'admin') {
+  if (!user || (userRole !== 'admin' && userRole !== 'sales_agent')) {
     return <Navigate to="/auth" replace />;
   }
+
+  const isSalesAgent = userRole === 'sales_agent';
 
   return (
     <SidebarProvider>
@@ -43,9 +45,9 @@ const CreateCustomerAccounts = () => {
               <div className="max-w-7xl mx-auto space-y-6">
                 <div className="flex items-center justify-between">
                   <h1 className="text-2xl font-semibold">Customer Account Management</h1>
-                  <BulkCreateAccountsDialog />
+                  {!isSalesAgent && <BulkCreateAccountsDialog />}
                 </div>
-                <CreateCleanerUsersUtility />
+                <CreateCleanerUsersUtility readOnly={isSalesAgent} />
               </div>
             </main>
           </SidebarInset>
