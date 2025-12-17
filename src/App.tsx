@@ -73,6 +73,35 @@ import { isCapacitor } from "@/utils/capacitor";
 
 const queryClient = new QueryClient();
 
+// Capture original landing URL on first page load (before any navigation)
+// This runs once when the app initializes
+const captureOriginalLandingUrl = () => {
+  const SESSION_KEY = 'quote_session_id';
+  const LANDING_URL_KEY = 'quote_original_landing_url';
+  const SESSION_TIMESTAMP_KEY = 'quote_session_timestamp';
+  const SESSION_REUSE_WINDOW = 30 * 60 * 1000; // 30 minutes
+  
+  const existingSession = localStorage.getItem(SESSION_KEY);
+  const sessionTimestamp = localStorage.getItem(SESSION_TIMESTAMP_KEY);
+  const existingLandingUrl = localStorage.getItem(LANDING_URL_KEY);
+  
+  // Check if this is a new session or if the session is too old
+  const isNewSession = !existingSession || !sessionTimestamp || 
+    (Date.now() - parseInt(sessionTimestamp, 10)) > SESSION_REUSE_WINDOW;
+  
+  // Capture landing URL if:
+  // 1. It's a new session, OR
+  // 2. We don't have a landing URL stored yet
+  if (isNewSession || !existingLandingUrl) {
+    // Store the current full URL (including all query params like UTM)
+    localStorage.setItem(LANDING_URL_KEY, window.location.href);
+    console.log('📊 Captured original landing URL:', window.location.href);
+  }
+};
+
+// Run immediately on app load
+captureOriginalLandingUrl();
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
