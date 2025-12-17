@@ -26,10 +26,13 @@ const CheckCoverage = () => {
 
   const extractPrefix = (postcode: string): string => {
     const clean = postcode.replace(/\s/g, '').toUpperCase();
-    if (clean.length >= 4) {
-      const outward = clean.slice(0, -3);
-      return outward;
+    // Check if it looks like a full postcode (ends with digit + 2 letters pattern for inward code)
+    const fullPostcodePattern = /^([A-Z]{1,2}\d{1,2}[A-Z]?)\d[A-Z]{2}$/;
+    const match = clean.match(fullPostcodePattern);
+    if (match) {
+      return match[1]; // Return the outward code
     }
+    // Otherwise assume it's already just the outward code (prefix)
     return clean;
   };
 
