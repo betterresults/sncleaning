@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
-type ColumnKey = 'date' | 'service' | 'contact' | 'property' | 'quote' | 'progress' | 'status' | 'source' | 'frequency' | 'cleaningType' | 'extras';
+type ColumnKey = 'date' | 'service' | 'contact' | 'property' | 'quote' | 'progress' | 'status' | 'source' | 'frequency' | 'cleaningType' | 'extras' | 'createdBy';
 
 const ALL_COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: 'date', label: 'Date' },
@@ -25,6 +25,7 @@ const ALL_COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: 'progress', label: 'Progress' },
   { key: 'status', label: 'Status' },
   { key: 'source', label: 'Source' },
+  { key: 'createdBy', label: 'Created By' },
   { key: 'frequency', label: 'Frequency' },
   { key: 'cleaningType', label: 'Cleaning Type' },
   { key: 'extras', label: 'Extras' },
@@ -91,6 +92,14 @@ interface QuoteLead {
   oven_cleaning: boolean | null;
   oven_size: string | null;
   ironing_hours: number | null;
+  created_by_admin_id: string | null;
+}
+
+interface AdminProfile {
+  user_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
 }
 
 // Check if a lead is idle (no heartbeat in last 2 minutes means browser likely closed)
@@ -115,6 +124,7 @@ const QuoteLeadsView = () => {
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [adminProfiles, setAdminProfiles] = useState<Map<string, AdminProfile>>(new Map());
   const [visibleColumns, setVisibleColumns] = useState<ColumnKey[]>(() => {
     const saved = localStorage.getItem('quoteLeadsVisibleColumns');
     if (saved) {
@@ -142,8 +152,8 @@ const QuoteLeadsView = () => {
   const fetchData = async () => {
     setRefreshing(true);
     try {
-      // Fetch both funnel events and quote leads
-      const [eventsResponse, leadsResponse] = await Promise.all([
+      // Fetch funnel events, quote leads, and admin profiles
+      const [eventsResponse, leadsResponse, profilesResponse] = await Promise.all([
         supabase
           .from('funnel_events')
           .select('*')
@@ -153,7 +163,10 @@ const QuoteLeadsView = () => {
           .from('quote_leads')
           .select('*')
           .order('created_at', { ascending: false })
-          .limit(100)
+          .limit(100),
+        supabase
+          .from('profiles')
+          .select('user_id, first_name, last_name, email')
       ]);
 
       if (eventsResponse.error) throw eventsResponse.error;
@@ -164,12 +177,33 @@ const QuoteLeadsView = () => {
         event_data: e.event_data as Record<string, unknown> | null
       })));
       setLeads(leadsResponse.data || []);
+
+      // Build admin profiles map
+      if (profilesResponse.data) {
+        const profilesMap = new Map<string, AdminProfile>();
+        profilesResponse.data.forEach(p => {
+          profilesMap.set(p.user_id, p);
+        });
+        setAdminProfiles(profilesMap);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
+  };
+
+  const getAdminName = (adminId: string | null): string => {
+    if (!adminId) return '-';
+    const profile = adminProfiles.get(adminId);
+    if (profile) {
+      if (profile.first_name || profile.last_name) {
+        return `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+      }
+      return profile.email || 'Admin';
+    }
+    return 'Admin';
   };
 
   useEffect(() => {
@@ -558,6 +592,7 @@ const QuoteLeadsView = () => {
                       {isColumnVisible('cleaningType') && <TableHead>Cleaning Type</TableHead>}
                       {isColumnVisible('extras') && <TableHead>Extras</TableHead>}
                       {isColumnVisible('source') && <TableHead>Source</TableHead>}
+                      {isColumnVisible('createdBy') && <TableHead>Created By</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -736,6 +771,18 @@ const QuoteLeadsView = () => {
                                   </a>
                                 )}
                               </div>
+                            </TableCell>
+                          )}
+                          
+                          {isColumnVisible('createdBy') && (
+                            <TableCell>
+                              {lead.created_by_admin_id ? (
+                                <Badge variant="secondary" className="text-xs">
+                                  {getAdminName(lead.created_by_admin_id)}
+                                </Badge>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">Customer</span>
+                              )}
                             </TableCell>
                           )}
                         </TableRow>
