@@ -52,7 +52,19 @@ serve(async (req) => {
       "Redbridge": ["IG1", "IG2", "IG3", "IG4", "IG5", "IG6", "IG8"],
       "Richmond upon Thames": ["TW9", "TW10", "TW1", "TW2", "SW13", "SW14"],
       "Sutton": ["SM1", "SM2", "SM3", "SM5", "SM6"],
-      "Waltham Forest": ["E4", "E10", "E11", "E17", "IG8"]
+      "Waltham Forest": ["E4", "E10", "E11", "E17", "IG8"],
+      // Essex
+      "Essex - Basildon": ["SS13", "SS14", "SS15", "SS16"],
+      "Essex - Brentwood": ["CM13", "CM14", "CM15"],
+      "Essex - Romford / Thurrock Edge": ["RM1", "RM2", "RM3", "RM4", "RM5", "RM6", "RM7", "RM8", "RM9", "RM10", "RM11", "RM12", "RM13", "RM14", "RM15", "RM16"],
+      "Essex - Chelmsford": ["CM1", "CM2", "CM3"],
+      "Essex - Southend-on-Sea": ["SS0", "SS1", "SS2"],
+      "Essex - Rayleigh": ["SS6"],
+      "Essex - Benfleet": ["SS7"],
+      "Essex - Canvey Island": ["SS8"],
+      "Essex - Leigh-on-Sea": ["SS9"],
+      // South Yorkshire
+      "Sheffield": ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S17", "S18", "S20", "S21", "S25", "S26"]
     };
 
     const results: any = { regions: [], boroughs: [], postcodes: [] };
