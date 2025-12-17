@@ -89,7 +89,8 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
   };
 
   const calculateTotal = () => {
-    if (isAdminMode && data.adminTotalCostOverride !== undefined && data.adminTotalCostOverride !== null) {
+    // Use admin override if set (works in admin mode AND for resumed admin quotes)
+    if (data.adminTotalCostOverride !== undefined && data.adminTotalCostOverride !== null && data.adminTotalCostOverride > 0) {
       return data.adminTotalCostOverride;
     }
     
@@ -528,8 +529,18 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
       {data.serviceFrequency && (
         <div className="mt-4 space-y-3">
           
-          {/* First-time discount banner */}
-          {data.isFirstTimeCustomer && (
+          {/* Quoted price badge - show when using admin override */}
+          {!isAdminMode && data.adminTotalCostOverride && data.adminTotalCostOverride > 0 && (
+            <div className="flex items-center justify-center p-3 bg-blue-50 rounded-xl border border-blue-200">
+              <div className="flex items-center gap-2">
+                <Tag className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-700">Your Quoted Price</span>
+              </div>
+            </div>
+          )}
+          
+          {/* First-time discount banner - only show when NOT using quoted price */}
+          {data.isFirstTimeCustomer && !(data.adminTotalCostOverride && data.adminTotalCostOverride > 0) && (
             <div className="flex items-center justify-between p-3 bg-green-50 rounded-xl border border-green-200">
               <div className="flex items-center gap-2">
                 <Tag className="w-4 h-4 text-green-600" />
@@ -547,7 +558,7 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
               {calculations.wantsFirstDeepClean ? 'First Clean' : 'Total'}
             </span>
             <div className="text-right">
-              {data.isFirstTimeCustomer && (
+              {data.isFirstTimeCustomer && !(data.adminTotalCostOverride && data.adminTotalCostOverride > 0) && (
                 <span className="text-sm text-muted-foreground line-through mr-2">
                   £{calculateSubtotalBeforeFirstTimeDiscount().toFixed(2)}
                 </span>

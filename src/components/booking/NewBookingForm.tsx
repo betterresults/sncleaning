@@ -561,6 +561,40 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
 
     setSendingQuote(true);
     try {
+      // Generate a unique session ID for this quote
+      const quoteSessionId = `admin_quote_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+      
+      // Get current user info for admin tracking
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Save the quote to quote_leads so it can be resumed with exact pricing
+      const { error: saveError } = await supabase.from('quote_leads').upsert({
+        session_id: quoteSessionId,
+        service_type: formData.serviceType === 'domestic' ? 'Domestic' : formData.serviceType,
+        cleaning_type: formData.cleaningSubType || formData.serviceType,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        phone: formData.phoneNumber,
+        postcode: formData.postcode,
+        address: formData.address,
+        calculated_quote: formData.totalCost,
+        recommended_hours: formData.totalHours || null,
+        discount_amount: formData.discount || 0,
+        selected_date: formData.selectedDate?.toISOString().split('T')[0] || null,
+        selected_time: formData.selectedTime,
+        source: 'admin',
+        status: 'quote_sent',
+        furthest_step: 'admin_quote',
+        created_by_admin_id: user?.id || null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'session_id' });
+
+      if (saveError) {
+        console.error('Error saving quote lead:', saveError);
+        // Continue anyway - email can still be sent
+      }
+
       const { data, error } = await supabase.functions.invoke('send-admin-quote-email', {
         body: {
           customerName: `${formData.firstName} ${formData.lastName}`.trim() || 'Valued Customer',
@@ -571,11 +605,14 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
           cleaningType: formData.cleaningSubType || formData.serviceType,
           totalHours: formData.totalHours || null,
           totalCost: formData.totalCost,
+          hourlyRate: formData.costPerHour || 22,
           discount: formData.discount || 0,
           selectedDate: formData.selectedDate?.toISOString() || null,
           selectedTime: formData.selectedTime,
           additionalDetails: formData.additionalDetails,
           propertyDetails: formData.propertyDetails,
+          // Pass the session ID so the email link can include it for resuming
+          quoteSessionId: quoteSessionId,
         },
       });
 
