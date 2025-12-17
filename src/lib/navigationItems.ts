@@ -1,4 +1,4 @@
-import { Briefcase, Calendar, History, DollarSign, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Calculator, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package, TrendingUp, Activity, Bell, CheckSquare, TestTube, Shirt, Target } from 'lucide-react';
+import { Briefcase, Calendar, History, DollarSign, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Calculator, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package, TrendingUp, Activity, Bell, CheckSquare, TestTube, Shirt, Target, Map } from 'lucide-react';
 
 export const cleanerNavigation = [
   {
@@ -257,6 +257,11 @@ export const adminNavigation = [
         title: "Notification Management",
         url: "/admin-notification-management",
         icon: Bell,
+      },
+      {
+        title: "Coverage Management",
+        url: "/admin-coverage-management",
+        icon: Map,
       },
       {
         title: "Airbnb Form Settings",

@@ -65,6 +65,8 @@ import AdminAirbnbFormSettings from "./pages/AdminAirbnbFormSettings";
 import AdminCustomerPricing from "./pages/AdminCustomerPricing";
 import CustomerWelcome from "./pages/CustomerWelcome";
 import AdminQuoteLeads from "./pages/AdminQuoteLeads";
+import AdminCoverageManagement from "./pages/AdminCoverageManagement";
+import CheckCoverage from "./pages/CheckCoverage";
 import NotFound from "./pages/NotFound";
 import { AdminCustomerProvider } from "./contexts/AdminCustomerContext";
 import { AdminCleanerProvider } from "./contexts/AdminCleanerContext";
@@ -177,6 +179,8 @@ const App = () => (
                      <Route path="/admin-airbnb-form-settings" element={<AdminAirbnbFormSettings />} />
                      <Route path="/admin-customer-pricing" element={<AdminCustomerPricing />} />
                      <Route path="/admin-company-settings" element={<AdminCompanySettings />} />
+                     <Route path="/admin-coverage-management" element={<AdminCoverageManagement />} />
+                     <Route path="/check-coverage" element={<CheckCoverage />} />
                      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
             </Routes>
