@@ -26,9 +26,10 @@ interface Customer {
 interface CustomerAccountActionsProps {
   customer: Customer;
   onAccountCreated?: () => void;
+  readOnly?: boolean;
 }
 
-export const CustomerAccountActions = ({ customer, onAccountCreated }: CustomerAccountActionsProps) => {
+export const CustomerAccountActions = ({ customer, onAccountCreated, readOnly = false }: CustomerAccountActionsProps) => {
   const [hasAccount, setHasAccount] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
@@ -161,6 +162,16 @@ export const CustomerAccountActions = ({ customer, onAccountCreated }: CustomerA
       <div className="flex items-center space-x-2">
         <Loader2 className="h-4 w-4 animate-spin" />
         <span className="text-sm text-muted-foreground">Checking account...</span>
+      </div>
+    );
+  }
+
+  if (readOnly) {
+    return (
+      <div className="flex items-center space-x-2">
+        <Badge variant={hasAccount ? "secondary" : "outline"} className={hasAccount ? "bg-green-100 text-green-800" : "text-orange-600 border-orange-300"}>
+          {hasAccount ? "Has Account" : "No Account"}
+        </Badge>
       </div>
     );
   }

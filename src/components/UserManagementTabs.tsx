@@ -16,6 +16,7 @@ interface UserManagementTabsProps {
   onCreateUserSuccess?: () => void;
   onCreateCleanerSuccess?: () => void;
   onCreateCustomerSuccess?: () => void;
+  readOnly?: boolean;
 }
 
 const UserManagementTabs = ({ 
@@ -25,7 +26,8 @@ const UserManagementTabs = ({
   showCreateCustomerForm, 
   onCreateUserSuccess, 
   onCreateCleanerSuccess,
-  onCreateCustomerSuccess 
+  onCreateCustomerSuccess,
+  readOnly = false
 }: UserManagementTabsProps) => {
   const refreshUsers = () => {
     window.location.reload();
@@ -68,6 +70,7 @@ const UserManagementTabs = ({
               hideCreateButton={true}
               showCreateForm={showCreateCleanerForm}
               onCreateSuccess={onCreateCleanerSuccess}
+              readOnly={readOnly}
             />
           </TabsContent>
           
@@ -76,6 +79,7 @@ const UserManagementTabs = ({
               hideCreateButton={true}
               showCreateForm={showCreateCustomerForm}
               onCreateSuccess={onCreateCustomerSuccess}
+              readOnly={readOnly}
             />
           </TabsContent>
         </Tabs>
