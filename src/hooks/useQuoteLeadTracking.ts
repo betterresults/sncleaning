@@ -38,6 +38,15 @@ interface QuoteLeadData {
   recommendedHours?: number;
   status?: 'live' | 'idle' | 'left' | 'completed';
   furthestStep?: string;
+  // Admin tracking
+  adminId?: string;
+  isAdminCreated?: boolean;
+}
+
+interface TrackingOptions {
+  isAdminMode?: boolean;
+  adminId?: string;
+  adminEmail?: string;
 }
 
 // Generate or retrieve persistent user ID (stored in localStorage to persist across sessions)
@@ -147,7 +156,8 @@ const determineSource = (): string => {
   return 'direct';
 };
 
-export const useQuoteLeadTracking = (serviceType: string) => {
+export const useQuoteLeadTracking = (serviceType: string, options?: TrackingOptions) => {
+  const { isAdminMode = false, adminId, adminEmail } = options || {};
   const userId = useRef(getUserId());
   const sessionId = useRef(getSessionId());
   const lastSaveRef = useRef<number>(0);
@@ -291,9 +301,10 @@ export const useQuoteLeadTracking = (serviceType: string) => {
 
     try {
       const utmParams = JSON.parse(localStorage.getItem('quote_utm_params') || '{}');
-      const source = localStorage.getItem('quote_source') || determineSource();
+      // Use "admin" as source when in admin mode, otherwise use detected source
+      const source = isAdminMode ? 'admin' : (localStorage.getItem('quote_source') || determineSource());
       
-      const leadData = {
+      const leadData: Record<string, unknown> = {
         user_id: userId.current,
         session_id: sessionId.current,
         service_type: data.serviceType || serviceType,
@@ -335,6 +346,13 @@ export const useQuoteLeadTracking = (serviceType: string) => {
         ...utmParams,
         updated_at: new Date().toISOString(),
       };
+
+      // Add admin info when in admin mode or when adminId is provided in data
+      const effectiveAdminId = data.adminId || adminId;
+      if ((isAdminMode || data.isAdminCreated) && effectiveAdminId) {
+        leadData.created_by_admin_id = effectiveAdminId;
+        leadData.source = 'admin'; // Override source for admin-created leads
+      }
 
       // Remove undefined values
       const cleanedData = Object.fromEntries(
