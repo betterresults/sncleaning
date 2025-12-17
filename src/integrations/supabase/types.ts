@@ -243,6 +243,8 @@ export type Database = {
           company: string | null
           cost_deduction: string | null
           coupon_code: string | null
+          created_by_source: string | null
+          created_by_user_id: string | null
           customer: number | null
           date_only: string | null
           date_submited: string | null
@@ -317,6 +319,8 @@ export type Database = {
           company?: string | null
           cost_deduction?: string | null
           coupon_code?: string | null
+          created_by_source?: string | null
+          created_by_user_id?: string | null
           customer?: number | null
           date_only?: string | null
           date_submited?: string | null
@@ -391,6 +395,8 @@ export type Database = {
           company?: string | null
           cost_deduction?: string | null
           coupon_code?: string | null
+          created_by_source?: string | null
+          created_by_user_id?: string | null
           customer?: number | null
           date_only?: string | null
           date_submited?: string | null
@@ -1592,6 +1598,8 @@ export type Database = {
           company: string | null
           cost_deduction: string | null
           coupon_code: string | null
+          created_by_source: string | null
+          created_by_user_id: string | null
           customer: number | null
           date_only: string | null
           date_submited: string | null
@@ -1658,6 +1666,8 @@ export type Database = {
           company?: string | null
           cost_deduction?: string | null
           coupon_code?: string | null
+          created_by_source?: string | null
+          created_by_user_id?: string | null
           customer?: number | null
           date_only?: string | null
           date_submited?: string | null
@@ -1724,6 +1734,8 @@ export type Database = {
           company?: string | null
           cost_deduction?: string | null
           coupon_code?: string | null
+          created_by_source?: string | null
+          created_by_user_id?: string | null
           customer?: number | null
           date_only?: string | null
           date_submited?: string | null
