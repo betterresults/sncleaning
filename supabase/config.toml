@@ -95,3 +95,6 @@ verify_jwt = false
 
 [functions.send-bank-transfer-sms]
 verify_jwt = false
+
+[functions.send-admin-quote-email]
+verify_jwt = false

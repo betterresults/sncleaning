@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { CalendarDays, User, MapPin, Clock, Banknote, Home, Calendar as CalendarIcon, Key, Plus, Loader2 } from 'lucide-react';
+import { CalendarDays, User, MapPin, Clock, Banknote, Home, Calendar as CalendarIcon, Key, Plus, Loader2, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import CustomerSelector from './CustomerSelector';
 import CleanerSelector from './CleanerSelector';
@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import LinenManagementSelector from './LinenManagementSelector';
 import { LinenUsageItem } from '@/hooks/useLinenProducts';
 import { useServiceTypes, useCleaningTypes, usePaymentMethods, getServiceTypeBadgeColor, getServiceTypeLabel, getCleaningTypeLabel } from '@/hooks/useCompanySettings';
@@ -159,6 +159,8 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
 
   const [showAddPropertyAccessDialog, setShowAddPropertyAccessDialog] = useState(false);
   const [newPropertyAccess, setNewPropertyAccess] = useState({ label: '', value: '', icon: '' });
+  const [showQuoteDialog, setShowQuoteDialog] = useState(false);
+  const [sendingQuote, setSendingQuote] = useState(false);
   const navigate = useNavigate();
   
   // Check if customer has payment methods (for admin mode)
@@ -535,6 +537,64 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
         title: "Success",
         description: "New property access option added!",
       });
+    }
+  };
+
+  const handleSendQuote = async () => {
+    if (!formData.email || !formData.email.includes('@')) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid customer email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.totalCost <= 0) {
+      toast({
+        title: "Error",
+        description: "Please set a valid total cost for the quote.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSendingQuote(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-admin-quote-email', {
+        body: {
+          customerName: `${formData.firstName} ${formData.lastName}`.trim() || 'Valued Customer',
+          customerEmail: formData.email,
+          address: formData.address,
+          postcode: formData.postcode,
+          serviceType: formData.serviceType,
+          cleaningType: formData.cleaningSubType || formData.serviceType,
+          totalHours: formData.totalHours || null,
+          totalCost: formData.totalCost,
+          discount: formData.discount || 0,
+          selectedDate: formData.selectedDate?.toISOString() || null,
+          selectedTime: formData.selectedTime,
+          additionalDetails: formData.additionalDetails,
+          propertyDetails: formData.propertyDetails,
+        },
+      });
+
+      if (error) throw error;
+
+      setShowQuoteDialog(false);
+      toast({
+        title: "Quote Sent!",
+        description: `Quote email sent successfully to ${formData.email}`,
+      });
+    } catch (error: any) {
+      console.error('Error sending quote email:', error);
+      toast({
+        title: "Failed to Send Quote",
+        description: error.message || "There was an issue sending the quote email.",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingQuote(false);
     }
   };
 
@@ -1588,16 +1648,96 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
 
         <Separator className="my-8" />
 
-        {/* Submit Button */}
-        <div className="flex justify-center space-x-6 pb-8">
+        {/* Submit Buttons */}
+        <div className="flex justify-center space-x-4 pb-8">
           <Button 
             type="button" 
             variant="outline" 
             onClick={() => onBookingCreated()}
-            className="px-8 py-3 text-lg border-2 border-gray-300 hover:border-gray-400 transition-colors"
+            className="px-6 py-3 text-lg border-2 border-gray-300 hover:border-gray-400 transition-colors"
           >
             Cancel
           </Button>
+          
+          {/* Send as Quote Button - Only show for admin/agent view */}
+          {!isCustomerView && (
+            <Dialog open={showQuoteDialog} onOpenChange={setShowQuoteDialog}>
+              <DialogTrigger asChild>
+                <Button 
+                  type="button"
+                  variant="outline"
+                  className="px-6 py-3 text-lg border-2 border-amber-500 text-amber-700 hover:bg-amber-50 hover:border-amber-600 transition-colors"
+                  disabled={!formData.email || formData.totalCost <= 0}
+                >
+                  <Mail className="mr-2 h-5 w-5" />
+                  Send as Quote
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Mail className="h-5 w-5 text-amber-600" />
+                    Send Quote to Customer
+                  </DialogTitle>
+                  <DialogDescription>
+                    Send this booking as a quote email to the customer. They can review and book later.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2">
+                    <p className="font-medium text-amber-800">Quote Summary</p>
+                    <div className="text-sm space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Customer:</span>
+                        <span className="font-medium">{formData.firstName} {formData.lastName}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Email:</span>
+                        <span className="font-medium">{formData.email}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Total Cost:</span>
+                        <span className="font-bold text-lg">£{formData.totalCost.toFixed(2)}</span>
+                      </div>
+                      {formData.discount > 0 && (
+                        <div className="flex justify-between text-green-600">
+                          <span>Discount:</span>
+                          <span>-£{formData.discount.toFixed(2)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex justify-end space-x-3">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowQuoteDialog(false)}
+                      disabled={sendingQuote}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleSendQuote}
+                      disabled={sendingQuote}
+                      className="bg-amber-600 hover:bg-amber-700 text-white"
+                    >
+                      {sendingQuote ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Mail className="mr-2 h-4 w-4" />
+                          Send Quote
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+          
           <Button 
             type="submit" 
             disabled={loading}
