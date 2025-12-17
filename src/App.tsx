@@ -180,7 +180,7 @@ const App = () => (
                      <Route path="/admin-customer-pricing" element={<AdminCustomerPricing />} />
                      <Route path="/admin-company-settings" element={<AdminCompanySettings />} />
                      <Route path="/admin-coverage-management" element={<AdminCoverageManagement />} />
-                     <Route path="/check-coverage" element={<CheckCoverage />} />
+                     <Route path="/coverage" element={<CheckCoverage />} />
                      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
             </Routes>
