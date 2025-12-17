@@ -191,6 +191,12 @@ const DomesticBookingForm: React.FC = () => {
       const email = searchParams.get('email') || '';
       const refSessionId = searchParams.get('ref');
       
+      // CRITICAL: Get the quoted pricing from URL to preserve exact amounts
+      const quotedCost = searchParams.get('quotedCost');
+      const quotedHours = searchParams.get('quotedHours');
+      const shortNotice = searchParams.get('shortNotice');
+      const isFirstTime = searchParams.get('firstTime');
+      
       setBookingData(prev => ({
         ...prev,
         propertyType: propertyType || prev.propertyType,
@@ -203,6 +209,13 @@ const DomesticBookingForm: React.FC = () => {
         selectedDate: dateStr ? new Date(dateStr) : prev.selectedDate,
         selectedTime: time || prev.selectedTime,
         email: email || prev.email,
+        // Preserve the exact quoted pricing
+        totalCost: quotedCost ? parseFloat(quotedCost) : prev.totalCost,
+        estimatedHours: quotedHours ? parseFloat(quotedHours) : prev.estimatedHours,
+        shortNoticeCharge: shortNotice ? parseFloat(shortNotice) : prev.shortNoticeCharge,
+        isFirstTimeCustomer: isFirstTime !== null ? isFirstTime === '1' : prev.isFirstTimeCustomer,
+        // Use admin override to lock in the quoted price so it doesn't get recalculated
+        adminTotalCostOverride: quotedCost ? parseFloat(quotedCost) : prev.adminTotalCostOverride,
       }));
       
       // Initialize tracking with ref session if available

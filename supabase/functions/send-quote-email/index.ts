@@ -96,6 +96,12 @@ const handler = async (req: Request): Promise<Response> => {
     if (quoteData.selectedTime) params.set('time', quoteData.selectedTime);
     if (email) params.set('email', email);
     
+    // CRITICAL: Include the calculated pricing to preserve the quoted amount
+    if (quoteData.totalCost) params.set('quotedCost', quoteData.totalCost.toString());
+    if (quoteData.estimatedHours) params.set('quotedHours', quoteData.estimatedHours.toString());
+    if (quoteData.shortNoticeCharge) params.set('shortNotice', quoteData.shortNoticeCharge.toString());
+    if (quoteData.isFirstTimeCustomer !== undefined) params.set('firstTime', quoteData.isFirstTimeCustomer ? '1' : '0');
+    
     // Also include session ID for tracking purposes
     params.set('ref', sessionId);
     
