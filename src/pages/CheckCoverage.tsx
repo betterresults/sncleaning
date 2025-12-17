@@ -202,7 +202,7 @@ const CheckCoverage = () => {
                     <div>
                       <h2 className="text-xl font-bold text-primary">Great news!</h2>
                       <p className="text-muted-foreground">
-                        We cover {result.borough}, {result.region}
+                        We cover {result.region}, London
                       </p>
                     </div>
                   </div>
