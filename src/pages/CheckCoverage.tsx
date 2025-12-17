@@ -187,17 +187,17 @@ const CheckCoverage = () => {
           {searched && result && (
             <div className={`p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white transition-all duration-300 ${
               result.covered 
-                ? 'border-2 border-green-500/50' 
+                ? 'border-2 border-primary/50' 
                 : 'border-2 border-destructive/50'
             }`}>
               {result.covered ? (
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
-                      <CheckCircle2 className="h-7 w-7 text-green-600" />
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <CheckCircle2 className="h-7 w-7 text-primary" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-green-700">Great news!</h2>
+                      <h2 className="text-xl font-bold text-primary">Great news!</h2>
                       <p className="text-muted-foreground">
                         We cover {result.borough}, {result.region}
                       </p>
@@ -208,30 +208,30 @@ const CheckCoverage = () => {
                     <h3 className="font-bold text-slate-700 mb-3">Available services in your area:</h3>
                     <div className="space-y-2">
                       {result.services.domestic_cleaning && (
-                        <div className="flex items-center gap-3 p-3 bg-green-50 rounded-xl border border-green-200">
-                          <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
-                            <Home className="h-5 w-5 text-green-600" />
+                        <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-xl border border-primary/20">
+                          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                            <Home className="h-5 w-5 text-primary" />
                           </div>
                           <span className="font-medium text-slate-700">Domestic Cleaning</span>
-                          <Badge className="ml-auto bg-green-600">Available</Badge>
+                          <Badge className="ml-auto bg-primary">Available</Badge>
                         </div>
                       )}
                       {result.services.airbnb_cleaning && (
-                        <div className="flex items-center gap-3 p-3 bg-green-50 rounded-xl border border-green-200">
-                          <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
-                            <Sparkles className="h-5 w-5 text-green-600" />
+                        <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-xl border border-primary/20">
+                          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                            <Sparkles className="h-5 w-5 text-primary" />
                           </div>
                           <span className="font-medium text-slate-700">Airbnb Cleaning</span>
-                          <Badge className="ml-auto bg-green-600">Available</Badge>
+                          <Badge className="ml-auto bg-primary">Available</Badge>
                         </div>
                       )}
                       {result.services.end_of_tenancy && (
-                        <div className="flex items-center gap-3 p-3 bg-green-50 rounded-xl border border-green-200">
-                          <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
-                            <Key className="h-5 w-5 text-green-600" />
+                        <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-xl border border-primary/20">
+                          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                            <Key className="h-5 w-5 text-primary" />
                           </div>
                           <span className="font-medium text-slate-700">End of Tenancy</span>
-                          <Badge className="ml-auto bg-green-600">Available</Badge>
+                          <Badge className="ml-auto bg-primary">Available</Badge>
                         </div>
                       )}
                     </div>
