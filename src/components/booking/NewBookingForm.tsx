@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { CalendarDays, User, MapPin, Clock, Banknote, Home, Calendar as CalendarIcon, Key, Plus, Loader2, Mail } from 'lucide-react';
+import { CalendarDays, User, MapPin, Clock, Banknote, Home, Calendar as CalendarIcon, Key, Plus, Loader2, Mail, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import CustomerSelector from './CustomerSelector';
 import CleanerSelector from './CleanerSelector';
@@ -835,6 +835,97 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
       
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
         <form onSubmit={handleSubmit} className="max-w-6xl mx-auto space-y-8">
+        
+        {/* Header with Back Button and Send as Quote - Only for admin/agent view */}
+        {!isCustomerView && (
+          <div className="flex items-center justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+            
+            <Dialog open={showQuoteDialog} onOpenChange={setShowQuoteDialog}>
+              <DialogTrigger asChild>
+                <Button 
+                  type="button"
+                  variant="outline"
+                  className="border-2 border-amber-500 text-amber-700 hover:bg-amber-50 hover:border-amber-600 transition-colors"
+                  disabled={!formData.email || formData.totalCost <= 0}
+                >
+                  <Mail className="mr-2 h-4 w-4" />
+                  Send as Quote
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Mail className="h-5 w-5 text-amber-600" />
+                    Send Quote to Customer
+                  </DialogTitle>
+                  <DialogDescription>
+                    Send this booking as a quote email to the customer. They can review and book later.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2">
+                    <p className="font-medium text-amber-800">Quote Summary</p>
+                    <div className="text-sm space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Customer:</span>
+                        <span className="font-medium">{formData.firstName} {formData.lastName}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Email:</span>
+                        <span className="font-medium">{formData.email}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Total Cost:</span>
+                        <span className="font-bold text-lg">£{formData.totalCost.toFixed(2)}</span>
+                      </div>
+                      {formData.discount > 0 && (
+                        <div className="flex justify-between text-green-600">
+                          <span>Discount:</span>
+                          <span>-£{formData.discount.toFixed(2)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex justify-end space-x-3">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowQuoteDialog(false)}
+                      disabled={sendingQuote}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleSendQuote}
+                      disabled={sendingQuote}
+                      className="bg-amber-600 hover:bg-amber-700 text-white"
+                    >
+                      {sendingQuote ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Mail className="mr-2 h-4 w-4" />
+                          Send Quote
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
 
         {/* Customer Selection - Only show for admin view */}
         {!isCustomerView && (
@@ -1658,85 +1749,6 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
           >
             Cancel
           </Button>
-          
-          {/* Send as Quote Button - Only show for admin/agent view */}
-          {!isCustomerView && (
-            <Dialog open={showQuoteDialog} onOpenChange={setShowQuoteDialog}>
-              <DialogTrigger asChild>
-                <Button 
-                  type="button"
-                  variant="outline"
-                  className="px-6 py-3 text-lg border-2 border-amber-500 text-amber-700 hover:bg-amber-50 hover:border-amber-600 transition-colors"
-                  disabled={!formData.email || formData.totalCost <= 0}
-                >
-                  <Mail className="mr-2 h-5 w-5" />
-                  Send as Quote
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <Mail className="h-5 w-5 text-amber-600" />
-                    Send Quote to Customer
-                  </DialogTitle>
-                  <DialogDescription>
-                    Send this booking as a quote email to the customer. They can review and book later.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2">
-                    <p className="font-medium text-amber-800">Quote Summary</p>
-                    <div className="text-sm space-y-1">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Customer:</span>
-                        <span className="font-medium">{formData.firstName} {formData.lastName}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Email:</span>
-                        <span className="font-medium">{formData.email}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Total Cost:</span>
-                        <span className="font-bold text-lg">£{formData.totalCost.toFixed(2)}</span>
-                      </div>
-                      {formData.discount > 0 && (
-                        <div className="flex justify-between text-green-600">
-                          <span>Discount:</span>
-                          <span>-£{formData.discount.toFixed(2)}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex justify-end space-x-3">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setShowQuoteDialog(false)}
-                      disabled={sendingQuote}
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={handleSendQuote}
-                      disabled={sendingQuote}
-                      className="bg-amber-600 hover:bg-amber-700 text-white"
-                    >
-                      {sendingQuote ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Sending...
-                        </>
-                      ) : (
-                        <>
-                          <Mail className="mr-2 h-4 w-4" />
-                          Send Quote
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
           
           <Button 
             type="submit" 
