@@ -759,17 +759,17 @@ const QuoteLeadsView = () => {
                                 {lead.utm_campaign && (
                                   <p className="text-muted-foreground">{lead.utm_campaign}</p>
                                 )}
-                                {lead.page_url && (
+                                {lead.referrer && (
                                   <div>
-                                    <span className="text-muted-foreground text-[10px] block">Landing URL:</span>
+                                    <span className="text-muted-foreground text-[10px] block">Original Landing URL:</span>
                                     <a 
-                                      href={lead.page_url} 
+                                      href={lead.referrer} 
                                       target="_blank" 
                                       rel="noopener noreferrer"
                                       className="text-blue-600 hover:underline block truncate max-w-[250px] text-[11px]"
-                                      title={lead.page_url}
+                                      title={lead.referrer}
                                     >
-                                      {lead.page_url}
+                                      {lead.referrer}
                                     </a>
                                   </div>
                                 )}
