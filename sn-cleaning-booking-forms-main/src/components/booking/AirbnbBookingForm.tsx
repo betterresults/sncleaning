@@ -115,6 +115,7 @@ const AirbnbBookingForm: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [isAdminMode, setIsAdminMode] = useState(false);
+  const [adminUserId, setAdminUserId] = useState<string | null>(null);
   const [showQuoteDialog, setShowQuoteDialog] = useState(false);
   
   // Quote lead tracking
@@ -189,7 +190,11 @@ const AirbnbBookingForm: React.FC = () => {
           .single();
         
         const isAdminOrSalesAgent = role?.role === 'admin' || role?.role === 'sales_agent';
-        setIsAdminMode(isAdminOrSalesAgent && isAdminRoute);
+        const adminMode = isAdminOrSalesAgent && isAdminRoute;
+        setIsAdminMode(adminMode);
+        if (adminMode) {
+          setAdminUserId(session.user.id);
+        }
         
         // If not on admin route (customer booking), always load customer profile
         if (!isAdminRoute) {
@@ -284,7 +289,7 @@ const AirbnbBookingForm: React.FC = () => {
         newData.totalCost = totalHours * newData.hourlyRate;
         
         // Track quote when price is calculated
-        if (totalHours > 0 && !isAdminMode) {
+        if (totalHours > 0) {
           trackQuoteCalculated(totalHours * newData.hourlyRate, totalHours, {
             cleaningType: newData.serviceType || undefined,
             propertyType: newData.propertyType || undefined,
@@ -295,18 +300,24 @@ const AirbnbBookingForm: React.FC = () => {
             ovenSize: newData.ovenType || undefined,
             ironingHours: newData.ironingHours || undefined,
             postcode: newData.postcode || undefined,
+            // Include admin info if in admin mode
+            adminId: isAdminMode && adminUserId ? adminUserId : undefined,
+            isAdminCreated: isAdminMode,
           });
         }
       }
       
       // Track contact info updates
-      if (!isAdminMode && ('firstName' in updates || 'email' in updates || 'phone' in updates || 'postcode' in updates)) {
+      if ('firstName' in updates || 'email' in updates || 'phone' in updates || 'postcode' in updates) {
         saveQuoteLead({
           firstName: newData.firstName || undefined,
           lastName: newData.lastName || undefined,
           email: newData.email || undefined,
           phone: newData.phone || undefined,
           postcode: newData.postcode || undefined,
+          // Include admin info if in admin mode
+          adminId: isAdminMode && adminUserId ? adminUserId : undefined,
+          isAdminCreated: isAdminMode,
         });
       }
       
@@ -317,14 +328,14 @@ const AirbnbBookingForm: React.FC = () => {
   const nextStep = () => {
     if (currentStep < steps.length) {
       const stepName = steps[currentStep - 1]?.key || `step_${currentStep}`;
-      if (!isAdminMode) {
-        trackStep(stepName, {
-          cleaningType: bookingData.serviceType || undefined,
-          propertyType: bookingData.propertyType || undefined,
-          bedrooms: bookingData.bedrooms ? parseInt(bookingData.bedrooms) : undefined,
-          calculatedQuote: bookingData.totalCost || undefined,
-        });
-      }
+      trackStep(stepName, {
+        cleaningType: bookingData.serviceType || undefined,
+        propertyType: bookingData.propertyType || undefined,
+        bedrooms: bookingData.bedrooms ? parseInt(bookingData.bedrooms) : undefined,
+        calculatedQuote: bookingData.totalCost || undefined,
+        adminId: isAdminMode && adminUserId ? adminUserId : undefined,
+        isAdminCreated: isAdminMode,
+      });
       setCurrentStep(currentStep + 1);
     }
   };
