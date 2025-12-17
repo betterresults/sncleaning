@@ -115,14 +115,26 @@ const QuoteLeadsView = () => {
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
-  const [visibleColumns, setVisibleColumns] = useState<ColumnKey[]>(DEFAULT_VISIBLE_COLUMNS);
+  const [visibleColumns, setVisibleColumns] = useState<ColumnKey[]>(() => {
+    const saved = localStorage.getItem('quoteLeadsVisibleColumns');
+    if (saved) {
+      try {
+        return JSON.parse(saved) as ColumnKey[];
+      } catch {
+        return DEFAULT_VISIBLE_COLUMNS;
+      }
+    }
+    return DEFAULT_VISIBLE_COLUMNS;
+  });
 
   const toggleColumn = (column: ColumnKey) => {
-    setVisibleColumns(prev => 
-      prev.includes(column) 
+    setVisibleColumns(prev => {
+      const newColumns = prev.includes(column) 
         ? prev.filter(c => c !== column)
-        : [...prev, column]
-    );
+        : [...prev, column];
+      localStorage.setItem('quoteLeadsVisibleColumns', JSON.stringify(newColumns));
+      return newColumns;
+    });
   };
 
   const isColumnVisible = (column: ColumnKey) => visibleColumns.includes(column);
