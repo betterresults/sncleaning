@@ -11,7 +11,7 @@ import { Home, Brush, Calendar, User, CreditCard, Package2, ArrowLeft, Mail } fr
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuoteLeadTracking } from '@/hooks/useQuoteLeadTracking';
 import { ExitQuotePopup } from '@/components/booking/ExitQuotePopup';
 export interface BookingData {
@@ -112,6 +112,7 @@ const steps = [
 const AirbnbBookingForm: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [currentStep, setCurrentStep] = useState(1);
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [isAdminMode, setIsAdminMode] = useState(false);
@@ -119,7 +120,7 @@ const AirbnbBookingForm: React.FC = () => {
   const [showQuoteDialog, setShowQuoteDialog] = useState(false);
   
   // Quote lead tracking
-  const { saveQuoteLead, trackStep, trackQuoteCalculated, markCompleted, sessionId } = useQuoteLeadTracking('Air BnB');
+  const { saveQuoteLead, trackStep, trackQuoteCalculated, markCompleted, initializeFromResume, sessionId } = useQuoteLeadTracking('Air BnB');
   
   const [bookingData, setBookingData] = useState<BookingData>({
     propertyType: '',
@@ -173,6 +174,55 @@ const AirbnbBookingForm: React.FC = () => {
     hourlyRate: 25,
     totalCost: 0,
   });
+
+  // Prefill from URL parameters (from exit popup email)
+  useEffect(() => {
+    const hasUrlPrefill = searchParams.get('propertyType') || searchParams.get('bedrooms') || searchParams.get('postcode') || searchParams.get('quotedCost');
+    
+    if (hasUrlPrefill) {
+      console.log('Prefilling Airbnb form from URL parameters');
+      
+      const propertyType = searchParams.get('propertyType') as 'flat' | 'house' | '' || '';
+      const bedrooms = searchParams.get('bedrooms') || '';
+      const bathrooms = searchParams.get('bathrooms') || '';
+      const postcode = searchParams.get('postcode') || '';
+      const hasOven = searchParams.get('oven') === '1';
+      const ovenType = searchParams.get('ovenType') || '';
+      const dateStr = searchParams.get('date');
+      const time = searchParams.get('time') || '';
+      const email = searchParams.get('email') || '';
+      const refSessionId = searchParams.get('ref');
+      
+      // Get the quoted pricing from URL to preserve exact amounts
+      const quotedCost = searchParams.get('quotedCost');
+      const quotedHours = searchParams.get('quotedHours');
+      const shortNotice = searchParams.get('shortNotice');
+      
+      setBookingData(prev => ({
+        ...prev,
+        propertyType: propertyType || prev.propertyType,
+        bedrooms: bedrooms || prev.bedrooms,
+        bathrooms: bathrooms || prev.bathrooms,
+        postcode: postcode || prev.postcode,
+        hasOvenCleaning: hasOven || prev.hasOvenCleaning,
+        ovenType: ovenType || prev.ovenType,
+        selectedDate: dateStr ? new Date(dateStr) : prev.selectedDate,
+        selectedTime: time || prev.selectedTime,
+        email: email || prev.email,
+        // Preserve the exact quoted pricing
+        totalCost: quotedCost ? parseFloat(quotedCost) : prev.totalCost,
+        estimatedHours: quotedHours ? parseFloat(quotedHours) : prev.estimatedHours,
+        shortNoticeCharge: shortNotice ? parseFloat(shortNotice) : prev.shortNoticeCharge,
+        // Use admin override to lock in the quoted price so it doesn't get recalculated
+        adminTotalCostOverride: quotedCost ? parseFloat(quotedCost) : prev.adminTotalCostOverride,
+      }));
+      
+      // Initialize tracking with ref session if available
+      if (refSessionId) {
+        initializeFromResume(refSessionId);
+      }
+    }
+  }, [searchParams]);
 
   // Check if user is admin AND on admin route, and load customer ID for logged-in customers
   useEffect(() => {
@@ -281,8 +331,8 @@ const AirbnbBookingForm: React.FC = () => {
         newData.estimatedHours = null;
       }
       
-      // Recalculate costs when relevant data changes explicitly
-      if ('estimatedHours' in updates || 'extraHours' in updates) {
+      // Only recalculate totalCost from hours if there's no admin override (preserves quoted prices)
+      if (('estimatedHours' in updates || 'extraHours' in updates) && !newData.adminTotalCostOverride) {
         const estimatedHours = newData.estimatedHours ?? 0;
         const extraHours = newData.extraHours ?? 0;
         const totalHours = estimatedHours + extraHours;

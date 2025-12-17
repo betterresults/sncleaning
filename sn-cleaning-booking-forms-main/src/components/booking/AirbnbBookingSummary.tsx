@@ -156,8 +156,8 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
 
   // Calculate total with admin overrides
   const calculateTotal = () => {
-    // If admin has set a total cost override, use that
-    if (isAdminMode && data.adminTotalCostOverride !== undefined && data.adminTotalCostOverride !== null) {
+    // Use admin override if set (works in admin mode AND for resumed admin quotes/email links)
+    if (data.adminTotalCostOverride !== undefined && data.adminTotalCostOverride !== null && data.adminTotalCostOverride > 0) {
       return data.adminTotalCostOverride;
     }
     
