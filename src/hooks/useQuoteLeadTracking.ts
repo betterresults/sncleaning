@@ -243,11 +243,8 @@ export const useQuoteLeadTracking = (serviceType: string, options?: TrackingOpti
       localStorage.setItem('quote_source', determineSource());
     }
 
-    // Store original landing URL (only on first visit - this is the services page URL with all tracking params)
-    // document.referrer when on the booking form is the page they came from (services page with UTM params)
-    if (!localStorage.getItem('quote_original_landing_url') && document.referrer) {
-      localStorage.setItem('quote_original_landing_url', document.referrer);
-    }
+    // Note: Original landing URL should be captured site-wide (see App.tsx or index.html)
+    // This hook runs too late (on booking form) to capture the true original landing URL
 
     // Start heartbeat interval (only if record exists)
     heartbeatInterval.current = setInterval(() => {
