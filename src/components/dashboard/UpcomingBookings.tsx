@@ -537,15 +537,23 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   }, [bookings, filters]);
 
   // Refresh data when page becomes visible again (e.g., after navigating back)
+  // Only refresh if more than 30 seconds have passed since last fetch
   useEffect(() => {
+    let lastFetchTime = Date.now();
+
     const handleVisibilityChange = () => {
-      if (!document.hidden) {
+      if (!document.hidden && Date.now() - lastFetchTime > 30000) {
+        lastFetchTime = Date.now();
         fetchData();
       }
     };
 
     const handleFocus = () => {
-      fetchData();
+      // Only refetch if more than 30 seconds have passed
+      if (Date.now() - lastFetchTime > 30000) {
+        lastFetchTime = Date.now();
+        fetchData();
+      }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
