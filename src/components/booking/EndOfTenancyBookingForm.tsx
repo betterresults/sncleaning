@@ -343,6 +343,25 @@ export function EndOfTenancyBookingForm({ onBookingCreated, children, onSubmit }
 
     setLoading(true);
     try {
+      // Get current user and their role for tracking
+      const { data: { user } } = await supabase.auth.getUser();
+      let createdBySource = 'website';
+      if (user) {
+        const { data: userRole } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (userRole?.role === 'admin') {
+          createdBySource = 'admin';
+        } else if (userRole?.role === 'sales_agent') {
+          createdBySource = 'sales_agent';
+        } else {
+          createdBySource = 'customer';
+        }
+      }
+
       const bookingData = {
         customer: parseInt(formData.customerId),
         service_type: 'End of Tenancy',
@@ -363,7 +382,10 @@ export function EndOfTenancyBookingForm({ onBookingCreated, children, onSubmit }
         postcode: formData.postcode,
         notes: formData.notes,
         total_cost: totalPrice,
-        booking_status: 'pending'
+        booking_status: 'pending',
+        // Tracking - who created this booking
+        created_by_user_id: user?.id || null,
+        created_by_source: createdBySource
       };
 
       const { error } = await supabase

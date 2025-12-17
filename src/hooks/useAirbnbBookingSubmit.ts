@@ -400,6 +400,25 @@ export const useAirbnbBookingSubmit = () => {
         .single();
       const nextId = (latestBooking?.id ?? 0) + 1;
 
+      // Get current user and their role for tracking
+      const { data: { user } } = await supabase.auth.getUser();
+      let createdBySource = 'website';
+      if (user) {
+        const { data: userRole } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (userRole?.role === 'admin') {
+          createdBySource = 'admin';
+        } else if (userRole?.role === 'sales_agent') {
+          createdBySource = 'sales_agent';
+        } else {
+          createdBySource = 'customer';
+        }
+      }
+
       const bookingInsert: any = {
         // Primary Key
         id: nextId,
@@ -452,7 +471,11 @@ export const useAirbnbBookingSubmit = () => {
         access: bookingData.propertyAccess || null,
         
         // Additional details (JSON with service, schedule, access info)
-        additional_details: buildAdditionalDetails(bookingData)
+        additional_details: buildAdditionalDetails(bookingData),
+        
+        // Tracking - who created this booking
+        created_by_user_id: user?.id || null,
+        created_by_source: createdBySource
       };
 
       // Conditional fields - only add if they have values

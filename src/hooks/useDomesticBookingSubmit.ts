@@ -271,6 +271,25 @@ export const useDomesticBookingSubmit = () => {
         .single();
       const nextId = (latestBooking?.id ?? 0) + 1;
 
+      // Get current user and their role for tracking
+      const { data: { user } } = await supabase.auth.getUser();
+      let createdBySource = 'website';
+      if (user) {
+        const { data: userRole } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (userRole?.role === 'admin') {
+          createdBySource = 'admin';
+        } else if (userRole?.role === 'sales_agent') {
+          createdBySource = 'sales_agent';
+        } else {
+          createdBySource = 'customer';
+        }
+      }
+
       const bookingInsert: any = {
         id: nextId,
         customer: customerId,
@@ -312,7 +331,11 @@ export const useDomesticBookingSubmit = () => {
         
         access: bookingData.propertyAccess || null,
         
-        additional_details: buildAdditionalDetails(bookingData)
+        additional_details: buildAdditionalDetails(bookingData),
+        
+        // Tracking - who created this booking
+        created_by_user_id: user?.id || null,
+        created_by_source: createdBySource
       };
 
       if (bookingDateTime && totalHours > 0) {

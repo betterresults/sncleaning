@@ -636,6 +636,25 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
         frequently = 'Same Day';
       }
 
+      // Get current user and their role for tracking
+      const { data: { user } } = await supabase.auth.getUser();
+      let createdBySource = 'website';
+      if (user) {
+        const { data: userRole } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (userRole?.role === 'admin') {
+          createdBySource = 'admin';
+        } else if (userRole?.role === 'sales_agent') {
+          createdBySource = 'sales_agent';
+        } else {
+          createdBySource = 'customer';
+        }
+      }
+
       const bookingData = {
         customer: formData.customerId,
         cleaner: formData.cleanerId,
@@ -667,7 +686,10 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
         key_collection: formData.keyPickupAddress || null,
         cleaning_cost_per_hour: requiresHours ? formData.costPerHour : null,
         linen_management: formData.linenManagement,
-        linen_used: formData.linenManagement && formData.linenUsed.length > 0 ? JSON.parse(JSON.stringify(formData.linenUsed)) : null
+        linen_used: formData.linenManagement && formData.linenUsed.length > 0 ? JSON.parse(JSON.stringify(formData.linenUsed)) : null,
+        // Tracking - who created this booking
+        created_by_user_id: user?.id || null,
+        created_by_source: createdBySource
       };
 
       console.log('NewBookingForm: Attempting to create booking with data:', bookingData);
