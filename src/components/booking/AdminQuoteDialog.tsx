@@ -48,6 +48,16 @@ interface AdminQuoteDialogProps {
 type SendOption = 'quote' | 'complete' | null;
 type SendStatus = 'idle' | 'sending' | 'success' | 'error';
 
+// Generate a random short code (6 characters, alphanumeric)
+const generateShortCode = (): string => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let result = '';
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
+
 export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
   open,
   onOpenChange,
@@ -80,40 +90,52 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
     }
   }, [open]);
 
-  // Build the pre-filled URL for "complete booking" option
-  const buildCompleteBookingUrl = () => {
-    // Use production URL directly
-    const baseUrl = 'https://account.sncleaningservices.co.uk';
-    const params = new URLSearchParams();
+  // Save quote data to quote_leads and generate short URL
+  const saveQuoteAndGetShortUrl = async (): Promise<string> => {
+    const shortCode = generateShortCode();
     
-    // Add all the form data as URL parameters
-    if (quoteData.propertyType) params.set('propertyType', quoteData.propertyType);
-    if (quoteData.bedrooms) params.set('bedrooms', quoteData.bedrooms);
-    if (quoteData.bathrooms) params.set('bathrooms', quoteData.bathrooms);
-    if (quoteData.serviceFrequency) params.set('frequency', quoteData.serviceFrequency);
-    if (quoteData.postcode) params.set('postcode', quoteData.postcode);
-    if (quoteData.hasOvenCleaning) params.set('oven', '1');
-    if (quoteData.ovenType) params.set('ovenType', quoteData.ovenType);
-    if (quoteData.selectedDate) params.set('date', quoteData.selectedDate.toISOString().split('T')[0]);
-    if (quoteData.selectedTime) params.set('time', quoteData.selectedTime);
-    if (email) params.set('email', email);
-    
-    // CRITICAL: Include the exact quoted pricing to preserve amounts
-    if (quoteData.totalCost) params.set('quotedCost', quoteData.totalCost.toFixed(2));
-    if (quoteData.estimatedHours) params.set('quotedHours', quoteData.estimatedHours.toString());
-    if (quoteData.shortNoticeCharge) params.set('shortNotice', quoteData.shortNoticeCharge.toString());
-    if (quoteData.isFirstTimeCustomer !== undefined) params.set('firstTime', quoteData.isFirstTimeCustomer ? '1' : '0');
-    
-    // Add session reference for tracking
-    if (sessionId) params.set('ref', sessionId);
-    
-    // Add agent ID for tracking who sent the quote
-    if (agentUserId) params.set('agentId', agentUserId);
-    
-    // Determine the route based on service type
-    const route = serviceType === 'Domestic' ? '/domestic-cleaning' : '/airbnb-cleaning';
-    
-    return `${baseUrl}${route}?${params.toString()}`;
+    // Build the quote_leads record
+    const quoteLeadData = {
+      session_id: sessionId || `admin_${Date.now()}`,
+      short_code: shortCode,
+      agent_user_id: agentUserId,
+      service_type: serviceType,
+      property_type: quoteData.propertyType,
+      bedrooms: quoteData.bedrooms ? parseInt(quoteData.bedrooms) : null,
+      bathrooms: quoteData.bathrooms ? parseInt(quoteData.bathrooms) : null,
+      frequency: quoteData.serviceFrequency,
+      postcode: quoteData.postcode,
+      oven_cleaning: quoteData.hasOvenCleaning,
+      oven_size: quoteData.ovenType,
+      selected_date: quoteData.selectedDate ? quoteData.selectedDate.toISOString().split('T')[0] : null,
+      selected_time: quoteData.selectedTime,
+      calculated_quote: quoteData.totalCost,
+      recommended_hours: quoteData.estimatedHours,
+      short_notice_charge: quoteData.shortNoticeCharge,
+      is_first_time_customer: quoteData.isFirstTimeCustomer,
+      discount_amount: quoteData.discountAmount,
+      first_name: quoteData.firstName || null,
+      last_name: quoteData.lastName || null,
+      email: email || null,
+      phone: phone || null,
+      status: 'sent',
+      source: 'admin',
+      created_by_admin_id: agentUserId,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Upsert (update if session exists, insert if not)
+    const { error } = await supabase
+      .from('quote_leads')
+      .upsert(quoteLeadData, { onConflict: 'session_id' });
+
+    if (error) {
+      console.error('Error saving quote lead:', error);
+      throw error;
+    }
+
+    // Return the short URL
+    return `https://account.sncleaningservices.co.uk/b/${shortCode}`;
   };
 
   const handleSendQuoteEmail = async () => {
@@ -191,77 +213,89 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
 
     setSendingEmail(true);
     
-    const completeUrl = buildCompleteBookingUrl();
-    // Only use name if we have a real one
-    const customerName = `${quoteData.firstName || ''} ${quoteData.lastName || ''}`.trim();
-    
-    let emailSent = false;
-    let smsSent = false;
-    const errors: string[] = [];
+    try {
+      // Save quote data and get short URL
+      const completeUrl = await saveQuoteAndGetShortUrl();
+      console.log('Generated short URL:', completeUrl);
+      
+      // Only use name if we have a real one
+      const customerName = `${quoteData.firstName || ''} ${quoteData.lastName || ''}`.trim();
+      
+      let emailSent = false;
+      let smsSent = false;
+      const errors: string[] = [];
 
-    // Send email if we have one
-    if (hasEmail) {
-      try {
-        const { data, error } = await supabase.functions.invoke('send-complete-booking-email', {
-          body: {
-            email,
-            customerName: customerName || 'Valued Customer',
-            completeBookingUrl: completeUrl,
-            quoteData: {
+      // Send email if we have one
+      if (hasEmail) {
+        try {
+          const { data, error } = await supabase.functions.invoke('send-complete-booking-email', {
+            body: {
+              email,
+              customerName: customerName || 'Valued Customer',
+              completeBookingUrl: completeUrl,
+              quoteData: {
+                totalCost: quoteData.totalCost,
+                estimatedHours: quoteData.estimatedHours,
+                serviceType,
+              },
+              sessionId,
+            },
+          });
+
+          if (error) throw error;
+          emailSent = true;
+          
+          if (onSaveEmail) {
+            onSaveEmail(email);
+          }
+        } catch (error: any) {
+          console.error('Error sending email:', error);
+          errors.push('email');
+        }
+      }
+
+      // Send SMS if we have a phone number
+      if (hasPhone) {
+        try {
+          const { data, error } = await supabase.functions.invoke('send-complete-booking-sms', {
+            body: {
+              phoneNumber: phone,
+              customerName, // Pass empty string if no name - edge function handles it
+              completeBookingUrl: completeUrl,
               totalCost: quoteData.totalCost,
               estimatedHours: quoteData.estimatedHours,
               serviceType,
+              sessionId,
             },
-            sessionId,
-          },
-        });
+          });
 
-        if (error) throw error;
-        emailSent = true;
-        
-        if (onSaveEmail) {
-          onSaveEmail(email);
+          if (error) throw error;
+          smsSent = true;
+        } catch (error: any) {
+          console.error('Error sending SMS:', error);
+          errors.push('SMS');
         }
-      } catch (error: any) {
-        console.error('Error sending email:', error);
-        errors.push('email');
       }
-    }
 
-    // Send SMS if we have a phone number
-    if (hasPhone) {
-      try {
-        const { data, error } = await supabase.functions.invoke('send-complete-booking-sms', {
-          body: {
-            phoneNumber: phone,
-            customerName, // Pass empty string if no name - edge function handles it
-            completeBookingUrl: completeUrl,
-            totalCost: quoteData.totalCost,
-            estimatedHours: quoteData.estimatedHours,
-            serviceType,
-            sessionId,
-          },
+      // Only show toast for errors, success screen handles success
+      if (emailSent || smsSent) {
+        setSendStatus('success');
+      } else {
+        toast({
+          title: "Failed to Send",
+          description: `Could not send ${errors.join(' or ')}.`,
+          variant: "destructive",
         });
-
-        if (error) throw error;
-        smsSent = true;
-      } catch (error: any) {
-        console.error('Error sending SMS:', error);
-        errors.push('SMS');
       }
-    }
-
-    setSendingEmail(false);
-
-    // Only show toast for errors, success screen handles success
-    if (emailSent || smsSent) {
-      setSendStatus('success');
-    } else {
+    } catch (error: any) {
+      console.error('Error saving quote data:', error);
       toast({
         title: "Failed to Send",
-        description: `Could not send ${errors.join(' or ')}.`,
+        description: "Could not save quote data. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setSendingEmail(false);
     }
   };
 
