@@ -60,8 +60,12 @@ const handler = async (req: Request): Promise<Response> => {
     // Build location text if postcode available
     const locationText = postcode ? ` for ${postcode}` : '';
     
-    // Build the message: "Your domestic cleaning quote for [postcode] for £X is ready. Complete your booking here: [link]"
-    const message = `Your ${serviceLabel} quote${locationText} for ${costText} is ready. Complete your booking here: ${completeBookingUrl}`;
+    // Get first name for greeting
+    const firstName = customerName ? customerName.split(' ')[0] : '';
+    const greeting = firstName ? `Hi ${firstName}, thank you for choosing SN Cleaning! ` : 'Thank you for choosing SN Cleaning! ';
+    
+    // Build friendly message
+    const message = `${greeting}Your ${serviceLabel} quote${locationText} for ${costText} is ready. Complete your booking here: ${completeBookingUrl}`;
 
     console.log('SMS Message:', message);
     console.log('Message length:', message.length);
