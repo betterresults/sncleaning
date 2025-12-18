@@ -432,6 +432,11 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
                 {calculations.totalHours} hour{calculations.totalHours !== 1 ? 's' : ''}{getFrequencyDescription() ? ` ${getFrequencyDescription()}` : ''}
               </p>
             )}
+            {isAdminMode && (
+              <p className="text-sm text-muted-foreground">
+                £{effectiveHourlyRate.toFixed(2)}/hour
+              </p>
+            )}
           </div>
         </div>
       )}
