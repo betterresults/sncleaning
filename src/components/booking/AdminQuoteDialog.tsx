@@ -41,6 +41,7 @@ interface AdminQuoteDialogProps {
   quoteData: QuoteData;
   sessionId: string;
   serviceType: string;
+  agentUserId?: string;
   onSaveEmail?: (email: string) => void;
 }
 
@@ -55,6 +56,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
   quoteData,
   sessionId,
   serviceType,
+  agentUserId,
   onSaveEmail,
 }) => {
   const [email, setEmail] = useState(initialEmail);
@@ -80,7 +82,8 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
 
   // Build the pre-filled URL for "complete booking" option
   const buildCompleteBookingUrl = () => {
-    const baseUrl = window.location.origin;
+    // Use production URL directly
+    const baseUrl = 'https://sncleaningservices.co.uk';
     const params = new URLSearchParams();
     
     // Add all the form data as URL parameters
@@ -103,6 +106,9 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
     
     // Add session reference for tracking
     if (sessionId) params.set('ref', sessionId);
+    
+    // Add agent ID for tracking who sent the quote
+    if (agentUserId) params.set('agentId', agentUserId);
     
     // Determine the route based on service type
     const route = serviceType === 'Domestic' ? '/domestic-cleaning' : '/airbnb-cleaning';
