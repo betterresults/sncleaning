@@ -26,7 +26,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Sending complete booking SMS to:', phoneNumber);
     console.log('Total cost:', totalCost, 'Estimated hours:', estimatedHours);
-    console.log('Complete URL:', completeBookingUrl);
+    console.log('Original URL:', completeBookingUrl);
 
     // Format phone number for Twilio
     let formattedPhone = phoneNumber.replace(/\s+/g, '').replace(/[^0-9+]/g, '');
@@ -46,11 +46,22 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Twilio credentials not configured");
     }
 
-    // Build a cleaner message
-    const firstName = customerName.split(' ')[0] || 'there';
-    const costText = totalCost && totalCost > 0 ? ` (£${totalCost.toFixed(2)})` : '';
+    // Replace lovableproject URL with production URL
+    let finalUrl = completeBookingUrl;
+    if (completeBookingUrl.includes('lovableproject.com')) {
+      const urlObj = new URL(completeBookingUrl);
+      finalUrl = `https://sncleaningservices.co.uk${urlObj.pathname}${urlObj.search}`;
+    }
     
-    const message = `Hi ${firstName}! Your ${serviceType || 'cleaning'} booking is ready to complete${costText}. Finish your booking here: ${completeBookingUrl}`;
+    console.log('Final URL:', finalUrl);
+
+    // Build message - only include name if we have a real one
+    const hasRealName = customerName && customerName.trim() && customerName.trim().toLowerCase() !== 'customer';
+    const greeting = hasRealName ? `Hi ${customerName.split(' ')[0]}! ` : '';
+    const serviceLabel = serviceType || 'cleaning';
+    const costText = totalCost && totalCost > 0 ? ` £${totalCost.toFixed(2)}` : '';
+    
+    const message = `${greeting}Your ${serviceLabel} booking${costText} is ready. Complete it here: ${finalUrl}`;
 
     console.log('SMS Message:', message);
 

@@ -186,7 +186,8 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
     setSendingEmail(true);
     
     const completeUrl = buildCompleteBookingUrl();
-    const customerName = `${quoteData.firstName || ''} ${quoteData.lastName || ''}`.trim() || 'Customer';
+    // Only use name if we have a real one
+    const customerName = `${quoteData.firstName || ''} ${quoteData.lastName || ''}`.trim();
     
     let emailSent = false;
     let smsSent = false;
@@ -198,7 +199,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
         const { data, error } = await supabase.functions.invoke('send-complete-booking-email', {
           body: {
             email,
-            customerName,
+            customerName: customerName || 'Valued Customer',
             completeBookingUrl: completeUrl,
             quoteData: {
               totalCost: quoteData.totalCost,
@@ -227,7 +228,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
         const { data, error } = await supabase.functions.invoke('send-complete-booking-sms', {
           body: {
             phoneNumber: phone,
-            customerName,
+            customerName, // Pass empty string if no name - edge function handles it
             completeBookingUrl: completeUrl,
             totalCost: quoteData.totalCost,
             estimatedHours: quoteData.estimatedHours,
@@ -246,17 +247,8 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
 
     setSendingEmail(false);
 
-    // Show appropriate toast
+    // Only show toast for errors, success screen handles success
     if (emailSent || smsSent) {
-      const sentMethods = [];
-      if (emailSent) sentMethods.push('email');
-      if (smsSent) sentMethods.push('SMS');
-      
-      toast({
-        title: "Sent Successfully",
-        description: `Booking link sent via ${sentMethods.join(' and ')}`,
-      });
-      
       setSendStatus('success');
     } else {
       toast({
