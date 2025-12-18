@@ -16,10 +16,12 @@ function formatPhoneNumber(phone: string): string {
   // Remove all non-digit characters except leading +
   let cleaned = phone.replace(/[^\d+]/g, '');
   
-  // Handle duplicate +44 prefix (e.g., +444479561682 -> +447956...)
-  // This catches cases where +44 was added to a number already containing 44
-  if (cleaned.startsWith('+4444')) {
-    cleaned = '+44' + cleaned.substring(4);
+  // Fix corrupted UK numbers where +44 was added to number already starting with 44
+  // e.g., +444479561682 should be +447956168X (user entered 447956... and +44 was added)
+  // Pattern: +4444 followed by 7,8,9 indicates double country code
+  if (cleaned.match(/^\+4444[789]/)) {
+    // +444479561682 -> +4479561682 (remove first 44 after +)
+    cleaned = '+' + cleaned.substring(3);
   }
   // Handle UK numbers starting with 07 (mobile) or 01/02 (landline)
   else if (cleaned.startsWith('07') || cleaned.startsWith('01') || cleaned.startsWith('02')) {
