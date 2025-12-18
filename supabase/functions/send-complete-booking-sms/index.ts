@@ -11,6 +11,8 @@ interface CompleteBookingSMSRequest {
   customerName: string;
   completeBookingUrl: string;
   totalCost: number;
+  estimatedHours: number | null;
+  serviceType: string;
   sessionId: string;
 }
 
@@ -20,9 +22,11 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { phoneNumber, customerName, completeBookingUrl, totalCost, sessionId }: CompleteBookingSMSRequest = await req.json();
+    const { phoneNumber, customerName, completeBookingUrl, totalCost, estimatedHours, serviceType, sessionId }: CompleteBookingSMSRequest = await req.json();
 
     console.log('Sending complete booking SMS to:', phoneNumber);
+    console.log('Total cost:', totalCost, 'Estimated hours:', estimatedHours);
+    console.log('Complete URL:', completeBookingUrl);
 
     // Format phone number for Twilio
     let formattedPhone = phoneNumber.replace(/\s+/g, '').replace(/[^0-9+]/g, '');
@@ -42,7 +46,13 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Twilio credentials not configured");
     }
 
-    const message = `Hi ${customerName}! Your cleaning quote (£${totalCost.toFixed(2)}) is ready. Complete your booking here: ${completeBookingUrl}`;
+    // Build a cleaner message
+    const firstName = customerName.split(' ')[0] || 'there';
+    const costText = totalCost && totalCost > 0 ? ` (£${totalCost.toFixed(2)})` : '';
+    
+    const message = `Hi ${firstName}! Your ${serviceType || 'cleaning'} booking is ready to complete${costText}. Finish your booking here: ${completeBookingUrl}`;
+
+    console.log('SMS Message:', message);
 
     const response = await fetch(
       `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`,
