@@ -263,12 +263,13 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
           const { data, error } = await supabase.functions.invoke('send-complete-booking-sms', {
             body: {
               phoneNumber: phone,
-              customerName, // Pass empty string if no name - edge function handles it
+              customerName,
               completeBookingUrl: completeUrl,
               totalCost: quoteData.totalCost,
               estimatedHours: quoteData.estimatedHours,
               serviceType,
               sessionId,
+              postcode: quoteData.postcode,
             },
           });
 

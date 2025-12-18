@@ -14,6 +14,7 @@ interface CompleteBookingSMSRequest {
   estimatedHours: number | null;
   serviceType: string;
   sessionId: string;
+  postcode?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -22,11 +23,12 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { phoneNumber, customerName, completeBookingUrl, totalCost, estimatedHours, serviceType, sessionId }: CompleteBookingSMSRequest = await req.json();
+    const { phoneNumber, customerName, completeBookingUrl, totalCost, estimatedHours, serviceType, sessionId, postcode }: CompleteBookingSMSRequest = await req.json();
 
     console.log('Sending complete booking SMS to:', phoneNumber);
     console.log('Customer name:', customerName);
     console.log('Total cost:', totalCost, 'Estimated hours:', estimatedHours);
+    console.log('Postcode:', postcode);
     console.log('Booking URL:', completeBookingUrl);
 
     // Format phone number for Twilio
@@ -47,27 +49,19 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Twilio credentials not configured");
     }
 
-    // Build personalized message
-    // Check if we have a real customer name (not empty, not just whitespace, not generic)
-    const hasRealName = customerName && 
-      customerName.trim() && 
-      customerName.trim().toLowerCase() !== 'customer' &&
-      customerName.trim().toLowerCase() !== 'valued customer';
-    
-    // Get first name only for greeting
-    const firstName = hasRealName ? customerName.split(' ')[0] : '';
-    const greeting = firstName ? `Hi ${firstName}! ` : '';
-    
     // Format service type for display
-    const serviceLabel = serviceType === 'Domestic' ? 'cleaning' : 
+    const serviceLabel = serviceType === 'Domestic' ? 'domestic cleaning' : 
                         serviceType === 'Airbnb' ? 'Airbnb cleaning' : 
-                        serviceType || 'cleaning';
+                        'cleaning';
     
-    // Format cost with pound sign
-    const costText = totalCost && totalCost > 0 ? ` (£${totalCost.toFixed(2)})` : '';
+    // Format cost - no brackets
+    const costText = totalCost && totalCost > 0 ? `£${totalCost.toFixed(2)}` : '';
     
-    // Build the message - short URL keeps it under SMS limit
-    const message = `${greeting}Your ${serviceLabel} quote${costText} is ready! Complete your booking here: ${completeBookingUrl}`;
+    // Build location text if postcode available
+    const locationText = postcode ? ` for ${postcode}` : '';
+    
+    // Build the message: "Your domestic cleaning quote for [postcode] for £X is ready. Complete your booking here: [link]"
+    const message = `Your ${serviceLabel} quote${locationText} for ${costText} is ready. Complete your booking here: ${completeBookingUrl}`;
 
     console.log('SMS Message:', message);
     console.log('Message length:', message.length);
