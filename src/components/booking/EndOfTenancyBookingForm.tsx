@@ -339,6 +339,12 @@ export function EndOfTenancyBookingForm({ onBookingCreated, children, onSubmit }
   ];
 
   const handleSubmit = async () => {
+    // Prevent double submissions
+    if (loading) {
+      console.log('EndOfTenancyBookingForm: Submission already in progress, ignoring');
+      return;
+    }
+    
     if (!canProceed()) return;
 
     setLoading(true);
