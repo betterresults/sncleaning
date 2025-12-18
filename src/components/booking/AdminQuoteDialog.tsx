@@ -83,7 +83,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
   // Build the pre-filled URL for "complete booking" option
   const buildCompleteBookingUrl = () => {
     // Use production URL directly
-    const baseUrl = 'https://sncleaningservices.co.uk';
+    const baseUrl = 'https://account.sncleaningservices.co.uk';
     const params = new URLSearchParams();
     
     // Add all the form data as URL parameters
