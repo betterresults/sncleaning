@@ -112,11 +112,28 @@ const buildAdditionalDetails = (data: DomesticBookingSubmission) => {
   return JSON.stringify(details);
 };
 
-const calculateEndDateTime = (startDateTime: Date, hours: number): string => {
-  const endDate = new Date(startDateTime);
-  endDate.setHours(endDate.getHours() + Math.floor(hours));
-  endDate.setMinutes(endDate.getMinutes() + ((hours % 1) * 60));
-  return endDate.toISOString();
+// Helper function to calculate end_date_time from a datetime string (London time)
+const calculateEndDateTime = (startDateTimeStr: string, hours: number): string => {
+  const match = startDateTimeStr.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if (!match) return startDateTimeStr;
+  
+  let year = parseInt(match[1]);
+  let month = parseInt(match[2]);
+  let day = parseInt(match[3]);
+  let hour = parseInt(match[4]) + Math.floor(hours);
+  let minute = parseInt(match[5]) + Math.round((hours % 1) * 60);
+  
+  if (minute >= 60) {
+    hour += Math.floor(minute / 60);
+    minute = minute % 60;
+  }
+  
+  if (hour >= 24) {
+    day += Math.floor(hour / 24);
+    hour = hour % 24;
+  }
+  
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00+00:00`;
 };
 
 export const useDomesticBookingSubmit = () => {
@@ -207,57 +224,57 @@ export const useDomesticBookingSubmit = () => {
         }
       }
 
-      let bookingDateTime = null;
+      let bookingDateTimeStr: string | null = null;
       let time24ForDB: string | null = null;
+      let dateStr: string | null = null;
       
       if (bookingData.selectedDate && bookingData.selectedTime) {
         try {
-          const dateObj = bookingData.selectedDate instanceof Date 
-            ? bookingData.selectedDate 
-            : new Date(bookingData.selectedDate);
-          
-          if (!isNaN(dateObj.getTime())) {
-            const dateStr = dateObj.toISOString().split('T')[0];
-            
-            let time24 = bookingData.selectedTime;
-            if (time24.includes(' - ')) {
-              time24 = time24.split(' - ')[0].trim();
-            }
-            
-            if (time24.toLowerCase().includes('am') || time24.toLowerCase().includes('pm')) {
-              const timeStr = time24.toLowerCase().replace(/\s+/g, '');
-              const isPM = timeStr.includes('pm');
-              const numericPart = timeStr.replace(/[ap]m/g, '');
-              
-              let hour: number;
-              let minutes: number = 0;
-              
-              if (numericPart.includes(':')) {
-                const parts = numericPart.split(':');
-                hour = parseInt(parts[0]);
-                minutes = parseInt(parts[1]);
-              } else {
-                hour = parseInt(numericPart);
-              }
-              
-              if (isPM && hour !== 12) hour += 12;
-              else if (!isPM && hour === 12) hour = 0;
-              
-              time24 = `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-            }
-            
-            time24ForDB = time24;
-            bookingDateTime = new Date(`${dateStr}T${time24}:00`);
-            
-            if (isNaN(bookingDateTime.getTime())) {
-              bookingDateTime = null;
-              time24ForDB = null;
-            }
+          // Extract date string without timezone conversion
+          if (bookingData.selectedDate instanceof Date) {
+            const d = bookingData.selectedDate;
+            dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          } else {
+            // Parse string date and extract components
+            const d = new Date(bookingData.selectedDate);
+            dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
           }
+          
+          let time24 = bookingData.selectedTime;
+          if (time24.includes(' - ')) {
+            time24 = time24.split(' - ')[0].trim();
+          }
+          
+          if (time24.toLowerCase().includes('am') || time24.toLowerCase().includes('pm')) {
+            const timeStr = time24.toLowerCase().replace(/\s+/g, '');
+            const isPM = timeStr.includes('pm');
+            const numericPart = timeStr.replace(/[ap]m/g, '');
+            
+            let hour: number;
+            let minutes: number = 0;
+            
+            if (numericPart.includes(':')) {
+              const parts = numericPart.split(':');
+              hour = parseInt(parts[0]);
+              minutes = parseInt(parts[1]);
+            } else {
+              hour = parseInt(numericPart);
+            }
+            
+            if (isPM && hour !== 12) hour += 12;
+            else if (!isPM && hour === 12) hour = 0;
+            
+            time24 = `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+          }
+          
+          time24ForDB = time24;
+          // Store as London time string without timezone conversion
+          bookingDateTimeStr = `${dateStr}T${time24}:00+00:00`;
         } catch (error) {
           console.error('Error creating booking datetime:', error);
-          bookingDateTime = null;
+          bookingDateTimeStr = null;
           time24ForDB = null;
+          dateStr = null;
         }
       }
 
@@ -307,12 +324,9 @@ export const useDomesticBookingSubmit = () => {
         cleaning_type: bookingData.serviceFrequency || 'onetime',
         frequently: bookingData.serviceFrequency || 'onetime',
         
-        date_time: bookingDateTime?.toISOString() || null,
-        date_only: bookingData.selectedDate 
-          ? (bookingData.selectedDate instanceof Date 
-              ? bookingData.selectedDate.toISOString().split('T')[0] 
-              : new Date(bookingData.selectedDate).toISOString().split('T')[0])
-          : null,
+        // Dates - stored as London time without timezone conversion
+        date_time: bookingDateTimeStr || null,
+        date_only: dateStr || null,
         time_only: (bookingData.flexibility === 'flexible-time' || !bookingData.selectedTime) 
           ? null 
           : time24ForDB,
@@ -338,8 +352,8 @@ export const useDomesticBookingSubmit = () => {
         created_by_source: createdBySource
       };
 
-      if (bookingDateTime && totalHours > 0) {
-        bookingInsert.end_date_time = calculateEndDateTime(bookingDateTime, totalHours);
+      if (bookingDateTimeStr && totalHours > 0) {
+        bookingInsert.end_date_time = calculateEndDateTime(bookingDateTimeStr, totalHours);
       }
 
       if (bookingData.ovenType && bookingData.ovenType !== 'dontneed' && bookingData.ovenType !== '') {

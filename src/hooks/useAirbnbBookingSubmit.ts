@@ -186,12 +186,31 @@ const buildLinenUsedArray = (linenPackages?: Record<string, number>) => {
   return linenArray.length > 0 ? JSON.stringify(linenArray) : null;
 };
 
-// Helper function to calculate end_date_time
-const calculateEndDateTime = (startDateTime: Date, hours: number): string => {
-  const endDate = new Date(startDateTime);
-  endDate.setHours(endDate.getHours() + Math.floor(hours));
-  endDate.setMinutes(endDate.getMinutes() + ((hours % 1) * 60));
-  return endDate.toISOString();
+// Helper function to calculate end_date_time from a datetime string (London time)
+const calculateEndDateTime = (startDateTimeStr: string, hours: number): string => {
+  // Parse the datetime string (format: YYYY-MM-DDTHH:MM:SS+00:00)
+  const match = startDateTimeStr.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if (!match) return startDateTimeStr;
+  
+  let year = parseInt(match[1]);
+  let month = parseInt(match[2]);
+  let day = parseInt(match[3]);
+  let hour = parseInt(match[4]) + Math.floor(hours);
+  let minute = parseInt(match[5]) + Math.round((hours % 1) * 60);
+  
+  // Handle minute overflow
+  if (minute >= 60) {
+    hour += Math.floor(minute / 60);
+    minute = minute % 60;
+  }
+  
+  // Handle hour overflow (simple day rollover)
+  if (hour >= 24) {
+    day += Math.floor(hour / 24);
+    hour = hour % 24;
+  }
+  
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00+00:00`;
 };
 
 export const useAirbnbBookingSubmit = () => {
@@ -300,85 +319,70 @@ export const useAirbnbBookingSubmit = () => {
         timeType: typeof bookingData.selectedTime
       });
 
-      let bookingDateTime = null;
-      let time24ForDB: string | null = null; // Store the converted 24-hour time for database
+      let bookingDateTimeStr: string | null = null;
+      let time24ForDB: string | null = null;
+      let dateStr: string | null = null;
       
       if (bookingData.selectedDate && bookingData.selectedTime) {
         try {
-          // Handle both Date objects and string dates
-          const dateObj = bookingData.selectedDate instanceof Date 
-            ? bookingData.selectedDate 
-            : new Date(bookingData.selectedDate);
-          
-          console.log('[useAirbnbBookingSubmit] Date object:', dateObj, 'isValid:', !isNaN(dateObj.getTime()));
-          
-          // Validate the date
-          if (!isNaN(dateObj.getTime())) {
-            const dateStr = dateObj.toISOString().split('T')[0];
-            
-            // Convert time from various formats to 24-hour "HH:MM" format
-            let time24 = bookingData.selectedTime;
-            
-            // Extract start time if it's a range (e.g., "9am - 10am" -> "9am")
-            if (time24.includes(' - ')) {
-              time24 = time24.split(' - ')[0].trim();
-            }
-            
-            // Handle formats like "9am", "10pm", "9:00 AM", "10:30 PM"
-            if (time24.toLowerCase().includes('am') || time24.toLowerCase().includes('pm')) {
-              // Remove spaces and convert to lowercase for easier parsing
-              const timeStr = time24.toLowerCase().replace(/\s+/g, '');
-              const isPM = timeStr.includes('pm');
-              const isAM = timeStr.includes('am');
-              
-              // Extract the numeric part (before 'am' or 'pm')
-              const numericPart = timeStr.replace(/[ap]m/g, '');
-              
-              let hour: number;
-              let minutes: number = 0;
-              
-              if (numericPart.includes(':')) {
-                // Format like "9:30" or "10:00"
-                const parts = numericPart.split(':');
-                hour = parseInt(parts[0]);
-                minutes = parseInt(parts[1]);
-              } else {
-                // Format like "9" or "10"
-                hour = parseInt(numericPart);
-              }
-              
-              // Convert to 24-hour format
-              if (isPM && hour !== 12) {
-                hour += 12;
-              } else if (isAM && hour === 12) {
-                hour = 0;
-              }
-              
-              time24 = `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-            }
-            
-            console.log('[useAirbnbBookingSubmit] Converted time:', bookingData.selectedTime, '->', time24);
-            
-            // Store the converted time for database
-            time24ForDB = time24;
-            
-            bookingDateTime = new Date(`${dateStr}T${time24}:00`);
-            
-            console.log('[useAirbnbBookingSubmit] Created booking datetime:', bookingDateTime.toISOString());
-            
-            // Validate the final datetime
-            if (isNaN(bookingDateTime.getTime())) {
-              console.error('Invalid datetime created:', { dateStr, time: time24 });
-              bookingDateTime = null;
-              time24ForDB = null;
-            }
+          // Extract date string without timezone conversion - treat input as London time
+          if (bookingData.selectedDate instanceof Date) {
+            const d = bookingData.selectedDate;
+            dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
           } else {
-            console.error('Invalid date object:', bookingData.selectedDate);
+            const d = new Date(bookingData.selectedDate);
+            dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
           }
+          
+          console.log('[useAirbnbBookingSubmit] Date string (London time):', dateStr);
+          
+          // Convert time from various formats to 24-hour "HH:MM" format
+          let time24 = bookingData.selectedTime;
+          
+          // Extract start time if it's a range (e.g., "9am - 10am" -> "9am")
+          if (time24.includes(' - ')) {
+            time24 = time24.split(' - ')[0].trim();
+          }
+          
+          // Handle formats like "9am", "10pm", "9:00 AM", "10:30 PM"
+          if (time24.toLowerCase().includes('am') || time24.toLowerCase().includes('pm')) {
+            const timeStr = time24.toLowerCase().replace(/\s+/g, '');
+            const isPM = timeStr.includes('pm');
+            const isAM = timeStr.includes('am');
+            const numericPart = timeStr.replace(/[ap]m/g, '');
+            
+            let hour: number;
+            let minutes: number = 0;
+            
+            if (numericPart.includes(':')) {
+              const parts = numericPart.split(':');
+              hour = parseInt(parts[0]);
+              minutes = parseInt(parts[1]);
+            } else {
+              hour = parseInt(numericPart);
+            }
+            
+            if (isPM && hour !== 12) {
+              hour += 12;
+            } else if (isAM && hour === 12) {
+              hour = 0;
+            }
+            
+            time24 = `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+          }
+          
+          console.log('[useAirbnbBookingSubmit] Converted time:', bookingData.selectedTime, '->', time24);
+          
+          time24ForDB = time24;
+          // Store as London time string without timezone conversion
+          bookingDateTimeStr = `${dateStr}T${time24}:00+00:00`;
+          
+          console.log('[useAirbnbBookingSubmit] Final datetime string (London):', bookingDateTimeStr);
         } catch (error) {
           console.error('Error creating booking datetime:', error);
-          bookingDateTime = null;
+          bookingDateTimeStr = null;
           time24ForDB = null;
+          dateStr = null;
         }
       } else {
         console.warn('[useAirbnbBookingSubmit] Missing selectedDate or selectedTime:', {
@@ -441,13 +445,9 @@ export const useAirbnbBookingSubmit = () => {
         cleaning_type: bookingData.serviceType || 'checkin-checkout', // checkin-checkout, midstay, etc.
         frequently: bookingData.serviceFrequency || null, // weekly, biweekly, monthly, onetime
         
-        // Dates
-        date_time: bookingDateTime?.toISOString() || null,
-        date_only: bookingData.selectedDate 
-          ? (bookingData.selectedDate instanceof Date 
-              ? bookingData.selectedDate.toISOString().split('T')[0] 
-              : new Date(bookingData.selectedDate).toISOString().split('T')[0])
-          : null,
+        // Dates - stored as London time without timezone conversion
+        date_time: bookingDateTimeStr || null,
+        date_only: dateStr || null,
         time_only: (bookingData.flexibility === 'flexible-time' || !bookingData.selectedTime) 
           ? null 
           : time24ForDB, // Use the converted 24-hour format for DB TIME field
@@ -479,8 +479,8 @@ export const useAirbnbBookingSubmit = () => {
       };
 
       // Conditional fields - only add if they have values
-      if (bookingDateTime && totalHours > 0) {
-        bookingInsert.end_date_time = calculateEndDateTime(bookingDateTime, totalHours);
+      if (bookingDateTimeStr && totalHours > 0) {
+        bookingInsert.end_date_time = calculateEndDateTime(bookingDateTimeStr, totalHours);
       }
 
       if (bookingData.alreadyCleaned === false) {
@@ -554,7 +554,7 @@ export const useAirbnbBookingSubmit = () => {
             booking_id: booking.id,
             customer_name: `${bookingData.firstName} ${bookingData.lastName}`,
             customer_email: bookingData.email,
-            booking_date: bookingDateTime?.toISOString(),
+            booking_date: bookingDateTimeStr,
             service_type: 'Air BnB',
             address: `${addressForBooking}, ${postcodeForBooking}`
           }
