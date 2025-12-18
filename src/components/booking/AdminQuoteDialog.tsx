@@ -62,7 +62,6 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
   const [selectedOption, setSelectedOption] = useState<SendOption>(null);
   const [sendStatus, setSendStatus] = useState<SendStatus>('idle');
   const [sendingEmail, setSendingEmail] = useState(false);
-  const [sendingSMS, setSendingSMS] = useState(false);
   const { toast } = useToast();
   
   // Sync email/phone state when props change
@@ -171,99 +170,100 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
     }
   };
 
-  const handleSendCompleteBookingEmail = async () => {
-    if (!email || !email.includes('@')) {
+  const handleSendCompleteBooking = async () => {
+    const hasEmail = email && email.includes('@');
+    const hasPhone = phone && phone.length >= 10;
+
+    if (!hasEmail && !hasPhone) {
       toast({
-        title: "Invalid Email",
-        description: "Please enter a valid email address.",
+        title: "Missing Contact Info",
+        description: "Please enter an email address or phone number.",
         variant: "destructive",
       });
       return;
     }
 
     setSendingEmail(true);
-    try {
-      const completeUrl = buildCompleteBookingUrl();
-      
-      const { data, error } = await supabase.functions.invoke('send-complete-booking-email', {
-        body: {
-          email,
-          customerName: `${quoteData.firstName || ''} ${quoteData.lastName || ''}`.trim() || 'Valued Customer',
-          completeBookingUrl: completeUrl,
-          quoteData: {
+    
+    const completeUrl = buildCompleteBookingUrl();
+    const customerName = `${quoteData.firstName || ''} ${quoteData.lastName || ''}`.trim() || 'Customer';
+    
+    let emailSent = false;
+    let smsSent = false;
+    const errors: string[] = [];
+
+    // Send email if we have one
+    if (hasEmail) {
+      try {
+        const { data, error } = await supabase.functions.invoke('send-complete-booking-email', {
+          body: {
+            email,
+            customerName,
+            completeBookingUrl: completeUrl,
+            quoteData: {
+              totalCost: quoteData.totalCost,
+              estimatedHours: quoteData.estimatedHours,
+              serviceType,
+            },
+            sessionId,
+          },
+        });
+
+        if (error) throw error;
+        emailSent = true;
+        
+        if (onSaveEmail) {
+          onSaveEmail(email);
+        }
+      } catch (error: any) {
+        console.error('Error sending email:', error);
+        errors.push('email');
+      }
+    }
+
+    // Send SMS if we have a phone number
+    if (hasPhone) {
+      try {
+        const { data, error } = await supabase.functions.invoke('send-complete-booking-sms', {
+          body: {
+            phoneNumber: phone,
+            customerName,
+            completeBookingUrl: completeUrl,
             totalCost: quoteData.totalCost,
             estimatedHours: quoteData.estimatedHours,
             serviceType,
+            sessionId,
           },
-          sessionId,
-        },
-      });
+        });
 
-      if (error) throw error;
-
-      if (onSaveEmail) {
-        onSaveEmail(email);
+        if (error) throw error;
+        smsSent = true;
+      } catch (error: any) {
+        console.error('Error sending SMS:', error);
+        errors.push('SMS');
       }
+    }
 
+    setSendingEmail(false);
+
+    // Show appropriate toast
+    if (emailSent || smsSent) {
+      const sentMethods = [];
+      if (emailSent) sentMethods.push('email');
+      if (smsSent) sentMethods.push('SMS');
+      
       toast({
-        title: "Email Sent",
-        description: `Complete booking link sent to ${email}`,
+        title: "Sent Successfully",
+        description: `Booking link sent via ${sentMethods.join(' and ')}`,
       });
       
       setSendStatus('success');
-    } catch (error: any) {
-      console.error('Error sending complete booking email:', error);
+    } else {
       toast({
         title: "Failed to Send",
-        description: "There was an issue sending the email.",
+        description: `Could not send ${errors.join(' or ')}.`,
         variant: "destructive",
       });
-    } finally {
-      setSendingEmail(false);
-    }
-  };
-
-  const handleSendCompleteBookingSMS = async () => {
-    if (!phone || phone.length < 10) {
-      toast({
-        title: "Invalid Phone",
-        description: "Please enter a valid phone number.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setSendingSMS(true);
-    try {
-      const completeUrl = buildCompleteBookingUrl();
-      
-      const { data, error } = await supabase.functions.invoke('send-complete-booking-sms', {
-        body: {
-          phoneNumber: phone,
-          customerName: `${quoteData.firstName || ''} ${quoteData.lastName || ''}`.trim() || 'Customer',
-          completeBookingUrl: completeUrl,
-          totalCost: quoteData.totalCost,
-          sessionId,
-        },
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "SMS Sent",
-        description: `Complete booking link sent to ${phone}`,
-      });
-      
-      setSendStatus('success');
-    } catch (error: any) {
-      console.error('Error sending SMS:', error);
-      toast({
-        title: "Failed to Send",
-        description: "There was an issue sending the SMS.",
-        variant: "destructive",
-      });
-    } finally {
-      setSendingSMS(false);
     }
   };
 
@@ -473,12 +473,18 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="flex gap-3">
                 <Button
-                  onClick={handleSendCompleteBookingEmail}
-                  disabled={sendingEmail || !email}
+                  onClick={() => setSelectedOption(null)}
                   variant="outline"
-                  className="border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-xl"
+                  className="flex-1 rounded-xl"
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={handleSendCompleteBooking}
+                  disabled={sendingEmail || (!email && !phone)}
+                  className="flex-1 bg-primary hover:bg-primary/90 rounded-xl"
                 >
                   {sendingEmail ? (
                     <>
@@ -487,38 +493,16 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                     </>
                   ) : (
                     <>
-                      <Mail className="w-4 h-4 mr-2" />
-                      Send Email
-                    </>
-                  )}
-                </Button>
-                <Button
-                  onClick={handleSendCompleteBookingSMS}
-                  disabled={sendingSMS || !phone}
-                  variant="outline"
-                  className="border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-xl"
-                >
-                  {sendingSMS ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <MessageSquare className="w-4 h-4 mr-2" />
-                      Send SMS
+                      <Send className="w-4 h-4 mr-2" />
+                      Send
                     </>
                   )}
                 </Button>
               </div>
-
-              <Button
-                onClick={() => setSelectedOption(null)}
-                variant="ghost"
-                className="w-full text-muted-foreground rounded-xl"
-              >
-                Back
-              </Button>
+              
+              <p className="text-xs text-muted-foreground text-center">
+                Will send via {email && phone ? 'email and SMS' : email ? 'email' : phone ? 'SMS' : 'email or SMS'}
+              </p>
             </div>
           </>
         )}
