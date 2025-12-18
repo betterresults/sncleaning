@@ -112,8 +112,13 @@ const BulkAirbnbBookingDialog: React.FC<BulkAirbnbBookingDialogProps> = ({
       // Create all bookings
       const bookingPromises = bookingDates.map(bookingDate => {
         const [hour, minute] = bookingDate.time.split(':').map(Number);
-        const dateTime = new Date(bookingDate.date);
-        dateTime.setHours(hour, minute, 0, 0);
+        
+        // Extract date components and build London time string
+        const d = new Date(bookingDate.date);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const dateTimeStr = `${year}-${month}-${day}T${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00+00:00`;
 
         return supabase.from('bookings').insert({
           customer: customerId,
@@ -122,7 +127,9 @@ const BulkAirbnbBookingDialog: React.FC<BulkAirbnbBookingDialogProps> = ({
           last_name: customer.last_name,
           email: customer.email,
           phone_number: customer.phone,
-          date_time: dateTime.toISOString(),
+          date_time: dateTimeStr,
+          date_only: `${year}-${month}-${day}`,
+          time_only: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00`,
           address,
           postcode,
           cleaning_type: 'Air BnB',
