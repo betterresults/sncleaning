@@ -46,13 +46,8 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Twilio credentials not configured");
     }
 
-    // Replace lovableproject URL with production URL
-    let finalUrl = completeBookingUrl;
-    if (completeBookingUrl.includes('lovableproject.com')) {
-      const urlObj = new URL(completeBookingUrl);
-      finalUrl = `https://sncleaningservices.co.uk${urlObj.pathname}${urlObj.search}`;
-    }
-    
+    // Use the URL as-is (should already be production URL from frontend)
+    const finalUrl = completeBookingUrl;
     console.log('Final URL:', finalUrl);
 
     // Build message - only include name if we have a real one
