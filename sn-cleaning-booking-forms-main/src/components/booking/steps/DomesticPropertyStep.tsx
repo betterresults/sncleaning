@@ -271,7 +271,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
           label: 'Weekly'
         }, {
           option: 'biweekly',
-          label: 'Biweekly'
+          label: 'Bi-Weekly'
         }, {
           option: 'monthly',
           label: 'Monthly'
