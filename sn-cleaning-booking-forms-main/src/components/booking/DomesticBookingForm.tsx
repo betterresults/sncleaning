@@ -5,14 +5,14 @@ import { DomesticPropertyStep } from './steps/DomesticPropertyStep';
 import { ScheduleStep } from './steps/ScheduleStep';
 import { DomesticBookingSummary } from './DomesticBookingSummary';
 import { PaymentStep } from './steps/PaymentStep';
-import { Home, Calendar, CreditCard, ArrowLeft, Mail } from 'lucide-react';
+import { Home, Calendar, CreditCard, ArrowLeft, Send } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuoteLeadTracking } from '@/hooks/useQuoteLeadTracking';
 import { ExitQuotePopup } from '@/components/booking/ExitQuotePopup';
-
+import { AdminQuoteDialog } from '@/components/booking/AdminQuoteDialog';
 export interface DomesticBookingData {
   // Property details
   propertyType: 'flat' | 'house' | '';
@@ -576,10 +576,10 @@ const DomesticBookingForm: React.FC = () => {
                 <Button
                   variant="outline"
                   onClick={() => setShowQuoteDialog(true)}
-                  className="text-sm font-medium border-amber-500 text-amber-600 hover:bg-amber-50 transition-all duration-200 shadow-sm"
+                  className="text-sm font-medium border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-200 shadow-sm"
                 >
-                  <Mail className="h-4 w-4 mr-2" />
-                  Send as Quote
+                  <Send className="h-4 w-4 mr-2" />
+                  Send to Customer
                 </Button>
               </>
             ) : bookingData.customerId ? (
@@ -682,12 +682,13 @@ const DomesticBookingForm: React.FC = () => {
         </div>
       </main>
       
-      {/* Admin Quote Popup */}
+      {/* Admin Quote Dialog */}
       {isAdminMode && (
-        <ExitQuotePopup
+        <AdminQuoteDialog
           open={showQuoteDialog}
           onOpenChange={setShowQuoteDialog}
           email={bookingData.email || bookingData.selectedCustomer?.email || ''}
+          phone={bookingData.phone || bookingData.selectedCustomer?.phone || ''}
           quoteData={{
             totalCost: bookingData.totalCost,
             estimatedHours: bookingData.estimatedHours,
@@ -701,6 +702,9 @@ const DomesticBookingForm: React.FC = () => {
             selectedTime: bookingData.selectedTime,
             postcode: bookingData.postcode,
             shortNoticeCharge: bookingData.shortNoticeCharge,
+            firstName: bookingData.firstName,
+            lastName: bookingData.lastName,
+            phone: bookingData.phone,
           }}
           sessionId={sessionId}
           serviceType="Domestic"

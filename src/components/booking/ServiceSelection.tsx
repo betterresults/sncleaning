@@ -79,7 +79,7 @@ const ServiceSelection = ({ onServiceSelect, isAdminView = false }: ServiceSelec
 
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
         {services.map((service) => {
           const IconComponent = service.icon;
           
@@ -88,37 +88,37 @@ const ServiceSelection = ({ onServiceSelect, isAdminView = false }: ServiceSelec
               key={service.id}
               className={`relative overflow-hidden transition-all duration-300 ${
                 service.available 
-                  ? 'cursor-pointer hover:scale-105 border-2 border-transparent hover:border-[#18A5A5] shadow-[0_8px_16px_rgba(0,0,0,0.15)] hover:shadow-[0_12px_24px_rgba(0,0,0,0.25)]' 
-                  : 'cursor-not-allowed opacity-75 shadow-md'
+                  ? 'cursor-pointer hover:scale-[1.02] border-2 border-transparent hover:border-primary shadow-md hover:shadow-xl' 
+                  : 'cursor-not-allowed opacity-75 shadow-sm'
               }`}
               onClick={() => service.available && handleServiceClick(service.id)}
             >
               {!service.available && (
-                <div className="absolute top-4 right-4 z-10">
-                  <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200">
+                <div className="absolute top-3 right-3 z-10">
+                  <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200 text-xs">
                     Coming Soon
                   </Badge>
                 </div>
               )}
               
-              <CardContent className="p-6 h-48 flex flex-col items-center justify-center text-center space-y-4">
-                <div className={`p-4 rounded-full ${service.available ? 'bg-[#18A5A5]/10' : 'bg-gray-100'}`}>
+              <CardContent className="p-5 md:p-6 h-44 md:h-52 flex flex-col items-center justify-center text-center space-y-3 md:space-y-4">
+                <div className={`p-4 md:p-5 rounded-full ${service.available ? 'bg-primary/10' : 'bg-muted'}`}>
                   <IconComponent 
-                    className={`h-8 w-8 ${service.available ? 'text-[#18A5A5]' : 'text-gray-400'}`}
+                    className={`h-7 w-7 md:h-9 md:w-9 ${service.available ? 'text-primary' : 'text-muted-foreground'}`}
                   />
                 </div>
                 
-                <div className="space-y-2">
-                  <h3 className={`font-semibold text-lg ${service.available ? 'text-[#185166]' : 'text-gray-500'}`}>
+                <div className="space-y-1.5 md:space-y-2">
+                  <h3 className={`font-semibold text-base md:text-lg ${service.available ? 'text-foreground' : 'text-muted-foreground'}`}>
                     {service.title}
                   </h3>
-                  <p className={`text-sm ${service.available ? 'text-gray-600' : 'text-gray-400'}`}>
+                  <p className={`text-xs md:text-sm ${service.available ? 'text-muted-foreground' : 'text-muted-foreground/70'}`}>
                     {service.description}
                   </p>
                 </div>
 
                 {service.available && (
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#18A5A5]/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300" />
                 )}
               </CardContent>
             </Card>
