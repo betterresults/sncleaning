@@ -727,9 +727,7 @@ const DomesticBookingForm: React.FC = () => {
           email={bookingData.email || bookingData.selectedCustomer?.email || ''}
           phone={bookingData.phone || bookingData.selectedCustomer?.phone || ''}
           quoteData={{
-            totalCost: bookingData.wantsFirstDeepClean 
-              ? (calculations.firstDeepCleanCost || bookingData.totalCost || calculatedTotal)
-              : (bookingData.totalCost || calculatedTotal),
+            totalCost: bookingData.totalCost || calculatedTotal,
             estimatedHours: bookingData.wantsFirstDeepClean
               ? (calculations.firstDeepCleanHours || bookingData.estimatedHours || calculations.totalHours)
               : (bookingData.estimatedHours || calculations.totalHours),
