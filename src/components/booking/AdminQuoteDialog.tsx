@@ -111,7 +111,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
       oven_cleaning: quoteData.hasOvenCleaning,
       oven_size: quoteData.ovenType,
       selected_date: quoteData.selectedDate ? quoteData.selectedDate.toISOString().split('T')[0] : null,
-      selected_time: quoteData.selectedTime || null,
+      selected_time: null, // Time slots like "9am - 10am" are stored as text in the form, not SQL time
       calculated_quote: quoteData.totalCost,
       recommended_hours: quoteData.estimatedHours,
       short_notice_charge: quoteData.shortNoticeCharge,
