@@ -448,7 +448,7 @@ const AirbnbBookingForm: React.FC = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-white py-4 mb-3 border-b border-border shadow-[0_10px_30px_rgba(0,0,0,0.14)]">
+      <header className="bg-white py-4 mb-3 border-b border-border">
         <div className="container mx-auto px-2 sm:px-4">
           <div className="flex items-center justify-between mb-4">
             {isAdminMode ? (
@@ -462,7 +462,8 @@ const AirbnbBookingForm: React.FC = () => {
                   Back to Services
                 </Button>
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700">
-                  Airbnb Cleaning Booking Form
+                  <span className="sm:hidden">Airbnb Cleaning</span>
+                  <span className="hidden sm:inline">Airbnb Cleaning Booking Form</span>
                 </h1>
                 <Button
                   variant="outline"
@@ -483,20 +484,21 @@ const AirbnbBookingForm: React.FC = () => {
                   ← Back to Account
                 </Button>
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700">
-                  Airbnb Cleaning Booking Form
+                  <span className="sm:hidden">Airbnb Cleaning</span>
+                  <span className="hidden sm:inline">Airbnb Cleaning Booking Form</span>
                 </h1>
                 <div className="w-[140px]" />
               </>
             ) : (
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700 mx-auto">
-                Airbnb Cleaning Booking Form
+                <span className="sm:hidden">Airbnb Cleaning</span>
+                <span className="hidden sm:inline">Airbnb Cleaning Booking Form</span>
               </h1>
             )}
           </div>
           
-          {/* Step Navigation - Mobile Optimized */}
+          {/* Step Navigation */}
           <div className="max-w-4xl mx-auto">
-            {/* Compact stepper with progress */}
             <div className="flex items-center justify-center gap-1 px-2">
               {steps.map((step, index) => {
                 const stepNumber = index + 1;
@@ -544,20 +546,23 @@ const AirbnbBookingForm: React.FC = () => {
       {/* Main Content */}
       <main className="container mx-auto px-2 sm:px-4 py-2 max-w-[1400px]">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-          {/* Form Section - Takes 2 columns */}
           <div className="lg:col-span-2">
-            <Card className="p-4 sm:p-6 lg:p-8 bg-white transition-shadow duration-300 border border-border shadow-[0_20px_60px_rgba(0,0,0,0.18),0_2px_8px_rgba(0,0,0,0.12)]">
+            <Card className="p-4 sm:p-6 lg:p-8 bg-white border border-border">
               {renderStep()}
             </Card>
           </div>
           
-          {/* Summary Section - Takes 1 column, always visible */}
           <div className="lg:col-span-1">
-            <BookingSummary 
-              data={bookingData} 
-              isAdminMode={isAdminMode}
-              onUpdate={updateBookingData}
-            />
+            <div className="lg:sticky lg:top-4">
+              <div className="bg-gradient-to-br from-slate-50 to-white rounded-2xl p-4 border-2 border-slate-200 shadow-lg lg:bg-transparent lg:p-0 lg:border-0 lg:shadow-none lg:rounded-none">
+                <h3 className="text-lg font-bold text-slate-700 mb-3 lg:hidden">Booking Summary</h3>
+                <BookingSummary 
+                  data={bookingData} 
+                  isAdminMode={isAdminMode}
+                  onUpdate={updateBookingData}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </main>

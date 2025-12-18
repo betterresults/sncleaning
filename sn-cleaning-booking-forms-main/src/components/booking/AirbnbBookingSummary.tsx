@@ -457,98 +457,164 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
           </span>
         </div>}
     </div>;
-  return <Card className="p-4 bg-white transition-shadow duration-300 sticky top-4 border border-border shadow-[0_20px_60px_rgba(0,0,0,0.18),0_2px_8px_rgba(0,0,0,0.12)]">
-      <div className="pb-4 mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-7 h-7 bg-muted rounded-lg flex items-center justify-center">
-            <span className="text-sm">🏠</span>
-          </div>
-          <h3 className="text-xl font-semibold text-foreground">Booking Summary</h3>
-        </div>
+  return <Card className="p-4 sm:p-5 lg:p-6 bg-white sticky top-4 border border-border">
+      <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
+        <h3 className="text-lg font-semibold text-foreground">Booking Summary</h3>
+        {isAdminMode && onUpdate && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsEditingPricing(!isEditingPricing)}
+            className="text-primary hover:bg-primary/10"
+          >
+            <Edit2 className="w-4 h-4 mr-1" />
+            {isEditingPricing ? 'Done' : 'Edit'}
+          </Button>
+        )}
       </div>
 
-      {/* Only show content if we have valid data */}
-      {(calculations.totalHours && calculations.totalHours > 0) ? renderSummaryContent() : (
-        <div className="text-center py-12 text-muted-foreground">
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
-              <Calendar className="w-8 h-8 text-muted-foreground/60" />
-            </div>
-            <p className="text-sm font-medium">Complete the form to see your booking summary</p>
+      {getPropertyDescription() && (
+        <div className="flex items-center gap-3 mb-4 pb-4 border-b border-border">
+          <div className="p-2 bg-primary/10 rounded-xl">
+            <Home className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <p className="font-medium text-foreground">{getPropertyDescription()}</p>
           </div>
         </div>
       )}
 
-      {/* Admin Pricing Controls */}
-      {isAdminMode && onUpdate && <div className="pt-4 mt-4 border-t">
-          <Button variant="outline" size="sm" onClick={() => setIsEditingPricing(!isEditingPricing)} className="w-full flex items-center justify-center gap-2 mb-3">
-            <Edit2 className="w-4 h-4" />
-            {isEditingPricing ? 'Hide' : 'Edit'} Pricing
-          </Button>
-          
-          {isEditingPricing && <div className="space-y-3 p-3 bg-gray-50 rounded-lg">
-              <div>
-                <Label className="text-xs text-gray-600">Hourly Rate Override (£)</Label>
-                <Input type="number" step="0.01" placeholder={`Default: £${effectiveHourlyRate.toFixed(2)}`} value={data.adminHourlyRateOverride ?? ''} onChange={e => onUpdate({
-            adminHourlyRateOverride: e.target.value ? parseFloat(e.target.value) : undefined
-          })} className="h-10 mt-1" />
-              </div>
-              
-              <div>
-                <Label className="text-xs text-gray-600">Discount Amount (£)</Label>
-                <Input type="number" step="0.01" placeholder="0.00" value={data.adminDiscountAmount ?? ''} onChange={e => onUpdate({
-            adminDiscountAmount: e.target.value ? parseFloat(e.target.value) : undefined
-          })} className="h-10 mt-1" />
-              </div>
-              
-              <div>
-                <Label className="text-xs text-gray-600">Discount Percentage (%)</Label>
-                <Input type="number" step="1" min="0" max="100" placeholder="0" value={data.adminDiscountPercentage ?? ''} onChange={e => onUpdate({
-            adminDiscountPercentage: e.target.value ? parseFloat(e.target.value) : undefined
-          })} className="h-10 mt-1" />
-              </div>
-              
-              <div>
-                <Label className="text-xs text-gray-600">Total Cost Override (£)</Label>
-                <Input type="number" step="0.01" placeholder={`Calculated: £${calculateTotal().toFixed(2)}`} value={data.adminTotalCostOverride ?? ''} onChange={e => onUpdate({
-            adminTotalCostOverride: e.target.value ? parseFloat(e.target.value) : undefined
-          })} className="h-10 mt-1" />
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
-                <div>
-                  <Label className="text-xs font-medium text-orange-900">Remove Short Notice Charge</Label>
-                  <p className="text-xs text-orange-600 mt-0.5">Waive urgent booking fee</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={data.adminRemoveShortNoticeCharge || false}
-                  onChange={(e) => onUpdate({ adminRemoveShortNoticeCharge: e.target.checked })}
-                  className="h-5 w-5 rounded border-orange-300 text-orange-600 focus:ring-orange-500"
-                />
-              </div>
-              
-              <Button variant="ghost" size="sm" onClick={() => onUpdate({
-          adminHourlyRateOverride: undefined,
-          adminDiscountAmount: undefined,
-          adminDiscountPercentage: undefined,
-          adminTotalCostOverride: undefined,
-          adminRemoveShortNoticeCharge: false
-        })} className="w-full text-xs">
-                Reset All Overrides
-              </Button>
-            </div>}
-        </div>}
+      {(calculations.totalHours ?? 0) > 0 && (
+        <div className="flex items-center gap-3 mb-4 pb-4 border-b border-border">
+          <div className="p-2 bg-primary/10 rounded-xl">
+            <Clock className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <p className="font-medium text-foreground">
+              {calculations.totalHours} hour{calculations.totalHours !== 1 ? 's' : ''}{getServiceDescription() ? ` - ${getServiceDescription()}` : ''}
+            </p>
+            {isAdminMode && (
+              <p className="text-sm text-muted-foreground">
+                £{effectiveHourlyRate.toFixed(2)}/hour
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
-      {/* Total Cost */}
-      {(calculations.totalHours > 0) && <div className="pt-4 mt-4">
-          <div className="bg-primary/5 rounded-lg p-4">
-            <div className="flex justify-between items-center">
-              <span className="text-xl font-semibold text-foreground">Total Cost</span>
-              <span className="text-3xl font-bold text-primary">£{calculateTotal().toFixed(2)}</span>
+      {/* Mobile: Collapsible details */}
+      <div className="lg:hidden">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center justify-between w-full py-2 text-primary"
+        >
+          <span className="font-medium">View Details</span>
+          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </button>
+        {isExpanded && (
+          <div className="pt-2 border-t border-border">
+            {renderSummaryContent()}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop: Always visible */}
+      <div className="hidden lg:block">
+        {(calculations.totalHours && calculations.totalHours > 0) ? renderSummaryContent() : (
+          <div className="text-center py-12 text-muted-foreground">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
+                <Calendar className="w-8 h-8 text-muted-foreground/60" />
+              </div>
+              <p className="text-sm font-medium">Complete the form to see your booking summary</p>
             </div>
           </div>
-        </div>}
+        )}
+      </div>
+
+      {/* Admin pricing controls */}
+      {isAdminMode && isEditingPricing && onUpdate && (
+        <div className="mt-4 pt-4 border-t border-border space-y-3">
+          <div>
+            <Label className="text-sm">Override Hourly Rate (£)</Label>
+            <Input
+              type="number"
+              step="0.5"
+              value={data.adminHourlyRateOverride ?? ''}
+              onChange={(e) => onUpdate({ 
+                adminHourlyRateOverride: e.target.value ? Number(e.target.value) : undefined 
+              })}
+              placeholder={`Default: £${calculations.hourlyRate.toFixed(2)}`}
+            />
+          </div>
+          <div>
+            <Label className="text-sm">Discount (%)</Label>
+            <Input
+              type="number"
+              step="1"
+              min="0"
+              max="100"
+              value={data.adminDiscountPercentage ?? ''}
+              onChange={(e) => onUpdate({ 
+                adminDiscountPercentage: e.target.value ? Number(e.target.value) : undefined 
+              })}
+              placeholder="0"
+            />
+          </div>
+          <div>
+            <Label className="text-sm">Fixed Discount (£)</Label>
+            <Input
+              type="number"
+              step="1"
+              min="0"
+              value={data.adminDiscountAmount ?? ''}
+              onChange={(e) => onUpdate({ 
+                adminDiscountAmount: e.target.value ? Number(e.target.value) : undefined 
+              })}
+              placeholder="0"
+            />
+          </div>
+          {shortNoticeInfo.charge > 0 && (
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="waive-short-notice-airbnb"
+                checked={data.adminRemoveShortNoticeCharge || false}
+                onChange={(e) => onUpdate({ adminRemoveShortNoticeCharge: e.target.checked })}
+                className="rounded border-gray-300"
+              />
+              <Label htmlFor="waive-short-notice-airbnb" className="text-sm cursor-pointer">
+                Waive short notice charge (£{shortNoticeInfo.charge.toFixed(2)})
+              </Label>
+            </div>
+          )}
+          <div>
+            <Label className="text-sm">Override Total Cost (£)</Label>
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              value={data.adminTotalCostOverride ?? ''}
+              onChange={(e) => onUpdate({ 
+                adminTotalCostOverride: e.target.value ? Number(e.target.value) : undefined 
+              })}
+              placeholder="Leave empty for calculated total"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Total Cost */}
+      {(calculations.totalHours > 0) && (
+        <div className="mt-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-2xl font-bold text-foreground">Total</span>
+            <span className="text-2xl font-bold text-primary">
+              £{calculateTotal().toFixed(2)}
+            </span>
+          </div>
+        </div>
+      )}
     </Card>;
 };
 export { BookingSummary };
