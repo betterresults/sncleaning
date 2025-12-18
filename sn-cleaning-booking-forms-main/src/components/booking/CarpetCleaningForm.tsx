@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CarpetCleaningItemsStep } from './steps/CarpetCleaningItemsStep';
-import { CarpetCleaningScheduleStep } from './steps/CarpetCleaningScheduleStep';
+import { ScheduleStep } from './steps/ScheduleStep';
 import { CarpetCleaningSummary } from './CarpetCleaningSummary';
 import { PaymentStep } from './steps/PaymentStep';
-import { Layers, Calendar, CreditCard, ArrowLeft } from 'lucide-react';
+import { Layers, Calendar, CreditCard, ArrowLeft, Mail } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -48,6 +48,8 @@ export interface CarpetCleaningData {
   accessNotes: string;
   
   // Calculations
+  estimatedHours: number | null;
+  hourlyRate: number;
   totalCost: number;
   
   // Admin pricing overrides
@@ -69,9 +71,9 @@ export interface CarpetCleaningData {
 }
 
 const steps = [
-  { id: 1, title: 'Items', key: 'items', icon: <Layers className="w-4 h-4" /> },
-  { id: 2, title: 'Schedule', key: 'schedule', icon: <Calendar className="w-4 h-4" /> },
-  { id: 3, title: 'Summary', key: 'payment', icon: <CreditCard className="w-4 h-4" /> },
+  { id: 1, title: 'Items', key: 'items' },
+  { id: 2, title: 'Schedule', key: 'schedule' },
+  { id: 3, title: 'Summary', key: 'payment' },
 ];
 
 const CarpetCleaningForm: React.FC = () => {
@@ -103,6 +105,8 @@ const CarpetCleaningForm: React.FC = () => {
     city: '',
     propertyAccess: '',
     accessNotes: '',
+    estimatedHours: null,
+    hourlyRate: 0,
     totalCost: 0,
   });
 
@@ -192,17 +196,15 @@ const CarpetCleaningForm: React.FC = () => {
   const nextStep = () => {
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const prevStep = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  };
-
-  const goToStep = (step: number) => {
-    setCurrentStep(step);
   };
 
   const renderStep = () => {
@@ -217,12 +219,11 @@ const CarpetCleaningForm: React.FC = () => {
         );
       case 2:
         return (
-          <CarpetCleaningScheduleStep
-            data={bookingData}
-            onUpdate={updateBookingData}
+          <ScheduleStep
+            data={bookingData as any}
+            onUpdate={updateBookingData as any}
             onNext={nextStep}
             onBack={prevStep}
-            isAdminMode={isAdminMode}
           />
         );
       case 3:
@@ -235,33 +236,16 @@ const CarpetCleaningForm: React.FC = () => {
                 bedrooms: '1',
                 bathrooms: '1',
                 linens: { provided: false, quantity: 0, type: '' },
-                estimatedHours: null,
-                hourlyRate: 0,
                 calculatedCleaningCost: bookingData.totalCost,
                 calculatedLinenCost: 0,
-              }}
-              onUpdate={(updates: any) => {
-                const relevantUpdates: Partial<CarpetCleaningData> = {};
-                if ('firstName' in updates) relevantUpdates.firstName = updates.firstName;
-                if ('lastName' in updates) relevantUpdates.lastName = updates.lastName;
-                if ('email' in updates) relevantUpdates.email = updates.email;
-                if ('phone' in updates) relevantUpdates.phone = updates.phone;
-                if ('houseNumber' in updates) relevantUpdates.houseNumber = updates.houseNumber;
-                if ('street' in updates) relevantUpdates.street = updates.street;
-                if ('postcode' in updates) relevantUpdates.postcode = updates.postcode;
-                if ('city' in updates) relevantUpdates.city = updates.city;
-                if ('propertyAccess' in updates) relevantUpdates.propertyAccess = updates.propertyAccess;
-                if ('accessNotes' in updates) relevantUpdates.accessNotes = updates.accessNotes;
-                updateBookingData(relevantUpdates);
-              }}
+              } as any}
+              onUpdate={updateBookingData as any}
               onBack={prevStep}
               isAdminMode={isAdminMode}
             />
           </Elements>
         ) : (
-          <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
+          <div className="text-center py-8">Loading payment form...</div>
         );
       default:
         return null;
@@ -269,69 +253,119 @@ const CarpetCleaningForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-slate-800 mb-2">
-            Carpet & Upholstery Cleaning
-          </h1>
-          <p className="text-muted-foreground">
-            Professional steam cleaning for carpets, upholstery, and mattresses
-          </p>
-        </div>
-
-        {/* Progress Steps */}
-        <div className="flex items-center justify-center mb-8">
-          <div className="flex items-center gap-2 bg-white rounded-full p-2 shadow-sm border border-border">
-            {steps.map((step, index) => {
-              const isActive = currentStep === step.id;
-              const isCompleted = currentStep > step.id;
-              
-              return (
-                <React.Fragment key={step.id}>
-                  <button
-                    onClick={() => isCompleted && goToStep(step.id)}
-                    disabled={!isCompleted && !isActive}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 ${
-                      isActive
-                        ? 'bg-primary text-primary-foreground'
-                        : isCompleted
-                        ? 'bg-primary/10 text-primary cursor-pointer hover:bg-primary/20'
-                        : 'text-muted-foreground'
-                    }`}
-                  >
-                    {step.icon}
-                    <span className="hidden sm:inline font-medium">{step.title}</span>
-                  </button>
-                  {index < steps.length - 1 && (
-                    <div className={`w-8 h-0.5 ${currentStep > step.id ? 'bg-primary' : 'bg-border'}`} />
-                  )}
-                </React.Fragment>
-              );
-            })}
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <header className="bg-white py-4 mb-3 border-b border-border">
+        <div className="container mx-auto px-2 sm:px-4">
+          <div className="flex items-center justify-between mb-4">
+            {isAdminMode ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate('/admin-add-booking')}
+                  className="text-sm font-medium hover:bg-accent/50 transition-all duration-200 shadow-sm"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Services
+                </Button>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700">
+                  <span className="sm:hidden">Carpet Cleaning</span>
+                  <span className="hidden sm:inline">Carpet Cleaning Booking Form</span>
+                </h1>
+                <div className="w-[140px]" />
+              </>
+            ) : bookingData.customerId ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.href = '/'}
+                  className="text-sm font-medium hover:bg-accent/50 transition-all duration-200 shadow-sm"
+                >
+                  ← Back to Account
+                </Button>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700">
+                  <span className="sm:hidden">Carpet Cleaning</span>
+                  <span className="hidden sm:inline">Carpet Cleaning Booking Form</span>
+                </h1>
+                <div className="w-[140px]" />
+              </>
+            ) : (
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700 mx-auto">
+                <span className="sm:hidden">Carpet Cleaning</span>
+                <span className="hidden sm:inline">Carpet Cleaning Booking Form</span>
+              </h1>
+            )}
+          </div>
+          
+          {/* Step Navigation */}
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-center gap-1 px-2">
+              {steps.map((step, index) => {
+                const stepNumber = index + 1;
+                const isActive = currentStep === stepNumber;
+                const isCompleted = currentStep > stepNumber;
+                
+                return (
+                  <div key={step.id} className="contents">
+                    <button
+                      onClick={() => (isCompleted || stepNumber <= currentStep) && setCurrentStep(stepNumber)}
+                      disabled={!(isCompleted || stepNumber <= currentStep)}
+                      className={`flex flex-col items-center justify-center transition-all duration-300 ${
+                        isActive ? 'flex-1' : 'w-12'
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                        isActive 
+                          ? 'bg-primary text-white scale-110' 
+                          : isCompleted 
+                          ? 'bg-primary text-white' 
+                          : 'bg-gray-200 text-gray-400'
+                      }`}>
+                        {stepNumber}
+                      </div>
+                      {isActive && (
+                        <span className="text-xs sm:text-sm font-medium text-primary mt-1 text-center">
+                          {step.title}
+                        </span>
+                      )}
+                    </button>
+                    
+                    {index < steps.length - 1 && (
+                      <div className={`h-0.5 flex-1 max-w-[20px] sm:max-w-[30px] transition-all ${
+                        currentStep > stepNumber ? 'bg-primary' : 'bg-gray-200'
+                      }`} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
+      </header>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Form */}
+      {/* Main Content */}
+      <main className="container mx-auto px-2 sm:px-4 py-2 max-w-[1400px]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
           <div className="lg:col-span-2">
-            <Card className="p-6 bg-white border border-border">
+            <Card className="p-4 sm:p-6 lg:p-8 bg-white border border-border">
               {renderStep()}
             </Card>
           </div>
-
-          {/* Summary */}
+          
           <div className="lg:col-span-1">
-            <CarpetCleaningSummary
-              data={bookingData}
-              isAdminMode={isAdminMode}
-              onUpdate={updateBookingData}
-            />
+            <div className="lg:sticky lg:top-4">
+              <div className="bg-gradient-to-br from-slate-50 to-white rounded-2xl p-4 border-2 border-slate-200 shadow-lg lg:bg-transparent lg:p-0 lg:border-0 lg:shadow-none lg:rounded-none">
+                <h3 className="text-lg font-bold text-slate-700 mb-3 lg:hidden">Booking Summary</h3>
+                <CarpetCleaningSummary 
+                  data={bookingData} 
+                  isAdminMode={isAdminMode}
+                  onUpdate={updateBookingData}
+                />
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };
