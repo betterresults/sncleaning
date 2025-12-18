@@ -334,9 +334,9 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                 <Button
                   onClick={() => setSelectedOption('quote')}
                   variant="outline"
-                  className="h-auto py-4 px-5 flex items-start gap-4 border-2 hover:border-primary hover:bg-primary/5 transition-all"
+                  className="h-auto py-4 px-5 flex items-start gap-4 border-2 rounded-xl hover:border-primary hover:bg-primary/5 transition-all"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <Mail className="w-5 h-5 text-primary" />
                   </div>
                   <div className="text-left">
@@ -350,9 +350,9 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                 <Button
                   onClick={() => setSelectedOption('complete')}
                   variant="outline"
-                  className="h-auto py-4 px-5 flex items-start gap-4 border-2 hover:border-primary hover:bg-primary/5 transition-all"
+                  className="h-auto py-4 px-5 flex items-start gap-4 border-2 rounded-xl hover:border-primary hover:bg-primary/5 transition-all"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <Link2 className="w-5 h-5 text-primary" />
                   </div>
                   <div className="text-left">
@@ -367,7 +367,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
               <Button
                 onClick={handleClose}
                 variant="ghost"
-                className="w-full text-muted-foreground"
+                className="w-full text-muted-foreground rounded-xl"
               >
                 Cancel
               </Button>
@@ -407,14 +407,14 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                 <Button
                   onClick={() => setSelectedOption(null)}
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 rounded-xl"
                 >
                   Back
                 </Button>
                 <Button
                   onClick={handleSendQuoteEmail}
                   disabled={sendingEmail || !email}
-                  className="flex-1 bg-primary hover:bg-primary/90"
+                  className="flex-1 bg-primary hover:bg-primary/90 rounded-xl"
                 >
                   {sendingEmail ? (
                     <>
@@ -478,7 +478,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                   onClick={handleSendCompleteBookingEmail}
                   disabled={sendingEmail || !email}
                   variant="outline"
-                  className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                  className="border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-xl"
                 >
                   {sendingEmail ? (
                     <>
@@ -496,7 +496,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                   onClick={handleSendCompleteBookingSMS}
                   disabled={sendingSMS || !phone}
                   variant="outline"
-                  className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                  className="border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-xl"
                 >
                   {sendingSMS ? (
                     <>
@@ -515,7 +515,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
               <Button
                 onClick={() => setSelectedOption(null)}
                 variant="ghost"
-                className="w-full text-muted-foreground"
+                className="w-full text-muted-foreground rounded-xl"
               >
                 Back
               </Button>
