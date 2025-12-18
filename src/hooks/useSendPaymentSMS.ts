@@ -7,6 +7,9 @@ export interface SendPaymentSMSOptions {
   phoneNumber: string;
   customerName: string;
   amount: number;
+  bookingDate?: string;
+  bookingTime?: string;
+  totalHours?: number;
 }
 
 export function useSendPaymentSMS() {
@@ -22,6 +25,9 @@ export function useSendPaymentSMS() {
           phoneNumber: options.phoneNumber,
           customerName: options.customerName,
           amount: options.amount,
+          bookingDate: options.bookingDate,
+          bookingTime: options.bookingTime,
+          totalHours: options.totalHours,
         }
       });
 

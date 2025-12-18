@@ -13,6 +13,9 @@ interface SendSMSRequest {
   amount: number;
   paymentLink?: string;
   messageType?: 'invoice' | 'payment_method_collection';
+  bookingDate?: string;
+  bookingTime?: string;
+  totalHours?: number;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -21,7 +24,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { bookingId, phoneNumber, customerName, amount, paymentLink, messageType = 'invoice' }: SendSMSRequest = await req.json();
+    const { bookingId, phoneNumber, customerName, amount, paymentLink, messageType = 'invoice', bookingDate, bookingTime, totalHours }: SendSMSRequest = await req.json();
 
     console.log(`Sending ${messageType} SMS for booking ${bookingId} to ${phoneNumber}`);
 
@@ -65,8 +68,15 @@ const handler = async (req: Request): Promise<Response> => {
     // Create message based on type
     let message: string;
     
+    // Build booking details string if available
+    const bookingDetails = [];
+    if (bookingDate) bookingDetails.push(`Date: ${bookingDate}`);
+    if (bookingTime) bookingDetails.push(`Time: ${bookingTime}`);
+    if (totalHours) bookingDetails.push(`Hours: ${totalHours}`);
+    const bookingInfo = bookingDetails.length > 0 ? `\n\nBooking details:\n${bookingDetails.join('\n')}\nCost: £${amount.toFixed(2)}` : '';
+    
     if (messageType === 'payment_method_collection') {
-      message = `Hi ${customerName}, thank you for booking with SN Cleaning Services. We don't have a payment card on file for your account. Please add one so we can authorize £${amount.toFixed(2)} 48 hours before your cleaning: ${finalPaymentLink}\n\nThank you,\nSN Cleaning Team`;
+      message = `Hi ${customerName}, thank you for booking with SN Cleaning Services. We don't have a payment card on file for your account. Please add one so we can authorize £${amount.toFixed(2)} 48 hours before your cleaning: ${finalPaymentLink}${bookingInfo}\n\nThank you,\nSN Cleaning Team`;
     } else {
       message = finalPaymentLink
         ? `Hi ${customerName}, invoice for £${amount.toFixed(2)} has been sent by email from SN Cleaning Services. If you don't see it, please check the spam folder. You can also pay here: ${finalPaymentLink}\n\nThank you,\nSN Cleaning Team`
