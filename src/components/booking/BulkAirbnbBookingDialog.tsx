@@ -79,6 +79,12 @@ const BulkAirbnbBookingDialog: React.FC<BulkAirbnbBookingDialogProps> = ({
   };
 
   const handleSubmit = async () => {
+    // Prevent double submissions
+    if (loading) {
+      console.log('BulkAirbnbBookingDialog: Submission already in progress, ignoring');
+      return;
+    }
+    
     if (!customerId || !address || !postcode || bookingDates.length === 0) {
       toast({
         title: "Validation Error",
