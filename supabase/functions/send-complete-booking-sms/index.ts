@@ -33,13 +33,22 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Format phone number for Twilio
     let formattedPhone = phoneNumber.replace(/\s+/g, '').replace(/[^0-9+]/g, '');
-    if (!formattedPhone.startsWith('+')) {
-      if (formattedPhone.startsWith('0')) {
-        formattedPhone = '+44' + formattedPhone.substring(1);
-      } else {
-        formattedPhone = '+44' + formattedPhone;
-      }
+    
+    // Handle various phone number formats
+    if (formattedPhone.startsWith('+44')) {
+      // Already has UK country code - keep as is
+    } else if (formattedPhone.startsWith('44') && !formattedPhone.startsWith('+')) {
+      // Has 44 without + prefix
+      formattedPhone = '+' + formattedPhone;
+    } else if (formattedPhone.startsWith('0')) {
+      // UK local format starting with 0
+      formattedPhone = '+44' + formattedPhone.substring(1);
+    } else if (!formattedPhone.startsWith('+')) {
+      // Just digits, assume UK
+      formattedPhone = '+44' + formattedPhone;
     }
+    
+    console.log('Formatted phone number:', formattedPhone);
 
     const twilioAccountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
     const twilioAuthToken = Deno.env.get("TWILIO_AUTH_TOKEN");
