@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, XCircle, MapPin, Loader2, Home, Sparkles, Key, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import CoverageMap from '@/components/CoverageMap';
 
 interface CoverageResult {
   covered: boolean;
@@ -23,6 +24,23 @@ const CheckCoverage = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CoverageResult | null>(null);
   const [searched, setSearched] = useState(false);
+  const [mapboxToken, setMapboxToken] = useState<string>('');
+
+  // Fetch Mapbox token on mount
+  useEffect(() => {
+    const fetchMapboxToken = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+        if (error) throw error;
+        if (data?.token) {
+          setMapboxToken(data.token);
+        }
+      } catch (error) {
+        console.error('Error fetching Mapbox token:', error);
+      }
+    };
+    fetchMapboxToken();
+  }, []);
 
   const extractPrefix = (postcode: string): string => {
     const clean = postcode.replace(/\s/g, '').toUpperCase();
@@ -272,6 +290,24 @@ const CheckCoverage = () => {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+        </div>
+
+        {/* Coverage Map - wider container */}
+        <div className="max-w-4xl mx-auto mt-8">
+          <h2 className="text-xl font-bold text-slate-700 mb-4 text-center">Our Coverage Areas</h2>
+          {mapboxToken ? (
+            <CoverageMap 
+              mapboxToken={mapboxToken} 
+              highlightedBorough={result?.region}
+            />
+          ) : (
+            <div className="w-full h-[400px] bg-muted rounded-2xl flex items-center justify-center shadow-[0_10px_28px_rgba(0,0,0,0.18)]">
+              <div className="text-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
+                <p className="text-muted-foreground text-sm">Loading map...</p>
+              </div>
             </div>
           )}
         </div>
