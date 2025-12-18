@@ -175,7 +175,38 @@ const DomesticBookingForm: React.FC = () => {
   const calculatedTotal = useMemo(() => {
     // Use admin override if set
     if (bookingData.adminTotalCostOverride !== undefined && bookingData.adminTotalCostOverride !== null && bookingData.adminTotalCostOverride > 0) {
-      return bookingData.adminTotalCostOverride;
+      let total = bookingData.adminTotalCostOverride;
+      if (isAdminMode && bookingData.adminRemoveShortNoticeCharge) {
+        total -= calculations.shortNoticeCharge || 0;
+      }
+      if (bookingData.isFirstTimeCustomer) {
+        total = total * 0.90;
+      }
+      if (isAdminMode && bookingData.adminDiscountPercentage) {
+        total -= total * bookingData.adminDiscountPercentage / 100;
+      }
+      if (isAdminMode && bookingData.adminDiscountAmount) {
+        total -= bookingData.adminDiscountAmount;
+      }
+      return Math.max(0, total);
+    }
+    
+    // If first deep clean is selected, use the first deep clean cost
+    if (calculations.wantsFirstDeepClean) {
+      let total = calculations.firstDeepCleanCost;
+      if (isAdminMode && bookingData.adminRemoveShortNoticeCharge) {
+        total -= calculations.shortNoticeCharge || 0;
+      }
+      if (bookingData.isFirstTimeCustomer) {
+        total = total * 0.90;
+      }
+      if (isAdminMode && bookingData.adminDiscountPercentage) {
+        total -= total * bookingData.adminDiscountPercentage / 100;
+      }
+      if (isAdminMode && bookingData.adminDiscountAmount) {
+        total -= bookingData.adminDiscountAmount;
+      }
+      return Math.max(0, total);
     }
     
     const effectiveRate = bookingData.adminHourlyRateOverride !== undefined ? bookingData.adminHourlyRateOverride : calculations.hourlyRate;
@@ -204,6 +235,14 @@ const DomesticBookingForm: React.FC = () => {
     
     return Math.max(0, total);
   }, [bookingData, calculations, isAdminMode]);
+  
+  // Calculate the hours to display (first deep clean hours if applicable)
+  const displayHours = useMemo(() => {
+    if (calculations.wantsFirstDeepClean) {
+      return calculations.firstDeepCleanHours || calculations.totalHours;
+    }
+    return calculations.totalHours;
+  }, [calculations]);
 
   // Resume from saved quote lead OR prefill from URL parameters
   useEffect(() => {
@@ -727,10 +766,8 @@ const DomesticBookingForm: React.FC = () => {
           email={bookingData.email || bookingData.selectedCustomer?.email || ''}
           phone={bookingData.phone || bookingData.selectedCustomer?.phone || ''}
           quoteData={{
-            totalCost: bookingData.totalCost || calculatedTotal,
-            estimatedHours: bookingData.wantsFirstDeepClean
-              ? (calculations.firstDeepCleanHours || bookingData.estimatedHours || calculations.totalHours)
-              : (bookingData.estimatedHours || calculations.totalHours),
+            totalCost: calculatedTotal,
+            estimatedHours: displayHours,
             propertyType: bookingData.propertyType,
             bedrooms: bookingData.bedrooms,
             bathrooms: bookingData.bathrooms,
