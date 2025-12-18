@@ -342,15 +342,15 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                 <Button
                   onClick={() => setSelectedOption('complete')}
                   variant="outline"
-                  className="h-auto py-4 px-5 flex items-start gap-4 border-2 rounded-xl hover:border-primary hover:bg-primary/5 transition-all"
+                  className="h-auto py-4 px-5 flex items-start gap-4 border-2 rounded-xl hover:border-primary hover:bg-primary/5 transition-all overflow-hidden"
                 >
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <Link2 className="w-5 h-5 text-primary" />
                   </div>
-                  <div className="text-left">
+                  <div className="text-left min-w-0 flex-1">
                     <p className="font-semibold text-foreground">Send to Complete Booking</p>
-                    <p className="text-sm text-muted-foreground font-normal">
-                      Send a link with all details pre-filled so they can complete the booking
+                    <p className="text-sm text-muted-foreground font-normal break-words">
+                      Send a link with details pre-filled to complete booking
                     </p>
                   </div>
                 </Button>
