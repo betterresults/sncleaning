@@ -1,18 +1,51 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format } from 'date-fns';
-import { RefreshCw, Eye, MousePointerClick, FileText, TrendingUp, Trash2, Sparkles, Mail, Settings2, Users, CheckCircle2, Clock, ArrowUpRight, Home, Building } from 'lucide-react';
+import { format, subDays, startOfDay, endOfDay, subWeeks, subMonths, isWithinInterval } from 'date-fns';
+import { RefreshCw, Eye, MousePointerClick, FileText, TrendingUp, Trash2, Sparkles, Mail, Settings2, Users, CheckCircle2, Clock, ArrowUpRight, Home, Building, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
+type TimePeriod = 'today' | 'yesterday' | 'last_week' | 'last_month' | 'last_3_months' | 'all';
+
+const TIME_PERIODS: { value: TimePeriod; label: string }[] = [
+  { value: 'today', label: 'Today' },
+  { value: 'yesterday', label: 'Yesterday' },
+  { value: 'last_week', label: 'Last 7 days' },
+  { value: 'last_month', label: 'Last 30 days' },
+  { value: 'last_3_months', label: 'Last 3 months' },
+  { value: 'all', label: 'All time' },
+];
+
+const getDateRange = (period: TimePeriod): { start: Date; end: Date } | null => {
+  const now = new Date();
+  switch (period) {
+    case 'today':
+      return { start: startOfDay(now), end: endOfDay(now) };
+    case 'yesterday':
+      const yesterday = subDays(now, 1);
+      return { start: startOfDay(yesterday), end: endOfDay(yesterday) };
+    case 'last_week':
+      return { start: startOfDay(subWeeks(now, 1)), end: endOfDay(now) };
+    case 'last_month':
+      return { start: startOfDay(subMonths(now, 1)), end: endOfDay(now) };
+    case 'last_3_months':
+      return { start: startOfDay(subMonths(now, 3)), end: endOfDay(now) };
+    case 'all':
+    default:
+      return null;
+  }
+};
+
+const ITEMS_PER_PAGE = 15;
 
 type ColumnKey = 'date' | 'service' | 'contact' | 'property' | 'quote' | 'progress' | 'status' | 'source' | 'frequency' | 'cleaningType' | 'extras' | 'createdBy';
 
@@ -136,6 +169,9 @@ const QuoteLeadsView = () => {
     return DEFAULT_VISIBLE_COLUMNS;
   });
 
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+
   const toggleColumn = (column: ColumnKey) => {
     setVisibleColumns(prev => {
       const newColumns = prev.includes(column) 
@@ -207,26 +243,25 @@ const QuoteLeadsView = () => {
     fetchData();
   }, [statusFilter, serviceFilter]);
 
-  // Calculate funnel stats
-  const pageViews = events.filter(e => e.event_type === 'page_view').length;
-  const serviceClicks = events.filter(e => e.event_type === 'service_click').length;
-  const formStarts = events.filter(e => e.event_type === 'form_started').length;
-  const quoteViews = leads.filter(l => l.furthest_step === 'quote_viewed' || l.status === 'completed').length;
-  const completions = leads.filter(l => l.status === 'completed').length;
-  const liveLeads = leads.filter(l => l.status === 'live' && !isLeadIdle(l)).length;
+  const getServiceIcon = (serviceId: string) => {
+    if (serviceId.includes('airbnb') || serviceId.includes('air-bnb')) {
+      return <Building className="h-4 w-4" />;
+    }
+    if (serviceId.includes('domestic')) {
+      return <Home className="h-4 w-4" />;
+    }
+    return <FileText className="h-4 w-4" />;
+  };
 
-  // Calculate conversion rates
-  const clickRate = pageViews > 0 ? ((serviceClicks / pageViews) * 100).toFixed(1) : '0';
-  const completionRate = leads.length > 0 ? ((completions / leads.length) * 100).toFixed(1) : '0';
-
-  // Get service click breakdown
-  const serviceBreakdown = events
-    .filter(e => e.event_type === 'service_click')
-    .reduce((acc, e) => {
-      const service = (e.event_data?.service_id as string) || 'unknown';
-      acc[service] = (acc[service] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+  const getServiceColor = (serviceId: string) => {
+    if (serviceId.includes('airbnb') || serviceId.includes('air-bnb')) {
+      return 'bg-rose-50 text-rose-700 border-rose-200';
+    }
+    if (serviceId.includes('domestic')) {
+      return 'bg-sky-50 text-sky-700 border-sky-200';
+    }
+    return 'bg-gray-50 text-gray-700 border-gray-200';
+  };
 
   const handleSelectLead = (leadId: string, checked: boolean) => {
     setSelectedLeads(prev => {
@@ -295,7 +330,21 @@ const QuoteLeadsView = () => {
     }
   };
 
-  const filteredLeads = leads.filter(lead => {
+  // Filter by time period
+  const filterByTimePeriod = <T extends { created_at: string | null }>(items: T[]): T[] => {
+    const range = getDateRange(timePeriod);
+    if (!range) return items;
+    return items.filter(item => {
+      if (!item.created_at) return false;
+      const date = new Date(item.created_at);
+      return isWithinInterval(date, { start: range.start, end: range.end });
+    });
+  };
+
+  const timeFilteredLeads = filterByTimePeriod(leads);
+  const timeFilteredEvents = filterByTimePeriod(events);
+
+  const filteredLeads = timeFilteredLeads.filter(lead => {
     if (statusFilter === 'email_sent') {
       if (!lead.quote_email_sent) return false;
     } else if (statusFilter === 'idle') {
@@ -309,25 +358,38 @@ const QuoteLeadsView = () => {
     return true;
   });
 
-  const getServiceIcon = (serviceId: string) => {
-    if (serviceId.includes('airbnb') || serviceId.includes('air-bnb')) {
-      return <Building className="h-4 w-4" />;
-    }
-    if (serviceId.includes('domestic')) {
-      return <Home className="h-4 w-4" />;
-    }
-    return <FileText className="h-4 w-4" />;
-  };
+  // Pagination
+  const totalPages = Math.ceil(filteredLeads.length / ITEMS_PER_PAGE);
+  const paginatedLeads = filteredLeads.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
-  const getServiceColor = (serviceId: string) => {
-    if (serviceId.includes('airbnb') || serviceId.includes('air-bnb')) {
-      return 'bg-rose-50 text-rose-700 border-rose-200';
-    }
-    if (serviceId.includes('domestic')) {
-      return 'bg-sky-50 text-sky-700 border-sky-200';
-    }
-    return 'bg-gray-50 text-gray-700 border-gray-200';
-  };
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, serviceFilter, timePeriod]);
+
+  // Calculate funnel stats from time-filtered data
+  const pageViews = timeFilteredEvents.filter(e => e.event_type === 'page_view').length;
+  const serviceClicks = timeFilteredEvents.filter(e => e.event_type === 'service_click').length;
+  const formStarts = timeFilteredEvents.filter(e => e.event_type === 'form_started').length;
+  const quoteViews = timeFilteredLeads.filter(l => l.furthest_step === 'quote_viewed' || l.status === 'completed').length;
+  const completions = timeFilteredLeads.filter(l => l.status === 'completed').length;
+  const liveLeads = timeFilteredLeads.filter(l => l.status === 'live' && !isLeadIdle(l)).length;
+
+  // Calculate conversion rates
+  const clickRate = pageViews > 0 ? ((serviceClicks / pageViews) * 100).toFixed(1) : '0';
+  const completionRate = timeFilteredLeads.length > 0 ? ((completions / timeFilteredLeads.length) * 100).toFixed(1) : '0';
+
+  // Get service click breakdown
+  const serviceBreakdown = timeFilteredEvents
+    .filter(e => e.event_type === 'service_click')
+    .reduce((acc, e) => {
+      const service = (e.event_data?.service_id as string) || 'unknown';
+      acc[service] = (acc[service] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
 
   if (loading) {
     return (
@@ -347,9 +409,21 @@ const QuoteLeadsView = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
+        <div className="flex items-center gap-3">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Quote Leads</h1>
-          <p className="text-gray-500 mt-1 text-sm sm:text-base">Monitor visitor activity and conversion funnel</p>
+          <Select value={timePeriod} onValueChange={(value) => setTimePeriod(value as TimePeriod)}>
+            <SelectTrigger className="w-[150px] bg-white rounded-xl border-gray-200">
+              <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-white">
+              {TIME_PERIODS.map(period => (
+                <SelectItem key={period.value} value={period.value}>
+                  {period.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <Button 
           variant="outline" 
@@ -641,7 +715,7 @@ const QuoteLeadsView = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredLeads.length === 0 ? (
+                    {paginatedLeads.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={visibleColumns.length + 1} className="text-center py-12 text-gray-400">
                           <div className="flex flex-col items-center gap-2">
@@ -651,7 +725,7 @@ const QuoteLeadsView = () => {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredLeads.map((lead) => (
+                      paginatedLeads.map((lead) => (
                         <TableRow key={lead.id} className="hover:bg-gray-50/50">
                           <TableCell>
                             <Checkbox 
@@ -834,6 +908,62 @@ const QuoteLeadsView = () => {
                   </TableBody>
                 </Table>
               </div>
+              
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50/30">
+                  <p className="text-sm text-gray-500">
+                    Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, filteredLeads.length)} of {filteredLeads.length} leads
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="rounded-lg"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum: number;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={currentPage === pageNum ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`w-9 h-9 rounded-lg ${currentPage === pageNum ? 'bg-primary text-primary-foreground' : ''}`}
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="rounded-lg"
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -853,7 +983,7 @@ const QuoteLeadsView = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {events.slice(0, 50).map((event) => (
+                    {timeFilteredEvents.slice(0, 50).map((event) => (
                       <TableRow key={event.id} className="hover:bg-gray-50/50">
                         <TableCell className="text-sm">
                           <div>
