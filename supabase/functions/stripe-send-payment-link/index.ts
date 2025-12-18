@@ -45,26 +45,18 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Sending payment link for:', { customer_id, email, amount, description });
 
-    // Check if Stripe customer exists
-    let stripeCustomer;
+    // Check if Stripe customer already exists (for reference, but don't create yet)
+    let existingStripeCustomerId: string | undefined;
     const existingCustomers = await stripe.customers.list({
       email: email,
       limit: 1
     });
 
     if (existingCustomers.data.length > 0) {
-      stripeCustomer = existingCustomers.data[0];
-      console.log('Found existing Stripe customer:', stripeCustomer.id);
+      existingStripeCustomerId = existingCustomers.data[0].id;
+      console.log('Found existing Stripe customer:', existingStripeCustomerId);
     } else {
-      // Create new Stripe customer
-      stripeCustomer = await stripe.customers.create({
-        email: email,
-        name: name,
-        metadata: {
-          customer_id: customer_id.toString()
-        }
-      });
-      console.log('Created new Stripe customer:', stripeCustomer.id);
+      console.log('No existing Stripe customer - will be created when customer starts checkout');
     }
 
     const successUrl = `${req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/') || 'https://dkomihipebixlegygnoy.supabase.co'}/auth?payment_success=true`;
@@ -73,8 +65,8 @@ const handler = async (req: Request): Promise<Response> => {
     // If collect_payment_method is true, use Checkout Session (supports saving card)
     // Otherwise use Payment Link (simpler, doesn't save card)
     if (collect_payment_method) {
-      const session = await stripe.checkout.sessions.create({
-        customer: stripeCustomer.id,
+      // Use existing customer if found, otherwise let Stripe create one during checkout
+      const sessionConfig: any = {
         mode: 'payment',
         line_items: [
           {
@@ -105,9 +97,21 @@ const handler = async (req: Request): Promise<Response> => {
         metadata: {
           customer_id: customer_id.toString(),
           booking_id: booking_id?.toString() || '',
-          collect_payment_method: 'true'
+          collect_payment_method: 'true',
+          customer_email: email,
+          customer_name: name
         }
-      });
+      };
+
+      // Only attach existing customer, otherwise let Stripe create during checkout
+      if (existingStripeCustomerId) {
+        sessionConfig.customer = existingStripeCustomerId;
+      } else {
+        sessionConfig.customer_creation = 'always';
+        sessionConfig.customer_email = email;
+      }
+
+      const session = await stripe.checkout.sessions.create(sessionConfig);
 
       console.log('Created checkout session with card saving:', session.id);
 
@@ -130,7 +134,7 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(JSON.stringify({
         success: true,
         payment_link_url: session.url,
-        stripe_customer_id: stripeCustomer.id,
+        stripe_customer_id: existingStripeCustomerId || null, // Will be set by webhook if newly created
         session_id: session.id
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -184,7 +188,7 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(JSON.stringify({
         success: true,
         payment_link_url: paymentLink.url,
-        stripe_customer_id: stripeCustomer.id,
+        stripe_customer_id: existingStripeCustomerId || null, // Will be set when customer completes payment
         payment_link_id: paymentLink.id
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
