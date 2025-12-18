@@ -228,20 +228,21 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
       let smsSent = false;
       const errors: string[] = [];
 
-      // Send email if we have one
+      // Send email if we have one - use the template-based notification system
       if (hasEmail) {
         try {
-          const { data, error } = await supabase.functions.invoke('send-complete-booking-email', {
+          const { data, error } = await supabase.functions.invoke('send-notification-email', {
             body: {
-              email,
-              customerName: customerName || 'Valued Customer',
-              completeBookingUrl: completeUrl,
-              quoteData: {
-                totalCost: quoteData.totalCost,
-                estimatedHours: quoteData.estimatedHours,
-                serviceType,
+              template: 'complete_booking_link',
+              recipient_email: email,
+              variables: {
+                customer_name: customerName || 'Valued Customer',
+                service_type: serviceType === 'Domestic' ? 'domestic' : serviceType === 'Airbnb' ? 'Airbnb' : 'cleaning',
+                total_cost: quoteData.totalCost.toFixed(2),
+                estimated_hours: quoteData.estimatedHours ? String(quoteData.estimatedHours) : '',
+                postcode: quoteData.postcode || '',
+                booking_url: completeUrl,
               },
-              sessionId,
             },
           });
 
