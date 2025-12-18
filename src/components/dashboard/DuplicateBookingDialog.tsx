@@ -160,6 +160,12 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
   ];
 
   const handleDuplicate = async () => {
+    // Prevent double submissions
+    if (isLoading) {
+      console.log('DuplicateBookingDialog: Submission already in progress, ignoring');
+      return;
+    }
+    
     if (!booking || !selectedDate || !selectedHour || !selectedMinute) {
       return;
     }

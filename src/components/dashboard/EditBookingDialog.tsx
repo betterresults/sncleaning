@@ -194,6 +194,13 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent double submissions
+    if (loading) {
+      console.log('EditBookingDialog: Submission already in progress, ignoring');
+      return;
+    }
+    
     setLoading(true);
 
     try {

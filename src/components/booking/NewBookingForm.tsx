@@ -637,6 +637,13 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent double submissions - guard against rapid clicks before loading state updates
+    if (loading) {
+      console.log('NewBookingForm: Submission already in progress, ignoring');
+      return;
+    }
+    
     setLoading(true);
 
     try {
