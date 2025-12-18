@@ -345,6 +345,13 @@ export default function AddRecurringBooking() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent double submissions
+    if (loading) {
+      console.log('AddRecurringBooking: Submission already in progress, ignoring');
+      return;
+    }
+    
     setLoading(true);
 
     try {
