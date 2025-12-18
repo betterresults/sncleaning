@@ -109,16 +109,18 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
     }
   };
 
-  // Convert datetime-local input to proper ISO string for database
+  // Convert datetime-local input to London time string for database (no timezone conversion)
   const convertToISOString = (dateTimeLocal: string) => {
     if (!dateTimeLocal) return '';
     try {
-      // Create date object from local datetime input
-      const date = new Date(dateTimeLocal);
-      if (isNaN(date.getTime())) return '';
+      // datetime-local format is "YYYY-MM-DDTHH:mm"
+      // We want to keep this as London time, so just append the timezone offset
+      const match = dateTimeLocal.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/);
+      if (!match) return '';
       
-      // Return as ISO string which will be stored correctly in the database
-      return date.toISOString();
+      const [, date, time] = match;
+      // Return as London time string with +00:00 offset
+      return `${date}T${time}:00+00:00`;
     } catch (error) {
       console.error('Error converting datetime:', error);
       return '';

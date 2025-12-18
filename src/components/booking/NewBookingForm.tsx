@@ -657,24 +657,21 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
         return;
       }
 
-      // Combine date and time properly
+      // Combine date and time properly - ALWAYS treat as London time regardless of user's timezone
       const time24h = convertTo24Hour(formData.selectedTime);
       const [hours, minutes] = time24h.split(':');
       
-      // Create the datetime in local timezone - no manual offset manipulation needed
-      // The browser will handle the timezone conversion when sending to the database
-      const dateTime = new Date(formData.selectedDate);
-      dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-      
-      const localDateTime = dateTime;
-      
-      // Format date_only using local date to avoid timezone shift issues
-      // toISOString() converts to UTC which can shift the date by 1 day
+      // Extract date components directly from the selected date
+      // Use local getters since the calendar sets the date in local timezone
       const year = formData.selectedDate.getFullYear();
       const month = String(formData.selectedDate.getMonth() + 1).padStart(2, '0');
       const day = String(formData.selectedDate.getDate()).padStart(2, '0');
       const dateOnly = `${year}-${month}-${day}`;
       const timeOnly = `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
+      
+      // Build the datetime string directly as London time (UTC+0)
+      // This ensures the booking time is always correct regardless of user's location
+      const dateTimeStr = `${dateOnly}T${timeOnly}+00:00`;
 
       // Determine form_name based on service type and sub type
       let formName = '';
@@ -770,7 +767,7 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
         last_name: formData.lastName,
         email: formData.email,
         phone_number: formData.phoneNumber,
-        date_time: localDateTime.toISOString(),
+        date_time: dateTimeStr,
         date_only: dateOnly,
         time_only: timeOnly,
         address: formData.address,

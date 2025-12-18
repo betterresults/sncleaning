@@ -219,9 +219,12 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
       const dateOnly = `${year}-${month}-${day}`;
       const timeOnly = `${hour24.toString().padStart(2, '0')}:${selectedMinute}:00`;
       
+      // Build datetime string as London time
+      const dateTimeStr = `${dateOnly}T${timeOnly}+00:00`;
+      
       const duplicateData = {
         ...bookingData,
-        date_time: newDateTime.toISOString(),
+        date_time: dateTimeStr,
         date_only: dateOnly,
         time_only: timeOnly,
         // Use editable values

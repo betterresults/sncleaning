@@ -104,15 +104,21 @@ const EditPastBookingDialog: React.FC<EditPastBookingDialogProps> = ({
 
     setLoading(true);
     try {
-      // Combine date and time
+      // Build datetime string as London time - no timezone conversion
       const [hours, minutes] = selectedTime.split(':').map(Number);
-      const newDateTime = new Date(selectedDate);
-      newDateTime.setHours(hours, minutes, 0, 0);
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const dateOnly = `${year}-${month}-${day}`;
+      const timeOnly = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+      const dateTimeStr = `${dateOnly}T${timeOnly}+00:00`;
 
       const { error } = await supabase
         .from('past_bookings')
         .update({
-          date_time: newDateTime.toISOString(),
+          date_time: dateTimeStr,
+          date_only: dateOnly,
+          time_only: timeOnly,
           ...formData
         })
         .eq('id', booking.id);

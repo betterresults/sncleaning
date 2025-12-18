@@ -126,15 +126,21 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
 
     setLoading(true);
     try {
-      // Combine date and time
-      const newDateTime = new Date(selectedDate);
-      newDateTime.setHours(parseInt(selectedHour), parseInt(selectedMinute), 0, 0);
+      // Build datetime string as London time - no timezone conversion
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const dateOnly = `${year}-${month}-${day}`;
+      const timeOnly = `${selectedHour.padStart(2, '0')}:${selectedMinute}:00`;
+      const dateTimeStr = `${dateOnly}T${timeOnly}+00:00`;
 
       const { error } = await supabase
         .from('bookings')
         .insert({
           customer: activeCustomerId,
-          date_time: newDateTime.toISOString(),
+          date_time: dateTimeStr,
+          date_only: dateOnly,
+          time_only: timeOnly,
           address: booking.address,
           postcode: booking.postcode,
           service_type: booking.cleaning_type || booking.service_type,
