@@ -68,6 +68,7 @@ import CustomerWelcome from "./pages/CustomerWelcome";
 import AdminQuoteLeads from "./pages/AdminQuoteLeads";
 import AdminCoverageManagement from "./pages/AdminCoverageManagement";
 import CheckCoverage from "./pages/CheckCoverage";
+import ShortLinkResolver from "./pages/ShortLinkResolver";
 import NotFound from "./pages/NotFound";
 import { AdminCustomerProvider } from "./contexts/AdminCustomerContext";
 import { AdminCleanerProvider } from "./contexts/AdminCleanerContext";
@@ -122,7 +123,10 @@ const App = () => (
             <Route path="/services" element={<ChooseService />} />
             <Route path="/airbnb" element={<AirbnbBooking />} />
             <Route path="/domestic" element={<DomesticBooking />} />
+            <Route path="/domestic-cleaning" element={<DomesticBooking />} />
             <Route path="/domestic-booking" element={<DomesticBooking />} />
+            <Route path="/airbnb-cleaning" element={<AirbnbBooking />} />
+            <Route path="/b/:shortCode" element={<ShortLinkResolver />} />
             <Route path="/linen-order" element={<LinenOrder />} />
             <Route path="/booking-confirmation" element={<BookingConfirmation />} />
             <Route path="/apply" element={<ApplyToWork />} />

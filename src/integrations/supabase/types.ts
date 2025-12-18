@@ -2068,6 +2068,7 @@ export type Database = {
         Row: {
           additional_rooms: Json | null
           address: string | null
+          agent_user_id: string | null
           bathrooms: number | null
           bedrooms: number | null
           calculated_quote: number | null
@@ -2106,6 +2107,7 @@ export type Database = {
           selected_time: string | null
           service_type: string | null
           session_id: string
+          short_code: string | null
           short_notice_charge: number | null
           source: string | null
           status: string | null
@@ -2123,6 +2125,7 @@ export type Database = {
         Insert: {
           additional_rooms?: Json | null
           address?: string | null
+          agent_user_id?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
           calculated_quote?: number | null
@@ -2161,6 +2164,7 @@ export type Database = {
           selected_time?: string | null
           service_type?: string | null
           session_id: string
+          short_code?: string | null
           short_notice_charge?: number | null
           source?: string | null
           status?: string | null
@@ -2178,6 +2182,7 @@ export type Database = {
         Update: {
           additional_rooms?: Json | null
           address?: string | null
+          agent_user_id?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
           calculated_quote?: number | null
@@ -2216,6 +2221,7 @@ export type Database = {
           selected_time?: string | null
           service_type?: string | null
           session_id?: string
+          short_code?: string | null
           short_notice_charge?: number | null
           source?: string | null
           status?: string | null

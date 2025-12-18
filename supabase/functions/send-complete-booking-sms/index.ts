@@ -25,8 +25,9 @@ const handler = async (req: Request): Promise<Response> => {
     const { phoneNumber, customerName, completeBookingUrl, totalCost, estimatedHours, serviceType, sessionId }: CompleteBookingSMSRequest = await req.json();
 
     console.log('Sending complete booking SMS to:', phoneNumber);
+    console.log('Customer name:', customerName);
     console.log('Total cost:', totalCost, 'Estimated hours:', estimatedHours);
-    console.log('Original URL:', completeBookingUrl);
+    console.log('Booking URL:', completeBookingUrl);
 
     // Format phone number for Twilio
     let formattedPhone = phoneNumber.replace(/\s+/g, '').replace(/[^0-9+]/g, '');
@@ -46,19 +47,30 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Twilio credentials not configured");
     }
 
-    // Use the URL as-is (should already be production URL from frontend)
-    const finalUrl = completeBookingUrl;
-    console.log('Final URL:', finalUrl);
-
-    // Build message - only include name if we have a real one
-    const hasRealName = customerName && customerName.trim() && customerName.trim().toLowerCase() !== 'customer';
-    const greeting = hasRealName ? `Hi ${customerName.split(' ')[0]}! ` : '';
-    const serviceLabel = serviceType || 'cleaning';
-    const costText = totalCost && totalCost > 0 ? ` £${totalCost.toFixed(2)}` : '';
+    // Build personalized message
+    // Check if we have a real customer name (not empty, not just whitespace, not generic)
+    const hasRealName = customerName && 
+      customerName.trim() && 
+      customerName.trim().toLowerCase() !== 'customer' &&
+      customerName.trim().toLowerCase() !== 'valued customer';
     
-    const message = `${greeting}Your ${serviceLabel} booking${costText} is ready. Complete it here: ${finalUrl}`;
+    // Get first name only for greeting
+    const firstName = hasRealName ? customerName.split(' ')[0] : '';
+    const greeting = firstName ? `Hi ${firstName}! ` : '';
+    
+    // Format service type for display
+    const serviceLabel = serviceType === 'Domestic' ? 'cleaning' : 
+                        serviceType === 'Airbnb' ? 'Airbnb cleaning' : 
+                        serviceType || 'cleaning';
+    
+    // Format cost with pound sign
+    const costText = totalCost && totalCost > 0 ? ` (£${totalCost.toFixed(2)})` : '';
+    
+    // Build the message - short URL keeps it under SMS limit
+    const message = `${greeting}Your ${serviceLabel} quote${costText} is ready! Complete your booking here: ${completeBookingUrl}`;
 
     console.log('SMS Message:', message);
+    console.log('Message length:', message.length);
 
     const response = await fetch(
       `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`,
