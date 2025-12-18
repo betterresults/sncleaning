@@ -1,4 +1,4 @@
-import { Briefcase, Calendar, History, DollarSign, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Calculator, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package, TrendingUp, Activity, Bell, CheckSquare, TestTube, Shirt, Target, Map } from 'lucide-react';
+import { Briefcase, Calendar, History, DollarSign, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package, TrendingUp, Activity, Bell, CheckSquare, TestTube, Shirt, Target, Map } from 'lucide-react';
 
 export const cleanerNavigation = [
   {
@@ -247,11 +247,6 @@ export const adminNavigation = [
         title: "Admin Settings",
         url: "/admin-settings",
         icon: Settings,
-      },
-      {
-        title: "Pricing Formulas",
-        url: "/admin-pricing-formulas",
-        icon: Calculator,
       },
       {
         title: "Customer Pricing",
