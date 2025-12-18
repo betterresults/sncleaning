@@ -46,7 +46,7 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
     if (!data.serviceFrequency) return '';
     const frequencyTypes: Record<string, string> = {
       'weekly': 'Weekly Cleaning',
-      'biweekly': 'Biweekly Cleaning',
+      'biweekly': 'Bi-Weekly Cleaning',
       'monthly': 'Monthly Cleaning',
       'onetime': 'One-time Cleaning'
     };
@@ -599,7 +599,7 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
                   {calculations.wantsFirstDeepClean ? 'Regular' : 'Upcoming'} {data.serviceFrequency === 'weekly' 
                     ? 'Weekly' 
                     : data.serviceFrequency === 'biweekly' 
-                      ? 'Biweekly' 
+                      ? 'Bi-Weekly' 
                       : 'Monthly'} Cleans
                   {data.serviceFrequency === 'weekly' && data.daysPerWeek > 1 && (
                     <span className="text-muted-foreground font-normal"> ({data.daysPerWeek}x/week)</span>
