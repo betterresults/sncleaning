@@ -71,16 +71,21 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
 }) => {
   const [email, setEmail] = useState(initialEmail);
   const [phone, setPhone] = useState(initialPhone || '');
+  const [firstName, setFirstName] = useState(quoteData.firstName || '');
+  const [lastName, setLastName] = useState(quoteData.lastName || '');
   const [selectedOption, setSelectedOption] = useState<SendOption>(null);
   const [sendStatus, setSendStatus] = useState<SendStatus>('idle');
   const [sendingEmail, setSendingEmail] = useState(false);
   const { toast } = useToast();
   
-  // Sync email/phone state when props change
+  // Sync email/phone/name state when props change
   React.useEffect(() => {
     if (initialEmail) setEmail(initialEmail);
     if (initialPhone) setPhone(initialPhone);
-  }, [initialEmail, initialPhone]);
+    if (quoteData.firstName) setFirstName(quoteData.firstName);
+    if (quoteData.lastName) setLastName(quoteData.lastName);
+    if (quoteData.phone) setPhone(quoteData.phone);
+  }, [initialEmail, initialPhone, quoteData.firstName, quoteData.lastName, quoteData.phone]);
 
   // Reset state when dialog opens
   React.useEffect(() => {
@@ -114,8 +119,8 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
       short_notice_charge: quoteData.shortNoticeCharge,
       is_first_time_customer: quoteData.isFirstTimeCustomer,
       discount_amount: quoteData.discountAmount,
-      first_name: quoteData.firstName || null,
-      last_name: quoteData.lastName || null,
+      first_name: firstName || null,
+      last_name: lastName || null,
       email: email || null,
       phone: phone || null,
       status: 'sent',
@@ -218,8 +223,8 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
       const completeUrl = await saveQuoteAndGetShortUrl();
       console.log('Generated short URL:', completeUrl);
       
-      // Only use name if we have a real one
-      const customerName = `${quoteData.firstName || ''} ${quoteData.lastName || ''}`.trim();
+      // Use local state for name (user may have edited it)
+      const customerName = `${firstName} ${lastName}`.trim();
       
       let emailSent = false;
       let smsSent = false;
@@ -481,6 +486,31 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
             </div>
             
             <div className="px-6 py-5 space-y-4 bg-white">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="complete-firstname" className="text-sm font-medium text-slate-700">First Name</Label>
+                  <Input
+                    id="complete-firstname"
+                    type="text"
+                    placeholder="First name"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="rounded-xl border-slate-200 focus:border-primary focus:ring-primary h-12"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="complete-lastname" className="text-sm font-medium text-slate-700">Last Name</Label>
+                  <Input
+                    id="complete-lastname"
+                    type="text"
+                    placeholder="Last name"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="rounded-xl border-slate-200 focus:border-primary focus:ring-primary h-12"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="complete-email" className="text-sm font-medium text-slate-700">Email Address</Label>
                 <Input
@@ -494,7 +524,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="complete-phone" className="text-sm font-medium text-slate-700">Phone Number (for SMS)</Label>
+                <Label htmlFor="complete-phone" className="text-sm font-medium text-slate-700">Phone Number</Label>
                 <Input
                   id="complete-phone"
                   type="tel"
