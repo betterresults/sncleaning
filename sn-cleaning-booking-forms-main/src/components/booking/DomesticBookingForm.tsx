@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DomesticPropertyStep } from './steps/DomesticPropertyStep';
@@ -13,6 +13,7 @@ import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuoteLeadTracking } from '@/hooks/useQuoteLeadTracking';
 import { ExitQuotePopup } from '@/components/booking/ExitQuotePopup';
 import { AdminQuoteDialog } from '@/components/booking/AdminQuoteDialog';
+import { useDomesticHardcodedCalculations } from '@/hooks/useDomesticHardcodedCalculations';
 export interface DomesticBookingData {
   // Property details
   propertyType: 'flat' | 'house' | '';
@@ -167,6 +168,42 @@ const DomesticBookingForm: React.FC = () => {
     totalCost: 0,
     isFirstTimeCustomer: true, // Default to true for new customers - will be checked against DB later
   });
+
+  // Calculate actual total using the same logic as DomesticBookingSummary
+  const calculations = useDomesticHardcodedCalculations(bookingData);
+  
+  const calculatedTotal = useMemo(() => {
+    // Use admin override if set
+    if (bookingData.adminTotalCostOverride !== undefined && bookingData.adminTotalCostOverride !== null && bookingData.adminTotalCostOverride > 0) {
+      return bookingData.adminTotalCostOverride;
+    }
+    
+    const effectiveRate = bookingData.adminHourlyRateOverride !== undefined ? bookingData.adminHourlyRateOverride : calculations.hourlyRate;
+    let total = (calculations.totalHours || 0) * effectiveRate;
+
+    // Add short notice charge
+    if (!(isAdminMode && bookingData.adminRemoveShortNoticeCharge)) {
+      total += calculations.shortNoticeCharge || 0;
+    }
+
+    total += calculations.equipmentOneTimeCost || 0;
+    total += calculations.ovenCleaningCost || 0;
+    
+    // Apply first-time customer discount
+    if (bookingData.isFirstTimeCustomer) {
+      total = total * 0.90;
+    }
+    
+    // Apply admin discounts
+    if (isAdminMode && bookingData.adminDiscountPercentage) {
+      total -= total * bookingData.adminDiscountPercentage / 100;
+    }
+    if (isAdminMode && bookingData.adminDiscountAmount) {
+      total -= bookingData.adminDiscountAmount;
+    }
+    
+    return Math.max(0, total);
+  }, [bookingData, calculations, isAdminMode]);
 
   // Resume from saved quote lead OR prefill from URL parameters
   useEffect(() => {
@@ -690,8 +727,8 @@ const DomesticBookingForm: React.FC = () => {
           email={bookingData.email || bookingData.selectedCustomer?.email || ''}
           phone={bookingData.phone || bookingData.selectedCustomer?.phone || ''}
           quoteData={{
-            totalCost: bookingData.totalCost,
-            estimatedHours: bookingData.estimatedHours,
+            totalCost: calculatedTotal,
+            estimatedHours: calculations.totalHours,
             propertyType: bookingData.propertyType,
             bedrooms: bookingData.bedrooms,
             bathrooms: bookingData.bathrooms,
