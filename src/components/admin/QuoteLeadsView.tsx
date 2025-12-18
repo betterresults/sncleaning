@@ -410,7 +410,6 @@ const QuoteLeadsView = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Quote Leads</h1>
           <Select value={timePeriod} onValueChange={(value) => setTimePeriod(value as TimePeriod)}>
             <SelectTrigger className="w-[150px] bg-white rounded-xl border-gray-200">
               <Calendar className="h-4 w-4 mr-2 text-gray-500" />
