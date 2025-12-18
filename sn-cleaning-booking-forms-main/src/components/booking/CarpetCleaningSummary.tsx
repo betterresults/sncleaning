@@ -141,62 +141,6 @@ export const CarpetCleaningSummary: React.FC<CarpetCleaningSummaryProps> = ({
     );
   };
 
-  const renderSummaryContent = () => (
-    <div className="space-y-3">
-      {data.selectedDate && (
-        <div className="space-y-3 mt-3">
-          <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Clean date</span>
-            <span className="text-foreground font-medium">
-              {data.selectedDate.toLocaleDateString('en-GB', {
-                weekday: 'short',
-                day: 'numeric',
-                month: 'short'
-              })}
-            </span>
-          </div>
-          
-          {(data.selectedTime || data.flexibility === 'flexible-time') && (
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Arrival time</span>
-              <span className="text-foreground font-medium">
-                {data.flexibility === 'flexible-time' ? 'Flexible timing' : data.selectedTime}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
-
-      {shortNoticeInfo.charge > 0 && (
-        <div className="flex justify-between items-center">
-          <span className="text-muted-foreground">{shortNoticeInfo.notice}</span>
-          <span className={`font-semibold ${isAdminMode && data.adminRemoveShortNoticeCharge ? 'line-through text-gray-400' : 'text-foreground'}`}>
-            {isAdminMode && data.adminRemoveShortNoticeCharge && (
-              <span className="text-green-600 mr-2 no-underline">WAIVED</span>
-            )}
-            £{shortNoticeInfo.charge.toFixed(2)}
-          </span>
-        </div>
-      )}
-      
-      {isAdminMode && data.adminDiscountPercentage && data.adminDiscountPercentage > 0 && (
-        <div className="flex justify-between items-center text-red-600">
-          <span>Discount ({data.adminDiscountPercentage}%)</span>
-          <span className="font-semibold">
-            -£{((calculateTotal() / (1 - data.adminDiscountPercentage / 100)) * data.adminDiscountPercentage / 100).toFixed(2)}
-          </span>
-        </div>
-      )}
-      
-      {isAdminMode && data.adminDiscountAmount && data.adminDiscountAmount > 0 && (
-        <div className="flex justify-between items-center text-red-600">
-          <span>Fixed Discount</span>
-          <span className="font-semibold">-£{data.adminDiscountAmount.toFixed(2)}</span>
-        </div>
-      )}
-    </div>
-  );
-
   return (
     <Card className="p-4 sm:p-5 lg:p-6 bg-white sticky top-4 border border-border">
       <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
@@ -214,13 +158,33 @@ export const CarpetCleaningSummary: React.FC<CarpetCleaningSummaryProps> = ({
         )}
       </div>
 
+      {/* Items Count */}
       {getTotalItemCount() > 0 && (
         <div className="flex items-center gap-3 mb-4 pb-4 border-b border-border">
           <div className="p-2 bg-primary/10 rounded-xl">
             <Layers className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <p className="font-medium text-foreground">{getTotalItemCount()} items selected</p>
+            <p className="font-medium text-foreground">{getTotalItemCount()} item{getTotalItemCount() !== 1 ? 's' : ''} selected</p>
+          </div>
+        </div>
+      )}
+
+      {/* Date/Time */}
+      {data.selectedDate && (
+        <div className="flex items-center gap-3 mb-4 pb-4 border-b border-border">
+          <div className="p-2 bg-primary/10 rounded-xl">
+            <Calendar className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <p className="font-medium text-foreground">
+              {data.selectedDate.toLocaleDateString('en-GB', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short'
+              })}
+              {data.selectedTime && ` at ${data.selectedTime}`}
+            </p>
           </div>
         </div>
       )}
@@ -234,22 +198,37 @@ export const CarpetCleaningSummary: React.FC<CarpetCleaningSummaryProps> = ({
         </div>
       )}
 
-      {/* Expandable summary */}
-      <div className="mb-4">
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center justify-between w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <span>View details</span>
-          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </button>
-        
-        {isExpanded && (
-          <div className="mt-3 pt-3 border-t border-border">
-            {renderSummaryContent()}
+      {/* Short Notice Charge */}
+      {shortNoticeInfo.charge > 0 && (
+        <div className="mb-4 pb-4 border-b border-border">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">{shortNoticeInfo.notice}</span>
+            <span className={`text-sm font-semibold ${isAdminMode && data.adminRemoveShortNoticeCharge ? 'line-through text-gray-400' : 'text-foreground'}`}>
+              {isAdminMode && data.adminRemoveShortNoticeCharge && (
+                <span className="text-green-600 mr-2 no-underline">WAIVED</span>
+              )}
+              £{shortNoticeInfo.charge.toFixed(2)}
+            </span>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+      
+      {/* Admin Discounts Display */}
+      {isAdminMode && data.adminDiscountPercentage && data.adminDiscountPercentage > 0 && (
+        <div className="flex justify-between items-center text-red-600 mb-2">
+          <span className="text-sm">Discount ({data.adminDiscountPercentage}%)</span>
+          <span className="text-sm font-semibold">
+            -£{((calculateTotal() / (1 - data.adminDiscountPercentage / 100)) * data.adminDiscountPercentage / 100).toFixed(2)}
+          </span>
+        </div>
+      )}
+      
+      {isAdminMode && data.adminDiscountAmount && data.adminDiscountAmount > 0 && (
+        <div className="flex justify-between items-center text-red-600 mb-2">
+          <span className="text-sm">Fixed Discount</span>
+          <span className="text-sm font-semibold">-£{data.adminDiscountAmount.toFixed(2)}</span>
+        </div>
+      )}
 
       {/* Admin Pricing Controls */}
       {isAdminMode && isEditingPricing && (

@@ -94,72 +94,71 @@ export const CarpetCleaningItemsStep: React.FC<CarpetCleaningItemsStepProps> = (
     const isSelected = quantity > 0;
 
     return (
-      <div
+      <button
         key={option.id}
-        className={`relative rounded-2xl border transition-all duration-300 ${
+        className={`group relative ${isSelected ? 'h-32' : 'h-24'} rounded-2xl border transition-all duration-300 ${
           isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
         }`}
+        onClick={() => {
+          if (quantity === 0) {
+            updateItemQuantity(type, option.id, option.name, option.size, option.price, 1);
+          }
+        }}
       >
-        <div className="p-4">
-          <div className="flex justify-between items-start mb-2">
-            <div>
-              <h4 className={`font-bold ${isSelected ? 'text-primary' : 'text-slate-700'}`}>
-                {option.name}
-              </h4>
-              <p className="text-xs text-muted-foreground">{option.description}</p>
-            </div>
-            <span className={`text-lg font-bold ${isSelected ? 'text-primary' : 'text-slate-600'}`}>
-              £{option.price}
+        {isSelected ? (
+          <div className="flex flex-col items-center justify-center h-full p-2">
+            <span className="text-xs font-bold text-primary mb-1 text-center leading-tight">
+              {option.name}
             </span>
-          </div>
-          
-          <div className="flex items-center justify-center mt-3">
-            {isSelected ? (
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
-                  onClick={() => updateItemQuantity(type, option.id, option.name, option.size, option.price, -1)}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <span className="text-lg font-bold text-primary w-8 text-center">{quantity}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
-                  onClick={() => updateItemQuantity(type, option.id, option.name, option.size, option.price, 1)}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
+            <span className="text-[10px] text-muted-foreground mb-1">£{option.price}</span>
+            <div className="flex items-center w-full">
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full h-8 rounded-lg bg-muted hover:bg-primary/10 text-slate-600 hover:text-primary"
-                onClick={() => updateItemQuantity(type, option.id, option.name, option.size, option.price, 1)}
+                className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  updateItemQuantity(type, option.id, option.name, option.size, option.price, -1);
+                }}
               >
-                <Plus className="h-4 w-4 mr-1" /> Add
+                <Minus className="h-3 w-3" />
               </Button>
-            )}
+              <div className="flex-1 text-center mx-1">
+                <div className="text-lg font-bold text-primary">
+                  {quantity}
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  updateItemQuantity(type, option.id, option.name, option.size, option.price, 1);
+                }}
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
-        </div>
-      </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full p-2">
+            <span className="text-xs font-bold text-slate-500 group-hover:text-primary text-center leading-tight">
+              {option.name}
+            </span>
+            <span className="text-[10px] text-muted-foreground mt-1">{option.description}</span>
+            <span className="text-sm font-bold text-slate-600 group-hover:text-primary mt-1">£{option.price}</span>
+          </div>
+        )}
+      </button>
     );
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Carpet Cleaning Section */}
       <div>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-primary/10 rounded-xl">
-            <Layers className="w-5 h-5 text-primary" />
-          </div>
-          <h2 className="text-2xl font-bold text-slate-700">Carpet Cleaning</h2>
-        </div>
+        <h2 className="text-2xl font-bold text-slate-700 mb-4">Carpet Cleaning</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {carpetOptions.map(option => renderItemCard(option, 'carpet', data.carpetItems))}
         </div>
@@ -167,12 +166,7 @@ export const CarpetCleaningItemsStep: React.FC<CarpetCleaningItemsStepProps> = (
 
       {/* Upholstery Cleaning Section */}
       <div>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-primary/10 rounded-xl">
-            <Sofa className="w-5 h-5 text-primary" />
-          </div>
-          <h2 className="text-2xl font-bold text-slate-700">Upholstery Cleaning</h2>
-        </div>
+        <h2 className="text-2xl font-bold text-slate-700 mb-4">Upholstery Cleaning</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {upholsteryOptions.map(option => renderItemCard(option, 'upholstery', data.upholsteryItems))}
         </div>
@@ -180,12 +174,7 @@ export const CarpetCleaningItemsStep: React.FC<CarpetCleaningItemsStepProps> = (
 
       {/* Mattress Cleaning Section */}
       <div>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-primary/10 rounded-xl">
-            <Bed className="w-5 h-5 text-primary" />
-          </div>
-          <h2 className="text-2xl font-bold text-slate-700">Mattress Cleaning</h2>
-        </div>
+        <h2 className="text-2xl font-bold text-slate-700 mb-4">Mattress Cleaning</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {mattressOptions.map(option => renderItemCard(option, 'mattress', data.mattressItems))}
         </div>
