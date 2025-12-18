@@ -661,8 +661,12 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
       
       const localDateTime = dateTime;
       
-      // Format date_only and time_only for database
-      const dateOnly = formData.selectedDate.toISOString().split('T')[0];
+      // Format date_only using local date to avoid timezone shift issues
+      // toISOString() converts to UTC which can shift the date by 1 day
+      const year = formData.selectedDate.getFullYear();
+      const month = String(formData.selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(formData.selectedDate.getDate()).padStart(2, '0');
+      const dateOnly = `${year}-${month}-${day}`;
       const timeOnly = `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
 
       // Determine form_name based on service type and sub type
