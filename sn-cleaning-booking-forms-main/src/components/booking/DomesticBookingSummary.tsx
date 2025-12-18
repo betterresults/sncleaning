@@ -202,6 +202,33 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
   const shortNoticeInfo = getShortNoticeInfo();
   const hasShortNoticeCharge = shortNoticeInfo.charge > 0 && !(isAdminMode && data.adminRemoveShortNoticeCharge);
   const effectiveHourlyRate = data.adminHourlyRateOverride !== undefined ? data.adminHourlyRateOverride : calculations.hourlyRate;
+  
+  // Calculate the effective per-hour rate after discounts for display purposes
+  const getDisplayHourlyRate = () => {
+    if (calculations.totalHours <= 0) return effectiveHourlyRate;
+    
+    // Start with base rate
+    let rate = effectiveHourlyRate;
+    
+    // If first-time customer, apply 10% discount to the rate
+    if (data.isFirstTimeCustomer) {
+      rate = rate * 0.90;
+    }
+    
+    // If admin percentage discount, apply it to the rate
+    if (isAdminMode && data.adminDiscountPercentage) {
+      rate = rate * (1 - data.adminDiscountPercentage / 100);
+    }
+    
+    // If admin fixed discount, distribute it across hours
+    if (isAdminMode && data.adminDiscountAmount && calculations.totalHours > 0) {
+      rate = rate - (data.adminDiscountAmount / calculations.totalHours);
+    }
+    
+    return Math.max(0, rate);
+  };
+  
+  const displayHourlyRate = getDisplayHourlyRate();
 
   useEffect(() => {
     if (onUpdate && calculations.totalHours > 0) {
@@ -434,7 +461,10 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
             )}
             {isAdminMode && (
               <p className="text-sm text-muted-foreground">
-                £{effectiveHourlyRate.toFixed(2)}/hour
+                £{displayHourlyRate.toFixed(2)}/hour
+                {(data.isFirstTimeCustomer || data.adminDiscountPercentage || data.adminDiscountAmount) && displayHourlyRate < effectiveHourlyRate && (
+                  <span className="ml-1 line-through text-gray-400">£{effectiveHourlyRate.toFixed(2)}</span>
+                )}
               </p>
             )}
           </div>
