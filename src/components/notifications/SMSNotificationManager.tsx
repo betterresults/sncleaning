@@ -177,7 +177,7 @@ const SMSNotificationManager = () => {
     loadBookings();
   }, []);
 
-  const sendSMS = async (to: string, recipientName?: string) => {
+  const sendSMS = async (to: string, recipientName?: string, recipientType?: 'customer' | 'cleaner', entityId?: string) => {
     try {
       const { error } = await supabase.functions.invoke('send-sms-notification', {
         body: {
@@ -187,6 +187,25 @@ const SMSNotificationManager = () => {
       });
 
       if (error) throw error;
+
+      // Log the SMS to notification_logs
+      const { error: logError } = await supabase
+        .from('notification_logs')
+        .insert({
+          notification_type: 'sms',
+          recipient_email: to, // Using recipient_email field for phone number
+          recipient_type: recipientType || 'customer',
+          subject: 'Custom SMS',
+          content: message,
+          status: 'sent',
+          sent_at: new Date().toISOString(),
+          entity_type: selectedBooking ? 'booking' : 'custom',
+          entity_id: entityId || selectedBooking || null
+        });
+
+      if (logError) {
+        console.error('Error logging SMS:', logError);
+      }
 
       toast({
         title: 'SMS Sent',
@@ -228,7 +247,8 @@ const SMSNotificationManager = () => {
           return;
         }
         
-        await sendSMS(phoneNumber);
+        const client = selectedClient !== 'manual' ? recipients.find(r => r.id === selectedClient) : undefined;
+        await sendSMS(phoneNumber, client?.name, client?.type, selectedBooking || undefined);
       } else {
         // Bulk send
         if (selectedRecipients.length === 0) {
@@ -246,7 +266,7 @@ const SMSNotificationManager = () => {
         for (const recipientId of selectedRecipients) {
           const recipient = recipients.find(r => r.id === recipientId);
           if (recipient) {
-            const success = await sendSMS(recipient.phone, recipient.name);
+            const success = await sendSMS(recipient.phone, recipient.name, recipient.type, selectedBooking || undefined);
             if (success) {
               successCount++;
             } else {
