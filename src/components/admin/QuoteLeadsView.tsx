@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
-import { RefreshCw, Eye, MousePointerClick, FileText, TrendingUp, Trash2, Sparkles, Mail, Settings2 } from 'lucide-react';
+import { RefreshCw, Eye, MousePointerClick, FileText, TrendingUp, Trash2, Sparkles, Mail, Settings2, Users, CheckCircle2, Clock, ArrowUpRight, Home, Building } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -102,7 +102,6 @@ interface AdminProfile {
   email: string | null;
 }
 
-// Check if a lead is idle (no heartbeat in last 2 minutes means browser likely closed)
 const isLeadIdle = (lead: QuoteLead): boolean => {
   if (lead.status !== 'live') return false;
   if (!lead.last_heartbeat) return true;
@@ -152,7 +151,6 @@ const QuoteLeadsView = () => {
   const fetchData = async () => {
     setRefreshing(true);
     try {
-      // Fetch funnel events, quote leads, and admin profiles
       const [eventsResponse, leadsResponse, profilesResponse] = await Promise.all([
         supabase
           .from('funnel_events')
@@ -178,7 +176,6 @@ const QuoteLeadsView = () => {
       })));
       setLeads(leadsResponse.data || []);
 
-      // Build admin profiles map
       if (profilesResponse.data) {
         const profilesMap = new Map<string, AdminProfile>();
         profilesResponse.data.forEach(p => {
@@ -216,10 +213,10 @@ const QuoteLeadsView = () => {
   const formStarts = events.filter(e => e.event_type === 'form_started').length;
   const quoteViews = leads.filter(l => l.furthest_step === 'quote_viewed' || l.status === 'completed').length;
   const completions = leads.filter(l => l.status === 'completed').length;
+  const liveLeads = leads.filter(l => l.status === 'live' && !isLeadIdle(l)).length;
 
   // Calculate conversion rates
   const clickRate = pageViews > 0 ? ((serviceClicks / pageViews) * 100).toFixed(1) : '0';
-  const formRate = serviceClicks > 0 ? ((formStarts / serviceClicks) * 100).toFixed(1) : '0';
   const completionRate = leads.length > 0 ? ((completions / leads.length) * 100).toFixed(1) : '0';
 
   // Get service click breakdown
@@ -230,30 +227,6 @@ const QuoteLeadsView = () => {
       acc[service] = (acc[service] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
-
-  const getStatusBadge = (lead: QuoteLead) => {
-    const status = lead.status;
-    
-    // Check if live but idle (no recent heartbeat)
-    if (status === 'live' && isLeadIdle(lead)) {
-      return <Badge className="bg-yellow-100 text-yellow-800">Idle</Badge>;
-    }
-    
-    switch (status) {
-      case 'completed':
-        return <Badge className="bg-green-100 text-green-800">Booked</Badge>;
-      case 'left':
-        return <Badge className="bg-red-100 text-red-800">Left</Badge>;
-      case 'live':
-        return <Badge className="bg-blue-100 text-blue-800 animate-pulse">Live</Badge>;
-      case 'idle':
-        return <Badge className="bg-yellow-100 text-yellow-800">Idle</Badge>;
-      case 'viewing':
-        return <Badge className="bg-yellow-100 text-yellow-800">Viewing</Badge>;
-      default:
-        return <Badge className="bg-gray-100 text-gray-800">{status || 'Unknown'}</Badge>;
-    }
-  };
 
   const handleSelectLead = (leadId: string, checked: boolean) => {
     setSelectedLeads(prev => {
@@ -306,7 +279,7 @@ const QuoteLeadsView = () => {
       const { error } = await supabase
         .from('quote_leads')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+        .neq('id', '00000000-0000-0000-0000-000000000000');
       
       if (error) throw error;
       
@@ -323,15 +296,11 @@ const QuoteLeadsView = () => {
   };
 
   const filteredLeads = leads.filter(lead => {
-    // Handle email_sent filter
     if (statusFilter === 'email_sent') {
       if (!lead.quote_email_sent) return false;
-    }
-    // Handle idle filter - computed status
-    else if (statusFilter === 'idle') {
+    } else if (statusFilter === 'idle') {
       if (!isLeadIdle(lead)) return false;
     } else if (statusFilter === 'live') {
-      // Live means currently active (not idle)
       if (lead.status !== 'live' || isLeadIdle(lead)) return false;
     } else if (statusFilter !== 'all' && lead.status !== statusFilter) {
       return false;
@@ -340,161 +309,232 @@ const QuoteLeadsView = () => {
     return true;
   });
 
+  const getServiceIcon = (serviceId: string) => {
+    if (serviceId.includes('airbnb') || serviceId.includes('air-bnb')) {
+      return <Building className="h-4 w-4" />;
+    }
+    if (serviceId.includes('domestic')) {
+      return <Home className="h-4 w-4" />;
+    }
+    return <FileText className="h-4 w-4" />;
+  };
+
+  const getServiceColor = (serviceId: string) => {
+    if (serviceId.includes('airbnb') || serviceId.includes('air-bnb')) {
+      return 'bg-rose-50 text-rose-700 border-rose-200';
+    }
+    if (serviceId.includes('domestic')) {
+      return 'bg-sky-50 text-sky-700 border-sky-200';
+    }
+    return 'bg-gray-50 text-gray-700 border-gray-200';
+  };
+
   if (loading) {
     return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
           {[1, 2, 3, 4, 5].map(i => (
-            <Skeleton key={i} className="h-24 rounded-xl" />
+            <Skeleton key={i} className="h-28 rounded-2xl" />
           ))}
         </div>
-        <Skeleton className="h-96 rounded-xl" />
+        <Skeleton className="h-32 rounded-2xl" />
+        <Skeleton className="h-96 rounded-2xl" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Funnel Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card className="rounded-xl border-0 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Quote Leads</h1>
+          <p className="text-gray-500 mt-1 text-sm sm:text-base">Monitor visitor activity and conversion funnel</p>
+        </div>
+        <Button 
+          variant="outline" 
+          onClick={fetchData} 
+          disabled={refreshing} 
+          className="gap-2 self-start sm:self-auto"
+        >
+          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
+
+      {/* Stats Grid - Modern Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+        <Card className="rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow bg-gradient-to-br from-blue-50 to-white">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs sm:text-sm font-medium text-blue-600/80">Page Views</p>
+                <p className="text-2xl sm:text-3xl font-bold text-blue-700 mt-1">{pageViews}</p>
+              </div>
+              <div className="p-2.5 bg-blue-100 rounded-xl">
                 <Eye className="h-5 w-5 text-blue-600" />
               </div>
-              <div>
-                <p className="text-xs text-gray-500">Page Views</p>
-                <p className="text-2xl font-bold">{pageViews}</p>
-              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="rounded-xl border-0 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
+        <Card className="rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow bg-gradient-to-br from-purple-50 to-white">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs sm:text-sm font-medium text-purple-600/80">Service Clicks</p>
+                <p className="text-2xl sm:text-3xl font-bold text-purple-700 mt-1">{serviceClicks}</p>
+                <p className="text-xs text-purple-500 mt-0.5">{clickRate}% rate</p>
+              </div>
+              <div className="p-2.5 bg-purple-100 rounded-xl">
                 <MousePointerClick className="h-5 w-5 text-purple-600" />
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow bg-gradient-to-br from-amber-50 to-white">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs text-gray-500">Service Clicks</p>
-                <p className="text-2xl font-bold">{serviceClicks}</p>
-                <p className="text-xs text-gray-400">{clickRate}% rate</p>
+                <p className="text-xs sm:text-sm font-medium text-amber-600/80">Form Starts</p>
+                <p className="text-2xl sm:text-3xl font-bold text-amber-700 mt-1">{leads.length}</p>
+                {liveLeads > 0 && (
+                  <p className="text-xs text-green-600 mt-0.5 flex items-center gap-1">
+                    <span className="h-1.5 w-1.5 bg-green-500 rounded-full animate-pulse" />
+                    {liveLeads} live now
+                  </p>
+                )}
+              </div>
+              <div className="p-2.5 bg-amber-100 rounded-xl">
+                <Users className="h-5 w-5 text-amber-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="rounded-xl border-0 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <FileText className="h-5 w-5 text-orange-600" />
-              </div>
+        <Card className="rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow bg-gradient-to-br from-teal-50 to-white">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs text-gray-500">Form Starts</p>
-                <p className="text-2xl font-bold">{leads.length}</p>
+                <p className="text-xs sm:text-sm font-medium text-teal-600/80">Quote Views</p>
+                <p className="text-2xl sm:text-3xl font-bold text-teal-700 mt-1">{quoteViews}</p>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-xl border-0 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-teal-100 rounded-lg">
+              <div className="p-2.5 bg-teal-100 rounded-xl">
                 <TrendingUp className="h-5 w-5 text-teal-600" />
               </div>
-              <div>
-                <p className="text-xs text-gray-500">Quote Views</p>
-                <p className="text-2xl font-bold">{quoteViews}</p>
-              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="rounded-xl border-0 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <TrendingUp className="h-5 w-5 text-green-600" />
-              </div>
+        <Card className="rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow bg-gradient-to-br from-green-50 to-white">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs text-gray-500">Completed</p>
-                <p className="text-2xl font-bold">{completions}</p>
-                <p className="text-xs text-gray-400">{completionRate}% rate</p>
+                <p className="text-xs sm:text-sm font-medium text-green-600/80">Completed</p>
+                <p className="text-2xl sm:text-3xl font-bold text-green-700 mt-1">{completions}</p>
+                <p className="text-xs text-green-500 mt-0.5">{completionRate}% rate</p>
+              </div>
+              <div className="p-2.5 bg-green-100 rounded-xl">
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Service Breakdown */}
+      {/* Service Breakdown - Modern Design */}
       {Object.keys(serviceBreakdown).length > 0 && (
-        <Card className="rounded-xl border-0 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Service Clicks Breakdown</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(serviceBreakdown).map(([service, count]) => (
-                <Badge key={service} variant="outline" className="py-1 px-3">
-                  {service.replace(/-/g, ' ')}: <span className="font-bold ml-1">{count}</span>
-                </Badge>
-              ))}
+        <Card className="rounded-2xl border border-gray-100 shadow-sm">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-gray-700">Service Interest</h3>
+              <span className="text-xs text-gray-400">Click distribution</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {Object.entries(serviceBreakdown)
+                .sort((a, b) => b[1] - a[1])
+                .map(([service, count]) => {
+                  const total = Object.values(serviceBreakdown).reduce((a, b) => a + b, 0);
+                  const percentage = ((count / total) * 100).toFixed(0);
+                  return (
+                    <div 
+                      key={service} 
+                      className={`flex items-center gap-3 p-3 rounded-xl border ${getServiceColor(service)}`}
+                    >
+                      <div className="p-2 rounded-lg bg-white/50">
+                        {getServiceIcon(service)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium capitalize truncate">
+                          {service.replace(/-/g, ' ')}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="flex-1 h-1.5 bg-white/50 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-current opacity-50 rounded-full transition-all duration-500"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-semibold">{count}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Tabs for Events and Leads */}
+      {/* Leads Table */}
       <Tabs defaultValue="leads" className="space-y-4">
-        <div className="flex items-center justify-between">
-          <TabsList>
-            <TabsTrigger value="leads">Quote Leads ({leads.length})</TabsTrigger>
-            <TabsTrigger value="events">All Events ({events.length})</TabsTrigger>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <TabsList className="bg-gray-100/80 p-1 rounded-xl">
+            <TabsTrigger value="leads" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm px-4">
+              Quote Leads ({leads.length})
+            </TabsTrigger>
+            <TabsTrigger value="events" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm px-4">
+              Events ({events.length})
+            </TabsTrigger>
           </TabsList>
-          <Button variant="outline" onClick={fetchData} disabled={refreshing} className="gap-2">
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
         </div>
 
         <TabsContent value="leads">
-          <Card className="rounded-xl border-0 shadow-sm">
-            <CardHeader className="pb-4">
-              <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-                <div className="flex flex-wrap gap-4">
+          <Card className="rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <CardHeader className="pb-4 bg-gray-50/50 border-b border-gray-100">
+              <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center justify-between">
+                <div className="flex flex-wrap gap-2">
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Filter by status" />
+                    <SelectTrigger className="w-[160px] bg-white rounded-xl border-gray-200">
+                      <SelectValue placeholder="All Statuses" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white">
                       <SelectItem value="all">All Statuses</SelectItem>
                       <SelectItem value="email_sent">Email Sent</SelectItem>
-                      <SelectItem value="live">Live (active)</SelectItem>
-                      <SelectItem value="idle">Idle (tab open but inactive)</SelectItem>
+                      <SelectItem value="live">Live</SelectItem>
+                      <SelectItem value="idle">Idle</SelectItem>
                       <SelectItem value="left">Left</SelectItem>
-                      <SelectItem value="completed">Booked</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
                     </SelectContent>
                   </Select>
                   <Select value={serviceFilter} onValueChange={setServiceFilter}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Filter by service" />
+                    <SelectTrigger className="w-[160px] bg-white rounded-xl border-gray-200">
+                      <SelectValue placeholder="All Services" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white">
                       <SelectItem value="all">All Services</SelectItem>
                       <SelectItem value="Air BnB">Air BnB</SelectItem>
                       <SelectItem value="Domestic">Domestic</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex gap-2">
+                
+                <div className="flex flex-wrap gap-2">
                   {selectedLeads.size > 0 && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm" disabled={deleting}>
+                        <Button variant="destructive" size="sm" disabled={deleting} className="rounded-xl">
                           <Trash2 className="h-4 w-4 mr-1" />
                           Delete ({selectedLeads.size})
                         </Button>
@@ -515,16 +555,17 @@ const QuoteLeadsView = () => {
                       </AlertDialogContent>
                     </AlertDialog>
                   )}
+                  
                   <AlertDialog onOpenChange={(open) => !open && setDeleteConfirmText('')}>
                     <AlertDialogTrigger asChild>
-                      <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700" disabled={deleting || leads.length === 0}>
+                      <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 rounded-xl" disabled={deleting || leads.length === 0}>
                         <Trash2 className="h-4 w-4 mr-1" />
                         Delete All
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle className="text-red-600">⚠️ Delete ALL leads?</AlertDialogTitle>
+                        <AlertDialogTitle className="text-red-600">Delete ALL leads?</AlertDialogTitle>
                         <AlertDialogDescription className="space-y-3">
                           <span className="block">This will permanently delete <strong>ALL {leads.length} leads</strong>. This action <strong>cannot be undone</strong>.</span>
                           <span className="block font-medium">Type <code className="bg-red-100 px-2 py-0.5 rounded text-red-700">DELETE</code> to confirm:</span>
@@ -533,7 +574,7 @@ const QuoteLeadsView = () => {
                             value={deleteConfirmText}
                             onChange={(e) => setDeleteConfirmText(e.target.value)}
                             placeholder="Type DELETE to confirm"
-                            className="w-full px-3 py-2 border rounded-md text-sm"
+                            className="w-full px-3 py-2 border rounded-lg text-sm"
                           />
                         </AlertDialogDescription>
                       </AlertDialogHeader>
@@ -550,20 +591,19 @@ const QuoteLeadsView = () => {
                     </AlertDialogContent>
                   </AlertDialog>
                   
-                  {/* Column visibility toggle */}
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" className="rounded-xl">
                         <Settings2 className="h-4 w-4 mr-1" />
                         Columns
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-48 p-2" align="end">
+                    <PopoverContent className="w-48 p-2 bg-white" align="end">
                       <p className="text-sm font-medium mb-2 px-2">Show columns</p>
                       {ALL_COLUMNS.map(col => (
                         <div 
                           key={col.key}
-                          className="flex items-center gap-2 px-2 py-1.5 hover:bg-muted rounded cursor-pointer"
+                          className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded-lg cursor-pointer"
                           onClick={() => toggleColumn(col.key)}
                         >
                           <Checkbox checked={isColumnVisible(col.key)} />
@@ -575,41 +615,44 @@ const QuoteLeadsView = () => {
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="rounded-lg border overflow-x-auto">
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-10">
+                    <TableRow className="bg-gray-50/50 hover:bg-gray-50/50">
+                      <TableHead className="w-12">
                         <Checkbox 
                           checked={selectedLeads.size === filteredLeads.length && filteredLeads.length > 0}
                           onCheckedChange={handleSelectAll}
                         />
                       </TableHead>
-                      {isColumnVisible('date') && <TableHead>Date</TableHead>}
-                      {isColumnVisible('service') && <TableHead>Service</TableHead>}
-                      {isColumnVisible('contact') && <TableHead>Contact</TableHead>}
-                      {isColumnVisible('property') && <TableHead>Property</TableHead>}
-                      {isColumnVisible('quote') && <TableHead>Quote</TableHead>}
-                      {isColumnVisible('progress') && <TableHead>Progress</TableHead>}
-                      {isColumnVisible('status') && <TableHead>Status</TableHead>}
-                      {isColumnVisible('frequency') && <TableHead>Frequency</TableHead>}
-                      {isColumnVisible('cleaningType') && <TableHead>Cleaning Type</TableHead>}
-                      {isColumnVisible('extras') && <TableHead>Extras</TableHead>}
-                      {isColumnVisible('source') && <TableHead>Source</TableHead>}
-                      {isColumnVisible('createdBy') && <TableHead>Created By</TableHead>}
+                      {isColumnVisible('date') && <TableHead className="font-semibold text-gray-600">Date</TableHead>}
+                      {isColumnVisible('service') && <TableHead className="font-semibold text-gray-600">Service</TableHead>}
+                      {isColumnVisible('contact') && <TableHead className="font-semibold text-gray-600">Contact</TableHead>}
+                      {isColumnVisible('property') && <TableHead className="font-semibold text-gray-600">Property</TableHead>}
+                      {isColumnVisible('quote') && <TableHead className="font-semibold text-gray-600">Quote</TableHead>}
+                      {isColumnVisible('progress') && <TableHead className="font-semibold text-gray-600">Progress</TableHead>}
+                      {isColumnVisible('status') && <TableHead className="font-semibold text-gray-600">Status</TableHead>}
+                      {isColumnVisible('frequency') && <TableHead className="font-semibold text-gray-600">Frequency</TableHead>}
+                      {isColumnVisible('cleaningType') && <TableHead className="font-semibold text-gray-600">Type</TableHead>}
+                      {isColumnVisible('extras') && <TableHead className="font-semibold text-gray-600">Extras</TableHead>}
+                      {isColumnVisible('source') && <TableHead className="font-semibold text-gray-600">Source</TableHead>}
+                      {isColumnVisible('createdBy') && <TableHead className="font-semibold text-gray-600">Created By</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredLeads.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
-                          No quote leads found
+                        <TableCell colSpan={visibleColumns.length + 1} className="text-center py-12 text-gray-400">
+                          <div className="flex flex-col items-center gap-2">
+                            <Users className="h-8 w-8 text-gray-300" />
+                            <p>No quote leads found</p>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ) : (
                       filteredLeads.map((lead) => (
-                        <TableRow key={lead.id}>
+                        <TableRow key={lead.id} className="hover:bg-gray-50/50">
                           <TableCell>
                             <Checkbox 
                               checked={selectedLeads.has(lead.id)}
@@ -621,8 +664,8 @@ const QuoteLeadsView = () => {
                             <TableCell>
                               {lead.created_at ? (
                                 <div className="text-sm">
-                                  <p className="font-medium">{format(new Date(lead.created_at), 'dd MMM')}</p>
-                                  <p className="text-muted-foreground text-xs">{format(new Date(lead.created_at), 'HH:mm')}</p>
+                                  <p className="font-medium text-gray-900">{format(new Date(lead.created_at), 'dd MMM')}</p>
+                                  <p className="text-gray-400 text-xs">{format(new Date(lead.created_at), 'HH:mm')}</p>
                                 </div>
                               ) : '-'}
                             </TableCell>
@@ -630,22 +673,31 @@ const QuoteLeadsView = () => {
                           
                           {isColumnVisible('service') && (
                             <TableCell>
-                              <Badge variant="outline">{lead.service_type || '-'}</Badge>
+                              <Badge 
+                                variant="outline" 
+                                className={`${
+                                  lead.service_type === 'Air BnB' 
+                                    ? 'bg-rose-50 text-rose-700 border-rose-200' 
+                                    : 'bg-sky-50 text-sky-700 border-sky-200'
+                                }`}
+                              >
+                                {lead.service_type || '-'}
+                              </Badge>
                             </TableCell>
                           )}
                           
                           {isColumnVisible('contact') && (
                             <TableCell>
-                              <div className="space-y-1">
+                              <div className="space-y-0.5">
                                 {lead.first_name || lead.last_name ? (
-                                  <p className="font-medium">{`${lead.first_name || ''} ${lead.last_name || ''}`.trim()}</p>
+                                  <p className="font-medium text-gray-900">{`${lead.first_name || ''} ${lead.last_name || ''}`.trim()}</p>
                                 ) : null}
                                 {lead.email && (
-                                  <p className="text-sm text-muted-foreground">{lead.email}</p>
+                                  <p className="text-sm text-gray-500 truncate max-w-[180px]">{lead.email}</p>
                                 )}
-                                {lead.phone && <p className="text-sm text-muted-foreground">{lead.phone}</p>}
+                                {lead.phone && <p className="text-sm text-gray-400">{lead.phone}</p>}
                                 {!lead.first_name && !lead.email && !lead.phone && (
-                                  <span className="text-muted-foreground">No contact info</span>
+                                  <span className="text-gray-400 text-sm">No info</span>
                                 )}
                               </div>
                             </TableCell>
@@ -654,11 +706,11 @@ const QuoteLeadsView = () => {
                           {isColumnVisible('property') && (
                             <TableCell>
                               <div className="text-sm">
-                                {lead.postcode && <p className="font-medium">{lead.postcode}</p>}
+                                {lead.postcode && <p className="font-medium text-gray-900">{lead.postcode}</p>}
                                 {(lead.bedrooms || lead.bathrooms) && (
-                                  <p className="text-muted-foreground">
+                                  <p className="text-gray-400 text-xs">
                                     {lead.bedrooms && `${lead.bedrooms} bed`}
-                                    {lead.bedrooms && lead.bathrooms && ' / '}
+                                    {lead.bedrooms && lead.bathrooms && ' • '}
                                     {lead.bathrooms && `${lead.bathrooms} bath`}
                                   </p>
                                 )}
@@ -668,14 +720,14 @@ const QuoteLeadsView = () => {
                           
                           {isColumnVisible('quote') && (
                             <TableCell>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1.5">
                                 {lead.calculated_quote ? (
                                   <span className="font-semibold text-green-600">£{lead.calculated_quote.toFixed(0)}</span>
                                 ) : (
-                                  <span className="text-muted-foreground">-</span>
+                                  <span className="text-gray-400">-</span>
                                 )}
                                 {lead.is_first_time_customer && (
-                                  <Sparkles className="h-4 w-4 text-purple-500" />
+                                  <Sparkles className="h-3.5 w-3.5 text-purple-500" />
                                 )}
                               </div>
                               {lead.discount_amount && lead.discount_amount > 0 && (
@@ -686,16 +738,16 @@ const QuoteLeadsView = () => {
                           
                           {isColumnVisible('progress') && (
                             <TableCell>
-                              <div className="space-y-1.5">
+                              <div className="space-y-1">
                                 {lead.furthest_step && (
                                   <div className="flex items-center gap-1.5">
                                     <div className={`h-2 w-2 rounded-full ${
-                                      lead.furthest_step === 'quote' ? 'bg-green-500' :
+                                      lead.furthest_step === 'quote' || lead.furthest_step === 'quote_viewed' ? 'bg-green-500' :
                                       lead.furthest_step === 'datetime' ? 'bg-blue-500' :
                                       lead.furthest_step === 'extras' ? 'bg-yellow-500' :
                                       'bg-gray-300'
                                     }`} />
-                                    <span className="text-xs capitalize">{lead.furthest_step.replace(/_/g, ' ')}</span>
+                                    <span className="text-xs text-gray-600 capitalize">{lead.furthest_step.replace(/_/g, ' ')}</span>
                                   </div>
                                 )}
                                 {lead.quote_email_sent && (
@@ -712,12 +764,12 @@ const QuoteLeadsView = () => {
                             <TableCell>
                               <Badge 
                                 variant="outline" 
-                                className={
+                                className={`text-xs ${
                                   lead.status === 'completed' ? 'bg-green-100 text-green-700 border-green-200' :
-                                  lead.status === 'left' ? 'bg-red-100 text-red-700 border-red-200' :
-                                  isLeadIdle(lead) ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-                                  'bg-blue-100 text-blue-700 border-blue-200'
-                                }
+                                  lead.status === 'left' ? 'bg-red-50 text-red-600 border-red-200' :
+                                  isLeadIdle(lead) ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                                  'bg-blue-50 text-blue-600 border-blue-200'
+                                }`}
                               >
                                 {lead.status === 'completed' ? 'Completed' : 
                                  lead.status === 'left' ? 'Left' :
@@ -728,22 +780,22 @@ const QuoteLeadsView = () => {
                           
                           {isColumnVisible('frequency') && (
                             <TableCell>
-                              <span className="text-sm">{lead.frequency || '-'}</span>
+                              <span className="text-sm text-gray-600">{lead.frequency || '-'}</span>
                             </TableCell>
                           )}
                           
                           {isColumnVisible('cleaningType') && (
                             <TableCell>
-                              <span className="text-sm">{lead.cleaning_type || '-'}</span>
+                              <span className="text-sm text-gray-600">{lead.cleaning_type || '-'}</span>
                             </TableCell>
                           )}
                           
                           {isColumnVisible('extras') && (
                             <TableCell>
-                              <div className="text-xs space-y-0.5">
+                              <div className="text-xs text-gray-600 space-y-0.5">
                                 {lead.oven_cleaning && <p>Oven: {lead.oven_size}</p>}
                                 {lead.ironing_hours && lead.ironing_hours > 0 && <p>Ironing: {lead.ironing_hours}h</p>}
-                                {!lead.oven_cleaning && !lead.ironing_hours && <span className="text-muted-foreground">-</span>}
+                                {!lead.oven_cleaning && !lead.ironing_hours && <span className="text-gray-400">-</span>}
                               </div>
                             </TableCell>
                           )}
@@ -752,31 +804,14 @@ const QuoteLeadsView = () => {
                             <TableCell>
                               <div className="text-xs space-y-1">
                                 {lead.source && lead.source !== 'direct' && lead.source !== 'website' ? (
-                                  <Badge variant="outline" className="capitalize">{lead.source}</Badge>
+                                  <Badge variant="outline" className="capitalize bg-gray-50">{lead.source}</Badge>
                                 ) : lead.utm_source ? (
-                                  <Badge variant="outline" className="capitalize">{lead.utm_source}</Badge>
+                                  <Badge variant="outline" className="capitalize bg-gray-50">{lead.utm_source}</Badge>
                                 ) : (
-                                  <span className="text-muted-foreground">Direct</span>
-                                )}
-                                {lead.utm_medium && (
-                                  <p className="text-muted-foreground capitalize">{lead.utm_medium}</p>
+                                  <span className="text-gray-400">Direct</span>
                                 )}
                                 {lead.utm_campaign && (
-                                  <p className="text-muted-foreground">{lead.utm_campaign}</p>
-                                )}
-                                {lead.referrer && (
-                                  <div>
-                                    <span className="text-muted-foreground text-[10px] block">Original Landing URL:</span>
-                                    <a 
-                                      href={lead.referrer} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      className="text-blue-600 hover:underline block truncate max-w-[250px] text-[11px]"
-                                      title={lead.referrer}
-                                    >
-                                      {lead.referrer}
-                                    </a>
-                                  </div>
+                                  <p className="text-gray-400">{lead.utm_campaign}</p>
                                 )}
                               </div>
                             </TableCell>
@@ -785,11 +820,11 @@ const QuoteLeadsView = () => {
                           {isColumnVisible('createdBy') && (
                             <TableCell>
                               {lead.created_by_admin_id ? (
-                                <Badge variant="secondary" className="text-xs">
+                                <Badge variant="secondary" className="text-xs bg-gray-100">
                                   {getAdminName(lead.created_by_admin_id)}
                                 </Badge>
                               ) : (
-                                <span className="text-xs text-muted-foreground">Customer</span>
+                                <span className="text-xs text-gray-400">Customer</span>
                               )}
                             </TableCell>
                           )}
@@ -804,58 +839,56 @@ const QuoteLeadsView = () => {
         </TabsContent>
 
         <TabsContent value="events">
-          <Card className="rounded-xl border-0 shadow-sm">
-            <CardContent className="pt-6">
-              <div className="rounded-lg border overflow-x-auto">
+          <Card className="rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Time</TableHead>
-                      <TableHead>Event</TableHead>
-                      <TableHead>Details</TableHead>
-                      <TableHead>Session</TableHead>
-                      <TableHead>Source</TableHead>
+                    <TableRow className="bg-gray-50/50 hover:bg-gray-50/50">
+                      <TableHead className="font-semibold text-gray-600">Time</TableHead>
+                      <TableHead className="font-semibold text-gray-600">Event</TableHead>
+                      <TableHead className="font-semibold text-gray-600">Session</TableHead>
+                      <TableHead className="font-semibold text-gray-600">Source</TableHead>
+                      <TableHead className="font-semibold text-gray-600">Details</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {events.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-gray-500">
-                          No events tracked yet
+                    {events.slice(0, 50).map((event) => (
+                      <TableRow key={event.id} className="hover:bg-gray-50/50">
+                        <TableCell className="text-sm">
+                          <div>
+                            <p className="font-medium text-gray-900">{format(new Date(event.created_at), 'dd MMM')}</p>
+                            <p className="text-gray-400 text-xs">{format(new Date(event.created_at), 'HH:mm:ss')}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize bg-gray-50">
+                            {event.event_type.replace(/_/g, ' ')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <code className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                            {event.session_id.slice(-8)}
+                          </code>
+                        </TableCell>
+                        <TableCell>
+                          {event.utm_source ? (
+                            <Badge variant="outline" className="capitalize text-xs">{event.utm_source}</Badge>
+                          ) : (
+                            <span className="text-gray-400 text-xs">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {event.event_data && Object.keys(event.event_data).length > 0 ? (
+                            <code className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded block max-w-[200px] truncate">
+                              {JSON.stringify(event.event_data)}
+                            </code>
+                          ) : (
+                            <span className="text-gray-400 text-xs">-</span>
+                          )}
                         </TableCell>
                       </TableRow>
-                    ) : (
-                      events.slice(0, 100).map((event) => (
-                        <TableRow key={event.id}>
-                          <TableCell className="whitespace-nowrap">
-                            {format(new Date(event.created_at), 'dd/MM/yy HH:mm:ss')}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={
-                              event.event_type === 'page_view' ? 'secondary' :
-                              event.event_type === 'service_click' ? 'default' : 'outline'
-                            }>
-                              {event.event_type.replace(/_/g, ' ')}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <code className="text-xs bg-gray-100 px-2 py-1 rounded">
-                              {JSON.stringify(event.event_data || {})}
-                            </code>
-                          </TableCell>
-                          <TableCell className="text-xs text-gray-500 font-mono">
-                            {event.session_id.substring(0, 12)}...
-                          </TableCell>
-                          <TableCell>
-                            {event.utm_source ? (
-                              <span className="text-xs">{event.utm_source}</span>
-                            ) : (
-                              <span className="text-gray-400 text-xs">Direct</span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
+                    ))}
                   </TableBody>
                 </Table>
               </div>

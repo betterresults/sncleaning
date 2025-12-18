@@ -54,14 +54,8 @@ const AdminQuoteLeads = () => {
             onSignOut={handleSignOut}
           />
           <SidebarInset className="flex-1">
-            <main className="flex-1 p-2 sm:p-4 space-y-3 sm:space-y-4 w-full overflow-x-hidden">
-              <div className="w-full px-1 sm:px-0 max-w-7xl mx-auto">
-                <div className="mb-6">
-                  <h1 className="text-3xl font-bold text-[#185166]">Quote Leads</h1>
-                  <p className="text-gray-600 mt-2">
-                    Track visitors who checked prices from your ads
-                  </p>
-                </div>
+            <main className="flex-1 p-3 sm:p-6 w-full overflow-x-hidden">
+              <div className="w-full max-w-7xl mx-auto">
                 <QuoteLeadsView />
               </div>
             </main>
