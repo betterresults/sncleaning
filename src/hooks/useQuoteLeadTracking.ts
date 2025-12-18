@@ -91,9 +91,38 @@ const getSessionId = (): string => {
   return sessionId;
 };
 
-// Get UTM parameters from URL
+// Get UTM parameters from URL (check current URL first, then referrer)
 const getUtmParams = () => {
-  const params = new URLSearchParams(window.location.search);
+  // First check current URL
+  let params = new URLSearchParams(window.location.search);
+  
+  // If no UTM params in current URL, check the referrer URL
+  if (!params.get('utm_source') && document.referrer) {
+    try {
+      const referrerUrl = new URL(document.referrer);
+      params = new URLSearchParams(referrerUrl.search);
+    } catch {
+      // Invalid referrer URL, ignore
+    }
+  }
+  
+  // Also check localStorage for originally captured UTM params
+  const storedParams = localStorage.getItem('quote_utm_params');
+  if (storedParams && !params.get('utm_source')) {
+    try {
+      const parsed = JSON.parse(storedParams);
+      return {
+        utm_source: parsed.utm_source || null,
+        utm_medium: parsed.utm_medium || null,
+        utm_campaign: parsed.utm_campaign || null,
+        utm_term: parsed.utm_term || null,
+        utm_content: parsed.utm_content || null,
+      };
+    } catch {
+      // Invalid JSON, ignore
+    }
+  }
+  
   return {
     utm_source: params.get('utm_source') || null,
     utm_medium: params.get('utm_medium') || null,
@@ -101,6 +130,16 @@ const getUtmParams = () => {
     utm_term: params.get('utm_term') || null,
     utm_content: params.get('utm_content') || null,
   };
+};
+
+// Extract UTM source from a URL's query params
+const getUtmSourceFromUrl = (url: string): string | null => {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.searchParams.get('utm_source');
+  } catch {
+    return null;
+  }
 };
 
 // Extract source from referrer URL
@@ -111,10 +150,15 @@ const getSourceFromReferrer = (referrer: string | null): string | null => {
     const referrerUrl = new URL(referrer);
     const hostname = referrerUrl.hostname.toLowerCase();
     
-    // Skip self-referrals and lovable preview links
+    // For self-referrals, extract UTM source from the referrer URL params
     if (hostname.includes('sncleaningservices') || 
         hostname.includes('lovable') || 
         hostname.includes('lovableproject')) {
+      // Check if there are UTM params in the referrer URL
+      const utmSource = referrerUrl.searchParams.get('utm_source');
+      if (utmSource) {
+        return utmSource.toLowerCase();
+      }
       return null;
     }
     
@@ -139,15 +183,23 @@ const getSourceFromReferrer = (referrer: string | null): string | null => {
 
 // Determine source based on UTM params or referrer
 const determineSource = (): string => {
+  // First check current URL params
   const params = new URLSearchParams(window.location.search);
   const utmSource = params.get('utm_source');
   
-  // If UTM source is present, use it
   if (utmSource) {
     return utmSource;
   }
   
-  // Try to determine from referrer
+  // Check referrer URL for UTM params (e.g., when navigating from services page)
+  if (document.referrer) {
+    const referrerUtmSource = getUtmSourceFromUrl(document.referrer);
+    if (referrerUtmSource) {
+      return referrerUtmSource;
+    }
+  }
+  
+  // Try to determine from referrer hostname
   const referrerSource = getSourceFromReferrer(document.referrer);
   if (referrerSource) {
     return referrerSource;
