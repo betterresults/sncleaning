@@ -387,7 +387,7 @@ export default function AddRecurringBooking() {
         cost_per_hour: formData.cost_per_hour ? parseFloat(formData.cost_per_hour) : null,
         total_cost: formData.total_cost ? parseFloat(formData.total_cost) : null,
         payment_method: formData.payment_method,
-        start_date: selectedDate?.toISOString().split('T')[0] || formData.start_date,
+        start_date: selectedDate ? `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}` : formData.start_date,
         start_time: selectedTime,
         postponed: formData.postponed,
         interval: interval,
@@ -555,7 +555,7 @@ export default function AddRecurringBooking() {
                               ...prev,
                               days_of_the_week: dayName,
                               days_number: '1',
-                              start_date: date.toISOString().split('T')[0]
+                              start_date: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
                             }));
                           }
                         }}

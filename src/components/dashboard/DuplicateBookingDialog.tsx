@@ -206,8 +206,11 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
         frequently = 'Same Day';
       }
       
-      // Extract date_only and time_only from newDateTime
-      const dateOnly = newDateTime.toISOString().split('T')[0];
+      // Extract date_only using local date to avoid timezone shift
+      const year = newDateTime.getFullYear();
+      const month = String(newDateTime.getMonth() + 1).padStart(2, '0');
+      const day = String(newDateTime.getDate()).padStart(2, '0');
+      const dateOnly = `${year}-${month}-${day}`;
       const timeOnly = `${hour24.toString().padStart(2, '0')}:${selectedMinute}:00`;
       
       const duplicateData = {
