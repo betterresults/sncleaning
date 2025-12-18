@@ -48,6 +48,37 @@ interface AdminQuoteDialogProps {
 type SendOption = 'quote' | 'complete' | null;
 type SendStatus = 'idle' | 'sending' | 'success' | 'error';
 
+// Extract the start time from a time slot like "9am - 10am" or "1:00 PM - 2:00 PM"
+const extractStartTime = (timeSlot: string | null | undefined): string | null => {
+  if (!timeSlot) return null;
+  
+  // Split by " - " to get the start time
+  const parts = timeSlot.split(' - ');
+  if (parts.length === 0) return null;
+  
+  const startTime = parts[0].trim();
+  
+  // Try to parse and convert to HH:MM format for SQL time
+  const timeRegex = /^(\d{1,2}):?(\d{2})?\s*(am|pm)?$/i;
+  const match = startTime.match(timeRegex);
+  
+  if (match) {
+    let hours = parseInt(match[1], 10);
+    const minutes = match[2] ? parseInt(match[2], 10) : 0;
+    const period = match[3]?.toLowerCase();
+    
+    if (period === 'pm' && hours !== 12) {
+      hours += 12;
+    } else if (period === 'am' && hours === 12) {
+      hours = 0;
+    }
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+  }
+  
+  return null;
+};
+
 // Generate a random short code (6 characters, alphanumeric)
 const generateShortCode = (): string => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
@@ -111,7 +142,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
       oven_cleaning: quoteData.hasOvenCleaning,
       oven_size: quoteData.ovenType,
       selected_date: quoteData.selectedDate ? quoteData.selectedDate.toISOString().split('T')[0] : null,
-      selected_time: null, // Time slots like "9am - 10am" are stored as text in the form, not SQL time
+      selected_time: extractStartTime(quoteData.selectedTime),
       calculated_quote: quoteData.totalCost,
       recommended_hours: quoteData.estimatedHours,
       short_notice_charge: quoteData.shortNoticeCharge,
