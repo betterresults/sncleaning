@@ -30,7 +30,19 @@ const handler = async (req: Request): Promise<Response> => {
     const { email, customerName, completeBookingUrl, quoteData, sessionId }: CompleteBookingEmailRequest = await req.json();
 
     console.log('Sending complete booking email to:', email);
-    console.log('Complete booking URL:', completeBookingUrl);
+    console.log('Original URL:', completeBookingUrl);
+
+    // Replace lovableproject URL with production URL
+    let finalUrl = completeBookingUrl;
+    if (completeBookingUrl.includes('lovableproject.com')) {
+      const urlObj = new URL(completeBookingUrl);
+      finalUrl = `https://sncleaningservices.co.uk${urlObj.pathname}${urlObj.search}`;
+    }
+    
+    console.log('Final URL:', finalUrl);
+
+    // Handle greeting - use name if we have one
+    const greeting = customerName && customerName.trim() ? `Hi ${customerName.split(' ')[0]},` : 'Hi there,';
 
     const emailResponse = await resend.emails.send({
       from: "SN Cleaning <bookings@sncleaningservices.co.uk>",
@@ -61,13 +73,13 @@ const handler = async (req: Request): Promise<Response> => {
                   <tr>
                     <td style="padding: 40px 30px;">
                       <p style="color: #333; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
-                        Hi ${customerName},
+                        ${greeting}
                       </p>
                       <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
                         We've prepared your ${quoteData.serviceType || 'cleaning'} booking with all the details you discussed with us. Click the button below to review and complete your booking.
                       </p>
                       
-                      ${quoteData.totalCost > 0 ? `
+                      ${quoteData.totalCost && quoteData.totalCost > 0 ? `
                       <!-- Quote Summary -->
                       <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="background-color: #f8f9fa; border-radius: 12px; margin: 25px 0;">
                         <tr>
@@ -88,7 +100,7 @@ const handler = async (req: Request): Promise<Response> => {
                       <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="margin: 30px 0;">
                         <tr>
                           <td style="text-align: center;">
-                            <a href="${completeBookingUrl}" style="display: inline-block; background: linear-gradient(135deg, #18A5A5, #185166); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 12px rgba(24, 165, 165, 0.3);">
+                            <a href="${finalUrl}" style="display: inline-block; background: linear-gradient(135deg, #18A5A5, #185166); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 12px rgba(24, 165, 165, 0.3);">
                               Complete Your Booking
                             </a>
                           </td>
