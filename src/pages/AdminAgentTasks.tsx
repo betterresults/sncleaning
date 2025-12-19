@@ -41,23 +41,10 @@ const AdminAgentTasks = () => {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
   const [cancelTaskId, setCancelTaskId] = useState<string | null>(null);
-  const [customers, setCustomers] = useState<Array<{ id: number; full_name: string | null; first_name: string | null; last_name: string | null }>>([]);
-
   const { tasks, loading, refetch, createTask, updateTask, deleteTask } = useAgentTasks({
     includeCompleted: statusFilter === 'all',
     status: statusFilter === 'completed' ? 'completed' : statusFilter === 'cancelled' ? 'cancelled' : undefined
   });
-
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      const { data } = await supabase
-        .from('customers')
-        .select('id, full_name, first_name, last_name')
-        .order('full_name');
-      if (data) setCustomers(data);
-    };
-    fetchCustomers();
-  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -186,7 +173,6 @@ const AdminAgentTasks = () => {
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         onSubmit={handleCreateTask}
-        customers={customers}
       />
 
       <TaskDetailsDialog
