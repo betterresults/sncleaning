@@ -499,9 +499,9 @@ const CoverageManagement = () => {
                           <SelectValue placeholder="Select borough" />
                         </SelectTrigger>
                         <SelectContent>
-                          {regions.filter(r => r.is_active).map((region) => (
+                          {regions.filter(r => r.is_active && getBoroughsForRegion(r.id).filter(b => b.is_active).length > 0).map((region) => (
                             <React.Fragment key={region.id}>
-                              <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">{region.name}</div>
+                              <div className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted/50">{region.name}</div>
                               {getBoroughsForRegion(region.id).filter(b => b.is_active).map((borough) => (
                                 <SelectItem key={borough.id} value={borough.id}>{borough.name}</SelectItem>
                               ))}
