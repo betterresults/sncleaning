@@ -49,19 +49,46 @@ export const BookingSelectorDialog: React.FC<BookingSelectorDialogProps> = ({
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      let query = supabase
+      // Fetch from upcoming bookings
+      let upcomingQuery = supabase
         .from('bookings')
         .select('id, date_only, address, postcode, service_type, first_name, last_name')
         .order('date_only', { ascending: false })
         .limit(50);
 
+      // Fetch from past bookings
+      let pastQuery = supabase
+        .from('past_bookings')
+        .select('id, date_only, address, postcode, service_type, first_name, last_name')
+        .order('date_only', { ascending: false })
+        .limit(50);
+
       if (customerId) {
-        query = query.eq('customer', customerId);
+        upcomingQuery = upcomingQuery.eq('customer', customerId);
+        pastQuery = pastQuery.eq('customer', customerId);
       }
 
-      const { data, error } = await query;
-      if (error) throw error;
-      setBookings(data || []);
+      const [upcomingResult, pastResult] = await Promise.all([upcomingQuery, pastQuery]);
+
+      if (upcomingResult.error) throw upcomingResult.error;
+      if (pastResult.error) throw pastResult.error;
+
+      // Combine and sort by date descending
+      const combined = [
+        ...(upcomingResult.data || []),
+        ...(pastResult.data || [])
+      ].sort((a, b) => {
+        const dateA = a.date_only ? new Date(a.date_only).getTime() : 0;
+        const dateB = b.date_only ? new Date(b.date_only).getTime() : 0;
+        return dateB - dateA;
+      });
+
+      // Remove duplicates by ID (in case a booking exists in both tables)
+      const uniqueBookings = combined.filter((booking, index, self) =>
+        index === self.findIndex((b) => b.id === booking.id)
+      );
+
+      setBookings(uniqueBookings.slice(0, 100));
     } catch (err) {
       console.error('Error fetching bookings:', err);
     } finally {
