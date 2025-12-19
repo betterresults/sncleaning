@@ -1998,38 +1998,56 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_holder_name: string | null
+          account_number: string | null
+          bank_name: string | null
           cleaner_id: number | null
           created_at: string | null
           customer_id: number | null
           email: string | null
           first_name: string | null
+          iban: string | null
           id: string
           last_name: string | null
+          payment_period: Database["public"]["Enums"]["payment_period"] | null
           role: Database["public"]["Enums"]["user_role"] | null
+          sort_code: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
+          account_holder_name?: string | null
+          account_number?: string | null
+          bank_name?: string | null
           cleaner_id?: number | null
           created_at?: string | null
           customer_id?: number | null
           email?: string | null
           first_name?: string | null
+          iban?: string | null
           id?: string
           last_name?: string | null
+          payment_period?: Database["public"]["Enums"]["payment_period"] | null
           role?: Database["public"]["Enums"]["user_role"] | null
+          sort_code?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          account_holder_name?: string | null
+          account_number?: string | null
+          bank_name?: string | null
           cleaner_id?: number | null
           created_at?: string | null
           customer_id?: number | null
           email?: string | null
           first_name?: string | null
+          iban?: string | null
           id?: string
           last_name?: string | null
+          payment_period?: Database["public"]["Enums"]["payment_period"] | null
           role?: Database["public"]["Enums"]["user_role"] | null
+          sort_code?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -2731,6 +2749,7 @@ export type Database = {
       app_role: "admin" | "user" | "guest" | "sales_agent"
       chat_type: "customer_office" | "customer_cleaner" | "office_cleaner"
       message_type: "text" | "image" | "file"
+      payment_period: "weekly" | "biweekly" | "monthly"
       sender_type: "customer" | "cleaner" | "admin"
       user_role: "admin" | "user" | "guest" | "sales_agent"
     }
@@ -2873,6 +2892,7 @@ export const Constants = {
       app_role: ["admin", "user", "guest", "sales_agent"],
       chat_type: ["customer_office", "customer_cleaner", "office_cleaner"],
       message_type: ["text", "image", "file"],
+      payment_period: ["weekly", "biweekly", "monthly"],
       sender_type: ["customer", "cleaner", "admin"],
       user_role: ["admin", "user", "guest", "sales_agent"],
     },
