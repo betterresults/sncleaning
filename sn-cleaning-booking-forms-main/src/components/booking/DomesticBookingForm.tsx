@@ -97,6 +97,9 @@ export interface DomesticBookingData {
   
   // First-time customer discount
   isFirstTimeCustomer?: boolean;
+  
+  // Agent attribution (from short link/quote lead)
+  agentUserId?: string;
 }
 
 const steps = [
@@ -267,6 +270,9 @@ const DomesticBookingForm: React.FC = () => {
       const email = searchParams.get('email') || '';
       const refSessionId = searchParams.get('ref');
       
+      // Agent attribution - CRITICAL for sales agent tracking
+      const agentUserId = searchParams.get('agentUserId');
+      
       // CRITICAL: Get the quoted pricing from URL to preserve exact amounts
       const quotedCost = searchParams.get('quotedCost');
       const quotedHours = searchParams.get('quotedHours');
@@ -292,6 +298,8 @@ const DomesticBookingForm: React.FC = () => {
         isFirstTimeCustomer: isFirstTime !== null ? isFirstTime === '1' : prev.isFirstTimeCustomer,
         // Use admin override to lock in the quoted price so it doesn't get recalculated
         adminTotalCostOverride: quotedCost ? parseFloat(quotedCost) : prev.adminTotalCostOverride,
+        // Agent attribution for sales agent tracking
+        agentUserId: agentUserId || prev.agentUserId,
       }));
       
       // Initialize tracking with ref session if available
