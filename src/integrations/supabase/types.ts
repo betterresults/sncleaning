@@ -2010,6 +2010,7 @@ export type Database = {
           id: string
           last_name: string | null
           payment_period: Database["public"]["Enums"]["payment_period"] | null
+          profile_photo: string | null
           role: Database["public"]["Enums"]["user_role"] | null
           sort_code: string | null
           updated_at: string | null
@@ -2028,6 +2029,7 @@ export type Database = {
           id?: string
           last_name?: string | null
           payment_period?: Database["public"]["Enums"]["payment_period"] | null
+          profile_photo?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           sort_code?: string | null
           updated_at?: string | null
@@ -2046,6 +2048,7 @@ export type Database = {
           id?: string
           last_name?: string | null
           payment_period?: Database["public"]["Enums"]["payment_period"] | null
+          profile_photo?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           sort_code?: string | null
           updated_at?: string | null
