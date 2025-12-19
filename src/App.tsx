@@ -45,6 +45,7 @@ import CleanerSettings from './pages/CleanerSettings';
 import CleanerChecklists from './pages/CleanerChecklists';
 import CleanerChecklist from './pages/CleanerChecklist';
 import AdminSettings from "./pages/AdminSettings";
+import StaffSettings from "./pages/StaffSettings";
 import RecurringBookings from "./pages/RecurringBookings";
 import AddRecurringBooking from "./pages/AddRecurringBooking";
 import EditRecurringBooking from "./pages/EditRecurringBooking";
@@ -135,6 +136,7 @@ const App = () => (
             <Route path="/bulk-edit-bookings" element={<BulkEditBookings />} />
             <Route path="/admin" element={<Dashboard />} />
             <Route path="/admin-settings" element={<AdminSettings />} />
+            <Route path="/staff-settings" element={<StaffSettings />} />
             <Route path="/users" element={<Users />} />
             <Route path="/past-bookings" element={<PastBookings />} />
             <Route path="/cleaner-dashboard" element={<CleanerDashboard />} />

@@ -198,14 +198,14 @@ export function UnifiedSidebar({ navigationItems, user, userRole, customerId, cl
             onClick={() => {
               console.log('Profile clicked, userRole:', userRole, 'customerId:', customerId);
               // Navigate to appropriate settings page based on user role and IDs
-              let settingsUrl = '/admin-settings'; // default
+              let settingsUrl = '/staff-settings'; // default for office staff
               
               if (customerId || userRole === 'guest') {
                 settingsUrl = '/customer-settings';
               } else if (userRole === 'user' || cleanerId) {
                 settingsUrl = '/cleaner-settings';
-              } else if (userRole === 'admin') {
-                settingsUrl = '/admin-settings';
+              } else if (userRole === 'admin' || userRole === 'sales_agent') {
+                settingsUrl = '/staff-settings';
               }
               
               console.log('Redirecting to:', settingsUrl);
