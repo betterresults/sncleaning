@@ -26,10 +26,11 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSalesAgents, CreateTaskInput } from '@/hooks/useAgentTasks';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Loader2, Check, ChevronsUpDown, X } from 'lucide-react';
+import { CalendarIcon, Loader2, Check, ChevronsUpDown, X, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -359,21 +360,32 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
                     </div>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[400px] p-0" align="start">
-                  <Command shouldFilter={false}>
-                    <CommandInput 
-                      placeholder="Search by name, email, phone, or ID..." 
+                <PopoverContent className="w-[400px] p-0" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
+                  <div className="flex items-center border-b px-3">
+                    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                    <input
+                      className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                      placeholder="Search by name, email, phone, or ID..."
                       value={customerSearch}
-                      onValueChange={setCustomerSearch}
+                      onChange={(e) => setCustomerSearch(e.target.value)}
+                      autoFocus
                     />
-                    <CommandList>
-                      <CommandEmpty>No customers found.</CommandEmpty>
-                      <CommandGroup>
+                  </div>
+                  <ScrollArea className="h-[300px]">
+                    {filteredCustomers.length === 0 ? (
+                      <div className="py-6 text-center text-sm text-muted-foreground">
+                        No customers found.
+                      </div>
+                    ) : (
+                      <div className="p-1">
                         {filteredCustomers.slice(0, 50).map((customer) => (
-                          <CommandItem
+                          <div
                             key={customer.id}
-                            value={customer.id.toString()}
-                            onSelect={() => {
+                            className={cn(
+                              "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                              formData.customer_id === customer.id.toString() && "bg-accent"
+                            )}
+                            onClick={() => {
                               setFormData(prev => ({ 
                                 ...prev, 
                                 customer_id: customer.id.toString(),
@@ -382,36 +394,33 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
                               setCustomerPopoverOpen(false);
                               setCustomerSearch('');
                             }}
-                            className="flex flex-col items-start py-2"
                           >
-                            <div className="flex items-center w-full">
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4 shrink-0",
-                                  formData.customer_id === customer.id.toString() ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <div className="flex flex-col min-w-0 flex-1">
-                                <span className="font-medium truncate">
-                                  {getCustomerDisplayName(customer)}
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4 shrink-0",
+                                formData.customer_id === customer.id.toString() ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <span className="font-medium truncate">
+                                {getCustomerDisplayName(customer)}
+                              </span>
+                              {getCustomerSubtext(customer) && (
+                                <span className="text-xs text-muted-foreground truncate">
+                                  {getCustomerSubtext(customer)}
                                 </span>
-                                {getCustomerSubtext(customer) && (
-                                  <span className="text-xs text-muted-foreground truncate">
-                                    {getCustomerSubtext(customer)}
-                                  </span>
-                                )}
-                              </div>
+                              )}
                             </div>
-                          </CommandItem>
+                          </div>
                         ))}
                         {filteredCustomers.length > 50 && (
                           <div className="p-2 text-xs text-center text-muted-foreground">
                             Showing 50 of {filteredCustomers.length} results. Type to narrow down.
                           </div>
                         )}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
+                      </div>
+                    )}
+                  </ScrollArea>
                 </PopoverContent>
               </Popover>
             </div>
