@@ -8,6 +8,7 @@ import { adminNavigation } from '@/lib/navigationItems';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { useAgentTasks, useSalesAgents, AgentTask, CreateTaskInput } from '@/hooks/useAgentTasks';
 import { CreateTaskDialog } from '@/components/admin/CreateTaskDialog';
+import { EditTaskDialog } from '@/components/admin/EditTaskDialog';
 import { AgentTasksTable } from '@/components/admin/AgentTasksTable';
 import { TaskDetailsDialog } from '@/components/admin/TaskDetailsDialog';
 import { BookingSelectorDialog } from '@/components/admin/BookingSelectorDialog';
@@ -42,6 +43,8 @@ const AdminAgentTasks = () => {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
   const [cancelTaskId, setCancelTaskId] = useState<string | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [taskToEdit, setTaskToEdit] = useState<AgentTask | null>(null);
   const [bookingSelectorOpen, setBookingSelectorOpen] = useState(false);
   const [taskForBookingEdit, setTaskForBookingEdit] = useState<AgentTask | null>(null);
   
@@ -67,6 +70,11 @@ const AdminAgentTasks = () => {
   const handleViewTask = (task: AgentTask) => {
     setSelectedTask(task);
     setDetailsDialogOpen(true);
+  };
+
+  const handleEditTask = (task: AgentTask) => {
+    setTaskToEdit(task);
+    setEditDialogOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
@@ -186,6 +194,7 @@ const AdminAgentTasks = () => {
                   <AgentTasksTable
                     tasks={filteredTasks}
                     onViewTask={handleViewTask}
+                    onEditTask={handleEditTask}
                     onDeleteTask={(id) => setDeleteTaskId(id)}
                     onCancelTask={(id) => setCancelTaskId(id)}
                     onReassignTask={handleReassignTask}
@@ -210,6 +219,17 @@ const AdminAgentTasks = () => {
         task={selectedTask}
         open={detailsDialogOpen}
         onOpenChange={setDetailsDialogOpen}
+      />
+
+      <EditTaskDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        task={taskToEdit}
+        onSubmit={async (input) => {
+          await updateTask(input);
+          setEditDialogOpen(false);
+          setTaskToEdit(null);
+        }}
       />
 
       <BookingSelectorDialog

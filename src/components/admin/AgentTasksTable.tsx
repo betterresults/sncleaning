@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { MoreHorizontal, Eye, Trash2, XCircle, Calendar, X } from 'lucide-react';
+import { MoreHorizontal, Eye, Trash2, XCircle, Calendar, X, Pencil } from 'lucide-react';
 import { AgentTask } from '@/hooks/useAgentTasks';
 import { format } from 'date-fns';
 import {
@@ -41,6 +41,7 @@ interface SalesAgent {
 interface AgentTasksTableProps {
   tasks: AgentTask[];
   onViewTask: (task: AgentTask) => void;
+  onEditTask?: (task: AgentTask) => void;
   onDeleteTask: (taskId: string) => void;
   onCancelTask: (taskId: string) => void;
   onReassignTask?: (taskId: string, newAgentId: string) => void;
@@ -94,6 +95,7 @@ const getTaskTypeLabel = (type: string) => {
 export const AgentTasksTable: React.FC<AgentTasksTableProps> = ({
   tasks,
   onViewTask,
+  onEditTask,
   onDeleteTask,
   onCancelTask,
   onReassignTask,
@@ -275,6 +277,12 @@ export const AgentTasksTable: React.FC<AgentTasksTableProps> = ({
                       <Eye className="mr-2 h-4 w-4" />
                       View Details
                     </DropdownMenuItem>
+                    {onEditTask && (
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEditTask(task); }}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Edit Task
+                      </DropdownMenuItem>
+                    )}
                     {task.status !== 'cancelled' && task.status !== 'completed' && (
                       <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onCancelTask(task.id); }}>
                         <XCircle className="mr-2 h-4 w-4" />
