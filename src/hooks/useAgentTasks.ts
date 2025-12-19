@@ -33,6 +33,7 @@ export interface AgentTask {
     address: string | null;
     postcode: string | null;
     service_type: string | null;
+    total_cost: number | string | null;
   } | null;
   assigned_to_profile?: {
     first_name: string | null;
@@ -149,11 +150,11 @@ export const useAgentTasks = (options?: {
         const [activeBookingsResult, pastBookingsResult] = await Promise.all([
           supabase
             .from('bookings')
-            .select('id, date_only, address, postcode, service_type')
+            .select('id, date_only, address, postcode, service_type, total_cost')
             .in('id', bookingIds),
           supabase
             .from('past_bookings')
-            .select('id, date_only, address, postcode, service_type')
+            .select('id, date_only, address, postcode, service_type, total_cost')
             .in('id', bookingIds)
         ]);
 
