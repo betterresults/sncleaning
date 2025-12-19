@@ -67,6 +67,7 @@ interface Booking {
   customer: number | null;
   first_name: string | null;
   last_name: string | null;
+  isPastBooking?: boolean;
 }
 
 export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
@@ -109,13 +110,32 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
           
           if (customerData) setCustomers(customerData);
 
+          // Fetch active bookings
           const { data: bookingData } = await supabase
             .from('bookings')
             .select('id, date_only, address, postcode, service_type, customer, first_name, last_name')
             .order('date_only', { ascending: false })
             .limit(100);
+
+          // Fetch past/completed bookings
+          const { data: pastBookingData } = await supabase
+            .from('past_bookings')
+            .select('id, date_only, address, postcode, service_type, customer, first_name, last_name')
+            .order('date_only', { ascending: false })
+            .limit(100);
           
-          if (bookingData) setBookings(bookingData);
+          // Combine and mark past bookings
+          const activeBookings: Booking[] = (bookingData || []).map(b => ({ ...b, isPastBooking: false }));
+          const pastBookings: Booking[] = (pastBookingData || []).map(b => ({ ...b, isPastBooking: true }));
+          
+          // Combine and sort by date descending
+          const allBookings = [...activeBookings, ...pastBookings].sort((a, b) => {
+            const dateA = a.date_only ? new Date(a.date_only).getTime() : 0;
+            const dateB = b.date_only ? new Date(b.date_only).getTime() : 0;
+            return dateB - dateA;
+          });
+          
+          setBookings(allBookings);
         } catch (err) {
           console.error('Error fetching data:', err);
         } finally {
@@ -219,7 +239,8 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
       ? `${booking.first_name || ''} ${booking.last_name || ''}`.trim()
       : '';
     const location = booking.postcode || booking.address || '';
-    return `#${booking.id} - ${date}${name ? ` - ${name}` : ''}${location ? ` (${location})` : ''}`;
+    const status = booking.isPastBooking ? ' [Completed]' : '';
+    return `#${booking.id} - ${date}${status}${name ? ` - ${name}` : ''}${location ? ` (${location})` : ''}`;
   };
 
   return (
