@@ -8,6 +8,7 @@ import { salesAgentNavigation } from '@/lib/navigationItems';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { useAgentTasks, AgentTask } from '@/hooks/useAgentTasks';
 import { TaskDetailsDialog } from '@/components/admin/TaskDetailsDialog';
+import { AgentSMSPanel } from '@/components/agent/AgentSMSPanel';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -307,6 +308,13 @@ const AgentTasks = () => {
                               </Button>
                             )}
                           </div>
+
+                          {/* SMS Panel */}
+                          {task.customer && (
+                            <div className="mt-3 pt-3 border-t" onClick={(e) => e.stopPropagation()}>
+                              <AgentSMSPanel task={task} />
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
                     ))}
