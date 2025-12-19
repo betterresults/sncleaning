@@ -319,38 +319,3 @@ Deno.serve(async (req) => {
     )
   }
 })
-          }
-        );
-
-        if (!emailResponse.ok) {
-          const errorText = await emailResponse.text();
-          console.error('Error sending invitation email:', errorText);
-        } else {
-          console.log('Invitation email sent successfully to:', email);
-        }
-      }
-    }
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        user: userData.user,
-        message: 'User created successfully' 
-      }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    )
-
-  } catch (error) {
-    console.error('Unexpected error:', error)
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    )
-  }
-})
