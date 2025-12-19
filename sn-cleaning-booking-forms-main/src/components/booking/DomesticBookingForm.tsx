@@ -547,12 +547,18 @@ const DomesticBookingForm: React.FC = () => {
   }, [isAdminMode, bookingData.totalCost]);
 
   // Also detect page visibility change (switching tabs/minimizing) - only show once per session
+  // But NOT on the payment step (step 3) as users may navigate to Stripe to add card details
   useEffect(() => {
     if (isAdminMode) return;
     
     const handleVisibilityChange = () => {
       const alreadyShownThisSession = sessionStorage.getItem('exit_popup_shown') === 'true';
       const emailAlreadySent = sessionStorage.getItem('quote_email_sent') === 'true';
+      
+      // Don't trigger exit popup on payment step - user may be adding card details in Stripe
+      if (currentStep === 3) {
+        return;
+      }
       
       if (document.hidden && bookingData.totalCost > 0 && !alreadyShownThisSession && !emailAlreadySent && currentStep > 1) {
         sessionStorage.setItem('exit_popup_pending', 'true');
