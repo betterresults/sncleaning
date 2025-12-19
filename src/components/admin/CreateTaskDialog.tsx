@@ -329,7 +329,7 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
 
             <div className="grid gap-2">
               <Label htmlFor="customer_id">Customer (Optional)</Label>
-              <Popover open={customerPopoverOpen} onOpenChange={setCustomerPopoverOpen}>
+              <Popover open={customerPopoverOpen} onOpenChange={setCustomerPopoverOpen} modal={true}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
