@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -18,10 +18,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 import { useSalesAgents, CreateTaskInput } from '@/hooks/useAgentTasks';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Loader2 } from 'lucide-react';
+import { CalendarIcon, Loader2, Check, ChevronsUpDown, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -54,6 +62,8 @@ interface Customer {
   full_name: string | null;
   first_name: string | null;
   last_name: string | null;
+  email: string | null;
+  phone: string | null;
 }
 
 interface Booking {
@@ -80,6 +90,8 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [customerPopoverOpen, setCustomerPopoverOpen] = useState(false);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -97,10 +109,10 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
       const fetchData = async () => {
         setLoadingData(true);
         try {
-          // Fetch customers
+          // Fetch customers with more fields for better search
           const { data: customerData } = await supabase
             .from('customers')
-            .select('id, full_name, first_name, last_name')
+            .select('id, full_name, first_name, last_name, email, phone')
             .order('full_name');
           
           if (customerData) setCustomers(customerData);
@@ -122,6 +134,26 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
       fetchData();
     }
   }, [open]);
+
+  // Filter customers based on search
+  const filteredCustomers = useMemo(() => {
+    if (!customerSearch.trim()) return customers;
+    const search = customerSearch.toLowerCase().trim();
+    return customers.filter(customer => {
+      const fullName = customer.full_name?.toLowerCase() || '';
+      const firstName = customer.first_name?.toLowerCase() || '';
+      const lastName = customer.last_name?.toLowerCase() || '';
+      const email = customer.email?.toLowerCase() || '';
+      const phone = customer.phone?.toLowerCase() || '';
+      const id = customer.id.toString();
+      return fullName.includes(search) || 
+             firstName.includes(search) || 
+             lastName.includes(search) || 
+             email.includes(search) || 
+             phone.includes(search) ||
+             id.includes(search);
+    });
+  }, [customers, customerSearch]);
 
   // Filter bookings based on selected customer
   const filteredBookings = formData.customer_id 
@@ -170,12 +202,23 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   };
 
   const getCustomerDisplayName = (customer: Customer) => {
-    if (customer.full_name) return customer.full_name;
-    if (customer.first_name || customer.last_name) {
-      return `${customer.first_name || ''} ${customer.last_name || ''}`.trim();
-    }
+    const name = customer.full_name || 
+      (customer.first_name || customer.last_name 
+        ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() 
+        : null);
+    if (name) return name;
+    if (customer.email) return customer.email;
     return `Customer #${customer.id}`;
   };
+
+  const getCustomerSubtext = (customer: Customer) => {
+    const parts: string[] = [];
+    if (customer.email) parts.push(customer.email);
+    if (customer.phone) parts.push(customer.phone);
+    return parts.join(' • ');
+  };
+
+  const selectedCustomer = customers.find(c => c.id.toString() === formData.customer_id);
 
   const getBookingDisplayName = (booking: Booking) => {
     const date = booking.date_only ? format(new Date(booking.date_only), 'dd MMM yyyy') : 'No date';
@@ -286,27 +329,91 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
 
             <div className="grid gap-2">
               <Label htmlFor="customer_id">Customer (Optional)</Label>
-              <Select
-                value={formData.customer_id || "none"}
-                onValueChange={(value) => setFormData(prev => ({ 
-                  ...prev, 
-                  customer_id: value === "none" ? "" : value,
-                  booking_id: "" // Reset booking when customer changes
-                }))}
-                disabled={loadingData}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={loadingData ? "Loading..." : "Select a customer"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {customers.map(customer => (
-                    <SelectItem key={customer.id} value={customer.id.toString()}>
-                      {getCustomerDisplayName(customer)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={customerPopoverOpen} onOpenChange={setCustomerPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={customerPopoverOpen}
+                    className="justify-between font-normal"
+                    disabled={loadingData}
+                  >
+                    {loadingData ? (
+                      "Loading..."
+                    ) : selectedCustomer ? (
+                      <span className="truncate">{getCustomerDisplayName(selectedCustomer)}</span>
+                    ) : (
+                      "Search for a customer..."
+                    )}
+                    <div className="flex items-center gap-1 ml-2 shrink-0">
+                      {selectedCustomer && (
+                        <X 
+                          className="h-4 w-4 opacity-50 hover:opacity-100" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFormData(prev => ({ ...prev, customer_id: '', booking_id: '' }));
+                          }}
+                        />
+                      )}
+                      <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                    </div>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[400px] p-0" align="start">
+                  <Command shouldFilter={false}>
+                    <CommandInput 
+                      placeholder="Search by name, email, phone, or ID..." 
+                      value={customerSearch}
+                      onValueChange={setCustomerSearch}
+                    />
+                    <CommandList>
+                      <CommandEmpty>No customers found.</CommandEmpty>
+                      <CommandGroup>
+                        {filteredCustomers.slice(0, 50).map((customer) => (
+                          <CommandItem
+                            key={customer.id}
+                            value={customer.id.toString()}
+                            onSelect={() => {
+                              setFormData(prev => ({ 
+                                ...prev, 
+                                customer_id: customer.id.toString(),
+                                booking_id: '' 
+                              }));
+                              setCustomerPopoverOpen(false);
+                              setCustomerSearch('');
+                            }}
+                            className="flex flex-col items-start py-2"
+                          >
+                            <div className="flex items-center w-full">
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4 shrink-0",
+                                  formData.customer_id === customer.id.toString() ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <div className="flex flex-col min-w-0 flex-1">
+                                <span className="font-medium truncate">
+                                  {getCustomerDisplayName(customer)}
+                                </span>
+                                {getCustomerSubtext(customer) && (
+                                  <span className="text-xs text-muted-foreground truncate">
+                                    {getCustomerSubtext(customer)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </CommandItem>
+                        ))}
+                        {filteredCustomers.length > 50 && (
+                          <div className="p-2 text-xs text-center text-muted-foreground">
+                            Showing 50 of {filteredCustomers.length} results. Type to narrow down.
+                          </div>
+                        )}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="grid gap-2">
