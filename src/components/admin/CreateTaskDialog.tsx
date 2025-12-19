@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,19 +18,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSalesAgents, CreateTaskInput } from '@/hooks/useAgentTasks';
 import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Loader2, Check, ChevronsUpDown, X, Search } from 'lucide-react';
+import { CalendarIcon, Loader2, Check, Search, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,10 +43,10 @@ const TASK_TYPES = [
 ];
 
 const PRIORITIES = [
-  { value: 'low', label: 'Low' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'high', label: 'High' },
-  { value: 'urgent', label: 'Urgent' },
+  { value: 'low', label: 'Low', color: 'bg-slate-100 text-slate-700' },
+  { value: 'medium', label: 'Medium', color: 'bg-blue-100 text-blue-700' },
+  { value: 'high', label: 'High', color: 'bg-orange-100 text-orange-700' },
+  { value: 'urgent', label: 'Urgent', color: 'bg-red-100 text-red-700' },
 ];
 
 interface Customer {
@@ -92,7 +83,8 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [customerSearch, setCustomerSearch] = useState('');
-  const [customerPopoverOpen, setCustomerPopoverOpen] = useState(false);
+  const [customerSectionOpen, setCustomerSectionOpen] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -110,7 +102,6 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
       const fetchData = async () => {
         setLoadingData(true);
         try {
-          // Fetch customers with more fields for better search
           const { data: customerData } = await supabase
             .from('customers')
             .select('id, full_name, first_name, last_name, email, phone')
@@ -118,7 +109,6 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
           
           if (customerData) setCustomers(customerData);
 
-          // Fetch recent bookings (last 100)
           const { data: bookingData } = await supabase
             .from('bookings')
             .select('id, date_only, address, postcode, service_type, customer, first_name, last_name')
@@ -189,6 +179,8 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
         booking_id: '',
       });
       setDueDate(undefined);
+      setCustomerSearch('');
+      setCustomerSectionOpen(false);
       onOpenChange(false);
     } finally {
       setSubmitting(false);
@@ -231,262 +223,325 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Create New Task</DialogTitle>
-            <DialogDescription>
-              Assign a task to a sales agent
-            </DialogDescription>
-          </DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="w-full sm:max-w-[540px] p-0 flex flex-col">
+        <SheetHeader className="px-6 py-4 border-b bg-muted/30">
+          <SheetTitle className="text-xl">Create New Task</SheetTitle>
+          <SheetDescription>
+            Assign a task to a sales agent
+          </SheetDescription>
+        </SheetHeader>
 
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="title">Task Title *</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                placeholder="e.g., Follow up on cleaning quality"
-                required
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Add details about what needs to be done..."
-                rows={3}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="task_type">Task Type</Label>
-                <Select
-                  value={formData.task_type}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, task_type: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TASK_TYPES.map(type => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <ScrollArea className="flex-1 px-6">
+            <div className="space-y-6 py-6">
+              {/* Task Title */}
+              <div className="space-y-2">
+                <Label htmlFor="title" className="text-sm font-medium">
+                  Task Title <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="e.g., Follow up on cleaning quality"
+                  className="h-11"
+                  required
+                />
               </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="priority">Priority</Label>
-                <Select
-                  value={formData.priority}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, priority: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PRIORITIES.map(priority => (
-                      <SelectItem key={priority.value} value={priority.value}>
-                        {priority.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {/* Description */}
+              <div className="space-y-2">
+                <Label htmlFor="description" className="text-sm font-medium">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Add details about what needs to be done..."
+                  rows={3}
+                  className="resize-none"
+                />
               </div>
-            </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="assigned_to">Assign To *</Label>
-              <Select
-                value={formData.assigned_to}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, assigned_to: value }))}
-                disabled={loadingAgents}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={loadingAgents ? "Loading agents..." : "Select an agent"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {agents.length === 0 && !loadingAgents ? (
-                    <div className="p-2 text-sm text-muted-foreground">No agents found</div>
-                  ) : (
-                    agents.map(agent => (
-                      <SelectItem key={agent.user_id} value={agent.user_id}>
-                        {getAgentDisplayName(agent)}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="customer_id">Customer (Optional)</Label>
-              <Popover open={customerPopoverOpen} onOpenChange={setCustomerPopoverOpen} modal={true}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={customerPopoverOpen}
-                    className="justify-between font-normal"
-                    disabled={loadingData}
+              {/* Task Type & Priority */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Task Type</Label>
+                  <Select
+                    value={formData.task_type}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, task_type: value }))}
                   >
-                    {loadingData ? (
-                      "Loading..."
-                    ) : selectedCustomer ? (
-                      <span className="truncate">{getCustomerDisplayName(selectedCustomer)}</span>
+                    <SelectTrigger className="h-11">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TASK_TYPES.map(type => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Priority</Label>
+                  <Select
+                    value={formData.priority}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, priority: value }))}
+                  >
+                    <SelectTrigger className="h-11">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PRIORITIES.map(priority => (
+                        <SelectItem key={priority.value} value={priority.value}>
+                          <span className={cn("px-2 py-0.5 rounded text-xs font-medium", priority.color)}>
+                            {priority.label}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Assign To */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">
+                  Assign To <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={formData.assigned_to}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, assigned_to: value }))}
+                  disabled={loadingAgents}
+                >
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder={loadingAgents ? "Loading agents..." : "Select an agent"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {agents.length === 0 && !loadingAgents ? (
+                      <div className="p-2 text-sm text-muted-foreground">No agents found</div>
                     ) : (
-                      "Search for a customer..."
+                      agents.map(agent => (
+                        <SelectItem key={agent.user_id} value={agent.user_id}>
+                          {getAgentDisplayName(agent)}
+                        </SelectItem>
+                      ))
                     )}
-                    <div className="flex items-center gap-1 ml-2 shrink-0">
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Customer Selection - Expandable Section */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Customer (Optional)</Label>
+                <div className="border rounded-lg overflow-hidden">
+                  {/* Selected Customer or Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => setCustomerSectionOpen(!customerSectionOpen)}
+                    className="w-full flex items-center justify-between p-3 bg-background hover:bg-muted/50 transition-colors text-left"
+                  >
+                    <span className={cn("text-sm", !selectedCustomer && "text-muted-foreground")}>
+                      {selectedCustomer ? getCustomerDisplayName(selectedCustomer) : "Select a customer..."}
+                    </span>
+                    <div className="flex items-center gap-2">
                       {selectedCustomer && (
                         <X 
-                          className="h-4 w-4 opacity-50 hover:opacity-100" 
+                          className="h-4 w-4 text-muted-foreground hover:text-foreground" 
                           onClick={(e) => {
                             e.stopPropagation();
                             setFormData(prev => ({ ...prev, customer_id: '', booking_id: '' }));
                           }}
                         />
                       )}
-                      <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                      {customerSectionOpen ? (
+                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      )}
                     </div>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[400px] p-0" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
-                  <div className="flex items-center border-b px-3">
-                    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                    <input
-                      className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                      placeholder="Search by name, email, phone, or ID..."
-                      value={customerSearch}
-                      onChange={(e) => setCustomerSearch(e.target.value)}
-                      autoFocus
-                    />
-                  </div>
-                  <ScrollArea className="h-[300px]">
-                    {filteredCustomers.length === 0 ? (
-                      <div className="py-6 text-center text-sm text-muted-foreground">
-                        No customers found.
+                  </button>
+                  
+                  {/* Expanded Customer Search */}
+                  {customerSectionOpen && (
+                    <div className="border-t">
+                      <div className="flex items-center border-b px-3 bg-muted/30">
+                        <Search className="h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search by name, email, phone..."
+                          value={customerSearch}
+                          onChange={(e) => setCustomerSearch(e.target.value)}
+                          className="border-0 focus-visible:ring-0 bg-transparent"
+                        />
                       </div>
-                    ) : (
-                      <div className="p-1">
-                        {filteredCustomers.slice(0, 50).map((customer) => (
-                          <div
-                            key={customer.id}
-                            className={cn(
-                              "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                              formData.customer_id === customer.id.toString() && "bg-accent"
-                            )}
-                            onClick={() => {
-                              setFormData(prev => ({ 
-                                ...prev, 
-                                customer_id: customer.id.toString(),
-                                booking_id: '' 
-                              }));
-                              setCustomerPopoverOpen(false);
-                              setCustomerSearch('');
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4 shrink-0",
-                                formData.customer_id === customer.id.toString() ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            <div className="flex flex-col min-w-0 flex-1">
-                              <span className="font-medium truncate">
-                                {getCustomerDisplayName(customer)}
-                              </span>
-                              {getCustomerSubtext(customer) && (
-                                <span className="text-xs text-muted-foreground truncate">
-                                  {getCustomerSubtext(customer)}
-                                </span>
-                              )}
-                            </div>
+                      <ScrollArea className="h-[200px]">
+                        {loadingData ? (
+                          <div className="flex items-center justify-center py-8">
+                            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                           </div>
-                        ))}
-                        {filteredCustomers.length > 50 && (
-                          <div className="p-2 text-xs text-center text-muted-foreground">
-                            Showing 50 of {filteredCustomers.length} results. Type to narrow down.
+                        ) : filteredCustomers.length === 0 ? (
+                          <div className="py-8 text-center text-sm text-muted-foreground">
+                            No customers found
+                          </div>
+                        ) : (
+                          <div className="p-1">
+                            {filteredCustomers.slice(0, 50).map((customer) => (
+                              <button
+                                key={customer.id}
+                                type="button"
+                                className={cn(
+                                  "w-full flex items-center gap-3 p-2.5 rounded-md text-left hover:bg-muted transition-colors",
+                                  formData.customer_id === customer.id.toString() && "bg-primary/10"
+                                )}
+                                onClick={() => {
+                                  setFormData(prev => ({ 
+                                    ...prev, 
+                                    customer_id: customer.id.toString(),
+                                    booking_id: '' 
+                                  }));
+                                  setCustomerSectionOpen(false);
+                                  setCustomerSearch('');
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "h-4 w-4 shrink-0",
+                                    formData.customer_id === customer.id.toString() ? "opacity-100 text-primary" : "opacity-0"
+                                  )}
+                                />
+                                <div className="flex flex-col min-w-0 flex-1">
+                                  <span className="font-medium text-sm truncate">
+                                    {getCustomerDisplayName(customer)}
+                                  </span>
+                                  {getCustomerSubtext(customer) && (
+                                    <span className="text-xs text-muted-foreground truncate">
+                                      {getCustomerSubtext(customer)}
+                                    </span>
+                                  )}
+                                </div>
+                              </button>
+                            ))}
+                            {filteredCustomers.length > 50 && (
+                              <div className="p-2 text-xs text-center text-muted-foreground">
+                                Showing 50 of {filteredCustomers.length} results
+                              </div>
+                            )}
                           </div>
                         )}
-                      </div>
-                    )}
-                  </ScrollArea>
-                </PopoverContent>
-              </Popover>
-            </div>
+                      </ScrollArea>
+                    </div>
+                  )}
+                </div>
+              </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="booking_id">Booking (Optional)</Label>
-              <Select
-                value={formData.booking_id || "none"}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, booking_id: value === "none" ? "" : value }))}
-                disabled={loadingData}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={loadingData ? "Loading..." : "Select a booking"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {filteredBookings.map(booking => (
-                    <SelectItem key={booking.id} value={booking.id.toString()}>
-                      {getBookingDisplayName(booking)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {formData.customer_id && filteredBookings.length === 0 && (
-                <p className="text-xs text-muted-foreground">No bookings found for this customer</p>
-              )}
-            </div>
+              {/* Booking Selection */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Booking (Optional)</Label>
+                <Select
+                  value={formData.booking_id || "none"}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, booking_id: value === "none" ? "" : value }))}
+                  disabled={loadingData}
+                >
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder={loadingData ? "Loading..." : "Select a booking"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {filteredBookings.map(booking => (
+                      <SelectItem key={booking.id} value={booking.id.toString()}>
+                        {getBookingDisplayName(booking)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {formData.customer_id && filteredBookings.length === 0 && (
+                  <p className="text-xs text-muted-foreground">No bookings found for this customer</p>
+                )}
+              </div>
 
-            <div className="grid gap-2">
-              <Label>Due Date (Optional)</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "justify-start text-left font-normal",
-                      !dueDate && "text-muted-foreground"
-                    )}
+              {/* Due Date */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Due Date (Optional)</Label>
+                <div className="border rounded-lg overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setCalendarOpen(!calendarOpen)}
+                    className="w-full flex items-center justify-between p-3 bg-background hover:bg-muted/50 transition-colors text-left"
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dueDate ? format(dueDate, "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={dueDate}
-                    onSelect={setDueDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+                    <div className="flex items-center gap-2">
+                      <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                      <span className={cn("text-sm", !dueDate && "text-muted-foreground")}>
+                        {dueDate ? format(dueDate, 'PPP') : "Pick a date"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {dueDate && (
+                        <X 
+                          className="h-4 w-4 text-muted-foreground hover:text-foreground" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDueDate(undefined);
+                          }}
+                        />
+                      )}
+                      {calendarOpen ? (
+                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </div>
+                  </button>
+                  
+                  {calendarOpen && (
+                    <div className="border-t p-3 flex justify-center">
+                      <Calendar
+                        mode="single"
+                        selected={dueDate}
+                        onSelect={(date) => {
+                          setDueDate(date);
+                          setCalendarOpen(false);
+                        }}
+                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                        initialFocus
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
+          </ScrollArea>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={submitting || !formData.title || !formData.assigned_to}>
-              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create Task
-            </Button>
-          </DialogFooter>
+          {/* Footer */}
+          <SheetFooter className="px-6 py-4 border-t bg-muted/30">
+            <div className="flex gap-3 w-full">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={submitting || !formData.title || !formData.assigned_to}
+                className="flex-1"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  'Create Task'
+                )}
+              </Button>
+            </div>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 };
