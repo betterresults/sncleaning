@@ -61,6 +61,9 @@ const ShortLinkResolver = () => {
         
         // Session tracking
         if (data.session_id) params.set('ref', data.session_id);
+        
+        // Agent attribution - CRITICAL for sales agent tracking
+        if (data.agent_user_id) params.set('agentUserId', data.agent_user_id);
 
         // Determine the route based on service type
         const serviceType = data.service_type || 'Domestic';

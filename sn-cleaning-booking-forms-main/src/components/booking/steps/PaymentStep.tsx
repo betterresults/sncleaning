@@ -426,7 +426,8 @@ useEffect(() => {
           // Notes
           notes: data.notes,
           additionalDetails: data,
-          cleanerId: data.cleanerId // Include cleaner assignment
+          cleanerId: data.cleanerId, // Include cleaner assignment
+          agentUserId: data.agentUserId // Agent attribution from quote link
         }, true);
 
         if (!result.success || !result.bookingId) {
@@ -600,7 +601,8 @@ useEffect(() => {
           notes: data.notes,
           additionalDetails: data,
           cleanerId: data.cleanerId,
-          paymentMethod: 'card' // Save as 'card' to trigger payment collection notification
+          paymentMethod: 'card', // Save as 'card' to trigger payment collection notification
+          agentUserId: data.agentUserId // Agent attribution from quote link
         }, true);
 
         if (!result.success || !result.bookingId) {
@@ -676,7 +678,8 @@ useEffect(() => {
           notes: data.notes,
           additionalDetails: data,
           cleanerId: data.cleanerId,
-          paymentMethod: 'bank-transfer'
+          paymentMethod: 'bank-transfer',
+          agentUserId: data.agentUserId // Agent attribution from quote link
         }, true);
 
         if (!result.success || !result.bookingId) {
@@ -752,7 +755,8 @@ useEffect(() => {
           notes: data.notes,
           additionalDetails: data,
           cleanerId: data.cleanerId,
-          paymentMethod: null
+          paymentMethod: null,
+          agentUserId: data.agentUserId // Agent attribution from quote link
         }, true);
 
         if (!result.success || !result.bookingId) {
@@ -832,7 +836,8 @@ useEffect(() => {
         notes: data.notes,
         additionalDetails: data,
         cleanerId: data.cleanerId, // Include cleaner assignment
-        paymentMethod: selectedAdminPaymentMethod || (defaultPaymentMethod ? 'Stripe' : null) // Include payment method
+        paymentMethod: selectedAdminPaymentMethod || (defaultPaymentMethod ? 'Stripe' : null), // Include payment method
+        agentUserId: data.agentUserId // Agent attribution from quote link
       };
 
       // Check if using a saved payment method (customer's or admin-selected)
