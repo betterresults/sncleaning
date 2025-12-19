@@ -280,14 +280,6 @@ export const useDomesticBookingSubmit = () => {
 
       const totalHours = bookingData.totalHours || bookingData.estimatedHours || 0;
 
-      const { data: latestBooking } = await supabase
-        .from('bookings')
-        .select('id')
-        .order('id', { ascending: false })
-        .limit(1)
-        .single();
-      const nextId = (latestBooking?.id ?? 0) + 1;
-
       // Get current user and their role for tracking
       const { data: { user } } = await supabase.auth.getUser();
       let createdBySource = 'website';
@@ -307,8 +299,8 @@ export const useDomesticBookingSubmit = () => {
         }
       }
 
+      // Note: Do NOT set 'id' - let the database auto-generate it (identity column)
       const bookingInsert: any = {
-        id: nextId,
         customer: customerId,
         first_name: bookingData.firstName || '',
         last_name: bookingData.lastName || '',
