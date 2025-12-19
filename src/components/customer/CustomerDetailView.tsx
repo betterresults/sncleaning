@@ -308,6 +308,67 @@ const CustomerDetailView = ({
     }
   };
 
+  const handleDeletePaymentMethod = async (paymentMethodId: string) => {
+    try {
+      const { error } = await supabase
+        .from('customer_payment_methods')
+        .delete()
+        .eq('id', paymentMethodId);
+
+      if (error) throw error;
+
+      setPaymentMethods(prev => prev.filter(pm => pm.id !== paymentMethodId));
+      
+      toast({
+        title: 'Success',
+        description: 'Payment method removed successfully',
+      });
+    } catch (error: any) {
+      console.error('Error deleting payment method:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to remove payment method',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleSetDefault = async (paymentMethodId: string) => {
+    if (!customerId) return;
+    
+    try {
+      // First, unset all other defaults
+      await supabase
+        .from('customer_payment_methods')
+        .update({ is_default: false })
+        .eq('customer_id', customerId);
+
+      // Then set the selected one as default
+      const { error } = await supabase
+        .from('customer_payment_methods')
+        .update({ is_default: true })
+        .eq('id', paymentMethodId);
+
+      if (error) throw error;
+
+      setPaymentMethods(prev => 
+        prev.map(pm => ({ ...pm, is_default: pm.id === paymentMethodId }))
+      );
+      
+      toast({
+        title: 'Success',
+        description: 'Default payment method updated',
+      });
+    } catch (error: any) {
+      console.error('Error setting default payment method:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update default payment method',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const totalUnpaid = unpaidBookings.reduce((sum, booking) => sum + booking.total_cost, 0);
 
   return (
@@ -551,24 +612,50 @@ const CustomerDetailView = ({
                   <CardContent>
                     {paymentMethods.length > 0 ? (
                       <div className="space-y-2">
-                        {paymentMethods.map((pm) => (
-                          <div key={pm.id} className="flex items-center justify-between p-3 border rounded-lg">
-                            <div className="flex items-center gap-3">
-                              <CreditCard className="h-5 w-5 text-muted-foreground" />
-                              <div>
-                                <span className="font-medium">
-                                  {pm.card_brand.toUpperCase()} •••• {pm.card_last4}
-                                </span>
-                                <div className="text-sm text-muted-foreground">
-                                  Expires {pm.card_exp_month}/{pm.card_exp_year}
+                        {paymentMethods.map((pm) => {
+                          const currentYear = new Date().getFullYear();
+                          const currentMonth = new Date().getMonth() + 1;
+                          const isExpired = pm.card_exp_year < currentYear || 
+                            (pm.card_exp_year === currentYear && pm.card_exp_month < currentMonth);
+                          
+                          return (
+                            <div key={pm.id} className={`flex items-center justify-between p-3 border rounded-lg ${isExpired ? 'bg-red-50 border-red-200' : ''}`}>
+                              <div className="flex items-center gap-3">
+                                <CreditCard className={`h-5 w-5 ${isExpired ? 'text-red-500' : 'text-muted-foreground'}`} />
+                                <div>
+                                  <span className={`font-medium ${isExpired ? 'text-red-700' : ''}`}>
+                                    {pm.card_brand.toUpperCase()} •••• {pm.card_last4}
+                                  </span>
+                                  <div className={`text-sm ${isExpired ? 'text-red-500 font-medium' : 'text-muted-foreground'}`}>
+                                    {isExpired ? 'EXPIRED' : 'Expires'} {pm.card_exp_month}/{pm.card_exp_year}
+                                  </div>
                                 </div>
                               </div>
+                              <div className="flex items-center gap-2">
+                                {pm.is_default ? (
+                                  <Badge variant="default" className="bg-green-600">Default</Badge>
+                                ) : (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleSetDefault(pm.id)}
+                                    disabled={isExpired}
+                                  >
+                                    Set Default
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDeletePaymentMethod(pm.id)}
+                                  className="text-red-600 hover:text-red-700 border-red-300 hover:border-red-400 hover:bg-red-50"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
-                            {pm.is_default && (
-                              <Badge variant="default">Default</Badge>
-                            )}
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : (
                       <div className="text-center py-4 text-muted-foreground">
