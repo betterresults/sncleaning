@@ -16,6 +16,24 @@ function getRoleDisplayName(role: string): string {
   }
 }
 
+// Helper function to generate a secure temporary password
+function generateTempPassword(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  const specialChars = '!@#$%&*';
+  let password = '';
+  
+  // Generate 10 random characters
+  for (let i = 0; i < 10; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  
+  // Add a special character and number to ensure password meets requirements
+  password += specialChars.charAt(Math.floor(Math.random() * specialChars.length));
+  password += Math.floor(Math.random() * 10);
+  
+  return password;
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -65,8 +83,12 @@ Deno.serve(async (req) => {
       }
     )
 
-    // Get the request body
-    const { email, password, firstName, lastName, role } = await req.json()
+    // Get the request body - password is now optional
+    const { email, password: providedPassword, firstName, lastName, role } = await req.json()
+
+    // Generate temporary password if not provided
+    const password = providedPassword || generateTempPassword();
+    console.log('Password will be auto-generated:', !providedPassword);
 
     // SECURITY LAYER 2: If trying to create an admin, verify the requesting user is an admin
     if (role === 'admin') {
@@ -261,6 +283,42 @@ Deno.serve(async (req) => {
                 login_url: loginUrl
               }
             })
+          }
+        );
+
+        if (!emailResponse.ok) {
+          const errorText = await emailResponse.text();
+          console.error('Error sending invitation email:', errorText);
+        } else {
+          console.log('Invitation email sent successfully to:', email);
+        }
+      }
+    }
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        user: userData.user,
+        message: 'User created successfully',
+        emailSent: role !== 'guest'
+      }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
+
+  } catch (error) {
+    console.error('Unexpected error:', error)
+    return new Response(
+      JSON.stringify({ error: 'Internal server error' }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
+  }
+})
           }
         );
 
