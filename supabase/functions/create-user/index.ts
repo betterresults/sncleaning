@@ -1,9 +1,19 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// Helper function to get role display name
+function getRoleDisplayName(role: string): string {
+  switch (role) {
+    case 'admin': return 'Administrator';
+    case 'user': return 'Cleaner';
+    case 'sales_agent': return 'Sales Agent';
+    case 'guest': return 'Customer';
+    default: return role;
+  }
 }
 
 Deno.serve(async (req) => {
@@ -209,6 +219,58 @@ Deno.serve(async (req) => {
     if (roleError) {
       console.error('Error creating user role:', roleError)
       // Continue anyway, as the user was created successfully
+    }
+
+    // Send invitation email for non-customer roles (staff members)
+    if (role !== 'guest') {
+      console.log('Sending staff invitation email to:', email);
+      
+      // Get the staff_invitation template
+      const { data: template, error: templateError } = await supabaseAdmin
+        .from('email_notification_templates')
+        .select('id')
+        .eq('name', 'staff_invitation')
+        .eq('is_active', true)
+        .single();
+
+      if (templateError) {
+        console.error('Error fetching invitation template:', templateError);
+      } else if (template) {
+        // Determine the login URL based on role
+        const baseUrl = 'https://preview--sn-cleaning-b5a73a14.lovable.app';
+        const loginUrl = `${baseUrl}/auth`;
+        
+        // Call send-notification-email function
+        const emailResponse = await fetch(
+          `${Deno.env.get('SUPABASE_URL')}/functions/v1/send-notification-email`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`
+            },
+            body: JSON.stringify({
+              template_id: template.id,
+              recipient_email: email,
+              variables: {
+                first_name: firstName,
+                last_name: lastName,
+                email: email,
+                temp_password: password,
+                role_display: getRoleDisplayName(role),
+                login_url: loginUrl
+              }
+            })
+          }
+        );
+
+        if (!emailResponse.ok) {
+          const errorText = await emailResponse.text();
+          console.error('Error sending invitation email:', errorText);
+        } else {
+          console.log('Invitation email sent successfully to:', email);
+        }
+      }
     }
 
     return new Response(
