@@ -31,25 +31,56 @@ const StaffSettings = () => {
   // Profile state
   const [profileLoading, setProfileLoading] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
-  const [profileData, setProfileData] = useState({
-    first_name: '',
-    last_name: '',
-    email: '',
-    profile_photo: '',
-    bank_name: '',
-    account_holder_name: '',
-    sort_code: '',
-    account_number: '',
-    iban: ''
+  const STORAGE_KEY = 'staff_settings_bank_draft';
+
+  // Initialize state from localStorage if available
+  const getInitialProfileData = () => {
+    const savedDraft = localStorage.getItem(STORAGE_KEY);
+    if (savedDraft) {
+      try {
+        return JSON.parse(savedDraft);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+
+  const [profileData, setProfileData] = useState(() => {
+    const draft = getInitialProfileData();
+    return draft || {
+      first_name: '',
+      last_name: '',
+      email: '',
+      profile_photo: '',
+      bank_name: '',
+      account_holder_name: '',
+      sort_code: '',
+      account_number: '',
+      iban: ''
+    };
   });
 
   // Track if initial load has happened
   const [initialLoadDone, setInitialLoadDone] = useState(false);
 
-  // Load profile data only once on mount
+  // Save form data to localStorage whenever it changes (for bank fields)
+  useEffect(() => {
+    // Only save if there's actual data entered
+    if (profileData.bank_name || profileData.account_holder_name || 
+        profileData.sort_code || profileData.account_number || profileData.iban) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(profileData));
+    }
+  }, [profileData]);
+
+  // Load profile data only once on mount (but don't override localStorage draft)
   useEffect(() => {
     const loadProfile = async () => {
       if (!user?.id || initialLoadDone) return;
+
+      const savedDraft = getInitialProfileData();
+      const hasDraft = savedDraft && (savedDraft.bank_name || savedDraft.account_holder_name || 
+                                       savedDraft.sort_code || savedDraft.account_number || savedDraft.iban);
 
       const { data, error } = await supabase
         .from('profiles')
@@ -58,17 +89,18 @@ const StaffSettings = () => {
         .single();
 
       if (data) {
-        setProfileData({
+        setProfileData(prev => ({
           first_name: data.first_name || user?.user_metadata?.first_name || '',
           last_name: data.last_name || user?.user_metadata?.last_name || '',
           email: data.email || user?.email || '',
           profile_photo: data.profile_photo || '',
-          bank_name: data.bank_name || '',
-          account_holder_name: data.account_holder_name || '',
-          sort_code: data.sort_code || '',
-          account_number: data.account_number || '',
-          iban: data.iban || ''
-        });
+          // Preserve draft data if user was filling the form, otherwise use database values
+          bank_name: hasDraft ? prev.bank_name : (data.bank_name || ''),
+          account_holder_name: hasDraft ? prev.account_holder_name : (data.account_holder_name || ''),
+          sort_code: hasDraft ? prev.sort_code : (data.sort_code || ''),
+          account_number: hasDraft ? prev.account_number : (data.account_number || ''),
+          iban: hasDraft ? prev.iban : (data.iban || '')
+        }));
       } else if (error && error.code !== 'PGRST116') {
         console.error('Error loading profile:', error);
       }
@@ -174,6 +206,9 @@ const StaffSettings = () => {
       });
 
       if (authError) throw authError;
+
+      // Clear the draft from localStorage after successful save
+      localStorage.removeItem(STORAGE_KEY);
 
       toast({
         title: 'Success',
