@@ -333,6 +333,9 @@ const AgentTasks = () => {
                                   {task.booking.service_type && (
                                     <Badge variant="outline" className="text-xs">{task.booking.service_type}</Badge>
                                   )}
+                                  {task.booking.total_cost != null && (
+                                    <Badge className="bg-emerald-500 text-xs">£{Number(task.booking.total_cost).toFixed(2)}</Badge>
+                                  )}
                                   {task.booking.date_only && (
                                     <span className="text-sm text-muted-foreground">
                                       {format(new Date(task.booking.date_only), 'EEE, dd MMM yyyy')}
