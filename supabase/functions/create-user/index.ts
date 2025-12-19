@@ -259,7 +259,7 @@ Deno.serve(async (req) => {
         console.error('Error fetching invitation template:', templateError);
       } else if (template) {
         // Determine the login URL based on role
-        const baseUrl = 'https://preview--sn-cleaning-b5a73a14.lovable.app';
+        const baseUrl = 'https://account.sncleaningservices.co.uk';
         const loginUrl = `${baseUrl}/auth`;
         
         // Call send-notification-email function
