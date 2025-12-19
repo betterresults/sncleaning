@@ -48,6 +48,7 @@ const CustomerDirectPaymentDialog = ({
 }: CustomerDirectPaymentDialogProps) => {
   const [unpaidBookings, setUnpaidBookings] = useState<UnpaidBooking[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const { toast } = useToast();
@@ -61,14 +62,22 @@ const CustomerDirectPaymentDialog = ({
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch payment methods
+      // Fetch payment methods - order by created_at DESC to show newest first
       const { data: paymentMethodsData, error: pmError } = await supabase
         .from('customer_payment_methods')
         .select('*')
-        .eq('customer_id', customerId);
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false });
 
       if (pmError) throw pmError;
-      setPaymentMethods(paymentMethodsData || []);
+      const methods = paymentMethodsData || [];
+      setPaymentMethods(methods);
+      
+      // Auto-select default payment method, or newest if no default
+      const defaultMethod = methods.find(pm => pm.is_default) || methods[0];
+      if (defaultMethod) {
+        setSelectedPaymentMethodId(defaultMethod.id);
+      }
 
       // Fetch unpaid bookings
       const [pastBookingsResponse, linenOrdersResponse] = await Promise.all([
@@ -170,8 +179,12 @@ const CustomerDirectPaymentDialog = ({
 
     setProcessing(true);
     try {
-      // Get default payment method or first one
-      const defaultMethod = paymentMethods.find(pm => pm.is_default) || paymentMethods[0];
+      // Get selected payment method
+      const paymentMethod = paymentMethods.find(pm => pm.id === selectedPaymentMethodId) || paymentMethods[0];
+      
+      if (!paymentMethod) {
+        throw new Error('No payment method selected');
+      }
       
       // Calculate total amount
       const totalAmount = unpaidBookings.reduce((sum, booking) => sum + booking.total_cost, 0);
@@ -180,7 +193,7 @@ const CustomerDirectPaymentDialog = ({
       const { data, error } = await supabase.functions.invoke('stripe-capture-payment', {
         body: {
           customer_id: customerId,
-          payment_method_id: defaultMethod.stripe_payment_method_id,
+          payment_method_id: paymentMethod.stripe_payment_method_id,
           amount: Math.round(totalAmount * 100), // Convert to cents
           description: `Payment for ${unpaidBookings.length} booking(s) - ${customerName}`,
           booking_ids: unpaidBookings.filter(b => b.source === 'past_booking').map(b => parseInt(b.id)),
@@ -216,7 +229,7 @@ const CustomerDirectPaymentDialog = ({
   };
 
   const totalAmount = unpaidBookings.reduce((sum, booking) => sum + booking.total_cost, 0);
-  const defaultPaymentMethod = paymentMethods.find(pm => pm.is_default) || paymentMethods[0];
+  const selectedPaymentMethod = paymentMethods.find(pm => pm.id === selectedPaymentMethodId) || paymentMethods[0];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -236,17 +249,51 @@ const CustomerDirectPaymentDialog = ({
             </div>
           ) : (
             <>
-              {/* Payment Method Info */}
+              {/* Payment Methods Selection */}
               {paymentMethods.length > 0 && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="space-y-3">
                   <div className="flex items-center gap-2 text-green-800">
                     <CheckCircle className="h-5 w-5" />
-                    <span className="font-medium">Payment Method Available</span>
+                    <span className="font-medium">Select Payment Method ({paymentMethods.length} available)</span>
                   </div>
-                  <p className="text-green-700 mt-1">
-                    {defaultPaymentMethod?.card_brand.toUpperCase()} •••• {defaultPaymentMethod?.card_last4}
-                    {defaultPaymentMethod?.is_default && ' (Default)'}
-                  </p>
+                  <div className="space-y-2">
+                    {paymentMethods.map((method) => {
+                      const isExpired = new Date(method.card_exp_year, method.card_exp_month - 1) < new Date();
+                      const isSelected = method.id === selectedPaymentMethodId;
+                      
+                      return (
+                        <div
+                          key={method.id}
+                          onClick={() => !isExpired && setSelectedPaymentMethodId(method.id)}
+                          className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                            isExpired 
+                              ? 'bg-red-50 border-red-200 opacity-60 cursor-not-allowed' 
+                              : isSelected 
+                                ? 'bg-green-50 border-green-400 ring-2 ring-green-400' 
+                                : 'bg-white border-gray-200 hover:border-green-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <CreditCard className={`h-4 w-4 ${isExpired ? 'text-red-500' : 'text-gray-500'}`} />
+                              <span className="font-medium">
+                                {method.card_brand?.toUpperCase()} •••• {method.card_last4}
+                              </span>
+                              {method.is_default && (
+                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Default</span>
+                              )}
+                              {isExpired && (
+                                <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded">Expired</span>
+                              )}
+                            </div>
+                            <span className={`text-sm ${isExpired ? 'text-red-500' : 'text-gray-500'}`}>
+                              {method.card_exp_month}/{method.card_exp_year}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
