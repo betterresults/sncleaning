@@ -220,7 +220,7 @@ const CheckCoverage = () => {
                     <div>
                       <h2 className="text-xl font-bold text-primary">Great news!</h2>
                       <p className="text-muted-foreground">
-                        We cover {result.region}, London
+                        We cover {result.region}{result.region?.toLowerCase().includes('essex') ? '' : ', London'}
                       </p>
                     </div>
                   </div>
