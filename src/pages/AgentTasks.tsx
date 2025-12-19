@@ -10,9 +10,9 @@ import { useAgentTasks, AgentTask } from '@/hooks/useAgentTasks';
 import { TaskDetailsDialog } from '@/components/admin/TaskDetailsDialog';
 import { AgentSMSPanel } from '@/components/agent/AgentSMSPanel';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Filter, RefreshCw, CheckCircle, Clock, AlertCircle, Phone, User, Calendar, MapPin } from 'lucide-react';
+import { Filter, RefreshCw, CheckCircle, Clock, AlertCircle, Phone, User, Calendar, MapPin, MessageSquare, Building2 } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -120,13 +120,13 @@ const AgentTasks = () => {
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'urgent':
-        return 'border-l-red-500 bg-red-50';
+        return 'border-l-red-500';
       case 'high':
-        return 'border-l-orange-500 bg-orange-50';
+        return 'border-l-orange-500';
       case 'medium':
-        return 'border-l-blue-500';
+        return 'border-l-primary';
       default:
-        return 'border-l-gray-300';
+        return 'border-l-muted';
     }
   };
 
@@ -221,127 +221,147 @@ const AgentTasks = () => {
                 {loading ? (
                   <div className="text-center py-8">Loading tasks...</div>
                 ) : sortedTasks.length === 0 ? (
-                  <Card>
-                    <CardContent className="py-8 text-center text-muted-foreground">
-                      <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-300" />
-                      <p>No tasks found. You're all caught up!</p>
-                    </CardContent>
+                  <Card className="py-8 text-center text-muted-foreground">
+                    <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-300" />
+                    <p>No tasks found. You're all caught up!</p>
                   </Card>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {sortedTasks.map((task) => (
                       <Card 
                         key={task.id} 
-                        className={`border-l-4 cursor-pointer hover:shadow-md transition-shadow ${getPriorityColor(task.priority)}`}
-                        onClick={() => handleViewTask(task)}
+                        className={`border-l-4 overflow-hidden transition-all hover:shadow-lg ${getPriorityColor(task.priority)}`}
                       >
-                        <CardHeader className="pb-2">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start gap-3">
-                              {getStatusIcon(task.status)}
-                              <div>
-                                <CardTitle className="text-lg">{task.title}</CardTitle>
-                                <CardDescription className="mt-1">
-                                  <Badge variant="outline" className="mr-2">
-                                    {getTaskTypeLabel(task.task_type)}
-                                  </Badge>
-                                  {task.priority === 'urgent' && (
-                                    <Badge variant="destructive">Urgent</Badge>
-                                  )}
-                                  {task.priority === 'high' && (
-                                    <Badge className="bg-orange-500">High Priority</Badge>
-                                  )}
-                                </CardDescription>
+                        {/* Header Section */}
+                        <div 
+                          className="p-4 cursor-pointer"
+                          onClick={() => handleViewTask(task)}
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-2">
+                                {getStatusIcon(task.status)}
+                                <h3 className="font-semibold text-lg text-foreground truncate">{task.title}</h3>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <Badge variant="secondary" className="text-xs">
+                                  {getTaskTypeLabel(task.task_type)}
+                                </Badge>
+                                {task.priority === 'urgent' && (
+                                  <Badge variant="destructive" className="text-xs">Urgent</Badge>
+                                )}
+                                {task.priority === 'high' && (
+                                  <Badge className="bg-orange-500 text-xs">High Priority</Badge>
+                                )}
+                                {task.status === 'in_progress' && (
+                                  <Badge className="bg-blue-500 text-xs">In Progress</Badge>
+                                )}
                               </div>
                             </div>
                             {task.due_date && (
-                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                <Calendar className="h-4 w-4" />
-                                {format(new Date(task.due_date), 'dd MMM')}
+                              <div className="flex items-center gap-1.5 text-sm bg-muted px-2 py-1 rounded-md shrink-0">
+                                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                                <span className="font-medium">{format(new Date(task.due_date), 'dd MMM')}</span>
                               </div>
                             )}
                           </div>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                          {task.description && (
-                            <p className="text-sm text-muted-foreground mb-3">{task.description}</p>
-                          )}
                           
-                          {/* Customer Info */}
+                          {task.description && (
+                            <p className="text-sm text-muted-foreground mt-3 line-clamp-2">{task.description}</p>
+                          )}
+                        </div>
+
+                        {/* Customer & Booking Info Section */}
+                        <div className="border-t bg-muted/30 px-4 py-3 space-y-3">
+                          {/* Customer Row */}
                           {getCustomerName(task) && (
-                            <div className="flex flex-wrap items-center gap-4 text-sm mb-3">
-                              <div className="flex items-center gap-1">
-                                <User className="h-4 w-4 text-muted-foreground" />
-                                <span>{getCustomerName(task)}</span>
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                  <User className="h-4 w-4 text-primary" />
+                                </div>
+                                <div>
+                                  <p className="font-medium text-sm">{getCustomerName(task)}</p>
+                                  {task.customer?.email && (
+                                    <p className="text-xs text-muted-foreground">{task.customer.email}</p>
+                                  )}
+                                </div>
                               </div>
                               {task.customer?.phone && (
-                                <div className="flex items-center gap-1">
-                                  <Phone className="h-4 w-4 text-muted-foreground" />
-                                  <a 
-                                    href={`tel:${task.customer.phone}`} 
-                                    className="text-primary hover:underline"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    {task.customer.phone}
-                                  </a>
-                                </div>
+                                <a 
+                                  href={`tel:${task.customer.phone}`} 
+                                  className="flex items-center gap-1.5 text-sm text-primary hover:underline bg-primary/5 px-2.5 py-1 rounded-full"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Phone className="h-3.5 w-3.5" />
+                                  {task.customer.phone}
+                                </a>
                               )}
                             </div>
                           )}
 
-                          {/* Attached Booking Info */}
+                          {/* Booking Row */}
                           {task.booking && (
-                            <div className="bg-muted/50 rounded-lg p-3 mb-3">
-                              <div className="flex items-center gap-2 text-sm font-medium mb-1">
-                                <Calendar className="h-4 w-4 text-primary" />
-                                <span>Attached Booking #{task.booking.id}</span>
-                                {task.booking.service_type && (
-                                  <Badge variant="outline" className="text-xs">{task.booking.service_type}</Badge>
-                                )}
+                            <div className="flex items-start gap-2 p-3 bg-background rounded-lg border">
+                              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                                <Building2 className="h-4 w-4 text-emerald-600" />
                               </div>
-                              <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                                {task.booking.date_only && (
-                                  <span>{format(new Date(task.booking.date_only), 'dd MMM yyyy')}</span>
-                                )}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-medium text-sm">Booking #{task.booking.id}</span>
+                                  {task.booking.service_type && (
+                                    <Badge variant="outline" className="text-xs">{task.booking.service_type}</Badge>
+                                  )}
+                                  {task.booking.date_only && (
+                                    <span className="text-sm text-muted-foreground">
+                                      {format(new Date(task.booking.date_only), 'EEE, dd MMM yyyy')}
+                                    </span>
+                                  )}
+                                </div>
                                 {task.booking.address && (
-                                  <div className="flex items-center gap-1">
-                                    <MapPin className="h-3 w-3" />
-                                    <span className="truncate max-w-[250px]">{task.booking.address}</span>
-                                    {task.booking.postcode && <span>({task.booking.postcode})</span>}
+                                  <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
+                                    <MapPin className="h-3.5 w-3.5 shrink-0" />
+                                    <span className="truncate">{task.booking.address}</span>
+                                    {task.booking.postcode && (
+                                      <span className="shrink-0 font-medium">• {task.booking.postcode}</span>
+                                    )}
                                   </div>
                                 )}
                               </div>
                             </div>
                           )}
+                        </div>
 
-                          <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                            {task.status === 'pending' && (
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handleStartTask(task)}
-                              >
-                                Start Task
-                              </Button>
-                            )}
-                            {(task.status === 'pending' || task.status === 'in_progress') && (
-                              <Button 
-                                size="sm"
-                                onClick={() => handleOpenCompleteDialog(task)}
-                              >
-                                <CheckCircle className="h-4 w-4 mr-2" />
-                                Mark Complete
-                              </Button>
-                            )}
-                          </div>
-
-                          {/* SMS Panel */}
+                        {/* Actions Section */}
+                        <div className="border-t px-4 py-3 flex flex-wrap items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                          {task.status === 'pending' && (
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleStartTask(task)}
+                            >
+                              <Clock className="h-4 w-4 mr-1.5" />
+                              Start Task
+                            </Button>
+                          )}
+                          {(task.status === 'pending' || task.status === 'in_progress') && (
+                            <Button 
+                              size="sm"
+                              variant="default"
+                              onClick={() => handleOpenCompleteDialog(task)}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1.5" />
+                              Mark Complete
+                            </Button>
+                          )}
+                          
+                          {/* SMS Button inline */}
                           {task.customer && (
-                            <div className="mt-3 pt-3 border-t" onClick={(e) => e.stopPropagation()}>
+                            <div className="ml-auto">
                               <AgentSMSPanel task={task} />
                             </div>
                           )}
-                        </CardContent>
+                        </div>
                       </Card>
                     ))}
                   </div>
