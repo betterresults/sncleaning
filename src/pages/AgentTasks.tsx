@@ -12,7 +12,7 @@ import { AgentSMSPanel } from '@/components/agent/AgentSMSPanel';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Filter, RefreshCw, CheckCircle, Clock, AlertCircle, Phone, User, Calendar, MapPin, MessageSquare, Building2 } from 'lucide-react';
+import { Filter, RefreshCw, CheckCircle, Clock, AlertCircle, Phone, User, Calendar, MapPin, MessageSquare, Building2, StickyNote, Edit3 } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -42,6 +42,9 @@ const AgentTasks = () => {
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [completionNotes, setCompletionNotes] = useState('');
   const [completing, setCompleting] = useState(false);
+  const [notesDialogOpen, setNotesDialogOpen] = useState(false);
+  const [editingNotes, setEditingNotes] = useState('');
+  const [savingNotes, setSavingNotes] = useState(false);
 
   const { tasks, loading, refetch, completeTask, updateTask } = useAgentTasks({
     assignedTo: user?.id,
@@ -80,6 +83,24 @@ const AgentTasks = () => {
       setSelectedTask(null);
     } finally {
       setCompleting(false);
+    }
+  };
+
+  const handleOpenNotesDialog = (task: AgentTask) => {
+    setSelectedTask(task);
+    setEditingNotes(task.notes || '');
+    setNotesDialogOpen(true);
+  };
+
+  const handleSaveNotes = async () => {
+    if (!selectedTask) return;
+    setSavingNotes(true);
+    try {
+      await updateTask({ id: selectedTask.id, notes: editingNotes || null });
+      setNotesDialogOpen(false);
+      setSelectedTask(null);
+    } finally {
+      setSavingNotes(false);
     }
   };
 
@@ -332,6 +353,19 @@ const AgentTasks = () => {
                           )}
                         </div>
 
+                        {/* Notes Section */}
+                        {task.notes && (
+                          <div className="border-t bg-amber-50/50 px-4 py-3">
+                            <div className="flex items-start gap-2">
+                              <StickyNote className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-amber-700 mb-1">Agent Notes</p>
+                                <p className="text-sm text-amber-900 whitespace-pre-wrap">{task.notes}</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Actions Section */}
                         <div className="border-t px-4 py-3 flex flex-wrap items-center gap-2" onClick={(e) => e.stopPropagation()}>
                           {task.status === 'pending' && (
@@ -345,14 +379,24 @@ const AgentTasks = () => {
                             </Button>
                           )}
                           {(task.status === 'pending' || task.status === 'in_progress') && (
-                            <Button 
-                              size="sm"
-                              variant="default"
-                              onClick={() => handleOpenCompleteDialog(task)}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-1.5" />
-                              Mark Complete
-                            </Button>
+                            <>
+                              <Button 
+                                size="sm"
+                                variant="default"
+                                onClick={() => handleOpenCompleteDialog(task)}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-1.5" />
+                                Mark Complete
+                              </Button>
+                              <Button 
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleOpenNotesDialog(task)}
+                              >
+                                <Edit3 className="h-4 w-4 mr-1.5" />
+                                {task.notes ? 'Edit Notes' : 'Add Notes'}
+                              </Button>
+                            </>
                           )}
                           
                           {/* SMS Button inline */}
@@ -403,6 +447,37 @@ const AgentTasks = () => {
             </Button>
             <Button onClick={handleCompleteTask} disabled={completing}>
               {completing ? 'Completing...' : 'Complete Task'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Notes Dialog */}
+      <Dialog open={notesDialogOpen} onOpenChange={setNotesDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{selectedTask?.notes ? 'Edit Notes' : 'Add Notes'}</DialogTitle>
+            <DialogDescription>
+              Add notes about this task. These will be visible to your admin.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="task-notes">Notes</Label>
+            <Textarea
+              id="task-notes"
+              value={editingNotes}
+              onChange={(e) => setEditingNotes(e.target.value)}
+              placeholder="e.g., Customer requested callback at 3pm, Left voicemail..."
+              rows={5}
+              className="mt-2"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNotesDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveNotes} disabled={savingNotes}>
+              {savingNotes ? 'Saving...' : 'Save Notes'}
             </Button>
           </DialogFooter>
         </DialogContent>
