@@ -91,8 +91,7 @@ export const useAgentTasks = (options?: {
         .from('agent_tasks')
         .select(`
           *,
-          customer:customers(id, full_name, first_name, last_name, email, phone),
-          booking:bookings(id, date_only, address, postcode, service_type)
+          customer:customers(id, full_name, first_name, last_name, email, phone)
         `)
         .order('created_at', { ascending: false });
 
@@ -110,14 +109,18 @@ export const useAgentTasks = (options?: {
 
       if (fetchError) throw fetchError;
 
-      // Fetch profile info for assigned_to and assigned_by
       const tasks = data as AgentTask[];
       
-      // Get unique user IDs
+      // Get unique user IDs for profiles
       const userIds = [...new Set([
         ...tasks.map(t => t.assigned_to),
         ...tasks.map(t => t.assigned_by)
       ])];
+
+      // Get unique booking IDs to fetch from both tables
+      const bookingIds = tasks
+        .filter(t => t.booking_id)
+        .map(t => t.booking_id as number);
 
       // Fetch profiles for those users
       const { data: profiles } = await supabase
@@ -125,11 +128,32 @@ export const useAgentTasks = (options?: {
         .select('user_id, first_name, last_name, email')
         .in('user_id', userIds);
 
-      // Map profiles to tasks
+      // Fetch bookings from both active and past bookings tables
+      let bookingsMap = new Map<number, AgentTask['booking']>();
+      
+      if (bookingIds.length > 0) {
+        const [activeBookings, pastBookings] = await Promise.all([
+          supabase
+            .from('bookings')
+            .select('id, date_only, address, postcode, service_type')
+            .in('id', bookingIds),
+          supabase
+            .from('past_bookings')
+            .select('id, date_only, address, postcode, service_type')
+            .in('id', bookingIds)
+        ]);
+
+        // Combine results into map
+        activeBookings.data?.forEach(b => bookingsMap.set(b.id, b));
+        pastBookings.data?.forEach(b => bookingsMap.set(b.id, b));
+      }
+
+      // Map profiles and bookings to tasks
       const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
       
       const enrichedTasks = tasks.map(task => ({
         ...task,
+        booking: task.booking_id ? bookingsMap.get(task.booking_id) || null : null,
         assigned_to_profile: profileMap.get(task.assigned_to) || null,
         assigned_by_profile: profileMap.get(task.assigned_by) || null
       }));
