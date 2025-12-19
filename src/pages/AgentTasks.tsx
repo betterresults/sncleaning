@@ -12,7 +12,7 @@ import { AgentSMSPanel } from '@/components/agent/AgentSMSPanel';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Filter, RefreshCw, CheckCircle, Clock, AlertCircle, Phone, User, Calendar } from 'lucide-react';
+import { Filter, RefreshCw, CheckCircle, Clock, AlertCircle, Phone, User, Calendar, MapPin } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -267,8 +267,9 @@ const AgentTasks = () => {
                             <p className="text-sm text-muted-foreground mb-3">{task.description}</p>
                           )}
                           
+                          {/* Customer Info */}
                           {getCustomerName(task) && (
-                            <div className="flex items-center gap-4 text-sm mb-3">
+                            <div className="flex flex-wrap items-center gap-4 text-sm mb-3">
                               <div className="flex items-center gap-1">
                                 <User className="h-4 w-4 text-muted-foreground" />
                                 <span>{getCustomerName(task)}</span>
@@ -285,6 +286,31 @@ const AgentTasks = () => {
                                   </a>
                                 </div>
                               )}
+                            </div>
+                          )}
+
+                          {/* Attached Booking Info */}
+                          {task.booking && (
+                            <div className="bg-muted/50 rounded-lg p-3 mb-3">
+                              <div className="flex items-center gap-2 text-sm font-medium mb-1">
+                                <Calendar className="h-4 w-4 text-primary" />
+                                <span>Attached Booking #{task.booking.id}</span>
+                                {task.booking.service_type && (
+                                  <Badge variant="outline" className="text-xs">{task.booking.service_type}</Badge>
+                                )}
+                              </div>
+                              <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                                {task.booking.date_only && (
+                                  <span>{format(new Date(task.booking.date_only), 'dd MMM yyyy')}</span>
+                                )}
+                                {task.booking.address && (
+                                  <div className="flex items-center gap-1">
+                                    <MapPin className="h-3 w-3" />
+                                    <span className="truncate max-w-[250px]">{task.booking.address}</span>
+                                    {task.booking.postcode && <span>({task.booking.postcode})</span>}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           )}
 

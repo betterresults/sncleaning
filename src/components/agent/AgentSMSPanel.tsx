@@ -11,10 +11,6 @@ import {
   ChevronUp, 
   Send, 
   Check,
-  Phone,
-  User,
-  Calendar,
-  MapPin,
   Loader2
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -183,31 +179,6 @@ export const AgentSMSPanel: React.FC<AgentSMSPanelProps> = ({ task }) => {
       
       <CollapsibleContent className="mt-2" onClick={(e) => e.stopPropagation()}>
         <div className="border rounded-lg p-4 bg-background space-y-4">
-          {/* Customer Info */}
-          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <User className="h-4 w-4" />
-              <span>{customerName}</span>
-            </div>
-            {customerPhone && (
-              <div className="flex items-center gap-1">
-                <Phone className="h-4 w-4" />
-                <span>{customerPhone}</span>
-              </div>
-            )}
-            {task.booking?.date_only && (
-              <div className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
-                <span>{format(new Date(task.booking.date_only), 'dd MMM yyyy')}</span>
-              </div>
-            )}
-            {task.booking?.address && (
-              <div className="flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
-                <span className="truncate max-w-[200px]">{task.booking.address}</span>
-              </div>
-            )}
-          </div>
 
           {/* Template Selection */}
           <div>
