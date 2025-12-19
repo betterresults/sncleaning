@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -31,7 +32,6 @@ interface CreateTaskDialogProps {
   onSubmit: (input: CreateTaskInput) => Promise<void>;
   prefilledCustomerId?: number | null;
   prefilledBookingId?: number | null;
-  customers?: Array<{ id: number; full_name: string | null; first_name: string | null; last_name: string | null }>;
 }
 
 const TASK_TYPES = [
@@ -49,17 +49,37 @@ const PRIORITIES = [
   { value: 'urgent', label: 'Urgent' },
 ];
 
+interface Customer {
+  id: number;
+  full_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
+}
+
+interface Booking {
+  id: number;
+  date_only: string | null;
+  address: string | null;
+  postcode: string | null;
+  service_type: string | null;
+  customer: number | null;
+  first_name: string | null;
+  last_name: string | null;
+}
+
 export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   open,
   onOpenChange,
   onSubmit,
   prefilledCustomerId,
   prefilledBookingId,
-  customers = [],
 }) => {
   const { agents, loading: loadingAgents } = useSalesAgents();
   const [submitting, setSubmitting] = useState(false);
   const [dueDate, setDueDate] = useState<Date | undefined>();
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -70,6 +90,43 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     customer_id: prefilledCustomerId?.toString() || '',
     booking_id: prefilledBookingId?.toString() || '',
   });
+
+  // Fetch customers and bookings when dialog opens
+  useEffect(() => {
+    if (open) {
+      const fetchData = async () => {
+        setLoadingData(true);
+        try {
+          // Fetch customers
+          const { data: customerData } = await supabase
+            .from('customers')
+            .select('id, full_name, first_name, last_name')
+            .order('full_name');
+          
+          if (customerData) setCustomers(customerData);
+
+          // Fetch recent bookings (last 100)
+          const { data: bookingData } = await supabase
+            .from('bookings')
+            .select('id, date_only, address, postcode, service_type, customer, first_name, last_name')
+            .order('date_only', { ascending: false })
+            .limit(100);
+          
+          if (bookingData) setBookings(bookingData);
+        } catch (err) {
+          console.error('Error fetching data:', err);
+        } finally {
+          setLoadingData(false);
+        }
+      };
+      fetchData();
+    }
+  }, [open]);
+
+  // Filter bookings based on selected customer
+  const filteredBookings = formData.customer_id 
+    ? bookings.filter(b => b.customer?.toString() === formData.customer_id)
+    : bookings;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,17 +169,26 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     return agent.email || 'Unknown';
   };
 
-  const getCustomerDisplayName = (customer: { full_name: string | null; first_name: string | null; last_name: string | null }) => {
+  const getCustomerDisplayName = (customer: Customer) => {
     if (customer.full_name) return customer.full_name;
     if (customer.first_name || customer.last_name) {
       return `${customer.first_name || ''} ${customer.last_name || ''}`.trim();
     }
-    return 'Unknown Customer';
+    return `Customer #${customer.id}`;
+  };
+
+  const getBookingDisplayName = (booking: Booking) => {
+    const date = booking.date_only ? format(new Date(booking.date_only), 'dd MMM yyyy') : 'No date';
+    const name = booking.first_name || booking.last_name 
+      ? `${booking.first_name || ''} ${booking.last_name || ''}`.trim()
+      : '';
+    const location = booking.postcode || booking.address || '';
+    return `#${booking.id} - ${date}${name ? ` - ${name}` : ''}${location ? ` (${location})` : ''}`;
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Create New Task</DialogTitle>
@@ -205,36 +271,67 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
                   <SelectValue placeholder={loadingAgents ? "Loading agents..." : "Select an agent"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {agents.map(agent => (
-                    <SelectItem key={agent.user_id} value={agent.user_id}>
-                      {getAgentDisplayName(agent)}
+                  {agents.length === 0 && !loadingAgents ? (
+                    <div className="p-2 text-sm text-muted-foreground">No agents found</div>
+                  ) : (
+                    agents.map(agent => (
+                      <SelectItem key={agent.user_id} value={agent.user_id}>
+                        {getAgentDisplayName(agent)}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="customer_id">Customer (Optional)</Label>
+              <Select
+                value={formData.customer_id || "none"}
+                onValueChange={(value) => setFormData(prev => ({ 
+                  ...prev, 
+                  customer_id: value === "none" ? "" : value,
+                  booking_id: "" // Reset booking when customer changes
+                }))}
+                disabled={loadingData}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={loadingData ? "Loading..." : "Select a customer"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {customers.map(customer => (
+                    <SelectItem key={customer.id} value={customer.id.toString()}>
+                      {getCustomerDisplayName(customer)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {customers.length > 0 && (
-              <div className="grid gap-2">
-                <Label htmlFor="customer_id">Customer (Optional)</Label>
-                <Select
-                  value={formData.customer_id || "none"}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, customer_id: value === "none" ? "" : value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a customer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {customers.map(customer => (
-                      <SelectItem key={customer.id} value={customer.id.toString()}>
-                        {getCustomerDisplayName(customer)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div className="grid gap-2">
+              <Label htmlFor="booking_id">Booking (Optional)</Label>
+              <Select
+                value={formData.booking_id || "none"}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, booking_id: value === "none" ? "" : value }))}
+                disabled={loadingData}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={loadingData ? "Loading..." : "Select a booking"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {filteredBookings.map(booking => (
+                    <SelectItem key={booking.id} value={booking.id.toString()}>
+                      {getBookingDisplayName(booking)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {formData.customer_id && filteredBookings.length === 0 && (
+                <p className="text-xs text-muted-foreground">No bookings found for this customer</p>
+              )}
+            </div>
 
             <div className="grid gap-2">
               <Label>Due Date (Optional)</Label>
