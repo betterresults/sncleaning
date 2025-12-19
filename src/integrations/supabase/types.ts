@@ -100,6 +100,75 @@ export type Database = {
           },
         ]
       }
+      agent_tasks: {
+        Row: {
+          assigned_by: string
+          assigned_to: string
+          booking_id: number | null
+          completed_at: string | null
+          created_at: string | null
+          customer_id: number | null
+          description: string | null
+          due_date: string | null
+          id: string
+          notes: string | null
+          priority: string | null
+          status: string
+          task_type: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_by: string
+          assigned_to: string
+          booking_id?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          customer_id?: number | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          priority?: string | null
+          status?: string
+          task_type?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_by?: string
+          assigned_to?: string
+          booking_id?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          customer_id?: number | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          priority?: string | null
+          status?: string
+          task_type?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_tasks_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_tasks_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       airbnb_category_defaults: {
         Row: {
           category: string

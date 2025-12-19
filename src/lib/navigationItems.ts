@@ -1,4 +1,4 @@
-import { Briefcase, Calendar, History, DollarSign, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package, TrendingUp, Activity, Bell, CheckSquare, TestTube, Shirt, Target, Map } from 'lucide-react';
+import { Briefcase, Calendar, History, DollarSign, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package, TrendingUp, Activity, Bell, CheckSquare, TestTube, Shirt, Target, Map, ClipboardList } from 'lucide-react';
 
 export const cleanerNavigation = [
   {
@@ -95,6 +95,11 @@ export const salesAgentNavigation = [
     title: "Coverage",
     url: "/coverage",
     icon: Map,
+  },
+  {
+    title: "My Tasks",
+    url: "/agent-tasks",
+    icon: ClipboardList,
   },
 ];
 
@@ -233,6 +238,11 @@ export const adminNavigation = [
     title: "Linen Management",
     url: "/admin-linen-management",
     icon: Package,
+  },
+  {
+    title: "Agent Tasks",
+    url: "/admin-agent-tasks",
+    icon: ClipboardList,
   },
   {
     title: "Settings",

@@ -71,6 +71,8 @@ import AdminCoverageManagement from "./pages/AdminCoverageManagement";
 import CheckCoverage from "./pages/CheckCoverage";
 import ShortLinkResolver from "./pages/ShortLinkResolver";
 import NotFound from "./pages/NotFound";
+import AdminAgentTasks from "./pages/AdminAgentTasks";
+import AgentTasks from "./pages/AgentTasks";
 import { AdminCustomerProvider } from "./contexts/AdminCustomerContext";
 import { AdminCleanerProvider } from "./contexts/AdminCleanerContext";
 import InstallPrompt from "./components/InstallPrompt";
@@ -190,6 +192,8 @@ const App = () => (
                      <Route path="/admin-company-settings" element={<AdminCompanySettings />} />
                      <Route path="/admin-coverage-management" element={<AdminCoverageManagement />} />
                      <Route path="/coverage" element={<CheckCoverage />} />
+                     <Route path="/admin-agent-tasks" element={<AdminAgentTasks />} />
+                     <Route path="/agent-tasks" element={<AgentTasks />} />
                      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
             </Routes>
