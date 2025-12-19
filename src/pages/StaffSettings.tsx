@@ -137,22 +137,29 @@ const StaffSettings = () => {
     setProfileLoading(true);
 
     try {
-      // Update profile in database
+      // Use upsert to create profile if it doesn't exist, or update if it does
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({
+        .upsert({
+          user_id: user?.id,
           first_name: profileData.first_name,
           last_name: profileData.last_name,
+          email: profileData.email,
           bank_name: profileData.bank_name,
           account_holder_name: profileData.account_holder_name,
           sort_code: profileData.sort_code,
           account_number: profileData.account_number,
           iban: profileData.iban,
           updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user?.id);
+        }, { 
+          onConflict: 'user_id',
+          ignoreDuplicates: false 
+        });
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Profile upsert error:', profileError);
+        throw profileError;
+      }
 
       // Update user metadata
       const { error: authError } = await supabase.auth.updateUser({
