@@ -15,15 +15,31 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Eye, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { MoreHorizontal, Eye, Trash2, XCircle, UserCog } from 'lucide-react';
 import { AgentTask } from '@/hooks/useAgentTasks';
 import { format } from 'date-fns';
+
+interface SalesAgent {
+  user_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+}
 
 interface AgentTasksTableProps {
   tasks: AgentTask[];
   onViewTask: (task: AgentTask) => void;
   onDeleteTask: (taskId: string) => void;
   onCancelTask: (taskId: string) => void;
+  onReassignTask?: (taskId: string, newAgentId: string) => void;
+  salesAgents?: SalesAgent[];
   showAssignedTo?: boolean;
 }
 
@@ -73,6 +89,8 @@ export const AgentTasksTable: React.FC<AgentTasksTableProps> = ({
   onViewTask,
   onDeleteTask,
   onCancelTask,
+  onReassignTask,
+  salesAgents = [],
   showAssignedTo = true,
 }) => {
   const getDisplayName = (profile: { first_name: string | null; last_name: string | null; email: string | null } | null | undefined) => {
@@ -130,7 +148,31 @@ export const AgentTasksTable: React.FC<AgentTasksTableProps> = ({
               </TableCell>
               <TableCell>{getTaskTypeLabel(task.task_type)}</TableCell>
               {showAssignedTo && (
-                <TableCell>{getDisplayName(task.assigned_to_profile)}</TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()}>
+                  {onReassignTask && salesAgents.length > 0 ? (
+                    <Select
+                      value={task.assigned_to}
+                      onValueChange={(value) => onReassignTask(task.id, value)}
+                    >
+                      <SelectTrigger className="w-[160px] h-8">
+                        <SelectValue>
+                          {getDisplayName(task.assigned_to_profile)}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {salesAgents.map((agent) => (
+                          <SelectItem key={agent.user_id} value={agent.user_id}>
+                            {agent.first_name || agent.last_name 
+                              ? `${agent.first_name || ''} ${agent.last_name || ''}`.trim()
+                              : agent.email || 'Unknown'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    getDisplayName(task.assigned_to_profile)
+                  )}
+                </TableCell>
               )}
               <TableCell>{getCustomerName(task)}</TableCell>
               <TableCell>{getPriorityBadge(task.priority)}</TableCell>
