@@ -144,7 +144,7 @@ export const useAgentTasks = (options?: {
       let bookingsMap = new Map<number, AgentTask['booking']>();
       
       if (bookingIds.length > 0) {
-        console.log('Fetching bookings for IDs:', bookingIds);
+        console.log('🔍 Fetching bookings for IDs:', bookingIds);
         
         const [activeBookingsResult, pastBookingsResult] = await Promise.all([
           supabase
@@ -157,21 +157,27 @@ export const useAgentTasks = (options?: {
             .in('id', bookingIds)
         ]);
 
-        console.log('Active bookings result:', activeBookingsResult);
-        console.log('Past bookings result:', pastBookingsResult);
+        console.log('📋 Active bookings result:', JSON.stringify(activeBookingsResult));
+        console.log('📋 Past bookings result:', JSON.stringify(pastBookingsResult));
 
         if (activeBookingsResult.error) {
-          console.error('Error fetching active bookings:', activeBookingsResult.error);
+          console.error('❌ Error fetching active bookings:', activeBookingsResult.error);
         }
         if (pastBookingsResult.error) {
-          console.error('Error fetching past bookings:', pastBookingsResult.error);
+          console.error('❌ Error fetching past bookings:', pastBookingsResult.error);
         }
 
-        // Combine results into map
-        activeBookingsResult.data?.forEach(b => bookingsMap.set(b.id, b));
-        pastBookingsResult.data?.forEach(b => bookingsMap.set(b.id, b));
+        // Combine results into map (past bookings take precedence if in both)
+        activeBookingsResult.data?.forEach(b => {
+          console.log('Adding active booking to map:', b.id);
+          bookingsMap.set(b.id, b);
+        });
+        pastBookingsResult.data?.forEach(b => {
+          console.log('Adding past booking to map:', b.id);
+          bookingsMap.set(b.id, b);
+        });
         
-        console.log('Bookings map size:', bookingsMap.size);
+        console.log('📊 Bookings map size:', bookingsMap.size, 'entries:', Array.from(bookingsMap.entries()));
       }
 
       // Map profiles and bookings to tasks
