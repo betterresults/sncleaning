@@ -28,6 +28,7 @@ interface CoverageMapProps {
 const CoverageMap: React.FC<CoverageMapProps> = ({ highlightedBorough, mapboxToken }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const essexMarkersRef = useRef<mapboxgl.Marker[]>([]);
   const [coveredBoroughs, setCoveredBoroughs] = useState<string[]>([]);
   const [coveredEssexAreas, setCoveredEssexAreas] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -176,34 +177,6 @@ const CoverageMap: React.FC<CoverageMapProps> = ({ highlightedBorough, mapboxTok
           },
         });
 
-        // Add Essex area markers
-        ESSEX_AREAS.forEach(area => {
-          const isAreaCovered = coveredEssexAreas.some(name => 
-            name.toLowerCase().includes(area.name.toLowerCase().split(' ')[0])
-          );
-          
-          if (isAreaCovered && map.current) {
-            // Create marker element
-            const el = document.createElement('div');
-            el.className = 'essex-marker';
-            el.style.width = '24px';
-            el.style.height = '24px';
-            el.style.backgroundColor = '#22c55e';
-            el.style.border = '3px solid #16a34a';
-            el.style.borderRadius = '50%';
-            el.style.cursor = 'pointer';
-            el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
-
-            const marker = new mapboxgl.Marker(el)
-              .setLngLat(area.coordinates)
-              .setPopup(
-                new mapboxgl.Popup({ offset: 25 })
-                  .setHTML(`<div class="p-2 font-semibold text-green-700">✓ Essex - ${area.name}</div>`)
-              )
-              .addTo(map.current);
-          }
-        });
-
         // Popup on hover
         const popup = new mapboxgl.Popup({
           closeButton: false,
@@ -270,6 +243,44 @@ const CoverageMap: React.FC<CoverageMapProps> = ({ highlightedBorough, mapboxTok
       // For now, just keep the current view
     }
   }, [highlightedBorough, mapLoaded, coveredBoroughs]);
+
+  // Add Essex markers when map is loaded and Essex areas are fetched
+  useEffect(() => {
+    if (!map.current || !mapLoaded || coveredEssexAreas.length === 0) return;
+
+    // Clear existing markers
+    essexMarkersRef.current.forEach(marker => marker.remove());
+    essexMarkersRef.current = [];
+
+    // Add Essex area markers
+    ESSEX_AREAS.forEach(area => {
+      const isAreaCovered = coveredEssexAreas.some(name => 
+        name.toLowerCase().includes(area.name.toLowerCase().split(' ')[0].split('/')[0].trim())
+      );
+      
+      if (isAreaCovered && map.current) {
+        // Create marker element
+        const el = document.createElement('div');
+        el.style.width = '28px';
+        el.style.height = '28px';
+        el.style.backgroundColor = '#22c55e';
+        el.style.border = '3px solid #16a34a';
+        el.style.borderRadius = '50%';
+        el.style.cursor = 'pointer';
+        el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+
+        const marker = new mapboxgl.Marker(el)
+          .setLngLat(area.coordinates)
+          .setPopup(
+            new mapboxgl.Popup({ offset: 25 })
+              .setHTML(`<div class="p-2 font-semibold text-green-700">✓ Essex - ${area.name}</div>`)
+          )
+          .addTo(map.current);
+        
+        essexMarkersRef.current.push(marker);
+      }
+    });
+  }, [mapLoaded, coveredEssexAreas]);
 
   if (loading) {
     return (
