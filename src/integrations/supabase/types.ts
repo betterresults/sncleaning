@@ -2748,6 +2748,7 @@ export type Database = {
       generate_recurring_bookings: { Args: never; Returns: undefined }
       get_current_user_role: { Args: never; Returns: string }
       get_user_role: { Args: { user_uuid: string }; Returns: string }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
       log_activity: {
         Args: {
           p_action_type: string
