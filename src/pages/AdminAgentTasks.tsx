@@ -41,6 +41,7 @@ const AdminAgentTasks = () => {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
   const [cancelTaskId, setCancelTaskId] = useState<string | null>(null);
+  
   const { tasks, loading, refetch, createTask, updateTask, deleteTask } = useAgentTasks({
     includeCompleted: statusFilter === 'all',
     status: statusFilter === 'completed' ? 'completed' : statusFilter === 'cancelled' ? 'cancelled' : undefined
@@ -84,6 +85,7 @@ const AdminAgentTasks = () => {
     return task.status === statusFilter;
   });
 
+  // Auth checks AFTER all hooks
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
