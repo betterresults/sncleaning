@@ -83,8 +83,11 @@ export const useAgentTasks = (options?: {
   const { toast } = useToast();
 
   const fetchTasks = async () => {
+    console.log('fetchTasks called with options:', options);
+    
     // Skip fetch if assignedTo is expected but user hasn't loaded yet
     if ('assignedTo' in (options || {}) && !options?.assignedTo) {
+      console.log('Skipping fetch - assignedTo not ready');
       setLoading(false);
       return;
     }
@@ -102,6 +105,7 @@ export const useAgentTasks = (options?: {
         .order('created_at', { ascending: false });
 
       if (options?.assignedTo) {
+        console.log('Filtering by assignedTo:', options.assignedTo);
         query = query.eq('assigned_to', options.assignedTo);
       }
 
@@ -112,6 +116,8 @@ export const useAgentTasks = (options?: {
       }
 
       const { data, error: fetchError } = await query;
+      
+      console.log('Fetch result:', { data, error: fetchError });
 
       if (fetchError) throw fetchError;
 
