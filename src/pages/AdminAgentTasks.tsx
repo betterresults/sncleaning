@@ -10,6 +10,7 @@ import { useAgentTasks, useSalesAgents, AgentTask, CreateTaskInput } from '@/hoo
 import { CreateTaskDialog } from '@/components/admin/CreateTaskDialog';
 import { AgentTasksTable } from '@/components/admin/AgentTasksTable';
 import { TaskDetailsDialog } from '@/components/admin/TaskDetailsDialog';
+import { BookingSelectorDialog } from '@/components/admin/BookingSelectorDialog';
 import { Button } from '@/components/ui/button';
 import { Plus, Filter, RefreshCw } from 'lucide-react';
 import {
@@ -41,6 +42,8 @@ const AdminAgentTasks = () => {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
   const [cancelTaskId, setCancelTaskId] = useState<string | null>(null);
+  const [bookingSelectorOpen, setBookingSelectorOpen] = useState(false);
+  const [taskForBookingEdit, setTaskForBookingEdit] = useState<AgentTask | null>(null);
   
   const { tasks, loading, refetch, createTask, updateTask, deleteTask } = useAgentTasks({
     includeCompleted: statusFilter === 'all',
@@ -82,6 +85,22 @@ const AdminAgentTasks = () => {
 
   const handleReassignTask = async (taskId: string, newAgentId: string) => {
     await updateTask({ id: taskId, assigned_to: newAgentId });
+  };
+
+  const handleEditBooking = (task: AgentTask) => {
+    setTaskForBookingEdit(task);
+    setBookingSelectorOpen(true);
+  };
+
+  const handleBookingSelect = async (bookingId: number | null) => {
+    if (taskForBookingEdit) {
+      await updateTask({ id: taskForBookingEdit.id, booking_id: bookingId });
+      setTaskForBookingEdit(null);
+    }
+  };
+
+  const handleRemoveBooking = async (taskId: string) => {
+    await updateTask({ id: taskId, booking_id: null });
   };
 
   // Filter tasks based on status
@@ -170,6 +189,8 @@ const AdminAgentTasks = () => {
                     onDeleteTask={(id) => setDeleteTaskId(id)}
                     onCancelTask={(id) => setCancelTaskId(id)}
                     onReassignTask={handleReassignTask}
+                    onEditBooking={handleEditBooking}
+                    onRemoveBooking={handleRemoveBooking}
                     salesAgents={salesAgents}
                   />
                 )}
@@ -189,6 +210,13 @@ const AdminAgentTasks = () => {
         task={selectedTask}
         open={detailsDialogOpen}
         onOpenChange={setDetailsDialogOpen}
+      />
+
+      <BookingSelectorDialog
+        open={bookingSelectorOpen}
+        onOpenChange={setBookingSelectorOpen}
+        onSelect={handleBookingSelect}
+        customerId={taskForBookingEdit?.customer_id}
       />
 
       <AlertDialog open={!!deleteTaskId} onOpenChange={() => setDeleteTaskId(null)}>

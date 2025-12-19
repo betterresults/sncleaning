@@ -22,9 +22,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { MoreHorizontal, Eye, Trash2, XCircle, UserCog } from 'lucide-react';
+import { MoreHorizontal, Eye, Trash2, XCircle, Calendar, X } from 'lucide-react';
 import { AgentTask } from '@/hooks/useAgentTasks';
 import { format } from 'date-fns';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 interface SalesAgent {
   user_id: string;
@@ -39,6 +44,8 @@ interface AgentTasksTableProps {
   onDeleteTask: (taskId: string) => void;
   onCancelTask: (taskId: string) => void;
   onReassignTask?: (taskId: string, newAgentId: string) => void;
+  onEditBooking?: (task: AgentTask) => void;
+  onRemoveBooking?: (taskId: string) => void;
   salesAgents?: SalesAgent[];
   showAssignedTo?: boolean;
 }
@@ -90,6 +97,8 @@ export const AgentTasksTable: React.FC<AgentTasksTableProps> = ({
   onDeleteTask,
   onCancelTask,
   onReassignTask,
+  onEditBooking,
+  onRemoveBooking,
   salesAgents = [],
   showAssignedTo = true,
 }) => {
@@ -127,6 +136,7 @@ export const AgentTasksTable: React.FC<AgentTasksTableProps> = ({
             <TableHead>Type</TableHead>
             {showAssignedTo && <TableHead>Assigned To</TableHead>}
             <TableHead>Customer</TableHead>
+            <TableHead>Booking</TableHead>
             <TableHead>Priority</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Due Date</TableHead>
@@ -175,6 +185,76 @@ export const AgentTasksTable: React.FC<AgentTasksTableProps> = ({
                 </TableCell>
               )}
               <TableCell>{getCustomerName(task)}</TableCell>
+              <TableCell onClick={(e) => e.stopPropagation()}>
+                {task.booking ? (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-8 text-xs">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        #{task.booking.id}
+                        {task.booking.date_only && (
+                          <span className="ml-1 text-muted-foreground">
+                            {format(new Date(task.booking.date_only), 'dd MMM')}
+                          </span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 p-3" align="start">
+                      <div className="space-y-2">
+                        <div className="font-medium text-sm">Booking #{task.booking.id}</div>
+                        {task.booking.date_only && (
+                          <p className="text-sm text-muted-foreground">
+                            Date: {format(new Date(task.booking.date_only), 'dd MMM yyyy')}
+                          </p>
+                        )}
+                        {task.booking.service_type && (
+                          <p className="text-sm text-muted-foreground">
+                            Type: {task.booking.service_type}
+                          </p>
+                        )}
+                        {task.booking.address && (
+                          <p className="text-sm text-muted-foreground truncate">
+                            {task.booking.address}
+                          </p>
+                        )}
+                        <div className="flex gap-2 pt-2 border-t">
+                          {onEditBooking && (
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="flex-1"
+                              onClick={() => onEditBooking(task)}
+                            >
+                              Change
+                            </Button>
+                          )}
+                          {onRemoveBooking && (
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="text-destructive"
+                              onClick={() => onRemoveBooking(task.id)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                ) : onEditBooking ? (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 text-xs text-muted-foreground"
+                    onClick={() => onEditBooking(task)}
+                  >
+                    + Add booking
+                  </Button>
+                ) : (
+                  <span className="text-muted-foreground">-</span>
+                )}
+              </TableCell>
               <TableCell>{getPriorityBadge(task.priority)}</TableCell>
               <TableCell>{getStatusBadge(task.status)}</TableCell>
               <TableCell>
