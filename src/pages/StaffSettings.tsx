@@ -43,10 +43,13 @@ const StaffSettings = () => {
     iban: ''
   });
 
-  // Load profile data
+  // Track if initial load has happened
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
+
+  // Load profile data only once on mount
   useEffect(() => {
     const loadProfile = async () => {
-      if (!user?.id) return;
+      if (!user?.id || initialLoadDone) return;
 
       const { data, error } = await supabase
         .from('profiles')
@@ -69,10 +72,11 @@ const StaffSettings = () => {
       } else if (error && error.code !== 'PGRST116') {
         console.error('Error loading profile:', error);
       }
+      setInitialLoadDone(true);
     };
 
     loadProfile();
-  }, [user]);
+  }, [user?.id, initialLoadDone]);
 
   const handleSignOut = async () => {
     try {
