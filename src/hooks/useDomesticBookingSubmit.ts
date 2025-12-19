@@ -52,6 +52,9 @@ interface DomesticBookingSubmission {
   additionalDetails?: any;
   cleanerId?: number;
   paymentMethod?: string;
+  
+  // Agent attribution (from short link/quote lead)
+  agentUserId?: string; // Sales agent who created the quote
 }
 
 const buildPropertyDetails = (data: DomesticBookingSubmission) => {
@@ -283,7 +286,14 @@ export const useDomesticBookingSubmit = () => {
       // Get current user and their role for tracking
       const { data: { user } } = await supabase.auth.getUser();
       let createdBySource = 'website';
-      if (user) {
+      let createdByUserId: string | null = null;
+      
+      // If agentUserId is provided (from short link), use it - this takes priority
+      if (bookingData.agentUserId) {
+        createdByUserId = bookingData.agentUserId;
+        createdBySource = 'sales_agent';
+      } else if (user) {
+        createdByUserId = user.id;
         const { data: userRole } = await supabase
           .from('user_roles')
           .select('role')
@@ -339,8 +349,8 @@ export const useDomesticBookingSubmit = () => {
         
         additional_details: buildAdditionalDetails(bookingData),
         
-        // Tracking - who created this booking
-        created_by_user_id: user?.id || null,
+        // Tracking - who created this booking (agentUserId takes priority if from quote link)
+        created_by_user_id: createdByUserId,
         created_by_source: createdBySource
       };
 
