@@ -7,13 +7,14 @@ import { LinensStep } from './steps/LinensStep';
 import { ScheduleStep } from './steps/ScheduleStep';
 import { BookingSummary } from './AirbnbBookingSummary';
 import { PaymentStep } from './steps/PaymentStep';
-import { Home, Brush, Calendar, User, CreditCard, Package2, ArrowLeft, Mail } from 'lucide-react';
+import { Home, Brush, Calendar, User, CreditCard, Package2, ArrowLeft, Send } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuoteLeadTracking } from '@/hooks/useQuoteLeadTracking';
 import { ExitQuotePopup } from '@/components/booking/ExitQuotePopup';
+import { AdminQuoteDialog } from '@/components/booking/AdminQuoteDialog';
 export interface BookingData {
   // Property details
   propertyType: 'flat' | 'house' | '';
@@ -468,10 +469,10 @@ const AirbnbBookingForm: React.FC = () => {
                 <Button
                   variant="outline"
                   onClick={() => setShowQuoteDialog(true)}
-                  className="text-sm font-medium border-amber-500 text-amber-600 hover:bg-amber-50 transition-all duration-200 shadow-sm"
+                  className="text-sm font-medium border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-200 shadow-sm"
                 >
-                  <Mail className="h-4 w-4 mr-2" />
-                  Send as Quote
+                  <Send className="h-4 w-4 mr-2" />
+                  Send to Customer
                 </Button>
               </>
             ) : bookingData.customerId ? (
@@ -567,12 +568,13 @@ const AirbnbBookingForm: React.FC = () => {
         </div>
       </main>
 
-      {/* Admin Quote Popup */}
+      {/* Admin Quote Dialog */}
       {isAdminMode && (
-        <ExitQuotePopup
+        <AdminQuoteDialog
           open={showQuoteDialog}
           onOpenChange={setShowQuoteDialog}
           email={bookingData.email || bookingData.selectedCustomer?.email || ''}
+          phone={bookingData.phone || bookingData.selectedCustomer?.phone || ''}
           quoteData={{
             totalCost: bookingData.totalCost,
             estimatedHours: bookingData.estimatedHours,
@@ -586,9 +588,13 @@ const AirbnbBookingForm: React.FC = () => {
             selectedTime: bookingData.selectedTime,
             postcode: bookingData.postcode,
             shortNoticeCharge: bookingData.shortNoticeCharge,
+            firstName: bookingData.firstName,
+            lastName: bookingData.lastName,
+            phone: bookingData.phone,
           }}
           sessionId={sessionId}
           serviceType="Air BnB"
+          agentUserId={adminUserId || undefined}
         />
       )}
     </div>
