@@ -341,7 +341,8 @@ const SMSNotificationManager = () => {
       // Payment info from booking
       processedContent = processedContent.replace(/\{\{payment_status\}\}/g, booking.payment_status || '');
       processedContent = processedContent.replace(/\{\{payment_method\}\}/g, booking.payment_method || '');
-      processedContent = processedContent.replace(/\{\{amount\}\}/g, booking.total_cost ? `£${booking.total_cost.toFixed(2)}` : '');
+      // Note: {{amount}} should NOT include £ symbol - templates already include it (e.g., "£{{amount}}")
+      processedContent = processedContent.replace(/\{\{amount\}\}/g, booking.total_cost ? booking.total_cost.toFixed(2) : '');
       processedContent = processedContent.replace(/\{\{invoice_link\}\}/g, booking.invoice_link || '');
       
       // Customer info from booking if no client selected
