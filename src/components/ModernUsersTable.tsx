@@ -102,7 +102,6 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
     first_name: '',
     last_name: '',
     email: '',
-    password: '',
     role: userType === 'customer' 
       ? 'guest' 
       : userType === 'cleaner' 
@@ -323,7 +322,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   };
 
   const handleAddUser = async () => {
-    if (!newUserData.first_name || !newUserData.last_name || !newUserData.email || !newUserData.password) {
+    if (!newUserData.first_name || !newUserData.last_name || !newUserData.email) {
       toast({
         title: 'Error',
         description: 'Please fill in all required fields',
@@ -337,7 +336,6 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       const response = await supabase.functions.invoke('create-user', {
         body: {
           email: newUserData.email,
-          password: newUserData.password,
           firstName: newUserData.first_name,
           lastName: newUserData.last_name,
           role: (userType === 'admin' || userType === 'office') ? newUserData.role : newUserData.role
@@ -395,8 +393,8 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
 
       // Success case
       toast({
-        title: 'Success',
-        description: 'User created successfully'
+        title: 'User Created Successfully',
+        description: `An invitation email with login credentials has been sent to ${newUserData.email}`
       });
 
       setShowAddUserForm(false);
@@ -404,7 +402,6 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         first_name: '',
         last_name: '',
         email: '',
-        password: '',
         role: userType === 'customer' 
           ? 'guest' 
           : userType === 'cleaner' 
@@ -493,7 +490,6 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         first_name: '',
         last_name: '',
         email: '',
-        password: '',
         role: userType === 'customer' ? 'guest' : userType === 'cleaner' ? 'user' : 'guest'
       });
       setExistingUserEmail('');
@@ -900,14 +896,11 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                     placeholder="Enter email address"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="password">Password *</Label>
-                  <PasswordInput
-                    id="password"
-                    value={newUserData.password}
-                    onChange={(e) => setNewUserData({...newUserData, password: e.target.value})}
-                    placeholder="Enter password"
-                  />
+                <div className="sm:col-span-2">
+                  <p className="text-sm text-muted-foreground flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    A temporary password will be auto-generated and sent via email
+                  </p>
                 </div>
               </div>
               {(userType === 'all' || userType === 'office') && (
@@ -1366,7 +1359,6 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                 first_name: '',
                 last_name: '',
                 email: '',
-                password: '',
                 role: userType === 'customer' ? 'guest' : userType === 'cleaner' ? 'user' : 'guest'
               });
             }}>
