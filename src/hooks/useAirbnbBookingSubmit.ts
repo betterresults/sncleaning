@@ -395,19 +395,6 @@ export const useAirbnbBookingSubmit = () => {
                          (bookingData.extraHours || 0) + 
                          (bookingData.ironingHours || 0);
 
-      // Generate incremental ID with retry logic to handle race conditions
-      const generateNextId = async (retries = 5): Promise<number> => {
-        const { data: latestBooking } = await supabase
-          .from('bookings')
-          .select('id')
-          .order('id', { ascending: false })
-          .limit(1)
-          .single();
-        return (latestBooking?.id ?? 0) + 1;
-      };
-      
-      let nextId = await generateNextId();
-
       // Get current user and their role for tracking
       const { data: { user } } = await supabase.auth.getUser();
       let createdBySource = 'website';
@@ -427,9 +414,8 @@ export const useAirbnbBookingSubmit = () => {
         }
       }
 
+      // Note: Do NOT set 'id' - let the database auto-generate it (identity column)
       const bookingInsert: any = {
-        // Primary Key
-        id: nextId,
         // Customer
         customer: customerId,
         first_name: bookingData.firstName || '',
@@ -536,60 +522,16 @@ export const useAirbnbBookingSubmit = () => {
         }
       }
 
-      // Insert with retry logic to handle duplicate key conflicts
-      let booking: { id: number } | null = null;
-      let lastError: any = null;
-      const maxRetries = 5;
+      // Simple insert - let the database auto-generate the ID
+      const { data: booking, error: bookingError } = await supabase
+        .from('bookings')
+        .insert(bookingInsert)
+        .select('id')
+        .single();
       
-      // Helper function to add a small delay
-      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-      
-      for (let attempt = 0; attempt < maxRetries; attempt++) {
-        // Re-fetch the latest ID on each retry (and on first attempt)
-        const { data: latestBooking } = await supabase
-          .from('bookings')
-          .select('id')
-          .order('id', { ascending: false })
-          .limit(1)
-          .single();
-        
-        // Add random offset to reduce collision chance (1-10)
-        const randomOffset = attempt > 0 ? Math.floor(Math.random() * 10) + 1 : 0;
-        nextId = (latestBooking?.id ?? 0) + 1 + randomOffset;
-        bookingInsert.id = nextId;
-        
-        if (attempt > 0) {
-          console.log(`[useAirbnbBookingSubmit] Retry ${attempt}: using new ID ${nextId}`);
-          // Add small delay before retry to let other transactions complete
-          await delay(100 * attempt);
-        }
-        
-        const { data: insertedBooking, error: bookingError } = await supabase
-          .from('bookings')
-          .insert(bookingInsert)
-          .select('id')
-          .single();
-        
-        if (!bookingError && insertedBooking) {
-          booking = insertedBooking;
-          break;
-        }
-        
-        // Check if it's a duplicate key error
-        if (bookingError?.code === '23505' || bookingError?.message?.includes('duplicate key')) {
-          lastError = bookingError;
-          console.log(`[useAirbnbBookingSubmit] Duplicate key on attempt ${attempt + 1}, retrying...`);
-          continue;
-        }
-        
-        // For other errors, throw immediately
+      if (bookingError || !booking) {
         console.error('Booking insert failed:', bookingError, { bookingInsert });
         throw new Error(bookingError?.message || 'Failed to create booking');
-      }
-
-      if (!booking) {
-        console.error('Booking insert failed after retries:', lastError, { bookingInsert });
-        throw new Error(lastError?.message || 'Failed to create booking after multiple attempts');
       }
 
       // Log booking creation to activity_logs
