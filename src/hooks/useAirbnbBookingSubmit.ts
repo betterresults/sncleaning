@@ -541,18 +541,27 @@ export const useAirbnbBookingSubmit = () => {
       let lastError: any = null;
       const maxRetries = 5;
       
+      // Helper function to add a small delay
+      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+      
       for (let attempt = 0; attempt < maxRetries; attempt++) {
-        // Re-fetch the latest ID on each retry
+        // Re-fetch the latest ID on each retry (and on first attempt)
+        const { data: latestBooking } = await supabase
+          .from('bookings')
+          .select('id')
+          .order('id', { ascending: false })
+          .limit(1)
+          .single();
+        
+        // Add random offset to reduce collision chance (1-10)
+        const randomOffset = attempt > 0 ? Math.floor(Math.random() * 10) + 1 : 0;
+        nextId = (latestBooking?.id ?? 0) + 1 + randomOffset;
+        bookingInsert.id = nextId;
+        
         if (attempt > 0) {
-          const { data: latestBooking } = await supabase
-            .from('bookings')
-            .select('id')
-            .order('id', { ascending: false })
-            .limit(1)
-            .single();
-          nextId = (latestBooking?.id ?? 0) + 1;
-          bookingInsert.id = nextId;
           console.log(`[useAirbnbBookingSubmit] Retry ${attempt}: using new ID ${nextId}`);
+          // Add small delay before retry to let other transactions complete
+          await delay(100 * attempt);
         }
         
         const { data: insertedBooking, error: bookingError } = await supabase
