@@ -83,6 +83,12 @@ export const useAgentTasks = (options?: {
   const { toast } = useToast();
 
   const fetchTasks = async () => {
+    // Skip fetch if assignedTo is expected but user hasn't loaded yet
+    if ('assignedTo' in (options || {}) && !options?.assignedTo) {
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true);
       setError(null);
