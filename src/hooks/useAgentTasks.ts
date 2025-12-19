@@ -144,7 +144,9 @@ export const useAgentTasks = (options?: {
       let bookingsMap = new Map<number, AgentTask['booking']>();
       
       if (bookingIds.length > 0) {
-        const [activeBookings, pastBookings] = await Promise.all([
+        console.log('Fetching bookings for IDs:', bookingIds);
+        
+        const [activeBookingsResult, pastBookingsResult] = await Promise.all([
           supabase
             .from('bookings')
             .select('id, date_only, address, postcode, service_type')
@@ -155,9 +157,21 @@ export const useAgentTasks = (options?: {
             .in('id', bookingIds)
         ]);
 
+        console.log('Active bookings result:', activeBookingsResult);
+        console.log('Past bookings result:', pastBookingsResult);
+
+        if (activeBookingsResult.error) {
+          console.error('Error fetching active bookings:', activeBookingsResult.error);
+        }
+        if (pastBookingsResult.error) {
+          console.error('Error fetching past bookings:', pastBookingsResult.error);
+        }
+
         // Combine results into map
-        activeBookings.data?.forEach(b => bookingsMap.set(b.id, b));
-        pastBookings.data?.forEach(b => bookingsMap.set(b.id, b));
+        activeBookingsResult.data?.forEach(b => bookingsMap.set(b.id, b));
+        pastBookingsResult.data?.forEach(b => bookingsMap.set(b.id, b));
+        
+        console.log('Bookings map size:', bookingsMap.size);
       }
 
       // Map profiles and bookings to tasks
