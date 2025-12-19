@@ -483,14 +483,14 @@ export const EditTaskDialog: React.FC<EditTaskDialogProps> = ({
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Related Booking (Optional)</Label>
                 <Select
-                  value={formData.booking_id}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, booking_id: value }))}
+                  value={formData.booking_id || "none"}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, booking_id: value === "none" ? "" : value }))}
                 >
                   <SelectTrigger className="h-11">
                     <SelectValue placeholder="Select a booking..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No booking</SelectItem>
+                    <SelectItem value="none">No booking</SelectItem>
                     {filteredBookings.slice(0, 50).map(booking => (
                       <SelectItem key={booking.id} value={booking.id.toString()}>
                         {getBookingDisplayName(booking)}
