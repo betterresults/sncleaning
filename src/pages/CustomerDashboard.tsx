@@ -32,34 +32,6 @@ const CustomerDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const isAdminViewing = userRole === 'admin';
-
-  // Handle payment_setup success parameter
-  useEffect(() => {
-    if (searchParams.get('payment_setup') === 'success') {
-      toast({
-        title: "Payment method added",
-        description: "Your payment method has been successfully saved.",
-      });
-      // Clean up the URL
-      searchParams.delete('payment_setup');
-      setSearchParams(searchParams, { replace: true });
-      // Refresh payment methods
-      fetchPaymentMethods();
-    }
-  }, [searchParams]);
-
-  // Redirect to auth if not logged in
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
   
   // Use selected customer ID if admin is viewing, otherwise use the logged-in user's customer ID  
   const activeCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
@@ -143,6 +115,21 @@ const CustomerDashboard = () => {
     }
   };
 
+  // Handle payment_setup success parameter
+  useEffect(() => {
+    if (searchParams.get('payment_setup') === 'success') {
+      toast({
+        title: "Payment method added",
+        description: "Your payment method has been successfully saved.",
+      });
+      // Clean up the URL
+      searchParams.delete('payment_setup');
+      setSearchParams(searchParams, { replace: true });
+      // Refresh payment methods
+      fetchPaymentMethods();
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     fetchPaymentMethods();
     checkIfBusinessClient();
@@ -167,6 +154,19 @@ const CustomerDashboard = () => {
       console.error('Error signing out:', error);
     }
   };
+
+  // Auth checks AFTER all hooks
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
 
   return (
     <SidebarProvider>
