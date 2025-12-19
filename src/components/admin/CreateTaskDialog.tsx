@@ -218,14 +218,14 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
               <div className="grid gap-2">
                 <Label htmlFor="customer_id">Customer (Optional)</Label>
                 <Select
-                  value={formData.customer_id}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, customer_id: value }))}
+                  value={formData.customer_id || "none"}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, customer_id: value === "none" ? "" : value }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a customer" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {customers.map(customer => (
                       <SelectItem key={customer.id} value={customer.id.toString()}>
                         {getCustomerDisplayName(customer)}
