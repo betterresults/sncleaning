@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -167,72 +165,69 @@ export const AgentSMSPanel: React.FC<AgentSMSPanelProps> = ({ task }) => {
           <div className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             <span>Send SMS</span>
-            {customerPhone && (
-              <Badge variant="secondary" className="text-xs">
-                {customerPhone}
-              </Badge>
-            )}
           </div>
           {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
       </CollapsibleTrigger>
       
-      <CollapsibleContent className="mt-2" onClick={(e) => e.stopPropagation()}>
-        <div className="border rounded-lg p-4 bg-background space-y-4">
+      <CollapsibleContent className="mt-3" onClick={(e) => e.stopPropagation()}>
+        <div className="border rounded-xl p-4 bg-background space-y-4">
 
-          {/* Template Selection */}
+          {/* Template Selection - Button Grid Style */}
           <div>
-            <p className="text-sm font-medium mb-2">Select Template</p>
+            <p className="text-sm font-medium text-slate-700 mb-3">Select Template</p>
             {loading ? (
-              <div className="flex items-center justify-center py-4">
+              <div className="flex items-center justify-center py-6">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
+            ) : templates.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No SMS templates available
+              </p>
             ) : (
-              <ScrollArea className="h-[150px]">
-                <div className="space-y-1">
-                  {templates.map((template) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {templates.map((template) => {
+                  const isSelected = selectedTemplate?.id === template.id;
+                  return (
                     <button
                       key={template.id}
                       onClick={() => setSelectedTemplate(template)}
-                      className={`w-full text-left p-2 rounded-md transition-colors text-sm ${
-                        selectedTemplate?.id === template.id
-                          ? 'bg-primary text-primary-foreground'
-                          : 'hover:bg-muted'
+                      className={`group relative h-12 rounded-xl border transition-all duration-200 justify-start gap-2 px-3 flex items-center ${
+                        isSelected 
+                          ? 'border-primary bg-primary/5' 
+                          : 'border-border bg-card hover:border-primary/50'
                       }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <span>{template.name}</span>
-                        {selectedTemplate?.id === template.id && (
-                          <Check className="h-4 w-4" />
-                        )}
-                      </div>
+                      <span className={`text-sm font-medium transition-colors truncate ${
+                        isSelected ? 'text-primary' : 'text-slate-600 group-hover:text-primary'
+                      }`}>
+                        {template.name}
+                      </span>
+                      {isSelected && (
+                        <Check className="h-4 w-4 text-primary ml-auto shrink-0" />
+                      )}
                     </button>
-                  ))}
-                  {templates.length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      No SMS templates available
-                    </p>
-                  )}
-                </div>
-              </ScrollArea>
+                  );
+                })}
+              </div>
             )}
           </div>
 
           {/* Preview */}
           {selectedTemplate && (
             <div>
-              <p className="text-sm font-medium mb-2">Message Preview</p>
-              <div className="bg-muted/50 rounded-lg p-3 text-sm whitespace-pre-wrap">
+              <p className="text-sm font-medium text-slate-700 mb-2">Message Preview</p>
+              <div className="bg-slate-50 rounded-xl p-3 text-sm text-slate-700 whitespace-pre-wrap border border-slate-100">
                 {previewContent}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-muted-foreground mt-1.5">
                 {previewContent.length} characters
               </p>
             </div>
           )}
 
           {/* Send Button */}
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 pt-2">
             <Button
               variant="outline"
               size="sm"

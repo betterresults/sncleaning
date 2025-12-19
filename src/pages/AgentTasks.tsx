@@ -127,27 +127,25 @@ const AgentTasks = () => {
     return 0;
   });
 
-  const getStatusIcon = (status: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
+        return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700"><CheckCircle className="h-3.5 w-3.5" />Completed</span>;
       case 'in_progress':
-        return <Clock className="h-5 w-5 text-blue-500" />;
+        return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700"><Clock className="h-3.5 w-3.5" />In Progress</span>;
       default:
-        return <AlertCircle className="h-5 w-5 text-yellow-500" />;
+        return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700"><AlertCircle className="h-3.5 w-3.5" />Pending</span>;
     }
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case 'urgent':
-        return 'border-l-red-500';
+        return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">Urgent</span>;
       case 'high':
-        return 'border-l-orange-500';
-      case 'medium':
-        return 'border-l-primary';
+        return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700">High</span>;
       default:
-        return 'border-l-muted';
+        return null;
     }
   };
 
@@ -247,162 +245,152 @@ const AgentTasks = () => {
                     <p>No tasks found. You're all caught up!</p>
                   </Card>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {sortedTasks.map((task) => (
                       <Card 
                         key={task.id} 
-                        className={`border-l-4 overflow-hidden transition-all hover:shadow-lg ${getPriorityColor(task.priority)}`}
+                        className="overflow-hidden transition-all hover:shadow-md border border-slate-200 rounded-xl"
                       >
                         {/* Header Section */}
                         <div 
                           className="p-4 cursor-pointer"
                           onClick={() => handleViewTask(task)}
                         >
-                          <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-start justify-between gap-3 mb-3">
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-2">
-                                {getStatusIcon(task.status)}
-                                <h3 className="font-semibold text-lg text-foreground truncate">{task.title}</h3>
-                              </div>
+                              <h3 className="font-semibold text-base text-slate-800 mb-2">{task.title}</h3>
                               <div className="flex flex-wrap items-center gap-2">
-                                <Badge variant="secondary" className="text-xs">
+                                {getStatusBadge(task.status)}
+                                {getPriorityBadge(task.priority)}
+                                <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
                                   {getTaskTypeLabel(task.task_type)}
-                                </Badge>
-                                {task.priority === 'urgent' && (
-                                  <Badge variant="destructive" className="text-xs">Urgent</Badge>
-                                )}
-                                {task.priority === 'high' && (
-                                  <Badge className="bg-orange-500 text-xs">High Priority</Badge>
-                                )}
-                                {task.status === 'in_progress' && (
-                                  <Badge className="bg-blue-500 text-xs">In Progress</Badge>
-                                )}
+                                </span>
                               </div>
                             </div>
                             {task.due_date && (
-                              <div className="flex items-center gap-1.5 text-sm bg-muted px-2 py-1 rounded-md shrink-0">
-                                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                                <span className="font-medium">{format(new Date(task.due_date), 'dd MMM')}</span>
+                              <div className="flex items-center gap-1.5 text-xs bg-slate-100 px-2.5 py-1.5 rounded-lg shrink-0">
+                                <Calendar className="h-3.5 w-3.5 text-slate-500" />
+                                <span className="font-medium text-slate-700">{format(new Date(task.due_date), 'dd MMM')}</span>
                               </div>
                             )}
                           </div>
                           
                           {task.description && (
-                            <p className="text-sm text-muted-foreground mt-3 line-clamp-2">{task.description}</p>
+                            <p className="text-sm text-slate-600 line-clamp-2">{task.description}</p>
                           )}
                         </div>
 
-                        {/* Customer & Booking Info Section */}
-                        <div className="border-t bg-muted/30 px-4 py-3 space-y-3">
-                          {/* Customer Row */}
-                          {getCustomerName(task) && (
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                              <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                                  <User className="h-4 w-4 text-primary" />
-                                </div>
-                                <div>
-                                  <p className="font-medium text-sm">{getCustomerName(task)}</p>
-                                  {task.customer?.email && (
-                                    <p className="text-xs text-muted-foreground">{task.customer.email}</p>
-                                  )}
-                                </div>
-                              </div>
-                              {task.customer?.phone && (
-                                <a 
-                                  href={`tel:${task.customer.phone}`} 
-                                  className="flex items-center gap-1.5 text-sm text-primary hover:underline bg-primary/5 px-2.5 py-1 rounded-full"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <Phone className="h-3.5 w-3.5" />
-                                  {task.customer.phone}
-                                </a>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Booking Row */}
-                          {task.booking && (
-                            <div className="flex items-start gap-2 p-3 bg-background rounded-lg border">
-                              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                                <Building2 className="h-4 w-4 text-emerald-600" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="font-medium text-sm">Booking #{task.booking.id}</span>
-                                  {task.booking.service_type && (
-                                    <Badge variant="outline" className="text-xs">{task.booking.service_type}</Badge>
-                                  )}
-                                  {task.booking.total_cost != null && (
-                                    <Badge className="bg-emerald-500 text-xs">£{Number(task.booking.total_cost).toFixed(2)}</Badge>
-                                  )}
-                                  {task.booking.date_only && (
-                                    <span className="text-sm text-muted-foreground">
-                                      {format(new Date(task.booking.date_only), 'EEE, dd MMM yyyy')}
-                                    </span>
-                                  )}
-                                </div>
-                                {task.booking.address && (
-                                  <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
-                                    <MapPin className="h-3.5 w-3.5 shrink-0" />
-                                    <span className="truncate">{task.booking.address}</span>
-                                    {task.booking.postcode && (
-                                      <span className="shrink-0 font-medium">• {task.booking.postcode}</span>
+                        {/* Customer & Booking Info */}
+                        {(getCustomerName(task) || task.booking) && (
+                          <div className="border-t border-slate-100 px-4 py-3 space-y-3 bg-slate-50/50">
+                            {/* Customer Info */}
+                            {getCustomerName(task) && (
+                              <div className="flex flex-wrap items-center gap-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center">
+                                    <User className="h-3.5 w-3.5 text-slate-600" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium text-sm text-slate-700">{getCustomerName(task)}</p>
+                                    {task.customer?.email && (
+                                      <p className="text-xs text-slate-500">{task.customer.email}</p>
                                     )}
                                   </div>
+                                </div>
+                                {task.customer?.phone && (
+                                  <a 
+                                    href={`tel:${task.customer.phone}`} 
+                                    className="flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-primary bg-white border border-slate-200 px-2.5 py-1.5 rounded-lg"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <Phone className="h-3.5 w-3.5" />
+                                    {task.customer.phone}
+                                  </a>
                                 )}
                               </div>
-                            </div>
-                          )}
-                        </div>
+                            )}
+
+                            {/* Booking Info */}
+                            {task.booking && (
+                              <div className="flex items-start gap-2 p-3 bg-white rounded-lg border border-slate-200">
+                                <Building2 className="h-4 w-4 text-slate-500 mt-0.5 shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-medium text-sm text-slate-700">#{task.booking.id}</span>
+                                    {task.booking.service_type && (
+                                      <span className="text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded">{task.booking.service_type}</span>
+                                    )}
+                                    {task.booking.total_cost != null && (
+                                      <span className="text-xs font-semibold text-primary">£{Number(task.booking.total_cost).toFixed(2)}</span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-1 mt-1 text-xs text-slate-500">
+                                    {task.booking.date_only && (
+                                      <span>{format(new Date(task.booking.date_only), 'EEE, dd MMM yyyy')}</span>
+                                    )}
+                                    {task.booking.date_only && task.booking.address && <span>•</span>}
+                                    {task.booking.address && (
+                                      <span className="truncate">{task.booking.address}</span>
+                                    )}
+                                    {task.booking.postcode && (
+                                      <span className="shrink-0 font-medium">{task.booking.postcode}</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
 
                         {/* Notes Section */}
                         {task.notes && (
-                          <div className="border-t bg-amber-50/50 px-4 py-3">
+                          <div className="border-t border-slate-100 px-4 py-3 bg-slate-50/50">
                             <div className="flex items-start gap-2">
-                              <StickyNote className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                              <StickyNote className="h-4 w-4 text-slate-500 mt-0.5 shrink-0" />
                               <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-amber-700 mb-1">Agent Notes</p>
-                                <p className="text-sm text-amber-900 whitespace-pre-wrap">{task.notes}</p>
+                                <p className="text-xs font-medium text-slate-600 mb-1">Notes</p>
+                                <p className="text-sm text-slate-700 whitespace-pre-wrap">{task.notes}</p>
                               </div>
                             </div>
                           </div>
                         )}
 
-                        {/* Actions Section */}
-                        <div className="border-t px-4 py-3 flex flex-wrap items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        {/* Actions */}
+                        <div className="border-t border-slate-100 px-4 py-3 flex flex-wrap items-center gap-2" onClick={(e) => e.stopPropagation()}>
                           {task.status === 'pending' && (
                             <Button 
                               size="sm" 
                               variant="outline"
+                              className="rounded-lg"
                               onClick={() => handleStartTask(task)}
                             >
                               <Clock className="h-4 w-4 mr-1.5" />
-                              Start Task
+                              Start
                             </Button>
                           )}
                           {(task.status === 'pending' || task.status === 'in_progress') && (
                             <>
                               <Button 
                                 size="sm"
-                                variant="default"
+                                className="rounded-lg"
                                 onClick={() => handleOpenCompleteDialog(task)}
                               >
                                 <CheckCircle className="h-4 w-4 mr-1.5" />
-                                Mark Complete
+                                Complete
                               </Button>
                               <Button 
                                 size="sm"
                                 variant="outline"
+                                className="rounded-lg"
                                 onClick={() => handleOpenNotesDialog(task)}
                               >
                                 <Edit3 className="h-4 w-4 mr-1.5" />
-                                {task.notes ? 'Edit Notes' : 'Add Notes'}
+                                Notes
                               </Button>
                             </>
                           )}
                           
-                          {/* SMS Button inline */}
+                          {/* SMS Button */}
                           {task.customer && (
                             <div className="ml-auto">
                               <AgentSMSPanel task={task} />
