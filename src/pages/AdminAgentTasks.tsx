@@ -6,7 +6,7 @@ import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { adminNavigation } from '@/lib/navigationItems';
 import { usePageTracking } from '@/hooks/usePageTracking';
-import { useAgentTasks, AgentTask, CreateTaskInput } from '@/hooks/useAgentTasks';
+import { useAgentTasks, useSalesAgents, AgentTask, CreateTaskInput } from '@/hooks/useAgentTasks';
 import { CreateTaskDialog } from '@/components/admin/CreateTaskDialog';
 import { AgentTasksTable } from '@/components/admin/AgentTasksTable';
 import { TaskDetailsDialog } from '@/components/admin/TaskDetailsDialog';
@@ -47,6 +47,8 @@ const AdminAgentTasks = () => {
     status: statusFilter === 'completed' ? 'completed' : statusFilter === 'cancelled' ? 'cancelled' : undefined
   });
 
+  const { agents: salesAgents } = useSalesAgents();
+
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -76,6 +78,10 @@ const AdminAgentTasks = () => {
       await updateTask({ id: cancelTaskId, status: 'cancelled' });
       setCancelTaskId(null);
     }
+  };
+
+  const handleReassignTask = async (taskId: string, newAgentId: string) => {
+    await updateTask({ id: taskId, assigned_to: newAgentId });
   };
 
   // Filter tasks based on status
@@ -163,6 +169,8 @@ const AdminAgentTasks = () => {
                     onViewTask={handleViewTask}
                     onDeleteTask={(id) => setDeleteTaskId(id)}
                     onCancelTask={(id) => setCancelTaskId(id)}
+                    onReassignTask={handleReassignTask}
+                    salesAgents={salesAgents}
                   />
                 )}
               </div>
