@@ -76,6 +76,7 @@ export interface DomesticBookingData {
   totalHours?: number;
   hourlyRate: number;
   totalCost: number;
+  weeklyCost?: number; // Recurring weekly cost for display
   
   // Admin pricing overrides
   adminDiscountAmount?: number;
@@ -353,6 +354,8 @@ const DomesticBookingForm: React.FC = () => {
         agentUserId: agentUserId || prev.agentUserId,
         // First deep clean settings - enable if the quote was created with first deep clean
         wantsFirstDeepClean: firstDeepClean || prev.wantsFirstDeepClean,
+        // Weekly/recurring cost for display
+        weeklyCost: weeklyCost ? parseFloat(weeklyCost) : prev.weeklyCost,
         // Calculate extra hours from the difference if both are available
         firstDeepCleanExtraHours: firstDeepClean && weeklyHours && quotedHours 
           ? parseFloat(quotedHours) - parseFloat(weeklyHours) 
@@ -849,18 +852,21 @@ const DomesticBookingForm: React.FC = () => {
             </Card>
           </div>
           
-          <div className="lg:col-span-1">
-            <div className="lg:sticky lg:top-4">
-              <div className="bg-gradient-to-br from-slate-50 to-white rounded-2xl p-4 border-2 border-slate-200 shadow-lg lg:bg-transparent lg:p-0 lg:border-0 lg:shadow-none lg:rounded-none">
-                <h3 className="text-lg font-bold text-slate-700 mb-3 lg:hidden">Booking Summary</h3>
-                <DomesticBookingSummary 
-                  data={bookingData} 
-                  isAdminMode={isAdminMode}
-                  onUpdate={updateBookingData}
-                />
+          {/* Hide sidebar booking summary when in quote link mode - it's shown at top of PaymentStep instead */}
+          {!isQuoteLinkMode && (
+            <div className="lg:col-span-1">
+              <div className="lg:sticky lg:top-4">
+                <div className="bg-gradient-to-br from-slate-50 to-white rounded-2xl p-4 border-2 border-slate-200 shadow-lg lg:bg-transparent lg:p-0 lg:border-0 lg:shadow-none lg:rounded-none">
+                  <h3 className="text-lg font-bold text-slate-700 mb-3 lg:hidden">Booking Summary</h3>
+                  <DomesticBookingSummary 
+                    data={bookingData} 
+                    isAdminMode={isAdminMode}
+                    onUpdate={updateBookingData}
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </main>
       
