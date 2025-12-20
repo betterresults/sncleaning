@@ -16,6 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 interface QuoteData {
   totalCost: number;
   estimatedHours: number | null;
+  weeklyHours?: number | null; // Regular weekly hours when first deep clean is selected
+  wantsFirstDeepClean?: boolean; // Whether first deep clean option was selected
   propertyType: string;
   bedrooms: string;
   bathrooms: string;
@@ -31,6 +33,7 @@ interface QuoteData {
   firstName?: string;
   lastName?: string;
   phone?: string;
+  weeklyCost?: number; // Recurring cost for weekly cleans
 }
 
 interface AdminQuoteDialogProps {
@@ -145,6 +148,9 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
       selected_time: extractStartTime(quoteData.selectedTime),
       calculated_quote: quoteData.totalCost,
       recommended_hours: quoteData.estimatedHours,
+      weekly_hours: quoteData.weeklyHours, // Store weekly hours separately
+      first_deep_clean: quoteData.wantsFirstDeepClean || false, // Store first deep clean flag
+      weekly_cost: quoteData.weeklyCost, // Store recurring cost
       short_notice_charge: quoteData.shortNoticeCharge,
       is_first_time_customer: quoteData.isFirstTimeCustomer,
       discount_amount: quoteData.discountAmount,

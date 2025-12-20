@@ -2165,6 +2165,7 @@ export type Database = {
           discount_amount: number | null
           email: string | null
           expires_at: string | null
+          first_deep_clean: boolean | null
           first_name: string | null
           frequency: string | null
           furthest_step: string | null
@@ -2204,6 +2205,7 @@ export type Database = {
           utm_source: string | null
           utm_term: string | null
           weekly_cost: number | null
+          weekly_hours: number | null
         }
         Insert: {
           additional_rooms?: Json | null
@@ -2222,6 +2224,7 @@ export type Database = {
           discount_amount?: number | null
           email?: string | null
           expires_at?: string | null
+          first_deep_clean?: boolean | null
           first_name?: string | null
           frequency?: string | null
           furthest_step?: string | null
@@ -2261,6 +2264,7 @@ export type Database = {
           utm_source?: string | null
           utm_term?: string | null
           weekly_cost?: number | null
+          weekly_hours?: number | null
         }
         Update: {
           additional_rooms?: Json | null
@@ -2279,6 +2283,7 @@ export type Database = {
           discount_amount?: number | null
           email?: string | null
           expires_at?: string | null
+          first_deep_clean?: boolean | null
           first_name?: string | null
           frequency?: string | null
           furthest_step?: string | null
@@ -2318,6 +2323,7 @@ export type Database = {
           utm_source?: string | null
           utm_term?: string | null
           weekly_cost?: number | null
+          weekly_hours?: number | null
         }
         Relationships: []
       }
