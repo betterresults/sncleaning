@@ -10,16 +10,13 @@ import { Button } from '@/components/ui/button';
 import { CreditCard, Lock, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { loadStripe } from '@stripe/stripe-js';
+import { loadStripe, Stripe } from '@stripe/stripe-js';
 import {
   Elements,
   CardElement,
   useStripe,
   useElements,
 } from '@stripe/react-stripe-js';
-
-// Initialize Stripe
-const stripePromise = loadStripe('pk_live_51OZcDaGJOgpfVmv6XjBc9JQ85pD4f08dcRpQSYvMJUJpxMPGKwmKXOcjvlrNqJMKmLIyZ3bNjPLSxPVUOXCvAUZ500Q4jrOj66');
 
 interface ManualCardEntryDialogProps {
   open: boolean;
@@ -216,6 +213,30 @@ const ManualCardEntryDialog: React.FC<ManualCardEntryDialogProps> = ({
   customerId,
   onSuccess,
 }) => {
+  const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
+  const [stripeError, setStripeError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchStripeKey = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-stripe-publishable-key');
+        if (error) throw error;
+        if (data?.publishable_key) {
+          setStripePromise(loadStripe(data.publishable_key));
+        } else {
+          throw new Error('No publishable key returned');
+        }
+      } catch (error: any) {
+        console.error('Error fetching Stripe key:', error);
+        setStripeError('Failed to initialize payment system');
+      }
+    };
+
+    if (open && !stripePromise) {
+      fetchStripeKey();
+    }
+  }, [open, stripePromise]);
+
   const handleSuccess = () => {
     onOpenChange(false);
     onSuccess();
@@ -234,13 +255,25 @@ const ManualCardEntryDialog: React.FC<ManualCardEntryDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <Elements stripe={stripePromise}>
-          <CardForm
-            customerId={customerId}
-            onSuccess={handleSuccess}
-            onCancel={() => onOpenChange(false)}
-          />
-        </Elements>
+        {stripeError ? (
+          <div className="text-center py-6">
+            <p className="text-destructive mb-4">{stripeError}</p>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+          </div>
+        ) : !stripePromise ? (
+          <div className="text-center py-6">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+            <p className="text-muted-foreground">Loading payment system...</p>
+          </div>
+        ) : (
+          <Elements stripe={stripePromise}>
+            <CardForm
+              customerId={customerId}
+              onSuccess={handleSuccess}
+              onCancel={() => onOpenChange(false)}
+            />
+          </Elements>
+        )}
       </DialogContent>
     </Dialog>
   );
