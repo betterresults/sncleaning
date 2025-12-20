@@ -1070,20 +1070,38 @@ useEffect(() => {
                 </div>
               </div>
             )}
-            {(data.street || data.postcode) && (
+            {(data.street || data.houseNumber || data.postcode) && (
               <div className="flex items-start gap-3">
                 <MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                 <div>
                   <span className="font-medium">Address:</span>{' '}
-                  {[data.houseNumber, data.street, data.city, data.postcode].filter(Boolean).join(', ')}
+                  {[data.houseNumber, data.street, data.city, data.postcode].filter(Boolean).join(', ') || data.postcode}
                 </div>
               </div>
             )}
-            <div className="pt-3 mt-3 border-t border-primary/20">
-              <div className="flex justify-between items-center text-lg">
-                <span className="font-bold">Total:</span>
-                <span className="font-bold text-primary">£{data.totalCost?.toFixed(2) || '0.00'}</span>
-              </div>
+            <div className="pt-3 mt-3 border-t border-primary/20 space-y-2">
+              {/* Show first clean cost if this is a recurring booking with first deep clean */}
+              {data.wantsFirstDeepClean && data.serviceFrequency !== 'one-time' && (
+                <>
+                  <div className="flex justify-between items-center text-lg">
+                    <span className="font-bold">First Clean:</span>
+                    <span className="font-bold text-primary">£{data.totalCost?.toFixed(2) || '0.00'}</span>
+                  </div>
+                  {data.weeklyCost && (
+                    <div className="flex justify-between items-center text-base text-muted-foreground">
+                      <span>Then {data.serviceFrequency === 'weekly' ? 'weekly' : data.serviceFrequency === 'biweekly' ? 'bi-weekly' : 'monthly'}:</span>
+                      <span>£{data.weeklyCost?.toFixed(2)}/visit</span>
+                    </div>
+                  )}
+                </>
+              )}
+              {/* Standard display for one-time or regular recurring */}
+              {!data.wantsFirstDeepClean && (
+                <div className="flex justify-between items-center text-lg">
+                  <span className="font-bold">Total{data.serviceFrequency !== 'one-time' ? '/visit' : ''}:</span>
+                  <span className="font-bold text-primary">£{data.totalCost?.toFixed(2) || '0.00'}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

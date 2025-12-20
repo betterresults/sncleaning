@@ -70,7 +70,7 @@ const ShortLinkResolver = () => {
         // Agent attribution - CRITICAL for sales agent tracking
         if (data.agent_user_id) params.set('agentUserId', data.agent_user_id);
         
-        // Address
+        // Address - pass the combined address which will be parsed by the booking form
         if (data.address) params.set('address', data.address);
         
         // Property access
