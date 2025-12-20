@@ -121,7 +121,7 @@ const AirbnbBookingForm: React.FC = () => {
   const [showQuoteDialog, setShowQuoteDialog] = useState(false);
   
   // Quote lead tracking
-  const { saveQuoteLead, trackStep, trackQuoteCalculated, markCompleted, initializeFromResume, sessionId } = useQuoteLeadTracking('Air BnB');
+  const { saveQuoteLead, trackStep, trackQuoteCalculated, markCompleted, trackBookingAttempt, initializeFromResume, sessionId } = useQuoteLeadTracking('Air BnB');
   
   const [bookingData, setBookingData] = useState<BookingData>({
     propertyType: '',
@@ -436,6 +436,12 @@ const AirbnbBookingForm: React.FC = () => {
               onUpdate={updateBookingData}
               onBack={prevStep}
               isAdminMode={isAdminMode}
+              onBookingAttempt={() => trackBookingAttempt({
+                email: bookingData.email,
+                phone: bookingData.phone,
+                calculatedQuote: bookingData.totalCost,
+                postcode: bookingData.postcode,
+              })}
             />
           </Elements>
         ) : (

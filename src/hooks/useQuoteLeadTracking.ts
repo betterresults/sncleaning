@@ -517,6 +517,17 @@ export const useQuoteLeadTracking = (serviceType: string, options?: TrackingOpti
     }, true);
   }, [saveQuoteLead]);
 
+  // Track when user clicks "Complete Booking" button (before actual submission)
+  // This helps identify failed booking attempts
+  const trackBookingAttempt = useCallback((data?: Partial<QuoteLeadData>) => {
+    console.log('📊 Tracking booking attempt (Complete Booking clicked)');
+    saveQuoteLead({
+      status: 'live',
+      furthestStep: 'booking_attempted',
+      ...data,
+    });
+  }, [saveQuoteLead]);
+
   // Force create a record (used when resuming from email)
   const initializeFromResume = useCallback((resumeSessionId: string) => {
     sessionId.current = resumeSessionId;
@@ -557,6 +568,7 @@ export const useQuoteLeadTracking = (serviceType: string, options?: TrackingOpti
     trackStep,
     trackQuoteCalculated,
     markCompleted,
+    trackBookingAttempt,
     initializeFromResume,
     markQuoteEmailSent,
     userId: userId.current,
