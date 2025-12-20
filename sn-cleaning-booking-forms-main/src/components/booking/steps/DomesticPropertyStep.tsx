@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { DomesticBookingData } from '../DomesticBookingForm';
 import { Home, Building, Plus, Minus, CheckCircle, Droplets, Wrench } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
@@ -12,11 +13,13 @@ interface DomesticPropertyStepProps {
   data: DomesticBookingData;
   onUpdate: (updates: Partial<DomesticBookingData>) => void;
   onNext: () => void;
+  isAdminMode?: boolean;
 }
 export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
   data,
   onUpdate,
-  onNext
+  onNext,
+  isAdminMode = false
 }) => {
   // Fetch all dynamic configurations from database
   const {
@@ -433,6 +436,22 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
                       </Button>
                     </div>
                   </div>
+                </div>
+              )}
+              
+              {/* Admin-only: Same cost as regular cleaning checkbox */}
+              {data.wantsFirstDeepClean && isAdminMode && (
+                <div className="mt-4 p-3 bg-amber-50 rounded-xl border border-amber-200">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <Checkbox
+                      checked={data.adminDeepCleanSameCost || false}
+                      onCheckedChange={(checked) => onUpdate({ adminDeepCleanSameCost: checked === true })}
+                    />
+                    <div>
+                      <span className="text-sm font-semibold text-amber-800">Same cost as regular cleaning</span>
+                      <p className="text-xs text-amber-600 mt-0.5">No additional charge for deep clean (use recurring rate)</p>
+                    </div>
+                  </label>
                 </div>
               )}
             </div>

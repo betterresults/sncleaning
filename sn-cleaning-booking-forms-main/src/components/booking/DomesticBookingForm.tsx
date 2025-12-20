@@ -84,6 +84,7 @@ export interface DomesticBookingData {
   adminTotalCostOverride?: number;
   adminRemoveShortNoticeCharge?: boolean;
   adminApplyDiscountToRecurring?: boolean;
+  adminDeepCleanSameCost?: boolean; // When true, deep clean charges at recurring rate instead of one-time rate
   
   // Admin payment control
   stripeChargeTiming?: 'immediate' | 'authorize' | 'none';
@@ -616,6 +617,7 @@ const DomesticBookingForm: React.FC = () => {
             data={bookingData}
             onUpdate={updateBookingData}
             onNext={nextStep}
+            isAdminMode={isAdminMode}
           />
         );
       case 2:
