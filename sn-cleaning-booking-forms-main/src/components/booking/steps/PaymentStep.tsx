@@ -9,7 +9,7 @@ import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
-import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import CustomerSelector from '@/components/booking/CustomerSelector';
 import AddressSelector from '@/components/booking/AddressSelector';
 import { usePaymentMethodCheck } from '@/hooks/usePaymentMethodCheck';
@@ -918,9 +918,9 @@ useEffect(() => {
           throw new Error('Stripe not loaded');
         }
 
-        const cardElement = elements.getElement(CardElement);
+        const cardElement = elements.getElement(CardNumberElement);
         if (!cardElement) {
-          console.error('[PaymentStep] CardElement not found');
+          console.error('[PaymentStep] CardNumberElement not found');
           throw new Error('Card information is incomplete');
         }
 
@@ -936,12 +936,13 @@ useEffect(() => {
 
         console.log('[PaymentStep] Creating payment method with Stripe...');
         const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
-          type: 'card',
-          card: cardElement,
-          billing_details: {
-            name: `${data.firstName} ${data.lastName}`,
-            email: data.email,
-            phone: data.phone,
+          elements,
+          params: {
+            billing_details: {
+              name: `${data.firstName} ${data.lastName}`,
+              email: data.email,
+              phone: data.phone,
+            },
           },
         });
 
@@ -1419,21 +1420,62 @@ useEffect(() => {
 
           {/* Card Element for adding new card */}
           {selectedAdminPaymentMethod === 'add-card' && (
-            <div className="rounded-2xl border-2 border-gray-200 bg-white p-6 mt-4">
-              <p className="text-sm font-medium text-gray-700 mb-4">Enter card details:</p>
-              <CardElement
-                options={{
-                  style: {
-                    base: {
-                      fontSize: '16px',
-                      color: '#424770',
-                      '::placeholder': { color: '#aab7c4' },
-                    },
-                    invalid: { color: '#9e2146' },
-                  },
-                }}
-                onChange={(e) => setCardComplete(e.complete)}
-              />
+            <div className="rounded-2xl border-2 border-gray-200 bg-white p-6 mt-4 space-y-4">
+              <p className="text-sm font-medium text-gray-700 mb-2">Enter card details:</p>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-2">Card Number</label>
+                <div className="p-3 border border-gray-300 rounded-lg bg-white">
+                  <CardNumberElement
+                    options={{
+                      style: {
+                        base: {
+                          fontSize: '16px',
+                          color: '#424770',
+                          '::placeholder': { color: '#aab7c4' },
+                        },
+                        invalid: { color: '#9e2146' },
+                      },
+                    }}
+                    onChange={(e) => setCardComplete(e.complete)}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-2">Expiry Date</label>
+                  <div className="p-3 border border-gray-300 rounded-lg bg-white">
+                    <CardExpiryElement
+                      options={{
+                        style: {
+                          base: {
+                            fontSize: '16px',
+                            color: '#424770',
+                            '::placeholder': { color: '#aab7c4' },
+                          },
+                          invalid: { color: '#9e2146' },
+                        },
+                      }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-2">CVC</label>
+                  <div className="p-3 border border-gray-300 rounded-lg bg-white">
+                    <CardCvcElement
+                      options={{
+                        style: {
+                          base: {
+                            fontSize: '16px',
+                            color: '#424770',
+                            '::placeholder': { color: '#aab7c4' },
+                          },
+                          invalid: { color: '#9e2146' },
+                        },
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -1633,27 +1675,78 @@ useEffect(() => {
                     </div>
                   </div>
                   
-                  <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-200">
-                    <CardElement 
-                      options={{
-                        style: {
-                          base: {
-                            fontSize: '16px',
-                            color: '#1f2937',
-                            fontFamily: 'system-ui, -apple-system, sans-serif',
-                            '::placeholder': {
-                              color: '#9ca3af',
+                  <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-200 space-y-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-2">Card Number</label>
+                      <div className="p-3 border border-gray-300 rounded-lg bg-white">
+                        <CardNumberElement 
+                          options={{
+                            style: {
+                              base: {
+                                fontSize: '16px',
+                                color: '#1f2937',
+                                fontFamily: 'system-ui, -apple-system, sans-serif',
+                                '::placeholder': {
+                                  color: '#9ca3af',
+                                },
+                                iconColor: '#185166',
+                              },
+                              invalid: {
+                                color: '#ef4444',
+                                iconColor: '#ef4444',
+                              },
                             },
-                            iconColor: '#185166',
-                          },
-                          invalid: {
-                            color: '#ef4444',
-                            iconColor: '#ef4444',
-                          },
-                        },
-                      }}
-                      onChange={(e) => setCardComplete(e.complete)}
-                    />
+                          }}
+                          onChange={(e) => setCardComplete(e.complete)}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-2">Expiry Date</label>
+                        <div className="p-3 border border-gray-300 rounded-lg bg-white">
+                          <CardExpiryElement 
+                            options={{
+                              style: {
+                                base: {
+                                  fontSize: '16px',
+                                  color: '#1f2937',
+                                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                                  '::placeholder': {
+                                    color: '#9ca3af',
+                                  },
+                                },
+                                invalid: {
+                                  color: '#ef4444',
+                                },
+                              },
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-2">CVC</label>
+                        <div className="p-3 border border-gray-300 rounded-lg bg-white">
+                          <CardCvcElement 
+                            options={{
+                              style: {
+                                base: {
+                                  fontSize: '16px',
+                                  color: '#1f2937',
+                                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                                  '::placeholder': {
+                                    color: '#9ca3af',
+                                  },
+                                },
+                                invalid: {
+                                  color: '#ef4444',
+                                },
+                              },
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="flex items-center justify-center gap-4 pt-2">
