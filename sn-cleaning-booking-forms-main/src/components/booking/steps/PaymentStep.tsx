@@ -1710,6 +1710,32 @@ useEffect(() => {
           )}
         </Button>
       </div>
+
+      {/* Full-screen loading overlay when processing booking */}
+      {(processing || submitting) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-6 p-8 rounded-2xl bg-card shadow-2xl border border-border max-w-sm mx-4 text-center">
+            <div className="relative">
+              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+                <Loader2 className="h-10 w-10 text-primary animate-spin" />
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                <Clock className="h-4 w-4 text-green-600" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold text-foreground">Creating Your Booking</h3>
+              <p className="text-muted-foreground text-sm">
+                Please wait while we secure your booking. This will only take a moment...
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Shield className="h-4 w-4 text-green-600" />
+              <span>Your payment is secure</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
