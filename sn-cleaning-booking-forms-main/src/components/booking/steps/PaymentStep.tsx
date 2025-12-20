@@ -1223,11 +1223,7 @@ useEffect(() => {
       {/* Customer/Guest Mode - show customer details */}
       {!isAdminMode && (
         <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
-          <div className={`rounded-2xl border-2 transition-all ${
-            isQuoteLinkMode && !detailsOpen && data.firstName 
-              ? 'border-green-200 bg-green-50/50' 
-              : 'border-gray-200 bg-white'
-          }`}>
+          <div className="rounded-2xl border-2 border-gray-200 bg-white transition-all">
             <CollapsibleTrigger className="w-full p-4 flex items-center justify-between text-left">
               <div className="flex items-center gap-3">
                 {isQuoteLinkMode && data.firstName && !detailsOpen && (
@@ -1380,11 +1376,7 @@ useEffect(() => {
       {/* Booking Address - Only show if no address is selected or in admin mode */}
       {(isAdminMode || !data.addressId) && (
         <Collapsible open={addressOpen} onOpenChange={setAddressOpen}>
-          <div className={`rounded-2xl border-2 transition-all ${
-            isQuoteLinkMode && !addressOpen && data.street 
-              ? 'border-green-200 bg-green-50/50' 
-              : 'border-gray-200 bg-white'
-          }`}>
+          <div className="rounded-2xl border-2 border-gray-200 bg-white transition-all">
             <CollapsibleTrigger className="w-full p-4 flex items-center justify-between text-left">
               <div className="flex items-center gap-3">
                 {isQuoteLinkMode && data.street && !addressOpen && (
