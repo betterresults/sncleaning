@@ -217,12 +217,17 @@ export const useDomesticHardcodedCalculations = (bookingData: DomesticBookingDat
     }
 
     if (bookingData.selectedTime) {
-      const startTime = bookingData.selectedTime.split(' - ')[0];
-      const hourMatch = startTime.match(/(\d+)(am|pm)/i);
+      // Parse time from formats: "9:00 AM", "9am - 10am", "9am"
+      let timePart = bookingData.selectedTime.includes(' - ') 
+        ? bookingData.selectedTime.split(' - ')[0] 
+        : bookingData.selectedTime;
+      
+      // Match both "9:00 AM" and "9am" formats
+      const hourMatch = timePart.match(/(\d+):?(\d{2})?\s*(AM|PM|am|pm)/i);
       
       if (hourMatch) {
         let hours = parseInt(hourMatch[1]);
-        const isPM = hourMatch[2].toLowerCase() === 'pm';
+        const isPM = hourMatch[3].toUpperCase() === 'PM';
         if (isPM && hours !== 12) hours += 12;
         if (!isPM && hours === 12) hours = 0;
         const selectedTimeMinutes = hours * 60;
