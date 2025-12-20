@@ -13,7 +13,9 @@ import { supabase } from '@/integrations/supabase/client';
 import LinenManagementSelector from '@/components/booking/LinenManagementSelector';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { User, Calendar, MapPin, CreditCard, UserCheck, Clock, Home, Phone, Mail, AlertTriangle, Settings } from 'lucide-react';
+import { User, Calendar, MapPin, CreditCard, UserCheck, Clock, Home, Phone, Mail, AlertTriangle, Settings, Users } from 'lucide-react';
+import SubCleanersList from '@/components/booking/SubCleanersList';
+import AddSubCleanerDialog from '@/components/booking/AddSubCleanerDialog';
 import { EmailNotificationConfirmDialog } from '@/components/notifications/EmailNotificationConfirmDialog';
 import { useBookingEmailPrompt } from '@/hooks/useBookingEmailPrompt';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -40,6 +42,11 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
   const [loading, setLoading] = useState(false);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [isSameDayCleaning, setIsSameDayCleaning] = useState(false);
+  const [subCleanersKey, setSubCleanersKey] = useState(0);
+  
+  const handleSubCleanerChange = () => {
+    setSubCleanersKey(prev => prev + 1);
+  };
   
   // Fetch dynamic service types, cleaning types, and payment methods
   const { data: serviceTypes } = useServiceTypes();
@@ -869,6 +876,43 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                         />
                       </div>
                     </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              {/* Additional Cleaners Section */}
+              <AccordionItem value="additional-cleaners" className="border rounded-lg">
+                <AccordionTrigger className="px-6 py-4 bg-indigo-50 hover:bg-indigo-100 rounded-t-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-indigo-500 rounded-full">
+                      <Users className="h-4 w-4 text-white" />
+                    </div>
+                    <span className="text-lg font-semibold text-indigo-900">Additional Cleaners</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 py-4 bg-white">
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Assign additional cleaners to this booking with their own payment rates.
+                    </p>
+                    
+                    <SubCleanersList 
+                      key={subCleanersKey}
+                      bookingId={booking.id} 
+                      compact={true}
+                      onSubCleanerRemoved={handleSubCleanerChange}
+                      onSubCleanerUpdated={handleSubCleanerChange}
+                    />
+                    
+                    <AddSubCleanerDialog 
+                      bookingId={booking.id} 
+                      onSubCleanerAdded={handleSubCleanerChange}
+                    >
+                      <Button variant="outline" className="w-full">
+                        <Users className="h-4 w-4 mr-2" />
+                        Add Additional Cleaner
+                      </Button>
+                    </AddSubCleanerDialog>
                   </div>
                 </AccordionContent>
               </AccordionItem>
