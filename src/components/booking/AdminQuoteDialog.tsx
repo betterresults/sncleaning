@@ -113,12 +113,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
   const [phone, setPhone] = useState(initialPhone || '');
   const [firstName, setFirstName] = useState(quoteData.firstName || '');
   const [lastName, setLastName] = useState(quoteData.lastName || '');
-  const [address, setAddress] = useState(
-    quoteData.address || 
-    (quoteData.houseNumber && quoteData.street 
-      ? `${quoteData.houseNumber} ${quoteData.street}${quoteData.city ? `, ${quoteData.city}` : ''}`
-      : '')
-  );
+  // Build address from form components - no separate state needed
   const [selectedOption, setSelectedOption] = useState<SendOption>(null);
   const [sendStatus, setSendStatus] = useState<SendStatus>('idle');
   const [sendingEmail, setSendingEmail] = useState(false);
@@ -154,20 +149,14 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
     checkExistingQuote();
   }, [open, sessionId]);
   
-  // Sync email/phone/name/address state when props change
+  // Sync email/phone/name state when props change
   React.useEffect(() => {
     if (initialEmail) setEmail(initialEmail);
     if (initialPhone) setPhone(initialPhone);
     if (quoteData.firstName) setFirstName(quoteData.firstName);
     if (quoteData.lastName) setLastName(quoteData.lastName);
     if (quoteData.phone) setPhone(quoteData.phone);
-    // Sync address from quoteData
-    const builtAddress = quoteData.address || 
-      (quoteData.houseNumber && quoteData.street 
-        ? `${quoteData.houseNumber} ${quoteData.street}${quoteData.city ? `, ${quoteData.city}` : ''}`
-        : '');
-    if (builtAddress) setAddress(builtAddress);
-  }, [initialEmail, initialPhone, quoteData.firstName, quoteData.lastName, quoteData.phone, quoteData.address, quoteData.houseNumber, quoteData.street, quoteData.city]);
+  }, [initialEmail, initialPhone, quoteData.firstName, quoteData.lastName, quoteData.phone]);
 
   // Reset state when dialog opens
   React.useEffect(() => {
@@ -213,8 +202,10 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
       last_name: lastName || null,
       email: email || null,
       phone: phone || null,
-      // Address - use state value (can be edited by admin) or fallback to quoteData
-      address: address || quoteData.address || null,
+      // Address - build from form components (houseNumber, street, city)
+      address: quoteData.houseNumber && quoteData.street 
+        ? `${quoteData.houseNumber} ${quoteData.street}${quoteData.city ? `, ${quoteData.city}` : ''}`
+        : (quoteData.address || null),
       // Property access
       property_access: quoteData.propertyAccess || null,
       access_notes: quoteData.accessNotes || null,
@@ -672,18 +663,6 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="complete-address" className="text-sm font-medium text-slate-700">Address (optional)</Label>
-                <Input
-                  id="complete-address"
-                  type="text"
-                  placeholder="123 Street Name, City"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className="rounded-xl border-slate-200 focus:border-primary focus:ring-primary h-12"
-                />
-                <p className="text-xs text-muted-foreground">Include house number, street, and city</p>
-              </div>
 
               <div className="flex gap-3">
                 <Button
