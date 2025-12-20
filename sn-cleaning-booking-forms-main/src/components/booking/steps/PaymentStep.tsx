@@ -71,6 +71,7 @@ interface PaymentStepProps {
   isAdminMode?: boolean;
   formType?: 'airbnb' | 'linen';
   bookingSummary?: React.ReactNode;
+  onBookingAttempt?: () => void;
 }
 
 const PaymentStep: React.FC<PaymentStepProps> = ({ 
@@ -79,7 +80,8 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   onBack, 
   isAdminMode = false, 
   formType = 'airbnb',
-  bookingSummary 
+  bookingSummary,
+  onBookingAttempt
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -347,6 +349,12 @@ useEffect(() => {
   }, [searchParams]);
 
   const handleSubmit = async () => {
+    // Track booking attempt BEFORE validation - this captures ALL click attempts
+    // so we can see when users tried to complete but failed
+    if (onBookingAttempt) {
+      onBookingAttempt();
+    }
+
     // Validate before submission
     const isEmailValid = validateEmail(data.email);
     const isPhoneValid = validatePhone(data.phone);

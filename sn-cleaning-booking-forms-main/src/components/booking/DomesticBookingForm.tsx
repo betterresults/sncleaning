@@ -121,7 +121,7 @@ const DomesticBookingForm: React.FC = () => {
   const [showQuoteDialog, setShowQuoteDialog] = useState(false);
   
   // Quote lead tracking
-  const { saveQuoteLead, trackStep, trackQuoteCalculated, markCompleted, initializeFromResume, markQuoteEmailSent, sessionId } = useQuoteLeadTracking('Domestic');
+  const { saveQuoteLead, trackStep, trackQuoteCalculated, markCompleted, trackBookingAttempt, initializeFromResume, markQuoteEmailSent, sessionId } = useQuoteLeadTracking('Domestic');
   
   const [bookingData, setBookingData] = useState<DomesticBookingData>({
     propertyType: '',
@@ -633,6 +633,12 @@ const DomesticBookingForm: React.FC = () => {
               onUpdate={updateBookingData as any}
               onBack={prevStep}
               isAdminMode={isAdminMode}
+              onBookingAttempt={() => trackBookingAttempt({
+                email: bookingData.email,
+                phone: bookingData.phone,
+                calculatedQuote: calculatedTotal,
+                postcode: bookingData.postcode,
+              })}
             />
           </Elements>
         ) : (
