@@ -45,7 +45,19 @@ const ShortLinkResolver = () => {
         
         // Date/time
         if (data.selected_date) params.set('date', data.selected_date);
-        if (data.selected_time) params.set('time', data.selected_time);
+        if (data.selected_time) {
+          // Convert SQL time format (HH:MM:SS) to display format (9:00 AM)
+          const timeParts = data.selected_time.match(/^(\d{1,2}):(\d{2})/);
+          if (timeParts) {
+            let hours = parseInt(timeParts[1], 10);
+            const period = hours >= 12 ? 'PM' : 'AM';
+            if (hours > 12) hours -= 12;
+            if (hours === 0) hours = 12;
+            params.set('time', `${hours}:00 ${period}`);
+          } else {
+            params.set('time', data.selected_time);
+          }
+        }
         
         // Contact info
         if (data.email) params.set('email', data.email);
