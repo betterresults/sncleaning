@@ -1085,11 +1085,11 @@ useEffect(() => {
               {data.weeklyCost && data.weeklyCost !== data.totalCost && data.serviceFrequency !== 'one-time' && (
                 <>
                   <div className="flex justify-between items-center text-lg">
-                    <span className="font-bold">First Clean:</span>
+                    <span className="font-bold">First Clean ({data.estimatedHours || data.firstDeepCleanExtraHours ? `${((data.estimatedHours || 0) + (data.firstDeepCleanExtraHours || 0)).toFixed(1)} hrs` : ''}):</span>
                     <span className="font-bold text-primary">£{data.totalCost?.toFixed(2) || '0.00'}</span>
                   </div>
                   <div className="flex justify-between items-center text-base text-muted-foreground">
-                    <span>Then {data.serviceFrequency === 'weekly' ? 'weekly' : data.serviceFrequency === 'biweekly' ? 'bi-weekly' : 'monthly'}:</span>
+                    <span>Then {data.serviceFrequency === 'weekly' ? 'weekly' : data.serviceFrequency === 'biweekly' ? 'bi-weekly' : 'monthly'} ({data.estimatedHours?.toFixed(1) || '0'} hrs):</span>
                     <span>£{data.weeklyCost?.toFixed(2)}/visit</span>
                   </div>
                 </>
@@ -1097,7 +1097,7 @@ useEffect(() => {
               {/* Standard display for one-time or when no weekly cost difference */}
               {(!data.weeklyCost || data.weeklyCost === data.totalCost || data.serviceFrequency === 'one-time') && (
                 <div className="flex justify-between items-center text-lg">
-                  <span className="font-bold">Total{data.serviceFrequency !== 'one-time' ? '/visit' : ''}:</span>
+                  <span className="font-bold">Total{data.serviceFrequency !== 'one-time' ? '/visit' : ''} ({data.estimatedHours?.toFixed(1) || '0'} hrs):</span>
                   <span className="font-bold text-primary">£{data.totalCost?.toFixed(2) || '0.00'}</span>
                 </div>
               )}
