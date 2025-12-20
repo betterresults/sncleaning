@@ -59,6 +59,11 @@ const ShortLinkResolver = () => {
         if (data.short_notice_charge) params.set('shortNotice', data.short_notice_charge.toString());
         if (data.is_first_time_customer !== null) params.set('firstTime', data.is_first_time_customer ? '1' : '0');
         
+        // First deep clean specific fields
+        if (data.first_deep_clean) params.set('firstDeepClean', '1');
+        if (data.weekly_hours) params.set('weeklyHours', data.weekly_hours.toString());
+        if (data.weekly_cost) params.set('weeklyCost', data.weekly_cost.toString());
+        
         // Session tracking
         if (data.session_id) params.set('ref', data.session_id);
         
