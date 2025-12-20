@@ -260,8 +260,10 @@ export const useDomesticHardcodedCalculations = (bookingData: DomesticBookingDat
     // Get one-time rate for first deep clean pricing
     const oneTimeRate = getConfigValue('domestic service frequency', 'onetime') || 22;
     
-    // Check if deep clean extra hours should be charged (1 = charge, 0 = free)
-    const chargeDeepCleanExtraHours = getConfigValue('deep clean settings', 'charge_extra_hours') !== 0;
+    // Check if deep clean should use one-time rate (1) or recurring rate (0)
+    // Value 1 = use one-time rate (default), Value 0 = use recurring rate (discounted)
+    const useOneTimeRateForDeepClean = getConfigValue('deep clean settings', 'charge_extra_hours') !== 0;
+    const deepCleanRate = useOneTimeRateForDeepClean ? oneTimeRate : hourlyRate;
     
     // First deep clean: use configured extra hours (or default to 50% of totalHours)
     const defaultExtraHours = Math.round(totalHours * 0.5 * 2) / 2; // Default: 50% extra, rounded to 0.5
@@ -272,9 +274,9 @@ export const useDomesticHardcodedCalculations = (bookingData: DomesticBookingDat
       : 0;
     const firstDeepCleanHours = wantsFirstDeepClean ? totalHours + extraHours : 0;
     
-    // Calculate first deep clean cost - if chargeDeepCleanExtraHours is false, only charge for base hours
+    // Calculate first deep clean cost using the appropriate rate
     const firstDeepCleanCost = wantsFirstDeepClean 
-      ? ((chargeDeepCleanExtraHours ? firstDeepCleanHours : totalHours) * oneTimeRate) + equipmentOneTimeCost + ovenCleaningCost + shortNoticeCharge + additionalCharge - discount
+      ? (firstDeepCleanHours * deepCleanRate) + equipmentOneTimeCost + ovenCleaningCost + shortNoticeCharge + additionalCharge - discount
       : 0;
     
     // Regular recurring cost (without one-time charges like equipment delivery, short notice)
