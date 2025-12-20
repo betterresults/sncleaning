@@ -188,7 +188,12 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
       recommended_hours: quoteData.estimatedHours,
       weekly_hours: quoteData.weeklyHours, // Store weekly hours separately
       first_deep_clean: quoteData.wantsFirstDeepClean || false, // Store first deep clean flag
-      weekly_cost: quoteData.weeklyCost, // Store recurring cost
+      // Store discounted weekly cost if discount applies
+      weekly_cost: quoteData.weeklyCost 
+        ? (quoteData.discountAmount 
+            ? quoteData.weeklyCost - (quoteData.weeklyCost * (quoteData.discountAmount / quoteData.totalCost))
+            : quoteData.weeklyCost)
+        : null,
       short_notice_charge: quoteData.shortNoticeCharge,
       is_first_time_customer: quoteData.isFirstTimeCustomer,
       discount_amount: quoteData.discountAmount,
