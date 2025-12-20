@@ -94,8 +94,8 @@ const ShortLinkResolver = () => {
           })
           .eq('short_code', shortCode);
 
-        // Navigate to the form with all params - use domestic for now since that's the main route
-        navigate(`/domestic?${params.toString()}`, { replace: true });
+        // Navigate to the form with all params
+        navigate(`${route}?${params.toString()}`, { replace: true });
         
       } catch (err) {
         console.error('Error resolving short link:', err);

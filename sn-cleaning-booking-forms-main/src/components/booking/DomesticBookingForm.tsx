@@ -276,6 +276,7 @@ const DomesticBookingForm: React.FC = () => {
       const phone = searchParams.get('phone') || '';
       const propertyAccess = searchParams.get('propertyAccess') || '';
       const accessNotes = searchParams.get('accessNotes') || '';
+      const address = searchParams.get('address') || '';
       const refSessionId = searchParams.get('ref');
       
       // Agent attribution - CRITICAL for sales agent tracking
@@ -291,6 +292,28 @@ const DomesticBookingForm: React.FC = () => {
       const firstDeepClean = searchParams.get('firstDeepClean') === '1';
       const weeklyHours = searchParams.get('weeklyHours');
       const weeklyCost = searchParams.get('weeklyCost');
+      
+      // Parse address into components (format: "houseNumber street, city")
+      let parsedHouseNumber = '';
+      let parsedStreet = '';
+      let parsedCity = '';
+      if (address) {
+        const addressParts = address.split(',');
+        if (addressParts.length >= 2) {
+          parsedCity = addressParts[addressParts.length - 1].trim();
+          const streetPart = addressParts.slice(0, -1).join(',').trim();
+          // Try to extract house number from start
+          const streetMatch = streetPart.match(/^(\d+[A-Za-z]?)\s+(.+)$/);
+          if (streetMatch) {
+            parsedHouseNumber = streetMatch[1];
+            parsedStreet = streetMatch[2];
+          } else {
+            parsedStreet = streetPart;
+          }
+        } else {
+          parsedStreet = address;
+        }
+      }
       
       setBookingData(prev => ({
         ...prev,
@@ -310,6 +333,10 @@ const DomesticBookingForm: React.FC = () => {
         // Property access
         propertyAccess: propertyAccess || prev.propertyAccess,
         accessNotes: accessNotes || prev.accessNotes,
+        // Address components
+        houseNumber: parsedHouseNumber || prev.houseNumber,
+        street: parsedStreet || prev.street,
+        city: parsedCity || prev.city,
         // Preserve the exact quoted pricing
         totalCost: quotedCost ? parseFloat(quotedCost) : prev.totalCost,
         // For first deep clean: use weekly hours for estimatedHours (for proper calculation)
@@ -844,6 +871,13 @@ const DomesticBookingForm: React.FC = () => {
             firstName: bookingData.firstName,
             lastName: bookingData.lastName,
             phone: bookingData.phone,
+            // Address fields
+            houseNumber: bookingData.houseNumber,
+            street: bookingData.street,
+            city: bookingData.city,
+            // Property access
+            propertyAccess: bookingData.propertyAccess,
+            accessNotes: bookingData.accessNotes,
           }}
           sessionId={sessionId}
           serviceType="Domestic"
