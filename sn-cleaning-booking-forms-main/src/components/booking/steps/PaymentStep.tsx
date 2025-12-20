@@ -1081,23 +1081,21 @@ useEffect(() => {
               </div>
             )}
             <div className="pt-3 mt-3 border-t border-primary/20 space-y-2">
-              {/* Show first clean cost if this is a recurring booking with first deep clean */}
-              {data.wantsFirstDeepClean && data.serviceFrequency !== 'one-time' && (
+              {/* Show first clean cost + weekly cost when weeklyCost is present (indicates first deep clean or recurring) */}
+              {data.weeklyCost && data.weeklyCost !== data.totalCost && data.serviceFrequency !== 'one-time' && (
                 <>
                   <div className="flex justify-between items-center text-lg">
                     <span className="font-bold">First Clean:</span>
                     <span className="font-bold text-primary">£{data.totalCost?.toFixed(2) || '0.00'}</span>
                   </div>
-                  {data.weeklyCost && (
-                    <div className="flex justify-between items-center text-base text-muted-foreground">
-                      <span>Then {data.serviceFrequency === 'weekly' ? 'weekly' : data.serviceFrequency === 'biweekly' ? 'bi-weekly' : 'monthly'}:</span>
-                      <span>£{data.weeklyCost?.toFixed(2)}/visit</span>
-                    </div>
-                  )}
+                  <div className="flex justify-between items-center text-base text-muted-foreground">
+                    <span>Then {data.serviceFrequency === 'weekly' ? 'weekly' : data.serviceFrequency === 'biweekly' ? 'bi-weekly' : 'monthly'}:</span>
+                    <span>£{data.weeklyCost?.toFixed(2)}/visit</span>
+                  </div>
                 </>
               )}
-              {/* Standard display for one-time or regular recurring */}
-              {!data.wantsFirstDeepClean && (
+              {/* Standard display for one-time or when no weekly cost difference */}
+              {(!data.weeklyCost || data.weeklyCost === data.totalCost || data.serviceFrequency === 'one-time') && (
                 <div className="flex justify-between items-center text-lg">
                   <span className="font-bold">Total{data.serviceFrequency !== 'one-time' ? '/visit' : ''}:</span>
                   <span className="font-bold text-primary">£{data.totalCost?.toFixed(2) || '0.00'}</span>
@@ -1106,20 +1104,6 @@ useEffect(() => {
             </div>
           </div>
           
-          {/* Notes field for quote link customers */}
-          <div className="pt-4 border-t border-primary/20">
-            <Label htmlFor="quote-notes" className="text-sm font-medium text-[#185166] mb-2 block">
-              Additional Notes (optional)
-            </Label>
-            <textarea
-              id="quote-notes"
-              value={data.notes || ''}
-              onChange={(e) => onUpdate({ notes: e.target.value })}
-              placeholder="Any special instructions or notes for your cleaning..."
-              className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:border-primary focus:ring-0 text-sm resize-none"
-              rows={3}
-            />
-          </div>
         </div>
       )}
 
@@ -1468,7 +1452,23 @@ useEffect(() => {
         </Collapsible>
       )}
 
-      {/* Cleaner Selection - ADMIN ONLY, NOT FOR LINEN ORDERS */}
+      {/* Additional Notes - for quote link customers, after address section */}
+      {isQuoteLinkMode && !isAdminMode && (
+        <div className="space-y-3">
+          <Label htmlFor="quote-notes" className="text-lg font-semibold text-[#185166]">
+            Additional Notes (optional)
+          </Label>
+          <textarea
+            id="quote-notes"
+            value={data.notes || ''}
+            onChange={(e) => onUpdate({ notes: e.target.value })}
+            placeholder="Any special instructions or notes for your cleaning..."
+            className="w-full p-4 border-2 border-gray-200 rounded-2xl bg-white focus:border-primary focus:ring-0 text-base resize-none"
+            rows={3}
+          />
+        </div>
+      )}
+
       {isAdminMode && formType !== 'linen' && (
         <div className="space-y-6">
           <h3 className="text-2xl font-bold text-[#185166] mb-4 flex items-center gap-2">
