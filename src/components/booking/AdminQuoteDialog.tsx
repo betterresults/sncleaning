@@ -34,6 +34,14 @@ interface QuoteData {
   lastName?: string;
   phone?: string;
   weeklyCost?: number; // Recurring cost for weekly cleans
+  // Address fields
+  address?: string;
+  city?: string;
+  houseNumber?: string;
+  street?: string;
+  // Property access
+  propertyAccess?: string;
+  accessNotes?: string;
 }
 
 interface AdminQuoteDialogProps {
@@ -106,6 +114,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
   const [email, setEmail] = useState(initialEmail);
   const [phone, setPhone] = useState(initialPhone || '');
   const [firstName, setFirstName] = useState(quoteData.firstName || '');
+  const [lastName, setLastName] = useState(quoteData.lastName || '');
   const [selectedOption, setSelectedOption] = useState<SendOption>(null);
   const [sendStatus, setSendStatus] = useState<SendStatus>('idle');
   const [sendingEmail, setSendingEmail] = useState(false);
@@ -116,8 +125,9 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
     if (initialEmail) setEmail(initialEmail);
     if (initialPhone) setPhone(initialPhone);
     if (quoteData.firstName) setFirstName(quoteData.firstName);
+    if (quoteData.lastName) setLastName(quoteData.lastName);
     if (quoteData.phone) setPhone(quoteData.phone);
-  }, [initialEmail, initialPhone, quoteData.firstName, quoteData.phone]);
+  }, [initialEmail, initialPhone, quoteData.firstName, quoteData.lastName, quoteData.phone]);
 
   // Reset state when dialog opens
   React.useEffect(() => {
@@ -155,9 +165,16 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
       is_first_time_customer: quoteData.isFirstTimeCustomer,
       discount_amount: quoteData.discountAmount,
       first_name: firstName || null,
-      last_name: null,
+      last_name: lastName || null,
       email: email || null,
       phone: phone || null,
+      // Address - combine into full address string if components provided
+      address: quoteData.address || (quoteData.houseNumber && quoteData.street 
+        ? `${quoteData.houseNumber} ${quoteData.street}${quoteData.city ? `, ${quoteData.city}` : ''}`
+        : null),
+      // Property access
+      property_access: quoteData.propertyAccess || null,
+      access_notes: quoteData.accessNotes || null,
       status: 'sent',
       source: 'admin',
       created_by_admin_id: agentUserId,

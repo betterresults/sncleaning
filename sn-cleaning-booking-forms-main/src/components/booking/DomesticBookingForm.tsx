@@ -274,6 +274,8 @@ const DomesticBookingForm: React.FC = () => {
       const firstName = searchParams.get('firstName') || '';
       const lastName = searchParams.get('lastName') || '';
       const phone = searchParams.get('phone') || '';
+      const propertyAccess = searchParams.get('propertyAccess') || '';
+      const accessNotes = searchParams.get('accessNotes') || '';
       const refSessionId = searchParams.get('ref');
       
       // Agent attribution - CRITICAL for sales agent tracking
@@ -305,6 +307,9 @@ const DomesticBookingForm: React.FC = () => {
         firstName: firstName || prev.firstName,
         lastName: lastName || prev.lastName,
         phone: phone || prev.phone,
+        // Property access
+        propertyAccess: propertyAccess || prev.propertyAccess,
+        accessNotes: accessNotes || prev.accessNotes,
         // Preserve the exact quoted pricing
         totalCost: quotedCost ? parseFloat(quotedCost) : prev.totalCost,
         // For first deep clean: use weekly hours for estimatedHours (for proper calculation)
