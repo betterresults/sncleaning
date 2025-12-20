@@ -326,7 +326,8 @@ export const useAirbnbBookingSubmit = () => {
       let time24ForDB: string | null = null;
       let dateStr: string | null = null;
       
-      if (bookingData.selectedDate && bookingData.selectedTime) {
+      // Extract date regardless of whether time is selected (for flexible-time bookings)
+      if (bookingData.selectedDate) {
         try {
           // Extract date string without timezone conversion - treat input as London time
           if (bookingData.selectedDate instanceof Date) {
@@ -339,48 +340,56 @@ export const useAirbnbBookingSubmit = () => {
           
           console.log('[useAirbnbBookingSubmit] Date string (London time):', dateStr);
           
-          // Convert time from various formats to 24-hour "HH:MM" format
-          let time24 = bookingData.selectedTime;
-          
-          // Extract start time if it's a range (e.g., "9am - 10am" -> "9am")
-          if (time24.includes(' - ')) {
-            time24 = time24.split(' - ')[0].trim();
-          }
-          
-          // Handle formats like "9am", "10pm", "9:00 AM", "10:30 PM"
-          if (time24.toLowerCase().includes('am') || time24.toLowerCase().includes('pm')) {
-            const timeStr = time24.toLowerCase().replace(/\s+/g, '');
-            const isPM = timeStr.includes('pm');
-            const isAM = timeStr.includes('am');
-            const numericPart = timeStr.replace(/[ap]m/g, '');
+          // Only process time if it's provided (not flexible-time)
+          if (bookingData.selectedTime) {
+            // Convert time from various formats to 24-hour "HH:MM" format
+            let time24 = bookingData.selectedTime;
             
-            let hour: number;
-            let minutes: number = 0;
-            
-            if (numericPart.includes(':')) {
-              const parts = numericPart.split(':');
-              hour = parseInt(parts[0]);
-              minutes = parseInt(parts[1]);
-            } else {
-              hour = parseInt(numericPart);
+            // Extract start time if it's a range (e.g., "9am - 10am" -> "9am")
+            if (time24.includes(' - ')) {
+              time24 = time24.split(' - ')[0].trim();
             }
             
-            if (isPM && hour !== 12) {
-              hour += 12;
-            } else if (isAM && hour === 12) {
-              hour = 0;
+            // Handle formats like "9am", "10pm", "9:00 AM", "10:30 PM"
+            if (time24.toLowerCase().includes('am') || time24.toLowerCase().includes('pm')) {
+              const timeStr = time24.toLowerCase().replace(/\s+/g, '');
+              const isPM = timeStr.includes('pm');
+              const isAM = timeStr.includes('am');
+              const numericPart = timeStr.replace(/[ap]m/g, '');
+              
+              let hour: number;
+              let minutes: number = 0;
+              
+              if (numericPart.includes(':')) {
+                const parts = numericPart.split(':');
+                hour = parseInt(parts[0]);
+                minutes = parseInt(parts[1]);
+              } else {
+                hour = parseInt(numericPart);
+              }
+              
+              if (isPM && hour !== 12) {
+                hour += 12;
+              } else if (isAM && hour === 12) {
+                hour = 0;
+              }
+              
+              time24 = `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
             }
             
-            time24 = `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            console.log('[useAirbnbBookingSubmit] Converted time:', bookingData.selectedTime, '->', time24);
+            
+            time24ForDB = time24;
+            // Store as London time string without timezone conversion
+            bookingDateTimeStr = `${dateStr}T${time24}:00+00:00`;
+            
+            console.log('[useAirbnbBookingSubmit] Final datetime string (London):', bookingDateTimeStr);
+          } else {
+            // For flexible-time bookings, set date_time to 9am as default placeholder
+            // This ensures the booking appears on the calendar on the correct day
+            bookingDateTimeStr = `${dateStr}T09:00:00+00:00`;
+            console.log('[useAirbnbBookingSubmit] Flexible time - using default 9am:', bookingDateTimeStr);
           }
-          
-          console.log('[useAirbnbBookingSubmit] Converted time:', bookingData.selectedTime, '->', time24);
-          
-          time24ForDB = time24;
-          // Store as London time string without timezone conversion
-          bookingDateTimeStr = `${dateStr}T${time24}:00+00:00`;
-          
-          console.log('[useAirbnbBookingSubmit] Final datetime string (London):', bookingDateTimeStr);
         } catch (error) {
           console.error('Error creating booking datetime:', error);
           bookingDateTimeStr = null;
@@ -388,10 +397,7 @@ export const useAirbnbBookingSubmit = () => {
           dateStr = null;
         }
       } else {
-        console.warn('[useAirbnbBookingSubmit] Missing selectedDate or selectedTime:', {
-          hasDate: !!bookingData.selectedDate,
-          hasTime: !!bookingData.selectedTime
-        });
+        console.warn('[useAirbnbBookingSubmit] Missing selectedDate');
       }
 
       const totalHours = (bookingData.totalHours || bookingData.estimatedHours || 0) + 

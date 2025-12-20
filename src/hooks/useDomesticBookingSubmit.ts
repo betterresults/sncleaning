@@ -231,7 +231,8 @@ export const useDomesticBookingSubmit = () => {
       let time24ForDB: string | null = null;
       let dateStr: string | null = null;
       
-      if (bookingData.selectedDate && bookingData.selectedTime) {
+      // Extract date regardless of whether time is selected (for flexible-time bookings)
+      if (bookingData.selectedDate) {
         try {
           // Extract date string without timezone conversion
           if (bookingData.selectedDate instanceof Date) {
@@ -243,36 +244,43 @@ export const useDomesticBookingSubmit = () => {
             dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
           }
           
-          let time24 = bookingData.selectedTime;
-          if (time24.includes(' - ')) {
-            time24 = time24.split(' - ')[0].trim();
-          }
-          
-          if (time24.toLowerCase().includes('am') || time24.toLowerCase().includes('pm')) {
-            const timeStr = time24.toLowerCase().replace(/\s+/g, '');
-            const isPM = timeStr.includes('pm');
-            const numericPart = timeStr.replace(/[ap]m/g, '');
-            
-            let hour: number;
-            let minutes: number = 0;
-            
-            if (numericPart.includes(':')) {
-              const parts = numericPart.split(':');
-              hour = parseInt(parts[0]);
-              minutes = parseInt(parts[1]);
-            } else {
-              hour = parseInt(numericPart);
+          // Only process time if it's provided (not flexible-time)
+          if (bookingData.selectedTime) {
+            let time24 = bookingData.selectedTime;
+            if (time24.includes(' - ')) {
+              time24 = time24.split(' - ')[0].trim();
             }
             
-            if (isPM && hour !== 12) hour += 12;
-            else if (!isPM && hour === 12) hour = 0;
+            if (time24.toLowerCase().includes('am') || time24.toLowerCase().includes('pm')) {
+              const timeStr = time24.toLowerCase().replace(/\s+/g, '');
+              const isPM = timeStr.includes('pm');
+              const numericPart = timeStr.replace(/[ap]m/g, '');
+              
+              let hour: number;
+              let minutes: number = 0;
+              
+              if (numericPart.includes(':')) {
+                const parts = numericPart.split(':');
+                hour = parseInt(parts[0]);
+                minutes = parseInt(parts[1]);
+              } else {
+                hour = parseInt(numericPart);
+              }
+              
+              if (isPM && hour !== 12) hour += 12;
+              else if (!isPM && hour === 12) hour = 0;
+              
+              time24 = `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            }
             
-            time24 = `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            time24ForDB = time24;
+            // Store as London time string without timezone conversion
+            bookingDateTimeStr = `${dateStr}T${time24}:00+00:00`;
+          } else {
+            // For flexible-time bookings, set date_time to 9am as default placeholder
+            // This ensures the booking appears on the calendar on the correct day
+            bookingDateTimeStr = `${dateStr}T09:00:00+00:00`;
           }
-          
-          time24ForDB = time24;
-          // Store as London time string without timezone conversion
-          bookingDateTimeStr = `${dateStr}T${time24}:00+00:00`;
         } catch (error) {
           console.error('Error creating booking datetime:', error);
           bookingDateTimeStr = null;
