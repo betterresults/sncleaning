@@ -13,12 +13,16 @@ interface DomesticBookingSummaryProps {
   data: DomesticBookingData;
   isAdminMode?: boolean;
   onUpdate?: (updates: Partial<DomesticBookingData>) => void;
+  storedQuotePrice?: number | null; // Exact price from quote link - use this if not modified
+  hasModifiedAfterLoad?: boolean; // Whether user modified the form after loading quote
 }
 
 export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
   data,
   isAdminMode = false,
-  onUpdate
+  onUpdate,
+  storedQuotePrice = null,
+  hasModifiedAfterLoad = false
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditingPricing, setIsEditingPricing] = useState(false);
@@ -89,6 +93,11 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
   };
 
   const calculateTotal = () => {
+    // If we have a stored quote price from a quote link and user hasn't modified the form, use it directly
+    if (storedQuotePrice && !hasModifiedAfterLoad) {
+      return storedQuotePrice;
+    }
+    
     // Use admin override if set (works in admin mode AND for resumed admin quotes)
     if (data.adminTotalCostOverride !== undefined && data.adminTotalCostOverride !== null && data.adminTotalCostOverride > 0) {
       return data.adminTotalCostOverride;
