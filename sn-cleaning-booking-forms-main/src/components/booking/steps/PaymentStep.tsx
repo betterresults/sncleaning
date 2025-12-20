@@ -263,8 +263,9 @@ useEffect(() => {
     return hoursUntilBooking <= 48;
   }, [data.selectedDate, data.selectedTime]);
 
-  // Bank transfer is always available for non-admin users
-  const canUseBankTransfer = !isAdminMode;
+  // Bank transfer is only available when admin explicitly allows it via URL param
+  const allowBankTransfer = searchParams.get('allowBankTransfer') === '1';
+  const canUseBankTransfer = !isAdminMode && allowBankTransfer;
 
   const validateEmail = (email: string) => {
     if (!email) {
@@ -1103,6 +1104,21 @@ useEffect(() => {
                 </div>
               )}
             </div>
+          </div>
+          
+          {/* Notes field for quote link customers */}
+          <div className="pt-4 border-t border-primary/20">
+            <Label htmlFor="quote-notes" className="text-sm font-medium text-[#185166] mb-2 block">
+              Additional Notes (optional)
+            </Label>
+            <textarea
+              id="quote-notes"
+              value={data.notes || ''}
+              onChange={(e) => onUpdate({ notes: e.target.value })}
+              placeholder="Any special instructions or notes for your cleaning..."
+              className="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:border-primary focus:ring-0 text-sm resize-none"
+              rows={3}
+            />
           </div>
         </div>
       )}

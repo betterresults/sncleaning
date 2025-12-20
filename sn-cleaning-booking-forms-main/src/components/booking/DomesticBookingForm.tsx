@@ -893,6 +893,8 @@ const DomesticBookingForm: React.FC = () => {
             selectedTime: bookingData.selectedTime,
             postcode: bookingData.postcode,
             shortNoticeCharge: bookingData.shortNoticeCharge,
+            isFirstTimeCustomer: bookingData.isFirstTimeCustomer,
+            discountAmount: bookingData.isFirstTimeCustomer ? calculatedTotal * 0.10 / 0.90 : 0,
             firstName: bookingData.firstName,
             lastName: bookingData.lastName,
             phone: bookingData.phone,
