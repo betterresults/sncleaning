@@ -5,7 +5,7 @@ import { CreditCard, Shield, Clock, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAirbnbBookingSubmit } from '@/hooks/useAirbnbBookingSubmit';
-import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 interface PaymentStepProps {
   data: BookingData;
@@ -146,7 +146,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
 
       // If no saved payment method, create new one
       if (!paymentMethodId) {
-        const cardElement = elements.getElement(CardElement);
+        const cardElement = elements.getElement(CardNumberElement);
         if (!cardElement) {
           toast({
             variant: 'destructive',
@@ -158,11 +158,12 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
 
         // Create payment method
         const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
-          type: 'card',
-          card: cardElement,
-          billing_details: {
-            name: `${data.firstName} ${data.lastName}`,
-            email: data.email,
+          elements,
+          params: {
+            billing_details: {
+              name: `${data.firstName} ${data.lastName}`,
+              email: data.email,
+            },
           },
         });
 
@@ -310,20 +311,63 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
                   ? 'Your card will be charged immediately to confirm your booking.'
                   : 'Enter your card details. Payment will be authorized now and charged after service completion.'}
               </p>
-              <div className="border rounded-lg p-4 bg-background">
-                <CardElement
-                  options={{
-                    style: {
-                      base: {
-                        fontSize: '16px',
-                        color: 'hsl(var(--foreground))',
-                        '::placeholder': {
-                          color: 'hsl(var(--muted-foreground))',
+              <div className="border rounded-lg p-4 bg-background space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-2">Card Number</label>
+                  <div className="p-3 border border-border rounded-lg bg-background">
+                    <CardNumberElement
+                      options={{
+                        style: {
+                          base: {
+                            fontSize: '16px',
+                            color: 'hsl(var(--foreground))',
+                            '::placeholder': {
+                              color: 'hsl(var(--muted-foreground))',
+                            },
+                          },
                         },
-                      },
-                    },
-                  }}
-                />
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-2">Expiry Date</label>
+                    <div className="p-3 border border-border rounded-lg bg-background">
+                      <CardExpiryElement
+                        options={{
+                          style: {
+                            base: {
+                              fontSize: '16px',
+                              color: 'hsl(var(--foreground))',
+                              '::placeholder': {
+                                color: 'hsl(var(--muted-foreground))',
+                              },
+                            },
+                          },
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-2">CVC</label>
+                    <div className="p-3 border border-border rounded-lg bg-background">
+                      <CardCvcElement
+                        options={{
+                          style: {
+                            base: {
+                              fontSize: '16px',
+                              color: 'hsl(var(--foreground))',
+                              '::placeholder': {
+                                color: 'hsl(var(--muted-foreground))',
+                              },
+                            },
+                          },
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
