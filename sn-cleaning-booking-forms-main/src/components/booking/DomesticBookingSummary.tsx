@@ -95,6 +95,8 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
     }
     
     // If first deep clean is selected, use the first deep clean cost for the first booking
+    // NOTE: First-time customer discount (10%) does NOT apply to first deep clean
+    // It only applies to weekly recurring cleans
     if (calculations.wantsFirstDeepClean) {
       let total = calculations.firstDeepCleanCost;
       
@@ -102,12 +104,10 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
         total -= calculations.shortNoticeCharge || 0;
       }
       
-      // Apply new client 10% discount FIRST (before admin adjustments)
-      if (data.isFirstTimeCustomer) {
-        total = total * 0.90;
-      }
+      // Do NOT apply first-time customer discount to first deep clean
+      // The discount only applies to recurring weekly/bi-weekly/monthly cleans
       
-      // Apply admin discounts AFTER the first-time discount (so admin sees £X and subtracts £Y to get £X-Y)
+      // Apply admin discounts
       if (isAdminMode && data.adminDiscountPercentage) {
         total -= total * data.adminDiscountPercentage / 100;
       }
