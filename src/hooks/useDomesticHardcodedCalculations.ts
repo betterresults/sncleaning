@@ -12,6 +12,7 @@ interface DomesticBookingData {
   numberOfFloors?: number;
   serviceFrequency: string;
   wantsFirstDeepClean?: boolean;
+  firstDeepCleanExtraHours?: number;
   hasOvenCleaning?: boolean;
   ovenType: string;
   ovenCleaningScope?: 'this-booking' | 'all-bookings';
@@ -259,8 +260,14 @@ export const useDomesticHardcodedCalculations = (bookingData: DomesticBookingDat
     // Get one-time rate for first deep clean pricing
     const oneTimeRate = getConfigValue('domestic service frequency', 'onetime') || 22;
     
-    // First deep clean: 1.5x the user-selected hours at one-time rate
-    const firstDeepCleanHours = wantsFirstDeepClean ? Math.round(totalHours * 1.5 * 2) / 2 : 0; // Round to nearest 0.5
+    // First deep clean: use configured extra hours (or default to 50% of totalHours)
+    const defaultExtraHours = Math.round(totalHours * 0.5 * 2) / 2; // Default: 50% extra, rounded to 0.5
+    const extraHours = wantsFirstDeepClean 
+      ? (bookingData.firstDeepCleanExtraHours !== undefined && bookingData.firstDeepCleanExtraHours !== null 
+          ? bookingData.firstDeepCleanExtraHours 
+          : defaultExtraHours)
+      : 0;
+    const firstDeepCleanHours = wantsFirstDeepClean ? totalHours + extraHours : 0;
     const firstDeepCleanCost = wantsFirstDeepClean 
       ? (firstDeepCleanHours * oneTimeRate) + equipmentOneTimeCost + ovenCleaningCost + shortNoticeCharge + additionalCharge - discount
       : 0;
@@ -288,6 +295,8 @@ export const useDomesticHardcodedCalculations = (bookingData: DomesticBookingDat
       isRecurring,
       wantsFirstDeepClean,
       firstDeepCleanHours,
+      firstDeepCleanExtraHours: extraHours,
+      defaultDeepCleanExtraHours: defaultExtraHours,
       firstDeepCleanCost,
       oneTimeRate,
       regularRecurringCost,
@@ -302,6 +311,7 @@ export const useDomesticHardcodedCalculations = (bookingData: DomesticBookingDat
     bookingData.numberOfFloors,
     bookingData.serviceFrequency,
     bookingData.wantsFirstDeepClean,
+    bookingData.firstDeepCleanExtraHours,
     bookingData.hasOvenCleaning,
     bookingData.ovenType,
     bookingData.cleaningProducts,
