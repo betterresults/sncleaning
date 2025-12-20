@@ -59,28 +59,26 @@ interface AdminQuoteDialogProps {
 type SendOption = 'quote' | 'complete' | null;
 type SendStatus = 'idle' | 'sending' | 'success' | 'error';
 
-// Extract the start time from a time slot like "9am - 10am" or "1:00 PM - 2:00 PM"
+// Extract the start time from a time slot and convert to HH:MM:SS format
+// Handles formats: "9:00 AM", "9am - 10am", "9am", "14:00"
 const extractStartTime = (timeSlot: string | null | undefined): string | null => {
   if (!timeSlot) return null;
   
-  // Split by " - " to get the start time
-  const parts = timeSlot.split(' - ');
-  if (parts.length === 0) return null;
+  // If it's a range format like "9am - 10am", take the first part
+  let timePart = timeSlot.includes(' - ') ? timeSlot.split(' - ')[0].trim() : timeSlot.trim();
   
-  const startTime = parts[0].trim();
-  
-  // Try to parse and convert to HH:MM format for SQL time
-  const timeRegex = /^(\d{1,2}):?(\d{2})?\s*(am|pm)?$/i;
-  const match = startTime.match(timeRegex);
+  // Try to parse formats like "9:00 AM", "9:00 PM", "9am", "9pm"
+  const timeRegex = /^(\d{1,2}):?(\d{2})?\s*(AM|PM|am|pm)?$/i;
+  const match = timePart.match(timeRegex);
   
   if (match) {
     let hours = parseInt(match[1], 10);
     const minutes = match[2] ? parseInt(match[2], 10) : 0;
-    const period = match[3]?.toLowerCase();
+    const period = match[3]?.toUpperCase();
     
-    if (period === 'pm' && hours !== 12) {
+    if (period === 'PM' && hours !== 12) {
       hours += 12;
-    } else if (period === 'am' && hours === 12) {
+    } else if (period === 'AM' && hours === 12) {
       hours = 0;
     }
     
