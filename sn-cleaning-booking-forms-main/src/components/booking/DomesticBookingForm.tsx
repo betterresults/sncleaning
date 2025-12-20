@@ -146,7 +146,7 @@ const DomesticBookingForm: React.FC = () => {
     hasOvenCleaning: false,
     ovenType: '',
     ovenCleaningScope: 'this-booking',
-    cleaningProducts: [],
+    cleaningProducts: ['products'],
     equipmentArrangement: null,
     equipmentStorageConfirmed: false,
     selectedDate: null,
