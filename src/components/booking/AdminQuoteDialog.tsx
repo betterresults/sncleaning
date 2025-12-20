@@ -185,7 +185,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
       oven_cleaning: quoteData.hasOvenCleaning,
       oven_size: quoteData.ovenType,
       selected_date: quoteData.selectedDate ? quoteData.selectedDate.toISOString().split('T')[0] : null,
-      selected_time: quoteData.selectedTime || null, // Store original time slot format (e.g., "9am - 10am")
+      selected_time: extractStartTime(quoteData.selectedTime), // Convert time slot to HH:MM:SS format for SQL time column
       calculated_quote: quoteData.totalCost,
       recommended_hours: quoteData.estimatedHours,
       weekly_hours: quoteData.weeklyHours, // Store weekly hours separately
