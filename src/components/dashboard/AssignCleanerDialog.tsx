@@ -5,8 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Users } from 'lucide-react';
+import SubCleanersList from '@/components/booking/SubCleanersList';
+import AddSubCleanerDialog from '@/components/booking/AddSubCleanerDialog';
 
 interface Cleaner {
   id: number;
@@ -37,7 +41,12 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
   const [isHourlyService, setIsHourlyService] = useState<boolean>(false);
   const [customHourlyRate, setCustomHourlyRate] = useState<string>('');
   const [customPercentageRate, setCustomPercentageRate] = useState<string>('');
+  const [subCleanersKey, setSubCleanersKey] = useState(0);
   const { toast } = useToast();
+  
+  const handleSubCleanerChange = () => {
+    setSubCleanersKey(prev => prev + 1);
+  };
 
   useEffect(() => {
     if (open && bookingId) {
@@ -186,7 +195,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Assign Cleaner</DialogTitle>
         </DialogHeader>
@@ -263,6 +272,37 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                 </div>
               )}
             </div>
+          )}
+          
+          {/* Additional Cleaners Section */}
+          {bookingId && (
+            <>
+              <Separator className="my-4" />
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <Label className="text-sm font-medium">Additional Cleaners</Label>
+                </div>
+                
+                <SubCleanersList 
+                  key={subCleanersKey}
+                  bookingId={bookingId} 
+                  compact={true}
+                  onSubCleanerRemoved={handleSubCleanerChange}
+                  onSubCleanerUpdated={handleSubCleanerChange}
+                />
+                
+                <AddSubCleanerDialog 
+                  bookingId={bookingId} 
+                  onSubCleanerAdded={handleSubCleanerChange}
+                >
+                  <Button variant="outline" size="sm" className="w-full">
+                    <Users className="h-4 w-4 mr-2" />
+                    Add Additional Cleaner
+                  </Button>
+                </AddSubCleanerDialog>
+              </div>
+            </>
           )}
         </div>
 
