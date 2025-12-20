@@ -632,7 +632,7 @@ const DomesticBookingForm: React.FC = () => {
         });
       }
       
-      // Track contact info updates
+      // Track contact info updates - also include property data to ensure it's saved
       if ('firstName' in updates || 'email' in updates || 'phone' in updates || 'postcode' in updates) {
         saveQuoteLead({
           firstName: newData.firstName || undefined,
@@ -640,6 +640,16 @@ const DomesticBookingForm: React.FC = () => {
           email: newData.email || undefined,
           phone: newData.phone || undefined,
           postcode: newData.postcode || undefined,
+          // Include property data so it's saved with contact info
+          propertyType: newData.propertyType || undefined,
+          bedrooms: newData.bedrooms ? parseInt(newData.bedrooms) : undefined,
+          bathrooms: newData.bathrooms ? parseInt(newData.bathrooms) : undefined,
+          toilets: newData.toilets ? parseInt(newData.toilets) : undefined,
+          frequency: newData.serviceFrequency || undefined,
+          ovenCleaning: newData.hasOvenCleaning,
+          ovenSize: newData.ovenType || undefined,
+          selectedDate: newData.selectedDate || undefined,
+          selectedTime: newData.selectedTime || undefined,
           // Include admin info if in admin mode
           adminId: isAdminMode && adminUserId ? adminUserId : undefined,
           isAdminCreated: isAdminMode,
