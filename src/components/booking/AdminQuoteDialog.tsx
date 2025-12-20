@@ -203,8 +203,8 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
       email: email || null,
       phone: phone || null,
       // Address - build from form components (houseNumber, street, city)
-      address: quoteData.houseNumber && quoteData.street 
-        ? `${quoteData.houseNumber} ${quoteData.street}${quoteData.city ? `, ${quoteData.city}` : ''}`
+      address: quoteData.street 
+        ? `${quoteData.houseNumber ? quoteData.houseNumber + ' ' : ''}${quoteData.street}${quoteData.city ? `, ${quoteData.city}` : ''}`
         : (quoteData.address || null),
       // Property access
       property_access: quoteData.propertyAccess || null,
