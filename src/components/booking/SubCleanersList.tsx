@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, User, Clock, Banknote } from 'lucide-react';
+import { Trash2, User, Clock, Banknote, Edit2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -16,6 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import EditSubCleanerDialog from './EditSubCleanerDialog';
 
 interface SubCleaner {
   id: number;
@@ -35,13 +35,24 @@ interface SubCleaner {
 
 interface SubCleanersListProps {
   bookingId: number;
+  bookingTotalCost?: number;
   onSubCleanerRemoved?: () => void;
+  onSubCleanerUpdated?: () => void;
+  compact?: boolean;
 }
 
-const SubCleanersList = ({ bookingId, onSubCleanerRemoved }: SubCleanersListProps) => {
+const SubCleanersList = ({ 
+  bookingId, 
+  bookingTotalCost = 0,
+  onSubCleanerRemoved, 
+  onSubCleanerUpdated,
+  compact = false 
+}: SubCleanersListProps) => {
   const [subCleaners, setSubCleaners] = useState<SubCleaner[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [editingSubCleaner, setEditingSubCleaner] = useState<SubCleaner | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const fetchSubCleaners = async () => {
@@ -119,10 +130,23 @@ const SubCleanersList = ({ bookingId, onSubCleanerRemoved }: SubCleanersListProp
     setDeleteId(null);
   };
 
+  const handleEditClick = (subCleaner: SubCleaner) => {
+    setEditingSubCleaner(subCleaner);
+    setEditDialogOpen(true);
+  };
+
+  const handleEditComplete = () => {
+    fetchSubCleaners();
+    onSubCleanerUpdated?.();
+  };
+
+  // Calculate total pay for all sub-cleaners
+  const totalSubCleanerPay = subCleaners.reduce((sum, sc) => sum + (sc.cleaner_pay || 0), 0);
+
   if (loading) {
     return (
       <div className="text-center py-4">
-        <div className="text-sm text-gray-500">Loading additional cleaners...</div>
+        <div className="text-sm text-muted-foreground">Loading additional cleaners...</div>
       </div>
     );
   }
@@ -131,6 +155,87 @@ const SubCleanersList = ({ bookingId, onSubCleanerRemoved }: SubCleanersListProp
     return null;
   }
 
+  // Compact version for inline display
+  if (compact) {
+    return (
+      <div className="space-y-2">
+        {subCleaners.map((subCleaner) => (
+          <div key={subCleaner.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg text-sm">
+            <div className="flex items-center gap-2">
+              <User className="h-3 w-3 text-muted-foreground" />
+              <span className="font-medium">
+                {subCleaner.cleaner.full_name || 
+                 `${subCleaner.cleaner.first_name} ${subCleaner.cleaner.last_name}`}
+              </span>
+              <Badge variant="outline" className="text-xs">
+                {subCleaner.payment_method === 'hourly' ? 'Hourly' : 'Percentage'}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">
+                £{subCleaner.cleaner_pay?.toFixed(2) || '0.00'}
+              </span>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => handleEditClick(subCleaner)}
+                className="h-6 w-6"
+              >
+                <Edit2 className="h-3 w-3" />
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => setDeleteId(subCleaner.id)}
+                className="h-6 w-6 text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+        ))}
+        
+        {subCleaners.length > 0 && (
+          <div className="flex justify-between items-center pt-2 border-t text-sm">
+            <span className="text-muted-foreground">Total Additional Pay:</span>
+            <span className="font-semibold">£{totalSubCleanerPay.toFixed(2)}</span>
+          </div>
+        )}
+
+        {/* Edit Dialog */}
+        <EditSubCleanerDialog
+          subCleaner={editingSubCleaner}
+          bookingTotalCost={bookingTotalCost}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onSubCleanerUpdated={handleEditComplete}
+        />
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remove Cleaner</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to remove this cleaner from the booking? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => deleteId && handleRemoveSubCleaner(deleteId)}
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                Remove Cleaner
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    );
+  }
+
+  // Full card version
   return (
     <>
       <Card className="mt-4">
@@ -143,7 +248,7 @@ const SubCleanersList = ({ bookingId, onSubCleanerRemoved }: SubCleanersListProp
         <CardContent>
           <div className="space-y-3">
             {subCleaners.map((subCleaner) => (
-              <div key={subCleaner.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div key={subCleaner.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="font-medium">
@@ -155,7 +260,7 @@ const SubCleanersList = ({ bookingId, onSubCleanerRemoved }: SubCleanersListProp
                     </Badge>
                   </div>
                   
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Clock className="h-4 w-4" />
                       {subCleaner.hours_assigned}h
@@ -173,19 +278,44 @@ const SubCleanersList = ({ bookingId, onSubCleanerRemoved }: SubCleanersListProp
                   </div>
                 </div>
                 
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setDeleteId(subCleaner.id)}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleEditClick(subCleaner)}
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setDeleteId(subCleaner.id)}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             ))}
+            
+            {subCleaners.length > 0 && (
+              <div className="flex justify-between items-center pt-3 border-t">
+                <span className="text-muted-foreground">Total Additional Pay:</span>
+                <span className="font-semibold text-lg">£{totalSubCleanerPay.toFixed(2)}</span>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Dialog */}
+      <EditSubCleanerDialog
+        subCleaner={editingSubCleaner}
+        bookingTotalCost={bookingTotalCost}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSubCleanerUpdated={handleEditComplete}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
@@ -200,7 +330,7 @@ const SubCleanersList = ({ bookingId, onSubCleanerRemoved }: SubCleanersListProp
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteId && handleRemoveSubCleaner(deleteId)}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive hover:bg-destructive/90"
             >
               Remove Cleaner
             </AlertDialogAction>

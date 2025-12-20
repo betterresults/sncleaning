@@ -7,14 +7,16 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarIcon, Clock, MapPin, User, Edit3, AlertCircle } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { CalendarIcon, Clock, MapPin, User, Edit3, AlertCircle, Users, UserPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
-
+import SubCleanersList from '@/components/booking/SubCleanersList';
+import AddSubCleanerDialog from '@/components/booking/AddSubCleanerDialog';
 
 interface Booking {
   id: number;
@@ -68,11 +70,17 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   const [totalHours, setTotalHours] = useState(0);
   const [totalCost, setTotalCost] = useState(0);
   const [isSameDay, setIsSameDay] = useState(false);
+  const [subCleanersKey, setSubCleanersKey] = useState(0);
   
   const [formData, setFormData] = useState({
     access: '',
     additional_details: ''
   });
+
+  // Callback to refresh sub-cleaners list
+  const handleSubCleanerChange = () => {
+    setSubCleanersKey(prev => prev + 1);
+  };
 
   // Get active customer ID  
   const { customerId } = useAuth();
@@ -444,6 +452,48 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
               className="border-gray-200 hover:border-gray-300 focus:border-[#185166]"
             />
           </div>
+
+          {/* Additional Cleaners Section - Admin only */}
+          {userRole === 'admin' && (
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="additional-cleaners" className="border rounded-lg">
+                <AccordionTrigger className="px-4 hover:no-underline">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-[#185166]" />
+                    <span className="font-semibold text-[#185166]">Additional Cleaners</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Assign additional cleaners to this booking with individual payment structures.
+                    </p>
+                    
+                    {/* Sub-cleaners list */}
+                    <SubCleanersList 
+                      key={subCleanersKey}
+                      bookingId={booking.id} 
+                      bookingTotalCost={totalCost}
+                      onSubCleanerRemoved={handleSubCleanerChange}
+                      onSubCleanerUpdated={handleSubCleanerChange}
+                      compact
+                    />
+                    
+                    {/* Add cleaner button */}
+                    <AddSubCleanerDialog 
+                      bookingId={booking.id} 
+                      onSubCleanerAdded={handleSubCleanerChange}
+                    >
+                      <Button variant="outline" className="w-full">
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Add Additional Cleaner
+                      </Button>
+                    </AddSubCleanerDialog>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          )}
         </div>
 
         <div className="flex justify-between gap-3 pt-6 border-t border-border/40">

@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Edit, Trash2, Copy, X, UserPlus, DollarSign, Repeat, MoreHorizontal, Clock, MapPin, User, Mail, Phone, Send, Calendar, Camera, FileText, CreditCard } from 'lucide-react';
+import { Edit, Trash2, Copy, X, UserPlus, DollarSign, Repeat, MoreHorizontal, Clock, MapPin, User, Mail, Phone, Send, Calendar, Camera, FileText, CreditCard, Users } from 'lucide-react';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import InvoilessInvoiceDialog from '@/components/payments/InvoilessInvoiceDialog';
@@ -50,6 +50,7 @@ interface Booking {
   booking_status?: string;
   has_photos?: boolean;
   same_day?: boolean;
+  sub_cleaners_count?: number;
   cleaners?: {
     id: number;
     first_name: string;
@@ -189,6 +190,30 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
         return;
       }
 
+      // Fetch sub-cleaners count for each booking
+      const bookingIds = (bookingsData || []).map(b => b.id);
+      let subCleanersCounts: Record<number, number> = {};
+      
+      if (bookingIds.length > 0) {
+        const { data: subBookingsData } = await supabase
+          .from('sub_bookings')
+          .select('primary_booking_id')
+          .in('primary_booking_id', bookingIds);
+        
+        if (subBookingsData) {
+          subCleanersCounts = subBookingsData.reduce((acc, sub) => {
+            acc[sub.primary_booking_id] = (acc[sub.primary_booking_id] || 0) + 1;
+            return acc;
+          }, {} as Record<number, number>);
+        }
+      }
+
+      // Merge sub_cleaners_count into bookings
+      const enrichedBookings = (bookingsData || []).map(booking => ({
+        ...booking,
+        sub_cleaners_count: subCleanersCounts[booking.id] || 0
+      }));
+
       // Fetch cleaners for filter dropdown (only when showing all bookings)
       if (!dashboardDateFilter) {
         const { data: cleanersData, error: cleanersError } = await supabase
@@ -203,7 +228,7 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
         }
       }
 
-      setBookings(bookingsData || []);
+      setBookings(enrichedBookings);
     } catch (error) {
       console.error('Error in fetchData:', error);
       setError('An unexpected error occurred');
@@ -723,6 +748,12 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
                         <User className="w-4 h-4 text-white" />
                       </div>
                       <span className="font-medium truncate">{cleanerName}</span>
+                      {booking.sub_cleaners_count && booking.sub_cleaners_count > 0 && (
+                        <Badge variant="secondary" className="text-xs px-1.5 py-0.5 flex items-center gap-1">
+                          <Users className="w-3 h-3" />
+                          +{booking.sub_cleaners_count}
+                        </Badge>
+                      )}
                     </div>
                     {booking.cleaner_pay && (
                       <p className="text-sm font-medium text-muted-foreground pl-9">
@@ -980,6 +1011,12 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
                       <User className="w-3 h-3 text-white" />
                     </div>
                     <span className="font-medium">{cleanerName}</span>
+                    {booking.sub_cleaners_count && booking.sub_cleaners_count > 0 && (
+                      <Badge variant="secondary" className="text-xs px-1.5 py-0.5 flex items-center gap-1">
+                        <Users className="w-3 h-3" />
+                        +{booking.sub_cleaners_count}
+                      </Badge>
+                    )}
                   </button>
                 ) : (
                   <button
