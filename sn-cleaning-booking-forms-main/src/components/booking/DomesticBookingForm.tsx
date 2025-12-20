@@ -429,11 +429,12 @@ const DomesticBookingForm: React.FC = () => {
           estimatedHours: data.recommended_hours || prev.estimatedHours,
           isFirstTimeCustomer: data.is_first_time_customer ?? prev.isFirstTimeCustomer,
           additionalRooms: data.additional_rooms ? (typeof data.additional_rooms === 'object' ? data.additional_rooms as any : prev.additionalRooms) : prev.additionalRooms,
-          // Load the exact quoted price if available (from admin quotes)
+          // Load the exact quoted price if available
           totalCost: data.calculated_quote || prev.totalCost,
           adminDiscountAmount: data.discount_amount || prev.adminDiscountAmount,
-          // Override total cost if this is an admin quote
-          adminTotalCostOverride: data.source === 'admin' && data.calculated_quote ? data.calculated_quote : prev.adminTotalCostOverride,
+          // ALWAYS use the stored calculated_quote as override - don't recalculate
+          // The quote was already calculated when the user filled the form
+          adminTotalCostOverride: data.calculated_quote ? data.calculated_quote : prev.adminTotalCostOverride,
         }));
 
         // Use the hook's initialize function to set session ID properly in localStorage
