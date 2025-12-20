@@ -231,7 +231,7 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
 
   return (
     <div className="space-y-4">
-      <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+      <div>
         <h2 className="text-2xl font-bold text-[#185166] mb-4">
           Linen Handling
         </h2>
@@ -306,10 +306,10 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
               return (
                 <div
                   key={size.id}
-                  className={`group relative rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+                  className={`group relative rounded-2xl border transition-all duration-300 ${
                     isSelected
-                      ? 'border-primary bg-primary/5 shadow-xl h-40'
-                      : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg h-32'
+                      ? 'border-primary bg-primary/5 h-40'
+                      : 'border-border bg-card hover:border-primary/50 h-32'
                   }`}
                 >
                   <button
@@ -379,7 +379,7 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
       {/* Estimated Additional Time - Show when linen handling requires extra time */}
       {(data.linensHandling === 'wash-hang' || data.linensHandling === 'wash-dry') && (
         <div className="mt-6">
-          <div className="relative z-[4] p-4 rounded-2xl border-2 border-primary/30 shadow-[0_12px_32px_rgba(0,0,0,0.2)] bg-gradient-to-br from-white to-primary/5 transition-all duration-300 hover:shadow-[0_16px_40px_rgba(0,0,0,0.25)] hover:border-primary/50">
+          <div className="relative z-[4] p-4 rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-white to-primary/5 transition-all duration-300 hover:border-primary/50">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
               <div className="flex-1">
                 <h2 className="text-2xl font-bold text-slate-700">Estimated Additional Time</h2>
@@ -528,10 +528,10 @@ const LinensStep: React.FC<LinensStepProps> = ({ data, onUpdate, onNext, onBack 
               return (
                 <div
                   key={linen.id}
-                  className={`group relative rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+                  className={`group relative rounded-2xl border transition-all duration-300 ${
                     isSelected
-                      ? 'border-primary bg-primary/5 shadow-xl h-40'
-                      : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg h-32'
+                      ? 'border-primary bg-primary/5 h-40'
+                      : 'border-border bg-card hover:border-primary/50 h-32'
                   }`}
                 >
                   {/* Info Icon */}
