@@ -19,6 +19,7 @@ import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 
 interface Booking {
   id: number;
+  customer?: number;
   date_time: string;
   address: string;
   postcode: string;
@@ -134,10 +135,13 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
       const timeOnly = `${selectedHour.padStart(2, '0')}:${selectedMinute}:00`;
       const dateTimeStr = `${dateOnly}T${timeOnly}+00:00`;
 
+      // Get the customer from the original booking if activeCustomerId is not set
+      const customerToUse = activeCustomerId || booking.customer;
+
       const { error } = await supabase
         .from('bookings')
         .insert({
-          customer: activeCustomerId,
+          customer: customerToUse,
           date_time: dateTimeStr,
           date_only: dateOnly,
           time_only: timeOnly,
@@ -145,9 +149,9 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
           postcode: booking.postcode,
           service_type: booking.cleaning_type || booking.service_type,
           cleaning_type: booking.cleaning_type || booking.service_type,
-          total_hours: hours,
-          total_cost: totalCost,
-          cleaning_cost_per_hour: booking.cleaning_cost_per_hour,
+          total_hours: Math.round(hours), // Ensure integer for bigint compatibility
+          total_cost: Math.round(totalCost), // Ensure integer for bigint compatibility
+          cleaning_cost_per_hour: booking.cleaning_cost_per_hour ? Math.round(booking.cleaning_cost_per_hour) : null,
           first_name: booking.first_name,
           last_name: booking.last_name,
           phone_number: booking.phone_number,
