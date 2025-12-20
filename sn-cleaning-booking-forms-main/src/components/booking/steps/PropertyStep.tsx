@@ -212,7 +212,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
   return (
     <div className="space-y-6">
       {isLoadingConfigs && (
-        <div className="p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+        <div className="p-4">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-muted rounded w-1/3"></div>
             <div className="grid grid-cols-2 gap-4">
@@ -222,7 +222,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
           </div>
         </div>
       )}
-      <div className="relative z-10 p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+      <div className="relative z-10">
         <h2 className="text-2xl font-bold text-slate-700 mb-4">
           Property Details
         </h2>
@@ -236,10 +236,10 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
             return (
               <button
                 key={opt.option}
-                className={`group relative h-16 rounded-2xl border-2 transition-all duration-500 hover:scale-105 justify-start gap-3 p-4 flex items-center ${
+                className={`group relative h-16 rounded-2xl border transition-all duration-300 justify-start gap-3 p-4 flex items-center ${
                   isSelected
-                    ? 'border-primary bg-primary/5 shadow-xl'
-                    : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border bg-card hover:border-primary/50'
                 }`}
                 onClick={() => onUpdate({ propertyType: isSelected ? '' : opt.option })}
               >
@@ -262,7 +262,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       </div>
 
       {/* Size of the property */}
-      <div className="relative z-[9] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+      <div className="relative z-[9]">
         <h2 className="text-2xl font-bold text-slate-700 mb-4">
           Size of the property
         </h2>
@@ -274,7 +274,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
             <div className="flex items-center justify-center">
               <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${
                 data.bedrooms 
-                  ? 'bg-primary/5 border-2 border-primary shadow-lg' 
+                  ? 'bg-primary/5 border-2 border-primary' 
                   : 'bg-card border-2 border-border'
               }`}>
                 <Button
@@ -311,7 +311,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
             <div className="flex items-center justify-center">
               <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${
                 data.bathrooms 
-                  ? 'bg-primary/5 border-2 border-primary shadow-lg' 
+                  ? 'bg-primary/5 border-2 border-primary' 
                   : 'bg-card border-2 border-border'
               }`}>
                 <Button
@@ -347,7 +347,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Additional Rooms - Dynamic Icons */}
       {data.bedrooms && !['studio', '1'].includes(data.bedrooms) && additionalRoomsConfigs.length > 0 && (
-        <div className="p-4 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white hover:shadow-[0_12px_32px_rgba(0,0,0,0.15)] transition-shadow duration-300">
+        <div>
           <h2 className="text-2xl font-bold text-slate-700 mb-4">
             Additional rooms
           </h2>
@@ -361,10 +361,10 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
               return (
                 <button
                   key={room.option}
-                  className={`group relative ${currentCount > 0 ? 'h-32' : 'h-24'} rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+                  className={`group relative ${currentCount > 0 ? 'h-32' : 'h-24'} rounded-2xl border transition-all duration-300 ${
                     currentCount > 0
-                      ? 'border-primary bg-primary/5 shadow-xl'
-                      : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border bg-card hover:border-primary/50'
                   }`}
                   onClick={() => {
                     if (currentCount === 0) {
@@ -448,7 +448,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       )}
 
       {/* Property Features */}
-      <div className="relative z-[8] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+      <div className="relative z-[8]">
         <h2 className="text-2xl font-bold text-slate-700 mb-4">
           Property Features
         </h2>
@@ -462,10 +462,10 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
             return (
               <button
                 key={feature.option}
-                className={`group relative h-24 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+                className={`group relative h-24 rounded-2xl border transition-all duration-300 ${
                   isSelected
-                    ? 'border-primary bg-primary/5 shadow-xl'
-                    : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border bg-card hover:border-primary/50'
                 }`}
                 onClick={() => {
                   if (feature.option === 'separateKitchenLivingRoom') {
@@ -509,10 +509,10 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
             
             return (
               <button
-                className={`group relative ${data.numberOfFloors > 0 ? 'h-32' : 'h-24'} rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+                className={`group relative ${data.numberOfFloors > 0 ? 'h-32' : 'h-24'} rounded-2xl border transition-all duration-300 ${
                   data.numberOfFloors > 0
-                    ? 'border-primary bg-primary/5 shadow-xl'
-                    : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border bg-card hover:border-primary/50'
                 }`}
                 onClick={() => {
                   if (data.numberOfFloors === 0) {
@@ -576,7 +576,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
       </div>
 
       {/* Service Type - Dynamic */}
-      <div className="relative z-[7] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+      <div className="relative z-[7]">
         <h2 className="text-2xl font-bold text-slate-700 mb-4">
           Choose your service
         </h2>
@@ -584,10 +584,10 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
           {serviceTypeConfigs.map((service: any) => (
             <button
               key={service.option}
-              className={`group relative h-24 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+              className={`group relative h-24 rounded-2xl border transition-all duration-300 ${
                 data.serviceType === service.option
-                  ? 'border-primary bg-primary/5 shadow-xl'
-                  : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border bg-card hover:border-primary/50'
               }`}
               onClick={() => onUpdate({ serviceType: data.serviceType === service.option ? '' : service.option as any })}
             >
@@ -608,7 +608,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Property Already Cleaned - Dynamic */}
       {data.serviceType === 'checkin-checkout' && cleaningHistoryConfigs.length > 0 && (
-        <div className="relative z-[6] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+        <div className="relative z-[6]">
           <h2 className="text-2xl font-bold text-slate-700 mb-4">
             Has the property been cleaned to Airbnb standard already?
           </h2>
@@ -621,10 +621,10 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
               return (
                 <button
                   key={option.option}
-                  className={`group relative h-16 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+                  className={`group relative h-16 rounded-2xl border transition-all duration-300 ${
                     isSelected
-                      ? 'border-primary bg-primary/5 shadow-xl'
-                      : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border bg-card hover:border-primary/50'
                   }`}
                   onClick={() => onUpdate({ 
                     alreadyCleaned: isSelected ? null : (option.option === 'yes' ? true : false)
@@ -649,7 +649,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Oven Cleaning - Always Visible with Switch */}
       {ovenCleaningConfigs.length > 0 && (
-        <div className="relative z-[5] p-4 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white border-2 border-border transition-shadow duration-300">
+        <div className="relative z-[5]">
           <div className="flex items-center justify-between mb-4 p-3 bg-muted/30 rounded-xl border border-border">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
@@ -685,10 +685,10 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
                   return (
                     <button
                       key={oven.option}
-                      className={`group relative h-20 rounded-2xl border-2 transition-all duration-500 hover:scale-105 ${
+                      className={`group relative h-20 rounded-2xl border transition-all duration-300 ${
                         isSelected
-                          ? 'border-primary bg-primary/5 shadow-xl'
-                          : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border bg-card hover:border-primary/50'
                       }`}
                       onClick={() => onUpdate({ ovenType: isSelected ? '' : oven.option as any })}
                     >
@@ -712,7 +712,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Cleaning Supplies - Dynamic */}
       {cleaningSuppliesConfigs.length > 0 && (
-        <div className="relative z-[4] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+        <div className="relative z-[4]">
           <h2 className="text-2xl font-bold text-slate-700 mb-2">
             Cleaning supplies
           </h2>
@@ -740,12 +740,10 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
               return (
                 <button
                   key={supply.option}
-                  className={`group relative h-24 rounded-2xl border-2 transition-all duration-500 ${
-                    !isLocked && 'hover:scale-105'
-                  } ${
+                  className={`group relative h-24 rounded-2xl border transition-all duration-300 ${
                     isSelected
-                      ? 'border-primary bg-primary/5 shadow-xl'
-                      : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border bg-card hover:border-primary/50'
                   } ${isLocked && 'cursor-not-allowed opacity-90'}`}
                   onClick={() => {
                     if (!isLocked) {
@@ -792,7 +790,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Equipment Arrangement - Dynamic */}
       {data.cleaningProducts.includes('equipment') && equipmentArrangementConfigs.length > 0 && (
-        <div className="relative z-[3] p-2 rounded-2xl shadow-[0_10px_28px_rgba(0,0,0,0.18)] bg-white transition-shadow duration-300">
+        <div className="relative z-[3]">
           <h2 className="text-2xl font-bold text-slate-700 mb-2">
             Equipment arrangement
           </h2>
@@ -807,10 +805,10 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
               return (
                 <button
                   key={arrangement.option}
-                  className={`group relative h-16 rounded-2xl border-2 transition-all duration-500 hover:scale-105 justify-start gap-3 p-4 flex items-center ${
+                  className={`group relative h-16 rounded-2xl border transition-all duration-300 justify-start gap-3 p-4 flex items-center ${
                     isSelected
-                      ? 'border-primary bg-primary/5 shadow-xl'
-                      : 'border-border bg-card hover:border-primary/50 hover:bg-primary/2 hover:shadow-lg'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border bg-card hover:border-primary/50'
                   }`}
                   onClick={() => onUpdate({ equipmentArrangement: arrangement.option })}
                 >
@@ -857,7 +855,7 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
 
       {/* Recommended Hours - Show after basic selections are made */}
       {data.propertyType && data.bedrooms && data.bathrooms && data.serviceType && (
-        <div className="relative z-[4] p-4 rounded-2xl border-2 border-primary/30 shadow-[0_12px_32px_rgba(0,0,0,0.2)] bg-gradient-to-br from-white to-primary/5 transition-all duration-300 hover:shadow-[0_16px_40px_rgba(0,0,0,0.25)] hover:border-primary/50">
+        <div className="relative z-[4] p-4 rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-white to-primary/5 transition-all duration-300 hover:border-primary/50">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div className="flex-1">
               <h2 className="text-2xl font-bold text-slate-700">Estimated Cleaning Time</h2>
