@@ -118,7 +118,37 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
   const [selectedOption, setSelectedOption] = useState<SendOption>(null);
   const [sendStatus, setSendStatus] = useState<SendStatus>('idle');
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [existingQuoteStatus, setExistingQuoteStatus] = useState<string | null>(null);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const { toast } = useToast();
+  
+  // Check if there's already a quote/link sent for this session
+  React.useEffect(() => {
+    const checkExistingQuote = async () => {
+      if (!open || !sessionId) return;
+      
+      setIsCheckingStatus(true);
+      try {
+        const { data, error } = await supabase
+          .from('quote_leads')
+          .select('status, quote_email_sent, short_code')
+          .eq('session_id', sessionId)
+          .maybeSingle();
+        
+        if (!error && data) {
+          setExistingQuoteStatus(data.status);
+        } else {
+          setExistingQuoteStatus(null);
+        }
+      } catch (err) {
+        console.error('Error checking existing quote:', err);
+      } finally {
+        setIsCheckingStatus(false);
+      }
+    };
+    
+    checkExistingQuote();
+  }, [open, sessionId]);
   
   // Sync email/phone/name state when props change
   React.useEffect(() => {
@@ -403,6 +433,39 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
             </div>
             
             <div className="px-6 py-5 space-y-4 bg-white">
+              {/* Status banner if quote/link already sent */}
+              {existingQuoteStatus && ['sent', 'link_clicked'].includes(existingQuoteStatus) && (
+                <div className={`rounded-xl p-4 border ${
+                  existingQuoteStatus === 'link_clicked' 
+                    ? 'bg-green-50 border-green-200' 
+                    : 'bg-amber-50 border-amber-200'
+                }`}>
+                  <div className="flex items-center gap-3">
+                    {existingQuoteStatus === 'link_clicked' ? (
+                      <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    ) : (
+                      <Mail className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                    )}
+                    <div>
+                      <p className={`text-sm font-medium ${
+                        existingQuoteStatus === 'link_clicked' ? 'text-green-800' : 'text-amber-800'
+                      }`}>
+                        {existingQuoteStatus === 'link_clicked' 
+                          ? 'Customer has clicked the booking link!' 
+                          : 'A booking link was already sent to this customer'}
+                      </p>
+                      <p className={`text-xs ${
+                        existingQuoteStatus === 'link_clicked' ? 'text-green-600' : 'text-amber-600'
+                      }`}>
+                        {existingQuoteStatus === 'link_clicked' 
+                          ? 'They may be completing their booking now' 
+                          : 'You can still resend if needed'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Quote Summary */}
               {quoteData.totalCost > 0 && (
                 <div className="bg-slate-50 rounded-xl p-4 space-y-2 border border-slate-100">
@@ -441,13 +504,33 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                 <Button
                   onClick={() => setSelectedOption('complete')}
                   variant="outline"
-                  className="h-auto py-4 px-5 flex items-start gap-4 border-2 rounded-xl hover:border-primary hover:bg-primary/5 transition-all overflow-hidden"
+                  className={`h-auto py-4 px-5 flex items-start gap-4 border-2 rounded-xl transition-all overflow-hidden ${
+                    existingQuoteStatus === 'sent' 
+                      ? 'border-amber-300 bg-amber-50/50' 
+                      : existingQuoteStatus === 'link_clicked'
+                        ? 'border-green-300 bg-green-50/50'
+                        : 'hover:border-primary hover:bg-primary/5'
+                  }`}
                 >
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Link2 className="w-5 h-5 text-primary" />
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                    existingQuoteStatus === 'link_clicked' 
+                      ? 'bg-green-100' 
+                      : existingQuoteStatus === 'sent'
+                        ? 'bg-amber-100'
+                        : 'bg-primary/10'
+                  }`}>
+                    <Link2 className={`w-5 h-5 ${
+                      existingQuoteStatus === 'link_clicked' 
+                        ? 'text-green-600' 
+                        : existingQuoteStatus === 'sent'
+                          ? 'text-amber-600'
+                          : 'text-primary'
+                    }`} />
                   </div>
                   <div className="text-left min-w-0 flex-1">
-                    <p className="font-semibold text-foreground">Send to Complete Booking</p>
+                    <p className="font-semibold text-foreground">
+                      {existingQuoteStatus === 'sent' ? 'Resend Booking Link' : 'Send to Complete Booking'}
+                    </p>
                     <p className="text-sm text-muted-foreground font-normal break-words">
                       Send a link with details pre-filled to complete booking
                     </p>
