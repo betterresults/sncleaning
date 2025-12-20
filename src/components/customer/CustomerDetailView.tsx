@@ -30,9 +30,12 @@ import {
   Loader2,
   Edit2,
   Save,
-  X as Cancel
+  X as Cancel,
+  Plus,
+  Keyboard
 } from 'lucide-react';
 import CustomerDirectPaymentDialog from '@/components/payments/CustomerDirectPaymentDialog';
+import ManualCardEntryDialog from '@/components/customer/ManualCardEntryDialog';
 import { formatPhoneToInternational } from '@/utils/phoneFormatter';
 
 interface CustomerDetailViewProps {
@@ -106,6 +109,7 @@ const CustomerDetailView = ({
   const [addresses, setAddresses] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [showDirectPayment, setShowDirectPayment] = useState(false);
+  const [showManualCardDialog, setShowManualCardDialog] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -604,10 +608,20 @@ const CustomerDetailView = ({
                 {/* Payment Methods */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <CreditCard className="h-5 w-5" />
-                      Payment Methods ({paymentMethods.length})
-                    </CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2">
+                        <CreditCard className="h-5 w-5" />
+                        Payment Methods ({paymentMethods.length})
+                      </CardTitle>
+                      <Button
+                        onClick={() => setShowManualCardDialog(true)}
+                        size="sm"
+                        className="bg-[#18A5A5] hover:bg-[#185166]"
+                      >
+                        <Keyboard className="h-4 w-4 mr-2" />
+                        Add Card
+                      </Button>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     {paymentMethods.length > 0 ? (
@@ -658,8 +672,16 @@ const CustomerDetailView = ({
                         })}
                       </div>
                     ) : (
-                      <div className="text-center py-4 text-muted-foreground">
-                        No payment methods on file
+                      <div className="text-center py-6 text-muted-foreground">
+                        <CreditCard className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                        <p className="mb-4">No payment methods on file</p>
+                        <Button
+                          onClick={() => setShowManualCardDialog(true)}
+                          className="bg-[#18A5A5] hover:bg-[#185166]"
+                        >
+                          <Keyboard className="h-4 w-4 mr-2" />
+                          Add Card Manually
+                        </Button>
                       </div>
                     )}
                   </CardContent>
@@ -873,6 +895,15 @@ const CustomerDetailView = ({
             setShowDirectPayment(false);
             fetchCustomerData(); // Refresh data after payment
           }}
+        />
+      )}
+
+      {customerId && (
+        <ManualCardEntryDialog
+          open={showManualCardDialog}
+          onOpenChange={setShowManualCardDialog}
+          customerId={customerId}
+          onSuccess={fetchCustomerData}
         />
       )}
     </>
