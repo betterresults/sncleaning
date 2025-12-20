@@ -41,6 +41,7 @@ export interface DomesticBookingData {
   serviceFrequency: 'weekly' | 'biweekly' | 'monthly' | 'onetime' | '';
   daysPerWeek: number;
   wantsFirstDeepClean: boolean;
+  firstDeepCleanExtraHours: number; // Extra hours for first deep clean (default 50% of estimated hours)
   hasOvenCleaning: boolean;
   ovenType: string;
   ovenCleaningScope: 'this-booking' | 'all-bookings';
@@ -143,6 +144,7 @@ const DomesticBookingForm: React.FC = () => {
     serviceFrequency: '',
     daysPerWeek: 1,
     wantsFirstDeepClean: false,
+    firstDeepCleanExtraHours: 0, // Will be calculated as 50% of estimated hours when enabled
     hasOvenCleaning: false,
     ovenType: '',
     ovenCleaningScope: 'this-booking',

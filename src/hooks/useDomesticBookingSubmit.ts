@@ -25,6 +25,7 @@ interface DomesticBookingSubmission {
   
   serviceFrequency: string;
   wantsFirstDeepClean?: boolean;
+  firstDeepCleanExtraHours?: number;
   ovenType?: string;
   cleaningProducts?: string;
   equipmentArrangement?: string | null;
@@ -85,6 +86,7 @@ const buildAdditionalDetails = (data: DomesticBookingSubmission) => {
   if (data.wantsFirstDeepClean) {
     details.firstDeepClean = {
       enabled: true,
+      extraHours: data.firstDeepCleanExtraHours || 0,
       hours: data.firstDeepCleanHours || 0,
       cost: data.firstDeepCleanCost || 0,
       regularRecurringCost: data.regularRecurringCost || 0,
