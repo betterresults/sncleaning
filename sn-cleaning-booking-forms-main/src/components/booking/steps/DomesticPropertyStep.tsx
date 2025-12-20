@@ -394,41 +394,45 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
               
               {/* Extra Hours Adjustment - Only show when deep clean is selected */}
               {data.wantsFirstDeepClean && (
-                <div className="mt-4 p-3 bg-amber-50 rounded-xl border border-amber-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-slate-700">Extra time for first clean:</span>
-                    <span className="text-sm font-bold text-amber-700">{data.firstDeepCleanExtraHours || 0}h extra</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      className="p-2 rounded-lg border border-amber-300 bg-white hover:bg-amber-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      onClick={() => {
-                        const newValue = Math.max(0, (data.firstDeepCleanExtraHours || 0) - 0.5);
-                        onUpdate({ firstDeepCleanExtraHours: newValue });
-                      }}
-                      disabled={(data.firstDeepCleanExtraHours || 0) <= 0}
-                    >
-                      <Minus className="h-4 w-4 text-amber-600" />
-                    </button>
-                    <div className="flex-1 h-2 bg-amber-100 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-amber-500 rounded-full transition-all duration-300"
-                        style={{ width: `${Math.min(100, ((data.firstDeepCleanExtraHours || 0) / 5) * 100)}%` }}
-                      />
+                <div className="mt-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div className="flex-1">
+                      <h4 className="text-base font-bold text-slate-700">Extra Time for First Clean</h4>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        First clean will be {calculations.firstDeepCleanHours}h (regular {calculations.totalHours}h + extra time)
+                      </p>
                     </div>
-                    <button
-                      className="p-2 rounded-lg border border-amber-300 bg-white hover:bg-amber-50 transition-colors"
-                      onClick={() => {
-                        const newValue = (data.firstDeepCleanExtraHours || 0) + 0.5;
-                        onUpdate({ firstDeepCleanExtraHours: newValue });
-                      }}
-                    >
-                      <Plus className="h-4 w-4 text-amber-600" />
-                    </button>
+                    <div className="flex items-center bg-card border border-border rounded-2xl p-2 w-full sm:w-auto sm:max-w-[280px]">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-11 w-11 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-700 flex-shrink-0" 
+                        onClick={() => {
+                          const newValue = Math.max(0, (data.firstDeepCleanExtraHours || 0) - 0.5);
+                          onUpdate({ firstDeepCleanExtraHours: newValue });
+                        }}
+                        disabled={(data.firstDeepCleanExtraHours || 0) <= 0}
+                      >
+                        <Minus className="h-5 w-5" />
+                      </Button>
+                      <div className="flex-1 text-center min-w-[90px]">
+                        <div className="text-lg font-bold text-slate-600" style={{ paddingLeft: '7px', paddingRight: '7px' }}>
+                          +{data.firstDeepCleanExtraHours || 0}h
+                        </div>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-11 w-11 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-700" 
+                        onClick={() => {
+                          const newValue = (data.firstDeepCleanExtraHours || 0) + 0.5;
+                          onUpdate({ firstDeepCleanExtraHours: newValue });
+                        }}
+                      >
+                        <Plus className="h-5 w-5" />
+                      </Button>
+                    </div>
                   </div>
-                  <p className="text-xs text-slate-500 mt-2">
-                    First clean: <span className="font-semibold">{calculations.firstDeepCleanHours}h</span> (regular {calculations.totalHours}h + {data.firstDeepCleanExtraHours || 0}h extra)
-                  </p>
                 </div>
               )}
             </div>
