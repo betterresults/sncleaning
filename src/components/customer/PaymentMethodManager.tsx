@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CreditCard, Plus, Trash2, CheckCircle } from 'lucide-react';
+import { CreditCard, Plus, Keyboard } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 import PaymentMethodCard from './PaymentMethodCard';
+import ManualCardEntryDialog from './ManualCardEntryDialog';
 
 interface PaymentMethod {
   id: string;
@@ -25,6 +26,7 @@ const PaymentMethodManager = () => {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddingPaymentMethod, setIsAddingPaymentMethod] = useState(false);
+  const [showManualCardDialog, setShowManualCardDialog] = useState(false);
   
   // Use selected customer ID if admin is viewing, otherwise use the logged-in user's customer ID  
   const activeCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
@@ -282,6 +284,26 @@ const PaymentMethodManager = () => {
           <Plus className="h-4 w-4 mr-2" />
           {isAddingPaymentMethod ? 'Redirecting to Stripe...' : 'Add Payment Method'}
         </Button>
+
+        {userRole === 'admin' && activeCustomerId && (
+          <>
+            <Button
+              onClick={() => setShowManualCardDialog(true)}
+              variant="outline"
+              className="w-full border-[#18A5A5] text-[#18A5A5] hover:bg-[#18A5A5]/10"
+            >
+              <Keyboard className="h-4 w-4 mr-2" />
+              Enter Card Details Manually
+            </Button>
+
+            <ManualCardEntryDialog
+              open={showManualCardDialog}
+              onOpenChange={setShowManualCardDialog}
+              customerId={activeCustomerId}
+              onSuccess={fetchPaymentMethods}
+            />
+          </>
+        )}
       </CardContent>
     </Card>
   );

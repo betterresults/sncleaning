@@ -101,3 +101,6 @@ verify_jwt = false
 
 [functions.seed-coverage-data]
 verify_jwt = false
+
+[functions.stripe-add-card-manual]
+verify_jwt = true
