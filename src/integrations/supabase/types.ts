@@ -2149,6 +2149,7 @@ export type Database = {
       }
       quote_leads: {
         Row: {
+          access_notes: string | null
           additional_rooms: Json | null
           address: string | null
           agent_user_id: string | null
@@ -2181,6 +2182,7 @@ export type Database = {
           page_url: string | null
           phone: string | null
           postcode: string | null
+          property_access: string | null
           property_type: string | null
           quote_email_sent: boolean | null
           quote_email_sent_at: string | null
@@ -2208,6 +2210,7 @@ export type Database = {
           weekly_hours: number | null
         }
         Insert: {
+          access_notes?: string | null
           additional_rooms?: Json | null
           address?: string | null
           agent_user_id?: string | null
@@ -2240,6 +2243,7 @@ export type Database = {
           page_url?: string | null
           phone?: string | null
           postcode?: string | null
+          property_access?: string | null
           property_type?: string | null
           quote_email_sent?: boolean | null
           quote_email_sent_at?: string | null
@@ -2267,6 +2271,7 @@ export type Database = {
           weekly_hours?: number | null
         }
         Update: {
+          access_notes?: string | null
           additional_rooms?: Json | null
           address?: string | null
           agent_user_id?: string | null
@@ -2299,6 +2304,7 @@ export type Database = {
           page_url?: string | null
           phone?: string | null
           postcode?: string | null
+          property_access?: string | null
           property_type?: string | null
           quote_email_sent?: boolean | null
           quote_email_sent_at?: string | null

@@ -69,6 +69,13 @@ const ShortLinkResolver = () => {
         
         // Agent attribution - CRITICAL for sales agent tracking
         if (data.agent_user_id) params.set('agentUserId', data.agent_user_id);
+        
+        // Address
+        if (data.address) params.set('address', data.address);
+        
+        // Property access
+        if (data.property_access) params.set('propertyAccess', data.property_access);
+        if (data.access_notes) params.set('accessNotes', data.access_notes);
 
         // Determine the route based on service type
         const serviceType = data.service_type || 'Domestic';
