@@ -944,13 +944,12 @@ useEffect(() => {
 
         console.log('[PaymentStep] Creating payment method with Stripe...');
         const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
-          elements,
-          params: {
-            billing_details: {
-              name: `${data.firstName} ${data.lastName}`,
-              email: data.email,
-              phone: data.phone,
-            },
+          type: 'card',
+          card: cardElement,
+          billing_details: {
+            name: `${data.firstName} ${data.lastName}`,
+            email: data.email,
+            phone: data.phone,
           },
         });
 
