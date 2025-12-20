@@ -3,13 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { BookingData } from '../AirbnbBookingForm';
-import { CreditCard, Shield, Loader2, AlertTriangle, Building2, Clock } from 'lucide-react';
+import { CreditCard, Shield, Loader2, AlertTriangle, Building2, Clock, ChevronDown, ChevronUp, Check, Pencil, MapPin, User as UserIcon, Calendar, Home } from 'lucide-react';
 import { useAirbnbBookingSubmit } from '@/hooks/useAirbnbBookingSubmit';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import { CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import CustomerSelector from '@/components/booking/CustomerSelector';
 import AddressSelector from '@/components/booking/AddressSelector';
 import { usePaymentMethodCheck } from '@/hooks/usePaymentMethodCheck';
@@ -69,6 +70,7 @@ interface PaymentStepProps {
   onUpdate: (updates: Partial<BookingData> | any) => void;
   onBack: () => void;
   isAdminMode?: boolean;
+  isQuoteLinkMode?: boolean;
   formType?: 'airbnb' | 'linen';
   bookingSummary?: React.ReactNode;
   onBookingAttempt?: () => void;
@@ -79,6 +81,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   onUpdate, 
   onBack, 
   isAdminMode = false, 
+  isQuoteLinkMode = false,
   formType = 'airbnb',
   bookingSummary,
   onBookingAttempt
@@ -101,6 +104,10 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   const [cleaners, setCleaners] = useState<any[]>([]);
   const [paymentType, setPaymentType] = useState<'card' | 'bank-transfer'>('card');
   const location = useLocation();
+  
+  // Collapsible states for quote link mode - start collapsed if data is pre-filled
+  const [detailsOpen, setDetailsOpen] = useState(!isQuoteLinkMode || !data.firstName);
+  const [addressOpen, setAddressOpen] = useState(!isQuoteLinkMode || !data.street);
 
   // Determine subServiceType based on current route
   const subServiceType = useMemo(() => {
@@ -1037,6 +1044,51 @@ useEffect(() => {
 
   return (
     <div className="space-y-8">
+      {/* Quote Link Mode: Booking Summary at Top */}
+      {isQuoteLinkMode && !isAdminMode && (
+        <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl p-6 border-2 border-primary/20">
+          <h3 className="text-xl font-bold text-[#185166] mb-4 flex items-center gap-2">
+            <Check className="h-5 w-5 text-green-600" />
+            Your Booking Summary
+          </h3>
+          <div className="space-y-3 text-sm">
+            <div className="flex items-start gap-3">
+              <Home className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+              <div>
+                <span className="font-medium">Property:</span>{' '}
+                {data.bedrooms} Bed {data.propertyType === 'flat' ? 'Flat' : 'House'}{' '}
+                • {data.serviceFrequency === 'weekly' ? 'Weekly' : data.serviceFrequency === 'biweekly' ? 'Bi-weekly' : data.serviceFrequency === 'monthly' ? 'Monthly' : 'One-time'} cleaning
+              </div>
+            </div>
+            {data.selectedDate && (
+              <div className="flex items-start gap-3">
+                <Calendar className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                <div>
+                  <span className="font-medium">Date & Time:</span>{' '}
+                  {data.selectedDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}{' '}
+                  at {data.selectedTime}
+                </div>
+              </div>
+            )}
+            {(data.street || data.postcode) && (
+              <div className="flex items-start gap-3">
+                <MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                <div>
+                  <span className="font-medium">Address:</span>{' '}
+                  {[data.houseNumber, data.street, data.city, data.postcode].filter(Boolean).join(', ')}
+                </div>
+              </div>
+            )}
+            <div className="pt-3 mt-3 border-t border-primary/20">
+              <div className="flex justify-between items-center text-lg">
+                <span className="font-bold">Total:</span>
+                <span className="font-bold text-primary">£{data.totalCost?.toFixed(2) || '0.00'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Admin Test Mode Warning */}
       {adminTestMode && (
         <div className="bg-orange-50 border-2 border-orange-500 rounded-xl p-6">
@@ -1152,58 +1204,94 @@ useEffect(() => {
 
       {/* Customer/Guest Mode - show customer details */}
       {!isAdminMode && (
-        <div className="space-y-6">
-          <h3 className="text-2xl font-bold text-[#185166] mb-4">
-            Your Details
-          </h3>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              placeholder="First Name"
-              value={data.firstName || ''}
-              onChange={(e) => onUpdate({ firstName: e.target.value })}
-              className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
-            />
-            <Input
-              placeholder="Last Name"
-              value={data.lastName || ''}
-              onChange={(e) => onUpdate({ lastName: e.target.value })}
-              className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
-            />
+        <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
+          <div className={`rounded-2xl border-2 transition-all ${
+            isQuoteLinkMode && !detailsOpen && data.firstName 
+              ? 'border-green-200 bg-green-50/50' 
+              : 'border-gray-200 bg-white'
+          }`}>
+            <CollapsibleTrigger className="w-full p-4 flex items-center justify-between text-left">
+              <div className="flex items-center gap-3">
+                {isQuoteLinkMode && data.firstName && !detailsOpen && (
+                  <Check className="h-5 w-5 text-green-600 flex-shrink-0" />
+                )}
+                <div>
+                  <h3 className="text-xl font-bold text-[#185166]">
+                    Your Details
+                  </h3>
+                  {isQuoteLinkMode && !detailsOpen && data.firstName && (
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      {data.firstName} {data.lastName} • {data.email} • {data.phone}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {isQuoteLinkMode && !detailsOpen && (
+                  <span className="text-sm text-primary font-medium flex items-center gap-1">
+                    <Pencil className="h-3 w-3" /> Edit
+                  </span>
+                )}
+                {detailsOpen ? (
+                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                )}
+              </div>
+            </CollapsibleTrigger>
+            
+            <CollapsibleContent>
+              <div className="px-4 pb-4 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    placeholder="First Name"
+                    value={data.firstName || ''}
+                    onChange={(e) => onUpdate({ firstName: e.target.value })}
+                    className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
+                  />
+                  <Input
+                    placeholder="Last Name"
+                    value={data.lastName || ''}
+                    onChange={(e) => onUpdate({ lastName: e.target.value })}
+                    className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
+                  />
+                </div>
+                
+                <div>
+                  <Input
+                    type="email"
+                    placeholder="Email Address"
+                    value={data.email || ''}
+                    onChange={(e) => {
+                      onUpdate({ email: e.target.value });
+                      setEmailError('');
+                    }}
+                    onBlur={(e) => validateEmail(e.target.value)}
+                    className={`h-16 text-lg rounded-2xl border-2 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400 ${emailError ? 'border-red-500' : 'border-gray-200'}`}
+                  />
+                  {emailError && (
+                    <p className="text-xs text-red-600 font-medium mt-1">{emailError}</p>
+                  )}
+                </div>
+                
+                <div>
+                  <PhoneInput
+                    value={data.phone || ''}
+                    onChange={(value) => {
+                      onUpdate({ phone: value });
+                      setPhoneError('');
+                    }}
+                    placeholder="Phone number"
+                    className={`h-16 text-lg rounded-2xl border-2 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400 ${phoneError ? 'border-red-500' : 'border-gray-200'}`}
+                  />
+                  {phoneError && (
+                    <p className="text-xs text-red-600 font-medium mt-1">{phoneError}</p>
+                  )}
+                </div>
+              </div>
+            </CollapsibleContent>
           </div>
-          
-          <div>
-            <Input
-              type="email"
-              placeholder="Email Address"
-              value={data.email || ''}
-              onChange={(e) => {
-                onUpdate({ email: e.target.value });
-                setEmailError('');
-              }}
-              onBlur={(e) => validateEmail(e.target.value)}
-              className={`h-16 text-lg rounded-2xl border-2 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400 ${emailError ? 'border-red-500' : 'border-gray-200'}`}
-            />
-            {emailError && (
-              <p className="text-xs text-red-600 font-medium mt-1">{emailError}</p>
-            )}
-          </div>
-          
-          <div>
-            <PhoneInput
-              value={data.phone || ''}
-              onChange={(value) => {
-                onUpdate({ phone: value });
-                setPhoneError('');
-              }}
-              placeholder="Phone number"
-              className={`h-16 text-lg rounded-2xl border-2 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400 ${phoneError ? 'border-red-500' : 'border-gray-200'}`}
-            />
-            {phoneError && (
-              <p className="text-xs text-red-600 font-medium mt-1">{phoneError}</p>
-            )}
-          </div>
-        </div>
+        </Collapsible>
       )}
 
       {/* ADMIN MODE: Address Selection */}
@@ -1273,34 +1361,70 @@ useEffect(() => {
 
       {/* Booking Address - Only show if no address is selected or in admin mode */}
       {(isAdminMode || !data.addressId) && (
-        <div className="space-y-6">
-          <h3 className="text-2xl font-bold text-[#185166] mb-4">
-            Booking Address
-          </h3>
-          
-          <Input
-            placeholder="Street Address"
-            value={data.street || ''}
-            onChange={(e) => onUpdate({ street: e.target.value })}
-            className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
-          />
-          
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              placeholder="Postcode"
-              value={data.postcode || ''}
-              onChange={(e) => onUpdate({ postcode: e.target.value })}
-              className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
-            />
+        <Collapsible open={addressOpen} onOpenChange={setAddressOpen}>
+          <div className={`rounded-2xl border-2 transition-all ${
+            isQuoteLinkMode && !addressOpen && data.street 
+              ? 'border-green-200 bg-green-50/50' 
+              : 'border-gray-200 bg-white'
+          }`}>
+            <CollapsibleTrigger className="w-full p-4 flex items-center justify-between text-left">
+              <div className="flex items-center gap-3">
+                {isQuoteLinkMode && data.street && !addressOpen && (
+                  <Check className="h-5 w-5 text-green-600 flex-shrink-0" />
+                )}
+                <div>
+                  <h3 className="text-xl font-bold text-[#185166]">
+                    Booking Address
+                  </h3>
+                  {isQuoteLinkMode && !addressOpen && data.street && (
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      {[data.houseNumber, data.street, data.city, data.postcode].filter(Boolean).join(', ')}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {isQuoteLinkMode && !addressOpen && (
+                  <span className="text-sm text-primary font-medium flex items-center gap-1">
+                    <Pencil className="h-3 w-3" /> Edit
+                  </span>
+                )}
+                {addressOpen ? (
+                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                )}
+              </div>
+            </CollapsibleTrigger>
             
-            <Input
-              placeholder="City"
-              value={data.city || ''}
-              onChange={(e) => onUpdate({ city: e.target.value })}
-              className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
-            />
+            <CollapsibleContent>
+              <div className="px-4 pb-4 space-y-4">
+                <Input
+                  placeholder="Street Address"
+                  value={data.street || ''}
+                  onChange={(e) => onUpdate({ street: e.target.value })}
+                  className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
+                />
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    placeholder="Postcode"
+                    value={data.postcode || ''}
+                    onChange={(e) => onUpdate({ postcode: e.target.value })}
+                    className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
+                  />
+                  
+                  <Input
+                    placeholder="City"
+                    value={data.city || ''}
+                    onChange={(e) => onUpdate({ city: e.target.value })}
+                    className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
+                  />
+                </div>
+              </div>
+            </CollapsibleContent>
           </div>
-        </div>
+        </Collapsible>
       )}
 
       {/* Cleaner Selection - ADMIN ONLY, NOT FOR LINEN ORDERS */}

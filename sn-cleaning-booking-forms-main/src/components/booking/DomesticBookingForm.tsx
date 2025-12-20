@@ -121,6 +121,7 @@ const DomesticBookingForm: React.FC = () => {
   const [showExitPopup, setShowExitPopup] = useState(false);
   const [isLoadingResume, setIsLoadingResume] = useState(false);
   const [showQuoteDialog, setShowQuoteDialog] = useState(false);
+  const [isQuoteLinkMode, setIsQuoteLinkMode] = useState(false);
   
   // Quote lead tracking
   const { saveQuoteLead, trackStep, trackQuoteCalculated, markCompleted, trackBookingAttempt, initializeFromResume, markQuoteEmailSent, sessionId } = useQuoteLeadTracking('Domestic');
@@ -361,10 +362,27 @@ const DomesticBookingForm: React.FC = () => {
       // Initialize tracking with ref session if available
       if (refSessionId) {
         initializeFromResume(refSessionId);
+        // Mark as quote link mode for streamlined checkout
+        setIsQuoteLinkMode(true);
       }
       
       // Mark that user came from a quote link - suppress exit popup
       sessionStorage.setItem('came_from_quote_link', 'true');
+      
+      // Determine if we can auto-navigate to payment step
+      // Check if property and schedule data is sufficiently complete
+      const hasPropertyData = propertyType && bedrooms && bathrooms && frequency;
+      const hasScheduleData = dateStr && time;
+      const hasContactData = firstName && email;
+      
+      // Auto-navigate to step 3 (payment) if data is complete
+      if (hasPropertyData && hasScheduleData && hasContactData && refSessionId) {
+        // Small delay to ensure state is updated
+        setTimeout(() => {
+          setCurrentStep(3);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 100);
+      }
       
       return;
     }
@@ -700,6 +718,7 @@ const DomesticBookingForm: React.FC = () => {
               onUpdate={updateBookingData as any}
               onBack={prevStep}
               isAdminMode={isAdminMode}
+              isQuoteLinkMode={isQuoteLinkMode}
               onBookingAttempt={() => trackBookingAttempt({
                 email: bookingData.email,
                 phone: bookingData.phone,
