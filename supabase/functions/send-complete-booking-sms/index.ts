@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.8";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -103,6 +104,34 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log("Complete booking SMS sent successfully:", result.sid);
+
+    // Log SMS to notification_logs table
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+      const { error: logError } = await supabase
+        .from('notification_logs')
+        .insert({
+          recipient_email: formattedPhone, // Using recipient_email field for phone number
+          recipient_type: 'customer',
+          subject: `Complete Booking SMS - ${serviceType}`,
+          content: message,
+          notification_type: 'sms',
+          status: 'sent',
+          delivery_id: result.sid,
+          sent_at: new Date().toISOString(),
+        });
+
+      if (logError) {
+        console.error('Failed to log SMS notification:', logError);
+      } else {
+        console.log('SMS notification logged successfully');
+      }
+    } catch (logErr) {
+      console.error('Error logging SMS notification:', logErr);
+    }
 
     return new Response(
       JSON.stringify({ success: true, messageSid: result.sid }),
