@@ -123,6 +123,8 @@ const DomesticBookingForm: React.FC = () => {
   const [isLoadingResume, setIsLoadingResume] = useState(false);
   const [showQuoteDialog, setShowQuoteDialog] = useState(false);
   const [isQuoteLinkMode, setIsQuoteLinkMode] = useState(false);
+  const [storedQuotePrice, setStoredQuotePrice] = useState<number | null>(null); // Exact price from quote link
+  const [hasModifiedAfterLoad, setHasModifiedAfterLoad] = useState(false); // Track if user modified form after loading quote
   
   // Quote lead tracking
   const { saveQuoteLead, trackStep, trackQuoteCalculated, markCompleted, trackBookingAttempt, initializeFromResume, markQuoteEmailSent, sessionId } = useQuoteLeadTracking('Domestic');
@@ -181,6 +183,11 @@ const DomesticBookingForm: React.FC = () => {
   const calculations = useDomesticHardcodedCalculations(bookingData);
   
   const calculatedTotal = useMemo(() => {
+    // If we have a stored quote price from a quote link and user hasn't modified the form, use it directly
+    if (storedQuotePrice && !hasModifiedAfterLoad) {
+      return storedQuotePrice;
+    }
+    
     // Use admin override if set
     if (bookingData.adminTotalCostOverride !== undefined && bookingData.adminTotalCostOverride !== null && bookingData.adminTotalCostOverride > 0) {
       let total = bookingData.adminTotalCostOverride;
@@ -243,7 +250,7 @@ const DomesticBookingForm: React.FC = () => {
     }
     
     return Math.max(0, total);
-  }, [bookingData, calculations, isAdminMode]);
+  }, [bookingData, calculations, isAdminMode, storedQuotePrice, hasModifiedAfterLoad]);
   
   // Calculate the hours to display (first deep clean hours if applicable)
   const displayHours = useMemo(() => {
@@ -432,10 +439,13 @@ const DomesticBookingForm: React.FC = () => {
           // Load the exact quoted price if available
           totalCost: data.calculated_quote || prev.totalCost,
           adminDiscountAmount: data.discount_amount || prev.adminDiscountAmount,
-          // ALWAYS use the stored calculated_quote as override - don't recalculate
-          // The quote was already calculated when the user filled the form
-          adminTotalCostOverride: data.calculated_quote ? data.calculated_quote : prev.adminTotalCostOverride,
         }));
+
+        // Store the original quote price to use until user modifies the form
+        if (data.calculated_quote) {
+          setStoredQuotePrice(data.calculated_quote);
+          setHasModifiedAfterLoad(false);
+        }
 
         // Use the hook's initialize function to set session ID properly in localStorage
         initializeFromResume(resumeSessionId);
@@ -548,6 +558,19 @@ const DomesticBookingForm: React.FC = () => {
   }, []);
 
   const updateBookingData = (updates: Partial<DomesticBookingData>) => {
+    // Fields that affect pricing - if user changes these, we should recalculate
+    const pricingAffectingKeys: (keyof DomesticBookingData)[] = [
+      'propertyType', 'bedrooms', 'bathrooms', 'toilets', 'additionalRooms', 'propertyFeatures',
+      'numberOfFloors', 'serviceFrequency', 'daysPerWeek', 'wantsFirstDeepClean', 'firstDeepCleanExtraHours',
+      'hasOvenCleaning', 'ovenType', 'cleaningProducts', 'equipmentArrangement', 'selectedDate', 'estimatedHours'
+    ];
+    
+    // If user modifies any pricing-affecting field, clear the stored quote so we recalculate
+    const affectsPricing = Object.keys(updates).some(k => pricingAffectingKeys.includes(k as keyof DomesticBookingData));
+    if (affectsPricing && storedQuotePrice) {
+      setHasModifiedAfterLoad(true);
+    }
+    
     setBookingData(prev => {
       const timeAffectingKeys: (keyof DomesticBookingData)[] = [
         'propertyType', 'bedrooms', 'bathrooms', 'toilets', 'additionalRooms', 'propertyFeatures',
@@ -864,6 +887,8 @@ const DomesticBookingForm: React.FC = () => {
                     data={bookingData} 
                     isAdminMode={isAdminMode}
                     onUpdate={updateBookingData}
+                    storedQuotePrice={storedQuotePrice}
+                    hasModifiedAfterLoad={hasModifiedAfterLoad}
                   />
                 </div>
               </div>
