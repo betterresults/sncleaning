@@ -219,7 +219,7 @@ const ManualCardEntryDialog: React.FC<ManualCardEntryDialogProps> = ({
   useEffect(() => {
     const fetchStripeKey = async () => {
       try {
-        const { data, error } = await supabase.functions.invoke('get-stripe-publishable-key');
+        const { data, error } = await supabase.functions.invoke('stripe-get-publishable-key');
         if (error) throw error;
         if (data?.publishable_key) {
           setStripePromise(loadStripe(data.publishable_key));

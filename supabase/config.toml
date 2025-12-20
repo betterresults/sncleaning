@@ -110,3 +110,6 @@ verify_jwt = true
 
 [functions.stripe-save-payment-method]
 verify_jwt = true
+
+[functions.stripe-get-publishable-key]
+verify_jwt = false
