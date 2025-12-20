@@ -308,28 +308,29 @@ export const useQuoteLeadTracking = (serviceType: string, options?: TrackingOpti
 
   // Initialize tracking on mount
   useEffect(() => {
-    // Capture UTM params FIRST before anything else - this is critical!
-    const utmParams = getUtmParams();
-    console.log('📊 Captured UTM params on mount:', utmParams);
+    // Check if we have fresh UTM params in the current URL (direct link to booking form)
+    const currentParams = new URLSearchParams(window.location.search);
+    const hasCurrentUtm = currentParams.get('utm_source') || currentParams.get('utm_medium') || currentParams.get('utm_campaign');
     
-    // Store UTM params if we found any (even partial)
-    if (utmParams.utm_source || utmParams.utm_medium || utmParams.utm_campaign || utmParams.utm_term || utmParams.utm_content) {
-      // Only store if we don't already have stored params (preserve original landing params)
-      const existingParams = localStorage.getItem('quote_utm_params');
-      if (!existingParams) {
-        localStorage.setItem('quote_utm_params', JSON.stringify(utmParams));
-        console.log('📊 Stored UTM params to localStorage:', utmParams);
-      } else {
-        console.log('📊 UTM params already stored, preserving original:', existingParams);
-      }
+    if (hasCurrentUtm) {
+      // Direct link to booking form with UTM params - store them
+      const utmParams = {
+        utm_source: currentParams.get('utm_source') || null,
+        utm_medium: currentParams.get('utm_medium') || null,
+        utm_campaign: currentParams.get('utm_campaign') || null,
+        utm_term: currentParams.get('utm_term') || null,
+        utm_content: currentParams.get('utm_content') || null,
+      };
+      localStorage.setItem('quote_utm_params', JSON.stringify(utmParams));
+      localStorage.setItem('quote_source', utmParams.utm_source?.toLowerCase() || 'website');
+      console.log('📊 Direct booking link - captured UTM params:', utmParams);
     }
     
-    // Store source (only on first visit to preserve original source)
-    if (!localStorage.getItem('quote_source')) {
-      const source = determineSource();
-      localStorage.setItem('quote_source', source);
-      console.log('📊 Stored source:', source);
-    }
+    // Log what we have stored for debugging
+    const storedUtm = localStorage.getItem('quote_utm_params');
+    const storedSource = localStorage.getItem('quote_source');
+    console.log('📊 useQuoteLeadTracking init - Stored UTM:', storedUtm);
+    console.log('📊 useQuoteLeadTracking init - Stored source:', storedSource);
     
     // Track page landing (separate from quote_leads)
     trackLanding();
@@ -391,9 +392,13 @@ export const useQuoteLeadTracking = (serviceType: string, options?: TrackingOpti
     lastSaveRef.current = now;
 
     try {
-      const utmParams = JSON.parse(localStorage.getItem('quote_utm_params') || '{}');
-      // Use "admin" as source when in admin mode, otherwise use detected source
-      const source = isAdminMode ? 'admin' : (localStorage.getItem('quote_source') || determineSource());
+      const storedUtmParams = localStorage.getItem('quote_utm_params');
+      const utmParams = storedUtmParams ? JSON.parse(storedUtmParams) : {};
+      
+      // Use "admin" as source when in admin mode, otherwise use stored source or fallback to 'direct'
+      const source = isAdminMode ? 'admin' : (localStorage.getItem('quote_source') || 'direct');
+      
+      console.log('📊 saveQuoteLead - Using source:', source, 'UTM:', utmParams);
       
       const leadData: Record<string, unknown> = {
         user_id: userId.current,
