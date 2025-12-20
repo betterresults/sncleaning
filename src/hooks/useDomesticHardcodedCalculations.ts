@@ -13,6 +13,7 @@ interface DomesticBookingData {
   serviceFrequency: string;
   wantsFirstDeepClean?: boolean;
   firstDeepCleanExtraHours?: number;
+  adminDeepCleanSameCost?: boolean; // When true, deep clean charges at recurring rate
   hasOvenCleaning?: boolean;
   ovenType: string;
   ovenCleaningScope?: 'this-booking' | 'all-bookings';
@@ -260,10 +261,9 @@ export const useDomesticHardcodedCalculations = (bookingData: DomesticBookingDat
     // Get one-time rate for first deep clean pricing
     const oneTimeRate = getConfigValue('domestic service frequency', 'onetime') || 22;
     
-    // Check if deep clean should use one-time rate (1) or recurring rate (0)
-    // Value 1 = use one-time rate (default), Value 0 = use recurring rate (discounted)
-    const useOneTimeRateForDeepClean = getConfigValue('deep clean settings', 'charge_extra_hours') !== 0;
-    const deepCleanRate = useOneTimeRateForDeepClean ? oneTimeRate : hourlyRate;
+    // Check if admin toggled "same cost as regular cleaning"
+    // If true, use recurring rate; otherwise use one-time rate (default)
+    const deepCleanRate = bookingData.adminDeepCleanSameCost ? hourlyRate : oneTimeRate;
     
     // First deep clean: use configured extra hours (or default to 50% of totalHours)
     const defaultExtraHours = Math.round(totalHours * 0.5 * 2) / 2; // Default: 50% extra, rounded to 0.5
@@ -319,6 +319,7 @@ export const useDomesticHardcodedCalculations = (bookingData: DomesticBookingDat
     bookingData.serviceFrequency,
     bookingData.wantsFirstDeepClean,
     bookingData.firstDeepCleanExtraHours,
+    bookingData.adminDeepCleanSameCost,
     bookingData.hasOvenCleaning,
     bookingData.ovenType,
     bookingData.cleaningProducts,
