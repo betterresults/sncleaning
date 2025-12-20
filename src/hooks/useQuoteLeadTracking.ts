@@ -91,44 +91,71 @@ const getSessionId = (): string => {
   return sessionId;
 };
 
-// Get UTM parameters from URL (check current URL first, then referrer)
+// Get UTM parameters from URL (check current URL first, then referrer, then localStorage)
 const getUtmParams = () => {
-  // First check current URL
-  let params = new URLSearchParams(window.location.search);
-  
-  // If no UTM params in current URL, check the referrer URL
-  if (!params.get('utm_source') && document.referrer) {
-    try {
-      const referrerUrl = new URL(document.referrer);
-      params = new URLSearchParams(referrerUrl.search);
-    } catch {
-      // Invalid referrer URL, ignore
-    }
-  }
-  
-  // Also check localStorage for originally captured UTM params
+  // First check localStorage for originally captured UTM params (highest priority - these were captured on first landing)
   const storedParams = localStorage.getItem('quote_utm_params');
-  if (storedParams && !params.get('utm_source')) {
+  if (storedParams) {
     try {
       const parsed = JSON.parse(storedParams);
-      return {
-        utm_source: parsed.utm_source || null,
-        utm_medium: parsed.utm_medium || null,
-        utm_campaign: parsed.utm_campaign || null,
-        utm_term: parsed.utm_term || null,
-        utm_content: parsed.utm_content || null,
-      };
+      if (parsed.utm_source || parsed.utm_medium || parsed.utm_campaign) {
+        console.log('📊 Using stored UTM params:', parsed);
+        return {
+          utm_source: parsed.utm_source || null,
+          utm_medium: parsed.utm_medium || null,
+          utm_campaign: parsed.utm_campaign || null,
+          utm_term: parsed.utm_term || null,
+          utm_content: parsed.utm_content || null,
+        };
+      }
     } catch {
       // Invalid JSON, ignore
     }
   }
   
+  // Check current URL
+  let params = new URLSearchParams(window.location.search);
+  
+  if (params.get('utm_source') || params.get('utm_medium') || params.get('utm_campaign')) {
+    const utmParams = {
+      utm_source: params.get('utm_source') || null,
+      utm_medium: params.get('utm_medium') || null,
+      utm_campaign: params.get('utm_campaign') || null,
+      utm_term: params.get('utm_term') || null,
+      utm_content: params.get('utm_content') || null,
+    };
+    console.log('📊 UTM params from current URL:', utmParams);
+    return utmParams;
+  }
+  
+  // If no UTM params in current URL, check the referrer URL
+  if (document.referrer) {
+    try {
+      const referrerUrl = new URL(document.referrer);
+      params = new URLSearchParams(referrerUrl.search);
+      
+      if (params.get('utm_source') || params.get('utm_medium') || params.get('utm_campaign')) {
+        const utmParams = {
+          utm_source: params.get('utm_source') || null,
+          utm_medium: params.get('utm_medium') || null,
+          utm_campaign: params.get('utm_campaign') || null,
+          utm_term: params.get('utm_term') || null,
+          utm_content: params.get('utm_content') || null,
+        };
+        console.log('📊 UTM params from referrer:', utmParams);
+        return utmParams;
+      }
+    } catch {
+      // Invalid referrer URL, ignore
+    }
+  }
+  
   return {
-    utm_source: params.get('utm_source') || null,
-    utm_medium: params.get('utm_medium') || null,
-    utm_campaign: params.get('utm_campaign') || null,
-    utm_term: params.get('utm_term') || null,
-    utm_content: params.get('utm_content') || null,
+    utm_source: null,
+    utm_medium: null,
+    utm_campaign: null,
+    utm_term: null,
+    utm_content: null,
   };
 };
 
@@ -281,22 +308,31 @@ export const useQuoteLeadTracking = (serviceType: string, options?: TrackingOpti
 
   // Initialize tracking on mount
   useEffect(() => {
-    // Track page landing (separate from quote_leads)
-    trackLanding();
-    
-    // Store UTM params and source for later use
+    // Capture UTM params FIRST before anything else - this is critical!
     const utmParams = getUtmParams();
-    if (Object.values(utmParams).some(v => v)) {
-      localStorage.setItem('quote_utm_params', JSON.stringify(utmParams));
+    console.log('📊 Captured UTM params on mount:', utmParams);
+    
+    // Store UTM params if we found any (even partial)
+    if (utmParams.utm_source || utmParams.utm_medium || utmParams.utm_campaign || utmParams.utm_term || utmParams.utm_content) {
+      // Only store if we don't already have stored params (preserve original landing params)
+      const existingParams = localStorage.getItem('quote_utm_params');
+      if (!existingParams) {
+        localStorage.setItem('quote_utm_params', JSON.stringify(utmParams));
+        console.log('📊 Stored UTM params to localStorage:', utmParams);
+      } else {
+        console.log('📊 UTM params already stored, preserving original:', existingParams);
+      }
     }
     
     // Store source (only on first visit to preserve original source)
     if (!localStorage.getItem('quote_source')) {
-      localStorage.setItem('quote_source', determineSource());
+      const source = determineSource();
+      localStorage.setItem('quote_source', source);
+      console.log('📊 Stored source:', source);
     }
-
-    // Note: Original landing URL should be captured site-wide (see App.tsx or index.html)
-    // This hook runs too late (on booking form) to capture the true original landing URL
+    
+    // Track page landing (separate from quote_leads)
+    trackLanding();
 
     // Start heartbeat interval (only if record exists)
     heartbeatInterval.current = setInterval(() => {
