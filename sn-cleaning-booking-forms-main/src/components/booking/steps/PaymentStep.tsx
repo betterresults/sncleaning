@@ -1433,25 +1433,32 @@ useEffect(() => {
             
             <CollapsibleContent>
               <div className="px-4 pb-4 space-y-4">
-                <Input
-                  placeholder="Street Address"
-                  value={data.street || ''}
-                  onChange={(e) => onUpdate({ street: e.target.value })}
-                  className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
-                />
-                
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <Input
-                    placeholder="Postcode"
-                    value={data.postcode || ''}
-                    onChange={(e) => onUpdate({ postcode: e.target.value })}
+                    placeholder="House No."
+                    value={data.houseNumber || ''}
+                    onChange={(e) => onUpdate({ houseNumber: e.target.value })}
                     className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
                   />
-                  
+                  <Input
+                    placeholder="Street Address"
+                    value={data.street || ''}
+                    onChange={(e) => onUpdate({ street: e.target.value })}
+                    className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400 col-span-2"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
                   <Input
                     placeholder="City"
                     value={data.city || ''}
                     onChange={(e) => onUpdate({ city: e.target.value })}
+                    className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
+                  />
+                  <Input
+                    placeholder="Postcode"
+                    value={data.postcode || ''}
+                    onChange={(e) => onUpdate({ postcode: e.target.value })}
                     className="h-16 text-lg rounded-2xl border-2 border-gray-200 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400"
                   />
                 </div>
