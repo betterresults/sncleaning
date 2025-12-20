@@ -3,6 +3,71 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Building, Home, Users, Droplets, HardHat, Layers, Sparkles, ArrowRight } from 'lucide-react';
 import { useFunnelTracking } from '@/hooks/useFunnelTracking';
 
+// Capture and store UTM params and source on first landing - this is critical!
+const captureTrackingParams = () => {
+  const params = new URLSearchParams(window.location.search);
+  const utmParams = {
+    utm_source: params.get('utm_source') || null,
+    utm_medium: params.get('utm_medium') || null,
+    utm_campaign: params.get('utm_campaign') || null,
+    utm_term: params.get('utm_term') || null,
+    utm_content: params.get('utm_content') || null,
+  };
+  
+  // Always store if we have UTM params (overwrite any stale data from previous sessions)
+  if (utmParams.utm_source || utmParams.utm_medium || utmParams.utm_campaign) {
+    localStorage.setItem('quote_utm_params', JSON.stringify(utmParams));
+    localStorage.setItem('quote_source', utmParams.utm_source?.toLowerCase() || 'website');
+    console.log('📊 ChooseService: Captured UTM params:', utmParams);
+  } else {
+    // Determine source from referrer if no UTM params
+    const referrer = document.referrer;
+    if (referrer) {
+      try {
+        const referrerUrl = new URL(referrer);
+        const hostname = referrerUrl.hostname.toLowerCase();
+        
+        // Skip self-referrals
+        if (!hostname.includes('sncleaningservices') && 
+            !hostname.includes('lovable') && 
+            !hostname.includes('lovableproject')) {
+          
+          let source = 'website';
+          if (hostname.includes('google')) source = 'google';
+          else if (hostname.includes('facebook') || hostname.includes('fb.com') || hostname.includes('m.facebook')) source = 'facebook';
+          else if (hostname.includes('instagram')) source = 'instagram';
+          else if (hostname.includes('tiktok')) source = 'tiktok';
+          else if (hostname.includes('twitter') || hostname.includes('x.com')) source = 'twitter';
+          else if (hostname.includes('linkedin')) source = 'linkedin';
+          else if (hostname.includes('bing')) source = 'bing';
+          else if (hostname.includes('yahoo')) source = 'yahoo';
+          else if (hostname.includes('pinterest')) source = 'pinterest';
+          else if (hostname.includes('youtube')) source = 'youtube';
+          else if (hostname.includes('nextdoor')) source = 'nextdoor';
+          else source = hostname.replace('www.', '').replace('m.', '');
+          
+          localStorage.setItem('quote_source', source);
+          console.log('📊 ChooseService: Source from referrer:', source);
+        }
+      } catch {
+        // Invalid referrer URL
+      }
+    }
+    
+    // If no source stored yet and no referrer, it's direct
+    if (!localStorage.getItem('quote_source')) {
+      localStorage.setItem('quote_source', 'direct');
+      console.log('📊 ChooseService: Direct traffic');
+    }
+  }
+  
+  // Store the original landing URL with all params for reference
+  if (!localStorage.getItem('quote_original_landing_url')) {
+    localStorage.setItem('quote_original_landing_url', window.location.href);
+    console.log('📊 ChooseService: Stored original landing URL:', window.location.href);
+  }
+};
+
 const services = [
   {
     id: 'domestic-cleaning',
@@ -61,8 +126,9 @@ const ChooseService = () => {
   const email = searchParams.get('email') || '';
   const { trackPageView, trackServiceClick } = useFunnelTracking();
 
-  // Track page view on mount
+  // Capture tracking params IMMEDIATELY on mount - before anything else
   useEffect(() => {
+    captureTrackingParams();
     console.log('🎯 ChooseService: Tracking page view for /services');
     trackPageView('services_page', { postcode });
   }, []);
