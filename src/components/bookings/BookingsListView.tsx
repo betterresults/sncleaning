@@ -748,7 +748,7 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
                         <User className="w-4 h-4 text-white" />
                       </div>
                       <span className="font-medium truncate">{cleanerName}</span>
-                      {booking.sub_cleaners_count && booking.sub_cleaners_count > 0 && (
+                      {(booking.sub_cleaners_count ?? 0) > 0 && (
                         <Badge variant="secondary" className="text-xs px-1.5 py-0.5 flex items-center gap-1">
                           <Users className="w-3 h-3" />
                           +{booking.sub_cleaners_count}
@@ -1011,7 +1011,7 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
                       <User className="w-3 h-3 text-white" />
                     </div>
                     <span className="font-medium">{cleanerName}</span>
-                    {booking.sub_cleaners_count && booking.sub_cleaners_count > 0 && (
+                    {(booking.sub_cleaners_count ?? 0) > 0 && (
                       <Badge variant="secondary" className="text-xs px-1.5 py-0.5 flex items-center gap-1">
                         <Users className="w-3 h-3" />
                         +{booking.sub_cleaners_count}
