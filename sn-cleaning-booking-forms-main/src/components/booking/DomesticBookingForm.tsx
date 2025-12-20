@@ -336,6 +336,9 @@ const DomesticBookingForm: React.FC = () => {
         initializeFromResume(refSessionId);
       }
       
+      // Mark that user came from a quote link - suppress exit popup
+      sessionStorage.setItem('came_from_quote_link', 'true');
+      
       return;
     }
     
@@ -566,9 +569,10 @@ const DomesticBookingForm: React.FC = () => {
     
     const handlePopState = (e: PopStateEvent) => {
       const emailAlreadySent = sessionStorage.getItem('quote_email_sent') === 'true';
+      const cameFromQuoteLink = sessionStorage.getItem('came_from_quote_link') === 'true';
       
-      // If quote was already sent, allow navigation
-      if (emailAlreadySent) {
+      // If quote was already sent or user came from quote link, allow navigation
+      if (emailAlreadySent || cameFromQuoteLink) {
         return;
       }
       
@@ -591,9 +595,15 @@ const DomesticBookingForm: React.FC = () => {
     const handleVisibilityChange = () => {
       const alreadyShownThisSession = sessionStorage.getItem('exit_popup_shown') === 'true';
       const emailAlreadySent = sessionStorage.getItem('quote_email_sent') === 'true';
+      const cameFromQuoteLink = sessionStorage.getItem('came_from_quote_link') === 'true';
       
       // Don't trigger exit popup on payment step - user may be adding card details in Stripe
       if (currentStep === 3) {
+        return;
+      }
+      
+      // Don't trigger exit popup if user came from a quote link - they already have the quote
+      if (cameFromQuoteLink) {
         return;
       }
       
