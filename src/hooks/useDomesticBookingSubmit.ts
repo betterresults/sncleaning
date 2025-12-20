@@ -431,7 +431,7 @@ export const useDomesticBookingSubmit = () => {
         description: `Your domestic cleaning booking has been confirmed.`,
       });
 
-      return { success: true, bookingId: booking.id };
+      return { success: true, bookingId: booking.id, customerId };
     } catch (error: any) {
       console.error('Booking submission error:', error);
       toast({
