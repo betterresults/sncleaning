@@ -104,3 +104,9 @@ verify_jwt = false
 
 [functions.stripe-add-card-manual]
 verify_jwt = true
+
+[functions.stripe-create-setup-intent]
+verify_jwt = true
+
+[functions.stripe-save-payment-method]
+verify_jwt = true
