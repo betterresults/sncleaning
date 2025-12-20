@@ -191,7 +191,20 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
             today.setHours(0, 0, 0, 0);
             const checkDate = new Date(date);
             checkDate.setHours(0, 0, 0, 0);
-            return checkDate < today;
+            
+            // Block past dates
+            if (checkDate < today) return true;
+            
+            // Block holiday dates (Dec 24, Dec 25, Dec 31, Jan 1)
+            const month = checkDate.getMonth();
+            const day = checkDate.getDate();
+            const isHoliday = 
+              (month === 11 && day === 24) || // Dec 24
+              (month === 11 && day === 25) || // Dec 25
+              (month === 11 && day === 31) || // Dec 31
+              (month === 0 && day === 1);     // Jan 1
+            
+            return isHoliday;
           }}
           className="rounded-2xl pointer-events-auto w-full"
         />
