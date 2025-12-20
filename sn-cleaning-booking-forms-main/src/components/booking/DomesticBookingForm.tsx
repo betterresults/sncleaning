@@ -449,6 +449,23 @@ const DomesticBookingForm: React.FC = () => {
 
         // Use the hook's initialize function to set session ID properly in localStorage
         initializeFromResume(resumeSessionId);
+        
+        // Mark that user came from a quote link - suppress exit popup
+        sessionStorage.setItem('came_from_quote_link', 'true');
+        
+        // Auto-navigate to step 3 (payment/summary) if data is complete
+        const hasPropertyData = data.property_type && data.bedrooms && data.bathrooms && data.frequency;
+        const hasScheduleData = data.selected_date && data.selected_time;
+        const hasContactData = data.first_name && data.email;
+        
+        if (hasPropertyData && hasScheduleData && hasContactData) {
+          setIsQuoteLinkMode(true);
+          // Small delay to ensure state is updated
+          setTimeout(() => {
+            setCurrentStep(3);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }, 100);
+        }
 
       } catch (err) {
         console.error('Error loading resume data:', err);
