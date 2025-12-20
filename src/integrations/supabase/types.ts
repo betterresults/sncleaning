@@ -2764,15 +2764,10 @@ export type Database = {
       populate_sample_activity_logs: { Args: never; Returns: undefined }
       round_bookings_prices: { Args: never; Returns: number }
       round_past_bookings_prices: { Args: never; Returns: number }
-      send_booking_notification:
-        | {
-            Args: { booking_id: number; event_type: string }
-            Returns: undefined
-          }
-        | {
-            Args: { booking_id: number; event_type: string }
-            Returns: undefined
-          }
+      send_booking_notification: {
+        Args: { booking_id: number; event_type: string }
+        Returns: undefined
+      }
       send_email_notification: {
         Args: {
           p_recipient_email: string
