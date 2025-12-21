@@ -83,7 +83,42 @@ const CleanerUpcomingBookings = () => {
         // Continue with just primary bookings
       }
 
-      let allBookings = [...(primaryBookings || [])];
+      // For primary bookings, fetch any sub-cleaners to adjust primary cleaner's pay
+      const primaryBookingIds = (primaryBookings || []).map(b => b.id);
+      let subCleanersForPrimary: { primary_booking_id: number; hours_assigned: number; cleaner_pay: number }[] = [];
+      
+      if (primaryBookingIds.length > 0) {
+        const { data: subCleanersData, error: subCleanersError } = await supabase
+          .from('sub_bookings')
+          .select('primary_booking_id, hours_assigned, cleaner_pay')
+          .in('primary_booking_id', primaryBookingIds);
+        
+        if (!subCleanersError && subCleanersData) {
+          subCleanersForPrimary = subCleanersData;
+        }
+      }
+
+      // Adjust primary cleaner's pay based on sub-cleaners
+      let allBookings = (primaryBookings || []).map(booking => {
+        const subCleaners = subCleanersForPrimary.filter(sc => sc.primary_booking_id === booking.id);
+        if (subCleaners.length > 0) {
+          // Calculate total hours assigned to sub-cleaners
+          const subCleanerHours = subCleaners.reduce((sum, sc) => sum + (sc.hours_assigned || 0), 0);
+          const totalHours = booking.total_hours || 0;
+          const remainingHours = Math.max(0, totalHours - subCleanerHours);
+          
+          // Recalculate primary cleaner's pay based on remaining hours
+          const cleanerRate = booking.cleaner_rate || 20; // Default to £20/hour
+          const adjustedPay = remainingHours * cleanerRate;
+          
+          return {
+            ...booking,
+            cleaner_pay: adjustedPay,
+            total_hours: remainingHours
+          };
+        }
+        return booking;
+      });
 
       // If there are sub-bookings, fetch those booking details
       if (subBookingsData && subBookingsData.length > 0) {
