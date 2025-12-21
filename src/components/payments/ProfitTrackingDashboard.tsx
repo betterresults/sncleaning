@@ -11,6 +11,13 @@ import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { ProfitTrackingTable } from './ProfitTrackingTable';
 import { DateRange } from 'react-day-picker';
 
+interface SubCleaner {
+  cleaner_id: number;
+  cleaner_pay: number;
+  hours_assigned: number;
+  cleaner_name?: string;
+}
+
 interface CompletedBooking {
   id: number;
   date_time: string;
@@ -21,7 +28,10 @@ interface CompletedBooking {
   address: string;
   postcode: string;
   cleaner: number;
+  cleaner_name?: string;
   customer: number;
+  sub_cleaners?: SubCleaner[];
+  total_cleaner_pay?: number; // Combined primary + sub-cleaners
 }
 
 export const ProfitTrackingDashboard = () => {
@@ -59,10 +69,73 @@ export const ProfitTrackingDashboard = () => {
       query = query.lte('date_time', endDate.toISOString());
     }
 
-    const { data, error } = await query.order('date_time', { ascending: false });
+    const { data: bookings, error } = await query.order('date_time', { ascending: false });
 
     if (error) throw error;
-    return (data || []) as any;
+    
+    if (!bookings || bookings.length === 0) return [];
+
+    // Get all booking IDs to fetch sub-cleaners
+    const bookingIds = bookings.map(b => b.id);
+
+    // Fetch sub-cleaners for these bookings
+    const { data: subBookings, error: subError } = await supabase
+      .from('sub_bookings')
+      .select('primary_booking_id, cleaner_id, cleaner_pay, hours_assigned')
+      .in('primary_booking_id', bookingIds);
+
+    if (subError) {
+      console.error('Error fetching sub-bookings:', subError);
+    }
+
+    // Fetch cleaner names for all cleaners (primary + sub)
+    const allCleanerIds = new Set<number>();
+    bookings.forEach(b => { if (b.cleaner) allCleanerIds.add(b.cleaner); });
+    (subBookings || []).forEach(sb => { if (sb.cleaner_id) allCleanerIds.add(sb.cleaner_id); });
+
+    let cleanerNames: Record<number, string> = {};
+    if (allCleanerIds.size > 0) {
+      const { data: cleaners } = await supabase
+        .from('cleaners')
+        .select('id, first_name, last_name')
+        .in('id', Array.from(allCleanerIds));
+
+      if (cleaners) {
+        cleaners.forEach(c => {
+          cleanerNames[c.id] = `${c.first_name || ''} ${c.last_name || ''}`.trim() || `Cleaner ${c.id}`;
+        });
+      }
+    }
+
+    // Group sub-bookings by primary booking ID
+    const subBookingsByBooking: Record<number, SubCleaner[]> = {};
+    (subBookings || []).forEach(sb => {
+      if (!subBookingsByBooking[sb.primary_booking_id]) {
+        subBookingsByBooking[sb.primary_booking_id] = [];
+      }
+      subBookingsByBooking[sb.primary_booking_id].push({
+        cleaner_id: sb.cleaner_id,
+        cleaner_pay: sb.cleaner_pay || 0,
+        hours_assigned: sb.hours_assigned || 0,
+        cleaner_name: cleanerNames[sb.cleaner_id] || `Cleaner ${sb.cleaner_id}`
+      });
+    });
+
+    // Enrich bookings with sub-cleaner data and calculate total cleaner pay
+    const enrichedBookings = bookings.map(booking => {
+      const subCleaners = subBookingsByBooking[booking.id] || [];
+      const primaryPay = booking.cleaner_pay || 0;
+      const subCleanersPay = subCleaners.reduce((sum, sc) => sum + (sc.cleaner_pay || 0), 0);
+      
+      return {
+        ...booking,
+        cleaner_name: cleanerNames[booking.cleaner] || (booking.cleaner ? `Cleaner ${booking.cleaner}` : 'Unassigned'),
+        sub_cleaners: subCleaners,
+        total_cleaner_pay: primaryPay + subCleanersPay
+      };
+    });
+
+    return enrichedBookings as CompletedBooking[];
   };
 
   const { data: completedBookings = [], isLoading } = useQuery({
@@ -76,8 +149,9 @@ export const ProfitTrackingDashboard = () => {
       return sum + revenue;
     }, 0);
 
+    // Use total_cleaner_pay which includes sub-cleaners
     const totalCleanerPay = completedBookings.reduce((sum, booking) => {
-      return sum + (booking.cleaner_pay || 0);
+      return sum + (booking.total_cleaner_pay || booking.cleaner_pay || 0);
     }, 0);
 
     const totalProfit = totalRevenue - totalCleanerPay;
