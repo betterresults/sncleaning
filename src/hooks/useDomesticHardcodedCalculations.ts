@@ -125,7 +125,10 @@ export const useDomesticHardcodedCalculations = (bookingData: DomesticBookingDat
     }
 
     // BASE TIME CALCULATION
-    const minutesSum = propertyTypeTime + bedroomsTime + bathroomsTime + additionalRoomsTime + propertyFeaturesTime + ovenCleaningTime;
+    // Note: ovenCleaningTime is intentionally excluded from minutesSum because oven cleaning
+    // is priced separately (ovenCleaningCost) and should not affect the base cleaning hours.
+    // Including it would cause user-adjusted hours to reset when oven cleaning is toggled.
+    const minutesSum = propertyTypeTime + bedroomsTime + bathroomsTime + additionalRoomsTime + propertyFeaturesTime;
     const totalMinutes = minutesSum * serviceFrequencyTime;
 
     // Convert to hours with rounding
