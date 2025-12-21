@@ -156,6 +156,7 @@ const CardForm: React.FC<CardFormProps> = ({ customerId, onSuccess, onCancel }) 
         <div className="p-3 border rounded-md bg-background">
           <CardElement
             options={{
+              disableLink: true,
               style: {
                 base: {
                   fontSize: '16px',
