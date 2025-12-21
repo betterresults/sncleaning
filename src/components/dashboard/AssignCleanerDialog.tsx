@@ -14,6 +14,8 @@ import { Badge } from '@/components/ui/badge';
 
 interface Cleaner {
   id: number;
+  first_name: string;
+  last_name: string;
   full_name: string;
   presentage_rate: number;
   hourly_rate: number;
@@ -114,8 +116,8 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
     try {
       const { data, error } = await supabase
         .from('cleaners')
-        .select('id, full_name, presentage_rate, hourly_rate')
-        .order('full_name');
+        .select('id, first_name, last_name, full_name, presentage_rate, hourly_rate')
+        .order('first_name');
 
       if (error) {
         console.error('Error fetching cleaners:', error);
@@ -359,16 +361,19 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                 <SelectValue placeholder="Choose a cleaner" />
               </SelectTrigger>
               <SelectContent>
-                {cleaners.map((cleaner) => (
-                  <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
-                    <div className="flex items-center justify-between w-full">
-                      <span>{cleaner.full_name}</span>
-                      <span className="text-xs text-muted-foreground ml-4">
-                        {cleaner.presentage_rate}% • £{cleaner.hourly_rate}/hr
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
+                {cleaners.map((cleaner) => {
+                  const displayName = cleaner.full_name || `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim() || 'Unnamed';
+                  return (
+                    <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
+                      <div className="flex items-center justify-between w-full">
+                        <span>{displayName}</span>
+                        <span className="text-xs text-muted-foreground ml-4">
+                          {cleaner.presentage_rate || 0}% • £{cleaner.hourly_rate || 0}/hr
+                        </span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
