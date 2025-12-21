@@ -258,6 +258,7 @@ export function UpcomingBookingsFilters({ filters, onFiltersChange, cleaners, on
                     </SelectTrigger>
                     <SelectContent className="bg-white shadow-lg rounded-lg z-[100]">
                       <SelectItem value="all">All cleaners</SelectItem>
+                      <SelectItem value="unassigned">Unassigned only</SelectItem>
                       {cleaners.map((cleaner) => (
                         <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
                           {cleaner.first_name} {cleaner.last_name}

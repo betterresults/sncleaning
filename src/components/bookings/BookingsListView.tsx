@@ -86,9 +86,10 @@ interface TodayBookingsCardsProps {
     dateFrom: string;
     dateTo: string;
   };
+  initialCleanerFilter?: string;
 }
 
-const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
+const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter }: TodayBookingsCardsProps) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
@@ -282,9 +283,13 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
 
     // Apply cleaner filter
     if (filters.cleanerId && filters.cleanerId !== 'all') {
-      filtered = filtered.filter(booking => 
-        booking.cleaner === parseInt(filters.cleanerId)
-      );
+      if (filters.cleanerId === 'unassigned') {
+        filtered = filtered.filter(booking => !booking.cleaner);
+      } else {
+        filtered = filtered.filter(booking => 
+          booking.cleaner === parseInt(filters.cleanerId)
+        );
+      }
     }
 
     // Apply payment method filter
@@ -342,6 +347,13 @@ const BookingsListView = ({ dashboardDateFilter }: TodayBookingsCardsProps) => {
     fetchData();
     setCurrentPage(1); // Reset to page 1 when filter changes
   }, [dashboardDateFilter]);
+
+  // Sync cleaner filter from parent when it changes
+  useEffect(() => {
+    if (initialCleanerFilter && initialCleanerFilter !== filters.cleanerId) {
+      setFilters(prev => ({ ...prev, cleanerId: initialCleanerFilter }));
+    }
+  }, [initialCleanerFilter]);
 
   useEffect(() => {
     applyFilters();

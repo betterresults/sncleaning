@@ -633,12 +633,18 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
     <div className="space-y-4">
       {/* Unassigned Bookings Notification */}
       {unassignedBookings.length > 0 && (
-        <div className="bg-gradient-to-r from-red-50 to-rose-100 border border-red-200 rounded-xl p-4 shadow-sm">
+        <div 
+          className="bg-gradient-to-r from-red-50 to-rose-100 border border-red-200 rounded-xl p-4 shadow-sm cursor-pointer hover:from-red-100 hover:to-rose-150 transition-colors"
+          onClick={() => {
+            setFilters(prev => ({ ...prev, cleanerId: 'unassigned' }));
+          }}
+        >
           <div className="flex items-center justify-center space-x-2">
             <AlertTriangle className="h-5 w-5 text-red-600 animate-pulse" />
             <span className="text-red-800 font-semibold">
               {unassignedBookings.length} unassigned booking{unassignedBookings.length > 1 ? 's' : ''} require{unassignedBookings.length === 1 ? 's' : ''} attention
             </span>
+            <span className="text-red-600 text-sm">(click to filter)</span>
           </div>
         </div>
       )}
@@ -670,6 +676,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
           {viewMode === 'list' ? (
             <BookingsListView 
               dashboardDateFilter={dashboardDateFilter}
+              initialCleanerFilter={filters.cleanerId}
             />
           ) : (
             <div className="p-4" style={{ height: '600px' }}>
