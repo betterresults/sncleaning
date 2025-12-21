@@ -185,6 +185,36 @@ const styles = StyleSheet.create({
     color: '#854d0e',
     lineHeight: 1.4,
   },
+  bankDetailsSection: {
+    backgroundColor: '#eff6ff',
+    padding: 15,
+    borderRadius: 8,
+    marginTop: 15,
+    border: '1 solid #bfdbfe',
+  },
+  bankDetailsTitle: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#1e40af',
+    marginBottom: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  bankDetailsRow: {
+    flexDirection: 'row',
+    marginBottom: 4,
+  },
+  bankDetailsLabel: {
+    width: '35%',
+    fontSize: 10,
+    color: '#3b82f6',
+    fontWeight: 'bold',
+  },
+  bankDetailsValue: {
+    width: '65%',
+    fontSize: 10,
+    color: '#1e3a8a',
+  },
 });
 
 interface BookingInvoicePDFProps {
@@ -227,6 +257,61 @@ export const BookingInvoicePDF: React.FC<BookingInvoicePDFProps> = ({ booking, c
       .map(w => (w ? w.charAt(0).toUpperCase() + w.slice(1) : w))
       .join(' ');
   };
+
+  // Parse additional_details and format as human-readable text
+  const formatAdditionalDetails = (details?: string | null): string | null => {
+    if (!details) return null;
+    
+    // Try to parse as JSON
+    try {
+      const parsed = JSON.parse(details);
+      const parts: string[] = [];
+      
+      // Handle cleaning products
+      if (parsed.cleaningProducts) {
+        const products = parsed.cleaningProducts;
+        if (products.type === 'products') {
+          parts.push('Cleaning products: Customer will provide');
+        } else if (products.type === 'bring') {
+          parts.push('Cleaning products: Cleaner will bring');
+        }
+        if (products.arrangement) {
+          parts.push(`Arrangement: ${products.arrangement}`);
+        }
+      }
+      
+      // Handle access info
+      if (parsed.access) {
+        const access = parsed.access;
+        if (access.method === 'meet') {
+          parts.push('Access: Customer will meet cleaner');
+        } else if (access.method === 'key') {
+          parts.push('Access: Key collection');
+        } else if (access.method === 'lockbox') {
+          parts.push('Access: Lockbox');
+        } else if (access.method) {
+          parts.push(`Access: ${access.method}`);
+        }
+        if (access.notes) {
+          parts.push(`Access notes: ${access.notes}`);
+        }
+      }
+      
+      // Handle any other string properties
+      Object.entries(parsed).forEach(([key, value]) => {
+        if (key !== 'cleaningProducts' && key !== 'access' && typeof value === 'string' && value) {
+          parts.push(`${humanize(key)}: ${value}`);
+        }
+      });
+      
+      return parts.length > 0 ? parts.join('\n') : null;
+    } catch {
+      // Not JSON, return as-is if it's not empty
+      return details.trim() || null;
+    }
+  };
+
+  const formattedNotes = formatAdditionalDetails(booking.additional_details);
 
   const bookingDate = booking.date_time 
     ? format(new Date(booking.date_time), 'dd MMMM yyyy')
@@ -351,13 +436,37 @@ export const BookingInvoicePDF: React.FC<BookingInvoicePDFProps> = ({ booking, c
             </View>
           </View>
 
+          {/* Bank Details */}
+          <View style={styles.bankDetailsSection}>
+            <Text style={styles.bankDetailsTitle}>Bank Transfer Details</Text>
+            <View style={styles.bankDetailsRow}>
+              <Text style={styles.bankDetailsLabel}>Account Name:</Text>
+              <Text style={styles.bankDetailsValue}>SN CORE LTD</Text>
+            </View>
+            <View style={styles.bankDetailsRow}>
+              <Text style={styles.bankDetailsLabel}>Sort Code:</Text>
+              <Text style={styles.bankDetailsValue}>04-29-09</Text>
+            </View>
+            <View style={styles.bankDetailsRow}>
+              <Text style={styles.bankDetailsLabel}>Account Number:</Text>
+              <Text style={styles.bankDetailsValue}>85267368</Text>
+            </View>
+            <View style={styles.bankDetailsRow}>
+              <Text style={styles.bankDetailsLabel}>Reference:</Text>
+              <Text style={styles.bankDetailsValue}>{booking.id}</Text>
+            </View>
+            <Text style={{ fontSize: 8, color: '#1e40af', marginTop: 8, fontStyle: 'italic' }}>
+              Please use your booking ID as the payment reference.
+            </Text>
+          </View>
+
           {/* Notes */}
-          {booking.additional_details && (
+          {formattedNotes && (
             <View style={styles.notesSection}>
               <Text style={{ fontSize: 10, fontWeight: 'bold', marginBottom: 4, color: '#854d0e' }}>
                 Additional Notes:
               </Text>
-              <Text style={styles.notesText}>{booking.additional_details}</Text>
+              <Text style={styles.notesText}>{formattedNotes}</Text>
             </View>
           )}
         </View>
