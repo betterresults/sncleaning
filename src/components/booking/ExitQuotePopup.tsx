@@ -16,6 +16,9 @@ import { useToast } from "@/hooks/use-toast";
 interface QuoteData {
   totalCost: number;
   estimatedHours: number | null;
+  weeklyHours?: number | null; // Regular weekly hours when first deep clean is selected
+  wantsFirstDeepClean?: boolean; // Whether first deep clean option was selected
+  firstDeepCleanHours?: number | null; // Total hours for first deep clean
   propertyType: string;
   bedrooms: string;
   bathrooms: string;
@@ -203,7 +206,13 @@ export const ExitQuotePopup: React.FC<ExitQuotePopupProps> = ({
                     <span className="text-slate-500">First Cleaning Cost:</span>
                     <span className="font-semibold text-slate-800">£{quoteData.totalCost.toFixed(2)}</span>
                   </div>
-                  {quoteData.estimatedHours && (
+                  {/* Show first deep clean hours if applicable, otherwise show regular estimated hours */}
+                  {(quoteData.wantsFirstDeepClean && quoteData.firstDeepCleanHours) ? (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500">First Cleaning Duration:</span>
+                      <span className="font-medium text-slate-700">{quoteData.firstDeepCleanHours} hours</span>
+                    </div>
+                  ) : quoteData.estimatedHours && (
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-500">Duration:</span>
                       <span className="font-medium text-slate-700">{quoteData.estimatedHours} hours</span>

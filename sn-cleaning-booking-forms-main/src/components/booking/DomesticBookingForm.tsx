@@ -952,6 +952,7 @@ const DomesticBookingForm: React.FC = () => {
             estimatedHours: displayHours,
             weeklyHours: calculations.totalHours, // Regular weekly hours
             wantsFirstDeepClean: calculations.wantsFirstDeepClean,
+            firstDeepCleanHours: calculations.firstDeepCleanHours, // Hours for first deep clean
             weeklyCost: calculations.regularRecurringCost, // Recurring cost
             propertyType: bookingData.propertyType,
             bedrooms: bookingData.bedrooms,
@@ -988,8 +989,11 @@ const DomesticBookingForm: React.FC = () => {
         onOpenChange={setShowExitPopup}
         email={bookingData.email}
         quoteData={{
-          totalCost: bookingData.totalCost,
-          estimatedHours: bookingData.estimatedHours,
+          totalCost: calculatedTotal,
+          estimatedHours: displayHours,
+          weeklyHours: calculations.totalHours, // Regular weekly hours
+          wantsFirstDeepClean: calculations.wantsFirstDeepClean,
+          firstDeepCleanHours: calculations.firstDeepCleanHours, // Hours for first deep clean
           propertyType: bookingData.propertyType,
           bedrooms: bookingData.bedrooms,
           bathrooms: bookingData.bathrooms,
@@ -1001,7 +1005,7 @@ const DomesticBookingForm: React.FC = () => {
           postcode: bookingData.postcode,
           shortNoticeCharge: bookingData.shortNoticeCharge,
           isFirstTimeCustomer: bookingData.isFirstTimeCustomer,
-          discountAmount: bookingData.isFirstTimeCustomer ? bookingData.totalCost * 0.10 / 0.90 : 0,
+          discountAmount: bookingData.isFirstTimeCustomer ? calculatedTotal * 0.10 / 0.90 : 0,
         }}
         sessionId={sessionId}
         serviceType="Domestic"
