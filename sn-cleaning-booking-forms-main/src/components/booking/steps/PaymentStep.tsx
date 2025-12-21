@@ -448,11 +448,7 @@ useEffect(() => {
           notes: data.notes,
           additionalDetails: data,
           cleanerId: data.cleanerId, // Include cleaner assignment
-          agentUserId: data.agentUserId, // Agent attribution from quote link
-          // Recurring service fields for domestic/commercial
-          weeklyCost: data.weeklyCost,
-          regularHours: data.wantsFirstDeepClean ? data.estimatedHours : data.totalHours,
-          isFirstTimeCustomer: data.isFirstTimeCustomer
+          agentUserId: data.agentUserId // Agent attribution from quote link
         }, true);
 
         if (!result.success || !result.bookingId) {
@@ -534,11 +530,7 @@ useEffect(() => {
           hourlyRate: data.hourlyRate,
           notes: data.notes,
           additionalDetails: data,
-          paymentMethod: 'Bank Transfer',
-          // Recurring service fields for domestic/commercial
-          weeklyCost: data.weeklyCost,
-          regularHours: data.wantsFirstDeepClean ? data.estimatedHours : data.totalHours,
-          isFirstTimeCustomer: data.isFirstTimeCustomer
+          paymentMethod: 'Bank Transfer'
         }, true); // Skip payment auth for bank transfer
 
         if (!result.success || !result.bookingId) {
@@ -637,11 +629,7 @@ useEffect(() => {
           additionalDetails: data,
           cleanerId: data.cleanerId,
           paymentMethod: 'card', // Save as 'card' to trigger payment collection notification
-          agentUserId: data.agentUserId, // Agent attribution from quote link
-          // Recurring service fields for domestic/commercial
-          weeklyCost: data.weeklyCost,
-          regularHours: data.wantsFirstDeepClean ? data.estimatedHours : data.totalHours,
-          isFirstTimeCustomer: data.isFirstTimeCustomer
+          agentUserId: data.agentUserId // Agent attribution from quote link
         }, true);
 
         if (!result.success || !result.bookingId) {
@@ -721,11 +709,7 @@ useEffect(() => {
           additionalDetails: data,
           cleanerId: data.cleanerId,
           paymentMethod: 'bank-transfer',
-          agentUserId: data.agentUserId, // Agent attribution from quote link
-          // Recurring service fields for domestic/commercial
-          weeklyCost: data.weeklyCost,
-          regularHours: data.wantsFirstDeepClean ? data.estimatedHours : data.totalHours,
-          isFirstTimeCustomer: data.isFirstTimeCustomer
+          agentUserId: data.agentUserId // Agent attribution from quote link
         }, true);
 
         if (!result.success || !result.bookingId) {
@@ -805,11 +789,7 @@ useEffect(() => {
           additionalDetails: data,
           cleanerId: data.cleanerId,
           paymentMethod: null,
-          agentUserId: data.agentUserId, // Agent attribution from quote link
-          // Recurring service fields for domestic/commercial
-          weeklyCost: data.weeklyCost,
-          regularHours: data.wantsFirstDeepClean ? data.estimatedHours : data.totalHours,
-          isFirstTimeCustomer: data.isFirstTimeCustomer
+          agentUserId: data.agentUserId // Agent attribution from quote link
         }, true);
 
         if (!result.success || !result.bookingId) {
@@ -893,11 +873,7 @@ useEffect(() => {
         additionalDetails: data,
         cleanerId: data.cleanerId, // Include cleaner assignment
         paymentMethod: selectedAdminPaymentMethod || (defaultPaymentMethod ? 'Stripe' : null), // Include payment method
-        agentUserId: data.agentUserId, // Agent attribution from quote link
-        // Recurring service fields for domestic/commercial
-        weeklyCost: data.weeklyCost,
-        regularHours: data.wantsFirstDeepClean ? data.estimatedHours : data.totalHours,
-        isFirstTimeCustomer: data.isFirstTimeCustomer
+        agentUserId: data.agentUserId // Agent attribution from quote link
       };
 
       // Check if using a saved payment method (customer's or admin-selected)
