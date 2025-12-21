@@ -15,9 +15,12 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Update recurring service for Sabi to use correct weekly cost from quote
-    // Quote shows: weekly_hours = 2, weekly_cost = £41.40
-    // So cost_per_hour should be £20.70 (£41.40 / 2)
+    console.log('Fixing Sabi recurring service pricing...')
+    
+    // Correct pricing from quote:
+    // - 2 hours weekly
+    // - £23/hour base rate with 10% discount = £20.70/hour
+    // - Weekly cost: 2 × £20.70 = £41.40
     const { data, error } = await supabase
       .from('recurring_services')
       .update({
@@ -28,19 +31,23 @@ Deno.serve(async (req) => {
       .select()
 
     if (error) {
+      console.error('Error updating recurring service:', error)
       throw error
     }
+
+    console.log('Successfully updated:', data)
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Updated Sabi recurring service to correct weekly cost: £41.40 (2 hours × £20.70)',
+        message: 'Updated Sabi recurring service: 2 hours × £20.70/hr (£23 - 10%) = £41.40/week',
         updated: data 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
+    console.error('Error:', error.message)
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }

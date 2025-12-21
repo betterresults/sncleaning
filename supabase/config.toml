@@ -113,3 +113,6 @@ verify_jwt = true
 
 [functions.stripe-get-publishable-key]
 verify_jwt = false
+
+[functions.fix-sabi-recurring-cost]
+verify_jwt = false
