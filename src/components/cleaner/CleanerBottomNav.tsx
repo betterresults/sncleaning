@@ -48,8 +48,8 @@ const CleanerBottomNav = () => {
           >
             <div className="relative">
               <item.icon className="h-6 w-6" />
-              {item.badge && item.badge > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center font-medium">
+              {item.badge !== undefined && item.badge > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center font-medium px-1">
                   {item.badge > 9 ? '9+' : item.badge}
                 </span>
               )}
