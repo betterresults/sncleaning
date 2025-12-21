@@ -6,13 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, subDays, startOfDay, endOfDay, subWeeks, subMonths, isWithinInterval } from 'date-fns';
-import { RefreshCw, Eye, MousePointerClick, FileText, TrendingUp, Trash2, Sparkles, Mail, Settings2, Users, CheckCircle2, Clock, ArrowUpRight, Home, Building, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { RefreshCw, Eye, MousePointerClick, FileText, TrendingUp, Trash2, Sparkles, Mail, Settings2, Users, CheckCircle2, Clock, ArrowUpRight, Home, Building, ChevronLeft, ChevronRight, Calendar, ChevronDown, ChevronUp, Phone, MapPin } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import QuoteLeadDetailPanel from './QuoteLeadDetailPanel';
 
 type TimePeriod = 'today' | 'yesterday' | 'last_week' | 'last_month' | 'last_3_months' | 'all';
 
@@ -95,37 +96,62 @@ interface QuoteLead {
   session_id: string;
   user_id: string | null;
   service_type: string | null;
+  cleaning_type: string | null;
+  property_type: string | null;
   postcode: string | null;
+  address: string | null;
   bedrooms: number | null;
   bathrooms: number | null;
-  calculated_quote: number | null;
-  weekly_cost: number | null;
-  discount_amount: number | null;
-  short_notice_charge: number | null;
-  is_first_time_customer: boolean | null;
+  toilets: number | null;
+  reception_rooms: number | null;
+  kitchen: string | null;
+  additional_rooms: unknown | null;
+  oven_cleaning: boolean | null;
+  oven_size: string | null;
+  ironing_hours: number | null;
+  frequency: string | null;
+  selected_date: string | null;
+  selected_time: string | null;
+  is_flexible: boolean | null;
   first_name: string | null;
   last_name: string | null;
   email: string | null;
   phone: string | null;
-  status: string | null;
-  furthest_step: string | null;
-  source: string | null;
-  referrer: string | null;
-  page_url: string | null;
+  calculated_quote: number | null;
+  recommended_hours: number | null;
+  weekly_cost: number | null;
+  weekly_hours: number | null;
+  discount_amount: number | null;
+  short_notice_charge: number | null;
+  is_first_time_customer: boolean | null;
+  first_deep_clean: boolean | null;
+  property_access: string | null;
+  access_notes: string | null;
+  cleaning_products: string[] | null;
+  equipment_arrangement: string | null;
   utm_source: string | null;
   utm_medium: string | null;
   utm_campaign: string | null;
+  utm_term: string | null;
+  utm_content: string | null;
+  page_url: string | null;
+  referrer: string | null;
+  user_agent: string | null;
+  source: string | null;
+  status: string | null;
+  furthest_step: string | null;
   created_at: string | null;
   updated_at: string | null;
   last_heartbeat: string | null;
   quote_email_sent: boolean | null;
   quote_email_sent_at: string | null;
-  frequency: string | null;
-  cleaning_type: string | null;
-  oven_cleaning: boolean | null;
-  oven_size: string | null;
-  ironing_hours: number | null;
+  confirmation_sent_at: string | null;
+  confirmed_at: string | null;
+  expires_at: string | null;
   created_by_admin_id: string | null;
+  converted_booking_id: number | null;
+  short_code: string | null;
+  agent_user_id: string | null;
 }
 
 interface AdminProfile {
@@ -157,6 +183,7 @@ const QuoteLeadsView = () => {
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [adminProfiles, setAdminProfiles] = useState<Map<string, AdminProfile>>(new Map());
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [visibleColumns, setVisibleColumns] = useState<ColumnKey[]>(() => {
     const saved = localStorage.getItem('quoteLeadsVisibleColumns');
     if (saved) {
@@ -183,6 +210,18 @@ const QuoteLeadsView = () => {
   };
 
   const isColumnVisible = (column: ColumnKey) => visibleColumns.includes(column);
+
+  const toggleRowExpansion = (leadId: string) => {
+    setExpandedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(leadId)) {
+        newSet.delete(leadId);
+      } else {
+        newSet.add(leadId);
+      }
+      return newSet;
+    });
+  };
 
   const fetchData = async () => {
     setRefreshing(true);
@@ -699,6 +738,7 @@ const QuoteLeadsView = () => {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-50/50 hover:bg-gray-50/50">
+                      <TableHead className="w-10"></TableHead>
                       <TableHead className="w-12">
                         <Checkbox 
                           checked={selectedLeads.size === filteredLeads.length && filteredLeads.length > 0}
@@ -722,7 +762,7 @@ const QuoteLeadsView = () => {
                   <TableBody>
                     {paginatedLeads.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={visibleColumns.length + 1} className="text-center py-12 text-gray-400">
+                        <TableCell colSpan={visibleColumns.length + 2} className="text-center py-12 text-gray-400">
                           <div className="flex flex-col items-center gap-2">
                             <Users className="h-8 w-8 text-gray-300" />
                             <p>No quote leads found</p>
@@ -731,183 +771,279 @@ const QuoteLeadsView = () => {
                       </TableRow>
                     ) : (
                       paginatedLeads.map((lead) => (
-                        <TableRow key={lead.id} className="hover:bg-gray-50/50">
-                          <TableCell>
-                            <Checkbox 
-                              checked={selectedLeads.has(lead.id)}
-                              onCheckedChange={(checked) => handleSelectLead(lead.id, checked as boolean)}
-                            />
-                          </TableCell>
-                          
-                          {isColumnVisible('date') && (
-                            <TableCell>
-                              {lead.created_at ? (
-                                <div className="text-sm">
-                                  <p className="font-medium text-gray-900">{format(new Date(lead.created_at), 'dd MMM')}</p>
-                                  <p className="text-gray-400 text-xs">{format(new Date(lead.created_at), 'HH:mm')}</p>
-                                </div>
-                              ) : '-'}
-                            </TableCell>
-                          )}
-                          
-                          {isColumnVisible('service') && (
-                            <TableCell>
-                              <Badge 
-                                variant="outline" 
-                                className={`${
-                                  lead.service_type === 'Air BnB' 
-                                    ? 'bg-rose-50 text-rose-700 border-rose-200' 
-                                    : 'bg-sky-50 text-sky-700 border-sky-200'
-                                }`}
+                        <React.Fragment key={lead.id}>
+                          <TableRow 
+                            className={`hover:bg-gray-50/50 cursor-pointer transition-colors ${expandedRows.has(lead.id) ? 'bg-primary/5 border-l-2 border-l-primary' : ''}`}
+                            onClick={() => toggleRowExpansion(lead.id)}
+                          >
+                            <TableCell className="w-10">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleRowExpansion(lead.id);
+                                }}
                               >
-                                {lead.service_type || '-'}
-                              </Badge>
-                            </TableCell>
-                          )}
-                          
-                          {isColumnVisible('contact') && (
-                            <TableCell>
-                              <div className="space-y-0.5">
-                                {lead.first_name || lead.last_name ? (
-                                  <p className="font-medium text-gray-900">{`${lead.first_name || ''} ${lead.last_name || ''}`.trim()}</p>
-                                ) : null}
-                                {lead.email && (
-                                  <p className="text-sm text-gray-500 truncate max-w-[180px]">{lead.email}</p>
+                                {expandedRows.has(lead.id) ? (
+                                  <ChevronUp className="h-4 w-4 text-primary" />
+                                ) : (
+                                  <ChevronDown className="h-4 w-4 text-gray-400" />
                                 )}
-                                {lead.phone && <p className="text-sm text-gray-400">{lead.phone}</p>}
-                                {!lead.first_name && !lead.email && !lead.phone && (
-                                  <span className="text-gray-400 text-sm">No info</span>
-                                )}
-                              </div>
+                              </Button>
                             </TableCell>
-                          )}
-                          
-                          {isColumnVisible('property') && (
-                            <TableCell>
-                              <div className="text-sm">
-                                {lead.postcode && <p className="font-medium text-gray-900">{lead.postcode}</p>}
-                                {(lead.bedrooms || lead.bathrooms) && (
-                                  <p className="text-gray-400 text-xs">
-                                    {lead.bedrooms && `${lead.bedrooms} bed`}
-                                    {lead.bedrooms && lead.bathrooms && ' • '}
-                                    {lead.bathrooms && `${lead.bathrooms} bath`}
-                                  </p>
-                                )}
-                              </div>
+                            <TableCell onClick={(e) => e.stopPropagation()}>
+                              <Checkbox 
+                                checked={selectedLeads.has(lead.id)}
+                                onCheckedChange={(checked) => handleSelectLead(lead.id, checked as boolean)}
+                              />
                             </TableCell>
-                          )}
-                          
-                          {isColumnVisible('quote') && (
-                            <TableCell>
-                              <div className="flex items-center gap-1.5">
-                                {lead.calculated_quote ? (
-                                  <span className="font-semibold text-green-600">£{lead.calculated_quote.toFixed(0)}</span>
+                            
+                            {isColumnVisible('date') && (
+                              <TableCell>
+                                {lead.created_at ? (
+                                  <div className="text-sm">
+                                    <p className="font-medium text-gray-900">{format(new Date(lead.created_at), 'dd MMM')}</p>
+                                    <p className="text-gray-400 text-xs">{format(new Date(lead.created_at), 'HH:mm')}</p>
+                                  </div>
+                                ) : '-'}
+                              </TableCell>
+                            )}
+                            
+                            {isColumnVisible('service') && (
+                              <TableCell>
+                                <Badge 
+                                  variant="outline" 
+                                  className={`${
+                                    lead.service_type === 'Air BnB' 
+                                      ? 'bg-rose-50 text-rose-700 border-rose-200' 
+                                      : 'bg-sky-50 text-sky-700 border-sky-200'
+                                  }`}
+                                >
+                                  {lead.service_type || '-'}
+                                </Badge>
+                              </TableCell>
+                            )}
+                            
+                            {isColumnVisible('contact') && (
+                              <TableCell>
+                                <div className="space-y-0.5">
+                                  {lead.first_name || lead.last_name ? (
+                                    <p className="font-medium text-gray-900">{`${lead.first_name || ''} ${lead.last_name || ''}`.trim()}</p>
+                                  ) : null}
+                                  {lead.email && (
+                                    <div className="flex items-center gap-1 text-sm text-gray-500">
+                                      <Mail className="h-3 w-3" />
+                                      <span className="truncate max-w-[160px]">{lead.email}</span>
+                                    </div>
+                                  )}
+                                  {lead.phone && (
+                                    <div className="flex items-center gap-1 text-sm text-gray-400">
+                                      <Phone className="h-3 w-3" />
+                                      <span>{lead.phone}</span>
+                                    </div>
+                                  )}
+                                  {!lead.first_name && !lead.email && !lead.phone && (
+                                    <span className="text-gray-400 text-sm italic">No contact info</span>
+                                  )}
+                                </div>
+                              </TableCell>
+                            )}
+                            
+                            {isColumnVisible('property') && (
+                              <TableCell>
+                                <div className="text-sm space-y-0.5">
+                                  {lead.postcode && (
+                                    <div className="flex items-center gap-1">
+                                      <MapPin className="h-3 w-3 text-gray-400" />
+                                      <span className="font-medium text-gray-900">{lead.postcode}</span>
+                                    </div>
+                                  )}
+                                  {(lead.bedrooms || lead.bathrooms) && (
+                                    <div className="flex items-center gap-2 text-gray-500 text-xs">
+                                      {lead.bedrooms && (
+                                        <span className="flex items-center gap-0.5">
+                                          <Home className="h-3 w-3" />
+                                          {lead.bedrooms} bed
+                                        </span>
+                                      )}
+                                      {lead.bathrooms && (
+                                        <span className="flex items-center gap-0.5">
+                                          <span className="text-gray-300">•</span>
+                                          {lead.bathrooms} bath
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                  {lead.property_type && (
+                                    <Badge variant="outline" className="text-xs capitalize bg-gray-50">
+                                      {lead.property_type}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </TableCell>
+                            )}
+                            
+                            {isColumnVisible('quote') && (
+                              <TableCell>
+                                <div className="flex items-center gap-1.5">
+                                  {lead.calculated_quote ? (
+                                    <span className="font-bold text-green-600 text-lg">£{lead.calculated_quote.toFixed(0)}</span>
+                                  ) : (
+                                    <span className="text-gray-400">-</span>
+                                  )}
+                                  {lead.is_first_time_customer && (
+                                    <span title="First time customer">
+                                      <Sparkles className="h-3.5 w-3.5 text-purple-500" />
+                                    </span>
+                                  )}
+                                </div>
+                                {lead.discount_amount && lead.discount_amount > 0 && (
+                                  <p className="text-xs text-red-500">-£{lead.discount_amount.toFixed(0)} discount</p>
+                                )}
+                                {lead.recommended_hours && (
+                                  <p className="text-xs text-gray-400">{lead.recommended_hours}h recommended</p>
+                                )}
+                              </TableCell>
+                            )}
+                            
+                            {isColumnVisible('progress') && (
+                              <TableCell>
+                                <div className="space-y-1.5">
+                                  {lead.furthest_step && (
+                                    <div className="flex items-center gap-1.5">
+                                      <div className={`h-2 w-2 rounded-full ${
+                                        lead.furthest_step === 'payment' || lead.furthest_step === 'booking_attempted' ? 'bg-green-500' :
+                                        lead.furthest_step === 'quote' || lead.furthest_step === 'quote_viewed' ? 'bg-teal-500' :
+                                        lead.furthest_step === 'contact' ? 'bg-purple-500' :
+                                        lead.furthest_step === 'schedule' || lead.furthest_step === 'datetime' ? 'bg-orange-500' :
+                                        lead.furthest_step === 'extras' ? 'bg-yellow-500' :
+                                        'bg-gray-300'
+                                      }`} />
+                                      <span className="text-xs text-gray-600 capitalize font-medium">{lead.furthest_step.replace(/_/g, ' ')}</span>
+                                    </div>
+                                  )}
+                                  {lead.quote_email_sent && (
+                                    <div className="flex items-center gap-1 text-green-600">
+                                      <Mail className="h-3 w-3" />
+                                      <span className="text-xs font-medium">Email Sent</span>
+                                    </div>
+                                  )}
+                                  {lead.converted_booking_id && (
+                                    <Badge className="bg-green-100 text-green-700 text-xs">
+                                      Converted #{lead.converted_booking_id}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </TableCell>
+                            )}
+                            
+                            {isColumnVisible('status') && (
+                              <TableCell>
+                                <Badge 
+                                  variant="outline" 
+                                  className={`text-xs font-medium ${
+                                    lead.status === 'completed' ? 'bg-green-100 text-green-700 border-green-200' :
+                                    lead.status === 'left' ? 'bg-red-50 text-red-600 border-red-200' :
+                                    isLeadIdle(lead) ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                                    'bg-blue-50 text-blue-600 border-blue-200 animate-pulse'
+                                  }`}
+                                >
+                                  {lead.status === 'completed' ? '✓ Completed' : 
+                                   lead.status === 'left' ? '✗ Left' :
+                                   isLeadIdle(lead) ? '⏸ Idle' : '● Live'}
+                                </Badge>
+                              </TableCell>
+                            )}
+                            
+                            {isColumnVisible('frequency') && (
+                              <TableCell>
+                                {lead.frequency ? (
+                                  <Badge variant="outline" className="text-xs capitalize">{lead.frequency}</Badge>
                                 ) : (
                                   <span className="text-gray-400">-</span>
                                 )}
-                                {lead.is_first_time_customer && (
-                                  <Sparkles className="h-3.5 w-3.5 text-purple-500" />
-                                )}
-                              </div>
-                              {lead.discount_amount && lead.discount_amount > 0 && (
-                                <p className="text-xs text-red-500">-£{lead.discount_amount.toFixed(0)}</p>
-                              )}
-                            </TableCell>
-                          )}
-                          
-                          {isColumnVisible('progress') && (
-                            <TableCell>
-                              <div className="space-y-1">
-                                {lead.furthest_step && (
-                                  <div className="flex items-center gap-1.5">
-                                    <div className={`h-2 w-2 rounded-full ${
-                                      lead.furthest_step === 'quote' || lead.furthest_step === 'quote_viewed' ? 'bg-green-500' :
-                                      lead.furthest_step === 'datetime' ? 'bg-blue-500' :
-                                      lead.furthest_step === 'extras' ? 'bg-yellow-500' :
-                                      'bg-gray-300'
-                                    }`} />
-                                    <span className="text-xs text-gray-600 capitalize">{lead.furthest_step.replace(/_/g, ' ')}</span>
-                                  </div>
-                                )}
-                                {lead.quote_email_sent && (
-                                  <div className="flex items-center gap-1 text-green-600">
-                                    <Mail className="h-3 w-3" />
-                                    <span className="text-xs">Sent</span>
-                                  </div>
-                                )}
-                              </div>
-                            </TableCell>
-                          )}
-                          
-                          {isColumnVisible('status') && (
-                            <TableCell>
-                              <Badge 
-                                variant="outline" 
-                                className={`text-xs ${
-                                  lead.status === 'completed' ? 'bg-green-100 text-green-700 border-green-200' :
-                                  lead.status === 'left' ? 'bg-red-50 text-red-600 border-red-200' :
-                                  isLeadIdle(lead) ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                                  'bg-blue-50 text-blue-600 border-blue-200'
-                                }`}
-                              >
-                                {lead.status === 'completed' ? 'Completed' : 
-                                 lead.status === 'left' ? 'Left' :
-                                 isLeadIdle(lead) ? 'Idle' : 'Live'}
-                              </Badge>
-                            </TableCell>
-                          )}
-                          
-                          {isColumnVisible('frequency') && (
-                            <TableCell>
-                              <span className="text-sm text-gray-600">{lead.frequency || '-'}</span>
-                            </TableCell>
-                          )}
-                          
-                          {isColumnVisible('cleaningType') && (
-                            <TableCell>
-                              <span className="text-sm text-gray-600">{lead.cleaning_type || '-'}</span>
-                            </TableCell>
-                          )}
-                          
-                          {isColumnVisible('extras') && (
-                            <TableCell>
-                              <div className="text-xs text-gray-600 space-y-0.5">
-                                {lead.oven_cleaning && <p>Oven: {lead.oven_size}</p>}
-                                {lead.ironing_hours && lead.ironing_hours > 0 && <p>Ironing: {lead.ironing_hours}h</p>}
-                                {!lead.oven_cleaning && !lead.ironing_hours && <span className="text-gray-400">-</span>}
-                              </div>
-                            </TableCell>
-                          )}
-                          
-                          {isColumnVisible('source') && (
-                            <TableCell>
-                              <div className="text-xs space-y-1">
-                                {lead.source && lead.source !== 'direct' && lead.source !== 'website' ? (
-                                  <Badge variant="outline" className="capitalize bg-gray-50">{lead.source}</Badge>
-                                ) : lead.utm_source ? (
-                                  <Badge variant="outline" className="capitalize bg-gray-50">{lead.utm_source}</Badge>
+                              </TableCell>
+                            )}
+                            
+                            {isColumnVisible('cleaningType') && (
+                              <TableCell>
+                                {lead.cleaning_type ? (
+                                  <Badge variant="outline" className="text-xs capitalize">{lead.cleaning_type}</Badge>
                                 ) : (
-                                  <span className="text-gray-400">Direct</span>
+                                  <span className="text-gray-400">-</span>
                                 )}
-                                {lead.utm_campaign && (
-                                  <p className="text-gray-400">{lead.utm_campaign}</p>
+                              </TableCell>
+                            )}
+                            
+                            {isColumnVisible('extras') && (
+                              <TableCell>
+                                <div className="text-xs text-gray-600 space-y-0.5">
+                                  {lead.oven_cleaning && (
+                                    <Badge variant="outline" className="text-xs mr-1">
+                                      Oven {lead.oven_size && `(${lead.oven_size})`}
+                                    </Badge>
+                                  )}
+                                  {lead.ironing_hours && lead.ironing_hours > 0 && (
+                                    <Badge variant="outline" className="text-xs">
+                                      Ironing {lead.ironing_hours}h
+                                    </Badge>
+                                  )}
+                                  {lead.first_deep_clean && (
+                                    <Badge variant="outline" className="text-xs bg-purple-50 text-purple-600">
+                                      Deep Clean
+                                    </Badge>
+                                  )}
+                                  {!lead.oven_cleaning && !lead.ironing_hours && !lead.first_deep_clean && (
+                                    <span className="text-gray-400">-</span>
+                                  )}
+                                </div>
+                              </TableCell>
+                            )}
+                            
+                            {isColumnVisible('source') && (
+                              <TableCell>
+                                <div className="text-xs space-y-1">
+                                  {lead.source && lead.source !== 'direct' && lead.source !== 'website' ? (
+                                    <Badge variant="outline" className="capitalize bg-gray-50">{lead.source}</Badge>
+                                  ) : lead.utm_source ? (
+                                    <Badge variant="outline" className="capitalize bg-gray-50">{lead.utm_source}</Badge>
+                                  ) : (
+                                    <span className="text-gray-400">Direct</span>
+                                  )}
+                                  {lead.utm_campaign && (
+                                    <p className="text-gray-400 truncate max-w-[100px]" title={lead.utm_campaign}>{lead.utm_campaign}</p>
+                                  )}
+                                </div>
+                              </TableCell>
+                            )}
+                            
+                            {isColumnVisible('createdBy') && (
+                              <TableCell>
+                                {lead.created_by_admin_id ? (
+                                  <Badge variant="secondary" className="text-xs bg-gray-100">
+                                    {getAdminName(lead.created_by_admin_id)}
+                                  </Badge>
+                                ) : (
+                                  <span className="text-xs text-gray-400 italic">Customer</span>
                                 )}
-                              </div>
-                            </TableCell>
-                          )}
+                              </TableCell>
+                            )}
+                          </TableRow>
                           
-                          {isColumnVisible('createdBy') && (
-                            <TableCell>
-                              {lead.created_by_admin_id ? (
-                                <Badge variant="secondary" className="text-xs bg-gray-100">
-                                  {getAdminName(lead.created_by_admin_id)}
-                                </Badge>
-                              ) : (
-                                <span className="text-xs text-gray-400">Customer</span>
-                              )}
-                            </TableCell>
+                          {/* Expanded Detail Panel */}
+                          {expandedRows.has(lead.id) && (
+                            <TableRow className="hover:bg-transparent">
+                              <TableCell colSpan={visibleColumns.length + 2} className="p-0">
+                                <QuoteLeadDetailPanel 
+                                  lead={lead}
+                                  adminName={lead.created_by_admin_id ? getAdminName(lead.created_by_admin_id) : undefined}
+                                />
+                              </TableCell>
+                            </TableRow>
                           )}
-                        </TableRow>
+                        </React.Fragment>
                       ))
                     )}
                   </TableBody>
