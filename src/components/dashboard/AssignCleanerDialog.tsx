@@ -224,12 +224,59 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
     }
   };
 
+  // Update the primary cleaner's pay in bookings table based on remaining hours
+  const updatePrimaryCleanerPay = async (subCleanersList: SubCleaner[]) => {
+    if (!bookingId) return;
+    
+    try {
+      // Get the current booking data
+      const { data: booking, error: bookingError } = await supabase
+        .from('bookings')
+        .select('cleaner, cleaner_rate, cleaner_percentage, total_cost, total_hours, cleaning_time')
+        .eq('id', bookingId)
+        .single();
+      
+      if (bookingError || !booking || !booking.cleaner) return;
+      
+      const totalHours = booking.total_hours || booking.cleaning_time || 0;
+      const subCleanerHours = subCleanersList.reduce((sum, sc) => sum + (sc.hours_assigned || 0), 0);
+      const primaryCleanerHours = Math.max(0, totalHours - subCleanerHours);
+      
+      let newPrimaryCleanerPay: number;
+      
+      if (booking.cleaner_rate && booking.cleaner_rate > 0) {
+        // Hourly rate
+        newPrimaryCleanerPay = primaryCleanerHours * booking.cleaner_rate;
+      } else if (booking.cleaner_percentage && booking.cleaner_percentage > 0) {
+        // Percentage rate - calculate proportionally based on hours
+        const hoursRatio = totalHours > 0 ? primaryCleanerHours / totalHours : 0;
+        newPrimaryCleanerPay = (booking.total_cost || 0) * (booking.cleaner_percentage / 100) * hoursRatio;
+      } else {
+        // Default fallback - use hourly rate of 20
+        newPrimaryCleanerPay = primaryCleanerHours * 20;
+      }
+      
+      // Update the booking with new cleaner_pay
+      const { error: updateError } = await supabase
+        .from('bookings')
+        .update({ cleaner_pay: newPrimaryCleanerPay })
+        .eq('id', bookingId);
+      
+      if (updateError) {
+        console.error('Error updating primary cleaner pay:', updateError);
+      }
+    } catch (error) {
+      console.error('Error updating primary cleaner pay:', error);
+    }
+  };
+
   const handleAddSubCleaner = async () => {
     if (!bookingId || !newCleanerId) return;
     
     setAddingSubCleaner(true);
     try {
       const cleanerPay = calculateNewCleanerPay();
+      const newSubCleanerHours = parseFloat(newHours) || 0;
       
       const { error } = await supabase
         .from('sub_bookings')
@@ -239,11 +286,24 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
           payment_method: newPaymentMethod,
           hourly_rate: newPaymentMethod === 'hourly' ? parseFloat(newHourlyRate) : null,
           percentage_rate: newPaymentMethod === 'percentage' ? parseFloat(newPercentageRate) : null,
-          hours_assigned: parseFloat(newHours) || 0,
+          hours_assigned: newSubCleanerHours,
           cleaner_pay: cleanerPay
         });
 
       if (error) throw error;
+
+      // Update primary cleaner pay with new sub-cleaner included
+      const updatedSubCleaners = [...subCleaners, {
+        id: 0,
+        cleaner_id: parseInt(newCleanerId),
+        payment_method: newPaymentMethod,
+        hourly_rate: newPaymentMethod === 'hourly' ? parseFloat(newHourlyRate) : null,
+        percentage_rate: newPaymentMethod === 'percentage' ? parseFloat(newPercentageRate) : null,
+        hours_assigned: newSubCleanerHours,
+        cleaner_pay: cleanerPay,
+        cleaner: { first_name: '', last_name: '', full_name: '' }
+      }];
+      await updatePrimaryCleanerPay(updatedSubCleaners);
 
       toast({ title: "Success", description: "Additional cleaner added" });
       
@@ -270,6 +330,10 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
         .eq('id', subCleanerId);
 
       if (error) throw error;
+      
+      // Update primary cleaner pay with removed sub-cleaner excluded
+      const updatedSubCleaners = subCleaners.filter(sc => sc.id !== subCleanerId);
+      await updatePrimaryCleanerPay(updatedSubCleaners);
       
       toast({ title: "Success", description: "Additional cleaner removed" });
       fetchSubCleaners();
