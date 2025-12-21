@@ -285,6 +285,31 @@ const CleanerUpcomingBookings = () => {
     }
   }, [effectiveCleanerId, authLoading, sortOrder]);
 
+  // Real-time subscription for bookings changes
+  useEffect(() => {
+    if (!effectiveCleanerId) return;
+
+    const channel = supabase
+      .channel('cleaner-upcoming-bookings-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings'
+        },
+        (payload) => {
+          console.log('Cleaner upcoming bookings realtime update:', payload);
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [effectiveCleanerId]);
+
   useEffect(() => {
     applyFilters();
   }, [bookings, dateFrom, dateTo, customerSearch, serviceTypeFilter]);

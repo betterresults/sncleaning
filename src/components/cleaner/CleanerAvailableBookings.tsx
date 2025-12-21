@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -39,11 +39,34 @@ const CleanerAvailableBookings = () => {
     return data;
   };
 
-    const { data: bookings = [], isLoading, error } = useQuery({
-      queryKey: ['available-bookings'],
-      queryFn: fetchAvailableBookings,
-      refetchInterval: 30000, // Refetch every 30 seconds to keep data fresh
-    });
+  const { data: bookings = [], isLoading, error } = useQuery({
+    queryKey: ['available-bookings'],
+    queryFn: fetchAvailableBookings,
+    refetchInterval: 30000, // Refetch every 30 seconds to keep data fresh
+  });
+
+  // Real-time subscription for bookings changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('available-bookings-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings'
+        },
+        (payload) => {
+          console.log('Available bookings realtime update:', payload);
+          queryClient.invalidateQueries({ queryKey: ['available-bookings'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const assignBookingMutation = useMutation({
     mutationFn: async (bookingId: number) => {
