@@ -9,6 +9,11 @@ interface UpcomingBookingsStatsProps {
 }
 
 const UpcomingBookingsStats: React.FC<UpcomingBookingsStatsProps> = ({ stats }) => {
+  // Don't show stats if there are no bookings
+  if (stats.totalBookings === 0) {
+    return null;
+  }
+
   return (
     <div className="grid grid-cols-2 gap-2 sm:gap-6 w-full">
       <Card className="bg-gradient-to-br from-slate-50 to-blue-50 border border-blue-100 shadow-lg">

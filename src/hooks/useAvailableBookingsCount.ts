@@ -7,6 +7,7 @@ export const useAvailableBookingsCount = () => {
       .from('bookings')
       .select('id', { count: 'exact', head: true })
       .is('cleaner', null)
+      .neq('booking_status', 'cancelled')
       .gte('date_time', new Date().toISOString()); // Only future bookings
 
     if (error) {
