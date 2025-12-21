@@ -1,14 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DomesticBookingData } from '../DomesticBookingForm';
-import { Home, Building, Plus, Minus, CheckCircle, Droplets, Wrench } from 'lucide-react';
+import { Home, Building, Plus, Minus, CheckCircle, Droplets, Wrench, AlertCircle } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { useAirbnbFieldConfigsBatch } from '@/hooks/useAirbnbFieldConfigs';
 import { useDomesticHardcodedCalculations } from '@/hooks/useDomesticHardcodedCalculations';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 interface DomesticPropertyStepProps {
   data: DomesticBookingData;
   onUpdate: (updates: Partial<DomesticBookingData>) => void;
@@ -103,7 +104,21 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
   const recommendedHours = calculations.baseTime;
   const [searchParams] = useSearchParams();
   const showDebug = searchParams.get('debug') === '1';
-  const canContinue = data.propertyType && data.bedrooms && data.bathrooms && data.serviceFrequency && (!data.cleaningProducts.includes('equipment') || data.equipmentArrangement !== null && (data.equipmentArrangement !== 'ongoing' || data.equipmentStorageConfirmed));
+  const { toast } = useToast();
+  const [showValidationErrors, setShowValidationErrors] = useState(false);
+  
+  // Individual field validation
+  const validationErrors = {
+    propertyType: !data.propertyType,
+    bedrooms: !data.bedrooms,
+    bathrooms: !data.bathrooms,
+    serviceFrequency: !data.serviceFrequency,
+    equipmentArrangement: data.cleaningProducts.includes('equipment') && data.equipmentArrangement === null,
+    equipmentStorageConfirmed: data.cleaningProducts.includes('equipment') && data.equipmentArrangement === 'ongoing' && !data.equipmentStorageConfirmed
+  };
+  
+  const canContinue = !validationErrors.propertyType && !validationErrors.bedrooms && !validationErrors.bathrooms && !validationErrors.serviceFrequency && !validationErrors.equipmentArrangement && !validationErrors.equipmentStorageConfirmed;
+  
   const [hasInitialized, setHasInitialized] = React.useState(false);
   React.useEffect(() => {
     if (recommendedHours > 0 && !hasInitialized) {
@@ -117,6 +132,44 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
       }
     }
   }, [recommendedHours]);
+  
+  const handleContinue = () => {
+    if (!canContinue) {
+      setShowValidationErrors(true);
+      
+      // Build error message
+      const missingFields: string[] = [];
+      if (validationErrors.propertyType) missingFields.push('property type');
+      if (validationErrors.bedrooms) missingFields.push('bedrooms');
+      if (validationErrors.bathrooms) missingFields.push('bathrooms');
+      if (validationErrors.serviceFrequency) missingFields.push('cleaning frequency');
+      if (validationErrors.equipmentArrangement) missingFields.push('equipment arrangement');
+      if (validationErrors.equipmentStorageConfirmed) missingFields.push('equipment storage confirmation');
+      
+      toast({
+        title: "Please complete all required fields",
+        description: `Missing: ${missingFields.join(', ')}`,
+        variant: "destructive",
+      });
+      
+      // Scroll to first missing field
+      if (validationErrors.propertyType) {
+        document.getElementById('property-type-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else if (validationErrors.bedrooms || validationErrors.bathrooms) {
+        document.getElementById('property-size-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else if (validationErrors.serviceFrequency) {
+        document.getElementById('frequency-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+    
+    if (data.estimatedHours === null && recommendedHours > 0) {
+      onUpdate({
+        estimatedHours: recommendedHours
+      });
+    }
+    onNext();
+  };
   return <div className="space-y-6">
       {isLoadingConfigs && <div className="p-4">
           <div className="animate-pulse space-y-4">
@@ -129,9 +182,17 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
         </div>}
 
       {/* Property Type */}
-      <div className="relative z-10">
-        <h2 className="text-2xl font-bold text-slate-700 mb-4">Property Details</h2>
-        <div className="grid grid-cols-2 gap-4">
+      <div className="relative z-10" id="property-type-section">
+        <div className="flex items-center gap-2 mb-4">
+          <h2 className="text-2xl font-bold text-slate-700">Property Details</h2>
+          {showValidationErrors && validationErrors.propertyType && (
+            <span className="flex items-center gap-1 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              Required
+            </span>
+          )}
+        </div>
+        <div className={`grid grid-cols-2 gap-4 ${showValidationErrors && validationErrors.propertyType ? 'ring-2 ring-destructive ring-offset-2 rounded-2xl' : ''}`}>
           {(propertyTypeConfigs.length > 0 ? propertyTypeConfigs : [{
           option: 'flat',
           label: 'Flat'
@@ -152,14 +213,22 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
       </div>
 
       {/* Property Size */}
-      <div className="relative z-[9]">
-        <h2 className="text-2xl font-bold text-slate-700 mb-4">Size of the property</h2>
+      <div className="relative z-[9]" id="property-size-section">
+        <div className="flex items-center gap-2 mb-4">
+          <h2 className="text-2xl font-bold text-slate-700">Size of the property</h2>
+          {showValidationErrors && (validationErrors.bedrooms || validationErrors.bathrooms) && (
+            <span className="flex items-center gap-1 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              {validationErrors.bedrooms && validationErrors.bathrooms ? 'Select bedrooms and bathrooms' : validationErrors.bedrooms ? 'Select bedrooms' : 'Select bathrooms'}
+            </span>
+          )}
+        </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+        <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 mb-2 ${showValidationErrors && (validationErrors.bedrooms || validationErrors.bathrooms) ? 'ring-2 ring-destructive ring-offset-2 rounded-2xl p-2' : ''}`}>
           {/* Bedrooms */}
           <div>
             <div className="flex items-center justify-center">
-              <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${data.bedrooms ? 'bg-primary/5 border border-primary' : 'bg-card border border-border'}`}>
+              <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${data.bedrooms ? 'bg-primary/5 border border-primary' : showValidationErrors && validationErrors.bedrooms ? 'bg-destructive/5 border border-destructive' : 'bg-card border border-border'}`}>
                 <Button variant="ghost" size="sm" className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary" onClick={decrementBedrooms} disabled={!data.bedrooms || data.bedrooms === 'studio'}>
                   <Minus className="h-5 w-5" />
                 </Button>
@@ -178,7 +247,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
           {/* Bathrooms */}
           <div>
             <div className="flex items-center justify-center">
-              <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${data.bathrooms ? 'bg-primary/5 border border-primary' : 'bg-card border border-border'}`}>
+              <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${data.bathrooms ? 'bg-primary/5 border border-primary' : showValidationErrors && validationErrors.bathrooms ? 'bg-destructive/5 border border-destructive' : 'bg-card border border-border'}`}>
                 <Button variant="ghost" size="sm" className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary" onClick={decrementBathrooms} disabled={!data.bathrooms || data.bathrooms === '1'}>
                   <Minus className="h-5 w-5" />
                 </Button>
@@ -265,10 +334,18 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
         </div>}
 
       {/* Service Frequency */}
-      <div>
-        <h2 className="text-2xl font-bold text-slate-700 mb-4">How often do you need cleaning?</h2>
+      <div id="frequency-section">
+        <div className="flex items-center gap-2 mb-4">
+          <h2 className="text-2xl font-bold text-slate-700">How often do you need cleaning?</h2>
+          {showValidationErrors && validationErrors.serviceFrequency && (
+            <span className="flex items-center gap-1 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              Required
+            </span>
+          )}
+        </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className={`grid grid-cols-2 md:grid-cols-4 gap-3 ${showValidationErrors && validationErrors.serviceFrequency ? 'ring-2 ring-destructive ring-offset-2 rounded-2xl p-2' : ''}`}>
           {(serviceFrequencyConfigs.length > 0 ? serviceFrequencyConfigs : [{
           option: 'weekly',
           label: 'Weekly'
@@ -611,14 +688,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
 
       {/* Continue Button */}
       <div className="flex justify-end pt-4">
-        <Button size="lg" onClick={() => {
-        if (data.estimatedHours === null && recommendedHours > 0) {
-          onUpdate({
-            estimatedHours: recommendedHours
-          });
-        }
-        onNext();
-      }} disabled={!canContinue} className="px-8 py-3 text-lg font-semibold rounded-2xl transition-all">
+        <Button size="lg" onClick={handleContinue} className="px-8 py-3 text-lg font-semibold rounded-2xl transition-all">
           Continue
         </Button>
       </div>
