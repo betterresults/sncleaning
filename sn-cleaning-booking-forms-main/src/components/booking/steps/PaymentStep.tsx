@@ -1276,8 +1276,7 @@ useEffect(() => {
                 onUpdate({ phone: value });
                 setPhoneError('');
               }}
-              placeholder="Phone number"
-              className={`h-16 text-lg rounded-2xl border-2 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400 ${phoneError ? 'border-red-500' : 'border-gray-200'}`}
+              placeholder="7123 456 789"
             />
             {phoneError && (
               <p className="text-xs text-red-600 font-medium mt-1">{phoneError}</p>
@@ -1361,8 +1360,7 @@ useEffect(() => {
                       onUpdate({ phone: value });
                       setPhoneError('');
                     }}
-                    placeholder="Phone number"
-                    className={`h-16 text-lg rounded-2xl border-2 bg-white focus:border-[#185166] focus:ring-0 px-6 font-medium transition-all duration-200 placeholder:text-gray-400 ${phoneError ? 'border-red-500' : 'border-gray-200'}`}
+                    placeholder="7123 456 789"
                   />
                   {phoneError && (
                     <p className="text-xs text-red-600 font-medium mt-1">{phoneError}</p>

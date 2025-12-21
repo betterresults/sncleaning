@@ -11,6 +11,7 @@ interface PhoneInputProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  wrapperClassName?: string;
 }
 
 const parsePhoneToDisplay = (value: string): string => {
@@ -37,7 +38,8 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   value,
   onChange,
   placeholder = "7123 456 789",
-  className = ""
+  className = "",
+  wrapperClassName = ""
 }) => {
   const [displayValue, setDisplayValue] = useState(() => parsePhoneToDisplay(value));
   const [error, setError] = useState<string>('');
@@ -109,8 +111,8 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
 
   return (
     <div className="space-y-1">
-      <div className={`flex items-center rounded-md border ${hasError ? 'border-destructive' : isComplete ? 'border-green-500' : 'border-input'} ${isFocused ? 'ring-2 ring-ring ring-offset-2' : ''} bg-background`}>
-        <span className="pl-3 pr-1 text-muted-foreground font-medium select-none">+44</span>
+      <div className={`flex items-center rounded-2xl border-2 ${hasError ? 'border-red-500' : isComplete ? 'border-green-500' : 'border-gray-200'} ${isFocused ? 'ring-2 ring-[#185166] ring-offset-2' : ''} bg-white h-16 ${className}`}>
+        <span className="pl-4 pr-2 text-gray-500 font-semibold select-none text-lg">+44</span>
         <Input
           type="tel"
           inputMode="numeric"
@@ -119,10 +121,10 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
           onChange={handleChange}
           onBlur={handleBlur}
           onFocus={handleFocus}
-          className={`${className} border-0 focus-visible:ring-0 focus-visible:ring-offset-0 pl-1`}
+          className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 pl-1 h-full text-lg font-medium bg-transparent"
         />
         {isComplete && !hasError && (
-          <span className="pr-3 text-green-500">✓</span>
+          <span className="pr-4 text-green-500 text-xl">✓</span>
         )}
       </div>
       {hasError && (
