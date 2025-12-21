@@ -56,6 +56,7 @@ interface BookingSubmission {
   sameDayTurnaround?: boolean;
   shortNoticeCharge?: number;
   serviceFrequency?: string; // weekly, biweekly, monthly, onetime
+  weeklyCost?: number; // Recurring weekly cost (may include discounts)
   
   // Access
   propertyAccess: string;
@@ -569,6 +570,117 @@ export const useAirbnbBookingSubmit = () => {
       } catch (logError) {
         console.error('Failed to log booking creation:', logError);
         // Don't fail the booking if logging fails
+      }
+
+      // Create recurring service for recurring domestic bookings
+      const isRecurring = bookingData.serviceFrequency && 
+        bookingData.serviceFrequency !== 'onetime' && 
+        bookingData.serviceFrequency !== 'one-time';
+      const isDomestic = bookingData.subServiceType === 'domestic' || 
+        bookingData.subServiceType === 'Domestic';
+      
+      if (isRecurring && isDomestic) {
+        console.log('[useAirbnbBookingSubmit] Creating recurring service for domestic booking');
+        
+        try {
+          // Generate recurring group ID
+          const recurringGroupId = crypto.randomUUID();
+          
+          // Determine interval based on frequency
+          let interval = '7'; // Default to weekly
+          if (bookingData.serviceFrequency === 'fortnightly' || bookingData.serviceFrequency === 'biweekly') {
+            interval = '14';
+          } else if (bookingData.serviceFrequency === 'monthly') {
+            interval = '30';
+          }
+
+          // Map day of week from selected date
+          let dayOfWeek = '';
+          if (bookingData.selectedDate) {
+            const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            const dateObj = bookingData.selectedDate instanceof Date 
+              ? bookingData.selectedDate 
+              : new Date(bookingData.selectedDate);
+            dayOfWeek = days[dateObj.getDay()];
+          }
+
+          // Get or create address ID for recurring service
+          let addressIdForRecurring = bookingData.addressId;
+          if (!addressIdForRecurring) {
+            const { data: existingAddress } = await supabase
+              .from('addresses')
+              .select('id')
+              .eq('customer_id', customerId)
+              .eq('address', addressForBooking)
+              .maybeSingle();
+            
+            if (existingAddress) {
+              addressIdForRecurring = existingAddress.id;
+            } else {
+              const { data: newAddress } = await supabase
+                .from('addresses')
+                .insert({
+                  customer_id: customerId,
+                  address: addressForBooking,
+                  postcode: postcodeForBooking,
+                  is_default: false
+                })
+                .select('id')
+                .single();
+              
+              if (newAddress) {
+                addressIdForRecurring = newAddress.id;
+              }
+            }
+          }
+
+          // Use weeklyCost from quote if available, otherwise calculate
+          const regularHours = bookingData.estimatedHours || 0;
+          const recurringCost = bookingData.weeklyCost || (regularHours * (bookingData.hourlyRate || 0));
+          const costPerHour = bookingData.weeklyCost && regularHours > 0 
+            ? bookingData.weeklyCost / regularHours 
+            : (bookingData.hourlyRate || 0);
+
+          const recurringServiceData = {
+            customer: customerId,
+            address: addressIdForRecurring || addressForBooking,
+            cleaner: bookingData.cleanerId && bookingData.cleanerId > 0 ? bookingData.cleanerId : null,
+            cleaner_rate: null,
+            cleaning_type: 'Domestic',
+            frequently: bookingData.serviceFrequency,
+            days_of_the_week: dayOfWeek,
+            hours: String(regularHours),
+            cost_per_hour: costPerHour,
+            total_cost: recurringCost,
+            payment_method: bookingData.paymentMethod || null,
+            start_date: dateStr || null,
+            start_time: time24ForDB ? `${time24ForDB}:00+00` : null,
+            postponed: false,
+            interval: interval,
+            recurring_group_id: recurringGroupId,
+            created_by_user_id: createdByUserId,
+            created_by_source: createdBySource
+          };
+
+          const { error: recurringError } = await supabase
+            .from('recurring_services')
+            .insert([recurringServiceData]);
+
+          if (recurringError) {
+            console.error('[useAirbnbBookingSubmit] Failed to create recurring service:', recurringError);
+          } else {
+            console.log('[useAirbnbBookingSubmit] Recurring service created successfully');
+            
+            // Update booking with recurring group ID
+            await supabase
+              .from('bookings')
+              .update({ recurring_group_id: recurringGroupId })
+              .eq('id', booking.id);
+          }
+        } catch (recurringError) {
+          console.error('[useAirbnbBookingSubmit] Error creating recurring service:', recurringError);
+          // Don't fail the booking if recurring service creation fails
+        }
       }
 
       // Note: Confirmation email is now handled automatically by the notification trigger system

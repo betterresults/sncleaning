@@ -443,6 +443,7 @@ useEffect(() => {
           estimatedHours: data.estimatedHours,
           totalHours: data.totalHours,
           hourlyRate: data.hourlyRate,
+          weeklyCost: data.weeklyCost, // Recurring weekly cost (may include discounts)
           
           // Notes
           notes: data.notes,
@@ -528,6 +529,7 @@ useEffect(() => {
           estimatedHours: data.estimatedHours,
           totalHours: data.totalHours,
           hourlyRate: data.hourlyRate,
+          weeklyCost: data.weeklyCost,
           notes: data.notes,
           additionalDetails: data,
           paymentMethod: 'Bank Transfer'
@@ -625,6 +627,7 @@ useEffect(() => {
           estimatedHours: data.estimatedHours,
           totalHours: data.totalHours,
           hourlyRate: data.hourlyRate,
+          weeklyCost: data.weeklyCost,
           notes: data.notes,
           additionalDetails: data,
           cleanerId: data.cleanerId,
@@ -705,6 +708,7 @@ useEffect(() => {
           estimatedHours: data.estimatedHours,
           totalHours: data.totalHours,
           hourlyRate: data.hourlyRate,
+          weeklyCost: data.weeklyCost,
           notes: data.notes,
           additionalDetails: data,
           cleanerId: data.cleanerId,
@@ -785,6 +789,7 @@ useEffect(() => {
           estimatedHours: data.estimatedHours,
           totalHours: data.totalHours,
           hourlyRate: data.hourlyRate,
+          weeklyCost: data.weeklyCost,
           notes: data.notes,
           additionalDetails: data,
           cleanerId: data.cleanerId,
@@ -869,6 +874,7 @@ useEffect(() => {
         estimatedHours: data.estimatedHours,
         totalHours: data.totalHours,
         hourlyRate: data.hourlyRate,
+        weeklyCost: data.weeklyCost,
         notes: data.notes,
         additionalDetails: data,
         cleanerId: data.cleanerId, // Include cleaner assignment
