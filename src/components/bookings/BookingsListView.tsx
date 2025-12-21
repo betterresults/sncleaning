@@ -803,7 +803,12 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter }: TodayBo
               <div className="bg-accent/30 h-full flex items-center justify-center">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-accent">
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      className="h-8 w-8 p-0 hover:bg-accent"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -952,7 +957,13 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter }: TodayBo
                 {/* Actions Menu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
