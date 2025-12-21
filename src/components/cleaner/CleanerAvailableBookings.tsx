@@ -39,10 +39,11 @@ const CleanerAvailableBookings = () => {
     return data;
   };
 
-  const { data: bookings = [], isLoading, error } = useQuery({
+  const { data: bookings = [], isLoading, error, refetch } = useQuery({
     queryKey: ['available-bookings'],
     queryFn: fetchAvailableBookings,
-    refetchInterval: 30000, // Refetch every 30 seconds to keep data fresh
+    refetchInterval: 10000, // Refetch every 10 seconds to keep data fresh
+    staleTime: 5000, // Consider data stale after 5 seconds
   });
 
   // Real-time subscription for bookings changes
@@ -58,7 +59,8 @@ const CleanerAvailableBookings = () => {
         },
         (payload) => {
           console.log('Available bookings realtime update:', payload);
-          queryClient.invalidateQueries({ queryKey: ['available-bookings'] });
+          // Force immediate refetch for real-time updates
+          refetch();
         }
       )
       .subscribe();

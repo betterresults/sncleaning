@@ -21,7 +21,7 @@ export const useAvailableBookingsCount = () => {
   return useQuery({
     queryKey: ['available-bookings-count'],
     queryFn: fetchAvailableBookingsCount,
-    refetchInterval: 30000, // Refetch every 30 seconds
-    staleTime: 10000, // Consider stale after 10 seconds
+    refetchInterval: 10000, // Refetch every 10 seconds
+    staleTime: 5000, // Consider stale after 5 seconds
   });
 };
