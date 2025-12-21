@@ -41,6 +41,8 @@ interface QuoteLeadData {
   // Admin tracking
   adminId?: string;
   isAdminCreated?: boolean;
+  // Conversion tracking
+  convertedBookingId?: number;
 }
 
 interface TrackingOptions {
@@ -442,6 +444,7 @@ export const useQuoteLeadTracking = (serviceType: string, options?: TrackingOpti
         last_heartbeat: new Date().toISOString(),
         ...utmParams,
         updated_at: new Date().toISOString(),
+        ...(data.convertedBookingId && { converted_booking_id: data.convertedBookingId }),
       };
 
       // Add admin info when in admin mode or when adminId is provided in data

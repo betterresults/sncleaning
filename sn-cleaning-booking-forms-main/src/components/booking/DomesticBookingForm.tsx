@@ -780,6 +780,10 @@ const DomesticBookingForm: React.FC = () => {
                 calculatedQuote: calculatedTotal,
                 postcode: bookingData.postcode,
               })}
+              onBookingSuccess={(bookingId) => markCompleted({
+                convertedBookingId: bookingId,
+                calculatedQuote: calculatedTotal,
+              })}
             />
           </Elements>
         ) : (
