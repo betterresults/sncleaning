@@ -116,3 +116,6 @@ verify_jwt = false
 
 [functions.fix-sabi-recurring-cost]
 verify_jwt = false
+
+[functions.create-public-booking]
+verify_jwt = false
