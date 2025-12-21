@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Input } from '@/components/ui/input';
 import { z } from 'zod';
 
 // UK Phone validation: +44 followed by 10 digits
@@ -11,62 +10,63 @@ interface PhoneInputProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
-  wrapperClassName?: string;
 }
 
 const parsePhoneToDisplay = (value: string): string => {
   if (!value) return '';
-  // Remove spaces and non-digits first
   let cleaned = value.replace(/\s/g, '');
-  // If it starts with +44, remove it
   if (cleaned.startsWith('+44')) {
     cleaned = cleaned.substring(3);
   }
-  // Remove any remaining non-digits
   cleaned = cleaned.replace(/\D/g, '');
-  // Always strip leading 44 - it's the country code entered redundantly
   if (cleaned.startsWith('44')) {
     cleaned = cleaned.substring(2);
   }
-  // Remove leading zeros (convert 07xxx to 7xxx)
   cleaned = cleaned.replace(/^0+/, '');
-  // Limit to 10 digits
   return cleaned.substring(0, 10);
 };
+
+// UK Flag SVG component
+const UKFlag = () => (
+  <svg width="24" height="18" viewBox="0 0 60 30" className="flex-shrink-0 rounded-sm">
+    <clipPath id="s">
+      <path d="M0,0 v30 h60 v-30 z"/>
+    </clipPath>
+    <clipPath id="t">
+      <path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z"/>
+    </clipPath>
+    <g clipPath="url(#s)">
+      <path d="M0,0 v30 h60 v-30 z" fill="#012169"/>
+      <path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" strokeWidth="6"/>
+      <path d="M0,0 L60,30 M60,0 L0,30" clipPath="url(#t)" stroke="#C8102E" strokeWidth="4"/>
+      <path d="M30,0 v30 M0,15 h60" stroke="#fff" strokeWidth="10"/>
+      <path d="M30,0 v30 M0,15 h60" stroke="#C8102E" strokeWidth="6"/>
+    </g>
+  </svg>
+);
 
 export const PhoneInput: React.FC<PhoneInputProps> = ({
   value,
   onChange,
   placeholder = "7123 456 789",
-  className = "",
-  wrapperClassName = ""
+  className = ""
 }) => {
   const [displayValue, setDisplayValue] = useState(() => parsePhoneToDisplay(value));
   const [error, setError] = useState<string>('');
   const [isFocused, setIsFocused] = useState(false);
 
-  // Sync displayValue when value prop changes (e.g., when customer is selected)
   useEffect(() => {
     const newDisplay = parsePhoneToDisplay(value);
     setDisplayValue(newDisplay);
   }, [value]);
 
   const formatPhoneNumber = (input: string) => {
-    // Remove all non-digit characters
     let cleaned = input.replace(/\D/g, '');
-    
-    // Always strip leading 44 if present - user is entering country code redundantly
-    // UK mobiles after +44 start with 7, so 44 at start is always the country code
     if (cleaned.startsWith('44')) {
       cleaned = cleaned.substring(2);
     }
-    
-    // Remove any leading zeros
     cleaned = cleaned.replace(/^0+/, '');
-    
-    // Limit to exactly 10 digits
     cleaned = cleaned.substring(0, 10);
-    
     return cleaned;
   };
 
@@ -75,7 +75,6 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
       setError('');
       return;
     }
-
     if (digits.length < 10) {
       setError(`${10 - digits.length} more digits needed`);
     } else {
@@ -111,9 +110,35 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
 
   return (
     <div className="space-y-1">
-      <div className={`flex items-center rounded-2xl border-2 ${hasError ? 'border-red-500' : isComplete ? 'border-green-500' : 'border-gray-200'} ${isFocused ? 'ring-2 ring-[#185166] ring-offset-2' : ''} bg-white h-16 ${className}`}>
-        <span className="pl-4 pr-2 text-gray-500 font-semibold select-none text-lg">+44</span>
-        <Input
+      <div 
+        className={`
+          flex items-center gap-3 
+          h-16 px-4
+          bg-white 
+          border-2 rounded-2xl
+          transition-all duration-200
+          ${hasError 
+            ? 'border-red-500' 
+            : isComplete 
+              ? 'border-green-500' 
+              : isFocused 
+                ? 'border-[#185166] ring-2 ring-[#185166]/20' 
+                : 'border-gray-200'
+          }
+          ${className}
+        `}
+      >
+        {/* UK Flag and Country Code */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <UKFlag />
+          <span className="text-gray-700 font-medium text-lg">+44</span>
+        </div>
+        
+        {/* Separator */}
+        <div className="w-px h-8 bg-gray-200 flex-shrink-0" />
+        
+        {/* Phone Input */}
+        <input
           type="tel"
           inputMode="numeric"
           placeholder={placeholder}
@@ -121,17 +146,23 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
           onChange={handleChange}
           onBlur={handleBlur}
           onFocus={handleFocus}
-          className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 pl-1 h-full text-lg font-medium bg-transparent"
+          className="flex-1 h-full bg-transparent text-lg font-medium text-gray-900 placeholder:text-gray-400 outline-none"
         />
+        
+        {/* Checkmark when complete */}
         {isComplete && !hasError && (
-          <span className="pr-4 text-green-500 text-xl">✓</span>
+          <span className="text-green-500 text-xl flex-shrink-0">✓</span>
         )}
       </div>
+      
+      {/* Error message */}
       {hasError && (
-        <p className="text-xs text-destructive font-medium">{error}</p>
+        <p className="text-xs text-red-600 font-medium pl-1">{error}</p>
       )}
+      
+      {/* Progress indicator */}
       {!hasError && displayValue.length > 0 && displayValue.length < 10 && (
-        <p className="text-xs text-muted-foreground">{displayValue.length}/10 digits</p>
+        <p className="text-xs text-gray-500 pl-1">{displayValue.length}/10 digits</p>
       )}
     </div>
   );
