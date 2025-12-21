@@ -486,6 +486,19 @@ useEffect(() => {
       try {
         setProcessing(true);
         
+        // Apply first-time customer 10% discount if applicable
+        // This ensures the discount is included even if the summary component hasn't synced yet
+        let finalTotalCost = data.totalCost;
+        if (data.isFirstTimeCustomer && finalTotalCost > 0) {
+          // Check if discount is already applied (total should be less than hours * hourlyRate)
+          const baseTotal = (data.totalHours || data.estimatedHours || 0) * (data.hourlyRate || 0);
+          if (finalTotalCost >= baseTotal * 0.95) { // Allow 5% tolerance for other charges
+            // Discount not yet applied, apply it now
+            finalTotalCost = Math.round(finalTotalCost * 0.90 * 100) / 100;
+            console.log('[PaymentStep] Applied first-time customer 10% discount for bank transfer:', { original: data.totalCost, discounted: finalTotalCost });
+          }
+        }
+        
         // Use edge function to create booking (bypasses RLS for guest users)
         const { data: bookingResult, error: bookingError } = await supabase.functions.invoke('create-public-booking', {
           body: {
@@ -515,7 +528,7 @@ useEffect(() => {
             shortNoticeCharge: data.shortNoticeCharge,
             propertyAccess: data.propertyAccess,
             accessNotes: data.accessNotes,
-            totalCost: data.totalCost,
+            totalCost: finalTotalCost,
             estimatedHours: data.estimatedHours,
             totalHours: data.totalHours,
             hourlyRate: data.hourlyRate,
@@ -547,7 +560,7 @@ useEffect(() => {
               bookingId: bookingId,
               phoneNumber: data.phone,
               customerName: data.firstName,
-              amount: data.totalCost,
+              amount: finalTotalCost, // Use discounted amount
               bookingDate: bookingDate
             }
           });
