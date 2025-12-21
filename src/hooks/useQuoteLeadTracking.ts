@@ -43,6 +43,9 @@ interface QuoteLeadData {
   isAdminCreated?: boolean;
   // Conversion tracking
   convertedBookingId?: number;
+  // Cleaning products & equipment
+  cleaningProducts?: string[];
+  equipmentArrangement?: 'oneoff' | 'ongoing' | null;
 }
 
 interface TrackingOptions {
@@ -418,6 +421,8 @@ export const useQuoteLeadTracking = (serviceType: string, options?: TrackingOpti
         oven_size: data.ovenSize,
         ironing_hours: data.ironingHours,
         frequency: data.frequency,
+        cleaning_products: data.cleaningProducts,
+        equipment_arrangement: data.equipmentArrangement,
         selected_date: data.selectedDate instanceof Date 
           ? data.selectedDate.toISOString().split('T')[0] 
           : data.selectedDate,

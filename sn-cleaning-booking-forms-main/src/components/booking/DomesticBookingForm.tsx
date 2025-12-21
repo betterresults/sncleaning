@@ -634,6 +634,8 @@ const DomesticBookingForm: React.FC = () => {
           discountAmount: discountAmount > 0 ? Math.round(discountAmount * 100) / 100 : undefined,
           shortNoticeCharge: newData.shortNoticeCharge || undefined,
           isFirstTimeCustomer: newData.isFirstTimeCustomer,
+          cleaningProducts: newData.cleaningProducts.length > 0 ? newData.cleaningProducts : undefined,
+          equipmentArrangement: newData.equipmentArrangement,
           // Include admin info if in admin mode
           adminId: isAdminMode && adminUserId ? adminUserId : undefined,
           isAdminCreated: isAdminMode,
@@ -658,6 +660,8 @@ const DomesticBookingForm: React.FC = () => {
           ovenSize: newData.ovenType || undefined,
           selectedDate: newData.selectedDate || undefined,
           selectedTime: newData.selectedTime || undefined,
+          cleaningProducts: newData.cleaningProducts.length > 0 ? newData.cleaningProducts : undefined,
+          equipmentArrangement: newData.equipmentArrangement,
           // Include admin info if in admin mode
           adminId: isAdminMode && adminUserId ? adminUserId : undefined,
           isAdminCreated: isAdminMode,
