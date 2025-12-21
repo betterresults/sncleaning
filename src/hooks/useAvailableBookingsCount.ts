@@ -11,7 +11,7 @@ export const useAvailableBookingsCount = () => {
       .select('id', { count: 'exact', head: true })
       .is('cleaner', null)
       .neq('booking_status', 'cancelled')
-      .gte('date_time', new Date().toISOString()); // Only future bookings
+      .gte('date_time', new Date().toISOString());
 
     if (error) {
       console.error('Error fetching available bookings count:', error);
@@ -20,6 +20,13 @@ export const useAvailableBookingsCount = () => {
 
     return count || 0;
   };
+
+  // Call useQuery first to maintain consistent hook order
+  const query = useQuery({
+    queryKey: ['available-bookings-count'],
+    queryFn: fetchAvailableBookingsCount,
+    staleTime: 0,
+  });
 
   // Real-time subscription for instant updates
   useEffect(() => {
@@ -33,7 +40,6 @@ export const useAvailableBookingsCount = () => {
           table: 'bookings'
         },
         () => {
-          // Invalidate the count query to refetch immediately
           queryClient.invalidateQueries({ queryKey: ['available-bookings-count'] });
         }
       )
@@ -44,9 +50,5 @@ export const useAvailableBookingsCount = () => {
     };
   }, [queryClient]);
 
-  return useQuery({
-    queryKey: ['available-bookings-count'],
-    queryFn: fetchAvailableBookingsCount,
-    staleTime: 0, // Always refetch when invalidated
-  });
+  return query;
 };
