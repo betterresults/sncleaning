@@ -55,17 +55,21 @@ serve(async (req) => {
 
     let stripeCustomerId = existingPaymentMethod?.stripe_customer_id;
 
-    // If no existing Stripe customer, search or create one
+    // If no existing Stripe customer for this specific customer, create a new one
+    // We don't search by email because multiple internal customers might share emails
+    // or we might accidentally link to the wrong Stripe customer (e.g., admin's account)
     if (!stripeCustomerId) {
-      const existingCustomers = await stripe.customers.list({
-        email: customerData.email,
+      // Search for a Stripe customer with matching internal_customer_id in metadata
+      const existingCustomers = await stripe.customers.search({
+        query: `metadata['internal_customer_id']:'${customer_id}'`,
         limit: 1,
       });
 
       if (existingCustomers.data.length > 0) {
         stripeCustomerId = existingCustomers.data[0].id;
-        console.log("Found existing Stripe customer:", stripeCustomerId);
+        console.log("Found existing Stripe customer by metadata:", stripeCustomerId);
       } else {
+        // Create a new Stripe customer for this specific internal customer
         const name = `${customerData.first_name || ''} ${customerData.last_name || ''}`.trim();
         const newCustomer = await stripe.customers.create({
           email: customerData.email,
