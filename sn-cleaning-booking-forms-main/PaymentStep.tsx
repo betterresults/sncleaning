@@ -191,9 +191,9 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
     try {
       let paymentMethodId = selectedPaymentMethod;
 
-      // If no saved payment method, create new one
+      // If no saved payment method, create new one using SetupIntent (supports 3DS)
       if (!paymentMethodId) {
-        console.log('[PaymentStep] No saved payment method, creating new one');
+        console.log('[PaymentStep] No saved payment method, creating new one with 3DS support');
         console.log('[PaymentStep] Card validation state:', { cardComplete, cardErrors, isCardValid });
         
         const cardElement = elements.getElement(CardNumberElement);
@@ -226,64 +226,109 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
           return;
         }
 
-        console.log('[PaymentStep] Calling stripe.createPaymentMethod...');
+        // Step 1: Get or create customer, then create SetupIntent
+        console.log('[PaymentStep] Creating customer and SetupIntent...');
         
-        // Create payment method
-        const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
-          elements,
-          params: {
-            billing_details: {
-              name: `${data.firstName} ${data.lastName}`,
-              email: data.email,
-            },
-          },
+        // First, we need to get/create the customer
+        const { data: customerResult, error: customerError } = await supabase
+          .from('customers')
+          .select('id')
+          .eq('email', data.email)
+          .single();
+        
+        let internalCustomerId = customerResult?.id;
+        
+        if (!internalCustomerId) {
+          // Create customer first via the booking submission which handles this
+          console.log('[PaymentStep] Customer not found, will be created during booking');
+        }
+        
+        // Create a SetupIntent - this is required for 3DS authentication
+        const { data: setupIntentData, error: setupIntentError } = await supabase.functions.invoke('stripe-create-setup-intent', {
+          body: {
+            customer_id: internalCustomerId || 0, // Will handle guest case
+            email: data.email,
+            name: `${data.firstName} ${data.lastName}`
+          }
         });
 
-        if (pmError) {
-          console.error('[PaymentStep] stripe.createPaymentMethod failed:', {
-            code: pmError.code,
-            type: pmError.type,
-            message: pmError.message,
-            decline_code: (pmError as any).decline_code
+        if (setupIntentError || !setupIntentData?.clientSecret) {
+          console.error('[PaymentStep] Failed to create SetupIntent:', setupIntentError || 'No client secret returned');
+          throw new Error('Failed to initialize payment. Please try again.');
+        }
+
+        console.log('[PaymentStep] SetupIntent created, confirming card setup with 3DS support...');
+        
+        // Step 2: Confirm the SetupIntent with the card - THIS HANDLES 3DS!
+        const { error: confirmError, setupIntent } = await stripe.confirmCardSetup(
+          setupIntentData.clientSecret,
+          {
+            payment_method: {
+              card: cardElement,
+              billing_details: {
+                name: `${data.firstName} ${data.lastName}`,
+                email: data.email,
+              },
+            },
+          }
+        );
+
+        if (confirmError) {
+          console.error('[PaymentStep] stripe.confirmCardSetup failed:', {
+            code: confirmError.code,
+            type: confirmError.type,
+            message: confirmError.message,
+            decline_code: (confirmError as any).decline_code
           });
           
           // Provide user-friendly error messages
-          let userMessage = pmError.message;
-          if (pmError.code === 'card_declined') {
+          let userMessage = confirmError.message || 'Card setup failed';
+          if (confirmError.code === 'card_declined') {
             userMessage = 'Your card was declined. Please try a different card.';
-          } else if (pmError.code === 'expired_card') {
+          } else if (confirmError.code === 'expired_card') {
             userMessage = 'Your card has expired. Please use a valid card.';
-          } else if (pmError.code === 'incorrect_cvc') {
+          } else if (confirmError.code === 'incorrect_cvc') {
             userMessage = 'The CVC code is incorrect. Please check and try again.';
-          } else if (pmError.code === 'insufficient_funds') {
+          } else if (confirmError.code === 'insufficient_funds') {
             userMessage = 'Insufficient funds. Please try a different card.';
-          } else if (pmError.code === 'processing_error') {
+          } else if (confirmError.code === 'processing_error') {
             userMessage = 'An error occurred processing your card. Please try again.';
+          } else if (confirmError.code === 'authentication_required') {
+            userMessage = 'Card authentication was cancelled or failed. Please try again.';
+          } else if (confirmError.code === 'setup_intent_authentication_failure') {
+            userMessage = 'Card authentication failed. Please try again or use a different card.';
           }
           
           throw new Error(userMessage);
         }
 
-        console.log('[PaymentStep] Payment method created successfully:', paymentMethod.id);
+        if (!setupIntent?.payment_method) {
+          console.error('[PaymentStep] SetupIntent confirmed but no payment method returned');
+          throw new Error('Payment setup completed but card was not saved. Please try again.');
+        }
 
-        // Save payment method
+        console.log('[PaymentStep] Card setup confirmed successfully:', setupIntent.payment_method);
+        paymentMethodId = typeof setupIntent.payment_method === 'string' 
+          ? setupIntent.payment_method 
+          : setupIntent.payment_method.id;
+
+        // Step 3: Save the payment method to our database
         console.log('[PaymentStep] Saving payment method to database...');
-        const { data: pmData, error: collectError } = await supabase.functions.invoke('stripe-collect-payment-method', {
+        const { data: saveResult, error: saveError } = await supabase.functions.invoke('stripe-save-payment-method', {
           body: {
-            customerEmail: data.email,
-            customerName: `${data.firstName} ${data.lastName}`,
-            paymentMethodId: paymentMethod.id,
-            isDefault: true
+            customer_id: internalCustomerId || customerId,
+            payment_method_id: paymentMethodId,
+            stripe_customer_id: setupIntentData.stripeCustomerId
           }
         });
 
-        if (collectError) {
-          console.error('[PaymentStep] Failed to save payment method:', collectError);
-          throw collectError;
+        if (saveError) {
+          console.error('[PaymentStep] Failed to save payment method:', saveError);
+          // Don't throw here - the payment method is still valid, just not saved
+          console.warn('[PaymentStep] Continuing without saving payment method to database');
+        } else {
+          console.log('[PaymentStep] Payment method saved successfully');
         }
-        
-        console.log('[PaymentStep] Payment method saved successfully');
-        paymentMethodId = paymentMethod.id;
       }
 
       // Submit booking first (skip payment auth for urgent bookings)

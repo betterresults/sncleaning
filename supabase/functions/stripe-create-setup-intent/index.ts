@@ -26,57 +26,87 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { customer_id } = await req.json();
+    const { customer_id, email, name } = await req.json();
 
-    console.log("Creating SetupIntent for customer:", customer_id);
+    console.log("Creating SetupIntent for customer:", { customer_id, email, name });
 
-    if (!customer_id) {
-      throw new Error("customer_id is required");
+    // For guest bookings (no customer_id), we still need email
+    if (!customer_id && !email) {
+      throw new Error("customer_id or email is required");
     }
 
-    // Get customer details
-    const { data: customerData } = await supabase
-      .from('customers')
-      .select('email, first_name, last_name')
-      .eq('id', customer_id)
-      .maybeSingle();
+    let customerEmail = email;
+    let customerName = name;
+    let internalCustomerId = customer_id;
 
-    if (!customerData?.email) {
+    // If we have a customer_id, get their details
+    if (customer_id && customer_id > 0) {
+      const { data: customerData } = await supabase
+        .from('customers')
+        .select('email, first_name, last_name')
+        .eq('id', customer_id)
+        .maybeSingle();
+
+      if (customerData) {
+        customerEmail = customerData.email || email;
+        customerName = customerName || `${customerData.first_name || ''} ${customerData.last_name || ''}`.trim();
+      }
+    }
+
+    if (!customerEmail) {
       throw new Error("Customer email is required");
     }
 
-    // Check if customer already has a Stripe customer ID
-    const { data: existingPaymentMethod } = await supabase
-      .from('customer_payment_methods')
-      .select('stripe_customer_id')
-      .eq('customer_id', customer_id)
-      .limit(1)
-      .maybeSingle();
+    let stripeCustomerId: string | undefined;
 
-    let stripeCustomerId = existingPaymentMethod?.stripe_customer_id;
+    // Check if customer already has a Stripe customer ID (only if we have an internal customer)
+    if (internalCustomerId && internalCustomerId > 0) {
+      const { data: existingPaymentMethod } = await supabase
+        .from('customer_payment_methods')
+        .select('stripe_customer_id')
+        .eq('customer_id', internalCustomerId)
+        .limit(1)
+        .maybeSingle();
 
-    // If no existing Stripe customer for this specific customer, create a new one
-    // We don't search by email because multiple internal customers might share emails
-    // or we might accidentally link to the wrong Stripe customer (e.g., admin's account)
+      stripeCustomerId = existingPaymentMethod?.stripe_customer_id;
+    }
+
+    // If no existing Stripe customer, find or create one
     if (!stripeCustomerId) {
-      // Search for a Stripe customer with matching internal_customer_id in metadata
-      const existingCustomers = await stripe.customers.search({
-        query: `metadata['internal_customer_id']:'${customer_id}'`,
-        limit: 1,
-      });
+      // First try to find by internal_customer_id in metadata (if we have one)
+      if (internalCustomerId && internalCustomerId > 0) {
+        const existingCustomers = await stripe.customers.search({
+          query: `metadata['internal_customer_id']:'${internalCustomerId}'`,
+          limit: 1,
+        });
 
-      if (existingCustomers.data.length > 0) {
-        stripeCustomerId = existingCustomers.data[0].id;
-        console.log("Found existing Stripe customer by metadata:", stripeCustomerId);
-      } else {
-        // Create a new Stripe customer for this specific internal customer
-        const name = `${customerData.first_name || ''} ${customerData.last_name || ''}`.trim();
+        if (existingCustomers.data.length > 0) {
+          stripeCustomerId = existingCustomers.data[0].id;
+          console.log("Found existing Stripe customer by metadata:", stripeCustomerId);
+        }
+      }
+      
+      // If still no customer, search by email as fallback for guests
+      if (!stripeCustomerId) {
+        const existingByEmail = await stripe.customers.list({
+          email: customerEmail,
+          limit: 1,
+        });
+
+        if (existingByEmail.data.length > 0) {
+          stripeCustomerId = existingByEmail.data[0].id;
+          console.log("Found existing Stripe customer by email:", stripeCustomerId);
+        }
+      }
+
+      // Create new Stripe customer if none found
+      if (!stripeCustomerId) {
         const newCustomer = await stripe.customers.create({
-          email: customerData.email,
-          name: name || undefined,
-          metadata: {
-            internal_customer_id: customer_id.toString(),
-          },
+          email: customerEmail,
+          name: customerName || undefined,
+          metadata: internalCustomerId && internalCustomerId > 0 ? {
+            internal_customer_id: internalCustomerId.toString(),
+          } : {},
         });
         stripeCustomerId = newCustomer.id;
         console.log("Created new Stripe customer:", stripeCustomerId);
@@ -87,12 +117,14 @@ serve(async (req) => {
     const setupIntent = await stripe.setupIntents.create({
       customer: stripeCustomerId,
       payment_method_types: ['card'],
-      metadata: {
-        internal_customer_id: customer_id.toString(),
+      metadata: internalCustomerId && internalCustomerId > 0 ? {
+        internal_customer_id: internalCustomerId.toString(),
+      } : {
+        guest_email: customerEmail,
       },
     });
 
-    console.log("Created SetupIntent:", setupIntent.id);
+    console.log("Created SetupIntent:", setupIntent.id, "for Stripe customer:", stripeCustomerId);
 
     return new Response(
       JSON.stringify({
