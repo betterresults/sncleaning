@@ -1,15 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { BookingData } from './src/components/booking/BookingForm';
-import { CreditCard, Shield, Clock, Check } from 'lucide-react';
+import { CreditCard, Shield, Clock, Check, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAirbnbBookingSubmit } from '@/hooks/useAirbnbBookingSubmit';
 import { CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { StripeCardNumberElementChangeEvent, StripeCardExpiryElementChangeEvent, StripeCardCvcElementChangeEvent } from '@stripe/stripe-js';
 
 interface PaymentStepProps {
   data: BookingData;
   onBack: () => void;
+}
+
+interface CardErrors {
+  cardNumber: string | null;
+  cardExpiry: string | null;
+  cardCvc: string | null;
+}
+
+interface CardComplete {
+  cardNumber: boolean;
+  cardExpiry: boolean;
+  cardCvc: boolean;
 }
 
 const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
@@ -24,6 +37,40 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   const [requiresImmediatePayment, setRequiresImmediatePayment] = useState(false);
+  
+  // Card validation state
+  const [cardErrors, setCardErrors] = useState<CardErrors>({
+    cardNumber: null,
+    cardExpiry: null,
+    cardCvc: null
+  });
+  const [cardComplete, setCardComplete] = useState<CardComplete>({
+    cardNumber: false,
+    cardExpiry: false,
+    cardCvc: false
+  });
+
+  const isCardValid = cardComplete.cardNumber && cardComplete.cardExpiry && cardComplete.cardCvc && 
+    !cardErrors.cardNumber && !cardErrors.cardExpiry && !cardErrors.cardCvc;
+
+  // Card element change handlers
+  const handleCardNumberChange = (event: StripeCardNumberElementChangeEvent) => {
+    console.log('[PaymentStep] Card number change:', { complete: event.complete, error: event.error?.message });
+    setCardErrors(prev => ({ ...prev, cardNumber: event.error?.message || null }));
+    setCardComplete(prev => ({ ...prev, cardNumber: event.complete }));
+  };
+
+  const handleCardExpiryChange = (event: StripeCardExpiryElementChangeEvent) => {
+    console.log('[PaymentStep] Card expiry change:', { complete: event.complete, error: event.error?.message });
+    setCardErrors(prev => ({ ...prev, cardExpiry: event.error?.message || null }));
+    setCardComplete(prev => ({ ...prev, cardExpiry: event.complete }));
+  };
+
+  const handleCardCvcChange = (event: StripeCardCvcElementChangeEvent) => {
+    console.log('[PaymentStep] Card CVC change:', { complete: event.complete, error: event.error?.message });
+    setCardErrors(prev => ({ ...prev, cardCvc: event.error?.message || null }));
+    setCardComplete(prev => ({ ...prev, cardCvc: event.complete }));
+  };
 
   useEffect(() => {
     checkAuthStatus();
@@ -146,8 +193,12 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
 
       // If no saved payment method, create new one
       if (!paymentMethodId) {
+        console.log('[PaymentStep] No saved payment method, creating new one');
+        console.log('[PaymentStep] Card validation state:', { cardComplete, cardErrors, isCardValid });
+        
         const cardElement = elements.getElement(CardNumberElement);
         if (!cardElement) {
+          console.error('[PaymentStep] CardNumberElement not found in DOM');
           toast({
             variant: 'destructive',
             title: 'Payment Required',
@@ -156,6 +207,27 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
           return;
         }
 
+        // Validate card is complete before attempting
+        if (!isCardValid) {
+          console.error('[PaymentStep] Card validation failed:', { cardComplete, cardErrors });
+          const errorMessages: string[] = [];
+          if (!cardComplete.cardNumber) errorMessages.push('card number is incomplete');
+          if (!cardComplete.cardExpiry) errorMessages.push('expiry date is incomplete');
+          if (!cardComplete.cardCvc) errorMessages.push('CVC is incomplete');
+          if (cardErrors.cardNumber) errorMessages.push(cardErrors.cardNumber);
+          if (cardErrors.cardExpiry) errorMessages.push(cardErrors.cardExpiry);
+          if (cardErrors.cardCvc) errorMessages.push(cardErrors.cardCvc);
+          
+          toast({
+            variant: 'destructive',
+            title: 'Card Details Invalid',
+            description: `Please fix: ${errorMessages.join(', ')}.`,
+          });
+          return;
+        }
+
+        console.log('[PaymentStep] Calling stripe.createPaymentMethod...');
+        
         // Create payment method
         const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
           elements,
@@ -168,10 +240,34 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
         });
 
         if (pmError) {
-          throw new Error(pmError.message);
+          console.error('[PaymentStep] stripe.createPaymentMethod failed:', {
+            code: pmError.code,
+            type: pmError.type,
+            message: pmError.message,
+            decline_code: (pmError as any).decline_code
+          });
+          
+          // Provide user-friendly error messages
+          let userMessage = pmError.message;
+          if (pmError.code === 'card_declined') {
+            userMessage = 'Your card was declined. Please try a different card.';
+          } else if (pmError.code === 'expired_card') {
+            userMessage = 'Your card has expired. Please use a valid card.';
+          } else if (pmError.code === 'incorrect_cvc') {
+            userMessage = 'The CVC code is incorrect. Please check and try again.';
+          } else if (pmError.code === 'insufficient_funds') {
+            userMessage = 'Insufficient funds. Please try a different card.';
+          } else if (pmError.code === 'processing_error') {
+            userMessage = 'An error occurred processing your card. Please try again.';
+          }
+          
+          throw new Error(userMessage);
         }
 
+        console.log('[PaymentStep] Payment method created successfully:', paymentMethod.id);
+
         // Save payment method
+        console.log('[PaymentStep] Saving payment method to database...');
         const { data: pmData, error: collectError } = await supabase.functions.invoke('stripe-collect-payment-method', {
           body: {
             customerEmail: data.email,
@@ -181,7 +277,12 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
           }
         });
 
-        if (collectError) throw collectError;
+        if (collectError) {
+          console.error('[PaymentStep] Failed to save payment method:', collectError);
+          throw collectError;
+        }
+        
+        console.log('[PaymentStep] Payment method saved successfully');
         paymentMethodId = paymentMethod.id;
       }
 
@@ -314,8 +415,11 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
               <div className="border rounded-lg p-4 bg-background space-y-4">
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-2">Card Number</label>
-                  <div className="p-3 border border-border rounded-lg bg-background">
+                  <div className={`p-3 border rounded-lg bg-background transition-colors ${
+                    cardErrors.cardNumber ? 'border-destructive' : 'border-border'
+                  }`}>
                     <CardNumberElement
+                      onChange={handleCardNumberChange}
                       options={{
                         style: {
                           base: {
@@ -325,16 +429,28 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
                               color: 'hsl(var(--muted-foreground))',
                             },
                           },
+                          invalid: {
+                            color: 'hsl(var(--destructive))',
+                          },
                         },
                       }}
                     />
                   </div>
+                  {cardErrors.cardNumber && (
+                    <div className="flex items-center gap-1 mt-1 text-xs text-destructive">
+                      <AlertCircle className="h-3 w-3" />
+                      <span>{cardErrors.cardNumber}</span>
+                    </div>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-muted-foreground mb-2">Expiry Date</label>
-                    <div className="p-3 border border-border rounded-lg bg-background">
+                    <div className={`p-3 border rounded-lg bg-background transition-colors ${
+                      cardErrors.cardExpiry ? 'border-destructive' : 'border-border'
+                    }`}>
                       <CardExpiryElement
+                        onChange={handleCardExpiryChange}
                         options={{
                           style: {
                             base: {
@@ -344,15 +460,27 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
                                 color: 'hsl(var(--muted-foreground))',
                               },
                             },
+                            invalid: {
+                              color: 'hsl(var(--destructive))',
+                            },
                           },
                         }}
                       />
                     </div>
+                    {cardErrors.cardExpiry && (
+                      <div className="flex items-center gap-1 mt-1 text-xs text-destructive">
+                        <AlertCircle className="h-3 w-3" />
+                        <span>{cardErrors.cardExpiry}</span>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-muted-foreground mb-2">CVC</label>
-                    <div className="p-3 border border-border rounded-lg bg-background">
+                    <div className={`p-3 border rounded-lg bg-background transition-colors ${
+                      cardErrors.cardCvc ? 'border-destructive' : 'border-border'
+                    }`}>
                       <CardCvcElement
+                        onChange={handleCardCvcChange}
                         options={{
                           style: {
                             base: {
@@ -362,10 +490,19 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
                                 color: 'hsl(var(--muted-foreground))',
                               },
                             },
+                            invalid: {
+                              color: 'hsl(var(--destructive))',
+                            },
                           },
                         }}
                       />
                     </div>
+                    {cardErrors.cardCvc && (
+                      <div className="flex items-center gap-1 mt-1 text-xs text-destructive">
+                        <AlertCircle className="h-3 w-3" />
+                        <span>{cardErrors.cardCvc}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -432,7 +569,11 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
           size="lg"
           className="px-12"
           onClick={handleCompleteBooking}
-          disabled={isSubmitting || loading || (requiresImmediatePayment && !selectedPaymentMethod && !stripe)}
+          disabled={
+            isSubmitting || 
+            loading || 
+            (requiresImmediatePayment && !selectedPaymentMethod && !isCardValid && !stripe)
+          }
         >
           {isSubmitting ? 'Processing...' : requiresImmediatePayment ? 'Pay Now & Complete Booking' : 'Complete Booking'}
         </Button>
