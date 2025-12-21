@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Users, Plus, Trash2, Edit2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
 
 interface Cleaner {
   id: number;
@@ -74,7 +75,6 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
 
   useEffect(() => {
     if (open && bookingId) {
-      fetchCleaners();
       fetchBookingDetails();
       fetchSubCleaners();
     }
@@ -112,23 +112,20 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
     }
   };
 
-  const fetchCleaners = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('cleaners')
-        .select('id, first_name, last_name, full_name, presentage_rate, hourly_rate')
-        .order('first_name');
-
-      if (error) {
-        console.error('Error fetching cleaners:', error);
-        return;
-      }
-
-      setCleaners(data || []);
-    } catch (error) {
-      console.error('Error fetching cleaners:', error);
+  // Use the shared hook for fetching linked cleaners
+  const { cleaners: linkedCleaners, loading: cleanersLoading } = useLinkedCleaners(open);
+  
+  // Sync linked cleaners to local state
+  useEffect(() => {
+    if (linkedCleaners.length > 0) {
+      setCleaners(linkedCleaners.map(c => ({
+        ...c,
+        full_name: c.full_name || `${c.first_name} ${c.last_name}`,
+        presentage_rate: c.presentage_rate || 0,
+        hourly_rate: c.hourly_rate || 0
+      })));
     }
-  };
+  }, [linkedCleaners]);
 
   const fetchSubCleaners = async () => {
     if (!bookingId) return;

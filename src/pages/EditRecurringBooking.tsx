@@ -13,6 +13,7 @@ import CreateCustomerDialog from "@/components/booking/CreateCustomerDialog";
 import CreateCleanerDialog from "@/components/booking/CreateCleanerDialog";
 import { useServiceTypes, useCleaningTypes, usePaymentMethods } from "@/hooks/useCompanySettings";
 import UpdateBookingsCleanerDialog from "@/components/recurring/UpdateBookingsCleanerDialog";
+import { useLinkedCleaners } from "@/hooks/useLinkedCleaners";
 
 interface Customer {
   id: number;

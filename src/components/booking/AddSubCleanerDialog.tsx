@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
+import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
 
 interface Cleaner {
   id: number;
@@ -33,31 +34,27 @@ const AddSubCleanerDialog = ({ bookingId, onSubCleanerAdded, children }: AddSubC
   const [bookingTotalCost, setBookingTotalCost] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  
+  // Use the shared hook for fetching linked cleaners
+  const { cleaners: linkedCleaners } = useLinkedCleaners(open);
 
   useEffect(() => {
     if (open) {
-      fetchCleaners();
       fetchBookingDetails();
     }
   }, [open, bookingId]);
 
-  const fetchCleaners = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('cleaners')
-        .select('id, first_name, last_name, full_name')
-        .order('first_name');
-
-      if (error) {
-        console.error('Error fetching cleaners:', error);
-        return;
-      }
-
-      setCleaners(data || []);
-    } catch (error) {
-      console.error('Error fetching cleaners:', error);
+  // Sync linked cleaners to local state
+  useEffect(() => {
+    if (linkedCleaners.length > 0) {
+      setCleaners(linkedCleaners.map(c => ({
+        id: c.id,
+        first_name: c.first_name,
+        last_name: c.last_name,
+        full_name: c.full_name || `${c.first_name} ${c.last_name}`
+      })));
     }
-  };
+  }, [linkedCleaners]);
 
   const fetchBookingDetails = async () => {
     try {

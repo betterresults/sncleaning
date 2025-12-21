@@ -21,6 +21,7 @@ import { useBookingEmailPrompt } from '@/hooks/useBookingEmailPrompt';
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatPropertyDetails, formatAdditionalDetails } from '@/utils/bookingFormatters';
 import { useServiceTypes, useCleaningTypes, usePaymentMethods } from '@/hooks/useCompanySettings';
+import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
 
 interface EditBookingDialogProps {
   booking: any;
@@ -184,22 +185,20 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
     }
   }, [booking, open]);
 
+  // Use the shared hook for fetching linked cleaners
+  const { cleaners: linkedCleaners } = useLinkedCleaners(open);
+  
   useEffect(() => {
-    const fetchCleaners = async () => {
-      const { data } = await supabase
-        .from('cleaners')
-        .select('id, first_name, last_name, hourly_rate, presentage_rate')
-        .order('first_name');
-      
-      if (data) {
-        setCleaners(data);
-      }
-    };
-
-    if (open) {
-      fetchCleaners();
+    if (linkedCleaners.length > 0) {
+      setCleaners(linkedCleaners.map(c => ({
+        id: c.id,
+        first_name: c.first_name,
+        last_name: c.last_name,
+        hourly_rate: c.hourly_rate || 0,
+        presentage_rate: c.presentage_rate || 0
+      })));
     }
-  }, [open]);
+  }, [linkedCleaners]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

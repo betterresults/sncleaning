@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import CreateCleanerDialog from './CreateCleanerDialog';
+import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
 
 interface Cleaner {
   id: number;
@@ -23,32 +23,23 @@ interface CleanerSelectorProps {
 const CleanerSelector = ({ onCleanerSelect }: CleanerSelectorProps) => {
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [selectedCleanerId, setSelectedCleanerId] = useState<string>('');
-  const [loading, setLoading] = useState(true);
+  
+  // Use the shared hook for fetching linked cleaners
+  const { cleaners: linkedCleaners, loading } = useLinkedCleaners(true);
 
-  const fetchCleaners = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('cleaners')
-        .select('*')
-        .order('first_name');
-
-      if (error) {
-        console.error('Error fetching cleaners:', error);
-        return;
-      }
-
-      setCleaners(data || []);
-    } catch (error) {
-      console.error('Error fetching cleaners:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Sync linked cleaners to local state
   useEffect(() => {
-    fetchCleaners();
-  }, []);
+    if (linkedCleaners.length > 0) {
+      setCleaners(linkedCleaners.map(c => ({
+        id: c.id,
+        first_name: c.first_name,
+        last_name: c.last_name,
+        full_name: c.full_name || `${c.first_name} ${c.last_name}`,
+        email: '',
+        phone: 0
+      })));
+    }
+  }, [linkedCleaners]);
 
   const handleCleanerSelect = (cleanerId: string) => {
     setSelectedCleanerId(cleanerId);

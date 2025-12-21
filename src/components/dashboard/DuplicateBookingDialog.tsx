@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
 
 interface Booking {
   id: number;
@@ -115,10 +116,12 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Use the shared hook for fetching linked cleaners
+  const { cleaners: linkedCleaners } = useLinkedCleaners(open);
+
   // Fetch cleaners and initialize editable fields when dialog opens
-  React.useEffect(() => {
+  useEffect(() => {
     if (open && booking) {
-      fetchCleaners();
       // Initialize editable fields from booking
       setTotalCost(booking.total_cost || 0);
       setDiscount(booking.discount || 0);
@@ -127,23 +130,15 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
     }
   }, [open, booking]);
 
-  const fetchCleaners = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('cleaners')
-        .select('id, full_name')
-        .order('full_name');
-
-      if (error) {
-        console.error('Error fetching cleaners:', error);
-        return;
-      }
-
-      setCleaners(data || []);
-    } catch (error) {
-      console.error('Error fetching cleaners:', error);
+  // Sync linked cleaners to local state
+  useEffect(() => {
+    if (linkedCleaners.length > 0) {
+      setCleaners(linkedCleaners.map(c => ({
+        id: c.id,
+        full_name: c.full_name || `${c.first_name} ${c.last_name}`
+      })));
     }
-  };
+  }, [linkedCleaners]);
 
   // Generate hour options (1-12 for 12-hour format)
   const hourOptions = Array.from({ length: 12 }, (_, i) => {

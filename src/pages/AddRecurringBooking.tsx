@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import CreateCustomerDialog from "@/components/booking/CreateCustomerDialog";
 import CreateCleanerDialog from "@/components/booking/CreateCleanerDialog";
 import { useServiceTypes, useCleaningTypes, usePaymentMethods } from "@/hooks/useCompanySettings";
+import { useLinkedCleaners } from "@/hooks/useLinkedCleaners";
 
 interface Customer {
   id: number;
