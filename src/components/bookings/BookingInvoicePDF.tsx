@@ -1,6 +1,6 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
-import { format } from 'date-fns';
+import { format, subHours } from 'date-fns';
 
 const styles = StyleSheet.create({
   page: {
@@ -174,28 +174,17 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     lineHeight: 1.4,
   },
-  notesSection: {
-    backgroundColor: '#fefce8',
-    padding: 12,
-    borderRadius: 6,
-    marginTop: 10,
-  },
-  notesText: {
-    fontSize: 9,
-    color: '#854d0e',
-    lineHeight: 1.4,
-  },
   bankDetailsSection: {
-    backgroundColor: '#eff6ff',
+    backgroundColor: '#ffffff',
     padding: 15,
     borderRadius: 8,
     marginTop: 15,
-    border: '1 solid #bfdbfe',
+    border: '1 solid #e5e7eb',
   },
   bankDetailsTitle: {
     fontSize: 11,
     fontWeight: 'bold',
-    color: '#1e40af',
+    color: '#1f2937',
     marginBottom: 10,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -207,13 +196,13 @@ const styles = StyleSheet.create({
   bankDetailsLabel: {
     width: '35%',
     fontSize: 10,
-    color: '#3b82f6',
+    color: '#6b7280',
     fontWeight: 'bold',
   },
   bankDetailsValue: {
     width: '65%',
     fontSize: 10,
-    color: '#1e3a8a',
+    color: '#1f2937',
   },
 });
 
@@ -323,6 +312,11 @@ export const BookingInvoicePDF: React.FC<BookingInvoicePDFProps> = ({ booking, c
 
   const invoiceNumber = `INV-${booking.id.toString().padStart(6, '0')}`;
 
+  // Due date is 48 hours before the booking
+  const dueDate = booking.date_time 
+    ? format(subHours(new Date(booking.date_time), 48), 'dd MMMM yyyy')
+    : 'N/A';
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -410,10 +404,7 @@ export const BookingInvoicePDF: React.FC<BookingInvoicePDFProps> = ({ booking, c
               <View style={styles.tableRow}>
                 <View style={styles.tableCol1}>
                   <Text style={{ fontWeight: 'bold', marginBottom: 2 }}>
-                    {humanize(booking.service_type)}
-                  </Text>
-                  <Text style={{ fontSize: 9, color: '#6b7280' }}>
-                    {humanize(booking.cleaning_type)}
+                    {humanize(booking.cleaning_type) || humanize(booking.service_type)}
                   </Text>
                 </View>
                 <Text style={styles.tableCol2}>
@@ -455,20 +446,14 @@ export const BookingInvoicePDF: React.FC<BookingInvoicePDFProps> = ({ booking, c
               <Text style={styles.bankDetailsLabel}>Reference:</Text>
               <Text style={styles.bankDetailsValue}>{booking.id}</Text>
             </View>
-            <Text style={{ fontSize: 8, color: '#1e40af', marginTop: 8, fontStyle: 'italic' }}>
-              Please use your booking ID as the payment reference.
+            <View style={styles.bankDetailsRow}>
+              <Text style={styles.bankDetailsLabel}>Payment Due:</Text>
+              <Text style={styles.bankDetailsValue}>{dueDate}</Text>
+            </View>
+            <Text style={{ fontSize: 8, color: '#6b7280', marginTop: 8, fontStyle: 'italic' }}>
+              Please transfer at least 48 hours before the booking date.
             </Text>
           </View>
-
-          {/* Notes */}
-          {formattedNotes && (
-            <View style={styles.notesSection}>
-              <Text style={{ fontSize: 10, fontWeight: 'bold', marginBottom: 4, color: '#854d0e' }}>
-                Additional Notes:
-              </Text>
-              <Text style={styles.notesText}>{formattedNotes}</Text>
-            </View>
-          )}
         </View>
 
         {/* Footer */}
