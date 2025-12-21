@@ -18,7 +18,8 @@ export const useTodayBookingsCount = () => {
       .from('bookings')
       .select('id', { count: 'exact', head: true })
       .gte('date_time', startOfDay)
-      .lte('date_time', endOfDay);
+      .lte('date_time', endOfDay)
+      .neq('booking_status', 'cancelled');
 
     // If we have a cleaner ID, filter by it
     if (effectiveCleanerId) {
