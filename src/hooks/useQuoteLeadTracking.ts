@@ -347,11 +347,16 @@ export const useQuoteLeadTracking = (serviceType: string, options?: TrackingOpti
       }
     }, HEARTBEAT_INTERVAL);
 
-    // Mark as 'left' when user leaves the page
+    // Mark as 'left' when user leaves the page (but not if booking was completed)
     const handleBeforeUnload = () => {
       if (!hasRecordCreated.current) return;
       
+      // Don't mark as 'left' if the booking was completed
       const currentStep = localStorage.getItem('quote_furthest_step') || 'started';
+      if (currentStep === 'booking_completed' || currentStep === 'completed') {
+        return; // Already completed, don't overwrite with 'left'
+      }
+      
       const leadData = {
         user_id: userId.current,
         session_id: sessionId.current,
@@ -371,7 +376,7 @@ export const useQuoteLeadTracking = (serviceType: string, options?: TrackingOpti
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
-    
+
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       if (heartbeatInterval.current) {
@@ -523,6 +528,9 @@ export const useQuoteLeadTracking = (serviceType: string, options?: TrackingOpti
   }, [saveQuoteLead]);
 
   const markCompleted = useCallback((data?: Partial<QuoteLeadData>) => {
+    // Store in localStorage so beforeunload knows not to overwrite with 'left'
+    localStorage.setItem('quote_furthest_step', 'booking_completed');
+    
     saveQuoteLead({
       status: 'completed',
       furthestStep: 'booking_completed',
