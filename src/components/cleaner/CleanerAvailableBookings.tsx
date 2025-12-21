@@ -26,6 +26,7 @@ const CleanerAvailableBookings = () => {
       .from('bookings')
       .select('*')
       .is('cleaner', null)
+      .neq('booking_status', 'cancelled')
       .gte('date_time', new Date().toISOString()) // Only future bookings  
       .order('date_time', { ascending: true });
 
