@@ -1,19 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, subDays, startOfDay, endOfDay, subWeeks, subMonths, isWithinInterval } from 'date-fns';
-import { RefreshCw, Eye, MousePointerClick, FileText, TrendingUp, Trash2, Sparkles, Mail, Settings2, Users, CheckCircle2, Clock, ArrowUpRight, Home, Building, ChevronLeft, ChevronRight, Calendar, ChevronDown, ChevronUp, Phone, MapPin } from 'lucide-react';
+import { RefreshCw, Eye, MousePointerClick, TrendingUp, Trash2, Users, CheckCircle2, Home, Building, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import QuoteLeadDetailPanel from './QuoteLeadDetailPanel';
+import QuoteLeadCard from './QuoteLeadCard';
 
 type TimePeriod = 'today' | 'yesterday' | 'last_week' | 'last_month' | 'last_3_months' | 'all';
 
@@ -46,26 +45,7 @@ const getDateRange = (period: TimePeriod): { start: Date; end: Date } | null => 
   }
 };
 
-const ITEMS_PER_PAGE = 15;
-
-type ColumnKey = 'date' | 'service' | 'contact' | 'property' | 'quote' | 'progress' | 'status' | 'source' | 'frequency' | 'cleaningType' | 'extras' | 'createdBy';
-
-const ALL_COLUMNS: { key: ColumnKey; label: string }[] = [
-  { key: 'date', label: 'Date' },
-  { key: 'service', label: 'Service' },
-  { key: 'contact', label: 'Contact' },
-  { key: 'property', label: 'Property' },
-  { key: 'quote', label: 'Quote' },
-  { key: 'progress', label: 'Progress' },
-  { key: 'status', label: 'Status' },
-  { key: 'source', label: 'Source' },
-  { key: 'createdBy', label: 'Created By' },
-  { key: 'frequency', label: 'Frequency' },
-  { key: 'cleaningType', label: 'Cleaning Type' },
-  { key: 'extras', label: 'Extras' },
-];
-
-const DEFAULT_VISIBLE_COLUMNS: ColumnKey[] = ['date', 'service', 'contact', 'property', 'quote', 'progress', 'status'];
+const ITEMS_PER_PAGE = 10;
 
 interface FunnelEvent {
   id: string;
@@ -78,18 +58,6 @@ interface FunnelEvent {
   utm_campaign: string | null;
   created_at: string;
 }
-
-type FunnelEventRow = {
-  id: string;
-  session_id: string;
-  event_type: string;
-  event_data: unknown;
-  page_url: string | null;
-  referrer: string | null;
-  utm_source: string | null;
-  utm_campaign: string | null;
-  created_at: string;
-};
 
 interface QuoteLead {
   id: string;
@@ -183,45 +151,8 @@ const QuoteLeadsView = () => {
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [adminProfiles, setAdminProfiles] = useState<Map<string, AdminProfile>>(new Map());
-  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [visibleColumns, setVisibleColumns] = useState<ColumnKey[]>(() => {
-    const saved = localStorage.getItem('quoteLeadsVisibleColumns');
-    if (saved) {
-      try {
-        return JSON.parse(saved) as ColumnKey[];
-      } catch {
-        return DEFAULT_VISIBLE_COLUMNS;
-      }
-    }
-    return DEFAULT_VISIBLE_COLUMNS;
-  });
-
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('all');
   const [currentPage, setCurrentPage] = useState(1);
-
-  const toggleColumn = (column: ColumnKey) => {
-    setVisibleColumns(prev => {
-      const newColumns = prev.includes(column) 
-        ? prev.filter(c => c !== column)
-        : [...prev, column];
-      localStorage.setItem('quoteLeadsVisibleColumns', JSON.stringify(newColumns));
-      return newColumns;
-    });
-  };
-
-  const isColumnVisible = (column: ColumnKey) => visibleColumns.includes(column);
-
-  const toggleRowExpansion = (leadId: string) => {
-    setExpandedRows(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(leadId)) {
-        newSet.delete(leadId);
-      } else {
-        newSet.add(leadId);
-      }
-      return newSet;
-    });
-  };
 
   const fetchData = async () => {
     setRefreshing(true);
@@ -286,20 +217,14 @@ const QuoteLeadsView = () => {
     if (serviceId.includes('airbnb') || serviceId.includes('air-bnb')) {
       return <Building className="h-4 w-4" />;
     }
-    if (serviceId.includes('domestic')) {
-      return <Home className="h-4 w-4" />;
-    }
-    return <FileText className="h-4 w-4" />;
+    return <Home className="h-4 w-4" />;
   };
 
   const getServiceColor = (serviceId: string) => {
     if (serviceId.includes('airbnb') || serviceId.includes('air-bnb')) {
       return 'bg-rose-50 text-rose-700 border-rose-200';
     }
-    if (serviceId.includes('domestic')) {
-      return 'bg-sky-50 text-sky-700 border-sky-200';
-    }
-    return 'bg-gray-50 text-gray-700 border-gray-200';
+    return 'bg-sky-50 text-sky-700 border-sky-200';
   };
 
   const handleSelectLead = (leadId: string, checked: boolean) => {
@@ -316,7 +241,7 @@ const QuoteLeadsView = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedLeads(new Set(filteredLeads.map(l => l.id)));
+      setSelectedLeads(new Set(paginatedLeads.map(l => l.id)));
     } else {
       setSelectedLeads(new Set());
     }
@@ -416,7 +341,7 @@ const QuoteLeadsView = () => {
   const completions = timeFilteredLeads.filter(l => l.status === 'completed').length;
   const liveLeads = timeFilteredLeads.filter(l => l.status === 'live' && !isLeadIdle(l)).length;
   
-  // Booking attempt stats - shows success vs failed attempts
+  // Booking attempt stats
   const bookingAttempts = timeFilteredLeads.filter(l => l.furthest_step === 'booking_attempted' || l.furthest_step === 'booking_completed').length;
   const successfulBookings = timeFilteredLeads.filter(l => l.status === 'completed').length;
   const failedAttempts = bookingAttempts - successfulBookings;
@@ -443,7 +368,11 @@ const QuoteLeadsView = () => {
           ))}
         </div>
         <Skeleton className="h-32 rounded-2xl" />
-        <Skeleton className="h-96 rounded-2xl" />
+        <div className="space-y-4">
+          {[1, 2, 3].map(i => (
+            <Skeleton key={i} className="h-40 rounded-2xl" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -478,7 +407,7 @@ const QuoteLeadsView = () => {
         </Button>
       </div>
 
-      {/* Stats Grid - Modern Cards */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         <Card className="rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow bg-gradient-to-br from-blue-50 to-white">
           <CardContent className="p-4 sm:p-5">
@@ -561,7 +490,7 @@ const QuoteLeadsView = () => {
         </Card>
       </div>
 
-      {/* Service Breakdown - Modern Design */}
+      {/* Service Breakdown */}
       {Object.keys(serviceBreakdown).length > 0 && (
         <Card className="rounded-2xl border border-gray-100 shadow-sm">
           <CardContent className="p-4 sm:p-6">
@@ -605,26 +534,27 @@ const QuoteLeadsView = () => {
         </Card>
       )}
 
-      {/* Leads Table */}
+      {/* Leads Section */}
       <Tabs defaultValue="leads" className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <TabsList className="bg-gray-100/80 p-1 rounded-xl">
             <TabsTrigger value="leads" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm px-4">
-              Quote Leads ({leads.length})
+              Quote Leads ({filteredLeads.length})
             </TabsTrigger>
             <TabsTrigger value="events" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm px-4">
-              Events ({events.length})
+              Events ({timeFilteredEvents.length})
             </TabsTrigger>
           </TabsList>
         </div>
 
-        <TabsContent value="leads">
-          <Card className="rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <CardHeader className="pb-4 bg-gray-50/50 border-b border-gray-100">
+        <TabsContent value="leads" className="space-y-4">
+          {/* Filters & Actions */}
+          <Card className="rounded-2xl border border-gray-100 shadow-sm">
+            <CardContent className="p-4">
               <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center justify-between">
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 items-center">
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[160px] bg-white rounded-xl border-gray-200">
+                    <SelectTrigger className="w-[140px] bg-white rounded-xl border-gray-200">
                       <SelectValue placeholder="All Statuses" />
                     </SelectTrigger>
                     <SelectContent className="bg-white">
@@ -637,7 +567,7 @@ const QuoteLeadsView = () => {
                     </SelectContent>
                   </Select>
                   <Select value={serviceFilter} onValueChange={setServiceFilter}>
-                    <SelectTrigger className="w-[160px] bg-white rounded-xl border-gray-200">
+                    <SelectTrigger className="w-[140px] bg-white rounded-xl border-gray-200">
                       <SelectValue placeholder="All Services" />
                     </SelectTrigger>
                     <SelectContent className="bg-white">
@@ -646,6 +576,16 @@ const QuoteLeadsView = () => {
                       <SelectItem value="Domestic">Domestic</SelectItem>
                     </SelectContent>
                   </Select>
+                  
+                  {paginatedLeads.length > 0 && (
+                    <div className="flex items-center gap-2 ml-2">
+                      <Checkbox 
+                        checked={selectedLeads.size === paginatedLeads.length && paginatedLeads.length > 0}
+                        onCheckedChange={handleSelectAll}
+                      />
+                      <span className="text-sm text-gray-500">Select all</span>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="flex flex-wrap gap-2">
@@ -708,405 +648,91 @@ const QuoteLeadsView = () => {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
-                  
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className="rounded-xl">
-                        <Settings2 className="h-4 w-4 mr-1" />
-                        Columns
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-48 p-2 bg-white" align="end">
-                      <p className="text-sm font-medium mb-2 px-2">Show columns</p>
-                      {ALL_COLUMNS.map(col => (
-                        <div 
-                          key={col.key}
-                          className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded-lg cursor-pointer"
-                          onClick={() => toggleColumn(col.key)}
-                        >
-                          <Checkbox checked={isColumnVisible(col.key)} />
-                          <span className="text-sm">{col.label}</span>
-                        </div>
-                      ))}
-                    </PopoverContent>
-                  </Popover>
                 </div>
               </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gray-50/50 hover:bg-gray-50/50">
-                      <TableHead className="w-10"></TableHead>
-                      <TableHead className="w-12">
-                        <Checkbox 
-                          checked={selectedLeads.size === filteredLeads.length && filteredLeads.length > 0}
-                          onCheckedChange={handleSelectAll}
-                        />
-                      </TableHead>
-                      {isColumnVisible('date') && <TableHead className="font-semibold text-gray-600">Date</TableHead>}
-                      {isColumnVisible('service') && <TableHead className="font-semibold text-gray-600">Service</TableHead>}
-                      {isColumnVisible('contact') && <TableHead className="font-semibold text-gray-600">Contact</TableHead>}
-                      {isColumnVisible('property') && <TableHead className="font-semibold text-gray-600">Property</TableHead>}
-                      {isColumnVisible('quote') && <TableHead className="font-semibold text-gray-600">Quote</TableHead>}
-                      {isColumnVisible('progress') && <TableHead className="font-semibold text-gray-600">Progress</TableHead>}
-                      {isColumnVisible('status') && <TableHead className="font-semibold text-gray-600">Status</TableHead>}
-                      {isColumnVisible('frequency') && <TableHead className="font-semibold text-gray-600">Frequency</TableHead>}
-                      {isColumnVisible('cleaningType') && <TableHead className="font-semibold text-gray-600">Type</TableHead>}
-                      {isColumnVisible('extras') && <TableHead className="font-semibold text-gray-600">Extras</TableHead>}
-                      {isColumnVisible('source') && <TableHead className="font-semibold text-gray-600">Source</TableHead>}
-                      {isColumnVisible('createdBy') && <TableHead className="font-semibold text-gray-600">Created By</TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedLeads.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={visibleColumns.length + 2} className="text-center py-12 text-gray-400">
-                          <div className="flex flex-col items-center gap-2">
-                            <Users className="h-8 w-8 text-gray-300" />
-                            <p>No quote leads found</p>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      paginatedLeads.map((lead) => (
-                        <React.Fragment key={lead.id}>
-                          <TableRow 
-                            className={`hover:bg-gray-50/50 cursor-pointer transition-colors ${expandedRows.has(lead.id) ? 'bg-primary/5 border-l-2 border-l-primary' : ''}`}
-                            onClick={() => toggleRowExpansion(lead.id)}
-                          >
-                            <TableCell className="w-10">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleRowExpansion(lead.id);
-                                }}
-                              >
-                                {expandedRows.has(lead.id) ? (
-                                  <ChevronUp className="h-4 w-4 text-primary" />
-                                ) : (
-                                  <ChevronDown className="h-4 w-4 text-gray-400" />
-                                )}
-                              </Button>
-                            </TableCell>
-                            <TableCell onClick={(e) => e.stopPropagation()}>
-                              <Checkbox 
-                                checked={selectedLeads.has(lead.id)}
-                                onCheckedChange={(checked) => handleSelectLead(lead.id, checked as boolean)}
-                              />
-                            </TableCell>
-                            
-                            {isColumnVisible('date') && (
-                              <TableCell>
-                                {lead.created_at ? (
-                                  <div className="text-sm">
-                                    <p className="font-medium text-gray-900">{format(new Date(lead.created_at), 'dd MMM')}</p>
-                                    <p className="text-gray-400 text-xs">{format(new Date(lead.created_at), 'HH:mm')}</p>
-                                  </div>
-                                ) : '-'}
-                              </TableCell>
-                            )}
-                            
-                            {isColumnVisible('service') && (
-                              <TableCell>
-                                <Badge 
-                                  variant="outline" 
-                                  className={`${
-                                    lead.service_type === 'Air BnB' 
-                                      ? 'bg-rose-50 text-rose-700 border-rose-200' 
-                                      : 'bg-sky-50 text-sky-700 border-sky-200'
-                                  }`}
-                                >
-                                  {lead.service_type || '-'}
-                                </Badge>
-                              </TableCell>
-                            )}
-                            
-                            {isColumnVisible('contact') && (
-                              <TableCell>
-                                <div className="space-y-0.5">
-                                  {lead.first_name || lead.last_name ? (
-                                    <p className="font-medium text-gray-900">{`${lead.first_name || ''} ${lead.last_name || ''}`.trim()}</p>
-                                  ) : null}
-                                  {lead.email && (
-                                    <div className="flex items-center gap-1 text-sm text-gray-500">
-                                      <Mail className="h-3 w-3" />
-                                      <span className="truncate max-w-[160px]">{lead.email}</span>
-                                    </div>
-                                  )}
-                                  {lead.phone && (
-                                    <div className="flex items-center gap-1 text-sm text-gray-400">
-                                      <Phone className="h-3 w-3" />
-                                      <span>{lead.phone}</span>
-                                    </div>
-                                  )}
-                                  {!lead.first_name && !lead.email && !lead.phone && (
-                                    <span className="text-gray-400 text-sm italic">No contact info</span>
-                                  )}
-                                </div>
-                              </TableCell>
-                            )}
-                            
-                            {isColumnVisible('property') && (
-                              <TableCell>
-                                <div className="text-sm space-y-0.5">
-                                  {lead.postcode && (
-                                    <div className="flex items-center gap-1">
-                                      <MapPin className="h-3 w-3 text-gray-400" />
-                                      <span className="font-medium text-gray-900">{lead.postcode}</span>
-                                    </div>
-                                  )}
-                                  {(lead.bedrooms || lead.bathrooms) && (
-                                    <div className="flex items-center gap-2 text-gray-500 text-xs">
-                                      {lead.bedrooms && (
-                                        <span className="flex items-center gap-0.5">
-                                          <Home className="h-3 w-3" />
-                                          {lead.bedrooms} bed
-                                        </span>
-                                      )}
-                                      {lead.bathrooms && (
-                                        <span className="flex items-center gap-0.5">
-                                          <span className="text-gray-300">•</span>
-                                          {lead.bathrooms} bath
-                                        </span>
-                                      )}
-                                    </div>
-                                  )}
-                                  {lead.property_type && (
-                                    <Badge variant="outline" className="text-xs capitalize bg-gray-50">
-                                      {lead.property_type}
-                                    </Badge>
-                                  )}
-                                </div>
-                              </TableCell>
-                            )}
-                            
-                            {isColumnVisible('quote') && (
-                              <TableCell>
-                                <div className="flex items-center gap-1.5">
-                                  {lead.calculated_quote ? (
-                                    <span className="font-bold text-green-600 text-lg">£{lead.calculated_quote.toFixed(0)}</span>
-                                  ) : (
-                                    <span className="text-gray-400">-</span>
-                                  )}
-                                  {lead.is_first_time_customer && (
-                                    <span title="First time customer">
-                                      <Sparkles className="h-3.5 w-3.5 text-purple-500" />
-                                    </span>
-                                  )}
-                                </div>
-                                {lead.discount_amount && lead.discount_amount > 0 && (
-                                  <p className="text-xs text-red-500">-£{lead.discount_amount.toFixed(0)} discount</p>
-                                )}
-                                {lead.recommended_hours && (
-                                  <p className="text-xs text-gray-400">{lead.recommended_hours}h recommended</p>
-                                )}
-                              </TableCell>
-                            )}
-                            
-                            {isColumnVisible('progress') && (
-                              <TableCell>
-                                <div className="space-y-1.5">
-                                  {lead.furthest_step && (
-                                    <div className="flex items-center gap-1.5">
-                                      <div className={`h-2 w-2 rounded-full ${
-                                        lead.furthest_step === 'payment' || lead.furthest_step === 'booking_attempted' ? 'bg-green-500' :
-                                        lead.furthest_step === 'quote' || lead.furthest_step === 'quote_viewed' ? 'bg-teal-500' :
-                                        lead.furthest_step === 'contact' ? 'bg-purple-500' :
-                                        lead.furthest_step === 'schedule' || lead.furthest_step === 'datetime' ? 'bg-orange-500' :
-                                        lead.furthest_step === 'extras' ? 'bg-yellow-500' :
-                                        'bg-gray-300'
-                                      }`} />
-                                      <span className="text-xs text-gray-600 capitalize font-medium">{lead.furthest_step.replace(/_/g, ' ')}</span>
-                                    </div>
-                                  )}
-                                  {lead.quote_email_sent && (
-                                    <div className="flex items-center gap-1 text-green-600">
-                                      <Mail className="h-3 w-3" />
-                                      <span className="text-xs font-medium">Email Sent</span>
-                                    </div>
-                                  )}
-                                  {lead.converted_booking_id && (
-                                    <Badge className="bg-green-100 text-green-700 text-xs">
-                                      Converted #{lead.converted_booking_id}
-                                    </Badge>
-                                  )}
-                                </div>
-                              </TableCell>
-                            )}
-                            
-                            {isColumnVisible('status') && (
-                              <TableCell>
-                                <Badge 
-                                  variant="outline" 
-                                  className={`text-xs font-medium ${
-                                    lead.status === 'completed' ? 'bg-green-100 text-green-700 border-green-200' :
-                                    lead.status === 'left' ? 'bg-red-50 text-red-600 border-red-200' :
-                                    isLeadIdle(lead) ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                                    'bg-blue-50 text-blue-600 border-blue-200 animate-pulse'
-                                  }`}
-                                >
-                                  {lead.status === 'completed' ? '✓ Completed' : 
-                                   lead.status === 'left' ? '✗ Left' :
-                                   isLeadIdle(lead) ? '⏸ Idle' : '● Live'}
-                                </Badge>
-                              </TableCell>
-                            )}
-                            
-                            {isColumnVisible('frequency') && (
-                              <TableCell>
-                                {lead.frequency ? (
-                                  <Badge variant="outline" className="text-xs capitalize">{lead.frequency}</Badge>
-                                ) : (
-                                  <span className="text-gray-400">-</span>
-                                )}
-                              </TableCell>
-                            )}
-                            
-                            {isColumnVisible('cleaningType') && (
-                              <TableCell>
-                                {lead.cleaning_type ? (
-                                  <Badge variant="outline" className="text-xs capitalize">{lead.cleaning_type}</Badge>
-                                ) : (
-                                  <span className="text-gray-400">-</span>
-                                )}
-                              </TableCell>
-                            )}
-                            
-                            {isColumnVisible('extras') && (
-                              <TableCell>
-                                <div className="text-xs text-gray-600 space-y-0.5">
-                                  {lead.oven_cleaning && (
-                                    <Badge variant="outline" className="text-xs mr-1">
-                                      Oven {lead.oven_size && `(${lead.oven_size})`}
-                                    </Badge>
-                                  )}
-                                  {lead.ironing_hours && lead.ironing_hours > 0 && (
-                                    <Badge variant="outline" className="text-xs">
-                                      Ironing {lead.ironing_hours}h
-                                    </Badge>
-                                  )}
-                                  {lead.first_deep_clean && (
-                                    <Badge variant="outline" className="text-xs bg-purple-50 text-purple-600">
-                                      Deep Clean
-                                    </Badge>
-                                  )}
-                                  {!lead.oven_cleaning && !lead.ironing_hours && !lead.first_deep_clean && (
-                                    <span className="text-gray-400">-</span>
-                                  )}
-                                </div>
-                              </TableCell>
-                            )}
-                            
-                            {isColumnVisible('source') && (
-                              <TableCell>
-                                <div className="text-xs space-y-1">
-                                  {lead.source && lead.source !== 'direct' && lead.source !== 'website' ? (
-                                    <Badge variant="outline" className="capitalize bg-gray-50">{lead.source}</Badge>
-                                  ) : lead.utm_source ? (
-                                    <Badge variant="outline" className="capitalize bg-gray-50">{lead.utm_source}</Badge>
-                                  ) : (
-                                    <span className="text-gray-400">Direct</span>
-                                  )}
-                                  {lead.utm_campaign && (
-                                    <p className="text-gray-400 truncate max-w-[100px]" title={lead.utm_campaign}>{lead.utm_campaign}</p>
-                                  )}
-                                </div>
-                              </TableCell>
-                            )}
-                            
-                            {isColumnVisible('createdBy') && (
-                              <TableCell>
-                                {lead.created_by_admin_id ? (
-                                  <Badge variant="secondary" className="text-xs bg-gray-100">
-                                    {getAdminName(lead.created_by_admin_id)}
-                                  </Badge>
-                                ) : (
-                                  <span className="text-xs text-gray-400 italic">Customer</span>
-                                )}
-                              </TableCell>
-                            )}
-                          </TableRow>
-                          
-                          {/* Expanded Detail Panel */}
-                          {expandedRows.has(lead.id) && (
-                            <TableRow className="hover:bg-transparent">
-                              <TableCell colSpan={visibleColumns.length + 2} className="p-0">
-                                <QuoteLeadDetailPanel 
-                                  lead={lead}
-                                  adminName={lead.created_by_admin_id ? getAdminName(lead.created_by_admin_id) : undefined}
-                                />
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </React.Fragment>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-              
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50/30">
-                  <p className="text-sm text-gray-500">
-                    Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, filteredLeads.length)} of {filteredLeads.length} leads
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      className="rounded-lg"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      Previous
-                    </Button>
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        let pageNum: number;
-                        if (totalPages <= 5) {
-                          pageNum = i + 1;
-                        } else if (currentPage <= 3) {
-                          pageNum = i + 1;
-                        } else if (currentPage >= totalPages - 2) {
-                          pageNum = totalPages - 4 + i;
-                        } else {
-                          pageNum = currentPage - 2 + i;
-                        }
-                        return (
-                          <Button
-                            key={pageNum}
-                            variant={currentPage === pageNum ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setCurrentPage(pageNum)}
-                            className={`w-9 h-9 rounded-lg ${currentPage === pageNum ? 'bg-primary text-primary-foreground' : ''}`}
-                          >
-                            {pageNum}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages}
-                      className="rounded-lg"
-                    >
-                      Next
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
+
+          {/* Lead Cards */}
+          {paginatedLeads.length === 0 ? (
+            <Card className="rounded-2xl border border-gray-100 shadow-sm">
+              <CardContent className="p-12 text-center text-gray-400">
+                <div className="flex flex-col items-center gap-2">
+                  <Users className="h-12 w-12 text-gray-300" />
+                  <p className="text-lg font-medium">No quote leads found</p>
+                  <p className="text-sm">Try adjusting your filters</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {paginatedLeads.map((lead) => (
+                <QuoteLeadCard
+                  key={lead.id}
+                  lead={lead}
+                  adminName={getAdminName(lead.created_by_admin_id || lead.agent_user_id)}
+                  isSelected={selectedLeads.has(lead.id)}
+                  onSelect={(checked) => handleSelectLead(lead.id, checked)}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-100">
+              <p className="text-sm text-gray-500">
+                Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, filteredLeads.length)} of {filteredLeads.length} leads
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="rounded-lg"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum: number;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-9 h-9 rounded-lg ${currentPage === pageNum ? 'bg-primary text-primary-foreground' : ''}`}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="rounded-lg"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="events">
