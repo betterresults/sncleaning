@@ -430,15 +430,28 @@ const QuoteLeadCard: React.FC<QuoteLeadCardProps> = ({ lead, adminName, isSelect
           </div>
 
           {/* Source Info */}
-          <div className="flex items-center gap-2 text-xs text-gray-500">
+          <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
             {(lead.source || lead.utm_source) && (
-              <span className="flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded">
+              <span className="flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded font-medium">
                 <Globe className="h-3 w-3" />
                 {lead.source || lead.utm_source}
               </span>
             )}
+            {lead.utm_medium && (
+              <Badge className={`text-xs border-0 ${
+                lead.utm_medium.toLowerCase() === 'sms' ? 'bg-green-100 text-green-700' :
+                lead.utm_medium.toLowerCase() === 'email' ? 'bg-blue-100 text-blue-700' :
+                lead.utm_medium.toLowerCase() === 'phone' || lead.utm_medium.toLowerCase() === 'call' ? 'bg-amber-100 text-amber-700' :
+                lead.utm_medium.toLowerCase() === 'cpc' || lead.utm_medium.toLowerCase() === 'paid' ? 'bg-purple-100 text-purple-700' :
+                lead.utm_medium.toLowerCase() === 'organic' ? 'bg-emerald-100 text-emerald-700' :
+                lead.utm_medium.toLowerCase() === 'social' ? 'bg-pink-100 text-pink-700' :
+                'bg-gray-100 text-gray-700'
+              }`}>
+                {lead.utm_medium.toUpperCase()}
+              </Badge>
+            )}
             {lead.utm_campaign && (
-              <span className="bg-gray-100 px-2 py-0.5 rounded truncate max-w-[120px]">
+              <span className="bg-gray-100 px-2 py-0.5 rounded truncate max-w-[150px]" title={lead.utm_campaign}>
                 {lead.utm_campaign}
               </span>
             )}
