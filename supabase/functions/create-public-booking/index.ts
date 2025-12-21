@@ -245,8 +245,22 @@ const handler = async (req: Request): Promise<Response> => {
     };
     if (data.notes) additionalDetailsJson.notes = data.notes;
 
-    const totalHours = data.totalHours || data.estimatedHours || 0;
-    const regularHours = data.estimatedHours || totalHours;
+    // Calculate hours correctly for first deep clean
+    const regularHours = data.estimatedHours || data.totalHours || 0;
+    const firstDeepCleanExtraHours = data.firstDeepCleanExtraHours || 0;
+    
+    // For the FIRST booking with deep clean, total hours should include extra deep clean hours
+    // e.g., 2 regular hours + 1 extra hour = 3 hours for first visit
+    const totalHoursForBooking = data.wantsFirstDeepClean 
+      ? regularHours + firstDeepCleanExtraHours  
+      : regularHours;
+    
+    console.log('[create-public-booking] Hours calculation:', {
+      regularHours,
+      firstDeepCleanExtraHours,
+      wantsFirstDeepClean: data.wantsFirstDeepClean,
+      totalHoursForBooking
+    });
 
     // Determine created_by_source
     let createdBySource = 'website';
@@ -279,9 +293,9 @@ const handler = async (req: Request): Promise<Response> => {
       date_time: bookingDateTimeStr || null,
       date_only: dateStr || null,
       time_only: (data.flexibility === 'flexible-time' || !data.selectedTime) ? null : time24ForDB,
-      hours_required: totalHours,
-      total_hours: totalHours,
-      recommended_hours: regularHours,
+      hours_required: totalHoursForBooking,
+      total_hours: totalHoursForBooking,
+      recommended_hours: regularHours,  // Regular hours for recurring bookings
       cleaning_cost_per_hour: data.hourlyRate || 0,
       total_cost: data.totalCost || 0,
       payment_method: data.paymentMethod || null,
