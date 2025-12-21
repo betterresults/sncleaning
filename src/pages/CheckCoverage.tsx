@@ -153,20 +153,19 @@ const CheckCoverage = () => {
       {/* Header - matching booking form style */}
       <header className="bg-white py-4 mb-3 border-b border-border shadow-[0_10px_30px_rgba(0,0,0,0.14)]">
         <div className="container mx-auto px-2 sm:px-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <Link to="/">
               <Button
                 variant="outline"
-                className="text-sm font-medium hover:bg-accent/50 transition-all duration-200 shadow-sm rounded-xl"
+                size="icon"
+                className="h-9 w-9 hover:bg-accent/50 transition-all duration-200 shadow-sm rounded-xl"
               >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
+                <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700">
               Check Our Coverage
             </h1>
-            <div className="w-[100px]" />
           </div>
         </div>
       </header>
@@ -188,7 +187,7 @@ const CheckCoverage = () => {
             <div className="flex gap-3">
               <Input
                 type="text"
-                placeholder="Enter your postcode (e.g., E1 6AN)"
+                placeholder="Enter your postcode, e.g. E1 6AN"
                 value={postcode}
                 onChange={(e) => setPostcode(e.target.value)}
                 onKeyPress={handleKeyPress}
