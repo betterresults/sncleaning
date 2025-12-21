@@ -9,8 +9,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useAdminCleaner } from '@/contexts/AdminCleanerContext';
 import { usePhotoSync } from '@/hooks/usePhotoSync';
 import { useTodayBookingsCount } from '@/hooks/useTodayBookingsCount';
-import { Calendar, Briefcase } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 const CleanerTodayPage = () => {
   const { user, userRole, cleanerId, loading } = useAuth();
@@ -62,24 +60,7 @@ const CleanerTodayPage = () => {
               <div className="text-muted-foreground">Loading bookings...</div>
             </div>
           ) : todayCount === 0 ? (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
-              <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                <Calendar className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <h2 className="text-xl font-semibold mb-2">No bookings today</h2>
-              <p className="text-muted-foreground mb-6 text-center">
-                Check available jobs or upcoming bookings
-              </p>
-              <div className="flex gap-3">
-                <Button onClick={() => navigate('/cleaner-available-bookings')} variant="default">
-                  <Briefcase className="h-4 w-4 mr-2" />
-                  View Available Jobs
-                </Button>
-                <Button onClick={() => navigate('/cleaner-upcoming-bookings')} variant="outline">
-                  View Upcoming
-                </Button>
-              </div>
-            </div>
+            <Navigate to="/cleaner-upcoming-bookings" replace />
           ) : (
             <CleanerTodayBookingsList />
           )}

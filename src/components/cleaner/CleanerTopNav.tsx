@@ -35,7 +35,7 @@ export default function CleanerTopNav() {
       <div className="flex items-center justify-between px-4 h-full max-w-screen-xl mx-auto">
         {/* Left: Today & Available badges */}
         <div className="flex items-center gap-2">
-          {todayCount && todayCount > 0 && (
+          {todayCount !== undefined && todayCount > 0 && (
             <Link to="/cleaner-today">
               <Badge
                 variant="secondary"
@@ -47,7 +47,7 @@ export default function CleanerTopNav() {
             </Link>
           )}
           
-          {availableCount && availableCount > 0 && (
+          {availableCount !== undefined && availableCount > 0 && (
             <Link to="/cleaner-available-bookings">
               <Badge
                 variant="default"
