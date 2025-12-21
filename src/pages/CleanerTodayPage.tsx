@@ -44,7 +44,7 @@ const CleanerTodayPage = () => {
     <div className="min-h-screen bg-background">
       <CleanerTopNav />
       
-      <main className="pt-16 pb-20 content-bottom-spacer">
+      <main className="pt-header-safe pb-20 content-bottom-spacer">
         {/* Header - hidden in mobile view */}
         {!isMobileView && (
           <div className="px-4 py-4 border-b border-border">

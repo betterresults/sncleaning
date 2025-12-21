@@ -32,7 +32,7 @@ const CleanerUpcomingBookingsPage = () => {
     <div className="min-h-screen bg-background">
       <CleanerTopNav />
       
-      <main className="pt-16 pb-20 content-bottom-spacer">
+      <main className="pt-header-safe pb-20 content-bottom-spacer">
         <div className="p-4 space-y-4">
           {showAvailableBookings && (
             <Card className="bg-primary/5 border-primary/20">
