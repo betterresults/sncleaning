@@ -55,6 +55,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [bookingTotalCost, setBookingTotalCost] = useState<number>(0);
   const [bookingTotalHours, setBookingTotalHours] = useState<number>(0);
+  const [primaryCleanerHours, setPrimaryCleanerHours] = useState<number>(0);
   const [calculatedCleanerPay, setCalculatedCleanerPay] = useState<number | null>(null);
   const [customHourlyRate, setCustomHourlyRate] = useState<string>('');
   const [customHours, setCustomHours] = useState<string>('');
@@ -80,6 +81,14 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
     }
   }, [open, bookingId]);
 
+  // Calculate primary cleaner hours when sub-cleaners change
+  useEffect(() => {
+    const subCleanerHours = subCleaners.reduce((sum, sc) => sum + (sc.hours_assigned || 0), 0);
+    const availableHours = Math.max(0, bookingTotalHours - subCleanerHours);
+    setPrimaryCleanerHours(availableHours);
+    setCustomHours(availableHours.toString());
+  }, [subCleaners, bookingTotalHours]);
+
   const fetchBookingDetails = async () => {
     if (!bookingId) return;
     
@@ -95,7 +104,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
       setBookingTotalCost(data.total_cost || 0);
       const hours = data.total_hours || data.cleaning_time || 0;
       setBookingTotalHours(hours);
-      setCustomHours(hours.toString());
+      // Don't set customHours here - let the useEffect calculate based on sub-cleaners
       
       // Determine payment method based on existing data
       if (data.cleaner_rate != null && data.cleaner_rate > 0) {
@@ -341,6 +350,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
   );
 
   const totalAdditionalPay = subCleaners.reduce((sum, sc) => sum + (sc.cleaner_pay || 0), 0);
+  const totalCleanersPay = (calculatedCleanerPay || 0) + totalAdditionalPay;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -443,6 +453,13 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                 <div className="border-t pt-2 flex justify-between items-center">
                   <span className="text-sm font-medium">Primary Cleaner Pay:</span>
                   <span className="text-lg font-bold text-primary">£{calculatedCleanerPay.toFixed(2)}</span>
+                </div>
+              )}
+
+              {/* Show primary cleaner's assigned hours info */}
+              {paymentMethod === 'hourly' && subCleaners.length > 0 && (
+                <div className="text-xs text-muted-foreground">
+                  Total booking hours: {bookingTotalHours}h • Sub-cleaners: {subCleaners.reduce((sum, sc) => sum + (sc.hours_assigned || 0), 0)}h
                 </div>
               )}
             </div>
@@ -609,6 +626,19 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                   </Button>
                 )}
               </div>
+
+              {/* Total Cleaners Pay Summary */}
+              {(calculatedCleanerPay !== null || subCleaners.length > 0) && (
+                <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mt-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-semibold text-amber-900 dark:text-amber-100">Total Cleaners Pay:</span>
+                    <span className="text-lg font-bold text-amber-700 dark:text-amber-300">£{totalCleanersPay.toFixed(2)}</span>
+                  </div>
+                  <div className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                    Booking Revenue: £{bookingTotalCost.toFixed(2)} • Profit: £{(bookingTotalCost - totalCleanersPay).toFixed(2)}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
