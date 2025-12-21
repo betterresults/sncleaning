@@ -574,8 +574,42 @@ export const useAirbnbBookingSubmit = () => {
       // Note: Confirmation email is now handled automatically by the notification trigger system
       // (trigger_event: 'booking_created') to avoid duplicate emails
 
-      // Step 3: Authorize payment only if not skipped (for non-urgent bookings)
-      if (!skipPaymentAuth) {
+      // Step 3a: Send bank transfer SMS if payment method is bank transfer
+      if (bookingData.paymentMethod === 'bank-transfer' && bookingData.phone) {
+        console.log('[useAirbnbBookingSubmit] Sending bank transfer SMS for booking:', booking.id);
+        try {
+          const bookingDateFormatted = bookingData.selectedDate 
+            ? new Date(bookingData.selectedDate).toLocaleDateString('en-GB', { 
+                weekday: 'long', 
+                day: 'numeric', 
+                month: 'long' 
+              })
+            : 'your scheduled date';
+          
+          const { error: smsError } = await supabase.functions.invoke('send-bank-transfer-sms', {
+            body: {
+              bookingId: booking.id,
+              phoneNumber: bookingData.phone,
+              customerName: bookingData.firstName || 'Customer',
+              amount: bookingData.totalCost || 0,
+              bookingDate: bookingDateFormatted
+            }
+          });
+
+          if (smsError) {
+            console.error('[useAirbnbBookingSubmit] Failed to send bank transfer SMS:', smsError);
+            // Don't fail the booking if SMS fails
+          } else {
+            console.log('[useAirbnbBookingSubmit] Bank transfer SMS sent successfully');
+          }
+        } catch (smsError) {
+          console.error('[useAirbnbBookingSubmit] Error sending bank transfer SMS:', smsError);
+          // Don't fail the booking if SMS fails
+        }
+      }
+
+      // Step 3b: Authorize payment only if not skipped (for non-urgent bookings) and not bank transfer
+      if (!skipPaymentAuth && bookingData.paymentMethod !== 'bank-transfer') {
         const { data: paymentResult, error: paymentError } = await supabase.functions.invoke(
           'stripe-authorize-payment',
           {
