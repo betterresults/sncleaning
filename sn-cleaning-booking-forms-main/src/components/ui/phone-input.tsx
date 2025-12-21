@@ -23,8 +23,8 @@ const parsePhoneToDisplay = (value: string): string => {
   }
   // Remove any remaining non-digits
   cleaned = cleaned.replace(/\D/g, '');
-  // Also strip leading 44 (country code without +) if present
-  if (cleaned.startsWith('44') && cleaned.length > 10) {
+  // Always strip leading 44 - it's the country code entered redundantly
+  if (cleaned.startsWith('44')) {
     cleaned = cleaned.substring(2);
   }
   // Remove leading zeros (convert 07xxx to 7xxx)
@@ -53,8 +53,9 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
     // Remove all non-digit characters
     let cleaned = input.replace(/\D/g, '');
     
-    // Strip leading 44 (country code without +) if user pasted it
-    if (cleaned.startsWith('44') && cleaned.length > 10) {
+    // Always strip leading 44 if present - user is entering country code redundantly
+    // UK mobiles after +44 start with 7, so 44 at start is always the country code
+    if (cleaned.startsWith('44')) {
       cleaned = cleaned.substring(2);
     }
     
