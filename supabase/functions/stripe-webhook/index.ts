@@ -278,15 +278,13 @@ async function sendBookingConfirmationForCustomer(supabaseAdmin: any, stripeCust
     const customerId = paymentMethods[0].customer_id;
     
     // Find the most recent booking for this customer with card payment that hasn't had confirmation sent
-    // Look for bookings created in the last hour with payment_method = 'Card' or similar
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    
+    // Look for most recent booking with card/stripe payment method
+    // Note: We use booking id (descending) to find the most recent booking since date_submited may not be set
     const { data: recentBookings, error: bookingError } = await supabaseAdmin
       .from('bookings')
       .select('id, email, first_name, last_name, payment_method')
       .eq('customer', customerId)
-      .gte('date_submited', oneHourAgo)
-      .or('payment_method.ilike.%card%,payment_method.ilike.%stripe%')
+      .or('payment_method.ilike.%card%,payment_method.ilike.%stripe%,payment_method.eq.add-card')
       .order('id', { ascending: false })
       .limit(1);
     
