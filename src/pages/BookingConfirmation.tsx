@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Calendar, Clock, MapPin, Loader2 } from 'lucide-react';
@@ -24,26 +24,39 @@ interface ServiceTypeSetting {
 const BookingConfirmation = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [booking, setBooking] = useState<BookingDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [serviceTypeLabel, setServiceTypeLabel] = useState<string>('');
-  const bookingId = location.state?.bookingId;
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [isUrgentBooking, setIsUrgentBooking] = useState(false);
+  
+  // Get bookingId from either location state OR URL query params (for Stripe redirects)
+  const bookingIdFromState = location.state?.bookingId;
+  const bookingIdFromQuery = searchParams.get('bookingId');
+  const paymentSetupSuccess = searchParams.get('payment_setup') === 'success';
+  const isUrgent = searchParams.get('urgent') === '1';
+  
+  // Also check sessionStorage for pending booking (set before Stripe redirect)
+  const pendingBookingId = sessionStorage.getItem('pending_booking_id');
+  
+  const bookingId = bookingIdFromState || bookingIdFromQuery || pendingBookingId;
+
+  useEffect(() => {
+    // Clear pending booking from session storage once we have it
+    if (pendingBookingId && bookingId) {
+      sessionStorage.removeItem('pending_booking_id');
+    }
+    
+    // Set payment success state if coming from Stripe
+    if (paymentSetupSuccess) {
+      setPaymentSuccess(true);
+      setIsUrgentBooking(isUrgent);
+    }
+  }, [pendingBookingId, bookingId, paymentSetupSuccess, isUrgent]);
 
   useEffect(() => {
     if (!bookingId) {
-      // Show demo data if accessed directly
-      setBooking({
-        id: 12345,
-        date_time: new Date(Date.now() + 86400000 * 2).toISOString(), // 2 days from now
-        address: '123 Demo Street, London',
-        postcode: 'SW1A 1AA',
-        service_type: 'airbnb',
-        total_cost: 250.00,
-        customer: 1,
-        payment_status: 'Pending',
-        payment_method: 'Stripe'
-      });
-      setServiceTypeLabel('Airbnb Cleaning');
       setLoading(false);
       return;
     }
@@ -94,12 +107,45 @@ const BookingConfirmation = () => {
     );
   }
 
-  if (!booking) {
+  if (!booking && !bookingId) {
+    // No booking ID provided at all
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#E8F5E9] to-[#C8E6C9]">
-        <div className="text-center">
-          <p className="text-xl text-[#185166] mb-4">Booking not found</p>
-          <Button onClick={() => navigate('/airbnb')}>Back to Booking</Button>
+        <div className="text-center p-8">
+          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-[#185166] mb-2">Thank You!</h1>
+          <p className="text-gray-600 mb-6">Your booking request has been received.</p>
+          <p className="text-sm text-gray-500 mb-6">We'll send you a confirmation email shortly.</p>
+          <Button onClick={() => navigate('/')} className="bg-[#185166] hover:bg-[#185166]/90">
+            Back to Home
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!booking && bookingId) {
+    // Booking ID provided but not found - might still be processing
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#E8F5E9] to-[#C8E6C9]">
+        <div className="text-center p-8 bg-white rounded-2xl shadow-xl max-w-md">
+          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-[#185166] mb-2">Booking Confirmed!</h1>
+          <p className="text-gray-600 mb-4">Your booking #{bookingId} has been successfully created.</p>
+          {paymentSuccess && (
+            <p className="text-green-600 font-medium mb-4">
+              {isUrgentBooking ? 'Payment received successfully!' : 'Card details saved successfully!'}
+            </p>
+          )}
+          <p className="text-sm text-gray-500 mb-6">You'll receive a confirmation email shortly with all the details.</p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button onClick={() => navigate('/auth')} className="flex-1 bg-[#185166] hover:bg-[#185166]/90">
+              Log In / Sign Up
+            </Button>
+            <Button onClick={() => navigate('/')} variant="outline" className="flex-1">
+              Back to Home
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -115,6 +161,15 @@ const BookingConfirmation = () => {
             <CheckCircle className="h-24 w-24 text-green-500 relative" />
           </div>
         </div>
+
+        {/* Payment Success Message */}
+        {paymentSuccess && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 text-center">
+            <p className="text-green-700 font-medium">
+              {isUrgentBooking ? '✓ Payment received successfully!' : '✓ Card details saved successfully!'}
+            </p>
+          </div>
+        )}
 
         {/* Title */}
         <h1 className="text-3xl md:text-4xl font-bold text-[#185166] text-center mb-3">
