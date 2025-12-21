@@ -349,6 +349,34 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
     setIsLoading(true);
 
     try {
+      // Handle unassigning a cleaner
+      if (selectedCleaner === 'unassigned') {
+        const { error } = await supabase
+          .from('bookings')
+          .update({ 
+            cleaner: null,
+            cleaner_pay: null,
+            cleaner_rate: null,
+            cleaner_percentage: null
+          })
+          .eq('id', bookingId);
+
+        if (error) {
+          console.error('Error unassigning cleaner:', error);
+          throw error;
+        }
+
+        toast({
+          title: "Success",
+          description: "Cleaner unassigned from booking",
+        });
+
+        onSuccess();
+        onOpenChange(false);
+        resetForm();
+        return;
+      }
+
       const updateData: any = { 
         cleaner: parseInt(selectedCleaner)
       };
@@ -432,6 +460,9 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                 <SelectValue placeholder="Choose a cleaner" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="unassigned">
+                  <span className="text-muted-foreground">Unassigned</span>
+                </SelectItem>
                 {cleaners.map((cleaner) => {
                   const displayName = cleaner.full_name || `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim() || 'Unnamed';
                   return (
