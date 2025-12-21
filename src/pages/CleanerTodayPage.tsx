@@ -26,7 +26,8 @@ const CleanerTodayPage = () => {
   // Initialize offline-first photo system
   usePhotoSync();
 
-  if (loading || countLoading) {
+  // Show loading only for auth, not for count (count can load in background)
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-base">Loading today's work...</div>
@@ -56,7 +57,11 @@ const CleanerTodayPage = () => {
 
         {/* Content */}
         <div className="p-4">
-          {todayCount === 0 ? (
+          {countLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="text-muted-foreground">Loading bookings...</div>
+            </div>
+          ) : todayCount === 0 ? (
             <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
               <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
                 <Calendar className="h-8 w-8 text-muted-foreground" />

@@ -38,6 +38,7 @@ export const useTodayBookingsCount = () => {
   return useQuery({
     queryKey: ['today-bookings-count', cleanerId, userRole],
     queryFn: fetchTodayBookingsCount,
+    enabled: !!cleanerId || userRole === 'admin', // Only run if we have a cleaner or user is admin
     refetchInterval: 30000, // Refetch every 30 seconds
     staleTime: 10000, // Consider stale after 10 seconds
   });
