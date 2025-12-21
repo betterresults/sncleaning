@@ -893,7 +893,8 @@ useEffect(() => {
         console.log('[PaymentStep] submitBooking result (using saved PM):', result);
 
         if (!result.success || !result.bookingId) {
-          throw new Error('Failed to create booking');
+          const errorDetail = result.error || 'Unknown error occurred while creating booking';
+          throw new Error(`Booking creation failed: ${errorDetail}`);
         }
 
         // Handle Stripe charge timing based on admin selection
@@ -912,7 +913,8 @@ useEffect(() => {
           );
 
           if (chargeError || !chargeResult?.success) {
-            throw new Error(chargeResult?.error || 'Payment failed');
+            const errorDetail = chargeResult?.error || chargeResult?.message || chargeError?.message || 'Card was declined or payment could not be processed';
+            throw new Error(`Payment failed: ${errorDetail}`);
           }
         } else if (chargeTiming === 'authorize') {
           // Authorize payment for later capture
@@ -928,7 +930,8 @@ useEffect(() => {
           );
 
           if (authError || !authResult?.success) {
-            throw new Error(authResult?.error || 'Payment authorization failed');
+            const errorDetail = authResult?.error || authResult?.message || authError?.message || 'Card authorization was declined. Please check your card details or try a different payment method.';
+            throw new Error(`Authorization failed: ${errorDetail}`);
           }
           console.log('[PaymentStep] Payment authorized successfully');
         }
@@ -968,7 +971,8 @@ useEffect(() => {
 
         if (!result.success || !result.customerId || !result.bookingId) {
           console.error('[PaymentStep] Booking submission failed:', result);
-          throw new Error('Failed to create booking');
+          const errorDetail = result.error || 'Unknown error occurred while creating booking';
+          throw new Error(`Booking creation failed: ${errorDetail}`);
         }
 
         console.log('[PaymentStep] Creating payment method with Stripe...');
@@ -1017,7 +1021,8 @@ useEffect(() => {
 
         if (verifyError || verifyResult?.success === false) {
           console.error('[PaymentStep] Payment verification failed:', { verifyError, verifyResult });
-          throw new Error(verifyResult?.error || 'Failed to verify card');
+          const errorDetail = verifyResult?.error || verifyError?.message || 'Card verification failed. Please check your card details are correct.';
+          throw new Error(`Card verification failed: ${errorDetail}`);
         }
 
         // For urgent bookings, charge immediately
@@ -1037,7 +1042,8 @@ useEffect(() => {
 
           if (chargeError || !chargeResult?.success) {
             console.error('[PaymentStep] Payment charge failed:', { chargeError, chargeResult });
-            throw new Error(chargeResult?.error || 'Payment failed');
+            const errorDetail = chargeResult?.error || chargeResult?.message || chargeError?.message || 'Card was declined or payment could not be processed';
+            throw new Error(`Payment failed: ${errorDetail}`);
           }
         }
 
