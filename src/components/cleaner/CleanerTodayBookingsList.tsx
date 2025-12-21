@@ -291,6 +291,31 @@ const CleanerTodayBookingsList = () => {
     }
   }, [effectiveCleanerId, authLoading]);
 
+  // Real-time subscription for bookings changes
+  useEffect(() => {
+    if (!effectiveCleanerId) return;
+
+    const channel = supabase
+      .channel('cleaner-today-bookings-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings'
+        },
+        (payload) => {
+          console.log('Cleaner today bookings realtime update:', payload);
+          fetchTodaysBookings();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [effectiveCleanerId]);
+
   if (authLoading || loading) {
     return (
       <div className="flex justify-center py-8">
