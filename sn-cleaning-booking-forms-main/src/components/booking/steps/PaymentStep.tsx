@@ -1018,7 +1018,27 @@ useEffect(() => {
 
         console.log('[PaymentStep] Verify result:', { verifyResult, verifyError });
 
-        if (verifyError || verifyResult?.success === false) {
+        // Handle 3D Secure authentication if required
+        if (verifyResult?.requires_action && verifyResult?.payment_intent_client_secret && stripe) {
+          console.log('[PaymentStep] 3D Secure required - handling on frontend...');
+          
+          const { error: confirmError, paymentIntent: confirmedIntent } = await stripe.confirmCardPayment(
+            verifyResult.payment_intent_client_secret,
+            {
+              payment_method: paymentMethod.id,
+            }
+          );
+
+          if (confirmError) {
+            console.error('[PaymentStep] 3D Secure authentication failed:', confirmError);
+            throw new Error(`Authentication failed: ${confirmError.message}`);
+          }
+
+          console.log('[PaymentStep] 3D Secure completed, status:', confirmedIntent?.status);
+          
+          // If this was just verification, the payment intent will be in requires_capture state
+          // We don't need to do anything else - the payment method is now verified
+        } else if (verifyError || verifyResult?.success === false) {
           console.error('[PaymentStep] Payment verification failed:', { verifyError, verifyResult });
           const errorDetail = verifyResult?.error || verifyError?.message || 'Card verification failed. Please check your card details are correct.';
           throw new Error(`Card verification failed: ${errorDetail}`);

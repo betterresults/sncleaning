@@ -186,7 +186,7 @@ serve(async (req) => {
           payment_method: selectedPaymentMethod.stripe_payment_method_id,
           capture_method: 'manual',
           confirm: 'true',
-          return_url: 'https://dkomihipebixlegygnoy.supabase.co/payment-return',
+          off_session: 'true',
           description: `Authorization for booking ${bookingId}`,
         }),
       })

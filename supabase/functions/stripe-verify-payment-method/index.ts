@@ -26,9 +26,9 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { customerId, paymentMethodId, verifyAmountInPence = 0, totalAmountInPence = 0 } = await req.json();
+    const { customerId, paymentMethodId, verifyAmountInPence = 0, totalAmountInPence = 0, skipVerification = false } = await req.json();
 
-    console.log('Verifying payment method:', { customerId, paymentMethodId, verifyAmountInPence });
+    console.log('Verifying payment method:', { customerId, paymentMethodId, verifyAmountInPence, skipVerification });
 
     // Step 1: Get customer details from database
     const { data: customer, error: customerError } = await supabase
@@ -115,34 +115,75 @@ serve(async (req) => {
       console.log('Payment method saved to database');
     }
 
-    // Step 6: For non-urgent bookings, perform £1 verification
-    if (verifyAmountInPence > 0) {
-      console.log('Performing £1 verification...');
+    // Step 6: If verification amount requested and not skipping, do server-side verification
+    // IMPORTANT: This should only be used for non-3DS cards or when called after frontend 3DS handling
+    if (verifyAmountInPence > 0 && !skipVerification) {
+      console.log('Performing verification with off_session (backend)...');
 
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: verifyAmountInPence,
-        currency: 'gbp',
-        customer: stripeCustomerId,
-        payment_method: paymentMethodId,
-        capture_method: 'manual',
-        confirm: true,
-        off_session: true,
-        description: `Card verification for amount £${(totalAmountInPence / 100).toFixed(2)}`,
-        metadata: {
-          customer_id: customerId.toString(),
-          verification_only: 'true',
-        },
-      });
+      try {
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: verifyAmountInPence,
+          currency: 'gbp',
+          customer: stripeCustomerId,
+          payment_method: paymentMethodId,
+          capture_method: 'manual',
+          confirm: true,
+          off_session: true,
+          description: `Card verification for amount £${(totalAmountInPence / 100).toFixed(2)}`,
+          metadata: {
+            customer_id: customerId.toString(),
+            verification_only: 'true',
+          },
+        });
 
-      console.log('Verification PaymentIntent created:', paymentIntent.id);
+        console.log('Verification PaymentIntent created:', paymentIntent.id, 'status:', paymentIntent.status);
 
-      // Immediately cancel the authorization
-      await stripe.paymentIntents.cancel(paymentIntent.id);
-      console.log('Verification authorization cancelled');
+        // Check if 3DS is required
+        if (paymentIntent.status === 'requires_action') {
+          console.log('Card requires 3D Secure authentication - will be handled on frontend');
+          // Don't cancel - return info for frontend to handle
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              requires_action: true,
+              payment_intent_client_secret: paymentIntent.client_secret,
+              payment_intent_id: paymentIntent.id,
+              message: 'Card requires 3D Secure authentication'
+            }),
+            { 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 200,
+            }
+          );
+        }
+
+        // Immediately cancel the authorization if successful
+        if (paymentIntent.status === 'requires_capture') {
+          await stripe.paymentIntents.cancel(paymentIntent.id);
+          console.log('Verification authorization cancelled');
+        }
+      } catch (verifyErr: any) {
+        // If requires_action, this is expected for 3DS cards
+        if (verifyErr.code === 'authentication_required') {
+          console.log('Card requires authentication - returning for frontend handling');
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              requires_action: true,
+              message: 'Card requires authentication - please complete 3D Secure verification'
+            }),
+            { 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 200,
+            }
+          );
+        }
+        throw verifyErr;
+      }
     }
 
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ success: true, stripeCustomerId }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
