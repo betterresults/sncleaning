@@ -16,32 +16,47 @@ function formatPhoneNumber(phone: string): string {
   // Remove all non-digit characters except leading +
   let cleaned = phone.replace(/[^\d+]/g, '');
   
-  // Fix corrupted UK numbers where +44 was added to number already starting with 44
-  // e.g., +444479561682 should be +447956168X (user entered 447956... and +44 was added)
-  // Pattern: +4444 followed by 7,8,9 indicates double country code
-  if (cleaned.match(/^\+4444[789]/)) {
-    // +444479561682 -> +4479561682 (remove first 44 after +)
-    cleaned = '+' + cleaned.substring(3);
-  }
-  // Handle UK numbers starting with 07 (mobile) or 01/02 (landline)
-  else if (cleaned.startsWith('07') || cleaned.startsWith('01') || cleaned.startsWith('02')) {
-    // Remove leading 0 and add +44
-    cleaned = '+44' + cleaned.substring(1);
-  } 
-  // Handle numbers starting with 44 (UK without +)
-  else if (cleaned.startsWith('44') && !cleaned.startsWith('+')) {
-    cleaned = '+' + cleaned;
-  }
-  // Handle numbers starting with 0044 (UK international dialing)
-  else if (cleaned.startsWith('0044')) {
-    cleaned = '+44' + cleaned.substring(4);
-  }
-  // If no + prefix, add it
-  else if (!cleaned.startsWith('+')) {
-    cleaned = '+' + cleaned;
+  console.log('formatPhoneNumber input:', phone, '-> cleaned:', cleaned);
+  
+  // Remove any leading + for processing
+  const hasPlus = cleaned.startsWith('+');
+  let digits = cleaned.replace(/^\+/, '');
+  
+  // Fix corrupted UK numbers where 44 was added multiple times
+  // e.g., 444479395338 -> 447939533800 (original was 07939533800, got 44 added twice)
+  // Pattern: 4444 followed by 7,8,9 at start indicates double country code
+  while (digits.match(/^4444[789]/)) {
+    // Remove one occurrence of 44
+    digits = digits.substring(2);
+    console.log('Removed duplicate 44 prefix, now:', digits);
   }
   
-  return cleaned;
+  // Now handle standard formats
+  // If starts with 0 (UK local format like 07939...)
+  if (digits.startsWith('0')) {
+    // Remove leading 0 and add 44
+    digits = '44' + digits.substring(1);
+  }
+  // If doesn't start with country code, assume UK
+  else if (!digits.startsWith('44') && !digits.startsWith('1') && digits.length >= 10) {
+    // Check if it's a UK mobile pattern (starts with 7, 8, 9 for mobiles)
+    if (digits.match(/^[789]/)) {
+      digits = '44' + digits;
+    }
+  }
+  // Handle 0044 prefix
+  else if (digits.startsWith('0044')) {
+    digits = '44' + digits.substring(4);
+  }
+  
+  // Validate UK number length (should be 12 digits: 44 + 10 digit number)
+  if (digits.startsWith('44') && digits.length < 12) {
+    console.warn('UK phone number appears incomplete:', digits, 'length:', digits.length);
+  }
+  
+  const result = '+' + digits;
+  console.log('formatPhoneNumber result:', result);
+  return result;
 }
 
 const handler = async (req: Request): Promise<Response> => {
