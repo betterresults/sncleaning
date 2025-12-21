@@ -1879,105 +1879,112 @@ useEffect(() => {
               </div>
             ) : paymentType === 'card' ? (
               // No saved payment method - show CardElement directly
-              <div className="rounded-2xl border-2 border-gray-200 bg-white p-8">
-                <div className="space-y-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <CreditCard className="h-6 w-6 text-primary" />
-                    </div>
+              <div className="rounded-2xl border-2 border-gray-200 bg-white p-5">
+                <div className="space-y-4">
+                  {/* Header - compact */}
+                  <div className="flex items-center gap-3 pb-2 border-b border-gray-100">
+                    <CreditCard className="h-5 w-5 text-primary" />
                     <div>
-                      <p className="text-lg font-bold text-gray-900">Enter Card Details</p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-base font-semibold text-gray-900">Card Details</p>
+                      <p className="text-xs text-gray-500">
                         {isUrgentBooking 
-                          ? `We will authorise £${data.totalCost?.toFixed(2) || '0.00'} now. Payment will be taken after the service is completed.`
-                          : "We only collect your payment details now. The amount will be held 48 hours before your booking, and payment taken after the service is completed."
+                          ? `£${data.totalCost?.toFixed(2) || '0.00'} will be authorised now`
+                          : "Payment held 48hrs before booking"
                         }
                       </p>
                     </div>
                   </div>
                   
-                  <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-200 space-y-4">
+                  {/* Card Number - Large field */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Card Number</label>
+                    <div className="h-14 px-4 border-2 border-gray-200 rounded-xl bg-white flex items-center hover:border-gray-300 focus-within:border-[#185166] focus-within:ring-2 focus-within:ring-[#185166]/20 transition-all">
+                      <CardNumberElement 
+                        options={{
+                          style: {
+                            base: {
+                              fontSize: '18px',
+                              color: '#1f2937',
+                              fontFamily: 'system-ui, -apple-system, sans-serif',
+                              fontWeight: '500',
+                              '::placeholder': {
+                                color: '#9ca3af',
+                              },
+                              iconColor: '#185166',
+                            },
+                            invalid: {
+                              color: '#ef4444',
+                              iconColor: '#ef4444',
+                            },
+                          },
+                        }}
+                        className="w-full"
+                        onChange={(e) => setCardComplete(e.complete)}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Expiry & CVC - Side by side, Large fields */}
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-2">Card Number</label>
-                      <div className="p-3 border border-gray-300 rounded-lg bg-white">
-                        <CardNumberElement 
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Expiry</label>
+                      <div className="h-14 px-4 border-2 border-gray-200 rounded-xl bg-white flex items-center hover:border-gray-300 focus-within:border-[#185166] focus-within:ring-2 focus-within:ring-[#185166]/20 transition-all">
+                        <CardExpiryElement 
                           options={{
                             style: {
                               base: {
-                                fontSize: '16px',
+                                fontSize: '18px',
                                 color: '#1f2937',
                                 fontFamily: 'system-ui, -apple-system, sans-serif',
+                                fontWeight: '500',
                                 '::placeholder': {
                                   color: '#9ca3af',
                                 },
-                                iconColor: '#185166',
                               },
                               invalid: {
                                 color: '#ef4444',
-                                iconColor: '#ef4444',
                               },
                             },
                           }}
-                          onChange={(e) => setCardComplete(e.complete)}
+                          className="w-full"
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-2">Expiry Date</label>
-                        <div className="p-3 border border-gray-300 rounded-lg bg-white">
-                          <CardExpiryElement 
-                            options={{
-                              style: {
-                                base: {
-                                  fontSize: '16px',
-                                  color: '#1f2937',
-                                  fontFamily: 'system-ui, -apple-system, sans-serif',
-                                  '::placeholder': {
-                                    color: '#9ca3af',
-                                  },
-                                },
-                                invalid: {
-                                  color: '#ef4444',
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">CVC</label>
+                      <div className="h-14 px-4 border-2 border-gray-200 rounded-xl bg-white flex items-center hover:border-gray-300 focus-within:border-[#185166] focus-within:ring-2 focus-within:ring-[#185166]/20 transition-all">
+                        <CardCvcElement 
+                          options={{
+                            style: {
+                              base: {
+                                fontSize: '18px',
+                                color: '#1f2937',
+                                fontFamily: 'system-ui, -apple-system, sans-serif',
+                                fontWeight: '500',
+                                '::placeholder': {
+                                  color: '#9ca3af',
                                 },
                               },
-                            }}
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-2">CVC</label>
-                        <div className="p-3 border border-gray-300 rounded-lg bg-white">
-                          <CardCvcElement 
-                            options={{
-                              style: {
-                                base: {
-                                  fontSize: '16px',
-                                  color: '#1f2937',
-                                  fontFamily: 'system-ui, -apple-system, sans-serif',
-                                  '::placeholder': {
-                                    color: '#9ca3af',
-                                  },
-                                },
-                                invalid: {
-                                  color: '#ef4444',
-                                },
+                              invalid: {
+                                color: '#ef4444',
                               },
-                            }}
-                          />
-                        </div>
+                            },
+                          }}
+                          className="w-full"
+                        />
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-center gap-4 pt-2">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Shield className="h-4 w-4 text-green-600" />
-                      <span>Bank-level security</span>
+                  {/* Security badges - compact */}
+                  <div className="flex items-center justify-center gap-4 pt-1 text-xs text-gray-500">
+                    <div className="flex items-center gap-1">
+                      <Shield className="h-3.5 w-3.5 text-green-600" />
+                      <span>Secure</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <CreditCard className="h-4 w-4 text-blue-600" />
-                      <span>All major cards</span>
+                    <div className="flex items-center gap-1">
+                      <CreditCard className="h-3.5 w-3.5 text-blue-600" />
+                      <span>All cards accepted</span>
                     </div>
                   </div>
                 </div>
