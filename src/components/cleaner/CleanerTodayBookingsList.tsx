@@ -80,7 +80,7 @@ const CleanerTodayBookingsList = () => {
       const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000 - 1);
 
-      // Fetch today's bookings
+      // Fetch today's bookings where cleaner is primary
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
         .select('*')
@@ -96,11 +96,80 @@ const CleanerTodayBookingsList = () => {
         return;
       }
 
-      setBookings(bookingsData || []);
+      let allBookings = bookingsData || [];
+
+      // Fetch sub-cleaners for these bookings to adjust primary cleaner's pay
+      if (allBookings.length > 0) {
+        const bookingIds = allBookings.map(b => b.id);
+        const { data: subCleanersData } = await supabase
+          .from('sub_bookings')
+          .select('primary_booking_id, hours_assigned, cleaner_pay')
+          .in('primary_booking_id', bookingIds);
+
+        // Adjust primary cleaner's pay based on sub-cleaners
+        if (subCleanersData && subCleanersData.length > 0) {
+          allBookings = allBookings.map(booking => {
+            const subCleaners = subCleanersData.filter(sc => sc.primary_booking_id === booking.id);
+            if (subCleaners.length > 0) {
+              const subCleanerHours = subCleaners.reduce((sum, sc) => sum + (sc.hours_assigned || 0), 0);
+              const totalHours = booking.total_hours || 0;
+              const remainingHours = Math.max(0, totalHours - subCleanerHours);
+              const cleanerRate = booking.cleaner_rate || 20;
+              const adjustedPay = remainingHours * cleanerRate;
+              
+              return {
+                ...booking,
+                cleaner_pay: adjustedPay,
+                total_hours: remainingHours
+              };
+            }
+            return booking;
+          });
+        }
+      }
+
+      // Also fetch bookings where this cleaner is a sub-cleaner
+      const { data: subBookingsData } = await supabase
+        .from('sub_bookings')
+        .select('primary_booking_id, hours_assigned, cleaner_pay')
+        .eq('cleaner_id', effectiveCleanerId);
+
+      if (subBookingsData && subBookingsData.length > 0) {
+        const subBookingIds = subBookingsData.map(sb => sb.primary_booking_id);
+        
+        const { data: subBookingDetails } = await supabase
+          .from('bookings')
+          .select('*')
+          .in('id', subBookingIds)
+          .neq('booking_status', 'cancelled')
+          .gte('date_time', startOfDay.toISOString())
+          .lte('date_time', endOfDay.toISOString());
+
+        if (subBookingDetails) {
+          const enrichedSubBookings = subBookingDetails.map(booking => {
+            const subInfo = subBookingsData.find(sb => sb.primary_booking_id === booking.id);
+            return {
+              ...booking,
+              cleaner_pay: subInfo?.cleaner_pay || booking.cleaner_pay,
+              total_hours: subInfo?.hours_assigned || booking.total_hours,
+              is_sub_cleaner: true
+            };
+          });
+          
+          const primaryIds = new Set(allBookings.map(b => b.id));
+          const newSubBookings = enrichedSubBookings.filter(b => !primaryIds.has(b.id));
+          allBookings = [...allBookings, ...newSubBookings];
+        }
+      }
+
+      // Sort by date
+      allBookings.sort((a, b) => new Date(a.date_time || 0).getTime() - new Date(b.date_time || 0).getTime());
+
+      setBookings(allBookings);
 
       // Fetch tracking records for today's bookings
-      if (bookingsData && bookingsData.length > 0) {
-        const bookingIds = bookingsData.map(b => b.id);
+      if (allBookings.length > 0) {
+        const bookingIds = allBookings.map(b => b.id);
         const { data: trackingData, error: trackingError } = await supabase
           .from('cleaner_tracking')
           .select('*')
