@@ -51,6 +51,7 @@ interface Booking {
   has_photos?: boolean;
   same_day?: boolean;
   sub_cleaners_count?: number;
+  sub_cleaners_total_pay?: number;
   cleaners?: {
     id: number;
     first_name: string;
@@ -191,28 +192,33 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter }: TodayBo
         return;
       }
 
-      // Fetch sub-cleaners count for each booking
+      // Fetch sub-cleaners data (count and total pay) for each booking
       const bookingIds = (bookingsData || []).map(b => b.id);
-      let subCleanersCounts: Record<number, number> = {};
+      let subCleanersData: Record<number, { count: number; totalPay: number }> = {};
       
       if (bookingIds.length > 0) {
         const { data: subBookingsData } = await supabase
           .from('sub_bookings')
-          .select('primary_booking_id')
+          .select('primary_booking_id, cleaner_pay')
           .in('primary_booking_id', bookingIds);
         
         if (subBookingsData) {
-          subCleanersCounts = subBookingsData.reduce((acc, sub) => {
-            acc[sub.primary_booking_id] = (acc[sub.primary_booking_id] || 0) + 1;
+          subCleanersData = subBookingsData.reduce((acc, sub) => {
+            if (!acc[sub.primary_booking_id]) {
+              acc[sub.primary_booking_id] = { count: 0, totalPay: 0 };
+            }
+            acc[sub.primary_booking_id].count += 1;
+            acc[sub.primary_booking_id].totalPay += sub.cleaner_pay || 0;
             return acc;
-          }, {} as Record<number, number>);
+          }, {} as Record<number, { count: number; totalPay: number }>);
         }
       }
 
-      // Merge sub_cleaners_count into bookings
+      // Merge sub_cleaners data into bookings
       const enrichedBookings = (bookingsData || []).map(booking => ({
         ...booking,
-        sub_cleaners_count: subCleanersCounts[booking.id] || 0
+        sub_cleaners_count: subCleanersData[booking.id]?.count || 0,
+        sub_cleaners_total_pay: subCleanersData[booking.id]?.totalPay || 0
       }));
 
       // Fetch cleaners for filter dropdown (only when showing all bookings)
@@ -767,9 +773,9 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter }: TodayBo
                         </Badge>
                       )}
                     </div>
-                    {booking.cleaner_pay && (
+                    {(booking.cleaner_pay || booking.sub_cleaners_total_pay) && (
                       <p className="text-sm font-medium text-muted-foreground pl-9">
-                        £{booking.cleaner_pay.toFixed(2)}
+                        £{((booking.cleaner_pay || 0) + (booking.sub_cleaners_total_pay || 0)).toFixed(2)}
                       </p>
                     )}
                   </button>
