@@ -18,10 +18,22 @@ const PublicServiceSelection = () => {
   const [email, setEmail] = useState<string>('');
   const { trackPageView, trackServiceClick } = useFunnelTracking();
 
-  // Prefetch forms and track page view on mount
+  // Prefetch forms, track page view, and load feedback widget on mount
   useEffect(() => {
     prefetchForms();
     trackPageView('services_page', { postcode: searchParams.get('postcode') });
+    
+    // Load Feedback Link Showcase Widget
+    const script = document.createElement('script');
+    script.src = 'https://fbl.embedwidgets.com/rG0a4JT3iOvy8arPyCCh.js';
+    document.body.appendChild(script);
+    
+    return () => {
+      // Cleanup script on unmount
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    };
   }, []);
 
   useEffect(() => {
