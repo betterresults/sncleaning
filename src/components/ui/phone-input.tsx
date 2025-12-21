@@ -118,11 +118,6 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
             className="flex-1 h-full bg-transparent text-lg font-medium text-gray-900 placeholder:text-gray-400 outline-none"
             {...props}
           />
-          
-          {/* Checkmark when complete */}
-          {isComplete && !hasError && (
-            <span className="text-green-500 text-xl flex-shrink-0">✓</span>
-          )}
         </div>
         
         {/* Progress indicator */}
