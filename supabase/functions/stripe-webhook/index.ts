@@ -50,12 +50,12 @@ const handler = async (req: Request): Promise<Response> => {
         const setupIntent = event.data.object;
         
         if (setupIntent.payment_method && setupIntent.customer) {
-          const success = await syncPaymentMethodToDatabase(stripe, supabaseAdmin, setupIntent.customer, setupIntent.payment_method);
-          if (success) {
-            await sendPaymentMethodSuccessEmail(stripe, supabaseAdmin, setupIntent.customer, setupIntent.payment_method);
-            // Send booking confirmation email now that card is confirmed
-            await sendBookingConfirmationForCustomer(supabaseAdmin, setupIntent.customer);
-          }
+          // Sync payment method (may already exist, that's ok)
+          await syncPaymentMethodToDatabase(stripe, supabaseAdmin, setupIntent.customer, setupIntent.payment_method);
+          // Always send emails when setup_intent succeeds - this is the confirmation event
+          await sendPaymentMethodSuccessEmail(stripe, supabaseAdmin, setupIntent.customer, setupIntent.payment_method);
+          // Send booking confirmation email now that card is confirmed
+          await sendBookingConfirmationForCustomer(supabaseAdmin, setupIntent.customer);
         }
         break;
       }
