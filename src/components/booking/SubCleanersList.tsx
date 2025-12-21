@@ -205,6 +205,7 @@ const SubCleanersList = ({
         {/* Edit Dialog */}
         <EditSubCleanerDialog
           subCleaner={editingSubCleaner}
+          bookingId={bookingId}
           bookingTotalCost={bookingTotalCost}
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
@@ -311,6 +312,7 @@ const SubCleanersList = ({
       {/* Edit Dialog */}
       <EditSubCleanerDialog
         subCleaner={editingSubCleaner}
+        bookingId={bookingId}
         bookingTotalCost={bookingTotalCost}
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}

@@ -24,6 +24,7 @@ interface SubCleaner {
 
 interface EditSubCleanerDialogProps {
   subCleaner: SubCleaner | null;
+  bookingId: number;
   bookingTotalCost: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -32,6 +33,7 @@ interface EditSubCleanerDialogProps {
 
 const EditSubCleanerDialog = ({ 
   subCleaner, 
+  bookingId,
   bookingTotalCost, 
   open, 
   onOpenChange, 
@@ -64,6 +66,54 @@ const EditSubCleanerDialog = ({
     }
   };
 
+  // Update the primary cleaner's pay in bookings table
+  const updatePrimaryCleanerPay = async (updatedSubCleanerHours: number) => {
+    try {
+      // Get the current booking data
+      const { data: booking, error: bookingError } = await supabase
+        .from('bookings')
+        .select('cleaner, cleaner_rate, cleaner_percentage, total_cost, total_hours, cleaning_time')
+        .eq('id', bookingId)
+        .single();
+      
+      if (bookingError || !booking || !booking.cleaner) return;
+      
+      // Get all sub-cleaners for this booking
+      const { data: allSubCleaners } = await supabase
+        .from('sub_bookings')
+        .select('id, hours_assigned')
+        .eq('primary_booking_id', bookingId);
+      
+      const totalHours = booking.total_hours || booking.cleaning_time || 0;
+      // Calculate total sub-cleaner hours, using the updated value for the current sub-cleaner
+      const subCleanerHours = (allSubCleaners || []).reduce((sum, sc) => {
+        if (sc.id === subCleaner?.id) {
+          return sum + updatedSubCleanerHours;
+        }
+        return sum + (sc.hours_assigned || 0);
+      }, 0);
+      const primaryCleanerHours = Math.max(0, totalHours - subCleanerHours);
+      
+      let newPrimaryCleanerPay: number;
+      
+      if (booking.cleaner_rate && booking.cleaner_rate > 0) {
+        newPrimaryCleanerPay = primaryCleanerHours * booking.cleaner_rate;
+      } else if (booking.cleaner_percentage && booking.cleaner_percentage > 0) {
+        const hoursRatio = totalHours > 0 ? primaryCleanerHours / totalHours : 0;
+        newPrimaryCleanerPay = (booking.total_cost || 0) * (booking.cleaner_percentage / 100) * hoursRatio;
+      } else {
+        newPrimaryCleanerPay = primaryCleanerHours * 20;
+      }
+      
+      await supabase
+        .from('bookings')
+        .update({ cleaner_pay: newPrimaryCleanerPay })
+        .eq('id', bookingId);
+    } catch (error) {
+      console.error('Error updating primary cleaner pay:', error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -90,12 +140,13 @@ const EditSubCleanerDialog = ({
     setLoading(true);
     try {
       const expectedPay = calculateExpectedPay();
+      const newHoursAssigned = paymentMethod === 'hourly' ? parseFloat(hoursAssigned) : 0;
       
       const { error } = await supabase
         .from('sub_bookings')
         .update({
           payment_method: paymentMethod,
-          hours_assigned: paymentMethod === 'hourly' ? parseFloat(hoursAssigned) : null,
+          hours_assigned: paymentMethod === 'hourly' ? newHoursAssigned : null,
           hourly_rate: paymentMethod === 'hourly' ? parseFloat(hourlyRate) : null,
           percentage_rate: paymentMethod === 'percentage' ? parseFloat(percentageRate) : null,
           cleaner_pay: expectedPay,
@@ -111,6 +162,9 @@ const EditSubCleanerDialog = ({
         });
         return;
       }
+
+      // Update primary cleaner pay
+      await updatePrimaryCleanerPay(newHoursAssigned);
 
       toast({
         title: "Success",
