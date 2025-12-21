@@ -85,6 +85,7 @@ const CleanerTodayBookingsList = () => {
         .from('bookings')
         .select('*')
         .eq('cleaner', effectiveCleanerId)
+        .neq('booking_status', 'cancelled')
         .gte('date_time', startOfDay.toISOString())
         .lte('date_time', endOfDay.toISOString())
         .order('date_time', { ascending: true });
