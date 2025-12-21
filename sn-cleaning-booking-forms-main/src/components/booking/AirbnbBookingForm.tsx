@@ -344,7 +344,7 @@ const AirbnbBookingForm: React.FC = () => {
           trackQuoteCalculated(totalHours * newData.hourlyRate, totalHours, {
             cleaningType: newData.serviceType || undefined,
             propertyType: newData.propertyType || undefined,
-            bedrooms: newData.bedrooms ? parseInt(newData.bedrooms) : undefined,
+            bedrooms: newData.bedrooms ? (newData.bedrooms === 'studio' ? 0 : parseInt(newData.bedrooms)) : undefined,
             bathrooms: newData.bathrooms ? parseInt(newData.bathrooms) : undefined,
             toilets: newData.toilets ? parseInt(newData.toilets) : undefined,
             ovenCleaning: newData.hasOvenCleaning,
@@ -382,7 +382,7 @@ const AirbnbBookingForm: React.FC = () => {
       trackStep(stepName, {
         cleaningType: bookingData.serviceType || undefined,
         propertyType: bookingData.propertyType || undefined,
-        bedrooms: bookingData.bedrooms ? parseInt(bookingData.bedrooms) : undefined,
+        bedrooms: bookingData.bedrooms ? (bookingData.bedrooms === 'studio' ? 0 : parseInt(bookingData.bedrooms)) : undefined,
         calculatedQuote: bookingData.totalCost || undefined,
         adminId: isAdminMode && adminUserId ? adminUserId : undefined,
         isAdminCreated: isAdminMode,

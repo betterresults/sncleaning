@@ -14,6 +14,14 @@ import { useQuoteLeadTracking } from '@/hooks/useQuoteLeadTracking';
 import { ExitQuotePopup } from '@/components/booking/ExitQuotePopup';
 import { AdminQuoteDialog } from '@/components/booking/AdminQuoteDialog';
 import { useDomesticHardcodedCalculations } from '@/hooks/useDomesticHardcodedCalculations';
+// Helper function to convert bedroom string to number (studio = 0)
+const parseBedroomsToNumber = (bedrooms: string | undefined): number | undefined => {
+  if (!bedrooms) return undefined;
+  if (bedrooms === 'studio') return 0;
+  const parsed = parseInt(bedrooms);
+  return isNaN(parsed) ? undefined : parsed;
+};
+
 export interface DomesticBookingData {
   // Property details
   propertyType: 'flat' | 'house' | '';
@@ -615,7 +623,7 @@ const DomesticBookingForm: React.FC = () => {
         
         trackQuoteCalculated(updates.totalCost, newData.estimatedHours ?? undefined, {
           propertyType: newData.propertyType || undefined,
-          bedrooms: newData.bedrooms ? parseInt(newData.bedrooms) : undefined,
+          bedrooms: parseBedroomsToNumber(newData.bedrooms),
           bathrooms: newData.bathrooms ? parseInt(newData.bathrooms) : undefined,
           toilets: newData.toilets ? parseInt(newData.toilets) : undefined,
           frequency: newData.serviceFrequency || undefined,
@@ -642,7 +650,7 @@ const DomesticBookingForm: React.FC = () => {
           postcode: newData.postcode || undefined,
           // Include property data so it's saved with contact info
           propertyType: newData.propertyType || undefined,
-          bedrooms: newData.bedrooms ? parseInt(newData.bedrooms) : undefined,
+          bedrooms: parseBedroomsToNumber(newData.bedrooms),
           bathrooms: newData.bathrooms ? parseInt(newData.bathrooms) : undefined,
           toilets: newData.toilets ? parseInt(newData.toilets) : undefined,
           frequency: newData.serviceFrequency || undefined,
@@ -726,7 +734,7 @@ const DomesticBookingForm: React.FC = () => {
       const nextStepKey = steps[currentStep]?.key || `step_${currentStep + 1}`;
       trackStep(nextStepKey, {
         propertyType: bookingData.propertyType || undefined,
-        bedrooms: bookingData.bedrooms ? parseInt(bookingData.bedrooms) : undefined,
+        bedrooms: parseBedroomsToNumber(bookingData.bedrooms),
         calculatedQuote: bookingData.totalCost || undefined,
         adminId: isAdminMode && adminUserId ? adminUserId : undefined,
         isAdminCreated: isAdminMode,
