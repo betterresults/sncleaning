@@ -53,6 +53,8 @@ const handler = async (req: Request): Promise<Response> => {
           const success = await syncPaymentMethodToDatabase(stripe, supabaseAdmin, setupIntent.customer, setupIntent.payment_method);
           if (success) {
             await sendPaymentMethodSuccessEmail(stripe, supabaseAdmin, setupIntent.customer, setupIntent.payment_method);
+            // Send booking confirmation email now that card is confirmed
+            await sendBookingConfirmationForCustomer(supabaseAdmin, setupIntent.customer);
           }
         }
         break;
@@ -95,6 +97,8 @@ const handler = async (req: Request): Promise<Response> => {
                 ? setupIntent.payment_method 
                 : setupIntent.payment_method.id;
               await syncPaymentMethodToDatabase(stripe, supabaseAdmin, session.customer, paymentMethodId);
+              // Send booking confirmation email now that card is confirmed
+              await sendBookingConfirmationForCustomer(supabaseAdmin, session.customer);
             }
           } catch (setupError) {
             console.error('Error retrieving SetupIntent:', setupError);
@@ -103,6 +107,8 @@ const handler = async (req: Request): Promise<Response> => {
         // Handle payment mode sessions
         else if (session.payment_method && session.customer) {
           await syncPaymentMethodToDatabase(stripe, supabaseAdmin, session.customer, session.payment_method);
+          // Send booking confirmation email now that payment is confirmed
+          await sendBookingConfirmationForCustomer(supabaseAdmin, session.customer);
         }
 
         // Mark booking as paid when session completes (for checkout sessions)
@@ -251,6 +257,63 @@ const handler = async (req: Request): Promise<Response> => {
     });
   }
 };
+
+// Helper function to send booking confirmation email after payment/card is confirmed
+async function sendBookingConfirmationForCustomer(supabaseAdmin: any, stripeCustomerId: string) {
+  try {
+    console.log('Checking for pending booking confirmation for Stripe customer:', stripeCustomerId);
+    
+    // Find customer by stripe_customer_id in payment methods
+    const { data: paymentMethods, error: pmError } = await supabaseAdmin
+      .from('customer_payment_methods')
+      .select('customer_id')
+      .eq('stripe_customer_id', stripeCustomerId)
+      .limit(1);
+    
+    if (pmError || !paymentMethods || paymentMethods.length === 0) {
+      console.log('No customer found with stripe_customer_id:', stripeCustomerId);
+      return;
+    }
+    
+    const customerId = paymentMethods[0].customer_id;
+    
+    // Find the most recent booking for this customer with card payment that hasn't had confirmation sent
+    // Look for bookings created in the last hour with payment_method = 'Card' or similar
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    
+    const { data: recentBookings, error: bookingError } = await supabaseAdmin
+      .from('bookings')
+      .select('id, email, first_name, last_name, payment_method')
+      .eq('customer', customerId)
+      .gte('date_submited', oneHourAgo)
+      .or('payment_method.ilike.%card%,payment_method.ilike.%stripe%')
+      .order('id', { ascending: false })
+      .limit(1);
+    
+    if (bookingError || !recentBookings || recentBookings.length === 0) {
+      console.log('No recent card payment bookings found for customer:', customerId);
+      return;
+    }
+    
+    const booking = recentBookings[0];
+    console.log('Found recent booking for confirmation email:', booking.id);
+    
+    // Call the send_booking_notification function via RPC
+    const { error: notifyError } = await supabaseAdmin.rpc('send_booking_notification', {
+      booking_id: booking.id,
+      event_type: 'booking_created'
+    });
+    
+    if (notifyError) {
+      console.error('Error sending booking confirmation via RPC:', notifyError);
+    } else {
+      console.log('Booking confirmation email sent successfully for booking:', booking.id);
+    }
+    
+  } catch (error) {
+    console.error('Error in sendBookingConfirmationForCustomer:', error);
+  }
+}
 
 async function syncPaymentMethodToDatabase(
   stripe: Stripe, 
