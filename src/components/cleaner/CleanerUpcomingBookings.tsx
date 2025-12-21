@@ -300,10 +300,13 @@ const CleanerUpcomingBookings = () => {
         },
         (payload) => {
           console.log('Cleaner upcoming bookings realtime update:', payload);
+          // Force immediate refetch for real-time updates
           fetchData();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
