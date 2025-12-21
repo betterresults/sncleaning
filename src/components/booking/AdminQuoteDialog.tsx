@@ -18,6 +18,7 @@ interface QuoteData {
   estimatedHours: number | null;
   weeklyHours?: number | null; // Regular weekly hours when first deep clean is selected
   wantsFirstDeepClean?: boolean; // Whether first deep clean option was selected
+  firstDeepCleanHours?: number | null; // Total hours for first deep clean
   propertyType: string;
   bedrooms: string;
   bathrooms: string;
@@ -475,10 +476,16 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                 <div className="bg-slate-50 rounded-xl p-4 space-y-2 border border-slate-100">
                   <p className="text-sm font-medium text-slate-600">Quote Summary</p>
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Total Cost:</span>
+                    <span className="text-slate-500">{quoteData.wantsFirstDeepClean ? 'First Cleaning Cost:' : 'Total Cost:'}</span>
                     <span className="font-semibold text-slate-800">£{quoteData.totalCost.toFixed(2)}</span>
                   </div>
-                  {quoteData.estimatedHours && (
+                  {/* Show first deep clean hours if applicable, otherwise show regular estimated hours */}
+                  {(quoteData.wantsFirstDeepClean && quoteData.firstDeepCleanHours) ? (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500">First Cleaning Duration:</span>
+                      <span className="font-medium text-slate-700">{quoteData.firstDeepCleanHours} hours</span>
+                    </div>
+                  ) : quoteData.estimatedHours && (
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-500">Duration:</span>
                       <span className="font-medium text-slate-700">{quoteData.estimatedHours} hours</span>
