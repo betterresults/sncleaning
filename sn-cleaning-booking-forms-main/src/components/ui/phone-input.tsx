@@ -24,6 +24,10 @@ const parsePhoneToDisplay = (value: string): string => {
   }
   // Remove any remaining non-digits
   cleaned = cleaned.replace(/\D/g, '');
+  // Also strip leading 44 (country code without +) if present
+  if (cleaned.startsWith('44') && cleaned.length > 10) {
+    cleaned = cleaned.substring(2);
+  }
   // Remove leading zeros (convert 07xxx to 7xxx)
   cleaned = cleaned.replace(/^0+/, '');
   // Limit to 10 digits
@@ -48,6 +52,11 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   const formatPhoneNumber = (input: string) => {
     // Remove all non-digit characters
     let cleaned = input.replace(/\D/g, '');
+    
+    // Strip leading 44 (country code without +) if user pasted it
+    if (cleaned.startsWith('44') && cleaned.length > 10) {
+      cleaned = cleaned.substring(2);
+    }
     
     // Remove any leading zeros
     cleaned = cleaned.replace(/^0+/, '');
