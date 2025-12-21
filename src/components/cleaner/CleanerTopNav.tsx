@@ -31,8 +31,8 @@ export default function CleanerTopNav() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-14 bg-background border-b border-border z-50">
-      <div className="flex items-center justify-between px-4 h-full max-w-screen-xl mx-auto">
+    <header className="fixed top-0 left-0 right-0 bg-background border-b border-border z-50 pt-safe">
+      <div className="flex items-center justify-between px-4 h-14 max-w-screen-xl mx-auto">
         {/* Left: Today & Available badges */}
         <div className="flex items-center gap-2">
           {todayCount !== undefined && todayCount > 0 && (

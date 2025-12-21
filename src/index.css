@@ -50,8 +50,22 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* For fixed headers that need to account for safe area */
+.top-safe {
+  top: env(safe-area-inset-top);
+}
+
 .content-bottom-spacer {
   padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+}
+
+/* Content padding to account for fixed header with safe area */
+.pt-header-safe {
+  padding-top: calc(3.5rem + env(safe-area-inset-top));
 }
 
 @layer base {

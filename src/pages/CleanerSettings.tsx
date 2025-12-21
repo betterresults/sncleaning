@@ -123,7 +123,7 @@ const CleanerSettings = () => {
       <div className="min-h-screen bg-background">
         <CleanerTopNav />
         
-        <main className="pt-16 pb-20 content-bottom-spacer">
+        <main className="pt-header-safe pb-20 content-bottom-spacer">
           <div className="p-4 space-y-4">
           {/* Account Information */}
           <Card>
