@@ -1,7 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useEffect } from 'react';
 
 export const useAvailableBookingsCount = () => {
+  const queryClient = useQueryClient();
+
   const fetchAvailableBookingsCount = async () => {
     const { count, error } = await supabase
       .from('bookings')
@@ -18,10 +21,32 @@ export const useAvailableBookingsCount = () => {
     return count || 0;
   };
 
+  // Real-time subscription for instant updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('available-bookings-count-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings'
+        },
+        () => {
+          // Invalidate the count query to refetch immediately
+          queryClient.invalidateQueries({ queryKey: ['available-bookings-count'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   return useQuery({
     queryKey: ['available-bookings-count'],
     queryFn: fetchAvailableBookingsCount,
-    refetchInterval: 10000, // Refetch every 10 seconds
-    staleTime: 5000, // Consider stale after 5 seconds
+    staleTime: 0, // Always refetch when invalidated
   });
 };
