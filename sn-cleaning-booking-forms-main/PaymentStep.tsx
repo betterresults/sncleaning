@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { BookingData } from './src/components/booking/BookingForm';
-import { CreditCard, Shield, Clock, Check, AlertCircle } from 'lucide-react';
+import { CreditCard, Shield, Clock, Check, AlertCircle, Building2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAirbnbBookingSubmit } from '@/hooks/useAirbnbBookingSubmit';
@@ -25,6 +25,8 @@ interface CardComplete {
   cardCvc: boolean;
 }
 
+type PaymentType = 'card' | 'bank-transfer';
+
 const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
   const { toast } = useToast();
   const stripe = useStripe();
@@ -37,6 +39,8 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   const [requiresImmediatePayment, setRequiresImmediatePayment] = useState(false);
+  const [paymentType, setPaymentType] = useState<PaymentType>('card');
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   
   // Card validation state
   const [cardErrors, setCardErrors] = useState<CardErrors>({
@@ -137,6 +141,9 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
   };
 
   const handleCompleteBooking = async () => {
+    // Clear any previous payment error
+    setPaymentError(null);
+    
     const bookingSubmission = {
       firstName: data.firstName,
       lastName: data.lastName,
@@ -162,8 +169,26 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
         linensHandling: data.linensHandling,
         needsIroning: data.needsIroning,
         ironingHours: data.ironingHours
-      }
+      },
+      paymentMethod: paymentType // Include selected payment type
     };
+
+    // Handle Bank Transfer payment - skip card processing entirely
+    if (paymentType === 'bank-transfer') {
+      console.log('[PaymentStep] Processing bank transfer booking');
+      const result = await submitBooking({
+        ...bookingSubmission,
+        paymentMethod: 'bank-transfer'
+      });
+      
+      if (result.success) {
+        toast({
+          title: 'Booking Complete!',
+          description: `Your booking has been created. Reference: #${result.bookingId}. We will send you bank transfer details shortly.`,
+        });
+      }
+      return;
+    }
 
     // If booking is NOT within 48 hours and user is logged in, skip payment
     if (!requiresImmediatePayment && isAuthenticated) {
@@ -178,8 +203,9 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
       return;
     }
 
-    // Booking within 48 hours OR guest - need to collect/charge payment
+    // Card payment - need to collect/charge payment
     if (!stripe || !elements) {
+      setPaymentError('Payment system is not ready. Please refresh the page and try again.');
       toast({
         variant: 'destructive',
         title: 'Payment Error',
@@ -373,10 +399,13 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
           : `Your booking has been confirmed. Reference: #${result.bookingId}`,
       });
     } catch (error: any) {
+      console.error('[PaymentStep] Payment error:', error);
+      const errorMessage = error.message || 'Failed to process payment. Please try again or use bank transfer.';
+      setPaymentError(errorMessage);
       toast({
         variant: 'destructive',
         title: 'Payment Failed',
-        description: error.message || 'Failed to process payment.',
+        description: errorMessage,
       });
     }
   };
@@ -394,7 +423,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
 
       {/* Payment Method Section */}
       {!loading && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Urgent booking notice */}
           {requiresImmediatePayment && (
             <div className="border-l-4 border-orange-500 bg-orange-50 dark:bg-orange-950 p-4 rounded">
@@ -410,10 +439,89 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
             </div>
           )}
 
-          {/* Show saved payment methods for logged in users */}
-          {isAuthenticated && paymentMethods.length > 0 && requiresImmediatePayment && (
+          {/* Payment Error Display */}
+          {paymentError && (
+            <div className="border-l-4 border-destructive bg-destructive/10 p-4 rounded">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-medium text-destructive">Payment Error</h3>
+                  <p className="text-sm text-destructive/90 mt-1">{paymentError}</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    You can try again with a different card, or choose Bank Transfer below.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Payment Type Selector */}
+          <div className="space-y-3">
+            <h3 className="font-medium">How would you like to pay?</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Card Payment Option */}
+              <div
+                onClick={() => { setPaymentType('card'); setPaymentError(null); }}
+                className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                  paymentType === 'card'
+                    ? 'border-primary bg-accent ring-2 ring-primary/20'
+                    : 'border-border hover:border-primary/50'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <CreditCard className="h-6 w-6 text-primary" />
+                  <div>
+                    <div className="font-medium">Card Payment</div>
+                    <div className="text-xs text-muted-foreground">Pay securely with your card</div>
+                  </div>
+                </div>
+                {paymentType === 'card' && (
+                  <Check className="h-5 w-5 text-primary absolute top-2 right-2" />
+                )}
+              </div>
+
+              {/* Bank Transfer Option */}
+              <div
+                onClick={() => { setPaymentType('bank-transfer'); setPaymentError(null); }}
+                className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                  paymentType === 'bank-transfer'
+                    ? 'border-primary bg-accent ring-2 ring-primary/20'
+                    : 'border-border hover:border-primary/50'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Building2 className="h-6 w-6 text-primary" />
+                  <div>
+                    <div className="font-medium">Bank Transfer</div>
+                    <div className="text-xs text-muted-foreground">Pay via bank transfer</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bank Transfer Info */}
+          {paymentType === 'bank-transfer' && (
+            <div className="border rounded-lg p-6 bg-accent/50 space-y-3">
+              <h3 className="font-medium flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-primary" />
+                Bank Transfer Payment
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Complete your booking now and we'll send you our bank details by email. 
+                Please transfer the payment within 24 hours to confirm your booking.
+              </p>
+              <div className="text-sm">
+                <span className="font-medium">Total to transfer: </span>
+                <span className="text-primary font-bold">£{data.totalCost.toFixed(2)}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Show saved payment methods for logged in users - only if card payment selected */}
+          {paymentType === 'card' && isAuthenticated && paymentMethods.length > 0 && requiresImmediatePayment && (
             <div className="space-y-3">
-              <h3 className="font-medium">Select Payment Method</h3>
+              <h3 className="font-medium">Select Saved Card</h3>
               {paymentMethods.map((method: any) => (
                 <div
                   key={method.id}
@@ -445,12 +553,12 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
             </div>
           )}
 
-          {/* Card entry form for guests or when immediate payment required without saved methods */}
-          {((!isAuthenticated || requiresImmediatePayment) && (!paymentMethods.length || !isAuthenticated)) && (
+          {/* Card entry form - only show if card payment selected */}
+          {paymentType === 'card' && ((!isAuthenticated || requiresImmediatePayment) && (!paymentMethods.length || !isAuthenticated)) && (
             <div className="border rounded-lg p-6 space-y-4">
               <h3 className="font-medium flex items-center gap-2">
                 <Shield className="h-5 w-5 text-success" />
-                {requiresImmediatePayment ? 'Payment Required Now' : 'Secure Payment Details'}
+                {requiresImmediatePayment ? 'Enter Card Details' : 'Secure Payment Details'}
               </h3>
               <p className="text-sm text-muted-foreground">
                 {requiresImmediatePayment 
@@ -617,10 +725,17 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ data, onBack }) => {
           disabled={
             isSubmitting || 
             loading || 
-            (requiresImmediatePayment && !selectedPaymentMethod && !isCardValid && !stripe)
+            (paymentType === 'card' && requiresImmediatePayment && !selectedPaymentMethod && !isCardValid && !stripe)
           }
         >
-          {isSubmitting ? 'Processing...' : requiresImmediatePayment ? 'Pay Now & Complete Booking' : 'Complete Booking'}
+          {isSubmitting 
+            ? 'Processing...' 
+            : paymentType === 'bank-transfer'
+              ? 'Complete Booking (Bank Transfer)'
+              : requiresImmediatePayment 
+                ? 'Pay Now & Complete Booking' 
+                : 'Complete Booking'
+          }
         </Button>
       </div>
     </div>
