@@ -291,7 +291,10 @@ export const useDomesticBookingSubmit = () => {
         }
       }
 
+      // Use totalHours consistently - this includes first deep clean extra hours
       const totalHours = bookingData.totalHours || bookingData.estimatedHours || 0;
+      // Regular hours is the base hours without first deep clean extras
+      const regularHours = bookingData.estimatedHours || totalHours;
 
       // Get current user and their role for tracking
       const { data: { user } } = await supabase.auth.getUser();
@@ -343,8 +346,9 @@ export const useDomesticBookingSubmit = () => {
           ? null 
           : time24ForDB,
         
-        hours_required: bookingData.estimatedHours || 0,
-        total_hours: totalHours || 0,
+        hours_required: totalHours,
+        total_hours: totalHours,
+        recommended_hours: regularHours,
         cleaning_cost_per_hour: bookingData.hourlyRate || 0,
         total_cost: bookingData.totalCost || 0,
         
@@ -388,6 +392,18 @@ export const useDomesticBookingSubmit = () => {
         }
       }
 
+      // Generate recurring group ID if this is a recurring booking
+      const isRecurring = bookingData.serviceFrequency && 
+        bookingData.serviceFrequency !== 'onetime' && 
+        bookingData.serviceFrequency !== 'one-time';
+      
+      const recurringGroupId = isRecurring ? crypto.randomUUID() : null;
+
+      // Add recurring group ID to the booking insert
+      if (recurringGroupId) {
+        bookingInsert.recurring_group_id = recurringGroupId;
+      }
+
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .insert(bookingInsert)
@@ -397,6 +413,95 @@ export const useDomesticBookingSubmit = () => {
       if (bookingError || !booking) {
         console.error('Create booking failed:', bookingError);
         throw new Error(bookingError?.message || 'Failed to create booking');
+      }
+
+      // Create recurring service if this is a recurring booking
+      if (isRecurring && recurringGroupId) {
+        console.log('[useDomesticBookingSubmit] Creating recurring service for frequency:', bookingData.serviceFrequency);
+        
+        // Determine interval based on frequency
+        let interval = '7'; // Default to weekly
+        if (bookingData.serviceFrequency === 'fortnightly' || bookingData.serviceFrequency === 'bi-weekly') {
+          interval = '14';
+        } else if (bookingData.serviceFrequency === 'monthly') {
+          interval = '30';
+        }
+
+        // Map frequency to day of week from selected date
+        let dayOfWeek = '';
+        if (bookingData.selectedDate) {
+          const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+          const dateObj = bookingData.selectedDate instanceof Date 
+            ? bookingData.selectedDate 
+            : new Date(bookingData.selectedDate);
+          dayOfWeek = days[dateObj.getDay()];
+        }
+
+        // Get or create address ID for recurring service
+        let addressIdForRecurring = bookingData.addressId;
+        if (!addressIdForRecurring) {
+          // Try to find or create address
+          const { data: existingAddress } = await supabase
+            .from('addresses')
+            .select('id')
+            .eq('customer_id', customerId)
+            .eq('address', addressForBooking)
+            .maybeSingle();
+          
+          if (existingAddress) {
+            addressIdForRecurring = existingAddress.id;
+          } else {
+            const { data: newAddress } = await supabase
+              .from('addresses')
+              .insert({
+                customer_id: customerId,
+                address: addressForBooking,
+                postcode: postcodeForBooking,
+                is_default: false
+              })
+              .select('id')
+              .single();
+            
+            if (newAddress) {
+              addressIdForRecurring = newAddress.id;
+            }
+          }
+        }
+
+        // Calculate recurring cost (without first deep clean extras)
+        const recurringCost = bookingData.regularRecurringCost || (regularHours * (bookingData.hourlyRate || 0));
+
+        const recurringServiceData = {
+          customer: customerId,
+          address: addressIdForRecurring || addressForBooking,
+          cleaner: bookingData.cleanerId && bookingData.cleanerId > 0 ? bookingData.cleanerId : null,
+          cleaner_rate: null as number | null, // Will be set when cleaner is assigned
+          cleaning_type: 'Domestic',
+          frequently: bookingData.serviceFrequency,
+          days_of_the_week: dayOfWeek,
+          hours: String(regularHours), // Regular hours for ongoing cleaning (stored as string in DB)
+          cost_per_hour: bookingData.hourlyRate || 0,
+          total_cost: recurringCost,
+          payment_method: bookingData.paymentMethod || null,
+          start_date: dateStr || null,
+          start_time: time24ForDB ? `${time24ForDB}:00+00` : null,
+          postponed: false,
+          interval: interval,
+          recurring_group_id: recurringGroupId,
+          created_by_user_id: createdByUserId,
+          created_by_source: createdBySource
+        };
+
+        const { error: recurringError } = await supabase
+          .from('recurring_services')
+          .insert([recurringServiceData]);
+
+        if (recurringError) {
+          console.error('[useDomesticBookingSubmit] Failed to create recurring service:', recurringError);
+          // Don't fail the whole booking if recurring service creation fails
+        } else {
+          console.log('[useDomesticBookingSubmit] Recurring service created successfully');
+        }
       }
 
       // Handle payment authorization if customer has payment methods
