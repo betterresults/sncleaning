@@ -2156,6 +2156,7 @@ export type Database = {
           bathrooms: number | null
           bedrooms: number | null
           calculated_quote: number | null
+          cleaning_products: string[] | null
           cleaning_type: string | null
           confirmation_sent_at: string | null
           confirmation_token: string | null
@@ -2165,6 +2166,7 @@ export type Database = {
           created_by_admin_id: string | null
           discount_amount: number | null
           email: string | null
+          equipment_arrangement: string | null
           expires_at: string | null
           first_deep_clean: boolean | null
           first_name: string | null
@@ -2217,6 +2219,7 @@ export type Database = {
           bathrooms?: number | null
           bedrooms?: number | null
           calculated_quote?: number | null
+          cleaning_products?: string[] | null
           cleaning_type?: string | null
           confirmation_sent_at?: string | null
           confirmation_token?: string | null
@@ -2226,6 +2229,7 @@ export type Database = {
           created_by_admin_id?: string | null
           discount_amount?: number | null
           email?: string | null
+          equipment_arrangement?: string | null
           expires_at?: string | null
           first_deep_clean?: boolean | null
           first_name?: string | null
@@ -2278,6 +2282,7 @@ export type Database = {
           bathrooms?: number | null
           bedrooms?: number | null
           calculated_quote?: number | null
+          cleaning_products?: string[] | null
           cleaning_type?: string | null
           confirmation_sent_at?: string | null
           confirmation_token?: string | null
@@ -2287,6 +2292,7 @@ export type Database = {
           created_by_admin_id?: string | null
           discount_amount?: number | null
           email?: string | null
+          equipment_arrangement?: string | null
           expires_at?: string | null
           first_deep_clean?: boolean | null
           first_name?: string | null
