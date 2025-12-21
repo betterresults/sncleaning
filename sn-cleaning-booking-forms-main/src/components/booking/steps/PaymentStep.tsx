@@ -265,9 +265,8 @@ useEffect(() => {
     return hoursUntilBooking <= 48;
   }, [data.selectedDate, data.selectedTime]);
 
-  // Bank transfer is only available when admin explicitly allows it via URL param
-  const allowBankTransfer = searchParams.get('allowBankTransfer') === '1';
-  const canUseBankTransfer = !isAdminMode && allowBankTransfer;
+  // Bank transfer is available for all customers
+  const canUseBankTransfer = !isAdminMode;
 
   const validateEmail = (email: string) => {
     if (!email) {
