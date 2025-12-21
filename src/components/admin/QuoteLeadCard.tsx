@@ -6,7 +6,8 @@ import {
   Calendar, Clock, Sparkles, Building2, 
   CheckCircle2, XCircle, AlertCircle, CookingPot, Shirt, 
   Sofa, DoorOpen, Globe, Zap, ArrowRight,
-  Timer
+  Timer, Percent, PoundSterling, SprayCan, Wrench, UtensilsCrossed,
+  HelpCircle, Tag
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -138,11 +139,13 @@ const QuoteLeadCard: React.FC<QuoteLeadCardProps> = ({ lead, adminName, isSelect
   const stepNumber = getStepNumber(lead.furthest_step);
   const additionalRooms = lead.additional_rooms as Record<string, number> | null;
   
-  const hasPropertyInfo = lead.postcode || lead.bedrooms || lead.bathrooms;
-  const hasExtras = lead.oven_cleaning || (lead.ironing_hours && lead.ironing_hours > 0) || lead.first_deep_clean;
-  const hasSchedule = lead.selected_date || lead.selected_time || lead.frequency;
+  const hasPropertyInfo = lead.postcode || lead.bedrooms || lead.bathrooms || lead.property_type || lead.kitchen;
+  const hasExtras = lead.oven_cleaning || (lead.ironing_hours && lead.ironing_hours > 0) || lead.first_deep_clean || 
+    (lead.cleaning_products && lead.cleaning_products.length > 0) || lead.equipment_arrangement;
+  const hasSchedule = lead.selected_date || lead.selected_time || lead.frequency || lead.is_flexible;
   const hasContact = lead.first_name || lead.email || lead.phone;
   const hasQuote = lead.calculated_quote;
+  const hasPricing = lead.weekly_cost || lead.weekly_hours || lead.discount_amount || lead.short_notice_charge || lead.recommended_hours;
 
   // Build extras list
   const extrasList: string[] = [];
@@ -164,6 +167,9 @@ const QuoteLeadCard: React.FC<QuoteLeadCardProps> = ({ lead, adminName, isSelect
       if (count > 0) additionalRoomsList.push(`${count}x ${room}`);
     });
   }
+  
+  // Cleaning products
+  const cleaningProductsList = lead.cleaning_products || [];
 
   const getStatusStyles = () => {
     if (lead.status === 'completed') return 'border-l-green-500 bg-green-50/30';
@@ -283,6 +289,14 @@ const QuoteLeadCard: React.FC<QuoteLeadCardProps> = ({ lead, adminName, isSelect
         {/* Row 3: Property Details */}
         {hasPropertyInfo && (
           <div className="flex items-center gap-3 flex-wrap text-sm">
+            {/* Property Type */}
+            {lead.property_type && (
+              <Badge className="bg-slate-200 text-slate-700 border-0 gap-1">
+                <Home className="h-3 w-3" />
+                {lead.property_type}
+              </Badge>
+            )}
+            
             <div className="flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-1.5">
               <MapPin className="h-4 w-4 text-slate-500" />
               <span className="font-medium text-slate-700">{lead.postcode || 'No postcode'}</span>
@@ -323,6 +337,14 @@ const QuoteLeadCard: React.FC<QuoteLeadCardProps> = ({ lead, adminName, isSelect
               </div>
             )}
 
+            {/* Kitchen */}
+            {lead.kitchen && (
+              <Badge variant="outline" className="text-xs bg-white gap-1">
+                <UtensilsCrossed className="h-3 w-3" />
+                Kitchen: {lead.kitchen}
+              </Badge>
+            )}
+
             {additionalRoomsList.length > 0 && (
               <div className="flex items-center gap-1 flex-wrap">
                 {additionalRoomsList.map((room, i) => (
@@ -357,6 +379,20 @@ const QuoteLeadCard: React.FC<QuoteLeadCardProps> = ({ lead, adminName, isSelect
                 First Deep Clean
               </Badge>
             )}
+            {/* Cleaning Products */}
+            {cleaningProductsList.length > 0 && cleaningProductsList.map((product, i) => (
+              <Badge key={i} className="bg-lime-100 text-lime-700 border-0 gap-1">
+                <SprayCan className="h-3 w-3" />
+                {product}
+              </Badge>
+            ))}
+            {/* Equipment Arrangement */}
+            {lead.equipment_arrangement && (
+              <Badge className="bg-amber-100 text-amber-700 border-0 gap-1">
+                <Wrench className="h-3 w-3" />
+                {lead.equipment_arrangement}
+              </Badge>
+            )}
           </div>
         )}
 
@@ -376,26 +412,63 @@ const QuoteLeadCard: React.FC<QuoteLeadCardProps> = ({ lead, adminName, isSelect
                 {lead.selected_date}
               </Badge>
             )}
-            {lead.selected_time && (
+            {/* Show time or TBC if flexible */}
+            {lead.selected_time ? (
               <Badge className="bg-cyan-100 text-cyan-700 border-0 gap-1">
                 <Clock className="h-3 w-3" />
                 {lead.selected_time}
               </Badge>
-            )}
-            {lead.is_flexible && (
+            ) : lead.is_flexible ? (
+              <Badge className="bg-gray-100 text-gray-600 border-0 gap-1">
+                <HelpCircle className="h-3 w-3" />
+                Time: TBC (Flexible)
+              </Badge>
+            ) : null}
+            {lead.is_flexible && lead.selected_time && (
               <Badge variant="outline" className="text-xs">Flexible</Badge>
             )}
           </div>
         )}
 
-        {/* Row 6: Hours & Cleaning Type */}
+        {/* Row 6: Pricing Details */}
+        {hasPricing && (
+          <div className="flex items-center gap-2 flex-wrap text-sm">
+            <span className="text-gray-500 text-xs font-medium">PRICING:</span>
+            {lead.recommended_hours && (
+              <Badge className="bg-gray-100 text-gray-700 border-0 gap-1">
+                <Clock className="h-3 w-3" />
+                {lead.recommended_hours}h recommended
+              </Badge>
+            )}
+            {lead.weekly_hours && (
+              <Badge className="bg-sky-100 text-sky-700 border-0 gap-1">
+                <Clock className="h-3 w-3" />
+                {lead.weekly_hours}h/week
+              </Badge>
+            )}
+            {lead.weekly_cost && (
+              <Badge className="bg-emerald-100 text-emerald-700 border-0 gap-1">
+                <PoundSterling className="h-3 w-3" />
+                £{lead.weekly_cost}/week
+              </Badge>
+            )}
+            {lead.discount_amount && lead.discount_amount > 0 && (
+              <Badge className="bg-pink-100 text-pink-700 border-0 gap-1">
+                <Percent className="h-3 w-3" />
+                -£{lead.discount_amount} discount
+              </Badge>
+            )}
+            {lead.short_notice_charge && lead.short_notice_charge > 0 && (
+              <Badge className="bg-red-100 text-red-700 border-0 gap-1">
+                <Tag className="h-3 w-3" />
+                +£{lead.short_notice_charge} short notice
+              </Badge>
+            )}
+          </div>
+        )}
+
+        {/* Row 7: Cleaning Type & Access */}
         <div className="flex items-center gap-2 flex-wrap text-sm">
-          {lead.recommended_hours && (
-            <Badge className="bg-gray-100 text-gray-700 border-0 gap-1">
-              <Clock className="h-3 w-3" />
-              {lead.recommended_hours}h recommended
-            </Badge>
-          )}
           {lead.cleaning_type && (
             <Badge variant="outline" className="text-xs">
               {lead.cleaning_type}
@@ -405,6 +478,11 @@ const QuoteLeadCard: React.FC<QuoteLeadCardProps> = ({ lead, adminName, isSelect
             <Badge variant="outline" className="text-xs">
               Access: {lead.property_access}
             </Badge>
+          )}
+          {lead.access_notes && (
+            <span className="text-xs text-gray-500 italic truncate max-w-[200px]" title={lead.access_notes}>
+              Note: {lead.access_notes}
+            </span>
           )}
         </div>
 
