@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
     )
 
     // Get the request body - password is now optional
-    const { email, password: providedPassword, firstName, lastName, role } = await req.json()
+    const { email, password: providedPassword, firstName, lastName, role, phone } = await req.json()
 
     // Generate temporary password if not provided
     const password = providedPassword || generateTempPassword();
@@ -208,6 +208,28 @@ Deno.serve(async (req) => {
       if (existingCleaner) {
         cleanerId = existingCleaner.id;
         console.log('Found existing cleaner:', cleanerId);
+      } else {
+        // Create new cleaner record
+        const { data: newCleaner, error: cleanerError } = await supabaseAdmin
+          .from('cleaners')
+          .insert({
+            first_name: firstName,
+            last_name: lastName,
+            full_name: `${firstName} ${lastName}`.trim(),
+            email: email,
+            phone: phone ? parseInt(phone.replace(/\D/g, '')) : null,
+            hourly_rate: 15,
+            presentage_rate: 70
+          })
+          .select('id')
+          .single();
+
+        if (cleanerError) {
+          console.error('Error creating cleaner:', cleanerError);
+        } else {
+          cleanerId = newCleaner.id;
+          console.log('Created new cleaner:', cleanerId);
+        }
       }
     }
 

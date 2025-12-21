@@ -102,6 +102,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
     first_name: '',
     last_name: '',
     email: '',
+    phone: '',
     role: userType === 'customer' 
       ? 'guest' 
       : userType === 'cleaner' 
@@ -338,6 +339,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           email: newUserData.email,
           firstName: newUserData.first_name,
           lastName: newUserData.last_name,
+          phone: newUserData.phone || undefined,
           role: (userType === 'admin' || userType === 'office') ? newUserData.role : newUserData.role
         }
       });
@@ -402,6 +404,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         first_name: '',
         last_name: '',
         email: '',
+        phone: '',
         role: userType === 'customer' 
           ? 'guest' 
           : userType === 'cleaner' 
@@ -490,6 +493,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         first_name: '',
         last_name: '',
         email: '',
+        phone: '',
         role: userType === 'customer' ? 'guest' : userType === 'cleaner' ? 'user' : 'guest'
       });
       setExistingUserEmail('');
@@ -896,12 +900,24 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                     placeholder="Enter email address"
                   />
                 </div>
-                <div className="sm:col-span-2">
-                  <p className="text-sm text-muted-foreground flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    A temporary password will be auto-generated and sent via email
-                  </p>
-                </div>
+                {userType === 'cleaner' && (
+                  <div>
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={newUserData.phone}
+                      onChange={(e) => setNewUserData({...newUserData, phone: e.target.value})}
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+                )}
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  A temporary password will be auto-generated and sent via email
+                </p>
               </div>
               {(userType === 'all' || userType === 'office') && (
                 <div className="max-w-xs">
@@ -1359,6 +1375,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                 first_name: '',
                 last_name: '',
                 email: '',
+                phone: '',
                 role: userType === 'customer' ? 'guest' : userType === 'cleaner' ? 'user' : 'guest'
               });
             }}>
