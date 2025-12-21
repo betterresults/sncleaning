@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
 
 interface Cleaner {
   id: number;
@@ -39,13 +40,29 @@ const AssignCleanerToPastBookingDialog: React.FC<AssignCleanerToPastBookingDialo
   const [customHourlyRate, setCustomHourlyRate] = useState<string>('');
   const [customPercentageRate, setCustomPercentageRate] = useState<string>('');
   const { toast } = useToast();
+  
+  // Use the shared hook for fetching linked cleaners
+  const { cleaners: linkedCleaners } = useLinkedCleaners(open);
 
   useEffect(() => {
     if (open && bookingId) {
-      fetchCleaners();
       fetchBookingDetails();
     }
   }, [open, bookingId]);
+
+  // Sync linked cleaners to local state
+  useEffect(() => {
+    if (linkedCleaners.length > 0) {
+      setCleaners(linkedCleaners.map(c => ({
+        id: c.id,
+        first_name: c.first_name,
+        last_name: c.last_name,
+        full_name: c.full_name || `${c.first_name} ${c.last_name}`,
+        presentage_rate: c.presentage_rate || 0,
+        hourly_rate: c.hourly_rate || 0
+      })));
+    }
+  }, [linkedCleaners]);
 
   const fetchBookingDetails = async () => {
     if (!bookingId) return;
@@ -78,24 +95,6 @@ const AssignCleanerToPastBookingDialog: React.FC<AssignCleanerToPastBookingDialo
       }
     } catch (error) {
       console.error('Error fetching booking details:', error);
-    }
-  };
-
-  const fetchCleaners = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('cleaners')
-        .select('id, first_name, last_name, full_name, presentage_rate, hourly_rate')
-        .order('first_name');
-
-      if (error) {
-        console.error('Error fetching cleaners:', error);
-        return;
-      }
-
-      setCleaners(data || []);
-    } catch (error) {
-      console.error('Error fetching cleaners:', error);
     }
   };
 
