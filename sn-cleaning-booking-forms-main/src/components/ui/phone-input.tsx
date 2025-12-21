@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
-import { Phone } from 'lucide-react';
 import { z } from 'zod';
 
 // UK Phone validation: +44 followed by 10 digits
@@ -42,6 +41,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
 }) => {
   const [displayValue, setDisplayValue] = useState(() => parsePhoneToDisplay(value));
   const [error, setError] = useState<string>('');
+  const [isFocused, setIsFocused] = useState(false);
 
   // Sync displayValue when value prop changes (e.g., when customer is selected)
   useEffect(() => {
@@ -73,12 +73,16 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
       return;
     }
 
-    const fullPhone = '+44' + digits;
-    const result = ukPhoneSchema.safeParse(fullPhone);
-    if (!result.success && digits.length > 0) {
-      setError('Phone must be 10 digits');
+    if (digits.length < 10) {
+      setError(`${10 - digits.length} more digits needed`);
     } else {
-      setError('');
+      const fullPhone = '+44' + digits;
+      const result = ukPhoneSchema.safeParse(fullPhone);
+      if (!result.success) {
+        setError('Invalid UK phone number');
+      } else {
+        setError('');
+      }
     }
   };
 
@@ -91,21 +95,40 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   };
 
   const handleBlur = () => {
+    setIsFocused(false);
     validatePhone(displayValue);
   };
 
+  const handleFocus = () => {
+    setIsFocused(true);
+  };
+
+  const isComplete = displayValue.length === 10;
+  const hasError = error && displayValue.length > 0;
+
   return (
     <div className="space-y-1">
-      <Input
-        type="tel"
-        placeholder={placeholder}
-        value={displayValue}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        className={`${className} ${error ? 'border-red-500 focus:border-red-500' : ''}`}
-      />
-      {error && (
-        <p className="text-xs text-red-600 font-medium">{error}</p>
+      <div className={`flex items-center rounded-md border ${hasError ? 'border-destructive' : isComplete ? 'border-green-500' : 'border-input'} ${isFocused ? 'ring-2 ring-ring ring-offset-2' : ''} bg-background`}>
+        <span className="pl-3 pr-1 text-muted-foreground font-medium select-none">+44</span>
+        <Input
+          type="tel"
+          inputMode="numeric"
+          placeholder={placeholder}
+          value={displayValue}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          onFocus={handleFocus}
+          className={`${className} border-0 focus-visible:ring-0 focus-visible:ring-offset-0 pl-1`}
+        />
+        {isComplete && !hasError && (
+          <span className="pr-3 text-green-500">✓</span>
+        )}
+      </div>
+      {hasError && (
+        <p className="text-xs text-destructive font-medium">{error}</p>
+      )}
+      {!hasError && displayValue.length > 0 && displayValue.length < 10 && (
+        <p className="text-xs text-muted-foreground">{displayValue.length}/10 digits</p>
       )}
     </div>
   );
