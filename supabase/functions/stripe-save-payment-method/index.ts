@@ -28,10 +28,10 @@ serve(async (req) => {
 
     const { customer_id, payment_method_id, stripe_customer_id } = await req.json();
 
-    console.log("Saving payment method:", payment_method_id, "for customer:", customer_id);
+    console.log("Saving payment method:", payment_method_id, "for customer:", customer_id, "stripe_customer:", stripe_customer_id);
 
-    if (!customer_id || !payment_method_id || !stripe_customer_id) {
-      throw new Error("customer_id, payment_method_id, and stripe_customer_id are required");
+    if (!payment_method_id || !stripe_customer_id) {
+      throw new Error("payment_method_id and stripe_customer_id are required");
     }
 
     // Get payment method details from Stripe
@@ -39,52 +39,85 @@ serve(async (req) => {
 
     console.log("Retrieved payment method details:", paymentMethod.id);
 
-    // Set as default payment method
+    // Set as default payment method on Stripe
     await stripe.customers.update(stripe_customer_id, {
       invoice_settings: {
         default_payment_method: payment_method_id,
       },
     });
 
-    // Unset other defaults for this customer
-    await supabase
-      .from('customer_payment_methods')
-      .update({ is_default: false })
-      .eq('customer_id', customer_id);
+    // If we have a customer_id, save to database
+    if (customer_id && customer_id > 0) {
+      // Unset other defaults for this customer
+      await supabase
+        .from('customer_payment_methods')
+        .update({ is_default: false })
+        .eq('customer_id', customer_id);
 
-    // Save to database
-    const { data: savedMethod, error: saveError } = await supabase
-      .from('customer_payment_methods')
-      .insert({
-        customer_id: customer_id,
-        stripe_customer_id: stripe_customer_id,
-        stripe_payment_method_id: payment_method_id,
-        card_brand: paymentMethod.card?.brand || 'unknown',
-        card_last4: paymentMethod.card?.last4 || '****',
-        card_exp_month: paymentMethod.card?.exp_month,
-        card_exp_year: paymentMethod.card?.exp_year,
-        is_default: true,
-      })
-      .select()
-      .single();
+      // Check if this payment method already exists
+      const { data: existingMethod } = await supabase
+        .from('customer_payment_methods')
+        .select('id')
+        .eq('customer_id', customer_id)
+        .eq('stripe_payment_method_id', payment_method_id)
+        .maybeSingle();
 
-    if (saveError) {
-      console.error("Error saving payment method:", saveError);
-      throw new Error("Failed to save payment method to database");
+      if (existingMethod) {
+        // Update existing
+        const { error: updateError } = await supabase
+          .from('customer_payment_methods')
+          .update({
+            is_default: true,
+            card_brand: paymentMethod.card?.brand || 'unknown',
+            card_last4: paymentMethod.card?.last4 || '****',
+            card_exp_month: paymentMethod.card?.exp_month,
+            card_exp_year: paymentMethod.card?.exp_year,
+          })
+          .eq('id', existingMethod.id);
+
+        if (updateError) {
+          console.error("Error updating payment method:", updateError);
+        } else {
+          console.log("Updated existing payment method:", existingMethod.id);
+        }
+      } else {
+        // Save new to database
+        const { data: savedMethod, error: saveError } = await supabase
+          .from('customer_payment_methods')
+          .insert({
+            customer_id: customer_id,
+            stripe_customer_id: stripe_customer_id,
+            stripe_payment_method_id: payment_method_id,
+            card_brand: paymentMethod.card?.brand || 'unknown',
+            card_last4: paymentMethod.card?.last4 || '****',
+            card_exp_month: paymentMethod.card?.exp_month,
+            card_exp_year: paymentMethod.card?.exp_year,
+            is_default: true,
+          })
+          .select()
+          .single();
+
+        if (saveError) {
+          console.error("Error saving payment method:", saveError);
+          throw new Error("Failed to save payment method to database");
+        }
+
+        console.log("Saved payment method to database:", savedMethod.id);
+      }
+    } else {
+      console.log("No customer_id provided, payment method saved to Stripe only (guest booking)");
     }
-
-    console.log("Saved payment method to database:", savedMethod.id);
 
     return new Response(
       JSON.stringify({
         success: true,
         payment_method: {
-          id: savedMethod.id,
-          card_brand: savedMethod.card_brand,
-          card_last4: savedMethod.card_last4,
-          card_exp_month: savedMethod.card_exp_month,
-          card_exp_year: savedMethod.card_exp_year,
-          is_default: savedMethod.is_default,
+          id: payment_method_id,
+          card_brand: paymentMethod.card?.brand || 'unknown',
+          card_last4: paymentMethod.card?.last4 || '****',
+          card_exp_month: paymentMethod.card?.exp_month,
+          card_exp_year: paymentMethod.card?.exp_year,
+          stripe_customer_id: stripe_customer_id,
         },
       }),
       {
