@@ -49,7 +49,8 @@ const CleanerUpcomingBookings = () => {
 
       console.log('CleanerUpcomingBookings - Fetching data for cleaner ID:', effectiveCleanerId);
       
-      const { data: bookingsData, error: bookingsError } = await supabase
+      // Fetch bookings where cleaner is primary
+      const { data: primaryBookings, error: primaryError } = await supabase
         .from('bookings')
         .select(`
           *,
@@ -63,25 +64,79 @@ const CleanerUpcomingBookings = () => {
         `)
         .eq('cleaner', effectiveCleanerId)
         .gte('date_time', startOfDay(new Date()).toISOString())
-        // No status filtering per requirement
         .order('date_time', { ascending: sortOrder === 'asc' });
 
-      if (bookingsError) {
-        console.error('Error fetching bookings:', bookingsError);
-        setError('Failed to fetch bookings: ' + bookingsError.message);
+      if (primaryError) {
+        console.error('Error fetching primary bookings:', primaryError);
+        setError('Failed to fetch bookings: ' + primaryError.message);
         return;
       }
 
-      console.log('Fetched bookings for cleaner:', bookingsData?.length || 0, 'bookings');
-      console.log('Sample booking data:', bookingsData?.[0]);
-      
-      // No status-based filtering; include all upcoming records
-      const bookingsList = bookingsData || [];
-      setBookings(bookingsList);
+      // Fetch bookings where cleaner is a sub-cleaner
+      const { data: subBookingsData, error: subBookingsError } = await supabase
+        .from('sub_bookings')
+        .select('primary_booking_id, hours_assigned, cleaner_pay')
+        .eq('cleaner_id', effectiveCleanerId);
 
-      // Extract unique service types for filter dropdown (use service_type, not cleaning_type)
+      if (subBookingsError) {
+        console.error('Error fetching sub_bookings:', subBookingsError);
+        // Continue with just primary bookings
+      }
+
+      let allBookings = [...(primaryBookings || [])];
+
+      // If there are sub-bookings, fetch those booking details
+      if (subBookingsData && subBookingsData.length > 0) {
+        const subBookingIds = subBookingsData.map(sb => sb.primary_booking_id);
+        
+        const { data: subBookingDetails, error: subDetailsError } = await supabase
+          .from('bookings')
+          .select(`
+            *,
+            time_only,
+            cleaners!bookings_cleaner_fkey (
+              id,
+              first_name,
+              last_name,
+              full_name
+            )
+          `)
+          .in('id', subBookingIds)
+          .gte('date_time', startOfDay(new Date()).toISOString());
+
+        if (!subDetailsError && subBookingDetails) {
+          // Merge sub-booking pay info and mark as sub-cleaner booking
+          const enrichedSubBookings = subBookingDetails.map(booking => {
+            const subInfo = subBookingsData.find(sb => sb.primary_booking_id === booking.id);
+            return {
+              ...booking,
+              cleaner_pay: subInfo?.cleaner_pay || booking.cleaner_pay,
+              total_hours: subInfo?.hours_assigned || booking.total_hours,
+              is_sub_cleaner: true
+            };
+          });
+          
+          // Add sub-bookings that aren't already in primary bookings
+          const primaryIds = new Set(allBookings.map(b => b.id));
+          const newSubBookings = enrichedSubBookings.filter(b => !primaryIds.has(b.id));
+          allBookings = [...allBookings, ...newSubBookings];
+        }
+      }
+
+      // Sort all bookings by date
+      allBookings.sort((a, b) => {
+        const dateA = new Date(a.date_time || 0).getTime();
+        const dateB = new Date(b.date_time || 0).getTime();
+        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+      });
+
+      console.log('Fetched bookings for cleaner:', allBookings.length, 'bookings (primary + sub)');
+      
+      setBookings(allBookings);
+
+      // Extract unique service types for filter dropdown
       const uniqueServiceTypes = [...new Set(
-        (bookingsData || [])
+        allBookings
           .map(booking => booking.service_type)
           .filter(serviceType => serviceType && serviceType.trim() !== '')
       )].sort();
