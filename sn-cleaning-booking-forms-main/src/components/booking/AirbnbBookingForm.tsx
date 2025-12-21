@@ -442,6 +442,10 @@ const AirbnbBookingForm: React.FC = () => {
                 calculatedQuote: bookingData.totalCost,
                 postcode: bookingData.postcode,
               })}
+              onBookingSuccess={(bookingId) => markCompleted({
+                convertedBookingId: bookingId,
+                calculatedQuote: bookingData.totalCost,
+              })}
             />
           </Elements>
         ) : (

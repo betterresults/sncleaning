@@ -74,6 +74,7 @@ interface PaymentStepProps {
   formType?: 'airbnb' | 'linen';
   bookingSummary?: React.ReactNode;
   onBookingAttempt?: () => void;
+  onBookingSuccess?: (bookingId: number) => void;
 }
 
 const PaymentStep: React.FC<PaymentStepProps> = ({ 
@@ -84,7 +85,8 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   isQuoteLinkMode = false,
   formType = 'airbnb',
   bookingSummary,
-  onBookingAttempt
+  onBookingAttempt,
+  onBookingSuccess
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -323,6 +325,9 @@ useEffect(() => {
             }
           }
 
+          // Call success callback for quote lead tracking
+          onBookingSuccess?.(parseInt(bookingId));
+
           // Navigate to confirmation or upcoming bookings for admin
           if (isAdminMode) {
             navigate(`/upcoming-bookings`, { replace: true });
@@ -455,6 +460,9 @@ useEffect(() => {
           description: "Admin test mode - payment skipped"
         });
 
+        // Call success callback for quote lead tracking
+        onBookingSuccess?.(result.bookingId);
+
         if (isAdminMode) {
           navigate('/upcoming-bookings', { replace: true });
         } else {
@@ -551,6 +559,9 @@ useEffect(() => {
           // Don't fail the booking if SMS fails
         }
 
+        // Call success callback for quote lead tracking
+        onBookingSuccess?.(result.bookingId);
+
         // Navigate to confirmation page (no toast needed as confirmation page shows the details)
         window.scrollTo({ top: 0, behavior: 'smooth' });
         navigate('/booking-confirmation', { state: { bookingId: result.bookingId, paymentMethod: 'bank-transfer' } });
@@ -630,6 +641,9 @@ useEffect(() => {
           description: "Customer will receive notification to add payment method.",
         });
 
+        // Call success callback for quote lead tracking
+        onBookingSuccess?.(result.bookingId);
+
         navigate('/upcoming-bookings', { replace: true });
         return;
       } catch (error: any) {
@@ -707,6 +721,9 @@ useEffect(() => {
           description: "Bank transfer details will be sent to customer.",
         });
 
+        // Call success callback for quote lead tracking
+        onBookingSuccess?.(result.bookingId);
+
         navigate('/upcoming-bookings', { replace: true });
         return;
       } catch (error: any) {
@@ -783,6 +800,9 @@ useEffect(() => {
           title: "Booking Created",
           description: "Booking created successfully.",
         });
+
+        // Call success callback for quote lead tracking
+        onBookingSuccess?.(result.bookingId);
 
         navigate('/upcoming-bookings', { replace: true });
         return;
@@ -908,6 +928,9 @@ useEffect(() => {
         }
         // If 'none', skip payment processing
 
+        // Call success callback for quote lead tracking
+        onBookingSuccess?.(result.bookingId);
+
         if (isAdminMode) {
           navigate('/upcoming-bookings', { replace: true });
           toast({
@@ -1013,6 +1036,10 @@ useEffect(() => {
         }
 
         console.log('[PaymentStep] Navigating to confirmation...');
+        
+        // Call success callback for quote lead tracking
+        onBookingSuccess?.(result.bookingId);
+
         if (isAdminMode) {
           navigate('/upcoming-bookings', { replace: true });
           toast({

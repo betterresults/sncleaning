@@ -373,10 +373,14 @@ const QuoteLeadsView = () => {
   // Calculate funnel stats from time-filtered data
   const pageViews = timeFilteredEvents.filter(e => e.event_type === 'page_view').length;
   const serviceClicks = timeFilteredEvents.filter(e => e.event_type === 'service_click').length;
-  const formStarts = timeFilteredEvents.filter(e => e.event_type === 'form_started').length;
   const quoteViews = timeFilteredLeads.filter(l => l.furthest_step === 'quote_viewed' || l.status === 'completed').length;
   const completions = timeFilteredLeads.filter(l => l.status === 'completed').length;
   const liveLeads = timeFilteredLeads.filter(l => l.status === 'live' && !isLeadIdle(l)).length;
+  
+  // Booking attempt stats - shows success vs failed attempts
+  const bookingAttempts = timeFilteredLeads.filter(l => l.furthest_step === 'booking_attempted' || l.furthest_step === 'booking_completed').length;
+  const successfulBookings = timeFilteredLeads.filter(l => l.status === 'completed').length;
+  const failedAttempts = bookingAttempts - successfulBookings;
 
   // Calculate conversion rates
   const clickRate = pageViews > 0 ? ((serviceClicks / pageViews) * 100).toFixed(1) : '0';
@@ -470,13 +474,15 @@ const QuoteLeadsView = () => {
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs sm:text-sm font-medium text-amber-600/80">Form Starts</p>
-                <p className="text-2xl sm:text-3xl font-bold text-amber-700 mt-1">{leads.length}</p>
-                {liveLeads > 0 && (
-                  <p className="text-xs text-green-600 mt-0.5 flex items-center gap-1">
-                    <span className="h-1.5 w-1.5 bg-green-500 rounded-full animate-pulse" />
-                    {liveLeads} live now
-                  </p>
+                <p className="text-xs sm:text-sm font-medium text-amber-600/80">Booking Attempts</p>
+                <p className="text-2xl sm:text-3xl font-bold text-amber-700 mt-1">{bookingAttempts}</p>
+                {bookingAttempts > 0 && (
+                  <div className="text-xs mt-0.5 space-y-0.5">
+                    <p className="text-green-600">{successfulBookings} completed</p>
+                    {failedAttempts > 0 && (
+                      <p className="text-red-500">{failedAttempts} failed</p>
+                    )}
+                  </div>
                 )}
               </div>
               <div className="p-2.5 bg-amber-100 rounded-xl">
