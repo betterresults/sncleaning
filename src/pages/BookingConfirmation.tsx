@@ -4,6 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Calendar, Clock, MapPin, Loader2 } from 'lucide-react';
 
+const SUPABASE_URL = "https://dkomihipebixlegygnoy.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrb21paGlwZWJpeGxlZ3lnbm95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA1MDEwNTMsImV4cCI6MjA0NjA3NzA1M30.z4hlXMnyyleo4sWyPnFuKFC5-tkQw4lVcDiF8TRWla4";
+
 interface BookingDetails {
   id: number;
   date_time: string | null;
@@ -52,6 +55,53 @@ const BookingConfirmation = () => {
     if (paymentSetupSuccess) {
       setPaymentSuccess(true);
       setIsUrgentBooking(isUrgent);
+      
+      // Clear payment redirect flag since we've returned successfully
+      localStorage.removeItem('payment_redirect_in_progress');
+      
+      // Mark the quote lead as completed now that payment is done
+      const quoteSessionId = sessionStorage.getItem('pending_quote_session_id') || localStorage.getItem('quote_session_id');
+      const quoteCost = sessionStorage.getItem('pending_quote_cost');
+      
+      if (quoteSessionId && bookingId) {
+        console.log('📊 Marking quote lead as completed on Stripe return:', { quoteSessionId, bookingId, quoteCost });
+        
+        // Update localStorage to prevent beforeunload from overwriting
+        localStorage.setItem('quote_furthest_step', 'booking_completed');
+        
+        // Update the quote lead in the database
+        const updateQuoteLead = async () => {
+          try {
+            await fetch(`${SUPABASE_URL}/functions/v1/track-funnel-event`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              },
+              body: JSON.stringify({
+                table: 'quote_leads',
+                data: {
+                  session_id: quoteSessionId,
+                  status: 'completed',
+                  furthest_step: 'booking_completed',
+                  converted_booking_id: parseInt(bookingId as string),
+                  ...(quoteCost && { calculated_quote: parseFloat(quoteCost) }),
+                  updated_at: new Date().toISOString(),
+                },
+              }),
+            });
+            console.log('✅ Quote lead marked as completed');
+            
+            // Clean up session storage
+            sessionStorage.removeItem('pending_quote_session_id');
+            sessionStorage.removeItem('pending_quote_cost');
+          } catch (err) {
+            console.error('❌ Error marking quote lead as completed:', err);
+          }
+        };
+        
+        updateQuoteLead();
+      }
     }
   }, [pendingBookingId, bookingId, paymentSetupSuccess, isUrgent]);
 

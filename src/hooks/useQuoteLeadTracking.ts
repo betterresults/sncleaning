@@ -5,8 +5,8 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 // Heartbeat interval - send every 30 seconds to indicate browser is still open
 const HEARTBEAT_INTERVAL = 30 * 1000;
-// Session reuse window - reuse session if created within last 30 minutes
-const SESSION_REUSE_WINDOW = 30 * 60 * 1000;
+// Session reuse window - reuse session if created within last 7 days (for multi-day return visitors)
+const SESSION_REUSE_WINDOW = 7 * 24 * 60 * 60 * 1000;
 
 interface QuoteLeadData {
   serviceType?: string;
@@ -347,9 +347,15 @@ export const useQuoteLeadTracking = (serviceType: string, options?: TrackingOpti
       }
     }, HEARTBEAT_INTERVAL);
 
-    // Mark as 'left' when user leaves the page (but not if booking was completed)
+    // Mark as 'left' when user leaves the page (but not if booking was completed or payment redirect is in progress)
     const handleBeforeUnload = () => {
       if (!hasRecordCreated.current) return;
+      
+      // Don't mark as 'left' if payment redirect is in progress (user is going to Stripe)
+      if (localStorage.getItem('payment_redirect_in_progress') === 'true') {
+        console.log('📊 Payment redirect in progress - not marking as left');
+        return;
+      }
       
       // Don't mark as 'left' if the booking was completed
       const currentStep = localStorage.getItem('quote_furthest_step') || 'started';
