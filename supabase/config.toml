@@ -120,6 +120,12 @@ verify_jwt = false
 [functions.create-public-booking]
 verify_jwt = false
 
+[functions.link-payment-method-to-booking]
+verify_jwt = false
+
+[functions.lookup-customer-by-email]
+verify_jwt = false
+
 [functions.twilio-sms-webhook]
 verify_jwt = false
 
