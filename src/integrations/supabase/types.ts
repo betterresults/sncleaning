@@ -2639,6 +2639,56 @@ export type Database = {
         }
         Relationships: []
       }
+      sms_conversations: {
+        Row: {
+          booking_id: number | null
+          created_at: string
+          customer_id: number | null
+          customer_name: string | null
+          direction: string
+          id: string
+          message: string
+          phone_number: string
+          read_at: string | null
+          status: string | null
+          twilio_sid: string | null
+        }
+        Insert: {
+          booking_id?: number | null
+          created_at?: string
+          customer_id?: number | null
+          customer_name?: string | null
+          direction: string
+          id?: string
+          message: string
+          phone_number: string
+          read_at?: string | null
+          status?: string | null
+          twilio_sid?: string | null
+        }
+        Update: {
+          booking_id?: number | null
+          created_at?: string
+          customer_id?: number | null
+          customer_name?: string | null
+          direction?: string
+          id?: string
+          message?: string
+          phone_number?: string
+          read_at?: string | null
+          status?: string | null
+          twilio_sid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_conversations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sms_reminders_queue: {
         Row: {
           amount: number

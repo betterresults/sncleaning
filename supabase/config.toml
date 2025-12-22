@@ -119,3 +119,9 @@ verify_jwt = false
 
 [functions.create-public-booking]
 verify_jwt = false
+
+[functions.twilio-sms-webhook]
+verify_jwt = false
+
+[functions.send-sms-reply]
+verify_jwt = true
