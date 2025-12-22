@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CarpetCleaningItemsStep } from './steps/CarpetCleaningItemsStep';
+import { UpholsteryMattressStep } from './steps/UpholsteryMattressStep';
 import { ScheduleStep } from './steps/ScheduleStep';
 import { CarpetCleaningSummary } from './CarpetCleaningSummary';
 import { PaymentStep } from './steps/PaymentStep';
-import { Layers, Calendar, CreditCard, ArrowLeft, Mail } from 'lucide-react';
+import { Layers, Sofa, Calendar, CreditCard, ArrowLeft, Mail } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -71,9 +72,10 @@ export interface CarpetCleaningData {
 }
 
 const steps = [
-  { id: 1, title: 'Items', key: 'items' },
-  { id: 2, title: 'Schedule', key: 'schedule' },
-  { id: 3, title: 'Summary', key: 'payment' },
+  { id: 1, title: 'Carpets', key: 'carpets' },
+  { id: 2, title: 'Upholstery', key: 'upholstery' },
+  { id: 3, title: 'Schedule', key: 'schedule' },
+  { id: 4, title: 'Summary', key: 'payment' },
 ];
 
 const CarpetCleaningForm: React.FC = () => {
@@ -219,6 +221,15 @@ const CarpetCleaningForm: React.FC = () => {
         );
       case 2:
         return (
+          <UpholsteryMattressStep
+            data={bookingData}
+            onUpdate={updateBookingData}
+            onNext={nextStep}
+            onBack={prevStep}
+          />
+        );
+      case 3:
+        return (
           <ScheduleStep
             data={bookingData as any}
             onUpdate={updateBookingData as any}
@@ -226,7 +237,7 @@ const CarpetCleaningForm: React.FC = () => {
             onBack={prevStep}
           />
         );
-      case 3:
+      case 4:
         return stripePromise ? (
           <Elements stripe={stripePromise}>
             <PaymentStep
