@@ -37,10 +37,19 @@ serve(async (req) => {
 
     let result;
     if (table === "quote_leads") {
+      // Sanitize data - convert empty strings to null for time/date fields
+      const sanitizedData = { ...data };
+      const timeFields = ['selected_time'];
+      for (const field of timeFields) {
+        if (sanitizedData[field] === '' || sanitizedData[field] === undefined) {
+          sanitizedData[field] = null;
+        }
+      }
+      
       // Use upsert for quote_leads
       const { error } = await supabase
         .from(table)
-        .upsert(data, { onConflict: "session_id", ignoreDuplicates: false });
+        .upsert(sanitizedData, { onConflict: "session_id", ignoreDuplicates: false });
       
       if (error) throw error;
       result = { success: true };
