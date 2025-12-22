@@ -79,10 +79,10 @@ export const UpholsteryMattressStep: React.FC<UpholsteryMattressStepProps> = ({
           });
         }
       } else {
-        items[existingIndex] = { ...items[existingIndex], quantity: newQuantity, price: finalPrice };
+        items[existingIndex] = { ...items[existingIndex], quantity: newQuantity, price: finalPrice, bothSides: type === 'mattress' ? bothSides[id] : undefined };
       }
     } else if (delta > 0) {
-      items.push({ id, name, type, size, quantity: 1, price: finalPrice });
+      items.push({ id, name, type, size, quantity: 1, price: finalPrice, bothSides: type === 'mattress' ? bothSides[id] : undefined });
     }
     
     onUpdate({ [key]: items });
@@ -100,7 +100,7 @@ export const UpholsteryMattressStep: React.FC<UpholsteryMattressStepProps> = ({
       const newPrice = newBothSides 
         ? Math.round(basePrice * BOTH_SIDES_MULTIPLIER) 
         : basePrice;
-      items[existingIndex] = { ...items[existingIndex], price: newPrice };
+      items[existingIndex] = { ...items[existingIndex], price: newPrice, bothSides: newBothSides };
       onUpdate({ mattressItems: items });
     }
   };
