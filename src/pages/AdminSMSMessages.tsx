@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Send, Search, Phone, ArrowLeft, MessageCircle } from 'lucide-react';
+import { Send, Search, Phone, ArrowLeft, MessageCircle, Check, CheckCheck } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
 
 interface SMSConversation {
@@ -182,7 +182,6 @@ const AdminSMSMessages = () => {
       if (error) throw error;
 
       if (data?.success) {
-        toast({ title: 'SMS sent successfully' });
         setNewMessage('');
         fetchConversations();
       } else {
@@ -387,11 +386,18 @@ const AdminSMSMessages = () => {
                                     }`}
                                   >
                                     <p className="whitespace-pre-wrap break-words">{msg.message}</p>
-                                    <p className={`text-xs mt-1 ${
+                                    <div className={`flex items-center justify-end gap-1 mt-1 ${
                                       msg.direction === 'outgoing' ? 'text-primary-foreground/70' : 'text-muted-foreground'
                                     }`}>
-                                      {formatMessageTime(msg.created_at)}
-                                    </p>
+                                      <span className="text-xs">{formatMessageTime(msg.created_at)}</span>
+                                      {msg.direction === 'outgoing' && (
+                                        msg.status === 'delivered' ? (
+                                          <CheckCheck className="h-3.5 w-3.5" />
+                                        ) : (
+                                          <Check className="h-3.5 w-3.5" />
+                                        )
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               ))}
