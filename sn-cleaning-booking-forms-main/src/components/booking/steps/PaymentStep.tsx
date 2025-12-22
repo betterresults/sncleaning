@@ -2155,8 +2155,8 @@ useEffect(() => {
                             <p className="text-base font-semibold text-gray-900">New Payment Method</p>
                             <p className="text-xs text-gray-500">
                               {isUrgentBooking 
-                                ? `£${data.totalCost?.toFixed(2) || '0.00'} will be charged now`
-                                : "Choose your preferred payment method"
+                                ? `£${data.totalCost?.toFixed(2) || '0.00'} will be charged securely`
+                                : "Add a new payment method"
                               }
                             </p>
                           </div>
@@ -2170,28 +2170,19 @@ useEffect(() => {
                         </button>
                       </div>
                       
-                      {loadingSetupIntent || checkingGuestCustomer ? (
+                      {checkingGuestCustomer ? (
                         <div className="flex items-center justify-center py-8">
                           <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                          <span className="ml-2 text-sm text-gray-600">Loading payment options...</span>
-                        </div>
-                      ) : setupIntentClientSecret && stripePromise ? (
-                        <PaymentElementWrapper
-                          clientSecret={setupIntentClientSecret}
-                          stripePromise={stripePromise}
-                          onReady={() => setPaymentElementReady(true)}
-                          onComplete={(complete) => setCardComplete(complete)}
-                          isUrgentBooking={isUrgentBooking}
-                          totalCost={data.totalCost || 0}
-                        />
-                      ) : !data.email ? (
-                        <div className="text-center py-6 text-gray-500">
-                          <p className="text-sm">Enter your email above to see payment options</p>
+                          <span className="ml-2 text-sm text-gray-600">Checking your account...</span>
                         </div>
                       ) : (
-                        <div className="flex items-center justify-center py-8">
-                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                          <span className="ml-2 text-sm text-gray-600">Preparing payment options...</span>
+                        <div className="text-center py-4 space-y-3">
+                          <p className="text-sm text-gray-600">
+                            When you click <span className="font-medium">Complete Booking</span>, you'll be redirected to our secure payment page.
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            We accept cards, Google Pay, Apple Pay, Revolut Pay, Amazon Pay, and more.
+                          </p>
                         </div>
                       )}
                     </div>
@@ -2199,58 +2190,42 @@ useEffect(() => {
                 )}
               </div>
             ) : paymentType === 'card' ? (
-              // No saved payment method - show PaymentElement with all payment options
+              // No saved payment method - show Stripe Checkout info
               <div className="rounded-2xl border-2 border-gray-200 bg-white p-5">
                 <div className="space-y-4">
                   {/* Header - compact */}
                   <div className="flex items-center gap-3 pb-2 border-b border-gray-100">
                     <CreditCard className="h-5 w-5 text-primary" />
                     <div>
-                      <p className="text-base font-semibold text-gray-900">Payment Method</p>
+                      <p className="text-base font-semibold text-gray-900">Secure Payment</p>
                       <p className="text-xs text-gray-500">
                         {isUrgentBooking 
-                          ? `£${data.totalCost?.toFixed(2) || '0.00'} will be charged now`
-                          : "Choose your preferred payment method"
+                          ? `£${data.totalCost?.toFixed(2) || '0.00'} will be charged securely`
+                          : "Your card will be securely saved for this booking"
                         }
                       </p>
                     </div>
                   </div>
                   
-                  {/* PaymentElement or loading state */}
-                  {loadingSetupIntent ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                      <span className="ml-2 text-sm text-gray-600">Loading payment options...</span>
-                    </div>
-                  ) : setupIntentClientSecret && stripePromise ? (
-                    <PaymentElementWrapper
-                      clientSecret={setupIntentClientSecret}
-                      stripePromise={stripePromise}
-                      onReady={() => setPaymentElementReady(true)}
-                      onComplete={(complete) => setCardComplete(complete)}
-                      isUrgentBooking={isUrgentBooking}
-                      totalCost={data.totalCost || 0}
-                    />
-                  ) : !data.email ? (
-                    <div className="text-center py-6 text-gray-500">
-                      <p className="text-sm">Please enter your email address above to see payment options.</p>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                      <span className="ml-2 text-sm text-gray-600">Preparing secure payment...</span>
-                    </div>
-                  )}
+                  {/* Stripe Checkout message */}
+                  <div className="text-center py-4 space-y-3">
+                    <p className="text-sm text-gray-600">
+                      When you click <span className="font-medium">Complete Booking</span>, you'll be redirected to our secure payment page to add your payment method.
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      We accept cards, Google Pay, Apple Pay, Revolut Pay, Amazon Pay, and more.
+                    </p>
+                  </div>
 
                   {/* Security badges - compact */}
                   <div className="flex items-center justify-center gap-4 pt-1 text-xs text-gray-500">
                     <div className="flex items-center gap-1">
                       <Shield className="h-3.5 w-3.5 text-green-600" />
-                      <span>Secure</span>
+                      <span>256-bit SSL</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <CreditCard className="h-3.5 w-3.5 text-blue-600" />
-                      <span>Google Pay, Apple Pay & more</span>
+                      <span>Powered by Stripe</span>
                     </div>
                   </div>
                 </div>
