@@ -9,7 +9,8 @@ import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
-import { CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { CardNumberElement, CardExpiryElement, CardCvcElement, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import CustomerSelector from '@/components/booking/CustomerSelector';
 import AddressSelector from '@/components/booking/AddressSelector';
@@ -65,6 +66,83 @@ const useSimpleAuth = () => {
 const emailSchema = z.string().email('Please enter a valid email address');
 const ukPhoneSchema = z.string().regex(/^\+44\d{10}$/, 'UK phone must be +44 followed by 10 digits');
 
+// PaymentElement wrapper component with its own Elements context
+interface PaymentElementWrapperProps {
+  clientSecret: string;
+  stripePromise: Promise<any> | null;
+  onReady: () => void;
+  onComplete: (complete: boolean) => void;
+  isUrgentBooking: boolean;
+  totalCost: number;
+}
+
+const PaymentElementWrapper: React.FC<PaymentElementWrapperProps> = ({ 
+  clientSecret, 
+  stripePromise,
+  onReady,
+  onComplete,
+  isUrgentBooking,
+  totalCost
+}) => {
+  if (!stripePromise) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <span className="ml-2 text-sm text-gray-600">Loading payment...</span>
+      </div>
+    );
+  }
+
+  return (
+    <Elements 
+      stripe={stripePromise} 
+      options={{ 
+        clientSecret,
+        appearance: {
+          theme: 'stripe',
+          variables: {
+            colorPrimary: '#185166',
+            colorBackground: '#ffffff',
+            colorText: '#1f2937',
+            colorDanger: '#ef4444',
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            borderRadius: '12px',
+          },
+        },
+      }}
+    >
+      <PaymentElementInner 
+        onReady={onReady} 
+        onComplete={onComplete}
+        isUrgentBooking={isUrgentBooking}
+        totalCost={totalCost}
+      />
+    </Elements>
+  );
+};
+
+// Inner component that uses PaymentElement hooks
+const PaymentElementInner: React.FC<{
+  onReady: () => void;
+  onComplete: (complete: boolean) => void;
+  isUrgentBooking: boolean;
+  totalCost: number;
+}> = ({ onReady, onComplete, isUrgentBooking, totalCost }) => {
+  return (
+    <div className="min-h-[200px]">
+      <PaymentElement 
+        options={{
+          layout: 'tabs',
+          paymentMethodOrder: ['apple_pay', 'google_pay', 'card'],
+          business: { name: 'SN Cleaning Services' },
+        }}
+        onReady={onReady}
+        onChange={(e) => onComplete(e.complete)}
+      />
+    </div>
+  );
+};
+
 interface PaymentStepProps {
   data: BookingData | any;
   onUpdate: (updates: Partial<BookingData> | any) => void;
@@ -75,6 +153,7 @@ interface PaymentStepProps {
   bookingSummary?: React.ReactNode;
   onBookingAttempt?: () => void;
   onBookingSuccess?: (bookingId: number) => void;
+  stripePromise?: Promise<any> | null;
 }
 
 const PaymentStep: React.FC<PaymentStepProps> = ({ 
@@ -86,7 +165,8 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   formType = 'airbnb',
   bookingSummary,
   onBookingAttempt,
-  onBookingSuccess
+  onBookingSuccess,
+  stripePromise
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -106,6 +186,11 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   const [cleaners, setCleaners] = useState<any[]>([]);
   const [paymentType, setPaymentType] = useState<'card' | 'bank-transfer'>('card');
   const location = useLocation();
+  
+  // Setup Intent state for PaymentElement
+  const [setupIntentClientSecret, setSetupIntentClientSecret] = useState<string | null>(null);
+  const [loadingSetupIntent, setLoadingSetupIntent] = useState(false);
+  const [paymentElementReady, setPaymentElementReady] = useState(false);
   
   // Collapsible states for quote link mode - start collapsed if data is pre-filled
   const [detailsOpen, setDetailsOpen] = useState(!isQuoteLinkMode || !data.firstName);
@@ -267,6 +352,49 @@ useEffect(() => {
 
   // Bank transfer is available for all customers
   const canUseBankTransfer = !isAdminMode;
+
+  // Create SetupIntent for PaymentElement when needed (new customers without saved cards)
+  useEffect(() => {
+    const createSetupIntent = async () => {
+      // Only create SetupIntent for customer mode (not admin), when paying by card,
+      // and when customer doesn't have saved payment methods
+      if (isAdminMode || paymentType !== 'card' || hasPaymentMethods || loadingSetupIntent) {
+        return;
+      }
+      
+      // Need email to create SetupIntent
+      if (!data.email) {
+        return;
+      }
+      
+      setLoadingSetupIntent(true);
+      try {
+        console.log('[PaymentStep] Creating SetupIntent for PaymentElement...');
+        const { data: setupData, error } = await supabase.functions.invoke('stripe-create-setup-intent', {
+          body: {
+            email: data.email,
+            name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || data.email,
+          }
+        });
+        
+        if (error) {
+          console.error('[PaymentStep] SetupIntent creation error:', error);
+          return;
+        }
+        
+        if (setupData?.clientSecret) {
+          console.log('[PaymentStep] SetupIntent created successfully');
+          setSetupIntentClientSecret(setupData.clientSecret);
+        }
+      } catch (err) {
+        console.error('[PaymentStep] Error creating SetupIntent:', err);
+      } finally {
+        setLoadingSetupIntent(false);
+      }
+    };
+    
+    createSetupIntent();
+  }, [isAdminMode, paymentType, hasPaymentMethods, data.email, data.firstName, data.lastName]);
 
   const validateEmail = (email: string) => {
     if (!email) {
@@ -1888,103 +2016,48 @@ useEffect(() => {
                 </p>
               </div>
             ) : paymentType === 'card' ? (
-              // No saved payment method - show CardElement directly
+              // No saved payment method - show PaymentElement with all payment options
               <div className="rounded-2xl border-2 border-gray-200 bg-white p-5">
                 <div className="space-y-4">
                   {/* Header - compact */}
                   <div className="flex items-center gap-3 pb-2 border-b border-gray-100">
                     <CreditCard className="h-5 w-5 text-primary" />
                     <div>
-                      <p className="text-base font-semibold text-gray-900">Card Details</p>
+                      <p className="text-base font-semibold text-gray-900">Payment Method</p>
                       <p className="text-xs text-gray-500">
                         {isUrgentBooking 
-                          ? `£${data.totalCost?.toFixed(2) || '0.00'} will be authorised now`
-                          : "Payment held 48hrs before booking"
+                          ? `£${data.totalCost?.toFixed(2) || '0.00'} will be charged now`
+                          : "Choose your preferred payment method"
                         }
                       </p>
                     </div>
                   </div>
                   
-                  {/* Card Number - Large field */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Card Number</label>
-                    <div className="h-14 px-4 border-2 border-gray-200 rounded-xl bg-white flex items-center hover:border-gray-300 focus-within:border-[#185166] focus-within:ring-2 focus-within:ring-[#185166]/20 transition-all">
-                      <CardNumberElement 
-                        options={{
-                          style: {
-                            base: {
-                              fontSize: '18px',
-                              color: '#1f2937',
-                              fontFamily: 'system-ui, -apple-system, sans-serif',
-                              fontWeight: '500',
-                              '::placeholder': {
-                                color: '#9ca3af',
-                              },
-                              iconColor: '#185166',
-                            },
-                            invalid: {
-                              color: '#ef4444',
-                              iconColor: '#ef4444',
-                            },
-                          },
-                        }}
-                        className="w-full"
-                        onChange={(e) => setCardComplete(e.complete)}
-                      />
+                  {/* PaymentElement or loading state */}
+                  {loadingSetupIntent ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      <span className="ml-2 text-sm text-gray-600">Loading payment options...</span>
                     </div>
-                  </div>
-                  
-                  {/* Expiry & CVC - Side by side, Large fields */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Expiry</label>
-                      <div className="h-14 px-4 border-2 border-gray-200 rounded-xl bg-white flex items-center hover:border-gray-300 focus-within:border-[#185166] focus-within:ring-2 focus-within:ring-[#185166]/20 transition-all">
-                        <CardExpiryElement 
-                          options={{
-                            style: {
-                              base: {
-                                fontSize: '18px',
-                                color: '#1f2937',
-                                fontFamily: 'system-ui, -apple-system, sans-serif',
-                                fontWeight: '500',
-                                '::placeholder': {
-                                  color: '#9ca3af',
-                                },
-                              },
-                              invalid: {
-                                color: '#ef4444',
-                              },
-                            },
-                          }}
-                          className="w-full"
-                        />
-                      </div>
+                  ) : setupIntentClientSecret && stripePromise ? (
+                    <PaymentElementWrapper
+                      clientSecret={setupIntentClientSecret}
+                      stripePromise={stripePromise}
+                      onReady={() => setPaymentElementReady(true)}
+                      onComplete={(complete) => setCardComplete(complete)}
+                      isUrgentBooking={isUrgentBooking}
+                      totalCost={data.totalCost || 0}
+                    />
+                  ) : !data.email ? (
+                    <div className="text-center py-6 text-gray-500">
+                      <p className="text-sm">Please enter your email address above to see payment options.</p>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">CVC</label>
-                      <div className="h-14 px-4 border-2 border-gray-200 rounded-xl bg-white flex items-center hover:border-gray-300 focus-within:border-[#185166] focus-within:ring-2 focus-within:ring-[#185166]/20 transition-all">
-                        <CardCvcElement 
-                          options={{
-                            style: {
-                              base: {
-                                fontSize: '18px',
-                                color: '#1f2937',
-                                fontFamily: 'system-ui, -apple-system, sans-serif',
-                                fontWeight: '500',
-                                '::placeholder': {
-                                  color: '#9ca3af',
-                                },
-                              },
-                              invalid: {
-                                color: '#ef4444',
-                              },
-                            },
-                          }}
-                          className="w-full"
-                        />
-                      </div>
+                  ) : (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      <span className="ml-2 text-sm text-gray-600">Preparing secure payment...</span>
                     </div>
-                  </div>
+                  )}
 
                   {/* Security badges - compact */}
                   <div className="flex items-center justify-center gap-4 pt-1 text-xs text-gray-500">
@@ -1994,7 +2067,7 @@ useEffect(() => {
                     </div>
                     <div className="flex items-center gap-1">
                       <CreditCard className="h-3.5 w-3.5 text-blue-600" />
-                      <span>All cards accepted</span>
+                      <span>Google Pay, Apple Pay & more</span>
                     </div>
                   </div>
                 </div>

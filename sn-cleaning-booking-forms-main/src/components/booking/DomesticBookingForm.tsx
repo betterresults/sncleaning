@@ -786,6 +786,7 @@ const DomesticBookingForm: React.FC = () => {
               onBack={prevStep}
               isAdminMode={isAdminMode}
               isQuoteLinkMode={isQuoteLinkMode}
+              stripePromise={stripePromise}
               onBookingAttempt={() => trackBookingAttempt({
                 email: bookingData.email,
                 phone: bookingData.phone,
