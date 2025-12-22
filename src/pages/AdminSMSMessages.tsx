@@ -13,8 +13,23 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Send, Search, Phone, ArrowLeft, MessageCircle, Check, CheckCheck } from 'lucide-react';
+import { Send, Search, Phone, ArrowLeft, MessageCircle, Check, CheckCheck, Plus, User } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+
+interface Customer {
+  id: number;
+  full_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  phone: string | null;
+}
 
 interface SMSConversation {
   id: string;
@@ -47,6 +62,12 @@ const AdminSMSMessages = () => {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showNewMessageDialog, setShowNewMessageDialog] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [searchingCustomers, setSearchingCustomers] = useState(false);
+  const [manualPhone, setManualPhone] = useState('');
+  const [manualName, setManualName] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const handleSignOut = async () => {
@@ -55,6 +76,66 @@ const AdminSMSMessages = () => {
     } catch (error) {
       console.error('Error signing out:', error);
     }
+  };
+
+  // Search customers for new message
+  const searchCustomers = async (term: string) => {
+    if (term.length < 2) {
+      setCustomers([]);
+      return;
+    }
+    
+    setSearchingCustomers(true);
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('id, full_name, first_name, last_name, phone')
+        .or(`full_name.ilike.%${term}%,first_name.ilike.%${term}%,last_name.ilike.%${term}%,phone.ilike.%${term}%`)
+        .limit(10);
+      
+      if (error) throw error;
+      setCustomers(data || []);
+    } catch (error) {
+      console.error('Error searching customers:', error);
+    } finally {
+      setSearchingCustomers(false);
+    }
+  };
+
+  // Debounced customer search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      searchCustomers(customerSearch);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [customerSearch]);
+
+  const handleStartNewConversation = (phone: string, name: string | null, customerId: number | null) => {
+    // Check if thread already exists
+    const existingThread = threads.find(t => t.phone_number === phone);
+    if (existingThread) {
+      setSelectedThread(existingThread);
+    } else {
+      // Create a temporary thread for new conversation
+      setSelectedThread({
+        phone_number: phone,
+        customer_id: customerId,
+        customer_name: name,
+        last_message: '',
+        last_message_at: new Date().toISOString(),
+        unread_count: 0,
+        messages: [],
+      });
+    }
+    setShowNewMessageDialog(false);
+    setCustomerSearch('');
+    setManualPhone('');
+    setManualName('');
+  };
+
+  const handleStartWithManualPhone = () => {
+    if (!manualPhone.trim()) return;
+    handleStartNewConversation(manualPhone.trim(), manualName.trim() || null, null);
   };
 
   // Fetch all SMS conversations grouped by phone number
@@ -262,10 +343,124 @@ const AdminSMSMessages = () => {
                   {/* Conversations List */}
                   <Card className={`lg:col-span-1 flex flex-col ${selectedThread ? 'hidden lg:flex' : 'flex'}`}>
                     <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2">
-                        <MessageCircle className="h-5 w-5" />
-                        SMS Messages
-                      </CardTitle>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2">
+                          <MessageCircle className="h-5 w-5" />
+                          SMS Messages
+                        </CardTitle>
+                        <Dialog open={showNewMessageDialog} onOpenChange={setShowNewMessageDialog}>
+                          <DialogTrigger asChild>
+                            <Button size="sm" variant="outline">
+                              <Plus className="h-4 w-4 mr-1" />
+                              New
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-md">
+                            <DialogHeader>
+                              <DialogTitle>New SMS Message</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              {/* Search existing customers */}
+                              <div>
+                                <label className="text-sm font-medium mb-2 block">Search Customer</label>
+                                <div className="relative">
+                                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                  <Input
+                                    placeholder="Search by name or phone..."
+                                    value={customerSearch}
+                                    onChange={(e) => setCustomerSearch(e.target.value)}
+                                    className="pl-9"
+                                  />
+                                </div>
+                                {searchingCustomers && (
+                                  <div className="flex items-center justify-center py-4">
+                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                                  </div>
+                                )}
+                                {customers.length > 0 && (
+                                  <div className="mt-2 border rounded-md max-h-48 overflow-y-auto">
+                                    {customers.map((customer) => (
+                                      <button
+                                        key={customer.id}
+                                        onClick={() => {
+                                          if (customer.phone) {
+                                            handleStartNewConversation(
+                                              customer.phone,
+                                              customer.full_name || `${customer.first_name || ''} ${customer.last_name || ''}`.trim(),
+                                              customer.id
+                                            );
+                                          } else {
+                                            toast({
+                                              title: 'No phone number',
+                                              description: 'This customer has no phone number on file.',
+                                              variant: 'destructive',
+                                            });
+                                          }
+                                        }}
+                                        className="w-full p-3 text-left hover:bg-muted/50 flex items-center gap-3 border-b last:border-b-0"
+                                      >
+                                        <Avatar className="h-8 w-8">
+                                          <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                                            {(customer.full_name || customer.first_name || '?')[0].toUpperCase()}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex-1 min-w-0">
+                                          <p className="font-medium text-sm truncate">
+                                            {customer.full_name || `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 'Unknown'}
+                                          </p>
+                                          {customer.phone && (
+                                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                              <Phone className="h-3 w-3" />
+                                              {customer.phone}
+                                            </p>
+                                          )}
+                                        </div>
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Divider */}
+                              <div className="relative">
+                                <div className="absolute inset-0 flex items-center">
+                                  <span className="w-full border-t" />
+                                </div>
+                                <div className="relative flex justify-center text-xs uppercase">
+                                  <span className="bg-background px-2 text-muted-foreground">Or enter manually</span>
+                                </div>
+                              </div>
+
+                              {/* Manual phone entry */}
+                              <div className="space-y-3">
+                                <div>
+                                  <label className="text-sm font-medium mb-2 block">Phone Number</label>
+                                  <Input
+                                    placeholder="+44..."
+                                    value={manualPhone}
+                                    onChange={(e) => setManualPhone(e.target.value)}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium mb-2 block">Name (optional)</label>
+                                  <Input
+                                    placeholder="Contact name"
+                                    value={manualName}
+                                    onChange={(e) => setManualName(e.target.value)}
+                                  />
+                                </div>
+                                <Button 
+                                  onClick={handleStartWithManualPhone}
+                                  disabled={!manualPhone.trim()}
+                                  className="w-full"
+                                >
+                                  Start Conversation
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
                       <div className="relative mt-2">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
