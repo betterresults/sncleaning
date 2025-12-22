@@ -68,7 +68,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Create Setup Intent for collecting payment method
     const setupIntent = await stripe.setupIntents.create({
       customer: stripeCustomer.id,
-      payment_method_types: ['card'],
+      automatic_payment_methods: { enabled: true },
       usage: 'off_session', // For future payments
       metadata: {
         customer_id: customer_id.toString()
@@ -82,7 +82,11 @@ const handler = async (req: Request): Promise<Response> => {
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: stripeCustomer.id,
       mode: 'setup',
-      payment_method_types: ['card'],
+      payment_method_options: {
+        card: {
+          request_three_d_secure: 'automatic'
+        }
+      },
       success_url: return_url || `${origin}/customer-settings?payment_method_added=true`,
       cancel_url: return_url || `${origin}/customer-settings?payment_method_cancelled=true`,
       metadata: {

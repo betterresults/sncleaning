@@ -116,7 +116,7 @@ serve(async (req) => {
     // Create a SetupIntent
     const setupIntent = await stripe.setupIntents.create({
       customer: stripeCustomerId,
-      payment_method_types: ['card'],
+      automatic_payment_methods: { enabled: true },
       metadata: internalCustomerId && internalCustomerId > 0 ? {
         internal_customer_id: internalCustomerId.toString(),
       } : {
