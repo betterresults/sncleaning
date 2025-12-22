@@ -1,30 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { EndOfTenancyBookingData } from './EndOfTenancyBookingForm';
-import { Home, Clock, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { Home, Clock, Calendar, ChevronDown, ChevronUp, Percent } from 'lucide-react';
+import { useEndOfTenancyCalculations } from '@/hooks/useEndOfTenancyCalculations';
 
 interface EndOfTenancySummaryProps {
   data: EndOfTenancyBookingData;
   isAdminMode?: boolean;
   onUpdate?: (updates: Partial<EndOfTenancyBookingData>) => void;
 }
-
-// Fixed pricing based on property size
-const BASE_PRICE_MAP: Record<string, Record<string, number>> = {
-  studio: { '1': 150, '2': 170 },
-  '1': { '1': 180, '2': 200 },
-  '2': { '1': 220, '2': 250, '3': 280 },
-  '3': { '1': 280, '2': 310, '3': 340, '4': 370 },
-  '4': { '1': 340, '2': 380, '3': 420, '4': 460 },
-  '5': { '1': 400, '2': 450, '3': 500, '4': 550, '5': 600 },
-  '6+': { '1': 480, '2': 550, '3': 620, '4': 690, '5': 760, '6+': 830 },
-};
-
-const OVEN_PRICES: Record<string, number> = {
-  single: 45,
-  double: 65,
-  range: 85,
-};
 
 const PROPERTY_CONDITION_LABELS: Record<string, string> = {
   'well-maintained': 'Well-Maintained',
@@ -46,42 +30,18 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Calculate fixed price based on property size
-  const getBasePrice = () => {
-    const bedrooms = data.bedrooms || '1';
-    const bathrooms = data.bathrooms || '1';
-    
-    const bedroomMap = BASE_PRICE_MAP[bedrooms] || BASE_PRICE_MAP['1'];
-    return bedroomMap[bathrooms] || bedroomMap['1'] || 180;
-  };
-  
-  const basePrice = getBasePrice();
-  const ovenCleaningCost = data.ovenType ? OVEN_PRICES[data.ovenType] || 0 : 0;
-  
-  // Calculate blinds total
-  const blindsTotal = (data.blindsItems || []).reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  
-  // Calculate extras total
-  const extrasTotal = (data.extraServices || []).reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  
-  // Calculate steam cleaning total
-  const steamCleaningTotal = 
-    data.carpetItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) +
-    data.upholsteryItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) +
-    data.mattressItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  
-  // Calculate short notice charge
-  const shortNoticeCharge = data.shortNoticeCharge || 0;
-  
-  // Calculate total cost
-  const totalCost = basePrice + ovenCleaningCost + blindsTotal + extrasTotal + steamCleaningTotal + shortNoticeCharge;
-  
+  // Use the calculation hook with database prices
+  const calculations = useEndOfTenancyCalculations(data, data.isFirstTimeCustomer || false);
+
   // Update parent when total changes
   useEffect(() => {
-    if (onUpdate && totalCost !== data.totalCost) {
-      onUpdate({ totalCost });
+    if (onUpdate && !calculations.isLoading && calculations.totalCost !== data.totalCost) {
+      onUpdate({ 
+        totalCost: calculations.totalCost,
+        estimatedHours: calculations.estimatedHours,
+      });
     }
-  }, [totalCost]);
+  }, [calculations.totalCost, calculations.estimatedHours, calculations.isLoading]);
   
   // Format property description
   const getPropertyDescription = () => {
@@ -110,34 +70,41 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
     return desc;
   };
 
+  const hasPropertyData = data.bedrooms && calculations.baseCost > 0;
+  const totalPercentage = calculations.conditionPercentage + calculations.furniturePercentage;
+
   const renderSummaryContent = () => (
     <div className="space-y-3">
-      {/* Service Section - Fixed Price */}
-      {basePrice > 0 && data.bedrooms && (
+      {/* Base Cleaning Cost */}
+      {calculations.baseCost > 0 && (
         <div className="flex justify-between items-center">
           <span className="text-muted-foreground">End of Tenancy Cleaning</span>
           <span className="text-foreground font-semibold whitespace-nowrap">
-            £{basePrice.toFixed(2)}
+            £{calculations.baseCost.toFixed(2)}
           </span>
         </div>
       )}
 
-      {/* Property Condition */}
-      {data.propertyCondition && (
+      {/* Property Condition with percentage */}
+      {data.propertyCondition && calculations.conditionPercentage > 0 && (
         <div className="flex justify-between items-center">
-          <span className="text-muted-foreground">Condition</span>
+          <span className="text-muted-foreground">
+            {PROPERTY_CONDITION_LABELS[data.propertyCondition]} (+{calculations.conditionPercentage}%)
+          </span>
           <span className="text-foreground font-medium">
-            {PROPERTY_CONDITION_LABELS[data.propertyCondition]}
+            +£{(calculations.baseCost * calculations.conditionPercentage / 100).toFixed(2)}
           </span>
         </div>
       )}
 
-      {/* Furniture Status */}
-      {data.furnitureStatus && (
+      {/* Furniture Status with percentage */}
+      {data.furnitureStatus && calculations.furniturePercentage > 0 && (
         <div className="flex justify-between items-center">
-          <span className="text-muted-foreground">Status</span>
+          <span className="text-muted-foreground">
+            {FURNITURE_STATUS_LABELS[data.furnitureStatus]} (+{calculations.furniturePercentage}%)
+          </span>
           <span className="text-foreground font-medium">
-            {FURNITURE_STATUS_LABELS[data.furnitureStatus]}
+            +£{(calculations.baseCost * calculations.furniturePercentage / 100).toFixed(2)}
           </span>
         </div>
       )}
@@ -165,44 +132,35 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
         </div>
       )}
 
-      {/* Oven Cleaning */}
-      {ovenCleaningCost > 0 && (
-        <div className="flex justify-between items-center mt-3">
-          <span className="text-muted-foreground capitalize">{data.ovenType} oven cleaning</span>
-          <span className="text-foreground font-semibold">£{ovenCleaningCost.toFixed(2)}</span>
-        </div>
-      )}
-
-      {/* Additional Rooms */}
-      {data.additionalRooms && data.additionalRooms.length > 0 && (
-        <div className="flex justify-between items-center mt-3">
-          <span className="text-muted-foreground">Additional Rooms ({data.additionalRooms.length})</span>
-          <span className="text-foreground font-semibold">+ Extra charge</span>
-        </div>
-      )}
-
       {/* Blinds */}
-      {blindsTotal > 0 && (
+      {calculations.blindsTotal > 0 && (
         <div className="flex justify-between items-center mt-3">
           <span className="text-muted-foreground">Blinds/Shutters Cleaning</span>
-          <span className="text-foreground font-semibold">£{blindsTotal.toFixed(2)}</span>
+          <span className="text-foreground font-semibold">£{calculations.blindsTotal.toFixed(2)}</span>
         </div>
       )}
 
       {/* Extra Services */}
-      {extrasTotal > 0 && (
+      {calculations.extrasTotal > 0 && (
         <div className="flex justify-between items-center mt-3">
           <span className="text-muted-foreground">Extra Services</span>
-          <span className="text-foreground font-semibold">£{extrasTotal.toFixed(2)}</span>
+          <span className="text-foreground font-semibold">£{calculations.extrasTotal.toFixed(2)}</span>
         </div>
       )}
 
-      {/* Steam Cleaning */}
-      {steamCleaningTotal > 0 && (
+      {/* Steam Cleaning with 20% discount */}
+      {calculations.steamCleaningTotal > 0 && (
         <div className="space-y-1 mt-3 pt-3 border-t border-border">
           <div className="flex justify-between items-center font-medium">
             <span className="text-muted-foreground">Steam Cleaning</span>
-            <span className="text-foreground font-semibold">£{steamCleaningTotal.toFixed(2)}</span>
+            <span className="text-muted-foreground line-through text-sm">£{calculations.steamCleaningTotal.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between items-center text-green-600">
+            <span className="text-sm flex items-center gap-1">
+              <Percent className="w-3 h-3" />
+              Combined discount (20% off)
+            </span>
+            <span className="font-semibold">£{calculations.steamCleaningFinal.toFixed(2)}</span>
           </div>
           {data.carpetItems.map(item => (
             <div key={item.id} className="flex justify-between items-center pl-4 text-sm">
@@ -226,18 +184,107 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
       )}
 
       {/* Short Notice Charge */}
-      {shortNoticeCharge > 0 && (
+      {calculations.shortNoticeCharge > 0 && (
         <div className="flex justify-between items-center mt-3 pt-3 border-t border-amber-200 bg-amber-50 -mx-4 px-4 py-2">
           <span className="text-amber-700 font-medium">Short Notice Charge</span>
-          <span className="text-amber-700 font-semibold">£{shortNoticeCharge.toFixed(2)}</span>
+          <span className="text-amber-700 font-semibold">£{calculations.shortNoticeCharge.toFixed(2)}</span>
+        </div>
+      )}
+
+      {/* First-Time Customer Discount */}
+      {data.isFirstTimeCustomer && calculations.firstTimeDiscount > 0 && (
+        <div className="flex justify-between items-center mt-3 pt-3 border-t border-green-200 bg-green-50 -mx-4 px-4 py-2">
+          <span className="text-green-700 font-medium flex items-center gap-1">
+            <Percent className="w-3 h-3" />
+            New Customer Discount (10%)
+          </span>
+          <span className="text-green-700 font-semibold">-£{calculations.firstTimeDiscount.toFixed(2)}</span>
         </div>
       )}
 
       {/* Total */}
       <div className="flex justify-between items-center mt-4 pt-4 border-t-2 border-primary">
         <span className="text-lg font-semibold text-foreground">Total</span>
-        <span className="text-2xl font-bold text-primary">£{totalCost.toFixed(2)}</span>
+        <span className="text-2xl font-bold text-primary">£{calculations.totalCost.toFixed(2)}</span>
       </div>
+    </div>
+  );
+
+  const renderMobileContent = () => (
+    <div className="space-y-3">
+      {/* Base Cleaning Cost */}
+      {calculations.baseCost > 0 && (
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground">End of Tenancy Cleaning</span>
+          <span className="text-foreground font-semibold whitespace-nowrap">
+            £{calculations.baseCost.toFixed(2)}
+          </span>
+        </div>
+      )}
+
+      {/* Property Condition adjustment */}
+      {data.propertyCondition && calculations.conditionPercentage > 0 && (
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground text-sm">
+            {PROPERTY_CONDITION_LABELS[data.propertyCondition]} (+{calculations.conditionPercentage}%)
+          </span>
+          <span className="text-foreground font-medium">
+            +£{(calculations.baseCost * calculations.conditionPercentage / 100).toFixed(2)}
+          </span>
+        </div>
+      )}
+
+      {/* Furniture Status adjustment */}
+      {data.furnitureStatus && calculations.furniturePercentage > 0 && (
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground text-sm">
+            {FURNITURE_STATUS_LABELS[data.furnitureStatus]} (+{calculations.furniturePercentage}%)
+          </span>
+          <span className="text-foreground font-medium">
+            +£{(calculations.baseCost * calculations.furniturePercentage / 100).toFixed(2)}
+          </span>
+        </div>
+      )}
+
+      {/* Blinds */}
+      {calculations.blindsTotal > 0 && (
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground">Blinds/Shutters Cleaning</span>
+          <span className="text-foreground font-semibold">£{calculations.blindsTotal.toFixed(2)}</span>
+        </div>
+      )}
+
+      {/* Extra Services */}
+      {calculations.extrasTotal > 0 && (
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground">Extra Services</span>
+          <span className="text-foreground font-semibold">£{calculations.extrasTotal.toFixed(2)}</span>
+        </div>
+      )}
+
+      {/* Steam Cleaning with discount */}
+      {calculations.steamCleaningTotal > 0 && (
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground">Steam Cleaning (20% off)</span>
+          <span className="text-foreground font-semibold">£{calculations.steamCleaningFinal.toFixed(2)}</span>
+        </div>
+      )}
+
+      {/* Short Notice Charge */}
+      {calculations.shortNoticeCharge > 0 && (
+        <div className="flex justify-between items-center bg-amber-50 -mx-4 px-4 py-2 rounded">
+          <span className="text-amber-700 font-medium">Short Notice Charge</span>
+          <span className="text-amber-700 font-semibold">£{calculations.shortNoticeCharge.toFixed(2)}</span>
+        </div>
+      )}
+
+      {/* First-Time Customer Discount */}
+      {data.isFirstTimeCustomer && calculations.firstTimeDiscount > 0 && (
+        <div className="flex justify-between items-center bg-green-50 -mx-4 px-4 py-2 rounded">
+          <span className="text-green-700 font-medium text-sm">New Customer (10% off)</span>
+          <span className="text-green-700 font-semibold">-£{calculations.firstTimeDiscount.toFixed(2)}</span>
+        </div>
+      )}
     </div>
   );
 
@@ -258,14 +305,14 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
         </div>
       )}
 
-      {basePrice > 0 && data.bedrooms && (
+      {hasPropertyData && (
         <div className="flex items-center gap-3 mb-4 pb-4 border-b border-border">
           <div className="p-2 bg-primary/10 rounded-xl">
             <Clock className="w-5 h-5 text-primary" />
           </div>
           <div>
             <p className="font-medium text-foreground">
-              End of Tenancy Cleaning
+              Est. {calculations.estimatedHours.toFixed(1)} hours
             </p>
           </div>
         </div>
@@ -282,83 +329,25 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
           {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
         
-        {/* Expanded details (without duplicate total) */}
+        {/* Expanded details */}
         {isExpanded && (
           <div className="pb-3 border-b border-border mb-3">
-            <div className="space-y-3">
-              {/* Service Section - Fixed Price */}
-              {basePrice > 0 && data.bedrooms && (
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">End of Tenancy Cleaning</span>
-                  <span className="text-foreground font-semibold whitespace-nowrap">
-                    £{basePrice.toFixed(2)}
-                  </span>
-                </div>
-              )}
-
-              {/* Oven Cleaning */}
-              {ovenCleaningCost > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground capitalize">{data.ovenType} oven cleaning</span>
-                  <span className="text-foreground font-semibold">£{ovenCleaningCost.toFixed(2)}</span>
-                </div>
-              )}
-
-              {/* Additional Rooms */}
-              {data.additionalRooms && data.additionalRooms.length > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Additional Rooms ({data.additionalRooms.length})</span>
-                  <span className="text-foreground font-semibold">+ Extra charge</span>
-                </div>
-              )}
-
-              {/* Blinds */}
-              {blindsTotal > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Blinds/Shutters Cleaning</span>
-                  <span className="text-foreground font-semibold">£{blindsTotal.toFixed(2)}</span>
-                </div>
-              )}
-
-              {/* Extra Services */}
-              {extrasTotal > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Extra Services</span>
-                  <span className="text-foreground font-semibold">£{extrasTotal.toFixed(2)}</span>
-                </div>
-              )}
-
-              {/* Steam Cleaning */}
-              {steamCleaningTotal > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Steam Cleaning</span>
-                  <span className="text-foreground font-semibold">£{steamCleaningTotal.toFixed(2)}</span>
-                </div>
-              )}
-
-              {/* Short Notice Charge */}
-              {shortNoticeCharge > 0 && (
-                <div className="flex justify-between items-center bg-amber-50 -mx-4 px-4 py-2 rounded">
-                  <span className="text-amber-700 font-medium">Short Notice Charge</span>
-                  <span className="text-amber-700 font-semibold">£{shortNoticeCharge.toFixed(2)}</span>
-                </div>
-              )}
-            </div>
+            {renderMobileContent()}
           </div>
         )}
         
         {/* Total always at bottom */}
-        {basePrice > 0 && data.bedrooms && (
+        {hasPropertyData && (
           <div className="flex justify-between items-center pt-2 border-t-2 border-primary">
             <span className="text-lg font-semibold text-foreground">Total</span>
-            <span className="text-2xl font-bold text-primary">£{totalCost.toFixed(2)}</span>
+            <span className="text-2xl font-bold text-primary">£{calculations.totalCost.toFixed(2)}</span>
           </div>
         )}
       </div>
 
       {/* Desktop: Always visible */}
       <div className="hidden lg:block">
-        {basePrice > 0 && data.bedrooms ? renderSummaryContent() : (
+        {hasPropertyData ? renderSummaryContent() : (
           <div className="text-center py-12 text-muted-foreground">
             <div className="flex flex-col items-center gap-3">
               <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
