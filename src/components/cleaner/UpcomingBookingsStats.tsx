@@ -9,8 +9,8 @@ interface UpcomingBookingsStatsProps {
 }
 
 const UpcomingBookingsStats: React.FC<UpcomingBookingsStatsProps> = ({ stats }) => {
-  // Don't show stats if there are no bookings
-  if (stats.totalBookings === 0) {
+  // Don't show stats if there are no bookings (prevents stray "0" from rendering)
+  if (!stats || stats.totalBookings === 0) {
     return null;
   }
 

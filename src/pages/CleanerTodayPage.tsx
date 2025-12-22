@@ -54,7 +54,7 @@ const CleanerTodayPage = () => {
         )}
 
         {/* Content */}
-        <div className="p-4">
+        <div className="p-4 pt-2">
           {countLoading ? (
             <div className="flex justify-center py-8">
               <div className="text-muted-foreground">Loading bookings...</div>
