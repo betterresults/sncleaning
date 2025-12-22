@@ -78,11 +78,13 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Created Setup Intent:', setupIntent.id);
 
     // Create Checkout Session for payment method collection
+    // Using automatic_payment_methods to support all enabled payment methods (card, Revolut Pay, Amazon Pay, etc.)
     const origin = req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/') || 'https://dkomihipebixlegygnoy.supabase.co';
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: stripeCustomer.id,
       mode: 'setup',
-      payment_method_types: ['card'],
+      // Don't restrict payment_method_types - let Stripe show all enabled methods from dashboard
+      // This allows cards, Revolut Pay, Amazon Pay, Google Pay, Apple Pay, etc.
       success_url: return_url || `${origin}/customer-settings?payment_method_added=true`,
       cancel_url: return_url || `${origin}/customer-settings?payment_method_cancelled=true`,
       metadata: {
