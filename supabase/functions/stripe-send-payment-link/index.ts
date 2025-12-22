@@ -66,6 +66,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Otherwise use Payment Link (simpler, doesn't save card)
     if (collect_payment_method) {
       // Use existing customer if found, otherwise let Stripe create one during checkout
+      // Don't specify payment_method_types to allow all enabled methods (card, Revolut Pay, Amazon Pay, etc.)
       const sessionConfig: any = {
         mode: 'payment',
         line_items: [
@@ -85,7 +86,7 @@ const handler = async (req: Request): Promise<Response> => {
           },
         ],
         payment_intent_data: {
-          setup_future_usage: 'off_session', // Save card for future use
+          setup_future_usage: 'off_session', // Save payment method for future use
           metadata: {
             customer_id: customer_id.toString(),
             booking_id: booking_id?.toString() || ''
