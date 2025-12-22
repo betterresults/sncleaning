@@ -97,6 +97,11 @@ export const salesAgentNavigation = [
     icon: Map,
   },
   {
+    title: "SMS Messages",
+    url: "/admin-sms-messages",
+    icon: MessageSquareText,
+  },
+  {
     title: "My Tasks",
     url: "/agent-tasks",
     icon: ClipboardList,
