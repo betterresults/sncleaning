@@ -1044,8 +1044,13 @@ useEffect(() => {
 
           console.log('[PaymentStep] Redirecting to Stripe Checkout for payment...');
           
-          // Store booking ID for quote lead tracking on return
+          // Store booking ID and quote tracking data for return from Stripe
           sessionStorage.setItem('pending_booking_id', bookingId.toString());
+          sessionStorage.setItem('pending_quote_session_id', localStorage.getItem('quote_session_id') || '');
+          sessionStorage.setItem('pending_quote_cost', data.totalCost?.toString() || '');
+          
+          // Set flag to prevent beforeunload from marking as 'left'
+          localStorage.setItem('payment_redirect_in_progress', 'true');
           
           // Redirect to Stripe Checkout
           window.location.href = paymentResult.payment_link_url;
@@ -1077,8 +1082,13 @@ useEffect(() => {
 
           console.log('[PaymentStep] Redirecting to Stripe Checkout for card collection...');
           
-          // Store booking ID for quote lead tracking on return
+          // Store booking ID and quote tracking data for return from Stripe
           sessionStorage.setItem('pending_booking_id', bookingId.toString());
+          sessionStorage.setItem('pending_quote_session_id', localStorage.getItem('quote_session_id') || '');
+          sessionStorage.setItem('pending_quote_cost', data.totalCost?.toString() || '');
+          
+          // Set flag to prevent beforeunload from marking as 'left'
+          localStorage.setItem('payment_redirect_in_progress', 'true');
           
           // Redirect to Stripe Checkout
           window.location.href = setupResult.checkout_url;
