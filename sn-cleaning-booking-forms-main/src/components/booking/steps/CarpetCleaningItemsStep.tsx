@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { CarpetCleaningData, CarpetCleaningItem } from '../CarpetCleaningForm';
-import { Plus, Minus, Layers, Sofa, Bed, SquareStack, Grid3X3, Footprints, Armchair, UtensilsCrossed, CircleDot, Theater, RectangleHorizontal, type LucideIcon } from 'lucide-react';
+import { Plus, Minus, Layers, Sofa, Bed, BedDouble, BedSingle, Tv, UtensilsCrossed, Armchair, CircleDot, Theater, TrendingUp, DoorOpen, SquareStack, Crown, type LucideIcon } from 'lucide-react';
 
 interface CarpetCleaningItemsStepProps {
   data: CarpetCleaningData;
@@ -9,35 +9,37 @@ interface CarpetCleaningItemsStepProps {
   onNext: () => void;
 }
 
-// Carpet items with pricing and icons
+// Carpet items with pricing and icons - room-based naming
 const carpetOptions: { id: string; name: string; size: 'small' | 'medium' | 'large'; description: string; price: number; icon: LucideIcon }[] = [
   { id: 'rug_small', name: 'Small Rug', size: 'small', description: 'Up to 4 sqm', price: 25, icon: SquareStack },
   { id: 'rug_medium', name: 'Medium Rug', size: 'medium', description: '4-8 sqm', price: 40, icon: SquareStack },
   { id: 'rug_large', name: 'Large Rug', size: 'large', description: '8+ sqm', price: 60, icon: SquareStack },
-  { id: 'carpet_room_small', name: 'Room Carpet (Small)', size: 'small', description: 'Bedroom/small room', price: 35, icon: Grid3X3 },
-  { id: 'carpet_room_medium', name: 'Room Carpet (Medium)', size: 'medium', description: 'Living room', price: 50, icon: Grid3X3 },
-  { id: 'carpet_room_large', name: 'Room Carpet (Large)', size: 'large', description: 'Open plan/large room', price: 75, icon: Grid3X3 },
-  { id: 'stairs', name: 'Staircase', size: 'medium', description: 'Standard staircase', price: 40, icon: Footprints },
-  { id: 'hallway', name: 'Hallway', size: 'small', description: 'Entrance/corridor', price: 25, icon: RectangleHorizontal },
+  { id: 'carpet_single_bedroom', name: 'Single Bedroom', size: 'small', description: 'Single bedroom carpet', price: 35, icon: BedSingle },
+  { id: 'carpet_double_bedroom', name: 'Double Bedroom', size: 'medium', description: 'Double bedroom carpet', price: 45, icon: BedDouble },
+  { id: 'carpet_master_bedroom', name: 'Master Bedroom', size: 'large', description: 'Master bedroom carpet', price: 55, icon: Crown },
+  { id: 'carpet_lounge', name: 'Lounge', size: 'medium', description: 'Living room carpet', price: 50, icon: Tv },
+  { id: 'carpet_dining_room', name: 'Dining Room', size: 'medium', description: 'Dining area carpet', price: 45, icon: UtensilsCrossed },
+  { id: 'stairs', name: 'Staircase', size: 'medium', description: 'Standard staircase', price: 40, icon: TrendingUp },
+  { id: 'hallway', name: 'Hallway', size: 'small', description: 'Entrance/corridor', price: 25, icon: DoorOpen },
 ];
 
 // Upholstery items with pricing and icons
 const upholsteryOptions: { id: string; name: string; size: 'small' | 'medium' | 'large'; description: string; price: number; icon: LucideIcon }[] = [
   { id: 'sofa_2seat', name: '2-Seater Sofa', size: 'small', description: 'Love seat', price: 45, icon: Sofa },
   { id: 'sofa_3seat', name: '3-Seater Sofa', size: 'medium', description: 'Standard sofa', price: 60, icon: Sofa },
-  { id: 'sofa_corner', name: 'Corner/L-Shaped Sofa', size: 'large', description: 'Large sectional', price: 85, icon: Sofa },
+  { id: 'sofa_corner', name: 'Corner Sofa', size: 'large', description: 'L-shaped sectional', price: 85, icon: Sofa },
   { id: 'armchair', name: 'Armchair', size: 'small', description: 'Single chair', price: 30, icon: Armchair },
   { id: 'dining_chair', name: 'Dining Chair', size: 'small', description: 'Fabric seat', price: 15, icon: UtensilsCrossed },
-  { id: 'ottoman', name: 'Ottoman/Footstool', size: 'small', description: 'Fabric ottoman', price: 20, icon: CircleDot },
-  { id: 'curtains', name: 'Curtains (per panel)', size: 'medium', description: 'Standard panel', price: 25, icon: Theater },
+  { id: 'ottoman', name: 'Ottoman', size: 'small', description: 'Fabric ottoman', price: 20, icon: CircleDot },
+  { id: 'curtains', name: 'Curtain Panel', size: 'medium', description: 'Per panel', price: 25, icon: Theater },
 ];
 
 // Mattress items with pricing and icons
 const mattressOptions: { id: string; name: string; size: 'small' | 'medium' | 'large'; description: string; price: number; icon: LucideIcon }[] = [
-  { id: 'mattress_single', name: 'Single Mattress', size: 'small', description: '90x190cm', price: 35, icon: Bed },
-  { id: 'mattress_double', name: 'Double Mattress', size: 'medium', description: '135x190cm', price: 45, icon: Bed },
+  { id: 'mattress_single', name: 'Single Mattress', size: 'small', description: '90x190cm', price: 35, icon: BedSingle },
+  { id: 'mattress_double', name: 'Double Mattress', size: 'medium', description: '135x190cm', price: 45, icon: BedDouble },
   { id: 'mattress_king', name: 'King Mattress', size: 'large', description: '150x200cm', price: 55, icon: Bed },
-  { id: 'mattress_superking', name: 'Super King Mattress', size: 'large', description: '180x200cm', price: 65, icon: Bed },
+  { id: 'mattress_superking', name: 'Super King', size: 'large', description: '180x200cm', price: 65, icon: Crown },
 ];
 
 export const CarpetCleaningItemsStep: React.FC<CarpetCleaningItemsStepProps> = ({
@@ -97,7 +99,7 @@ export const CarpetCleaningItemsStep: React.FC<CarpetCleaningItemsStepProps> = (
     return (
       <button
         key={option.id}
-        className={`group relative ${isSelected ? 'h-36' : 'h-28'} rounded-2xl border transition-all duration-300 ${
+        className={`group relative h-32 rounded-2xl border transition-all duration-300 ${
           isSelected ? 'border-primary bg-primary/5 shadow-md' : 'border-border bg-card hover:border-primary/50 hover:shadow-sm'
         }`}
         onClick={() => {
@@ -108,53 +110,49 @@ export const CarpetCleaningItemsStep: React.FC<CarpetCleaningItemsStepProps> = (
       >
         {isSelected ? (
           <div className="flex flex-col items-center justify-center h-full p-3">
-            <div className="p-2 rounded-full bg-primary/10 mb-1">
-              <IconComponent className="h-5 w-5 text-primary" />
+            <div className="p-2.5 rounded-full bg-primary/10 mb-2">
+              <IconComponent className="h-7 w-7 text-primary" />
             </div>
-            <span className="text-xs font-bold text-primary mb-1 text-center leading-tight">
+            <span className="text-sm font-bold text-primary mb-2 text-center leading-tight">
               {option.name}
             </span>
-            <span className="text-[10px] text-muted-foreground mb-1">£{option.price}</span>
-            <div className="flex items-center w-full">
+            <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 w-7 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
+                className="h-8 w-8 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
                 onClick={(e) => {
                   e.stopPropagation();
                   updateItemQuantity(type, option.id, option.name, option.size, option.price, -1);
                 }}
               >
-                <Minus className="h-3 w-3" />
+                <Minus className="h-4 w-4" />
               </Button>
-              <div className="flex-1 text-center mx-1">
-                <div className="text-lg font-bold text-primary">
-                  {quantity}
-                </div>
+              <div className="w-8 text-center">
+                <span className="text-xl font-bold text-primary">{quantity}</span>
               </div>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 w-7 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
+                className="h-8 w-8 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
                 onClick={(e) => {
                   e.stopPropagation();
                   updateItemQuantity(type, option.id, option.name, option.size, option.price, 1);
                 }}
               >
-                <Plus className="h-3 w-3" />
+                <Plus className="h-4 w-4" />
               </Button>
             </div>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-full p-3">
-            <div className="p-2 rounded-full bg-muted mb-1 group-hover:bg-primary/10 transition-colors">
-              <IconComponent className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+            <div className="p-2.5 rounded-full bg-muted mb-2 group-hover:bg-primary/10 transition-colors">
+              <IconComponent className="h-7 w-7 text-muted-foreground group-hover:text-primary transition-colors" />
             </div>
-            <span className="text-xs font-bold text-slate-600 group-hover:text-primary text-center leading-tight transition-colors">
+            <span className="text-sm font-bold text-slate-700 group-hover:text-primary text-center leading-tight transition-colors">
               {option.name}
             </span>
-            <span className="text-[10px] text-muted-foreground mt-0.5">{option.description}</span>
-            <span className="text-sm font-bold text-slate-600 group-hover:text-primary mt-0.5 transition-colors">£{option.price}</span>
+            <span className="text-base font-bold text-primary mt-1">£{option.price}</span>
           </div>
         )}
       </button>
