@@ -56,7 +56,10 @@ const AdminQuoteLeads = () => {
           <SidebarInset className="flex-1">
             <main className="flex-1 p-3 sm:p-6 w-full overflow-x-hidden">
               <div className="w-full max-w-7xl mx-auto">
-                <QuoteLeadsView />
+                <QuoteLeadsView 
+                  agentUserId={user?.id} 
+                  isAgent={userRole === 'sales_agent'} 
+                />
               </div>
             </main>
           </SidebarInset>

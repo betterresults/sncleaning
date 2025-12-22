@@ -140,7 +140,12 @@ const isLeadIdle = (lead: QuoteLead): boolean => {
   return (now - heartbeatTime) > twoMinutes;
 };
 
-const QuoteLeadsView = () => {
+interface QuoteLeadsViewProps {
+  agentUserId?: string | null;
+  isAgent?: boolean;
+}
+
+const QuoteLeadsView = ({ agentUserId, isAgent = false }: QuoteLeadsViewProps) => {
   const [leads, setLeads] = useState<QuoteLead[]>([]);
   const [events, setEvents] = useState<FunnelEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -157,17 +162,25 @@ const QuoteLeadsView = () => {
   const fetchData = async () => {
     setRefreshing(true);
     try {
+      // Build leads query - filter by agent if specified
+      let leadsQuery = supabase
+        .from('quote_leads')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
+      
+      // If agent, only show their own leads
+      if (isAgent && agentUserId) {
+        leadsQuery = leadsQuery.eq('agent_user_id', agentUserId);
+      }
+
       const [eventsResponse, leadsResponse, profilesResponse] = await Promise.all([
         supabase
           .from('funnel_events')
           .select('*')
           .order('created_at', { ascending: false })
           .limit(500),
-        supabase
-          .from('quote_leads')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(100),
+        leadsQuery,
         supabase
           .from('profiles')
           .select('user_id, first_name, last_name, email')
