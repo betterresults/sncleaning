@@ -277,7 +277,7 @@ const CarpetCleaningForm: React.FC = () => {
                   className="text-sm font-medium hover:bg-accent/50 transition-all duration-200 shadow-sm"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Services
+                  Back
                 </Button>
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700">
                   <span className="sm:hidden">Carpet Cleaning</span>
