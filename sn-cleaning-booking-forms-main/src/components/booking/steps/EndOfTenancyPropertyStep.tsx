@@ -1,13 +1,9 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { EndOfTenancyBookingData } from '../EndOfTenancyBookingForm';
-import { Home, Building, Plus, Minus, CheckCircle, AlertCircle, Sparkles } from 'lucide-react';
-import * as LucideIcons from 'lucide-react';
-import { useAirbnbFieldConfigsBatch } from '@/hooks/useAirbnbFieldConfigs';
+import { Home, Building, Users, Plus, Minus, CheckCircle, AlertCircle, ChefHat } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { CarpetCleaningItem } from '../CarpetCleaningForm';
 
 interface EndOfTenancyPropertyStepProps {
   data: EndOfTenancyBookingData;
@@ -16,28 +12,47 @@ interface EndOfTenancyPropertyStepProps {
   isAdminMode?: boolean;
 }
 
-// Carpet item pricing (reusing from CarpetCleaningItemsStep)
-const CARPET_PRICES = {
-  small: 35,
-  medium: 45,
-  large: 55,
-};
-
-const UPHOLSTERY_ITEMS = [
-  { id: 'sofa-2-seater', name: '2-Seater Sofa', price: 50 },
-  { id: 'sofa-3-seater', name: '3-Seater Sofa', price: 65 },
-  { id: 'sofa-4-seater', name: '4-Seater Sofa', price: 80 },
-  { id: 'armchair', name: 'Armchair', price: 35 },
-  { id: 'dining-chair', name: 'Dining Chair', price: 15 },
-  { id: 'ottoman', name: 'Ottoman/Footstool', price: 25 },
-  { id: 'cushion', name: 'Cushion', price: 10 },
+const PROPERTY_TYPES = [
+  { id: 'flat', label: 'Flat', icon: Building },
+  { id: 'house', label: 'House', icon: Home },
+  { id: 'house-share', label: 'House Share', icon: Users },
 ];
 
-const MATTRESS_ITEMS = [
-  { id: 'single', name: 'Single Mattress', price: 40, bothSidesPrice: 60 },
-  { id: 'double', name: 'Double Mattress', price: 50, bothSidesPrice: 75 },
-  { id: 'king', name: 'King Mattress', price: 60, bothSidesPrice: 90 },
-  { id: 'super-king', name: 'Super King Mattress', price: 70, bothSidesPrice: 105 },
+const PROPERTY_CONDITIONS = [
+  { id: 'well-maintained', label: 'Well-Maintained', description: 'Property is in good condition with no significant issues' },
+  { id: 'moderate', label: 'Moderate Condition', description: 'Regular use with some areas needing extra attention' },
+  { id: 'heavily-used', label: 'Heavily Used', description: 'Several areas need significant cleaning effort' },
+  { id: 'intensive', label: 'Intensive Cleaning Required', description: 'Requires thorough and extensive cleaning service' },
+];
+
+const FURNITURE_STATUS = [
+  { id: 'furnished', label: 'Furnished' },
+  { id: 'unfurnished', label: 'Unfurnished' },
+  { id: 'part-furnished', label: 'Part Furnished' },
+];
+
+const ADDITIONAL_ROOMS = [
+  { id: 'dining-room', label: 'Dining Room' },
+  { id: 'study', label: 'Study Room' },
+  { id: 'utility-room', label: 'Utility Room' },
+  { id: 'conservatory', label: 'Conservatory' },
+  { id: 'additional-living', label: 'Additional Living Room' },
+  { id: 'basement', label: 'Basement' },
+  { id: 'loft', label: 'Loft Room' },
+];
+
+const HOUSE_SHARE_AREAS = [
+  { id: 'bedroom', label: 'Bedroom' },
+  { id: 'bathroom', label: 'Bathroom' },
+  { id: 'kitchen-shared', label: 'Kitchen (Shared)' },
+  { id: 'living-shared', label: 'Living Room (Shared)' },
+];
+
+const OVEN_OPTIONS = [
+  { id: '', label: 'No Oven Cleaning' },
+  { id: 'single', label: 'Single Oven' },
+  { id: 'double', label: 'Double Oven' },
+  { id: 'range', label: 'Range Cooker' },
 ];
 
 export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> = ({
@@ -49,14 +64,8 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
   const { toast } = useToast();
   const [showValidationErrors, setShowValidationErrors] = useState(false);
   
-  // Fetch configurations
-  const {
-    data: allConfigs,
-    isLoading: isLoadingConfigs
-  } = useAirbnbFieldConfigsBatch(['Property Type', 'Bedrooms', 'Bathrooms', 'Oven Cleaning'], true);
-  
-  const propertyTypeConfigs = allConfigs?.['Property Type'] || [];
-  const ovenCleaningConfigs = allConfigs?.['Oven Cleaning'] || [];
+  const isHouseShare = data.propertyType === 'house-share';
+  const isFlatOrHouse = data.propertyType === 'flat' || data.propertyType === 'house';
   
   const getBedroomLabel = (value: string) => {
     if (value === 'studio') return 'Studio';
@@ -109,98 +118,39 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
     }
   };
   
-  // Steam cleaning add-ons handlers
-  const addCarpetItem = (size: 'small' | 'medium' | 'large') => {
-    const newItem: CarpetCleaningItem = {
-      id: `carpet-${size}-${Date.now()}`,
-      name: `${size.charAt(0).toUpperCase() + size.slice(1)} Carpet/Rug`,
-      type: 'carpet',
-      size,
-      quantity: 1,
-      price: CARPET_PRICES[size],
-    };
-    onUpdate({
-      carpetItems: [...data.carpetItems, newItem],
-      wantsSteamCleaning: true,
-    });
-  };
-  
-  const removeCarpetItem = (id: string) => {
-    const updatedItems = data.carpetItems.filter(item => item.id !== id);
-    onUpdate({
-      carpetItems: updatedItems,
-      wantsSteamCleaning: updatedItems.length > 0 || data.upholsteryItems.length > 0 || data.mattressItems.length > 0,
-    });
-  };
-  
-  const addUpholsteryItem = (item: typeof UPHOLSTERY_ITEMS[0]) => {
-    const existingItem = data.upholsteryItems.find(u => u.name === item.name);
-    if (existingItem) {
-      onUpdate({
-        upholsteryItems: data.upholsteryItems.map(u => 
-          u.id === existingItem.id ? { ...u, quantity: u.quantity + 1 } : u
-        ),
-      });
+  const toggleAdditionalRoom = (roomId: string) => {
+    const current = data.additionalRooms || [];
+    if (current.includes(roomId)) {
+      onUpdate({ additionalRooms: current.filter(r => r !== roomId) });
     } else {
-      const newItem: CarpetCleaningItem = {
-        id: `upholstery-${item.id}-${Date.now()}`,
-        name: item.name,
-        type: 'upholstery',
-        quantity: 1,
-        price: item.price,
-      };
-      onUpdate({
-        upholsteryItems: [...data.upholsteryItems, newItem],
-        wantsSteamCleaning: true,
-      });
+      onUpdate({ additionalRooms: [...current, roomId] });
     }
   };
   
-  const removeUpholsteryItem = (id: string) => {
-    const updatedItems = data.upholsteryItems.filter(item => item.id !== id);
-    onUpdate({
-      upholsteryItems: updatedItems,
-      wantsSteamCleaning: data.carpetItems.length > 0 || updatedItems.length > 0 || data.mattressItems.length > 0,
-    });
+  const toggleHouseShareArea = (areaId: string) => {
+    const current = data.houseShareAreas || [];
+    if (current.includes(areaId)) {
+      onUpdate({ houseShareAreas: current.filter(a => a !== areaId) });
+    } else {
+      onUpdate({ houseShareAreas: [...current, areaId] });
+    }
   };
-  
-  const addMattressItem = (item: typeof MATTRESS_ITEMS[0], bothSides: boolean) => {
-    const newItem: CarpetCleaningItem = {
-      id: `mattress-${item.id}-${bothSides ? 'both' : 'one'}-${Date.now()}`,
-      name: item.name + (bothSides ? ' (Both Sides)' : ' (One Side)'),
-      type: 'mattress',
-      quantity: 1,
-      price: bothSides ? item.bothSidesPrice : item.price,
-      bothSides,
-    };
-    onUpdate({
-      mattressItems: [...data.mattressItems, newItem],
-      wantsSteamCleaning: true,
-    });
-  };
-  
-  const removeMattressItem = (id: string) => {
-    const updatedItems = data.mattressItems.filter(item => item.id !== id);
-    onUpdate({
-      mattressItems: updatedItems,
-      wantsSteamCleaning: data.carpetItems.length > 0 || data.upholsteryItems.length > 0 || updatedItems.length > 0,
-    });
-  };
-  
-  // Calculate steam cleaning total
-  const steamCleaningTotal = 
-    data.carpetItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) +
-    data.upholsteryItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) +
-    data.mattressItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   
   // Validation
   const validationErrors = {
     propertyType: !data.propertyType,
-    bedrooms: !data.bedrooms,
-    bathrooms: !data.bathrooms,
+    bedrooms: isFlatOrHouse && !data.bedrooms,
+    bathrooms: isFlatOrHouse && !data.bathrooms,
+    propertyCondition: !data.propertyCondition,
+    furnitureStatus: !data.furnitureStatus,
+    houseShareAreas: isHouseShare && (!data.houseShareAreas || data.houseShareAreas.length === 0),
   };
   
-  const canContinue = !validationErrors.propertyType && !validationErrors.bedrooms && !validationErrors.bathrooms;
+  const canContinue = !validationErrors.propertyType && 
+    !validationErrors.propertyCondition && 
+    !validationErrors.furnitureStatus &&
+    (!isFlatOrHouse || (!validationErrors.bedrooms && !validationErrors.bathrooms)) &&
+    (!isHouseShare || !validationErrors.houseShareAreas);
   
   const handleContinue = () => {
     if (!canContinue) {
@@ -208,8 +158,11 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
       
       const missingFields: string[] = [];
       if (validationErrors.propertyType) missingFields.push('property type');
+      if (validationErrors.propertyCondition) missingFields.push('property condition');
+      if (validationErrors.furnitureStatus) missingFields.push('furniture status');
       if (validationErrors.bedrooms) missingFields.push('bedrooms');
       if (validationErrors.bathrooms) missingFields.push('bathrooms');
+      if (validationErrors.houseShareAreas) missingFields.push('areas to clean');
       
       toast({
         title: "Please complete all required fields",
@@ -222,23 +175,13 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
   };
   
   return (
-    <div className="space-y-6">
-      {isLoadingConfigs && (
-        <div className="p-4">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-muted rounded w-1/3"></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="h-16 bg-muted rounded-2xl"></div>
-              <div className="h-16 bg-muted rounded-2xl"></div>
-            </div>
-          </div>
-        </div>
-      )}
+    <div className="space-y-8">
+      <h2 className="text-2xl font-bold text-slate-700">Please Provide Details About The Property</h2>
 
       {/* Property Type */}
-      <div className="relative z-10" id="property-type-section">
+      <div>
         <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-2xl font-bold text-slate-700">Property Details</h2>
+          <h3 className="text-lg font-semibold text-slate-700">Property Type <span className="text-destructive">*</span></h3>
           {showValidationErrors && validationErrors.propertyType && (
             <span className="flex items-center gap-1 text-sm text-destructive">
               <AlertCircle className="h-4 w-4" />
@@ -246,306 +189,304 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
             </span>
           )}
         </div>
-        <div className={`grid grid-cols-2 gap-4 ${showValidationErrors && validationErrors.propertyType ? 'ring-2 ring-destructive ring-offset-2 rounded-2xl' : ''}`}>
-          {(propertyTypeConfigs.length > 0 ? propertyTypeConfigs : [
-            { option: 'flat', label: 'Flat' },
-            { option: 'house', label: 'House' }
-          ]).map((opt: any) => {
-            const isSelected = data.propertyType === opt.option;
-            const isHouse = opt.option === 'house';
+        <div className={`grid grid-cols-2 md:grid-cols-4 gap-3 ${showValidationErrors && validationErrors.propertyType ? 'ring-2 ring-destructive ring-offset-2 rounded-2xl' : ''}`}>
+          {PROPERTY_TYPES.map((type) => {
+            const isSelected = data.propertyType === type.id;
+            const Icon = type.icon;
             return (
               <button
-                key={opt.option}
-                className={`group relative h-16 rounded-2xl border transition-all duration-300 justify-start gap-3 p-4 flex items-center ${
+                key={type.id}
+                className={`group relative h-16 rounded-2xl border transition-all duration-300 flex items-center justify-center gap-2 ${
                   isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
                 }`}
-                onClick={() => onUpdate({ propertyType: isSelected ? '' : opt.option })}
+                onClick={() => {
+                  onUpdate({ 
+                    propertyType: type.id as any,
+                    // Reset related fields when changing property type
+                    bedrooms: '',
+                    bathrooms: '',
+                    houseShareAreas: [],
+                  });
+                }}
               >
-                {isHouse ? (
-                  <Home className={`h-6 w-6 transition-all duration-500 ${isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'}`} />
-                ) : (
-                  <Building className={`h-6 w-6 transition-all duration-500 ${isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'}`} />
-                )}
-                <span className={`text-base font-bold transition-colors ${isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'}`}>
-                  {opt.label}
+                <Icon className={`h-5 w-5 ${isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'}`} />
+                <span className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'}`}>
+                  {type.label}
                 </span>
+                {isSelected && <CheckCircle className="h-4 w-4 text-primary absolute top-2 right-2" />}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Property Size */}
-      <div className="relative z-[9]" id="property-size-section">
-        <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-2xl font-bold text-slate-700">Size of the property</h2>
-          {showValidationErrors && (validationErrors.bedrooms || validationErrors.bathrooms) && (
+      {/* House Share Areas (only show for house share) */}
+      {isHouseShare && (
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <h3 className="text-lg font-semibold text-slate-700">Which areas need cleaning? <span className="text-destructive">*</span></h3>
+            {showValidationErrors && validationErrors.houseShareAreas && (
+              <span className="flex items-center gap-1 text-sm text-destructive">
+                <AlertCircle className="h-4 w-4" />
+                Select at least one area
+              </span>
+            )}
+          </div>
+          <div className={`grid grid-cols-2 gap-3 ${showValidationErrors && validationErrors.houseShareAreas ? 'ring-2 ring-destructive ring-offset-2 rounded-2xl p-2' : ''}`}>
+            {HOUSE_SHARE_AREAS.map((area) => {
+              const isSelected = data.houseShareAreas?.includes(area.id);
+              return (
+                <button
+                  key={area.id}
+                  className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center gap-2 ${
+                    isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
+                  }`}
+                  onClick={() => toggleHouseShareArea(area.id)}
+                >
+                  {isSelected && <CheckCircle className="h-4 w-4 text-primary" />}
+                  <span className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>
+                    {area.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Property Condition */}
+      <div>
+        <div className="flex items-center gap-2 mb-2">
+          <h3 className="text-lg font-semibold text-slate-700">Condition Of The Property <span className="text-destructive">*</span></h3>
+          {showValidationErrors && validationErrors.propertyCondition && (
             <span className="flex items-center gap-1 text-sm text-destructive">
               <AlertCircle className="h-4 w-4" />
-              {validationErrors.bedrooms && validationErrors.bathrooms ? 'Select bedrooms and bathrooms' : validationErrors.bedrooms ? 'Select bedrooms' : 'Select bathrooms'}
+              Required
             </span>
           )}
         </div>
-        
-        <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 mb-2 ${showValidationErrors && (validationErrors.bedrooms || validationErrors.bathrooms) ? 'ring-2 ring-destructive ring-offset-2 rounded-2xl p-2' : ''}`}>
-          {/* Bedrooms */}
-          <div>
-            <div className="flex items-center justify-center">
-              <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${
-                data.bedrooms ? 'bg-primary/5 border border-primary' : showValidationErrors && validationErrors.bedrooms ? 'bg-destructive/5 border border-destructive' : 'bg-card border border-border'
-              }`}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
-                  onClick={decrementBedrooms}
-                  disabled={!data.bedrooms || data.bedrooms === 'studio'}
-                >
-                  <Minus className="h-5 w-5" />
-                </Button>
-                <div className="flex-1 text-center">
-                  <div className={`text-base font-bold transition-colors ${data.bedrooms ? 'text-primary' : 'text-slate-400'}`}>
-                    {data.bedrooms ? getBedroomLabel(data.bedrooms) : 'Bedrooms'}
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
-                  onClick={incrementBedrooms}
-                  disabled={data.bedrooms === '6+'}
-                >
-                  <Plus className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Bathrooms */}
-          <div>
-            <div className="flex items-center justify-center">
-              <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${
-                data.bathrooms ? 'bg-primary/5 border border-primary' : showValidationErrors && validationErrors.bathrooms ? 'bg-destructive/5 border border-destructive' : 'bg-card border border-border'
-              }`}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
-                  onClick={decrementBathrooms}
-                  disabled={!data.bathrooms || data.bathrooms === '1'}
-                >
-                  <Minus className="h-5 w-5" />
-                </Button>
-                <div className="flex-1 text-center">
-                  <div className={`text-base font-bold transition-colors ${data.bathrooms ? 'text-primary' : 'text-slate-400'}`}>
-                    {data.bathrooms ? `${data.bathrooms} Bathroom${data.bathrooms !== '1' && data.bathrooms !== '6+' && parseInt(data.bathrooms) > 1 ? 's' : data.bathrooms === '6+' ? 's' : ''}` : 'Bathrooms'}
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
-                  onClick={incrementBathrooms}
-                  disabled={data.bathrooms === '6+'}
-                >
-                  <Plus className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Oven Cleaning */}
-      <div>
-        <h2 className="text-2xl font-bold text-slate-700 mb-4">Add Oven Cleaning?</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          <button
-            className={`group relative h-20 rounded-2xl border transition-all duration-300 flex flex-col items-center justify-center ${
-              !data.hasOvenCleaning ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
-            }`}
-            onClick={() => onUpdate({ hasOvenCleaning: false, ovenType: '' })}
-          >
-            {!data.hasOvenCleaning && <CheckCircle className="h-5 w-5 text-primary mb-1" />}
-            <span className={`text-base font-bold transition-colors ${!data.hasOvenCleaning ? 'text-primary' : 'text-slate-500 group-hover:text-primary'}`}>
-              No Oven
-            </span>
-          </button>
-          {(ovenCleaningConfigs.length > 0 ? ovenCleaningConfigs : [
-            { option: 'single', label: 'Single Oven', value: 45 },
-            { option: 'double', label: 'Double Oven', value: 65 },
-            { option: 'range', label: 'Range Cooker', value: 85 },
-          ]).map((opt: any) => {
-            const isSelected = data.hasOvenCleaning && data.ovenType === opt.option;
+        <p className="text-sm text-muted-foreground mb-4">
+          Indicate the current state of the property. 'Well-Maintained' means the property is in good condition with no significant issues. 'Moderate Condition' shows signs of regular use with some areas needing extra attention. 'Heavily Used' indicates that the property has several areas that need significant cleaning effort. 'Intensive Cleaning Required' points to a property that requires a thorough and extensive cleaning service due to prolonged usage or buildup.
+        </p>
+        <div className={`grid grid-cols-2 gap-3 ${showValidationErrors && validationErrors.propertyCondition ? 'ring-2 ring-destructive ring-offset-2 rounded-2xl p-2' : ''}`}>
+          {PROPERTY_CONDITIONS.map((condition) => {
+            const isSelected = data.propertyCondition === condition.id;
             return (
               <button
-                key={opt.option}
-                className={`group relative h-20 rounded-2xl border transition-all duration-300 flex flex-col items-center justify-center ${
+                key={condition.id}
+                className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center ${
                   isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
                 }`}
-                onClick={() => onUpdate({ hasOvenCleaning: true, ovenType: opt.option })}
+                onClick={() => onUpdate({ propertyCondition: condition.id as any })}
               >
-                {isSelected && <CheckCircle className="h-5 w-5 text-primary mb-1" />}
-                <span className={`text-base font-bold transition-colors ${isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'}`}>
-                  {opt.label}
+                {isSelected && <CheckCircle className="h-4 w-4 text-primary mr-2" />}
+                <span className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>
+                  {condition.label}
                 </span>
-                <span className="text-xs text-muted-foreground">+£{opt.value}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Steam Cleaning Add-ons */}
-      <div className="border-t border-border pt-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Sparkles className="h-6 w-6 text-primary" />
-          <h2 className="text-2xl font-bold text-slate-700">Add Steam Cleaning?</h2>
-        </div>
-        <p className="text-muted-foreground mb-6">
-          Need professional carpet, upholstery, or mattress cleaning? Add these services to your end of tenancy clean.
-        </p>
-
-        {/* Carpet Cleaning */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-slate-700 mb-3">Carpets & Rugs</h3>
-          <div className="grid grid-cols-3 gap-3 mb-3">
-            <button
-              className="h-20 rounded-2xl border border-border bg-card hover:border-primary/50 transition-all duration-300 flex flex-col items-center justify-center"
-              onClick={() => addCarpetItem('small')}
-            >
-              <Plus className="h-5 w-5 text-muted-foreground mb-1" />
-              <span className="text-sm font-medium text-slate-600">Small</span>
-              <span className="text-xs text-muted-foreground">£{CARPET_PRICES.small}</span>
-            </button>
-            <button
-              className="h-20 rounded-2xl border border-border bg-card hover:border-primary/50 transition-all duration-300 flex flex-col items-center justify-center"
-              onClick={() => addCarpetItem('medium')}
-            >
-              <Plus className="h-5 w-5 text-muted-foreground mb-1" />
-              <span className="text-sm font-medium text-slate-600">Medium</span>
-              <span className="text-xs text-muted-foreground">£{CARPET_PRICES.medium}</span>
-            </button>
-            <button
-              className="h-20 rounded-2xl border border-border bg-card hover:border-primary/50 transition-all duration-300 flex flex-col items-center justify-center"
-              onClick={() => addCarpetItem('large')}
-            >
-              <Plus className="h-5 w-5 text-muted-foreground mb-1" />
-              <span className="text-sm font-medium text-slate-600">Large</span>
-              <span className="text-xs text-muted-foreground">£{CARPET_PRICES.large}</span>
-            </button>
-          </div>
-          {data.carpetItems.length > 0 && (
-            <div className="space-y-2">
-              {data.carpetItems.map(item => (
-                <div key={item.id} className="flex items-center justify-between p-3 bg-primary/5 rounded-xl border border-primary/20">
-                  <span className="font-medium text-slate-700">{item.name}</span>
-                  <div className="flex items-center gap-3">
-                    <span className="text-primary font-semibold">£{item.price}</span>
-                    <button
-                      onClick={() => removeCarpetItem(item.id)}
-                      className="text-destructive hover:text-destructive/80"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+      {/* Furniture Status */}
+      <div>
+        <div className="flex items-center gap-2 mb-4">
+          <h3 className="text-lg font-semibold text-slate-700">Property Status <span className="text-destructive">*</span></h3>
+          {showValidationErrors && validationErrors.furnitureStatus && (
+            <span className="flex items-center gap-1 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              Required
+            </span>
           )}
         </div>
-
-        {/* Upholstery Cleaning */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-slate-700 mb-3">Upholstery</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
-            {UPHOLSTERY_ITEMS.slice(0, 4).map(item => (
+        <div className={`grid grid-cols-3 gap-3 ${showValidationErrors && validationErrors.furnitureStatus ? 'ring-2 ring-destructive ring-offset-2 rounded-2xl p-2' : ''}`}>
+          {FURNITURE_STATUS.map((status) => {
+            const isSelected = data.furnitureStatus === status.id;
+            return (
               <button
-                key={item.id}
-                className="h-16 rounded-xl border border-border bg-card hover:border-primary/50 transition-all duration-300 flex flex-col items-center justify-center px-2"
-                onClick={() => addUpholsteryItem(item)}
+                key={status.id}
+                className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center ${
+                  isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
+                }`}
+                onClick={() => onUpdate({ furnitureStatus: status.id as any })}
               >
-                <Plus className="h-4 w-4 text-muted-foreground mb-1" />
-                <span className="text-xs font-medium text-slate-600 text-center">{item.name}</span>
-                <span className="text-xs text-muted-foreground">£{item.price}</span>
+                {isSelected && <CheckCircle className="h-4 w-4 text-primary mr-2" />}
+                <span className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>
+                  {status.label}
+                </span>
               </button>
-            ))}
-          </div>
-          {data.upholsteryItems.length > 0 && (
-            <div className="space-y-2">
-              {data.upholsteryItems.map(item => (
-                <div key={item.id} className="flex items-center justify-between p-3 bg-primary/5 rounded-xl border border-primary/20">
-                  <span className="font-medium text-slate-700">{item.name} x{item.quantity}</span>
-                  <div className="flex items-center gap-3">
-                    <span className="text-primary font-semibold">£{item.price * item.quantity}</span>
-                    <button
-                      onClick={() => removeUpholsteryItem(item.id)}
-                      className="text-destructive hover:text-destructive/80"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+            );
+          })}
         </div>
+      </div>
 
-        {/* Mattress Cleaning */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-slate-700 mb-3">Mattresses</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
-            {MATTRESS_ITEMS.map(item => (
+      {/* Property Size (for flat/house only) */}
+      {isFlatOrHouse && (
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <h3 className="text-lg font-semibold text-slate-700">Size Of The Property <span className="text-destructive">*</span></h3>
+            {showValidationErrors && (validationErrors.bedrooms || validationErrors.bathrooms) && (
+              <span className="flex items-center gap-1 text-sm text-destructive">
+                <AlertCircle className="h-4 w-4" />
+                Required
+              </span>
+            )}
+          </div>
+          
+          <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${showValidationErrors && (validationErrors.bedrooms || validationErrors.bathrooms) ? 'ring-2 ring-destructive ring-offset-2 rounded-2xl p-2' : ''}`}>
+            {/* Bedrooms */}
+            <div className={`flex items-center rounded-2xl p-2 transition-all duration-300 ${
+              data.bedrooms ? 'bg-primary/5 border border-primary' : 'bg-card border border-border'
+            }`}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
+                onClick={decrementBedrooms}
+                disabled={!data.bedrooms || data.bedrooms === 'studio'}
+              >
+                <Minus className="h-5 w-5" />
+              </Button>
+              <div className="flex-1 text-center">
+                <div className={`text-base font-bold ${data.bedrooms ? 'text-primary' : 'text-slate-400'}`}>
+                  {data.bedrooms ? getBedroomLabel(data.bedrooms) : 'Bedrooms'}
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
+                onClick={incrementBedrooms}
+                disabled={data.bedrooms === '6+'}
+              >
+                <Plus className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {/* Bathrooms */}
+            <div className={`flex items-center rounded-2xl p-2 transition-all duration-300 ${
+              data.bathrooms ? 'bg-primary/5 border border-primary' : 'bg-card border border-border'
+            }`}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
+                onClick={decrementBathrooms}
+                disabled={!data.bathrooms || data.bathrooms === '1'}
+              >
+                <Minus className="h-5 w-5" />
+              </Button>
+              <div className="flex-1 text-center">
+                <div className={`text-base font-bold ${data.bathrooms ? 'text-primary' : 'text-slate-400'}`}>
+                  {data.bathrooms ? `${data.bathrooms} Bathroom${data.bathrooms !== '1' ? 's' : ''}` : 'Bathrooms'}
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
+                onClick={incrementBathrooms}
+                disabled={data.bathrooms === '6+'}
+              >
+                <Plus className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Kitchen/Living Room Layout */}
+      {isFlatOrHouse && (
+        <div>
+          <h3 className="text-lg font-semibold text-slate-700 mb-4">Kitchen & Living Room Layout</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center ${
+                data.kitchenLivingSeparate === true ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
+              }`}
+              onClick={() => onUpdate({ kitchenLivingSeparate: true })}
+            >
+              {data.kitchenLivingSeparate === true && <CheckCircle className="h-4 w-4 text-primary mr-2" />}
+              <span className={`text-sm font-bold ${data.kitchenLivingSeparate === true ? 'text-primary' : 'text-slate-500'}`}>
+                Separate Rooms
+              </span>
+            </button>
+            <button
+              className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center ${
+                data.kitchenLivingSeparate === false ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
+              }`}
+              onClick={() => onUpdate({ kitchenLivingSeparate: false })}
+            >
+              {data.kitchenLivingSeparate === false && <CheckCircle className="h-4 w-4 text-primary mr-2" />}
+              <span className={`text-sm font-bold ${data.kitchenLivingSeparate === false ? 'text-primary' : 'text-slate-500'}`}>
+                Open Plan
+              </span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Additional Rooms */}
+      {isFlatOrHouse && (
+        <div>
+          <h3 className="text-lg font-semibold text-slate-700 mb-4">Additional Rooms</h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {ADDITIONAL_ROOMS.map((room) => {
+              const isSelected = data.additionalRooms?.includes(room.id);
+              return (
+                <button
+                  key={room.id}
+                  className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center ${
+                    isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
+                  }`}
+                  onClick={() => toggleAdditionalRoom(room.id)}
+                >
+                  {isSelected && <CheckCircle className="h-4 w-4 text-primary mr-2" />}
+                  <span className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>
+                    {room.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Oven Size */}
+      <div>
+        <div className="flex items-center gap-2 mb-4">
+          <ChefHat className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-semibold text-slate-700">Oven Size</h3>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {OVEN_OPTIONS.map((oven) => {
+            const isSelected = data.ovenType === oven.id;
+            return (
               <button
-                key={item.id}
-                className="h-20 rounded-xl border border-border bg-card hover:border-primary/50 transition-all duration-300 flex flex-col items-center justify-center px-2"
-                onClick={() => addMattressItem(item, false)}
+                key={oven.id}
+                className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center ${
+                  isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
+                }`}
+                onClick={() => onUpdate({ ovenType: oven.id })}
               >
-                <Plus className="h-4 w-4 text-muted-foreground mb-1" />
-                <span className="text-xs font-medium text-slate-600 text-center">{item.name}</span>
-                <span className="text-xs text-muted-foreground">£{item.price} / £{item.bothSidesPrice}</span>
+                {isSelected && <CheckCircle className="h-4 w-4 text-primary mr-2" />}
+                <span className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>
+                  {oven.label}
+                </span>
               </button>
-            ))}
-          </div>
-          {data.mattressItems.length > 0 && (
-            <div className="space-y-2">
-              {data.mattressItems.map(item => (
-                <div key={item.id} className="flex items-center justify-between p-3 bg-primary/5 rounded-xl border border-primary/20">
-                  <span className="font-medium text-slate-700">{item.name}</span>
-                  <div className="flex items-center gap-3">
-                    <span className="text-primary font-semibold">£{item.price}</span>
-                    <button
-                      onClick={() => removeMattressItem(item.id)}
-                      className="text-destructive hover:text-destructive/80"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+            );
+          })}
         </div>
-
-        {/* Steam Cleaning Total */}
-        {steamCleaningTotal > 0 && (
-          <div className="p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-2xl border border-primary/20">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-slate-700">Steam Cleaning Total</span>
-              <span className="text-xl font-bold text-primary">£{steamCleaningTotal.toFixed(2)}</span>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Continue Button */}
       <div className="pt-4">
         <Button
           onClick={handleContinue}
-          className="w-full h-14 text-lg font-semibold rounded-2xl"
-          size="lg"
+          className="w-full h-14 text-lg font-semibold rounded-xl"
         >
-          Continue to Schedule
+          Continue
         </Button>
       </div>
     </div>

@@ -2,11 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { EndOfTenancyPropertyStep } from './steps/EndOfTenancyPropertyStep';
+import { EndOfTenancyExtrasStep } from './steps/EndOfTenancyExtrasStep';
 import { ScheduleStep } from './steps/ScheduleStep';
 import { EndOfTenancySummary } from './EndOfTenancySummary';
 import { PaymentStep } from './steps/PaymentStep';
 import { ExitQuotePopup } from '@/components/booking/ExitQuotePopup';
-import { Home, Calendar, CreditCard, ArrowLeft } from 'lucide-react';
+import { Home, Sparkles, Calendar, CreditCard, ArrowLeft } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,14 +16,22 @@ import { useQuoteLeadTracking } from '@/hooks/useQuoteLeadTracking';
 import { CarpetCleaningItem } from './CarpetCleaningForm';
 
 export interface EndOfTenancyBookingData {
-  // Property details
-  propertyType: 'flat' | 'house' | '';
+  // Property details - Step 1
+  propertyType: 'flat' | 'house' | 'house-share' | '';
   bedrooms: string;
   bathrooms: string;
-  
-  // Oven cleaning
-  hasOvenCleaning: boolean;
+  propertyCondition: 'well-maintained' | 'moderate' | 'heavily-used' | 'intensive' | '';
+  furnitureStatus: 'furnished' | 'unfurnished' | 'part-furnished' | '';
+  kitchenLivingSeparate: boolean | null;
+  additionalRooms: string[];
   ovenType: string;
+  
+  // House share specific
+  houseShareAreas: string[];
+  
+  // Extras - Step 2
+  blindsItems: { type: string; quantity: number; price: number }[];
+  extraServices: { id: string; name: string; quantity: number; price: number }[];
   
   // Steam cleaning add-ons
   wantsSteamCleaning: boolean;
@@ -30,7 +39,7 @@ export interface EndOfTenancyBookingData {
   upholsteryItems: CarpetCleaningItem[];
   mattressItems: CarpetCleaningItem[];
   
-  // Schedule
+  // Schedule - Step 3
   selectedDate: Date | null;
   selectedTime: string;
   flexibility: 'not-flexible' | 'flexible-time' | 'flexible-date' | '';
@@ -95,8 +104,9 @@ const OVEN_PRICES: Record<string, number> = {
 
 const steps = [
   { id: 1, title: 'Property', key: 'property', icon: <Home className="w-4 h-4" /> },
-  { id: 2, title: 'Schedule', key: 'schedule', icon: <Calendar className="w-4 h-4" /> },
-  { id: 3, title: 'Summary', key: 'payment', icon: <CreditCard className="w-4 h-4" /> },
+  { id: 2, title: 'Extras', key: 'extras', icon: <Sparkles className="w-4 h-4" /> },
+  { id: 3, title: 'Schedule', key: 'schedule', icon: <Calendar className="w-4 h-4" /> },
+  { id: 4, title: 'Summary', key: 'payment', icon: <CreditCard className="w-4 h-4" /> },
 ];
 
 const EndOfTenancyBookingForm: React.FC = () => {
@@ -113,8 +123,14 @@ const EndOfTenancyBookingForm: React.FC = () => {
     propertyType: '',
     bedrooms: '',
     bathrooms: '',
-    hasOvenCleaning: false,
+    propertyCondition: '',
+    furnitureStatus: '',
+    kitchenLivingSeparate: null,
+    additionalRooms: [],
     ovenType: '',
+    houseShareAreas: [],
+    blindsItems: [],
+    extraServices: [],
     wantsSteamCleaning: false,
     carpetItems: [],
     upholsteryItems: [],
@@ -149,7 +165,13 @@ const EndOfTenancyBookingForm: React.FC = () => {
     const baseHours = bedroomMap[bathrooms] || bedroomMap['1'] || 4;
     
     const baseCost = baseHours * HOURLY_RATE;
-    const ovenCost = data.hasOvenCleaning && data.ovenType ? OVEN_PRICES[data.ovenType] || 0 : 0;
+    const ovenCost = data.ovenType ? OVEN_PRICES[data.ovenType] || 0 : 0;
+    
+    // Blinds total
+    const blindsTotal = data.blindsItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    
+    // Extra services total
+    const extrasTotal = data.extraServices.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     
     const steamCleaningTotal = 
       data.carpetItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) +
@@ -160,7 +182,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
     
     return {
       estimatedHours: baseHours,
-      totalCost: baseCost + ovenCost + steamCleaningTotal + shortNoticeCharge,
+      totalCost: baseCost + ovenCost + blindsTotal + extrasTotal + steamCleaningTotal + shortNoticeCharge,
     };
   }, []);
 
@@ -262,13 +284,13 @@ const EndOfTenancyBookingForm: React.FC = () => {
       
       // Save to tracking (non-admin only)
       if (!isAdminMode) {
-        const stepName = currentStep === 1 ? 'property' : currentStep === 2 ? 'schedule' : 'payment';
+        const stepNames = ['property', 'extras', 'schedule', 'payment'];
+        const stepName = stepNames[currentStep - 1] || 'property';
         saveQuoteLead({
           serviceType: 'End of Tenancy',
           propertyType: newData.propertyType,
           bedrooms: newData.bedrooms ? (newData.bedrooms === 'studio' ? 0 : parseInt(newData.bedrooms)) : undefined,
           bathrooms: newData.bathrooms ? parseInt(newData.bathrooms) : undefined,
-          ovenCleaning: newData.hasOvenCleaning,
           ovenSize: newData.ovenType,
           calculatedQuote: newData.totalCost,
           selectedDate: newData.selectedDate || undefined,
@@ -331,6 +353,15 @@ const EndOfTenancyBookingForm: React.FC = () => {
         );
       case 2:
         return (
+          <EndOfTenancyExtrasStep
+            data={bookingData}
+            onUpdate={updateBookingData}
+            onNext={nextStep}
+            onBack={prevStep}
+          />
+        );
+      case 3:
+        return (
           <ScheduleStep
             data={bookingData as any}
             onUpdate={updateBookingData as any}
@@ -338,7 +369,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
             onBack={prevStep}
           />
         );
-      case 3:
+      case 4:
         return stripePromise ? (
           <Elements stripe={stripePromise}>
             <PaymentStep
@@ -488,7 +519,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
           bedrooms: bookingData.bedrooms,
           bathrooms: bookingData.bathrooms,
           serviceFrequency: '',
-          hasOvenCleaning: bookingData.hasOvenCleaning,
+          hasOvenCleaning: !!bookingData.ovenType,
           ovenType: bookingData.ovenType,
           selectedDate: bookingData.selectedDate,
           selectedTime: bookingData.selectedTime,
@@ -498,9 +529,10 @@ const EndOfTenancyBookingForm: React.FC = () => {
           upholsteryItems: bookingData.upholsteryItems,
           mattressItems: bookingData.mattressItems,
         }}
-        sessionId={sessionId}
-        serviceType="End of Tenancy"
-        onSaveEmail={(email) => updateBookingData({ email })}
+        onEmailSubmit={(email) => {
+          updateBookingData({ email });
+        }}
+        onClose={() => setShowExitPopup(false)}
       />
     </div>
   );
