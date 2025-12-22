@@ -75,7 +75,7 @@ interface PaymentElementWrapperProps {
   isUrgentBooking: boolean;
   totalCost: number;
   onConfirmSetup?: () => Promise<{ setupIntent?: any; error?: any }>;
-  setConfirmSetupFn?: (fn: () => Promise<{ setupIntent?: any; error?: any }>) => void;
+  setConfirmSetupFn?: (fn: (returnUrl: string) => Promise<{ setupIntent?: any; error?: any }>) => void;
 }
 
 const PaymentElementWrapper: React.FC<PaymentElementWrapperProps> = ({ 
@@ -131,20 +131,21 @@ const PaymentElementInner: React.FC<{
   onComplete: (complete: boolean) => void;
   isUrgentBooking: boolean;
   totalCost: number;
-  setConfirmSetupFn?: (fn: () => Promise<{ setupIntent?: any; error?: any }>) => void;
+  setConfirmSetupFn?: (fn: (returnUrl: string) => Promise<{ setupIntent?: any; error?: any }>) => void;
 }> = ({ onReady, onComplete, isUrgentBooking, totalCost, setConfirmSetupFn }) => {
   const stripe = useStripe();
   const elements = useElements();
   
   // Register the confirmSetup function with parent component
+  // Now accepts a dynamic returnUrl parameter
   useEffect(() => {
     if (stripe && elements && setConfirmSetupFn) {
-      const confirmFn = async () => {
-        console.log('[PaymentElementInner] confirmSetup called with mounted elements');
+      const confirmFn = async (returnUrl: string) => {
+        console.log('[PaymentElementInner] confirmSetup called with mounted elements, return_url:', returnUrl);
         const result = await stripe.confirmSetup({
           elements,
           confirmParams: {
-            return_url: `${window.location.origin}/booking-confirmation?payment_setup=pending`,
+            return_url: returnUrl,
           },
           redirect: 'if_required',
         });
@@ -224,8 +225,9 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   const [paymentElementReady, setPaymentElementReady] = useState(false);
   
   // Ref to store confirmSetup function from PaymentElementWrapper (using ref to avoid React function-in-state issues)
-  const confirmSetupFnRef = useRef<(() => Promise<{ setupIntent?: any; error?: any }>) | null>(null);
-  const setConfirmSetupFn = useCallback((fn: () => Promise<{ setupIntent?: any; error?: any }>) => {
+  // Now accepts a dynamic returnUrl parameter
+  const confirmSetupFnRef = useRef<((returnUrl: string) => Promise<{ setupIntent?: any; error?: any }>) | null>(null);
+  const setConfirmSetupFn = useCallback((fn: (returnUrl: string) => Promise<{ setupIntent?: any; error?: any }>) => {
     confirmSetupFnRef.current = fn;
   }, []);
   
@@ -1236,74 +1238,101 @@ useEffect(() => {
           navigate('/booking-confirmation', { state: { bookingId: result.bookingId } });
         }
       } else if (setupIntentClientSecret && confirmSetupFnRef.current) {
-        // New customer with inline PaymentElement - confirm the SetupIntent
-        console.log('[PaymentStep] Confirming SetupIntent with mounted PaymentElement...');
+        // New customer with inline PaymentElement
+        console.log('[PaymentStep] New customer flow - creating booking FIRST, then confirming SetupIntent...');
         
-        // Call the confirmSetup function registered by PaymentElementInner
-        const { error: confirmError, setupIntent } = await confirmSetupFnRef.current();
+        // Step 1: Create the booking BEFORE confirming SetupIntent
+        // This ensures we have a bookingId for redirect-based payment methods (Revolut Pay, Amazon Pay, etc.)
+        const { data: bookingResult, error: bookingError } = await supabase.functions.invoke('create-public-booking', {
+          body: {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email,
+            phone: data.phone,
+            houseNumber: data.houseNumber,
+            street: data.street,
+            postcode: data.postcode,
+            city: data.city,
+            addressId: data.addressId,
+            propertyType: data.propertyType,
+            bedrooms: data.bedrooms,
+            bathrooms: data.bathrooms,
+            toilets: data.toilets,
+            numberOfFloors: data.numberOfFloors,
+            additionalRooms: data.additionalRooms,
+            propertyFeatures: data.propertyFeatures,
+            serviceType: subServiceType === 'domestic' ? 'Domestic' : (subServiceType === 'airbnb' ? 'Air BnB' : 'Commercial'),
+            cleaningType: data.wantsFirstDeepClean ? 'Deep Cleaning' : 'Standard Cleaning',
+            serviceFrequency: data.serviceFrequency,
+            ovenType: data.ovenType,
+            selectedDate: data.selectedDate?.toISOString(),
+            selectedTime: data.selectedTime,
+            flexibility: data.flexibility,
+            shortNoticeCharge: data.shortNoticeCharge,
+            propertyAccess: data.propertyAccess,
+            accessNotes: data.accessNotes,
+            totalCost: data.totalCost,
+            estimatedHours: data.estimatedHours,
+            totalHours: data.totalHours,
+            hourlyRate: data.hourlyRate,
+            weeklyCost: data.weeklyCost,
+            notes: data.notes,
+            paymentMethod: 'Stripe',
+            paymentStatus: 'pending', // Set to pending until payment is confirmed
+            agentUserId: data.agentUserId,
+            wantsFirstDeepClean: data.wantsFirstDeepClean,
+            firstDeepCleanExtraHours: data.firstDeepCleanExtraHours,
+          }
+        });
+
+        if (bookingError || !bookingResult?.success) {
+          console.error('[PaymentStep] Booking creation failed:', bookingError || bookingResult);
+          throw new Error(bookingResult?.error || bookingError?.message || 'Failed to create booking');
+        }
+
+        const bookingId = bookingResult.bookingId;
+        console.log('[PaymentStep] Booking created with ID:', bookingId);
+        
+        // Store booking form path for retry
+        sessionStorage.setItem('booking_form_path', location.pathname);
+        
+        // Step 2: Build the return URL with bookingId
+        const successReturnUrl = `${window.location.origin}/booking-confirmation?bookingId=${bookingId}&payment_setup=success&urgent=${isUrgentBooking ? '1' : '0'}`;
+        const failureReturnUrl = `${window.location.origin}/payment-failed?bookingId=${bookingId}&error=Payment%20was%20cancelled%20or%20failed`;
+        
+        // Step 3: Call the confirmSetup function with the return URL
+        console.log('[PaymentStep] Confirming SetupIntent with return_url:', successReturnUrl);
+        const { error: confirmError, setupIntent } = await confirmSetupFnRef.current(successReturnUrl);
 
         if (confirmError) {
           console.error('[PaymentStep] SetupIntent confirmation error:', confirmError);
-          throw new Error(confirmError.message || 'Failed to save payment method');
+          // Booking was created but payment failed - navigate to failure page
+          navigate(`/payment-failed?bookingId=${bookingId}&error=${encodeURIComponent(confirmError.message || 'Payment failed')}`);
+          return;
         }
 
-        console.log('[PaymentStep] SetupIntent confirmed:', setupIntent?.status);
+        console.log('[PaymentStep] SetupIntent result:', setupIntent?.status);
 
-        // If redirected (for Revolut Pay, etc.), the return_url will handle the rest
+        // Step 4: Handle the result
         if (setupIntent?.status === 'succeeded') {
-          // Payment method saved successfully - now create the booking
-          const { data: bookingResult, error: bookingError } = await supabase.functions.invoke('create-public-booking', {
+          // Payment method saved successfully - link it to the booking
+          console.log('[PaymentStep] SetupIntent succeeded - linking payment method to booking...');
+          
+          // Update booking with payment method info
+          const { error: updateError } = await supabase.functions.invoke('link-payment-method-to-booking', {
             body: {
-              firstName: data.firstName,
-              lastName: data.lastName,
-              email: data.email,
-              phone: data.phone,
-              houseNumber: data.houseNumber,
-              street: data.street,
-              postcode: data.postcode,
-              city: data.city,
-              addressId: data.addressId,
-              propertyType: data.propertyType,
-              bedrooms: data.bedrooms,
-              bathrooms: data.bathrooms,
-              toilets: data.toilets,
-              numberOfFloors: data.numberOfFloors,
-              additionalRooms: data.additionalRooms,
-              propertyFeatures: data.propertyFeatures,
-              serviceType: subServiceType === 'domestic' ? 'Domestic' : (subServiceType === 'airbnb' ? 'Air BnB' : 'Commercial'),
-              cleaningType: data.wantsFirstDeepClean ? 'Deep Cleaning' : 'Standard Cleaning',
-              serviceFrequency: data.serviceFrequency,
-              ovenType: data.ovenType,
-              selectedDate: data.selectedDate?.toISOString(),
-              selectedTime: data.selectedTime,
-              flexibility: data.flexibility,
-              shortNoticeCharge: data.shortNoticeCharge,
-              propertyAccess: data.propertyAccess,
-              accessNotes: data.accessNotes,
-              totalCost: data.totalCost,
-              estimatedHours: data.estimatedHours,
-              totalHours: data.totalHours,
-              hourlyRate: data.hourlyRate,
-              weeklyCost: data.weeklyCost,
-              notes: data.notes,
-              paymentMethod: 'Stripe',
-              agentUserId: data.agentUserId,
-              wantsFirstDeepClean: data.wantsFirstDeepClean,
-              firstDeepCleanExtraHours: data.firstDeepCleanExtraHours,
-              stripeSetupIntentId: setupIntent.id, // Pass the SetupIntent ID for payment method linking
-              stripePaymentMethodId: setupIntent.payment_method // Pass the payment method ID
+              bookingId: bookingId,
+              stripeSetupIntentId: setupIntent.id,
+              stripePaymentMethodId: setupIntent.payment_method
             }
           });
 
-          if (bookingError || !bookingResult?.success) {
-            console.error('[PaymentStep] Booking creation failed:', bookingError || bookingResult);
-            throw new Error(bookingResult?.error || bookingError?.message || 'Failed to create booking');
+          if (updateError) {
+            console.error('[PaymentStep] Failed to link payment method:', updateError);
+            // Don't throw - booking is created, we can link later
           }
 
-          const bookingId = bookingResult.bookingId;
-          console.log('[PaymentStep] Booking created with payment method:', bookingId);
-
-          // For urgent bookings, charge immediately
+          // Process payment (charge or authorize)
           if (isUrgentBooking) {
             console.log('[PaymentStep] Urgent booking - charging immediately...');
             const { data: chargeResult, error: chargeError } = await supabase.functions.invoke(
@@ -1318,7 +1347,6 @@ useEffect(() => {
 
             if (chargeError || !chargeResult?.success) {
               console.error('[PaymentStep] Charge failed:', chargeError || chargeResult);
-              // Don't throw - booking is created, payment can be retried
               toast({
                 title: "Payment Issue",
                 description: "Booking created but payment failed. We'll contact you to arrange payment.",
@@ -1326,7 +1354,6 @@ useEffect(() => {
               });
             }
           } else {
-            // Non-urgent: authorize for later capture
             console.log('[PaymentStep] Non-urgent booking - authorizing payment...');
             const { data: authResult, error: authError } = await supabase.functions.invoke(
               'system-payment-action',
@@ -1340,7 +1367,6 @@ useEffect(() => {
 
             if (authError || !authResult?.success) {
               console.error('[PaymentStep] Authorization failed:', authError || authResult);
-              // Don't throw - booking is created, can be authorized later
             }
           }
 
@@ -1351,7 +1377,7 @@ useEffect(() => {
           navigate('/booking-confirmation', { state: { bookingId: bookingId } });
         }
         // If status is 'processing' or 'requires_action', the user was redirected
-        // and will return via return_url
+        // and will return via return_url with the bookingId
         return;
       } else {
         // Fallback: No SetupIntent available - redirect to Stripe Checkout

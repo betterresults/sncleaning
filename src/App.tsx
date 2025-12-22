@@ -41,6 +41,7 @@ import CarpetBooking from "./pages/CarpetBooking";
 import AdminDomesticFormSettings from "./pages/AdminDomesticFormSettings";
 import LinenOrder from "./pages/LinenOrder";
 import BookingConfirmation from "./pages/BookingConfirmation";
+import PaymentFailed from "./pages/PaymentFailed";
 import AdminAddBooking from "./pages/AdminAddBooking";
 import CleanerSettings from './pages/CleanerSettings';
 import CleanerChecklists from './pages/CleanerChecklists';
@@ -133,6 +134,7 @@ const App = () => (
             <Route path="/b/:shortCode" element={<ShortLinkResolver />} />
             <Route path="/linen-order" element={<LinenOrder />} />
             <Route path="/booking-confirmation" element={<BookingConfirmation />} />
+            <Route path="/payment-failed" element={<PaymentFailed />} />
             <Route path="/apply" element={<ApplyToWork />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/upcoming-bookings" element={<UpcomingBookings />} />

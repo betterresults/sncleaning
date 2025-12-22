@@ -33,17 +33,88 @@ const BookingConfirmation = () => {
   const [serviceTypeLabel, setServiceTypeLabel] = useState<string>('');
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [isUrgentBooking, setIsUrgentBooking] = useState(false);
+  const [processingPayment, setProcessingPayment] = useState(false);
   
   // Get bookingId from either location state OR URL query params (for Stripe redirects)
   const bookingIdFromState = location.state?.bookingId;
   const bookingIdFromQuery = searchParams.get('bookingId');
   const paymentSetupSuccess = searchParams.get('payment_setup') === 'success';
   const isUrgent = searchParams.get('urgent') === '1';
+  const setupIntentParam = searchParams.get('setup_intent'); // Stripe adds this on redirect return
+  const redirectStatus = searchParams.get('redirect_status'); // Stripe adds this on redirect return
   
   // Also check sessionStorage for pending booking (set before Stripe redirect)
   const pendingBookingId = sessionStorage.getItem('pending_booking_id');
   
   const bookingId = bookingIdFromState || bookingIdFromQuery || pendingBookingId;
+
+  // Handle payment method linking and payment processing after Stripe redirect
+  useEffect(() => {
+    const processPaymentAfterRedirect = async () => {
+      // Only process if we have bookingId and this is a redirect return
+      if (!bookingId || !setupIntentParam || processingPayment) return;
+      
+      // Check if redirect was successful
+      if (redirectStatus !== 'succeeded') {
+        console.log('[BookingConfirmation] Redirect status not succeeded:', redirectStatus);
+        // Payment failed during redirect - show the error but keep the booking
+        if (redirectStatus === 'failed') {
+          navigate(`/payment-failed?bookingId=${bookingId}&error=Payment%20was%20declined`);
+        }
+        return;
+      }
+      
+      console.log('[BookingConfirmation] Processing payment after Stripe redirect...', { bookingId, setupIntentParam });
+      setProcessingPayment(true);
+      
+      try {
+        // Step 1: Link the payment method to the booking
+        console.log('[BookingConfirmation] Linking payment method to booking...');
+        const { data: linkResult, error: linkError } = await supabase.functions.invoke('link-payment-method-to-booking', {
+          body: {
+            bookingId: parseInt(bookingId as string),
+            stripeSetupIntentId: setupIntentParam
+          }
+        });
+
+        if (linkError) {
+          console.error('[BookingConfirmation] Failed to link payment method:', linkError);
+          // Don't throw - we can still show the confirmation, payment can be retried later
+        } else {
+          console.log('[BookingConfirmation] Payment method linked successfully:', linkResult);
+        }
+
+        // Step 2: Process the payment (charge for urgent, authorize for non-urgent)
+        const action = isUrgent ? 'charge' : 'authorize';
+        console.log(`[BookingConfirmation] Processing payment action: ${action}`);
+        
+        const { data: paymentResult, error: paymentError } = await supabase.functions.invoke(
+          'system-payment-action',
+          {
+            body: {
+              bookingId: parseInt(bookingId as string),
+              action: action
+            }
+          }
+        );
+
+        if (paymentError || !paymentResult?.success) {
+          console.error('[BookingConfirmation] Payment processing failed:', paymentError || paymentResult);
+          // Don't navigate away - show the confirmation but note the payment issue
+        } else {
+          console.log('[BookingConfirmation] Payment processed successfully:', paymentResult);
+          setPaymentSuccess(true);
+        }
+
+      } catch (error) {
+        console.error('[BookingConfirmation] Error processing payment after redirect:', error);
+      } finally {
+        setProcessingPayment(false);
+      }
+    };
+
+    processPaymentAfterRedirect();
+  }, [bookingId, setupIntentParam, redirectStatus, isUrgent, navigate, processingPayment]);
 
   useEffect(() => {
     // Clear pending booking from session storage once we have it
@@ -51,59 +122,59 @@ const BookingConfirmation = () => {
       sessionStorage.removeItem('pending_booking_id');
     }
     
-    // Set payment success state if coming from Stripe
-    if (paymentSetupSuccess) {
+    // Set payment success state if coming from Stripe (no redirect, immediate success)
+    if (paymentSetupSuccess && !setupIntentParam) {
       setPaymentSuccess(true);
       setIsUrgentBooking(isUrgent);
-      
-      // Clear payment redirect flag since we've returned successfully
-      localStorage.removeItem('payment_redirect_in_progress');
-      
-      // Mark the quote lead as completed now that payment is done
-      const quoteSessionId = sessionStorage.getItem('pending_quote_session_id') || localStorage.getItem('quote_session_id');
-      const quoteCost = sessionStorage.getItem('pending_quote_cost');
-      
-      if (quoteSessionId && bookingId) {
-        console.log('📊 Marking quote lead as completed on Stripe return:', { quoteSessionId, bookingId, quoteCost });
-        
-        // Update localStorage to prevent beforeunload from overwriting
-        localStorage.setItem('quote_furthest_step', 'booking_completed');
-        
-        // Update the quote lead in the database
-        const updateQuoteLead = async () => {
-          try {
-            await fetch(`${SUPABASE_URL}/functions/v1/track-funnel-event`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-              },
-              body: JSON.stringify({
-                table: 'quote_leads',
-                data: {
-                  session_id: quoteSessionId,
-                  status: 'completed',
-                  furthest_step: 'booking_completed',
-                  converted_booking_id: parseInt(bookingId as string),
-                  ...(quoteCost && { calculated_quote: parseFloat(quoteCost) }),
-                  updated_at: new Date().toISOString(),
-                },
-              }),
-            });
-            console.log('✅ Quote lead marked as completed');
-            
-            // Clean up session storage
-            sessionStorage.removeItem('pending_quote_session_id');
-            sessionStorage.removeItem('pending_quote_cost');
-          } catch (err) {
-            console.error('❌ Error marking quote lead as completed:', err);
-          }
-        };
-        
-        updateQuoteLead();
-      }
     }
-  }, [pendingBookingId, bookingId, paymentSetupSuccess, isUrgent]);
+    
+    // Clear payment redirect flag since we've returned successfully
+    localStorage.removeItem('payment_redirect_in_progress');
+    
+    // Mark the quote lead as completed now that payment is done
+    const quoteSessionId = sessionStorage.getItem('pending_quote_session_id') || localStorage.getItem('quote_session_id');
+    const quoteCost = sessionStorage.getItem('pending_quote_cost');
+    
+    if (quoteSessionId && bookingId) {
+      console.log('📊 Marking quote lead as completed on Stripe return:', { quoteSessionId, bookingId, quoteCost });
+      
+      // Update localStorage to prevent beforeunload from overwriting
+      localStorage.setItem('quote_furthest_step', 'booking_completed');
+      
+      // Update the quote lead in the database
+      const updateQuoteLead = async () => {
+        try {
+          await fetch(`${SUPABASE_URL}/functions/v1/track-funnel-event`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({
+              table: 'quote_leads',
+              data: {
+                session_id: quoteSessionId,
+                status: 'completed',
+                furthest_step: 'booking_completed',
+                converted_booking_id: parseInt(bookingId as string),
+                ...(quoteCost && { calculated_quote: parseFloat(quoteCost) }),
+                updated_at: new Date().toISOString(),
+              },
+            }),
+          });
+          console.log('✅ Quote lead marked as completed');
+          
+          // Clean up session storage
+          sessionStorage.removeItem('pending_quote_session_id');
+          sessionStorage.removeItem('pending_quote_cost');
+        } catch (err) {
+          console.error('❌ Error marking quote lead as completed:', err);
+        }
+      };
+      
+      updateQuoteLead();
+    }
+  }, [pendingBookingId, bookingId, paymentSetupSuccess, isUrgent, setupIntentParam]);
 
   useEffect(() => {
     if (!bookingId) {
@@ -149,10 +220,13 @@ const BookingConfirmation = () => {
     fetchBooking();
   }, [bookingId, navigate]);
 
-  if (loading) {
+  if (loading || processingPayment) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#E8F5E9] to-[#C8E6C9]">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#E8F5E9] to-[#C8E6C9]">
         <Loader2 className="h-12 w-12 animate-spin text-[#185166]" />
+        {processingPayment && (
+          <p className="mt-4 text-[#185166] font-medium">Processing your payment...</p>
+        )}
       </div>
     );
   }
@@ -184,7 +258,7 @@ const BookingConfirmation = () => {
           <p className="text-gray-600 mb-4">Your booking #{bookingId} has been successfully created.</p>
           {paymentSuccess && (
             <p className="text-green-600 font-medium mb-4">
-              {isUrgentBooking ? 'Payment received successfully!' : 'Card details saved successfully!'}
+              {isUrgentBooking || isUrgent ? 'Payment received successfully!' : 'Card details saved successfully!'}
             </p>
           )}
           <p className="text-sm text-gray-500 mb-6">You'll receive a confirmation email shortly with all the details.</p>
@@ -216,7 +290,7 @@ const BookingConfirmation = () => {
         {paymentSuccess && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 text-center">
             <p className="text-green-700 font-medium">
-              {isUrgentBooking ? '✓ Payment received successfully!' : '✓ Card details saved successfully!'}
+              {isUrgentBooking || isUrgent ? '✓ Payment received successfully!' : '✓ Card details saved successfully!'}
             </p>
           </div>
         )}
