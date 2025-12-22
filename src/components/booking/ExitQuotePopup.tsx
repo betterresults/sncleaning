@@ -13,12 +13,23 @@ import { Mail, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+// Generic item for carpet/upholstery/mattress
+interface CleaningItem {
+  id: string;
+  name: string;
+  type?: 'carpet' | 'upholstery' | 'mattress';
+  size?: 'small' | 'medium' | 'large';
+  quantity: number;
+  price: number;
+  bothSides?: boolean;
+}
+
 interface QuoteData {
   totalCost: number;
   estimatedHours: number | null;
-  weeklyHours?: number | null; // Regular weekly hours when first deep clean is selected
-  wantsFirstDeepClean?: boolean; // Whether first deep clean option was selected
-  firstDeepCleanHours?: number | null; // Total hours for first deep clean
+  weeklyHours?: number | null;
+  wantsFirstDeepClean?: boolean;
+  firstDeepCleanHours?: number | null;
   propertyType: string;
   bedrooms: string;
   bathrooms: string;
@@ -31,6 +42,10 @@ interface QuoteData {
   shortNoticeCharge?: number;
   isFirstTimeCustomer?: boolean;
   discountAmount?: number;
+  // Carpet cleaning specific
+  carpetItems?: CleaningItem[];
+  upholsteryItems?: CleaningItem[];
+  mattressItems?: CleaningItem[];
 }
 
 interface ExitQuotePopupProps {
@@ -42,6 +57,14 @@ interface ExitQuotePopupProps {
   serviceType: string;
   onSaveEmail?: (email: string) => void;
 }
+
+// Format items for display
+const formatItemsForDisplay = (items: CleaningItem[]): string[] => {
+  return items.map(item => {
+    const bothSidesText = item.bothSides ? ' (Both sides)' : '';
+    return `${item.name}${bothSidesText} x${item.quantity} - £${(item.price * item.quantity).toFixed(2)}`;
+  });
+};
 
 export const ExitQuotePopup: React.FC<ExitQuotePopupProps> = ({
   open,
@@ -57,8 +80,8 @@ export const ExitQuotePopup: React.FC<ExitQuotePopupProps> = ({
   const [quoteSent, setQuoteSent] = useState(false);
   const { toast } = useToast();
   
-  // Check if email is already provided (valid email)
   const hasValidEmail = initialEmail && initialEmail.includes('@');
+  const isCarpetCleaning = serviceType === 'Carpet Cleaning' || serviceType === 'carpet_cleaning';
   
   // Sync email state when initialEmail changes
   React.useEffect(() => {
@@ -104,6 +127,10 @@ export const ExitQuotePopup: React.FC<ExitQuotePopupProps> = ({
             shortNoticeCharge: quoteData.shortNoticeCharge,
             isFirstTimeCustomer: quoteData.isFirstTimeCustomer,
             discountAmount: quoteData.discountAmount,
+            // Carpet cleaning specific
+            carpetItems: quoteData.carpetItems,
+            upholsteryItems: quoteData.upholsteryItems,
+            mattressItems: quoteData.mattressItems,
           },
           sessionId,
           serviceType,
@@ -112,12 +139,10 @@ export const ExitQuotePopup: React.FC<ExitQuotePopupProps> = ({
 
       if (error) throw error;
 
-      // Save the email to the quote lead session
       if (onSaveEmail) {
         onSaveEmail(email);
       }
 
-      // Show success state instead of closing
       setQuoteSent(true);
     } catch (error: any) {
       console.error('Error sending quote email:', error);
@@ -133,17 +158,21 @@ export const ExitQuotePopup: React.FC<ExitQuotePopupProps> = ({
 
   const handleClose = () => {
     onOpenChange(false);
-    // If quote was sent, allow user to leave by going back
     if (quoteSent) {
       window.history.back();
     }
   };
 
+  // Carpet cleaning item lists
+  const allCarpetItems = quoteData.carpetItems ? formatItemsForDisplay(quoteData.carpetItems) : [];
+  const allUpholsteryItems = quoteData.upholsteryItems ? formatItemsForDisplay(quoteData.upholsteryItems) : [];
+  const allMattressItems = quoteData.mattressItems ? formatItemsForDisplay(quoteData.mattressItems) : [];
+  const hasCarpetItems = allCarpetItems.length > 0 || allUpholsteryItems.length > 0 || allMattressItems.length > 0;
+
   return (
     <Dialog open={open} onOpenChange={quoteSent ? handleClose : onOpenChange}>
       <DialogContent className="sm:max-w-md rounded-2xl border-0 p-0 overflow-hidden shadow-2xl">
         {quoteSent ? (
-          // Success state - prominent green confirmation
           <div className="bg-gradient-to-br from-green-500 to-green-600 px-6 py-10 text-center">
             <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur flex items-center justify-center mx-auto mb-5">
               <CheckCircle2 className="w-12 h-12 text-white" />
@@ -165,7 +194,6 @@ export const ExitQuotePopup: React.FC<ExitQuotePopupProps> = ({
           </div>
         ) : (
           <>
-            {/* Header with softer gradient */}
             <div className="bg-gradient-to-br from-slate-700 to-slate-800 px-6 pt-6 pb-5">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-3 text-white text-xl font-light tracking-wide">
@@ -202,26 +230,65 @@ export const ExitQuotePopup: React.FC<ExitQuotePopupProps> = ({
               {quoteData.totalCost > 0 && (
                 <div className="bg-slate-50 rounded-xl p-4 space-y-2 border border-slate-100">
                   <p className="text-sm font-medium text-slate-600">Your Quote Summary</p>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">First Cleaning Cost:</span>
-                    <span className="font-semibold text-slate-800">£{quoteData.totalCost.toFixed(2)}</span>
-                  </div>
-                  {/* Show first deep clean hours if applicable, otherwise show regular estimated hours */}
-                  {(quoteData.wantsFirstDeepClean && quoteData.firstDeepCleanHours) ? (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">First Cleaning Duration:</span>
-                      <span className="font-medium text-slate-700">{quoteData.firstDeepCleanHours} hours</span>
+                  
+                  {/* Carpet cleaning specific items */}
+                  {isCarpetCleaning && hasCarpetItems ? (
+                    <div className="space-y-3">
+                      {allCarpetItems.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-xs text-slate-500 font-medium">Carpets & Rugs</p>
+                          {allCarpetItems.map((item, idx) => (
+                            <p key={idx} className="text-sm text-slate-700">{item}</p>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {allUpholsteryItems.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-xs text-slate-500 font-medium">Upholstery</p>
+                          {allUpholsteryItems.map((item, idx) => (
+                            <p key={idx} className="text-sm text-slate-700">{item}</p>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {allMattressItems.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-xs text-slate-500 font-medium">Mattresses</p>
+                          {allMattressItems.map((item, idx) => (
+                            <p key={idx} className="text-sm text-slate-700">{item}</p>
+                          ))}
+                        </div>
+                      )}
+                      
+                      <div className="flex justify-between text-sm pt-2 border-t border-slate-200">
+                        <span className="text-slate-500">Total:</span>
+                        <span className="font-semibold text-slate-800">£{quoteData.totalCost.toFixed(2)}</span>
+                      </div>
                     </div>
-                  ) : quoteData.estimatedHours && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Duration:</span>
-                      <span className="font-medium text-slate-700">{quoteData.estimatedHours} hours</span>
-                    </div>
-                  )}
-                  {quoteData.isFirstTimeCustomer && quoteData.discountAmount && quoteData.discountAmount > 0 && (
-                    <p className="text-xs text-emerald-600 font-medium">
-                      Includes 10% first-time customer discount!
-                    </p>
+                  ) : (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">First Cleaning Cost:</span>
+                        <span className="font-semibold text-slate-800">£{quoteData.totalCost.toFixed(2)}</span>
+                      </div>
+                      {(quoteData.wantsFirstDeepClean && quoteData.firstDeepCleanHours) ? (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-500">First Cleaning Duration:</span>
+                          <span className="font-medium text-slate-700">{quoteData.firstDeepCleanHours} hours</span>
+                        </div>
+                      ) : quoteData.estimatedHours && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-500">Duration:</span>
+                          <span className="font-medium text-slate-700">{quoteData.estimatedHours} hours</span>
+                        </div>
+                      )}
+                      {quoteData.isFirstTimeCustomer && quoteData.discountAmount && quoteData.discountAmount > 0 && (
+                        <p className="text-xs text-emerald-600 font-medium">
+                          Includes 10% first-time customer discount!
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
               )}

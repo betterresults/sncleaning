@@ -8,6 +8,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface CleaningItem {
+  id: string;
+  name: string;
+  type?: 'carpet' | 'upholstery' | 'mattress';
+  size?: 'small' | 'medium' | 'large';
+  quantity: number;
+  price: number;
+  bothSides?: boolean;
+}
+
 interface QuoteData {
   totalCost: number;
   estimatedHours: number | null;
@@ -23,6 +33,10 @@ interface QuoteData {
   shortNoticeCharge?: number;
   isFirstTimeCustomer?: boolean;
   discountAmount?: number;
+  // Carpet cleaning specific
+  carpetItems?: CleaningItem[];
+  upholsteryItems?: CleaningItem[];
+  mattressItems?: CleaningItem[];
 }
 
 interface QuoteEmailRequest {
@@ -57,6 +71,19 @@ const formatPropertyType = (type: string): string => {
   return type.charAt(0).toUpperCase() + type.slice(1);
 };
 
+// Format cleaning items for email display
+const formatItemsForEmail = (items: CleaningItem[]): string => {
+  if (!items || items.length === 0) return '';
+  return items.map(item => {
+    const bothSidesText = item.bothSides ? ' (Both sides)' : '';
+    return `<tr>
+      <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">${item.name}${bothSidesText}</td>
+      <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; text-align: center;">x${item.quantity}</td>
+      <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 500;">£${(item.price * item.quantity).toFixed(2)}</td>
+    </tr>`;
+  }).join('');
+};
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -71,12 +98,21 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Sending quote email to:', email);
     console.log('Quote data:', quoteData);
+    console.log('Service type:', serviceType);
+
+    const isCarpetCleaning = serviceType === 'Carpet Cleaning' || serviceType === 'carpet_cleaning';
 
     // Generate booking link with URL parameters to prefill the form
-    // This allows the link to work across different devices
     const referer = req.headers.get('referer') || req.headers.get('origin') || '';
     const baseUrl = referer ? new URL(referer).origin : 'https://sncleaningservices.co.uk';
-    const bookingPath = serviceType === 'Domestic' ? '/domestic-booking' : '/airbnb-booking';
+    
+    // Determine booking path based on service type
+    let bookingPath = '/domestic-booking';
+    if (serviceType === 'Air BnB' || serviceType === 'airbnb') {
+      bookingPath = '/airbnb-booking';
+    } else if (isCarpetCleaning) {
+      bookingPath = '/carpet-cleaning';
+    }
     
     // Build URL parameters for prefilling
     const params = new URLSearchParams();
@@ -96,13 +132,12 @@ const handler = async (req: Request): Promise<Response> => {
     if (quoteData.selectedTime) params.set('time', quoteData.selectedTime);
     if (email) params.set('email', email);
     
-    // CRITICAL: Include the calculated pricing to preserve the quoted amount
+    // Include the calculated pricing to preserve the quoted amount
     if (quoteData.totalCost) params.set('quotedCost', quoteData.totalCost.toString());
     if (quoteData.estimatedHours) params.set('quotedHours', quoteData.estimatedHours.toString());
     if (quoteData.shortNoticeCharge) params.set('shortNotice', quoteData.shortNoticeCharge.toString());
     if (quoteData.isFirstTimeCustomer !== undefined) params.set('firstTime', quoteData.isFirstTimeCustomer ? '1' : '0');
     
-    // Also include session ID for tracking purposes
     params.set('ref', sessionId);
     
     const resumeLink = `${baseUrl}${bookingPath}?${params.toString()}`;
@@ -115,7 +150,115 @@ const handler = async (req: Request): Promise<Response> => {
       ? baseCost - quoteData.totalCost 
       : 0;
 
+    // Build carpet cleaning items section
+    let carpetItemsHtml = '';
+    if (isCarpetCleaning) {
+      const hasCarpetItems = quoteData.carpetItems && quoteData.carpetItems.length > 0;
+      const hasUpholsteryItems = quoteData.upholsteryItems && quoteData.upholsteryItems.length > 0;
+      const hasMattressItems = quoteData.mattressItems && quoteData.mattressItems.length > 0;
+      
+      if (hasCarpetItems || hasUpholsteryItems || hasMattressItems) {
+        carpetItemsHtml = `
+          <h3 style="color: #1a365d; margin-top: 30px;">Items to be Cleaned</h3>
+          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <thead>
+              <tr style="background: #f8fafc;">
+                <th style="padding: 10px 0; text-align: left; color: #64748b; font-size: 14px;">Item</th>
+                <th style="padding: 10px 0; text-align: center; color: #64748b; font-size: 14px;">Qty</th>
+                <th style="padding: 10px 0; text-align: right; color: #64748b; font-size: 14px;">Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${hasCarpetItems ? `
+                <tr><td colspan="3" style="padding: 12px 0 4px; font-weight: 600; color: #1a365d;">Carpets & Rugs</td></tr>
+                ${formatItemsForEmail(quoteData.carpetItems!)}
+              ` : ''}
+              ${hasUpholsteryItems ? `
+                <tr><td colspan="3" style="padding: 12px 0 4px; font-weight: 600; color: #1a365d;">Upholstery</td></tr>
+                ${formatItemsForEmail(quoteData.upholsteryItems!)}
+              ` : ''}
+              ${hasMattressItems ? `
+                <tr><td colspan="3" style="padding: 12px 0 4px; font-weight: 600; color: #1a365d;">Mattresses</td></tr>
+                ${formatItemsForEmail(quoteData.mattressItems!)}
+              ` : ''}
+            </tbody>
+          </table>
+        `;
+      }
+    }
+
+    // Build domestic/airbnb details section
+    let domesticDetailsHtml = '';
+    if (!isCarpetCleaning) {
+      domesticDetailsHtml = `
+        <h3 style="color: #1a365d; margin-top: 30px;">Quote Details</h3>
+        <table class="details-table">
+          ${quoteData.propertyType ? `
+          <tr>
+            <td>Property Type</td>
+            <td>${formatPropertyType(quoteData.propertyType)}</td>
+          </tr>
+          ` : ''}
+          ${quoteData.bedrooms ? `
+          <tr>
+            <td>Bedrooms</td>
+            <td>${quoteData.bedrooms}</td>
+          </tr>
+          ` : ''}
+          ${quoteData.bathrooms ? `
+          <tr>
+            <td>Bathrooms</td>
+            <td>${quoteData.bathrooms}</td>
+          </tr>
+          ` : ''}
+          ${quoteData.estimatedHours ? `
+          <tr>
+            <td>Estimated Duration</td>
+            <td>${quoteData.estimatedHours} hours</td>
+          </tr>
+          ` : ''}
+          ${quoteData.serviceFrequency ? `
+          <tr>
+            <td>Frequency</td>
+            <td>${formatFrequency(quoteData.serviceFrequency)}</td>
+          </tr>
+          ` : ''}
+          ${quoteData.hasOvenCleaning ? `
+          <tr>
+            <td>Oven Cleaning</td>
+            <td>Included${quoteData.ovenType ? ` (${quoteData.ovenType})` : ''}</td>
+          </tr>
+          ` : ''}
+          ${quoteData.selectedDate ? `
+          <tr>
+            <td>Preferred Date</td>
+            <td>${formatDate(quoteData.selectedDate)}</td>
+          </tr>
+          ` : ''}
+          ${quoteData.selectedTime ? `
+          <tr>
+            <td>Preferred Time</td>
+            <td>${quoteData.selectedTime}</td>
+          </tr>
+          ` : ''}
+          ${quoteData.postcode ? `
+          <tr>
+            <td>Postcode</td>
+            <td>${quoteData.postcode.toUpperCase()}</td>
+          </tr>
+          ` : ''}
+          ${quoteData.shortNoticeCharge && quoteData.shortNoticeCharge > 0 ? `
+          <tr>
+            <td>Short Notice Fee</td>
+            <td>+£${quoteData.shortNoticeCharge.toFixed(2)}</td>
+          </tr>
+          ` : ''}
+        </table>
+      `;
+    }
+
     // Build email HTML
+    const serviceLabel = isCarpetCleaning ? 'carpet & upholstery cleaning' : `${serviceType.toLowerCase()} cleaning`;
     const emailHtml = `
 <!DOCTYPE html>
 <html>
@@ -149,18 +292,18 @@ const handler = async (req: Request): Promise<Response> => {
 <body>
   <div class="container">
     <div class="header">
-      <h1>Your Cleaning Quote</h1>
+      <h1>Your ${isCarpetCleaning ? 'Carpet Cleaning' : 'Cleaning'} Quote</h1>
       <p>SN Cleaning Services</p>
     </div>
     
     <div class="content">
       <p>Hi there,</p>
-      <p>Thank you for your interest in our ${serviceType.toLowerCase()} cleaning services! Here's your personalized quote:</p>
+      <p>Thank you for your interest in our ${serviceLabel} services! Here's your personalized quote:</p>
       
       <div class="quote-box">
         <p class="quote-label">Your Estimated Cost</p>
         <p class="quote-total">£${quoteData.totalCost.toFixed(2)}</p>
-        ${quoteData.isFirstTimeCustomer ? `
+        ${!isCarpetCleaning && quoteData.isFirstTimeCustomer ? `
         <div style="text-align: center;">
           <span class="discount-badge">🎉 10% First-Time Discount Applied!</span>
           <p style="font-size: 13px; color: #64748b; margin-top: 8px;">You save £${discount.toFixed(2)}</p>
@@ -168,44 +311,12 @@ const handler = async (req: Request): Promise<Response> => {
         ` : ''}
       </div>
       
-      <h3 style="color: #1a365d; margin-top: 30px;">Quote Details</h3>
+      ${carpetItemsHtml}
+      ${domesticDetailsHtml}
+      
+      ${quoteData.selectedDate || quoteData.selectedTime || quoteData.postcode ? `
+      <h3 style="color: #1a365d; margin-top: 30px;">Appointment Details</h3>
       <table class="details-table">
-        ${quoteData.propertyType ? `
-        <tr>
-          <td>Property Type</td>
-          <td>${formatPropertyType(quoteData.propertyType)}</td>
-        </tr>
-        ` : ''}
-        ${quoteData.bedrooms ? `
-        <tr>
-          <td>Bedrooms</td>
-          <td>${quoteData.bedrooms}</td>
-        </tr>
-        ` : ''}
-        ${quoteData.bathrooms ? `
-        <tr>
-          <td>Bathrooms</td>
-          <td>${quoteData.bathrooms}</td>
-        </tr>
-        ` : ''}
-        ${quoteData.estimatedHours ? `
-        <tr>
-          <td>Estimated Duration</td>
-          <td>${quoteData.estimatedHours} hours</td>
-        </tr>
-        ` : ''}
-        ${quoteData.serviceFrequency ? `
-        <tr>
-          <td>Frequency</td>
-          <td>${formatFrequency(quoteData.serviceFrequency)}</td>
-        </tr>
-        ` : ''}
-        ${quoteData.hasOvenCleaning ? `
-        <tr>
-          <td>Oven Cleaning</td>
-          <td>Included${quoteData.ovenType ? ` (${quoteData.ovenType})` : ''}</td>
-        </tr>
-        ` : ''}
         ${quoteData.selectedDate ? `
         <tr>
           <td>Preferred Date</td>
@@ -231,6 +342,7 @@ const handler = async (req: Request): Promise<Response> => {
         </tr>
         ` : ''}
       </table>
+      ` : ''}
       
       <div class="validity">
         <strong>⏰ This quote is valid for 7 days</strong>
@@ -263,7 +375,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResult = await resend.emails.send({
       from: 'SN Cleaning <noreply@notifications.sncleaningservices.co.uk>',
       to: [email],
-      subject: `Your Cleaning Quote: £${quoteData.totalCost.toFixed(2)} - SN Cleaning Services`,
+      subject: `Your ${isCarpetCleaning ? 'Carpet Cleaning' : 'Cleaning'} Quote: £${quoteData.totalCost.toFixed(2)} - SN Cleaning Services`,
       html: emailHtml,
     });
 

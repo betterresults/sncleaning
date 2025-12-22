@@ -6,13 +6,13 @@ import { UpholsteryMattressStep } from './steps/UpholsteryMattressStep';
 import { ScheduleStep } from './steps/ScheduleStep';
 import { CarpetCleaningSummary } from './CarpetCleaningSummary';
 import { PaymentStep } from './steps/PaymentStep';
-import { CarpetExitQuotePopup } from './CarpetExitQuotePopup';
+import { ExitQuotePopup } from '@/components/booking/ExitQuotePopup';
 import { Layers, Sofa, Calendar, CreditCard, ArrowLeft, Mail } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
-import { useCarpetQuoteTracking } from '../../hooks/useCarpetQuoteTracking';
+import { useQuoteLeadTracking } from '@/hooks/useQuoteLeadTracking';
 
 export interface CarpetCleaningItem {
   id: string;
@@ -116,8 +116,8 @@ const CarpetCleaningForm: React.FC = () => {
     totalCost: 0,
   });
 
-  // Initialize tracking
-  const { sessionId, saveQuoteLead, markCompleted } = useCarpetQuoteTracking({
+  // Initialize tracking using the shared hook
+  const { saveQuoteLead, markCompleted, sessionId } = useQuoteLeadTracking('Carpet Cleaning', {
     isAdminMode,
     adminId: adminUserId || undefined,
   });
@@ -204,7 +204,19 @@ const CarpetCleaningForm: React.FC = () => {
       // Save to tracking (non-admin only)
       if (!isAdminMode) {
         const stepName = currentStep === 1 ? 'carpets' : currentStep === 2 ? 'upholstery' : currentStep === 3 ? 'schedule' : 'payment';
-        saveQuoteLead(newData, stepName);
+        saveQuoteLead({
+          serviceType: 'Carpet Cleaning',
+          calculatedQuote: newData.totalCost,
+          selectedDate: newData.selectedDate || undefined,
+          selectedTime: newData.selectedTime,
+          firstName: newData.firstName,
+          lastName: newData.lastName,
+          email: newData.email,
+          phone: newData.phone,
+          postcode: newData.postcode,
+          furthestStep: stepName,
+          shortNoticeCharge: newData.shortNoticeCharge,
+        });
       }
       return newData;
     });
@@ -411,13 +423,30 @@ const CarpetCleaningForm: React.FC = () => {
         </div>
       </main>
 
-      {/* Exit Quote Popup */}
-      <CarpetExitQuotePopup
+      {/* Exit Quote Popup - using the shared component */}
+      <ExitQuotePopup
         open={showExitPopup}
         onOpenChange={setShowExitPopup}
         email={bookingData.email}
-        data={bookingData}
+        quoteData={{
+          totalCost: bookingData.totalCost,
+          estimatedHours: bookingData.estimatedHours,
+          propertyType: '',
+          bedrooms: '',
+          bathrooms: '',
+          serviceFrequency: '',
+          hasOvenCleaning: false,
+          ovenType: '',
+          selectedDate: bookingData.selectedDate,
+          selectedTime: bookingData.selectedTime,
+          postcode: bookingData.postcode,
+          shortNoticeCharge: bookingData.shortNoticeCharge,
+          carpetItems: bookingData.carpetItems,
+          upholsteryItems: bookingData.upholsteryItems,
+          mattressItems: bookingData.mattressItems,
+        }}
         sessionId={sessionId}
+        serviceType="Carpet Cleaning"
         onSaveEmail={(email) => updateBookingData({ email })}
       />
     </div>

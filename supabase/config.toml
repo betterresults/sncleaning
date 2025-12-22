@@ -131,6 +131,3 @@ verify_jwt = false
 
 [functions.send-sms-reply]
 verify_jwt = true
-
-[functions.send-carpet-quote-email]
-verify_jwt = false
