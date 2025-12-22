@@ -67,6 +67,7 @@ import AdminNotificationManagement from "./pages/AdminNotificationManagement";
 import ApplyToWork from "./pages/ApplyToWork";
 import InvoilessAPITest from "./pages/InvoilessAPITest";
 import AdminAirbnbFormSettings from "./pages/AdminAirbnbFormSettings";
+import AdminEndOfTenancyFormSettings from "./pages/AdminEndOfTenancyFormSettings";
 import AdminCustomerPricing from "./pages/AdminCustomerPricing";
 import CustomerWelcome from "./pages/CustomerWelcome";
 import AdminQuoteLeads from "./pages/AdminQuoteLeads";
@@ -196,6 +197,7 @@ const App = () => (
                     <Route path="/admin-notification-management" element={<AdminNotificationManagement />} />
                      <Route path="/invoiless-api-test" element={<InvoilessAPITest />} />
                      <Route path="/admin-airbnb-form-settings" element={<AdminAirbnbFormSettings />} />
+                     <Route path="/admin-end-of-tenancy-form-settings" element={<AdminEndOfTenancyFormSettings />} />
                      <Route path="/admin-customer-pricing" element={<AdminCustomerPricing />} />
                      <Route path="/admin-company-settings" element={<AdminCompanySettings />} />
                      <Route path="/admin-coverage-management" element={<AdminCoverageManagement />} />

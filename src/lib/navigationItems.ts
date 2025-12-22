@@ -299,6 +299,11 @@ export const adminNavigation = [
         icon: Home,
       },
       {
+        title: "End of Tenancy Form Settings",
+        url: "/admin-end-of-tenancy-form-settings",
+        icon: CheckSquare,
+      },
+      {
         title: "Linen Order Form",
         url: "/admin/linen",
         icon: Shirt,
