@@ -1204,12 +1204,135 @@ useEffect(() => {
         } else {
           navigate('/booking-confirmation', { state: { bookingId: result.bookingId } });
         }
-      } else {
-        // No saved payment method - use edge function to create booking and redirect to Stripe Checkout
-        // This approach handles 3D Secure properly on mobile and avoids RLS issues
-        console.log('[PaymentStep] No saved payment method - using Stripe Checkout flow');
+      } else if (setupIntentClientSecret && stripe && elements) {
+        // New customer with inline PaymentElement - confirm the SetupIntent
+        console.log('[PaymentStep] Confirming SetupIntent with inline PaymentElement...');
         
-        // Step 1: Create booking via edge function (bypasses RLS for guest users)
+        // First, confirm the SetupIntent to save the payment method
+        const { error: confirmError, setupIntent } = await stripe.confirmSetup({
+          elements,
+          confirmParams: {
+            return_url: `${window.location.origin}/booking-confirmation?payment_setup=pending`,
+          },
+          redirect: 'if_required', // Only redirect if payment method requires it (e.g., Revolut Pay)
+        });
+
+        if (confirmError) {
+          console.error('[PaymentStep] SetupIntent confirmation error:', confirmError);
+          throw new Error(confirmError.message || 'Failed to save payment method');
+        }
+
+        console.log('[PaymentStep] SetupIntent confirmed:', setupIntent?.status);
+
+        // If redirected (for Revolut Pay, etc.), the return_url will handle the rest
+        if (setupIntent?.status === 'succeeded') {
+          // Payment method saved successfully - now create the booking
+          const { data: bookingResult, error: bookingError } = await supabase.functions.invoke('create-public-booking', {
+            body: {
+              firstName: data.firstName,
+              lastName: data.lastName,
+              email: data.email,
+              phone: data.phone,
+              houseNumber: data.houseNumber,
+              street: data.street,
+              postcode: data.postcode,
+              city: data.city,
+              addressId: data.addressId,
+              propertyType: data.propertyType,
+              bedrooms: data.bedrooms,
+              bathrooms: data.bathrooms,
+              toilets: data.toilets,
+              numberOfFloors: data.numberOfFloors,
+              additionalRooms: data.additionalRooms,
+              propertyFeatures: data.propertyFeatures,
+              serviceType: subServiceType === 'domestic' ? 'Domestic' : (subServiceType === 'airbnb' ? 'Air BnB' : 'Commercial'),
+              cleaningType: data.wantsFirstDeepClean ? 'Deep Cleaning' : 'Standard Cleaning',
+              serviceFrequency: data.serviceFrequency,
+              ovenType: data.ovenType,
+              selectedDate: data.selectedDate?.toISOString(),
+              selectedTime: data.selectedTime,
+              flexibility: data.flexibility,
+              shortNoticeCharge: data.shortNoticeCharge,
+              propertyAccess: data.propertyAccess,
+              accessNotes: data.accessNotes,
+              totalCost: data.totalCost,
+              estimatedHours: data.estimatedHours,
+              totalHours: data.totalHours,
+              hourlyRate: data.hourlyRate,
+              weeklyCost: data.weeklyCost,
+              notes: data.notes,
+              paymentMethod: 'Stripe',
+              agentUserId: data.agentUserId,
+              wantsFirstDeepClean: data.wantsFirstDeepClean,
+              firstDeepCleanExtraHours: data.firstDeepCleanExtraHours,
+              stripeSetupIntentId: setupIntent.id, // Pass the SetupIntent ID for payment method linking
+              stripePaymentMethodId: setupIntent.payment_method // Pass the payment method ID
+            }
+          });
+
+          if (bookingError || !bookingResult?.success) {
+            console.error('[PaymentStep] Booking creation failed:', bookingError || bookingResult);
+            throw new Error(bookingResult?.error || bookingError?.message || 'Failed to create booking');
+          }
+
+          const bookingId = bookingResult.bookingId;
+          console.log('[PaymentStep] Booking created with payment method:', bookingId);
+
+          // For urgent bookings, charge immediately
+          if (isUrgentBooking) {
+            console.log('[PaymentStep] Urgent booking - charging immediately...');
+            const { data: chargeResult, error: chargeError } = await supabase.functions.invoke(
+              'system-payment-action',
+              {
+                body: {
+                  bookingId: bookingId,
+                  action: 'charge'
+                }
+              }
+            );
+
+            if (chargeError || !chargeResult?.success) {
+              console.error('[PaymentStep] Charge failed:', chargeError || chargeResult);
+              // Don't throw - booking is created, payment can be retried
+              toast({
+                title: "Payment Issue",
+                description: "Booking created but payment failed. We'll contact you to arrange payment.",
+                variant: "destructive"
+              });
+            }
+          } else {
+            // Non-urgent: authorize for later capture
+            console.log('[PaymentStep] Non-urgent booking - authorizing payment...');
+            const { data: authResult, error: authError } = await supabase.functions.invoke(
+              'system-payment-action',
+              {
+                body: {
+                  bookingId: bookingId,
+                  action: 'authorize'
+                }
+              }
+            );
+
+            if (authError || !authResult?.success) {
+              console.error('[PaymentStep] Authorization failed:', authError || authResult);
+              // Don't throw - booking is created, can be authorized later
+            }
+          }
+
+          // Call success callback for quote lead tracking
+          onBookingSuccess?.(bookingId);
+
+          // Navigate to confirmation page
+          navigate('/booking-confirmation', { state: { bookingId: bookingId } });
+        }
+        // If status is 'processing' or 'requires_action', the user was redirected
+        // and will return via return_url
+        return;
+      } else {
+        // Fallback: No SetupIntent available - redirect to Stripe Checkout
+        console.log('[PaymentStep] No SetupIntent - falling back to Stripe Checkout flow');
+        
+        // Create booking first
         const { data: bookingResult, error: bookingError } = await supabase.functions.invoke('create-public-booking', {
           body: {
             firstName: data.firstName,
@@ -1252,97 +1375,39 @@ useEffect(() => {
         });
 
         if (bookingError || !bookingResult?.success) {
-          console.error('[PaymentStep] Booking creation via edge function failed:', bookingError || bookingResult);
           throw new Error(bookingResult?.error || bookingError?.message || 'Failed to create booking');
         }
 
         const bookingId = bookingResult.bookingId;
         const customerId = bookingResult.customerId;
-        console.log('[PaymentStep] Booking created via edge function:', { bookingId, customerId });
 
-        // Step 2: Redirect to Stripe Checkout
-        // For urgent bookings (< 48 hours): Use stripe-send-payment-link (pay now + save card)
-        // For non-urgent bookings: Use stripe-collect-payment-method (save card for later authorization)
-        
+        // Redirect to Stripe Checkout
         const returnUrl = `${window.location.origin}/booking-confirmation?bookingId=${bookingId}&payment_setup=success${isUrgentBooking ? '&urgent=1' : ''}`;
         
-        if (isUrgentBooking) {
-          // Urgent booking: Create payment checkout to pay now and save card
-          console.log('[PaymentStep] Urgent booking - redirecting to payment checkout...');
-          
-          const { data: paymentResult, error: paymentError } = await supabase.functions.invoke('stripe-send-payment-link', {
-            body: {
-              customer_id: customerId,
-              email: data.email,
-              name: `${data.firstName} ${data.lastName}`,
-              amount: data.totalCost,
-              description: `Cleaning Service - ${data.selectedDate ? new Date(data.selectedDate).toLocaleDateString('en-GB') : 'Booking'} - #${bookingId}`,
-              booking_id: bookingId,
-              collect_payment_method: true, // Save card for future use
-              payment_method_type: 'card' // Explicitly use card to avoid automatic_payment_methods error
-            }
-          });
-
-          if (paymentError || !paymentResult?.success) {
-            console.error('[PaymentStep] Payment link creation failed:', paymentError || paymentResult);
-            throw new Error(paymentResult?.error || paymentError?.message || 'Failed to create payment link');
+        const { data: setupResult, error: setupError } = await supabase.functions.invoke('stripe-collect-payment-method', {
+          body: {
+            customer_id: customerId,
+            email: data.email,
+            name: `${data.firstName} ${data.lastName}`,
+            return_url: returnUrl,
+            booking_details: {
+              address: `${data.houseNumber || ''} ${data.street || ''}, ${data.postcode || ''}`.trim(),
+              total_cost: data.totalCost,
+              cleaning_type: data.wantsFirstDeepClean ? 'Deep Cleaning' : 'Standard Cleaning',
+              date_time: data.selectedDate?.toISOString()
+            },
+            collect_only: false,
+            send_email: false
           }
+        });
 
-          console.log('[PaymentStep] Redirecting to Stripe Checkout for payment...');
-          
-          // Store booking ID and quote tracking data for return from Stripe
-          sessionStorage.setItem('pending_booking_id', bookingId.toString());
-          sessionStorage.setItem('pending_quote_session_id', localStorage.getItem('quote_session_id') || '');
-          sessionStorage.setItem('pending_quote_cost', data.totalCost?.toString() || '');
-          
-          // Set flag to prevent beforeunload from marking as 'left'
-          localStorage.setItem('payment_redirect_in_progress', 'true');
-          
-          // Redirect to Stripe Checkout
-          window.location.href = paymentResult.payment_link_url;
-        } else {
-          // Non-urgent booking: Create setup session to collect card for later authorization
-          console.log('[PaymentStep] Non-urgent booking - redirecting to card collection...');
-          
-          const { data: setupResult, error: setupError } = await supabase.functions.invoke('stripe-collect-payment-method', {
-            body: {
-              customer_id: customerId,
-              email: data.email,
-              name: `${data.firstName} ${data.lastName}`,
-              return_url: returnUrl,
-              booking_details: {
-                address: `${data.houseNumber || ''} ${data.street || ''}, ${data.postcode || ''}`.trim(),
-                total_cost: data.totalCost,
-                cleaning_type: data.wantsFirstDeepClean ? 'Deep Cleaning' : 'Standard Cleaning',
-                date_time: data.selectedDate?.toISOString()
-              },
-              collect_only: false,
-              send_email: false, // Don't send email, customer is being redirected
-              payment_method_type: 'card' // Explicitly use card to avoid automatic_payment_methods error
-            }
-          });
-
-          if (setupError || !setupResult?.success) {
-            console.error('[PaymentStep] Card collection setup failed:', setupError || setupResult);
-            throw new Error(setupResult?.error || setupError?.message || 'Failed to setup card collection');
-          }
-
-          console.log('[PaymentStep] Redirecting to Stripe Checkout for card collection...');
-          
-          // Store booking ID and quote tracking data for return from Stripe
-          sessionStorage.setItem('pending_booking_id', bookingId.toString());
-          sessionStorage.setItem('pending_quote_session_id', localStorage.getItem('quote_session_id') || '');
-          sessionStorage.setItem('pending_quote_cost', data.totalCost?.toString() || '');
-          
-          // Set flag to prevent beforeunload from marking as 'left'
-          localStorage.setItem('payment_redirect_in_progress', 'true');
-          
-          // Redirect to Stripe Checkout
-          window.location.href = setupResult.checkout_url;
+        if (setupError || !setupResult?.success) {
+          throw new Error(setupResult?.error || setupError?.message || 'Failed to setup card collection');
         }
-        
-        // Note: User will be redirected, so we don't navigate here
-        // The return URL will handle navigation to confirmation page
+
+        sessionStorage.setItem('pending_booking_id', bookingId.toString());
+        localStorage.setItem('payment_redirect_in_progress', 'true');
+        window.location.href = setupResult.checkout_url;
         return;
       }
       
