@@ -447,63 +447,10 @@ useEffect(() => {
     return () => clearTimeout(timeoutId);
   }, [data.email, user, isAdminMode]);
 
-  // Create SetupIntent for PaymentElement when needed (new customers without saved cards)
-  useEffect(() => {
-    // Need valid email to create SetupIntent - validate first
-    const emailResult = emailSchema.safeParse(data.email);
-    if (!emailResult.success) {
-      return;
-    }
-    
-    // Also skip if still checking for guest customer
-    if (checkingGuestCustomer) {
-      return;
-    }
-    
-    const createSetupIntent = async () => {
-      // Only create SetupIntent for customer mode (not admin), when paying by card,
-      // and when customer doesn't have saved payment methods
-      // Also skip if guest has saved cards and wants to use them
-      if (isAdminMode || paymentType !== 'card' || hasPaymentMethods || loadingSetupIntent) {
-        return;
-      }
-      
-      // Skip if guest has saved cards and wants to use them
-      if (guestPaymentMethods.length > 0 && useGuestSavedCard) {
-        return;
-      }
-      
-      setLoadingSetupIntent(true);
-      try {
-        console.log('[PaymentStep] Creating SetupIntent for PaymentElement...');
-        const { data: setupData, error } = await supabase.functions.invoke('stripe-create-setup-intent', {
-          body: {
-            email: data.email,
-            name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || data.email,
-          }
-        });
-        
-        if (error) {
-          console.error('[PaymentStep] SetupIntent creation error:', error);
-          setLoadingSetupIntent(false);
-          return;
-        }
-        
-        if (setupData?.clientSecret) {
-          console.log('[PaymentStep] SetupIntent created successfully');
-          setSetupIntentClientSecret(setupData.clientSecret);
-        }
-      } catch (err) {
-        console.error('[PaymentStep] Error creating SetupIntent:', err);
-      } finally {
-        setLoadingSetupIntent(false);
-      }
-    };
-    
-    // Debounce the SetupIntent creation to avoid calling with partial email
-    const timeoutId = setTimeout(createSetupIntent, 800);
-    return () => clearTimeout(timeoutId);
-  }, [isAdminMode, paymentType, hasPaymentMethods, data.email, data.firstName, data.lastName, guestPaymentMethods.length, useGuestSavedCard, checkingGuestCustomer]);
+  // NOTE: SetupIntent creation has been moved to booking submission flow
+  // This prevents Stripe customers from being created just because someone enters an email
+  // Instead, customers are created via Stripe Checkout when they actually complete the booking
+  // The SetupIntent/PaymentElement is only used for customers who already have saved cards
 
   const validateEmail = (email: string) => {
     if (!email) {
