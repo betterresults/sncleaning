@@ -157,7 +157,7 @@ export const CarpetCleaningItemsStep: React.FC<CarpetCleaningItemsStepProps> = (
           onClick={onNext}
           className="w-full h-14 text-lg font-semibold rounded-xl"
         >
-          Continue to Upholstery & Mattress
+          Continue
         </Button>
       </div>
     </div>

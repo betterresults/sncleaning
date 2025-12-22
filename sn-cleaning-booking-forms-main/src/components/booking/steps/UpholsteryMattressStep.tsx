@@ -183,7 +183,7 @@ export const UpholsteryMattressStep: React.FC<UpholsteryMattressStepProps> = ({
           onClick={onNext}
           className="flex-1 h-14 text-lg font-semibold rounded-xl"
         >
-          Continue to Schedule
+          Continue
         </Button>
       </div>
     </div>
