@@ -422,6 +422,17 @@ useEffect(() => {
 
   // Create SetupIntent for PaymentElement when needed (new customers without saved cards)
   useEffect(() => {
+    // Need valid email to create SetupIntent - validate first
+    const emailResult = emailSchema.safeParse(data.email);
+    if (!emailResult.success) {
+      return;
+    }
+    
+    // Also skip if still checking for guest customer
+    if (checkingGuestCustomer) {
+      return;
+    }
+    
     const createSetupIntent = async () => {
       // Only create SetupIntent for customer mode (not admin), when paying by card,
       // and when customer doesn't have saved payment methods
@@ -432,11 +443,6 @@ useEffect(() => {
       
       // Skip if guest has saved cards and wants to use them
       if (guestPaymentMethods.length > 0 && useGuestSavedCard) {
-        return;
-      }
-      
-      // Need email to create SetupIntent
-      if (!data.email) {
         return;
       }
       
@@ -452,6 +458,7 @@ useEffect(() => {
         
         if (error) {
           console.error('[PaymentStep] SetupIntent creation error:', error);
+          setLoadingSetupIntent(false);
           return;
         }
         
@@ -466,8 +473,10 @@ useEffect(() => {
       }
     };
     
-    createSetupIntent();
-  }, [isAdminMode, paymentType, hasPaymentMethods, data.email, data.firstName, data.lastName, guestPaymentMethods.length, useGuestSavedCard]);
+    // Debounce the SetupIntent creation to avoid calling with partial email
+    const timeoutId = setTimeout(createSetupIntent, 800);
+    return () => clearTimeout(timeoutId);
+  }, [isAdminMode, paymentType, hasPaymentMethods, data.email, data.firstName, data.lastName, guestPaymentMethods.length, useGuestSavedCard, checkingGuestCustomer]);
 
   const validateEmail = (email: string) => {
     if (!email) {
