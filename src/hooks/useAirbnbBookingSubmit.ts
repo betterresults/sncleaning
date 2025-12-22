@@ -451,16 +451,17 @@ export const useAirbnbBookingSubmit = () => {
         service_type: (() => {
           const subType = bookingData.subServiceType || 'airbnb';
           const serviceTypeMap: Record<string, string> = {
-            'airbnb': 'Air BnB',
-            'domestic': 'Domestic',
-            'commercial': 'Commercial',
+            'airbnb': 'Airbnb Cleaning',
+            'domestic': 'Domestic Cleaning',
+            'commercial': 'Commercial Cleaning',
             'carpet': 'Carpet Cleaning',
-            'end-of-tenancy': 'End of Tenancy',
+            'end-of-tenancy': 'End of Tenancy Cleaning',
           };
           return serviceTypeMap[subType] || subType;
         })(),
-        cleaning_type: bookingData.serviceType || 'checkin-checkout', // checkin-checkout, midstay, etc.
-        frequently: bookingData.serviceFrequency || null, // weekly, biweekly, monthly, onetime
+        // cleaning_type: For Airbnb = type of cleaning (checkin-checkout, midstay), For others = frequency or specific type
+        cleaning_type: bookingData.serviceType || 'checkin-checkout',
+        frequently: bookingData.serviceFrequency || 'onetime', // Default to onetime
         
         // Dates - stored as London time without timezone conversion
         date_time: bookingDateTimeStr || null,
@@ -590,11 +591,11 @@ export const useAirbnbBookingSubmit = () => {
         const serviceTypeForLog = (() => {
           const subType = bookingData.subServiceType || 'airbnb';
           const serviceTypeMap: Record<string, string> = {
-            'airbnb': 'Air BnB',
-            'domestic': 'Domestic',
-            'commercial': 'Commercial',
+            'airbnb': 'Airbnb Cleaning',
+            'domestic': 'Domestic Cleaning',
+            'commercial': 'Commercial Cleaning',
             'carpet': 'Carpet Cleaning',
-            'end-of-tenancy': 'End of Tenancy',
+            'end-of-tenancy': 'End of Tenancy Cleaning',
           };
           return serviceTypeMap[subType] || subType;
         })();
