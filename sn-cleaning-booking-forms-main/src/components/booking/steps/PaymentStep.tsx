@@ -200,6 +200,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   // Guest customer lookup by email
   const [guestCustomerId, setGuestCustomerId] = useState<number | null>(null);
   const [guestPaymentMethods, setGuestPaymentMethods] = useState<any[]>([]);
+  const [guestCustomerName, setGuestCustomerName] = useState<string | null>(null);
   const [checkingGuestCustomer, setCheckingGuestCustomer] = useState(false);
   const [useGuestSavedCard, setUseGuestSavedCard] = useState(true);
   
@@ -370,6 +371,7 @@ useEffect(() => {
     if (user || isAdminMode || !data.email) {
       setGuestCustomerId(null);
       setGuestPaymentMethods([]);
+      setGuestCustomerName(null);
       return;
     }
     
@@ -382,17 +384,34 @@ useEffect(() => {
     const checkExistingCustomer = async () => {
       setCheckingGuestCustomer(true);
       try {
-        // Look up customer by email - only existing customers, don't create new ones yet
+        // Look up customer by email - fetch name too for welcome message
         const { data: customerData, error: customerError } = await supabase
           .from('customers')
-          .select('id')
+          .select('id, first_name, last_name, full_name, phone')
           .eq('email', data.email)
           .single();
         
         if (customerData?.id) {
           // Existing customer found
-          console.log('[PaymentStep] Found existing customer by email:', customerData.id);
+          console.log('[PaymentStep] Found existing customer by email:', customerData.id, customerData);
           setGuestCustomerId(customerData.id);
+          
+          // Store customer name for welcome message
+          const customerName = customerData.full_name || 
+            [customerData.first_name, customerData.last_name].filter(Boolean).join(' ') ||
+            null;
+          setGuestCustomerName(customerName);
+          
+          // Auto-fill name and phone if not already filled
+          if (customerData.first_name && !data.firstName) {
+            onUpdate({ firstName: customerData.first_name });
+          }
+          if (customerData.last_name && !data.lastName) {
+            onUpdate({ lastName: customerData.last_name });
+          }
+          if (customerData.phone && !data.phone) {
+            onUpdate({ phone: customerData.phone });
+          }
           
           // Fetch their saved payment methods
           const { data: methods, error: methodsError } = await supabase
@@ -413,6 +432,7 @@ useEffect(() => {
           console.log('[PaymentStep] No existing customer found for email:', data.email);
           setGuestCustomerId(null);
           setGuestPaymentMethods([]);
+          setGuestCustomerName(null);
         }
       } catch (err) {
         console.error('[PaymentStep] Error checking customer:', err);
@@ -1595,6 +1615,36 @@ useEffect(() => {
                     <p className="text-xs text-red-600 font-medium mt-1">{phoneError}</p>
                   )}
                 </div>
+
+                {/* Welcome back banner for returning guests with saved cards */}
+                {!user && guestCustomerId && guestPaymentMethods.length > 0 && !checkingGuestCustomer && (
+                  <div className="rounded-xl border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                        <Check className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-green-800">
+                          Welcome back{guestCustomerName ? `, ${guestCustomerName.split(' ')[0]}` : ''}! 👋
+                        </p>
+                        <p className="text-sm text-green-700 mt-0.5">
+                          We found your account with a saved card on file ({guestPaymentMethods[0]?.card_brand?.toUpperCase?.()} •••• {guestPaymentMethods[0]?.card_last4}).
+                        </p>
+                        <p className="text-xs text-green-600 mt-2">
+                          You can use your saved card or add a new payment method in the payment section below.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Loading indicator while checking for existing customer */}
+                {checkingGuestCustomer && (
+                  <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Checking for existing account...</span>
+                  </div>
+                )}
               </div>
             </CollapsibleContent>
           </div>
