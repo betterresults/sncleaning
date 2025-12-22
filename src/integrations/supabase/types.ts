@@ -285,6 +285,69 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_cleaners: {
+        Row: {
+          booking_id: number
+          calculated_pay: number
+          cleaner_id: number
+          created_at: string | null
+          fixed_amount: number | null
+          hourly_rate: number | null
+          hours_assigned: number | null
+          id: string
+          is_primary: boolean | null
+          payment_type: string
+          percentage_rate: number | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          booking_id: number
+          calculated_pay?: number
+          cleaner_id: number
+          created_at?: string | null
+          fixed_amount?: number | null
+          hourly_rate?: number | null
+          hours_assigned?: number | null
+          id?: string
+          is_primary?: boolean | null
+          payment_type?: string
+          percentage_rate?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          booking_id?: number
+          calculated_pay?: number
+          cleaner_id?: number
+          created_at?: string | null
+          fixed_amount?: number | null
+          hourly_rate?: number | null
+          hours_assigned?: number | null
+          id?: string
+          is_primary?: boolean | null
+          payment_type?: string
+          percentage_rate?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_cleaners_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_cleaners_cleaner_id_fkey"
+            columns: ["cleaner_id"]
+            isOneToOne: false
+            referencedRelation: "cleaners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           access: string | null
