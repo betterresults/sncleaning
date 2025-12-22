@@ -33,6 +33,9 @@ const AdminAddBooking = () => {
     } else if (serviceType === 'linen-order') {
       // Navigate to linen order form
       navigate('/admin/linen');
+    } else if (serviceType === 'carpet-cleaning') {
+      // Navigate to dedicated admin Carpet booking page
+      navigate('/admin/carpet');
     } else {
       // For all other services, show the form inline
       setSelectedService(serviceType);

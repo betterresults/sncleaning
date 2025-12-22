@@ -57,7 +57,7 @@ const getServices = (isAdminView: boolean = false) => [
     id: 'carpet-cleaning',
     title: 'Carpet Cleaning',
     icon: Layers,
-    available: isAdminView, // Available only in admin view
+    available: true, // Available for all users
     description: 'Professional carpet deep cleaning'
   },
   {
