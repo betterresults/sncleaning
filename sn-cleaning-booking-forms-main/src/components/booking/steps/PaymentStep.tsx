@@ -365,7 +365,7 @@ useEffect(() => {
   // Bank transfer is available for all customers
   const canUseBankTransfer = !isAdminMode;
 
-  // Check for existing customer by email (for guest users) - only lookup, don't create yet
+  // Check for existing customer by email (for guest users) - uses edge function to bypass RLS
   useEffect(() => {
     // Skip if logged in, admin mode, or no valid email
     if (user || isAdminMode || !data.email) {
@@ -384,45 +384,45 @@ useEffect(() => {
     const checkExistingCustomer = async () => {
       setCheckingGuestCustomer(true);
       try {
-        // Look up customer by email - fetch name too for welcome message
-        const { data: customerData, error: customerError } = await supabase
-          .from('customers')
-          .select('id, first_name, last_name, full_name, phone')
-          .eq('email', data.email)
-          .single();
+        // Use edge function to look up customer by email (bypasses RLS for guest users)
+        const { data: lookupResult, error: lookupError } = await supabase.functions.invoke('lookup-customer-by-email', {
+          body: { email: data.email }
+        });
         
-        if (customerData?.id) {
+        if (lookupError) {
+          console.error('[PaymentStep] Error looking up customer:', lookupError);
+          setGuestCustomerId(null);
+          setGuestPaymentMethods([]);
+          setGuestCustomerName(null);
+          return;
+        }
+        
+        if (lookupResult?.found && lookupResult.customer?.id) {
           // Existing customer found
-          console.log('[PaymentStep] Found existing customer by email:', customerData.id, customerData);
-          setGuestCustomerId(customerData.id);
+          console.log('[PaymentStep] Found existing customer by email:', lookupResult.customer.id, lookupResult.customer);
+          setGuestCustomerId(lookupResult.customer.id);
           
           // Store customer name for welcome message
-          const customerName = customerData.full_name || 
-            [customerData.first_name, customerData.last_name].filter(Boolean).join(' ') ||
+          const customerName = lookupResult.customer.fullName || 
+            [lookupResult.customer.firstName, lookupResult.customer.lastName].filter(Boolean).join(' ') ||
             null;
           setGuestCustomerName(customerName);
           
           // Auto-fill name and phone if not already filled
-          if (customerData.first_name && !data.firstName) {
-            onUpdate({ firstName: customerData.first_name });
+          if (lookupResult.customer.firstName && !data.firstName) {
+            onUpdate({ firstName: lookupResult.customer.firstName });
           }
-          if (customerData.last_name && !data.lastName) {
-            onUpdate({ lastName: customerData.last_name });
+          if (lookupResult.customer.lastName && !data.lastName) {
+            onUpdate({ lastName: lookupResult.customer.lastName });
           }
-          if (customerData.phone && !data.phone) {
-            onUpdate({ phone: customerData.phone });
+          if (lookupResult.customer.phone && !data.phone) {
+            onUpdate({ phone: lookupResult.customer.phone });
           }
           
-          // Fetch their saved payment methods
-          const { data: methods, error: methodsError } = await supabase
-            .from('customer_payment_methods')
-            .select('*')
-            .eq('customer_id', customerData.id)
-            .order('created_at', { ascending: false });
-          
-          if (!methodsError && methods && methods.length > 0) {
-            console.log('[PaymentStep] Found saved payment methods for guest:', methods.length);
-            setGuestPaymentMethods(methods);
+          // Use payment methods from the lookup result
+          if (lookupResult.paymentMethods && lookupResult.paymentMethods.length > 0) {
+            console.log('[PaymentStep] Found saved payment methods for guest:', lookupResult.paymentMethods.length);
+            setGuestPaymentMethods(lookupResult.paymentMethods);
             setUseGuestSavedCard(true);
           } else {
             setGuestPaymentMethods([]);
