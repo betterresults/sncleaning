@@ -566,139 +566,148 @@ export const EndOfTenancyExtrasStep: React.FC<EndOfTenancyExtrasStepProps> = ({
       {/* Steam Cleaning */}
       <div>
         <h2 className="text-xl font-bold text-slate-700 mb-4">Do You Need Professional Steam Cleaning?</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="space-y-4">
           {/* Carpet Cleaning Box */}
-          <div
-            className={`rounded-2xl border-2 overflow-hidden transition-all duration-300 cursor-pointer ${
-              hasSteamCleaningItems('carpet') || expandedSteamCleaning.includes('carpet') 
-                ? 'border-primary' 
-                : 'border-border hover:border-primary/50'
-            }`}
-          >
-            <div 
-              className={`p-4 flex items-center justify-between ${
-                hasSteamCleaningItems('carpet') ? 'bg-primary/5' : 'bg-card'
+          <div>
+            <div
+              className={`rounded-2xl border-2 overflow-hidden transition-all duration-300 cursor-pointer ${
+                hasSteamCleaningItems('carpet') || expandedSteamCleaning.includes('carpet') 
+                  ? 'border-primary' 
+                  : 'border-border hover:border-primary/50'
               }`}
               onClick={() => toggleSteamCleaningSection('carpet')}
             >
-              <div className="flex items-center gap-3">
-                <Layers className={`h-6 w-6 ${hasSteamCleaningItems('carpet') ? 'text-primary' : 'text-muted-foreground'}`} />
-                <span className={`font-bold ${hasSteamCleaningItems('carpet') ? 'text-primary' : 'text-slate-700'}`}>
-                  Carpet Cleaning
-                </span>
-                {hasSteamCleaningItems('carpet') && (
-                  <CheckCircle className="h-5 w-5 text-primary" />
+              <div 
+                className={`p-4 flex items-center justify-between ${
+                  hasSteamCleaningItems('carpet') ? 'bg-primary/5' : 'bg-card'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-full ${hasSteamCleaningItems('carpet') ? 'bg-primary/10' : 'bg-muted'}`}>
+                    <Layers className={`h-6 w-6 ${hasSteamCleaningItems('carpet') ? 'text-primary' : 'text-muted-foreground'}`} />
+                  </div>
+                  <span className={`font-bold ${hasSteamCleaningItems('carpet') ? 'text-primary' : 'text-slate-700'}`}>
+                    Carpet Cleaning
+                  </span>
+                  {hasSteamCleaningItems('carpet') && (
+                    <CheckCircle className="h-5 w-5 text-primary" />
+                  )}
+                </div>
+                {expandedSteamCleaning.includes('carpet') ? (
+                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
                 )}
               </div>
-              {expandedSteamCleaning.includes('carpet') ? (
-                <ChevronUp className="h-5 w-5 text-muted-foreground" />
-              ) : (
-                <ChevronDown className="h-5 w-5 text-muted-foreground" />
-              )}
             </div>
+            {/* Expanded Carpet Items - directly under the box */}
+            {expandedSteamCleaning.includes('carpet') && (
+              <div className="mt-2 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                <h3 className="text-lg font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                  <Layers className="h-5 w-5 text-primary" />
+                  Select Carpet Items
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {CARPET_OPTIONS.map(option => renderItemCard(option, data.carpetItems, updateCarpetItem))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Upholstery Cleaning Box */}
-          <div
-            className={`rounded-2xl border-2 overflow-hidden transition-all duration-300 cursor-pointer ${
-              hasSteamCleaningItems('upholstery') || expandedSteamCleaning.includes('upholstery') 
-                ? 'border-primary' 
-                : 'border-border hover:border-primary/50'
-            }`}
-          >
-            <div 
-              className={`p-4 flex items-center justify-between ${
-                hasSteamCleaningItems('upholstery') ? 'bg-primary/5' : 'bg-card'
+          <div>
+            <div
+              className={`rounded-2xl border-2 overflow-hidden transition-all duration-300 cursor-pointer ${
+                hasSteamCleaningItems('upholstery') || expandedSteamCleaning.includes('upholstery') 
+                  ? 'border-primary' 
+                  : 'border-border hover:border-primary/50'
               }`}
               onClick={() => toggleSteamCleaningSection('upholstery')}
             >
-              <div className="flex items-center gap-3">
-                <Sofa className={`h-6 w-6 ${hasSteamCleaningItems('upholstery') ? 'text-primary' : 'text-muted-foreground'}`} />
-                <span className={`font-bold ${hasSteamCleaningItems('upholstery') ? 'text-primary' : 'text-slate-700'}`}>
-                  Upholstery Cleaning
-                </span>
-                {hasSteamCleaningItems('upholstery') && (
-                  <CheckCircle className="h-5 w-5 text-primary" />
+              <div 
+                className={`p-4 flex items-center justify-between ${
+                  hasSteamCleaningItems('upholstery') ? 'bg-primary/5' : 'bg-card'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-full ${hasSteamCleaningItems('upholstery') ? 'bg-primary/10' : 'bg-muted'}`}>
+                    <Sofa className={`h-6 w-6 ${hasSteamCleaningItems('upholstery') ? 'text-primary' : 'text-muted-foreground'}`} />
+                  </div>
+                  <span className={`font-bold ${hasSteamCleaningItems('upholstery') ? 'text-primary' : 'text-slate-700'}`}>
+                    Upholstery Cleaning
+                  </span>
+                  {hasSteamCleaningItems('upholstery') && (
+                    <CheckCircle className="h-5 w-5 text-primary" />
+                  )}
+                </div>
+                {expandedSteamCleaning.includes('upholstery') ? (
+                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
                 )}
               </div>
-              {expandedSteamCleaning.includes('upholstery') ? (
-                <ChevronUp className="h-5 w-5 text-muted-foreground" />
-              ) : (
-                <ChevronDown className="h-5 w-5 text-muted-foreground" />
-              )}
             </div>
+            {/* Expanded Upholstery Items - directly under the box */}
+            {expandedSteamCleaning.includes('upholstery') && (
+              <div className="mt-2 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                <h3 className="text-lg font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                  <Sofa className="h-5 w-5 text-primary" />
+                  Select Upholstery Items
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {UPHOLSTERY_OPTIONS.map(option => renderItemCard(option, data.upholsteryItems, updateUpholsteryItem))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Mattress Cleaning Box */}
-          <div
-            className={`rounded-2xl border-2 overflow-hidden transition-all duration-300 cursor-pointer ${
-              hasSteamCleaningItems('mattress') || expandedSteamCleaning.includes('mattress') 
-                ? 'border-primary' 
-                : 'border-border hover:border-primary/50'
-            }`}
-          >
-            <div 
-              className={`p-4 flex items-center justify-between ${
-                hasSteamCleaningItems('mattress') ? 'bg-primary/5' : 'bg-card'
+          <div>
+            <div
+              className={`rounded-2xl border-2 overflow-hidden transition-all duration-300 cursor-pointer ${
+                hasSteamCleaningItems('mattress') || expandedSteamCleaning.includes('mattress') 
+                  ? 'border-primary' 
+                  : 'border-border hover:border-primary/50'
               }`}
               onClick={() => toggleSteamCleaningSection('mattress')}
             >
-              <div className="flex items-center gap-3">
-                <Bed className={`h-6 w-6 ${hasSteamCleaningItems('mattress') ? 'text-primary' : 'text-muted-foreground'}`} />
-                <span className={`font-bold ${hasSteamCleaningItems('mattress') ? 'text-primary' : 'text-slate-700'}`}>
-                  Mattress Cleaning
-                </span>
-                {hasSteamCleaningItems('mattress') && (
-                  <CheckCircle className="h-5 w-5 text-primary" />
+              <div 
+                className={`p-4 flex items-center justify-between ${
+                  hasSteamCleaningItems('mattress') ? 'bg-primary/5' : 'bg-card'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-full ${hasSteamCleaningItems('mattress') ? 'bg-primary/10' : 'bg-muted'}`}>
+                    <Bed className={`h-6 w-6 ${hasSteamCleaningItems('mattress') ? 'text-primary' : 'text-muted-foreground'}`} />
+                  </div>
+                  <span className={`font-bold ${hasSteamCleaningItems('mattress') ? 'text-primary' : 'text-slate-700'}`}>
+                    Mattress Cleaning
+                  </span>
+                  {hasSteamCleaningItems('mattress') && (
+                    <CheckCircle className="h-5 w-5 text-primary" />
+                  )}
+                </div>
+                {expandedSteamCleaning.includes('mattress') ? (
+                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
                 )}
               </div>
-              {expandedSteamCleaning.includes('mattress') ? (
-                <ChevronUp className="h-5 w-5 text-muted-foreground" />
-              ) : (
-                <ChevronDown className="h-5 w-5 text-muted-foreground" />
-              )}
             </div>
+            {/* Expanded Mattress Items - directly under the box */}
+            {expandedSteamCleaning.includes('mattress') && (
+              <div className="mt-2 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                <h3 className="text-lg font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                  <Bed className="h-5 w-5 text-primary" />
+                  Select Mattress Items
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {MATTRESS_OPTIONS.map(option => renderMattressCard(option))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Expanded Carpet Items */}
-        {expandedSteamCleaning.includes('carpet') && (
-          <div className="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-200">
-            <h3 className="text-lg font-semibold text-slate-700 mb-4 flex items-center gap-2">
-              <Layers className="h-5 w-5 text-primary" />
-              Select Carpet Items
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {CARPET_OPTIONS.map(option => renderItemCard(option, data.carpetItems, updateCarpetItem))}
-            </div>
-          </div>
-        )}
-
-        {/* Expanded Upholstery Items */}
-        {expandedSteamCleaning.includes('upholstery') && (
-          <div className="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-200">
-            <h3 className="text-lg font-semibold text-slate-700 mb-4 flex items-center gap-2">
-              <Sofa className="h-5 w-5 text-primary" />
-              Select Upholstery Items
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {UPHOLSTERY_OPTIONS.map(option => renderItemCard(option, data.upholsteryItems, updateUpholsteryItem))}
-            </div>
-          </div>
-        )}
-
-        {/* Expanded Mattress Items */}
-        {expandedSteamCleaning.includes('mattress') && (
-          <div className="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-200">
-            <h3 className="text-lg font-semibold text-slate-700 mb-4 flex items-center gap-2">
-              <Bed className="h-5 w-5 text-primary" />
-              Select Mattress Items
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {MATTRESS_OPTIONS.map(option => renderMattressCard(option))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Navigation Buttons */}

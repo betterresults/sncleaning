@@ -271,8 +271,15 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
         </div>
       )}
 
-      {/* Mobile: Collapsible details */}
+      {/* Mobile: Total always visible, details collapsible */}
       <div className="lg:hidden">
+        {/* Always show total on mobile */}
+        {basePrice > 0 && data.bedrooms && (
+          <div className="flex justify-between items-center mb-3 pb-3 border-b-2 border-primary">
+            <span className="text-lg font-semibold text-foreground">Total</span>
+            <span className="text-2xl font-bold text-primary">£{totalCost.toFixed(2)}</span>
+          </div>
+        )}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className="flex items-center justify-between w-full py-2 text-primary"
