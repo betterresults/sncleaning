@@ -193,37 +193,38 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter }: TodayBo
         return;
       }
 
-      // Fetch sub-cleaners data (count, total pay, and hours) for each booking
+      // Fetch additional cleaners data (count, total pay, and hours) for each booking using booking_cleaners
       const bookingIds = (bookingsData || []).map(b => b.id);
-      let subCleanersData: Record<number, { count: number; totalPay: number; totalHours: number }> = {};
+      let additionalCleanersData: Record<number, { count: number; totalPay: number; totalHours: number }> = {};
       
       if (bookingIds.length > 0) {
-        const { data: subBookingsData } = await supabase
-          .from('sub_bookings')
-          .select('primary_booking_id, cleaner_pay, hours_assigned')
-          .in('primary_booking_id', bookingIds);
+        const { data: bookingCleanersData } = await supabase
+          .from('booking_cleaners')
+          .select('booking_id, calculated_pay, hours_assigned')
+          .in('booking_id', bookingIds)
+          .eq('is_primary', false);
         
-        if (subBookingsData) {
-          subCleanersData = subBookingsData.reduce((acc, sub) => {
-            if (!acc[sub.primary_booking_id]) {
-              acc[sub.primary_booking_id] = { count: 0, totalPay: 0, totalHours: 0 };
+        if (bookingCleanersData) {
+          additionalCleanersData = bookingCleanersData.reduce((acc, cleaner) => {
+            if (!acc[cleaner.booking_id]) {
+              acc[cleaner.booking_id] = { count: 0, totalPay: 0, totalHours: 0 };
             }
-            acc[sub.primary_booking_id].count += 1;
-            acc[sub.primary_booking_id].totalPay += sub.cleaner_pay || 0;
-            acc[sub.primary_booking_id].totalHours += sub.hours_assigned || 0;
+            acc[cleaner.booking_id].count += 1;
+            acc[cleaner.booking_id].totalPay += cleaner.calculated_pay || 0;
+            acc[cleaner.booking_id].totalHours += cleaner.hours_assigned || 0;
             return acc;
           }, {} as Record<number, { count: number; totalPay: number; totalHours: number }>);
         }
       }
 
-      // Merge sub_cleaners data into bookings and recalculate primary cleaner pay
+      // Merge additional cleaners data into bookings and recalculate primary cleaner pay
       const enrichedBookings = (bookingsData || []).map(booking => {
-        const subData = subCleanersData[booking.id];
+        const additionalData = additionalCleanersData[booking.id];
         let adjustedCleanerPay = booking.cleaner_pay || 0;
         
-        // If there are sub-cleaners, recalculate primary cleaner's pay based on remaining hours
-        if (subData && subData.totalHours > 0 && booking.total_hours) {
-          const remainingHours = Math.max(0, booking.total_hours - subData.totalHours);
+        // If there are additional cleaners, recalculate primary cleaner's pay based on remaining hours
+        if (additionalData && additionalData.totalHours > 0 && booking.total_hours) {
+          const remainingHours = Math.max(0, booking.total_hours - additionalData.totalHours);
           const cleanerRate = booking.cleaner_rate || 20; // Default to £20/hour
           adjustedCleanerPay = remainingHours * cleanerRate;
         }
@@ -231,8 +232,8 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter }: TodayBo
         return {
           ...booking,
           cleaner_pay: adjustedCleanerPay,
-          sub_cleaners_count: subData?.count || 0,
-          sub_cleaners_total_pay: subData?.totalPay || 0
+          sub_cleaners_count: additionalData?.count || 0,
+          sub_cleaners_total_pay: additionalData?.totalPay || 0
         };
       });
 

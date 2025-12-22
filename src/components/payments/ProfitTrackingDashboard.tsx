@@ -75,23 +75,24 @@ export const ProfitTrackingDashboard = () => {
     
     if (!bookings || bookings.length === 0) return [];
 
-    // Get all booking IDs to fetch sub-cleaners
+    // Get all booking IDs to fetch additional cleaners
     const bookingIds = bookings.map(b => b.id);
 
-    // Fetch sub-cleaners for these bookings
-    const { data: subBookings, error: subError } = await supabase
-      .from('sub_bookings')
-      .select('primary_booking_id, cleaner_id, cleaner_pay, hours_assigned')
-      .in('primary_booking_id', bookingIds);
+    // Fetch additional cleaners for these bookings using booking_cleaners table
+    const { data: bookingCleanersData, error: cleanersError } = await supabase
+      .from('booking_cleaners')
+      .select('booking_id, cleaner_id, calculated_pay, hours_assigned')
+      .in('booking_id', bookingIds)
+      .eq('is_primary', false);
 
-    if (subError) {
-      console.error('Error fetching sub-bookings:', subError);
+    if (cleanersError) {
+      console.error('Error fetching booking_cleaners:', cleanersError);
     }
 
-    // Fetch cleaner names for all cleaners (primary + sub)
+    // Collect all cleaner IDs for name lookup
     const allCleanerIds = new Set<number>();
     bookings.forEach(b => { if (b.cleaner) allCleanerIds.add(b.cleaner); });
-    (subBookings || []).forEach(sb => { if (sb.cleaner_id) allCleanerIds.add(sb.cleaner_id); });
+    (bookingCleanersData || []).forEach(bc => { if (bc.cleaner_id) allCleanerIds.add(bc.cleaner_id); });
 
     let cleanerNames: Record<number, string> = {};
     if (allCleanerIds.size > 0) {
@@ -107,31 +108,31 @@ export const ProfitTrackingDashboard = () => {
       }
     }
 
-    // Group sub-bookings by primary booking ID
-    const subBookingsByBooking: Record<number, SubCleaner[]> = {};
-    (subBookings || []).forEach(sb => {
-      if (!subBookingsByBooking[sb.primary_booking_id]) {
-        subBookingsByBooking[sb.primary_booking_id] = [];
+    // Group additional cleaners by booking ID
+    const additionalCleanersByBooking: Record<number, SubCleaner[]> = {};
+    (bookingCleanersData || []).forEach(bc => {
+      if (!additionalCleanersByBooking[bc.booking_id]) {
+        additionalCleanersByBooking[bc.booking_id] = [];
       }
-      subBookingsByBooking[sb.primary_booking_id].push({
-        cleaner_id: sb.cleaner_id,
-        cleaner_pay: sb.cleaner_pay || 0,
-        hours_assigned: sb.hours_assigned || 0,
-        cleaner_name: cleanerNames[sb.cleaner_id] || `Cleaner ${sb.cleaner_id}`
+      additionalCleanersByBooking[bc.booking_id].push({
+        cleaner_id: bc.cleaner_id,
+        cleaner_pay: bc.calculated_pay || 0,
+        hours_assigned: bc.hours_assigned || 0,
+        cleaner_name: cleanerNames[bc.cleaner_id] || `Cleaner ${bc.cleaner_id}`
       });
     });
 
-    // Enrich bookings with sub-cleaner data and calculate total cleaner pay
+    // Enrich bookings with additional cleaner data and calculate total cleaner pay
     const enrichedBookings = bookings.map(booking => {
-      const subCleaners = subBookingsByBooking[booking.id] || [];
+      const additionalCleaners = additionalCleanersByBooking[booking.id] || [];
       const primaryPay = booking.cleaner_pay || 0;
-      const subCleanersPay = subCleaners.reduce((sum, sc) => sum + (sc.cleaner_pay || 0), 0);
+      const additionalCleanersPay = additionalCleaners.reduce((sum, ac) => sum + (ac.cleaner_pay || 0), 0);
       
       return {
         ...booking,
         cleaner_name: cleanerNames[booking.cleaner] || (booking.cleaner ? `Cleaner ${booking.cleaner}` : 'Unassigned'),
-        sub_cleaners: subCleaners,
-        total_cleaner_pay: primaryPay + subCleanersPay
+        sub_cleaners: additionalCleaners,
+        total_cleaner_pay: primaryPay + additionalCleanersPay
       };
     });
 
