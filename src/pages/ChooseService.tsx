@@ -89,9 +89,9 @@ const services = [
     id: 'end-of-tenancy',
     title: 'End Of Tenancy Cleaning',
     icon: Users,
-    available: false,
+    available: true,
     description: 'Deep clean for move-out properties',
-    gradient: 'from-gray-400 to-gray-500'
+    gradient: 'from-[#6B4E71] to-[#4A3550]'
   },
   {
     id: 'deep-cleaning',
@@ -153,6 +153,11 @@ const ChooseService = () => {
 
     if (serviceId === 'carpet-cleaning') {
       navigate(`/carpet-cleaning?postcode=${encodeURIComponent(postcode)}&email=${encodeURIComponent(email)}`);
+      return;
+    }
+
+    if (serviceId === 'end-of-tenancy') {
+      navigate(`/end-of-tenancy?postcode=${encodeURIComponent(postcode)}&email=${encodeURIComponent(email)}`);
       return;
     }
 
