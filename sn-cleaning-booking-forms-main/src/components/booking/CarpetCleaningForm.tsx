@@ -122,6 +122,11 @@ const CarpetCleaningForm: React.FC = () => {
     adminId: adminUserId || undefined,
   });
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
+
   // Check if user is admin AND on admin route
   useEffect(() => {
     const checkAdminAndLoadCustomer = async () => {
