@@ -9,9 +9,17 @@ import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Users, Plus, Trash2, Edit2 } from 'lucide-react';
+import { Users, Plus, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
+import { 
+  fetchAdditionalCleaners, 
+  addBookingCleaner, 
+  removeBookingCleaner,
+  recalculatePrimaryCleanerPay,
+  upsertPrimaryCleaner,
+  BookingCleaner
+} from '@/hooks/useBookingCleaners';
 
 interface Cleaner {
   id: number;
@@ -20,21 +28,6 @@ interface Cleaner {
   full_name: string;
   presentage_rate: number;
   hourly_rate: number;
-}
-
-interface SubCleaner {
-  id: number;
-  cleaner_id: number;
-  payment_method: 'hourly' | 'percentage';
-  hourly_rate: number | null;
-  percentage_rate: number | null;
-  hours_assigned: number;
-  cleaner_pay: number;
-  cleaner: {
-    first_name: string;
-    last_name: string;
-    full_name: string;
-  };
 }
 
 interface AssignCleanerDialogProps {
@@ -63,13 +56,14 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
   const [paymentMethod, setPaymentMethod] = useState<'hourly' | 'percentage'>('percentage');
   
   // Additional cleaners state
-  const [subCleaners, setSubCleaners] = useState<SubCleaner[]>([]);
+  const [subCleaners, setSubCleaners] = useState<BookingCleaner[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newCleanerId, setNewCleanerId] = useState<string>('');
-  const [newPaymentMethod, setNewPaymentMethod] = useState<'hourly' | 'percentage'>('percentage');
+  const [newPaymentMethod, setNewPaymentMethod] = useState<'hourly' | 'percentage' | 'fixed'>('percentage');
   const [newHours, setNewHours] = useState<string>('');
   const [newHourlyRate, setNewHourlyRate] = useState<string>('');
   const [newPercentageRate, setNewPercentageRate] = useState<string>('');
+  const [newFixedAmount, setNewFixedAmount] = useState<string>('');
   const [addingSubCleaner, setAddingSubCleaner] = useState(false);
   
   const { toast } = useToast();
@@ -104,7 +98,6 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
       setBookingTotalCost(data.total_cost || 0);
       const hours = data.total_hours || data.cleaning_time || 0;
       setBookingTotalHours(hours);
-      // Don't set customHours here - let the useEffect calculate based on sub-cleaners
       
       // Determine payment method based on existing data
       if (data.cleaner_rate != null && data.cleaner_rate > 0) {
@@ -140,22 +133,8 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
     if (!bookingId) return;
     
     try {
-      const { data, error } = await supabase
-        .from('sub_bookings')
-        .select(`
-          id,
-          cleaner_id,
-          payment_method,
-          hourly_rate,
-          percentage_rate,
-          hours_assigned,
-          cleaner_pay,
-          cleaner:cleaners(first_name, last_name, full_name)
-        `)
-        .eq('primary_booking_id', bookingId);
-
-      if (error) throw error;
-      setSubCleaners((data || []) as unknown as SubCleaner[]);
+      const data = await fetchAdditionalCleaners(bookingId);
+      setSubCleaners(data);
     } catch (error) {
       console.error('Error fetching sub cleaners:', error);
     }
@@ -218,55 +197,11 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
       const hours = parseFloat(newHours) || 0;
       const rate = parseFloat(newHourlyRate) || 0;
       return hours * rate;
-    } else {
+    } else if (newPaymentMethod === 'percentage') {
       const rate = parseFloat(newPercentageRate) || 0;
       return (bookingTotalCost * rate) / 100;
-    }
-  };
-
-  // Update the primary cleaner's pay in bookings table based on remaining hours
-  const updatePrimaryCleanerPay = async (subCleanersList: SubCleaner[]) => {
-    if (!bookingId) return;
-    
-    try {
-      // Get the current booking data
-      const { data: booking, error: bookingError } = await supabase
-        .from('bookings')
-        .select('cleaner, cleaner_rate, cleaner_percentage, total_cost, total_hours, cleaning_time')
-        .eq('id', bookingId)
-        .single();
-      
-      if (bookingError || !booking || !booking.cleaner) return;
-      
-      const totalHours = booking.total_hours || booking.cleaning_time || 0;
-      const subCleanerHours = subCleanersList.reduce((sum, sc) => sum + (sc.hours_assigned || 0), 0);
-      const primaryCleanerHours = Math.max(0, totalHours - subCleanerHours);
-      
-      let newPrimaryCleanerPay: number;
-      
-      if (booking.cleaner_rate && booking.cleaner_rate > 0) {
-        // Hourly rate
-        newPrimaryCleanerPay = primaryCleanerHours * booking.cleaner_rate;
-      } else if (booking.cleaner_percentage && booking.cleaner_percentage > 0) {
-        // Percentage rate - calculate proportionally based on hours
-        const hoursRatio = totalHours > 0 ? primaryCleanerHours / totalHours : 0;
-        newPrimaryCleanerPay = (booking.total_cost || 0) * (booking.cleaner_percentage / 100) * hoursRatio;
-      } else {
-        // Default fallback - use hourly rate of 20
-        newPrimaryCleanerPay = primaryCleanerHours * 20;
-      }
-      
-      // Update the booking with new cleaner_pay
-      const { error: updateError } = await supabase
-        .from('bookings')
-        .update({ cleaner_pay: newPrimaryCleanerPay })
-        .eq('id', bookingId);
-      
-      if (updateError) {
-        console.error('Error updating primary cleaner pay:', updateError);
-      }
-    } catch (error) {
-      console.error('Error updating primary cleaner pay:', error);
+    } else {
+      return parseFloat(newFixedAmount) || 0;
     }
   };
 
@@ -275,35 +210,22 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
     
     setAddingSubCleaner(true);
     try {
-      const cleanerPay = calculateNewCleanerPay();
       const newSubCleanerHours = parseFloat(newHours) || 0;
       
-      const { error } = await supabase
-        .from('sub_bookings')
-        .insert({
-          primary_booking_id: bookingId,
-          cleaner_id: parseInt(newCleanerId),
-          payment_method: newPaymentMethod,
-          hourly_rate: newPaymentMethod === 'hourly' ? parseFloat(newHourlyRate) : null,
-          percentage_rate: newPaymentMethod === 'percentage' ? parseFloat(newPercentageRate) : null,
-          hours_assigned: newSubCleanerHours,
-          cleaner_pay: cleanerPay
-        });
+      await addBookingCleaner({
+        bookingId,
+        cleanerId: parseInt(newCleanerId),
+        isPrimary: false,
+        paymentType: newPaymentMethod,
+        hourlyRate: newPaymentMethod === 'hourly' ? parseFloat(newHourlyRate) : undefined,
+        percentageRate: newPaymentMethod === 'percentage' ? parseFloat(newPercentageRate) : undefined,
+        fixedAmount: newPaymentMethod === 'fixed' ? parseFloat(newFixedAmount) : undefined,
+        hoursAssigned: newSubCleanerHours,
+        totalCost: bookingTotalCost
+      });
 
-      if (error) throw error;
-
-      // Update primary cleaner pay with new sub-cleaner included
-      const updatedSubCleaners = [...subCleaners, {
-        id: 0,
-        cleaner_id: parseInt(newCleanerId),
-        payment_method: newPaymentMethod,
-        hourly_rate: newPaymentMethod === 'hourly' ? parseFloat(newHourlyRate) : null,
-        percentage_rate: newPaymentMethod === 'percentage' ? parseFloat(newPercentageRate) : null,
-        hours_assigned: newSubCleanerHours,
-        cleaner_pay: cleanerPay,
-        cleaner: { first_name: '', last_name: '', full_name: '' }
-      }];
-      await updatePrimaryCleanerPay(updatedSubCleaners);
+      // Update primary cleaner pay
+      await recalculatePrimaryCleanerPay(bookingId, newSubCleanerHours);
 
       toast({ title: "Success", description: "Additional cleaner added" });
       
@@ -312,6 +234,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
       setNewHours('');
       setNewHourlyRate('');
       setNewPercentageRate('');
+      setNewFixedAmount('');
       setShowAddForm(false);
       fetchSubCleaners();
     } catch (error) {
@@ -322,18 +245,15 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
     }
   };
 
-  const handleRemoveSubCleaner = async (subCleanerId: number) => {
+  const handleRemoveSubCleaner = async (subCleanerId: string) => {
     try {
-      const { error } = await supabase
-        .from('sub_bookings')
-        .delete()
-        .eq('id', subCleanerId);
-
-      if (error) throw error;
+      const subCleaner = subCleaners.find(sc => sc.id === subCleanerId);
+      const removedHours = subCleaner?.hours_assigned || 0;
       
-      // Update primary cleaner pay with removed sub-cleaner excluded
-      const updatedSubCleaners = subCleaners.filter(sc => sc.id !== subCleanerId);
-      await updatePrimaryCleanerPay(updatedSubCleaners);
+      await removeBookingCleaner(subCleanerId);
+      
+      // Update primary cleaner pay
+      await recalculatePrimaryCleanerPay(bookingId!, -removedHours);
       
       toast({ title: "Success", description: "Additional cleaner removed" });
       fetchSubCleaners();
@@ -404,6 +324,18 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
         throw error;
       }
 
+      // Also update/create primary cleaner in booking_cleaners table
+      await upsertPrimaryCleaner(
+        bookingId,
+        parseInt(selectedCleaner),
+        paymentMethod,
+        bookingTotalCost,
+        paymentMethod === 'hourly' ? parseFloat(customHourlyRate) : undefined,
+        paymentMethod === 'percentage' ? parseFloat(customPercentageRate) : undefined,
+        undefined,
+        parseFloat(customHours) || undefined
+      );
+
       toast({
         title: "Success",
         description: `Cleaner assigned${calculatedCleanerPay ? ` with £${calculatedCleanerPay.toFixed(2)} pay` : ''}`,
@@ -441,8 +373,17 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
     !subCleaners.some(sc => sc.cleaner_id === c.id)
   );
 
-  const totalAdditionalPay = subCleaners.reduce((sum, sc) => sum + (sc.cleaner_pay || 0), 0);
+  const totalAdditionalPay = subCleaners.reduce((sum, sc) => sum + (sc.calculated_pay || 0), 0);
   const totalCleanersPay = (calculatedCleanerPay || 0) + totalAdditionalPay;
+
+  const getPaymentMethodLabel = (paymentType: string) => {
+    switch (paymentType) {
+      case 'hourly': return 'Hourly';
+      case 'percentage': return 'Percentage';
+      case 'fixed': return 'Fixed';
+      default: return paymentType;
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -481,7 +422,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
           </div>
 
           {/* Main cleaner payment details */}
-          {selectedCleaner && (
+          {selectedCleaner && selectedCleaner !== 'unassigned' && (
             <div className="bg-primary/5 rounded-lg p-4 space-y-3">
               <RadioGroup 
                 value={paymentMethod} 
@@ -554,7 +495,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
               {/* Show primary cleaner's assigned hours info */}
               {paymentMethod === 'hourly' && subCleaners.length > 0 && (
                 <div className="text-xs text-muted-foreground">
-                  Total booking hours: {bookingTotalHours}h • Sub-cleaners: {subCleaners.reduce((sum, sc) => sum + (sc.hours_assigned || 0), 0)}h
+                  Total booking hours: {bookingTotalHours}h • Additional cleaners: {subCleaners.reduce((sum, sc) => sum + (sc.hours_assigned || 0), 0)}h
                 </div>
               )}
             </div>
@@ -587,11 +528,11 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                             {sc.cleaner?.full_name || `${sc.cleaner?.first_name} ${sc.cleaner?.last_name}`}
                           </span>
                           <Badge variant="outline" className="text-xs">
-                            {sc.payment_method === 'hourly' ? 'Hourly' : 'Percentage'}
+                            {getPaymentMethodLabel(sc.payment_type)}
                           </Badge>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold">£{sc.cleaner_pay?.toFixed(2)}</span>
+                          <span className="text-sm font-semibold">£{sc.calculated_pay?.toFixed(2)}</span>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -626,7 +567,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                       <>
                         <RadioGroup 
                           value={newPaymentMethod} 
-                          onValueChange={(v) => setNewPaymentMethod(v as 'hourly' | 'percentage')}
+                          onValueChange={(v) => setNewPaymentMethod(v as 'hourly' | 'percentage' | 'fixed')}
                           className="flex gap-4"
                         >
                           <div className="flex items-center space-x-2">
@@ -637,9 +578,13 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                             <RadioGroupItem value="hourly" id="new-hourly" />
                             <Label htmlFor="new-hourly" className="text-xs">Hourly</Label>
                           </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="fixed" id="new-fixed" />
+                            <Label htmlFor="new-fixed" className="text-xs">Fixed</Label>
+                          </div>
                         </RadioGroup>
 
-                        {newPaymentMethod === 'hourly' ? (
+                        {newPaymentMethod === 'hourly' && (
                           <div className="grid grid-cols-2 gap-2">
                             <div className="space-y-1">
                               <Label className="text-xs text-muted-foreground">Hours</Label>
@@ -664,7 +609,9 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                               />
                             </div>
                           </div>
-                        ) : (
+                        )}
+
+                        {newPaymentMethod === 'percentage' && (
                           <div className="space-y-1">
                             <Label className="text-xs text-muted-foreground">Percentage (%)</Label>
                             <Input
@@ -674,6 +621,20 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                               max="100"
                               value={newPercentageRate}
                               onChange={(e) => setNewPercentageRate(e.target.value)}
+                              className="h-8"
+                            />
+                          </div>
+                        )}
+
+                        {newPaymentMethod === 'fixed' && (
+                          <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Fixed Amount (£)</Label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={newFixedAmount}
+                              onChange={(e) => setNewFixedAmount(e.target.value)}
                               className="h-8"
                             />
                           </div>
