@@ -416,38 +416,37 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
         {!isHouseShare && (
           <div>
             <h2 className="text-2xl font-bold text-slate-700 mb-4">Additional Rooms</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="space-y-2">
               {ADDITIONAL_ROOMS.map((room) => {
                 const isSelected = data.additionalRooms?.includes(room.id);
                 const Icon = room.icon;
                 return (
-                  <button
+                  <div
                     key={room.id}
-                    className={`group relative h-32 rounded-2xl border transition-all duration-300 ${
-                      isSelected ? 'border-primary bg-primary/5 shadow-md' : 'border-border bg-card hover:border-primary/50 hover:shadow-sm'
+                    className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-300 ${
+                      isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
                     }`}
-                    onClick={() => toggleAdditionalRoom(room.id)}
                   >
-                    <div className="flex flex-col items-center justify-center h-full p-3">
-                      <div className={`p-2.5 rounded-full mb-2 transition-colors ${
-                        isSelected ? 'bg-primary/10' : 'bg-muted group-hover:bg-primary/10'
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg transition-colors ${
+                        isSelected ? 'bg-primary/10' : 'bg-muted'
                       }`}>
-                        <Icon className={`h-7 w-7 transition-colors ${
-                          isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                        <Icon className={`h-5 w-5 transition-colors ${
+                          isSelected ? 'text-primary' : 'text-muted-foreground'
                         }`} />
                       </div>
-                      <span className={`text-sm font-bold text-center leading-tight transition-colors ${
-                        isSelected ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
+                      <span className={`text-sm font-bold transition-colors ${
+                        isSelected ? 'text-primary' : 'text-slate-700'
                       }`}>
                         {room.label}
                       </span>
-                      {isSelected && (
-                        <div className="absolute top-2 right-2">
-                          <CheckCircle className="h-5 w-5 text-primary" />
-                        </div>
-                      )}
                     </div>
-                  </button>
+                    <Switch
+                      checked={isSelected}
+                      onCheckedChange={() => toggleAdditionalRoom(room.id)}
+                      className={`${!isSelected ? 'border-2 border-border' : ''}`}
+                    />
+                  </div>
                 );
               })}
             </div>
