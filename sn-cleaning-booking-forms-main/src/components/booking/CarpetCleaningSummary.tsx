@@ -137,7 +137,7 @@ export const CarpetCleaningSummary: React.FC<CarpetCleaningSummaryProps> = ({
         {items.map((item, idx) => (
           <div key={idx} className="flex justify-between items-center pl-2">
             <span className="text-sm text-foreground">
-              {item.name} {item.size && `(${item.size})`} x{item.quantity}
+              {item.name}{item.bothSides ? ' (Both sides)' : ''} x{item.quantity}
             </span>
             <span className="text-sm font-medium text-foreground">
               £{(item.price * item.quantity).toFixed(2)}

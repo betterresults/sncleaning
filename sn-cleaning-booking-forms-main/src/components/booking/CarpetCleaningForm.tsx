@@ -19,6 +19,7 @@ export interface CarpetCleaningItem {
   size?: 'small' | 'medium' | 'large';
   quantity: number;
   price: number;
+  bothSides?: boolean;
 }
 
 export interface CarpetCleaningData {
