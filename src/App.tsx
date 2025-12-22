@@ -38,6 +38,7 @@ import CreateCustomerAccounts from "./pages/CreateCustomerAccounts";
 import AirbnbBooking from "./pages/AirbnbBooking";
 import DomesticBooking from "./pages/DomesticBooking";
 import CarpetBooking from "./pages/CarpetBooking";
+import EndOfTenancyBooking from "./pages/EndOfTenancyBooking";
 import AdminDomesticFormSettings from "./pages/AdminDomesticFormSettings";
 import LinenOrder from "./pages/LinenOrder";
 import BookingConfirmation from "./pages/BookingConfirmation";
@@ -172,6 +173,9 @@ const App = () => (
                 <Route path="/admin/domestic" element={<DomesticBooking />} />
                 <Route path="/admin/carpet" element={<CarpetBooking />} />
                 <Route path="/carpet-cleaning" element={<CarpetBooking />} />
+                <Route path="/end-of-tenancy" element={<EndOfTenancyBooking />} />
+                <Route path="/end-of-tenancy-cleaning" element={<EndOfTenancyBooking />} />
+                <Route path="/admin/end-of-tenancy" element={<EndOfTenancyBooking />} />
                 <Route path="/admin/linen" element={<LinenOrder />} />
                <Route path="/admin-domestic-form-settings" element={<AdminDomesticFormSettings />} />
                <Route path="/photos/:folderName" element={<CustomerPhotos />} />
