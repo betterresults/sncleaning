@@ -67,6 +67,7 @@ serve(async (req) => {
       customer_email: customerId ? undefined : user.email,
       line_items: lineItems,
       mode: "payment",
+      automatic_tax: { enabled: false },
       success_url: `${req.headers.get("origin")}/customer-dashboard?payment=success`,
       cancel_url: `${req.headers.get("origin")}/customer-dashboard?payment=cancelled`,
       metadata: {
