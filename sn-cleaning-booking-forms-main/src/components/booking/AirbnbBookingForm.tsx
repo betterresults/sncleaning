@@ -436,6 +436,7 @@ const AirbnbBookingForm: React.FC = () => {
               onUpdate={updateBookingData}
               onBack={prevStep}
               isAdminMode={isAdminMode}
+              stripePromise={stripePromise}
               onBookingAttempt={() => trackBookingAttempt({
                 email: bookingData.email,
                 phone: bookingData.phone,
