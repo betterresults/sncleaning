@@ -143,12 +143,12 @@ export const CarpetCleaningItemsStep: React.FC<CarpetCleaningItemsStepProps> = (
 
   return (
     <div className="space-y-6">
-      {/* Carpet Cleaning Section */}
-      <div className="bg-white rounded-2xl p-5 border border-border shadow-sm">
-        {renderSectionHeader()}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {carpetOptions.map(option => renderItemCard(option))}
-        </div>
+      {/* Section Header */}
+      {renderSectionHeader()}
+      
+      {/* Carpet Items Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {carpetOptions.map(option => renderItemCard(option))}
       </div>
 
       {/* Continue Button */}
