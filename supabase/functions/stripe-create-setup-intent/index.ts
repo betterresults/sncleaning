@@ -69,12 +69,9 @@ serve(async (req) => {
         .maybeSingle();
 
       stripeCustomerId = existingPaymentMethod?.stripe_customer_id;
-    }
-
-    // If no existing Stripe customer, find or create one
-    if (!stripeCustomerId) {
-      // First try to find by internal_customer_id in metadata (if we have one)
-      if (internalCustomerId && internalCustomerId > 0) {
+      
+      // If no existing Stripe customer ID in our DB, try to find by metadata
+      if (!stripeCustomerId) {
         const existingCustomers = await stripe.customers.search({
           query: `metadata['internal_customer_id']:'${internalCustomerId}'`,
           limit: 1,
@@ -85,50 +82,37 @@ serve(async (req) => {
           console.log("Found existing Stripe customer by metadata:", stripeCustomerId);
         }
       }
-      
-      // If still no customer, search by email as fallback for guests
-      if (!stripeCustomerId) {
-        const existingByEmail = await stripe.customers.list({
-          email: customerEmail,
-          limit: 1,
-        });
-
-        if (existingByEmail.data.length > 0) {
-          stripeCustomerId = existingByEmail.data[0].id;
-          console.log("Found existing Stripe customer by email:", stripeCustomerId);
-        }
-      }
-
-      // Create new Stripe customer if none found
-      if (!stripeCustomerId) {
-        const newCustomer = await stripe.customers.create({
-          email: customerEmail,
-          name: customerName || undefined,
-          metadata: internalCustomerId && internalCustomerId > 0 ? {
-            internal_customer_id: internalCustomerId.toString(),
-          } : {},
-        });
-        stripeCustomerId = newCustomer.id;
-        console.log("Created new Stripe customer:", stripeCustomerId);
-      }
     }
 
-    // Create a SetupIntent with automatic payment methods enabled
-    // This allows Stripe to show all enabled payment methods (Revolut Pay, Amazon Pay, etc.)
-    const setupIntent = await stripe.setupIntents.create({
-      customer: stripeCustomerId,
+    // IMPORTANT: Do NOT create a new Stripe customer here just for showing the PaymentElement
+    // Stripe customers should only be created when the booking is actually completed
+    // If we don't have an existing customer, create SetupIntent without customer attachment
+    // The customer will be created/attached when the payment is confirmed via webhook
+    
+    // Create a SetupIntent - with or without customer
+    const setupIntentParams: any = {
       automatic_payment_methods: { 
         enabled: true,
         allow_redirects: 'always' // Allow redirect-based payment methods like Revolut Pay
       },
-      metadata: internalCustomerId && internalCustomerId > 0 ? {
-        internal_customer_id: internalCustomerId.toString(),
-      } : {
+      metadata: {
         guest_email: customerEmail,
+        guest_name: customerName || '',
+        ...(internalCustomerId && internalCustomerId > 0 ? { internal_customer_id: internalCustomerId.toString() } : {}),
       },
-    });
+    };
 
-    console.log("Created SetupIntent:", setupIntent.id, "for Stripe customer:", stripeCustomerId);
+    // Only attach customer if we found an existing one
+    if (stripeCustomerId) {
+      setupIntentParams.customer = stripeCustomerId;
+      console.log("Attaching existing Stripe customer:", stripeCustomerId);
+    } else {
+      console.log("Creating SetupIntent without customer - customer will be created on booking completion");
+    }
+
+    const setupIntent = await stripe.setupIntents.create(setupIntentParams);
+
+    console.log("Created SetupIntent:", setupIntent.id, stripeCustomerId ? `for Stripe customer: ${stripeCustomerId}` : "without customer");
 
     return new Response(
       JSON.stringify({
