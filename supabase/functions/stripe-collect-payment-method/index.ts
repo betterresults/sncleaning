@@ -82,6 +82,7 @@ const handler = async (req: Request): Promise<Response> => {
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: stripeCustomer.id,
       mode: 'setup',
+      automatic_payment_methods: { enabled: true },
       payment_method_options: {
         card: {
           request_three_d_secure: 'automatic'
