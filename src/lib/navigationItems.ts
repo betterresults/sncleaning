@@ -1,4 +1,4 @@
-import { Briefcase, Calendar, History, DollarSign, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package, TrendingUp, Activity, Bell, CheckSquare, TestTube, Shirt, Target, Map, ClipboardList } from 'lucide-react';
+import { Briefcase, Calendar, History, DollarSign, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package, TrendingUp, Activity, Bell, CheckSquare, TestTube, Shirt, Target, Map, ClipboardList, MessageSquareText } from 'lucide-react';
 
 export const cleanerNavigation = [
   {
@@ -226,6 +226,11 @@ export const adminNavigation = [
         title: "Activity Logs",
         url: "/admin-activity-logs",
         icon: Activity,
+      },
+      {
+        title: "SMS Messages",
+        url: "/admin-sms-messages",
+        icon: MessageSquareText,
       },
       {
         title: "Quote Leads",

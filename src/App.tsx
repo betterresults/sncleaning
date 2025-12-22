@@ -20,6 +20,7 @@ import CleanerCompletedBookingsPage from "./pages/CleanerCompletedBookingsPage";
 import CustomerMessages from "./pages/CustomerMessages";
 import CleanerMessages from "./pages/CleanerMessages";
 import AdminChatManagement from "./pages/AdminChatManagement";
+import AdminSMSMessages from "./pages/AdminSMSMessages";
 
 import AdminCompanySettings from "./pages/AdminCompanySettings";
 import CleanerPastBookings from "./pages/CleanerPastBookings";
@@ -151,6 +152,7 @@ const App = () => (
            <Route path="/customer-messages" element={<CustomerMessages />} />
            <Route path="/cleaner-messages" element={<CleanerMessages />} />
            <Route path="/admin-chat-management" element={<AdminChatManagement />} />
+           <Route path="/admin-sms-messages" element={<AdminSMSMessages />} />
            
               <Route path="/cleaner-available-bookings" element={<CleanerAvailableBookings />} />
             <Route path="/cleaner-past-bookings" element={<CleanerPastBookings />} />
