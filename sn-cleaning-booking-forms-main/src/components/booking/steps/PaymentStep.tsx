@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
@@ -223,8 +223,11 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   const [loadingSetupIntent, setLoadingSetupIntent] = useState(false);
   const [paymentElementReady, setPaymentElementReady] = useState(false);
   
-  // Function to confirm SetupIntent from inside PaymentElementWrapper
-  const [confirmSetupFn, setConfirmSetupFn] = useState<(() => Promise<{ setupIntent?: any; error?: any }>) | null>(null);
+  // Ref to store confirmSetup function from PaymentElementWrapper (using ref to avoid React function-in-state issues)
+  const confirmSetupFnRef = useRef<(() => Promise<{ setupIntent?: any; error?: any }>) | null>(null);
+  const setConfirmSetupFn = useCallback((fn: () => Promise<{ setupIntent?: any; error?: any }>) => {
+    confirmSetupFnRef.current = fn;
+  }, []);
   
   // Guest customer lookup by email
   const [guestCustomerId, setGuestCustomerId] = useState<number | null>(null);
@@ -1232,12 +1235,12 @@ useEffect(() => {
         } else {
           navigate('/booking-confirmation', { state: { bookingId: result.bookingId } });
         }
-      } else if (setupIntentClientSecret && confirmSetupFn) {
+      } else if (setupIntentClientSecret && confirmSetupFnRef.current) {
         // New customer with inline PaymentElement - confirm the SetupIntent
         console.log('[PaymentStep] Confirming SetupIntent with mounted PaymentElement...');
         
         // Call the confirmSetup function registered by PaymentElementInner
-        const { error: confirmError, setupIntent } = await confirmSetupFn();
+        const { error: confirmError, setupIntent } = await confirmSetupFnRef.current();
 
         if (confirmError) {
           console.error('[PaymentStep] SetupIntent confirmation error:', confirmError);
