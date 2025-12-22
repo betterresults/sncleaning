@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { CarpetCleaningData, CarpetCleaningItem } from '../CarpetCleaningForm';
-import { Plus, Minus, Layers, Sofa, Bed, BedDouble, BedSingle, Tv, UtensilsCrossed, Armchair, CircleDot, Theater, TrendingUp, DoorOpen, SquareStack, Crown, type LucideIcon } from 'lucide-react';
+import { Plus, Minus, Layers, BedDouble, BedSingle, Tv, UtensilsCrossed, TrendingUp, DoorOpen, SquareStack, Crown, type LucideIcon } from 'lucide-react';
 
 interface CarpetCleaningItemsStepProps {
   data: CarpetCleaningData;
@@ -23,25 +23,6 @@ const carpetOptions: { id: string; name: string; size: 'small' | 'medium' | 'lar
   { id: 'hallway', name: 'Hallway', size: 'small', description: 'Entrance/corridor', price: 25, icon: DoorOpen },
 ];
 
-// Upholstery items with pricing and icons
-const upholsteryOptions: { id: string; name: string; size: 'small' | 'medium' | 'large'; description: string; price: number; icon: LucideIcon }[] = [
-  { id: 'sofa_2seat', name: '2-Seater Sofa', size: 'small', description: 'Love seat', price: 45, icon: Sofa },
-  { id: 'sofa_3seat', name: '3-Seater Sofa', size: 'medium', description: 'Standard sofa', price: 60, icon: Sofa },
-  { id: 'sofa_corner', name: 'Corner Sofa', size: 'large', description: 'L-shaped sectional', price: 85, icon: Sofa },
-  { id: 'armchair', name: 'Armchair', size: 'small', description: 'Single chair', price: 30, icon: Armchair },
-  { id: 'dining_chair', name: 'Dining Chair', size: 'small', description: 'Fabric seat', price: 15, icon: UtensilsCrossed },
-  { id: 'ottoman', name: 'Ottoman', size: 'small', description: 'Fabric ottoman', price: 20, icon: CircleDot },
-  { id: 'curtains', name: 'Curtain Panel', size: 'medium', description: 'Per panel', price: 25, icon: Theater },
-];
-
-// Mattress items with pricing and icons
-const mattressOptions: { id: string; name: string; size: 'small' | 'medium' | 'large'; description: string; price: number; icon: LucideIcon }[] = [
-  { id: 'mattress_single', name: 'Single Mattress', size: 'small', description: '90x190cm', price: 35, icon: BedSingle },
-  { id: 'mattress_double', name: 'Double Mattress', size: 'medium', description: '135x190cm', price: 45, icon: BedDouble },
-  { id: 'mattress_king', name: 'King Mattress', size: 'large', description: '150x200cm', price: 55, icon: Bed },
-  { id: 'mattress_superking', name: 'Super King', size: 'large', description: '180x200cm', price: 65, icon: Crown },
-];
-
 export const CarpetCleaningItemsStep: React.FC<CarpetCleaningItemsStepProps> = ({
   data,
   onUpdate,
@@ -53,15 +34,13 @@ export const CarpetCleaningItemsStep: React.FC<CarpetCleaningItemsStepProps> = (
   };
 
   const updateItemQuantity = (
-    type: 'carpet' | 'upholstery' | 'mattress',
     id: string,
     name: string,
     size: 'small' | 'medium' | 'large',
     price: number,
     delta: number
   ) => {
-    const key = type === 'carpet' ? 'carpetItems' : type === 'upholstery' ? 'upholsteryItems' : 'mattressItems';
-    const items = [...data[key]];
+    const items = [...data.carpetItems];
     const existingIndex = items.findIndex(i => i.id === id);
     
     if (existingIndex >= 0) {
@@ -72,27 +51,16 @@ export const CarpetCleaningItemsStep: React.FC<CarpetCleaningItemsStepProps> = (
         items[existingIndex] = { ...items[existingIndex], quantity: newQuantity };
       }
     } else if (delta > 0) {
-      items.push({ id, name, type, size, quantity: 1, price });
+      items.push({ id, name, type: 'carpet', size, quantity: 1, price });
     }
     
-    onUpdate({ [key]: items });
+    onUpdate({ carpetItems: items });
   };
-
-  const getTotalItemCount = () => {
-    const carpetCount = data.carpetItems.reduce((sum, item) => sum + item.quantity, 0);
-    const upholsteryCount = data.upholsteryItems.reduce((sum, item) => sum + item.quantity, 0);
-    const mattressCount = data.mattressItems.reduce((sum, item) => sum + item.quantity, 0);
-    return carpetCount + upholsteryCount + mattressCount;
-  };
-
-  const canContinue = getTotalItemCount() > 0;
 
   const renderItemCard = (
-    option: { id: string; name: string; size: 'small' | 'medium' | 'large'; description: string; price: number; icon: LucideIcon },
-    type: 'carpet' | 'upholstery' | 'mattress',
-    items: CarpetCleaningItem[]
+    option: { id: string; name: string; size: 'small' | 'medium' | 'large'; description: string; price: number; icon: LucideIcon }
   ) => {
-    const quantity = getItemQuantity(items, option.id);
+    const quantity = getItemQuantity(data.carpetItems, option.id);
     const isSelected = quantity > 0;
     const IconComponent = option.icon;
 
@@ -104,7 +72,7 @@ export const CarpetCleaningItemsStep: React.FC<CarpetCleaningItemsStepProps> = (
         }`}
         onClick={() => {
           if (quantity === 0) {
-            updateItemQuantity(type, option.id, option.name, option.size, option.price, 1);
+            updateItemQuantity(option.id, option.name, option.size, option.price, 1);
           }
         }}
       >
@@ -123,7 +91,7 @@ export const CarpetCleaningItemsStep: React.FC<CarpetCleaningItemsStepProps> = (
                 className="h-8 w-8 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
                 onClick={(e) => {
                   e.stopPropagation();
-                  updateItemQuantity(type, option.id, option.name, option.size, option.price, -1);
+                  updateItemQuantity(option.id, option.name, option.size, option.price, -1);
                 }}
               >
                 <Minus className="h-4 w-4" />
@@ -137,7 +105,7 @@ export const CarpetCleaningItemsStep: React.FC<CarpetCleaningItemsStepProps> = (
                 className="h-8 w-8 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
                 onClick={(e) => {
                   e.stopPropagation();
-                  updateItemQuantity(type, option.id, option.name, option.size, option.price, 1);
+                  updateItemQuantity(option.id, option.name, option.size, option.price, 1);
                 }}
               >
                 <Plus className="h-4 w-4" />
@@ -159,44 +127,27 @@ export const CarpetCleaningItemsStep: React.FC<CarpetCleaningItemsStepProps> = (
     );
   };
 
-  const renderSectionHeader = (title: string, icon: LucideIcon, description: string, color: string) => {
-    const IconComponent = icon;
+  const renderSectionHeader = () => {
     return (
-      <div className={`flex items-center gap-4 p-4 rounded-xl ${color} mb-4`}>
+      <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 mb-4">
         <div className="p-3 rounded-xl bg-white/80 shadow-sm">
-          <IconComponent className="h-6 w-6 text-slate-700" />
+          <Layers className="h-6 w-6 text-slate-700" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-slate-800">{title}</h2>
-          <p className="text-sm text-slate-600">{description}</p>
+          <h2 className="text-xl font-bold text-slate-800">Carpet Cleaning</h2>
+          <p className="text-sm text-slate-600">Rugs, room carpets, stairs & hallways</p>
         </div>
       </div>
     );
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Carpet Cleaning Section */}
       <div className="bg-white rounded-2xl p-5 border border-border shadow-sm">
-        {renderSectionHeader('Carpet Cleaning', Layers, 'Rugs, room carpets, stairs & hallways', 'bg-gradient-to-r from-amber-50 to-orange-50')}
+        {renderSectionHeader()}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {carpetOptions.map(option => renderItemCard(option, 'carpet', data.carpetItems))}
-        </div>
-      </div>
-
-      {/* Upholstery Cleaning Section */}
-      <div className="bg-white rounded-2xl p-5 border border-border shadow-sm">
-        {renderSectionHeader('Upholstery Cleaning', Sofa, 'Sofas, chairs, ottomans & curtains', 'bg-gradient-to-r from-blue-50 to-indigo-50')}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {upholsteryOptions.map(option => renderItemCard(option, 'upholstery', data.upholsteryItems))}
-        </div>
-      </div>
-
-      {/* Mattress Cleaning Section */}
-      <div className="bg-white rounded-2xl p-5 border border-border shadow-sm">
-        {renderSectionHeader('Mattress Cleaning', Bed, 'Deep clean & sanitize mattresses', 'bg-gradient-to-r from-purple-50 to-pink-50')}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {mattressOptions.map(option => renderItemCard(option, 'mattress', data.mattressItems))}
+          {carpetOptions.map(option => renderItemCard(option))}
         </div>
       </div>
 
@@ -204,16 +155,10 @@ export const CarpetCleaningItemsStep: React.FC<CarpetCleaningItemsStepProps> = (
       <div className="pt-4">
         <Button
           onClick={onNext}
-          disabled={!canContinue}
           className="w-full h-14 text-lg font-semibold rounded-xl"
         >
-          Continue to Schedule
+          Continue to Upholstery & Mattress
         </Button>
-        {!canContinue && (
-          <p className="text-center text-sm text-muted-foreground mt-2">
-            Please select at least one item to continue
-          </p>
-        )}
       </div>
     </div>
   );
