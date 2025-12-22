@@ -512,6 +512,8 @@ const EndOfTenancyBookingForm: React.FC = () => {
         open={showExitPopup}
         onOpenChange={setShowExitPopup}
         email={bookingData.email}
+        sessionId={sessionId}
+        serviceType="End of Tenancy"
         quoteData={{
           totalCost: bookingData.totalCost,
           estimatedHours: bookingData.estimatedHours,
@@ -529,10 +531,9 @@ const EndOfTenancyBookingForm: React.FC = () => {
           upholsteryItems: bookingData.upholsteryItems,
           mattressItems: bookingData.mattressItems,
         }}
-        onEmailSubmit={(email) => {
+        onSaveEmail={(email) => {
           updateBookingData({ email });
         }}
-        onClose={() => setShowExitPopup(false)}
       />
     </div>
   );
