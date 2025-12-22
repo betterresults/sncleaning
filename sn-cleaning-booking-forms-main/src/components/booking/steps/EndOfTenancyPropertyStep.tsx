@@ -1,7 +1,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { EndOfTenancyBookingData } from '../EndOfTenancyBookingForm';
-import { Home, Building, Users, Plus, Minus, CheckCircle, ChefHat } from 'lucide-react';
+import { Home, Building, Users, Plus, Minus, CheckCircle, Info, Microwave } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface EndOfTenancyPropertyStepProps {
@@ -18,10 +20,26 @@ const PROPERTY_TYPES = [
 ];
 
 const PROPERTY_CONDITIONS = [
-  { id: 'well-maintained', label: 'Well-Maintained' },
-  { id: 'moderate', label: 'Moderate Condition' },
-  { id: 'heavily-used', label: 'Heavily Used' },
-  { id: 'intensive', label: 'Intensive Cleaning Required' },
+  { 
+    id: 'well-maintained', 
+    label: 'Well-Maintained',
+    description: 'Property is in good condition, regularly maintained with minimal dust and grime buildup.'
+  },
+  { 
+    id: 'moderate', 
+    label: 'Moderate Condition',
+    description: 'Average wear and tear, some areas may need extra attention but generally acceptable.'
+  },
+  { 
+    id: 'heavily-used', 
+    label: 'Heavily Used',
+    description: 'Significant wear, visible marks, and accumulated dirt requiring more intensive cleaning.'
+  },
+  { 
+    id: 'intensive', 
+    label: 'Intensive Cleaning Required',
+    description: 'Property has substantial cleaning needs, may include grease buildup, heavy staining, or neglect.'
+  },
 ];
 
 const FURNITURE_STATUS = [
@@ -48,7 +66,6 @@ const HOUSE_SHARE_AREAS = [
 ];
 
 const OVEN_OPTIONS = [
-  { id: '', label: 'No Oven Cleaning' },
   { id: 'single', label: 'Single Oven' },
   { id: 'double', label: 'Double Oven' },
   { id: 'range', label: 'Range Cooker' },
@@ -161,170 +178,191 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
   };
   
   return (
-    <div className="space-y-6">
-      {/* Property Type */}
-      <div className="relative z-10">
-        <h2 className="text-2xl font-bold text-slate-700 mb-4">Property Details</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {PROPERTY_TYPES.map((type) => {
-            const isSelected = data.propertyType === type.id;
-            const Icon = type.icon;
-            return (
-              <button
-                key={type.id}
-                className={`group relative h-16 rounded-2xl border transition-all duration-300 justify-start gap-3 p-4 flex items-center ${
-                  isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
-                }`}
-                onClick={() => {
-                  onUpdate({ 
-                    propertyType: type.id as any,
-                    bedrooms: '',
-                    bathrooms: '',
-                    houseShareAreas: [],
-                  });
-                }}
-              >
-                <Icon className={`h-6 w-6 transition-all duration-500 ${isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'}`} />
-                <span className={`text-base font-bold transition-colors ${isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'}`}>
-                  {type.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* House Share Areas (only show for house share) */}
-      {isHouseShare && (
-        <div>
-          <h2 className="text-2xl font-bold text-slate-700 mb-4">Which areas need cleaning?</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {HOUSE_SHARE_AREAS.map((area) => {
-              const isSelected = data.houseShareAreas?.includes(area.id);
+    <TooltipProvider>
+      <div className="space-y-6">
+        {/* Property Type */}
+        <div className="relative z-10">
+          <h2 className="text-2xl font-bold text-slate-700 mb-4">Property Details</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {PROPERTY_TYPES.map((type) => {
+              const isSelected = data.propertyType === type.id;
+              const Icon = type.icon;
               return (
                 <button
-                  key={area.id}
-                  className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center gap-2 ${
+                  key={type.id}
+                  className={`group relative h-16 rounded-2xl border transition-all duration-300 justify-start gap-3 p-4 flex items-center ${
                     isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
                   }`}
-                  onClick={() => toggleHouseShareArea(area.id)}
+                  onClick={() => {
+                    if (isSelected) {
+                      onUpdate({ propertyType: '' as any });
+                    } else {
+                      onUpdate({ 
+                        propertyType: type.id as any,
+                        bedrooms: '',
+                        bathrooms: '',
+                        houseShareAreas: [],
+                      });
+                    }
+                  }}
                 >
-                  {isSelected && <CheckCircle className="h-4 w-4 text-primary" />}
-                  <span className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>
-                    {area.label}
+                  <Icon className={`h-6 w-6 transition-all duration-500 ${isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'}`} />
+                  <span className={`text-base font-bold transition-colors ${isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'}`}>
+                    {type.label}
                   </span>
                 </button>
               );
             })}
           </div>
         </div>
-      )}
 
-      {/* Property Size (for flat/house only) */}
-      {isFlatOrHouse && (
-        <div className="relative z-[9]">
-          <h2 className="text-2xl font-bold text-slate-700 mb-4">Size of the property</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
-            {/* Bedrooms */}
-            <div>
-              <div className="flex items-center justify-center">
-                <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${
-                  data.bedrooms ? 'bg-primary/5 border-2 border-primary' : 'bg-card border-2 border-border'
-                }`}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
-                    onClick={decrementBedrooms}
-                    disabled={!data.bedrooms || data.bedrooms === 'studio'}
-                  >
-                    <Minus className="h-5 w-5" />
-                  </Button>
-                  <div className="flex-1 text-center">
-                    <div className={`text-base font-bold transition-colors ${data.bedrooms ? 'text-primary' : 'text-slate-400'}`}>
-                      {data.bedrooms ? getBedroomLabel(data.bedrooms) : 'Bedrooms'}
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
-                    onClick={incrementBedrooms}
-                    disabled={data.bedrooms === '6+'}
-                  >
-                    <Plus className="h-5 w-5" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Bathrooms */}
-            <div>
-              <div className="flex items-center justify-center">
-                <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${
-                  data.bathrooms ? 'bg-primary/5 border-2 border-primary' : 'bg-card border-2 border-border'
-                }`}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
-                    onClick={decrementBathrooms}
-                    disabled={!data.bathrooms || data.bathrooms === '1'}
-                  >
-                    <Minus className="h-5 w-5" />
-                  </Button>
-                  <div className="flex-1 text-center">
-                    <div className={`text-base font-bold transition-colors ${data.bathrooms ? 'text-primary' : 'text-slate-400'}`}>
-                      {data.bathrooms ? `${data.bathrooms} Bathroom${data.bathrooms !== '1' ? 's' : ''}` : 'Bathrooms'}
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
-                    onClick={incrementBathrooms}
-                    disabled={data.bathrooms === '6+'}
-                  >
-                    <Plus className="h-5 w-5" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Condition of the Property (show after flat/house selection with size) */}
-      {isFlatOrHouse && data.bedrooms && data.bathrooms && (
-        <>
+        {/* House Share Areas (only show for house share) */}
+        {isHouseShare && (
           <div>
-            <h2 className="text-2xl font-bold text-slate-700 mb-2">Condition Of The Property</h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              Indicate the current state of the property. 'Well-Maintained' means the property is in good condition with no significant issues.
-            </p>
+            <h2 className="text-2xl font-bold text-slate-700 mb-4">Which areas need cleaning?</h2>
             <div className="grid grid-cols-2 gap-3">
-              {PROPERTY_CONDITIONS.map((condition) => {
-                const isSelected = data.propertyCondition === condition.id;
+              {HOUSE_SHARE_AREAS.map((area) => {
+                const isSelected = data.houseShareAreas?.includes(area.id);
                 return (
                   <button
-                    key={condition.id}
-                    className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center ${
+                    key={area.id}
+                    className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center gap-2 ${
                       isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
                     }`}
-                    onClick={() => onUpdate({ propertyCondition: condition.id as any })}
+                    onClick={() => toggleHouseShareArea(area.id)}
                   >
-                    {isSelected && <CheckCircle className="h-4 w-4 text-primary mr-2" />}
+                    {isSelected && <CheckCircle className="h-4 w-4 text-primary" />}
                     <span className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>
-                      {condition.label}
+                      {area.label}
                     </span>
                   </button>
                 );
               })}
             </div>
           </div>
+        )}
 
-          {/* Furniture Status */}
+        {/* Property Size (for flat/house only) */}
+        {isFlatOrHouse && (
+          <div className="relative z-[9]">
+            <h2 className="text-2xl font-bold text-slate-700 mb-4">Size of the property</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+              {/* Bedrooms */}
+              <div>
+                <div className="flex items-center justify-center">
+                  <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${
+                    data.bedrooms ? 'bg-primary/5 border-2 border-primary' : 'bg-card border-2 border-border'
+                  }`}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
+                      onClick={decrementBedrooms}
+                      disabled={!data.bedrooms || data.bedrooms === 'studio'}
+                    >
+                      <Minus className="h-5 w-5" />
+                    </Button>
+                    <div className="flex-1 text-center">
+                      <div className={`text-base font-bold transition-colors ${data.bedrooms ? 'text-primary' : 'text-slate-400'}`}>
+                        {data.bedrooms ? getBedroomLabel(data.bedrooms) : 'Bedrooms'}
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
+                      onClick={incrementBedrooms}
+                      disabled={data.bedrooms === '6+'}
+                    >
+                      <Plus className="h-5 w-5" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bathrooms */}
+              <div>
+                <div className="flex items-center justify-center">
+                  <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${
+                    data.bathrooms ? 'bg-primary/5 border-2 border-primary' : 'bg-card border-2 border-border'
+                  }`}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
+                      onClick={decrementBathrooms}
+                      disabled={!data.bathrooms || data.bathrooms === '1'}
+                    >
+                      <Minus className="h-5 w-5" />
+                    </Button>
+                    <div className="flex-1 text-center">
+                      <div className={`text-base font-bold transition-colors ${data.bathrooms ? 'text-primary' : 'text-slate-400'}`}>
+                        {data.bathrooms ? `${data.bathrooms} Bathroom${data.bathrooms !== '1' ? 's' : ''}` : 'Bathrooms'}
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary"
+                      onClick={incrementBathrooms}
+                      disabled={data.bathrooms === '6+'}
+                    >
+                      <Plus className="h-5 w-5" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Condition of the Property */}
+        {isFlatOrHouse && (
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <h2 className="text-2xl font-bold text-slate-700">Condition Of The Property</h2>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="p-1 hover:bg-muted rounded-full transition-colors">
+                    <Info className="h-5 w-5 text-muted-foreground" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="max-w-xs">
+                  <p>Indicate the current state of the property to help us prepare the right cleaning approach.</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {PROPERTY_CONDITIONS.map((condition) => {
+                const isSelected = data.propertyCondition === condition.id;
+                return (
+                  <Tooltip key={condition.id}>
+                    <TooltipTrigger asChild>
+                      <button
+                        className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center gap-2 ${
+                          isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
+                        }`}
+                        onClick={() => onUpdate({ propertyCondition: isSelected ? '' : condition.id as any })}
+                      >
+                        {isSelected && <CheckCircle className="h-4 w-4 text-primary" />}
+                        <span className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>
+                          {condition.label}
+                        </span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs">
+                      <p>{condition.description}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Furniture Status */}
+        {isFlatOrHouse && (
           <div>
             <h2 className="text-2xl font-bold text-slate-700 mb-4">Property Status</h2>
             <div className="grid grid-cols-3 gap-3">
@@ -336,7 +374,7 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
                     className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center ${
                       isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
                     }`}
-                    onClick={() => onUpdate({ furnitureStatus: status.id as any })}
+                    onClick={() => onUpdate({ furnitureStatus: isSelected ? '' : status.id as any })}
                   >
                     {isSelected && <CheckCircle className="h-4 w-4 text-primary mr-2" />}
                     <span className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>
@@ -347,8 +385,10 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
               })}
             </div>
           </div>
+        )}
 
-          {/* Kitchen/Living Room Layout */}
+        {/* Kitchen/Living Room Layout */}
+        {isFlatOrHouse && (
           <div>
             <h2 className="text-2xl font-bold text-slate-700 mb-4">Kitchen & Living Room Layout</h2>
             <div className="grid grid-cols-2 gap-3">
@@ -356,7 +396,7 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
                 className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center ${
                   data.kitchenLivingSeparate === true ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
                 }`}
-                onClick={() => onUpdate({ kitchenLivingSeparate: true })}
+                onClick={() => onUpdate({ kitchenLivingSeparate: data.kitchenLivingSeparate === true ? null : true })}
               >
                 {data.kitchenLivingSeparate === true && <CheckCircle className="h-4 w-4 text-primary mr-2" />}
                 <span className={`text-sm font-bold ${data.kitchenLivingSeparate === true ? 'text-primary' : 'text-slate-500'}`}>
@@ -367,7 +407,7 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
                 className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center ${
                   data.kitchenLivingSeparate === false ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
                 }`}
-                onClick={() => onUpdate({ kitchenLivingSeparate: false })}
+                onClick={() => onUpdate({ kitchenLivingSeparate: data.kitchenLivingSeparate === false ? null : false })}
               >
                 {data.kitchenLivingSeparate === false && <CheckCircle className="h-4 w-4 text-primary mr-2" />}
                 <span className={`text-sm font-bold ${data.kitchenLivingSeparate === false ? 'text-primary' : 'text-slate-500'}`}>
@@ -376,8 +416,10 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
               </button>
             </div>
           </div>
+        )}
 
-          {/* Additional Rooms */}
+        {/* Additional Rooms */}
+        {isFlatOrHouse && (
           <div>
             <h2 className="text-2xl font-bold text-slate-700 mb-4">Additional Rooms</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -400,93 +442,74 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
               })}
             </div>
           </div>
+        )}
 
-          {/* Oven Size */}
-          <div>
-            <h2 className="text-2xl font-bold text-slate-700 mb-4">Oven Size</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {OVEN_OPTIONS.map((oven) => {
-                const isSelected = data.ovenType === oven.id;
-                return (
-                  <button
-                    key={oven.id}
-                    className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center ${
-                      isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
-                    }`}
-                    onClick={() => onUpdate({ ovenType: oven.id })}
-                  >
-                    {isSelected && <CheckCircle className="h-4 w-4 text-primary mr-2" />}
-                    <span className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>
-                      {oven.label}
-                    </span>
-                  </button>
-                );
-              })}
+        {/* Oven Cleaning - Switch Style like PropertyStep */}
+        {isFlatOrHouse && (
+          <div className="relative z-[5]">
+            <div className="flex items-center justify-between mb-4 p-3 bg-muted/30 rounded-xl border border-border">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Microwave className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-700">
+                    Add professional oven cleaning
+                  </h2>
+                  <p className="text-sm text-slate-600 mt-1">
+                    Include professional oven cleaning service
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={!!data.ovenType}
+                onCheckedChange={(checked) => {
+                  onUpdate({ 
+                    ovenType: checked ? 'single' : ''
+                  });
+                }}
+                className={`w-16 h-7 ${!data.ovenType ? 'border-2 border-border' : ''}`}
+              />
             </div>
+            
+            {data.ovenType && (
+              <div className="grid grid-cols-3 gap-3">
+                {OVEN_OPTIONS.map((oven) => {
+                  const isSelected = data.ovenType === oven.id;
+                  return (
+                    <button
+                      key={oven.id}
+                      className={`group relative h-20 rounded-2xl border transition-all duration-300 ${
+                        isSelected
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border bg-card hover:border-primary/50'
+                      }`}
+                      onClick={() => onUpdate({ ovenType: oven.id })}
+                    >
+                      <div className="flex flex-col items-center justify-center h-full">
+                        <span className={`text-base font-bold transition-colors ${
+                          isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'
+                        }`}>{oven.label}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        </>
-      )}
+        )}
 
-      {/* House share also needs condition and status */}
-      {isHouseShare && data.houseShareAreas && data.houseShareAreas.length > 0 && (
-        <>
-          <div>
-            <h2 className="text-2xl font-bold text-slate-700 mb-2">Condition Of The Property</h2>
-            <div className="grid grid-cols-2 gap-3">
-              {PROPERTY_CONDITIONS.map((condition) => {
-                const isSelected = data.propertyCondition === condition.id;
-                return (
-                  <button
-                    key={condition.id}
-                    className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center ${
-                      isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
-                    }`}
-                    onClick={() => onUpdate({ propertyCondition: condition.id as any })}
-                  >
-                    {isSelected && <CheckCircle className="h-4 w-4 text-primary mr-2" />}
-                    <span className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>
-                      {condition.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-bold text-slate-700 mb-4">Property Status</h2>
-            <div className="grid grid-cols-3 gap-3">
-              {FURNITURE_STATUS.map((status) => {
-                const isSelected = data.furnitureStatus === status.id;
-                return (
-                  <button
-                    key={status.id}
-                    className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center ${
-                      isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
-                    }`}
-                    onClick={() => onUpdate({ furnitureStatus: status.id as any })}
-                  >
-                    {isSelected && <CheckCircle className="h-4 w-4 text-primary mr-2" />}
-                    <span className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>
-                      {status.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Continue Button */}
-      <div className="pt-4">
-        <Button
-          onClick={handleContinue}
-          className="w-full h-14 text-lg font-semibold rounded-xl"
-        >
-          Continue
-        </Button>
+        {/* Continue Button */}
+        <div className="flex justify-end pt-4">
+          <Button
+            size="lg"
+            className="rounded-xl px-8 h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all"
+            onClick={handleContinue}
+          >
+            Continue
+          </Button>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 };
