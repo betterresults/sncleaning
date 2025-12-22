@@ -113,10 +113,14 @@ serve(async (req) => {
       }
     }
 
-    // Create a SetupIntent
+    // Create a SetupIntent with automatic payment methods enabled
+    // This allows Stripe to show all enabled payment methods (Revolut Pay, Amazon Pay, etc.)
     const setupIntent = await stripe.setupIntents.create({
       customer: stripeCustomerId,
-      automatic_payment_methods: { enabled: true },
+      automatic_payment_methods: { 
+        enabled: true,
+        allow_redirects: 'always' // Allow redirect-based payment methods like Revolut Pay
+      },
       metadata: internalCustomerId && internalCustomerId > 0 ? {
         internal_customer_id: internalCustomerId.toString(),
       } : {

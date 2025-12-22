@@ -138,7 +138,8 @@ const PaymentElementInner: React.FC<{
             radios: false,
             spacedAccordionItems: true,
           },
-          paymentMethodOrder: ['card', 'apple_pay', 'google_pay'],
+          // Include all alternative payment methods - Stripe will show enabled ones from dashboard
+          paymentMethodOrder: ['card', 'revolut_pay', 'amazon_pay', 'apple_pay', 'google_pay', 'link'],
           business: { name: 'SN Cleaning Services' },
         }}
         onReady={onReady}
