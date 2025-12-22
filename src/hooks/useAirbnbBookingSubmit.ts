@@ -447,8 +447,18 @@ export const useAirbnbBookingSubmit = () => {
         // Property details (JSON with ALL property info)
         property_details: buildPropertyDetails(bookingData),
         
-        // Service
-        service_type: bookingData.subServiceType || 'airbnb', // Service type key from company_settings (airbnb, domestic, commercial)
+        // Service - map subServiceType to proper display name for database
+        service_type: (() => {
+          const subType = bookingData.subServiceType || 'airbnb';
+          const serviceTypeMap: Record<string, string> = {
+            'airbnb': 'Air BnB',
+            'domestic': 'Domestic',
+            'commercial': 'Commercial',
+            'carpet': 'Carpet Cleaning',
+            'end-of-tenancy': 'End of Tenancy',
+          };
+          return serviceTypeMap[subType] || subType;
+        })(),
         cleaning_type: bookingData.serviceType || 'checkin-checkout', // checkin-checkout, midstay, etc.
         frequently: bookingData.serviceFrequency || null, // weekly, biweekly, monthly, onetime
         
@@ -577,6 +587,18 @@ export const useAirbnbBookingSubmit = () => {
 
       // Log booking creation to activity_logs
       try {
+        const serviceTypeForLog = (() => {
+          const subType = bookingData.subServiceType || 'airbnb';
+          const serviceTypeMap: Record<string, string> = {
+            'airbnb': 'Air BnB',
+            'domestic': 'Domestic',
+            'commercial': 'Commercial',
+            'carpet': 'Carpet Cleaning',
+            'end-of-tenancy': 'End of Tenancy',
+          };
+          return serviceTypeMap[subType] || subType;
+        })();
+        
         await supabase.from('activity_logs').insert({
           action_type: 'booking_created',
           entity_type: 'booking',
@@ -587,7 +609,7 @@ export const useAirbnbBookingSubmit = () => {
             customer_name: `${bookingData.firstName} ${bookingData.lastName}`,
             customer_email: bookingData.email,
             booking_date: bookingDateTimeStr,
-            service_type: 'Air BnB',
+            service_type: serviceTypeForLog,
             address: `${addressForBooking}, ${postcodeForBooking}`
           }
         });

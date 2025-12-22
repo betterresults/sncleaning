@@ -247,6 +247,8 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
     const path = location.pathname.toLowerCase();
     if (path.includes('/domestic')) return 'domestic';
     if (path.includes('/commercial')) return 'commercial';
+    if (path.includes('/carpet')) return 'carpet';
+    if (path.includes('/end-of-tenancy')) return 'end-of-tenancy';
     return 'airbnb'; // default
   }, [location.pathname]);
 
