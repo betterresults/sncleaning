@@ -177,7 +177,7 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
       {data.additionalRooms && data.additionalRooms.length > 0 && (
         <div className="flex justify-between items-center mt-3">
           <span className="text-muted-foreground">Additional Rooms ({data.additionalRooms.length})</span>
-          <span className="text-foreground font-semibold">Included</span>
+          <span className="text-foreground font-semibold">+ Extra charge</span>
         </div>
       )}
 
@@ -273,23 +273,85 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
 
       {/* Mobile: Total always visible, details collapsible */}
       <div className="lg:hidden">
-        {/* Always show total on mobile */}
-        {basePrice > 0 && data.bedrooms && (
-          <div className="flex justify-between items-center mb-3 pb-3 border-b-2 border-primary">
-            <span className="text-lg font-semibold text-foreground">Total</span>
-            <span className="text-2xl font-bold text-primary">£{totalCost.toFixed(2)}</span>
-          </div>
-        )}
+        {/* View Details button first */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center justify-between w-full py-2 text-primary"
+          className="flex items-center justify-between w-full py-2 text-primary mb-3"
         >
           <span className="font-medium">View Details</span>
           {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
+        
+        {/* Expanded details (without duplicate total) */}
         {isExpanded && (
-          <div className="pt-2 border-t border-border">
-            {renderSummaryContent()}
+          <div className="pb-3 border-b border-border mb-3">
+            <div className="space-y-3">
+              {/* Service Section - Fixed Price */}
+              {basePrice > 0 && data.bedrooms && (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">End of Tenancy Cleaning</span>
+                  <span className="text-foreground font-semibold whitespace-nowrap">
+                    £{basePrice.toFixed(2)}
+                  </span>
+                </div>
+              )}
+
+              {/* Oven Cleaning */}
+              {ovenCleaningCost > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground capitalize">{data.ovenType} oven cleaning</span>
+                  <span className="text-foreground font-semibold">£{ovenCleaningCost.toFixed(2)}</span>
+                </div>
+              )}
+
+              {/* Additional Rooms */}
+              {data.additionalRooms && data.additionalRooms.length > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Additional Rooms ({data.additionalRooms.length})</span>
+                  <span className="text-foreground font-semibold">+ Extra charge</span>
+                </div>
+              )}
+
+              {/* Blinds */}
+              {blindsTotal > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Blinds/Shutters Cleaning</span>
+                  <span className="text-foreground font-semibold">£{blindsTotal.toFixed(2)}</span>
+                </div>
+              )}
+
+              {/* Extra Services */}
+              {extrasTotal > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Extra Services</span>
+                  <span className="text-foreground font-semibold">£{extrasTotal.toFixed(2)}</span>
+                </div>
+              )}
+
+              {/* Steam Cleaning */}
+              {steamCleaningTotal > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Steam Cleaning</span>
+                  <span className="text-foreground font-semibold">£{steamCleaningTotal.toFixed(2)}</span>
+                </div>
+              )}
+
+              {/* Short Notice Charge */}
+              {shortNoticeCharge > 0 && (
+                <div className="flex justify-between items-center bg-amber-50 -mx-4 px-4 py-2 rounded">
+                  <span className="text-amber-700 font-medium">Short Notice Charge</span>
+                  <span className="text-amber-700 font-semibold">£{shortNoticeCharge.toFixed(2)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        
+        {/* Total always at bottom */}
+        {basePrice > 0 && data.bedrooms && (
+          <div className="flex justify-between items-center pt-2 border-t-2 border-primary">
+            <span className="text-lg font-semibold text-foreground">Total</span>
+            <span className="text-2xl font-bold text-primary">£{totalCost.toFixed(2)}</span>
           </div>
         )}
       </div>
