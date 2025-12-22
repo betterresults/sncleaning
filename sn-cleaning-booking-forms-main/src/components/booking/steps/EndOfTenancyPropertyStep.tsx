@@ -416,22 +416,37 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
         {!isHouseShare && (
           <div>
             <h2 className="text-2xl font-bold text-slate-700 mb-4">Additional Rooms</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {ADDITIONAL_ROOMS.map((room) => {
                 const isSelected = data.additionalRooms?.includes(room.id);
                 const Icon = room.icon;
                 return (
                   <button
                     key={room.id}
-                    className={`h-20 rounded-2xl border transition-all duration-300 flex flex-col items-center justify-center gap-1 ${
-                      isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
+                    className={`group relative h-32 rounded-2xl border transition-all duration-300 ${
+                      isSelected ? 'border-primary bg-primary/5 shadow-md' : 'border-border bg-card hover:border-primary/50 hover:shadow-sm'
                     }`}
                     onClick={() => toggleAdditionalRoom(room.id)}
                   >
-                    <Icon className={`h-6 w-6 ${isSelected ? 'text-primary' : 'text-slate-400'}`} />
-                    <span className={`text-xs font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>
-                      {room.label}
-                    </span>
+                    <div className="flex flex-col items-center justify-center h-full p-3">
+                      <div className={`p-2.5 rounded-full mb-2 transition-colors ${
+                        isSelected ? 'bg-primary/10' : 'bg-muted group-hover:bg-primary/10'
+                      }`}>
+                        <Icon className={`h-7 w-7 transition-colors ${
+                          isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                        }`} />
+                      </div>
+                      <span className={`text-sm font-bold text-center leading-tight transition-colors ${
+                        isSelected ? 'text-primary' : 'text-slate-700 group-hover:text-primary'
+                      }`}>
+                        {room.label}
+                      </span>
+                      {isSelected && (
+                        <div className="absolute top-2 right-2">
+                          <CheckCircle className="h-5 w-5 text-primary" />
+                        </div>
+                      )}
+                    </div>
                   </button>
                 );
               })}
