@@ -176,7 +176,6 @@ export const UpholsteryMattressStep: React.FC<UpholsteryMattressStepProps> = ({
           onClick={onBack}
           className="flex-1 h-14 text-lg font-semibold rounded-xl"
         >
-          <ArrowLeft className="h-5 w-5 mr-2" />
           Back
         </Button>
         <Button

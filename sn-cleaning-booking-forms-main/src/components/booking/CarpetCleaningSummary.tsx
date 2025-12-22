@@ -73,6 +73,8 @@ export const CarpetCleaningSummary: React.FC<CarpetCleaningSummaryProps> = ({
   const shortNoticeInfo = getShortNoticeInfo();
   const hasShortNoticeCharge = shortNoticeInfo.charge > 0 && !(isAdminMode && data.adminRemoveShortNoticeCharge);
 
+  const MINIMUM_CHARGE = 99;
+
   const calculateTotal = () => {
     if (data.adminTotalCostOverride !== undefined && data.adminTotalCostOverride !== null && data.adminTotalCostOverride > 0) {
       return data.adminTotalCostOverride;
@@ -89,6 +91,11 @@ export const CarpetCleaningSummary: React.FC<CarpetCleaningSummaryProps> = ({
     }
     if (isAdminMode && data.adminDiscountAmount) {
       total -= data.adminDiscountAmount;
+    }
+    
+    // Apply minimum charge (only if items are selected)
+    if (getItemsSubtotal() > 0 && total < MINIMUM_CHARGE) {
+      total = MINIMUM_CHARGE;
     }
     
     return Math.max(0, total);
