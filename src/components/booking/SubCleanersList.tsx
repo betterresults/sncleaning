@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,22 +15,12 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import EditSubCleanerDialog from './EditSubCleanerDialog';
-
-interface SubCleaner {
-  id: number;
-  cleaner_id: number;
-  payment_method: 'hourly' | 'percentage';
-  hourly_rate: number | null;
-  percentage_rate: number | null;
-  hours_assigned: number;
-  cleaner_pay: number;
-  cleaner: {
-    first_name: string;
-    last_name: string;
-    full_name: string;
-    email: string;
-  };
-}
+import { 
+  fetchAdditionalCleaners, 
+  removeBookingCleaner, 
+  recalculatePrimaryCleanerPay,
+  BookingCleaner 
+} from '@/hooks/useBookingCleaners';
 
 interface SubCleanersListProps {
   bookingId: number;
@@ -48,42 +37,18 @@ const SubCleanersList = ({
   onSubCleanerUpdated,
   compact = false 
 }: SubCleanersListProps) => {
-  const [subCleaners, setSubCleaners] = useState<SubCleaner[]>([]);
+  const [subCleaners, setSubCleaners] = useState<BookingCleaner[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [editingSubCleaner, setEditingSubCleaner] = useState<SubCleaner | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editingSubCleaner, setEditingSubCleaner] = useState<BookingCleaner | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const fetchSubCleaners = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('sub_bookings')
-        .select(`
-          *,
-          cleaner:cleaners (
-            first_name,
-            last_name,
-            full_name,
-            email
-          )
-        `)
-        .eq('primary_booking_id', bookingId)
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching sub-cleaners:', error);
-        return;
-      }
-
-      // Type assertion to ensure payment_method is properly typed
-      const typedData = (data || []).map(item => ({
-        ...item,
-        payment_method: item.payment_method as 'hourly' | 'percentage'
-      }));
-
-      setSubCleaners(typedData);
+      const data = await fetchAdditionalCleaners(bookingId);
+      setSubCleaners(data);
     } catch (error) {
       console.error('Error fetching sub-cleaners:', error);
     } finally {
@@ -95,29 +60,17 @@ const SubCleanersList = ({
     fetchSubCleaners();
   }, [bookingId]);
 
-  const handleRemoveSubCleaner = async (subCleanerId: number) => {
+  const handleRemoveSubCleaner = async (subCleanerId: string) => {
     try {
       // Get the sub-cleaner hours before deletion
       const subCleanerToRemove = subCleaners.find(sc => sc.id === subCleanerId);
       const removedHours = subCleanerToRemove?.hours_assigned || 0;
 
-      const { error } = await supabase
-        .from('sub_bookings')
-        .delete()
-        .eq('id', subCleanerId);
-
-      if (error) {
-        console.error('Error removing sub-cleaner:', error);
-        toast({
-          title: "Error",
-          description: "Failed to remove cleaner from booking",
-          variant: "destructive",
-        });
-        return;
-      }
+      await removeBookingCleaner(subCleanerId);
 
       // Update primary cleaner's pay after removing sub-cleaner
-      await updatePrimaryCleanerPayAfterRemoval(removedHours);
+      // Pass negative hours to indicate removal
+      await recalculatePrimaryCleanerPay(bookingId, -removedHours);
 
       toast({
         title: "Success",
@@ -130,63 +83,14 @@ const SubCleanersList = ({
       console.error('Error removing sub-cleaner:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred",
+        description: "Failed to remove cleaner from booking",
         variant: "destructive",
       });
     }
     setDeleteId(null);
   };
 
-  // Update primary cleaner's pay when a sub-cleaner is removed
-  const updatePrimaryCleanerPayAfterRemoval = async (removedHours: number) => {
-    try {
-      // Get the current booking data
-      const { data: booking, error: bookingError } = await supabase
-        .from('bookings')
-        .select('cleaner, cleaner_rate, cleaner_percentage, total_cost, total_hours, cleaning_time')
-        .eq('id', bookingId)
-        .single();
-      
-      if (bookingError || !booking || !booking.cleaner) return;
-      
-      const totalHours = booking.total_hours || booking.cleaning_time || 0;
-      
-      // Calculate remaining sub-cleaner hours (excluding the removed one)
-      const remainingSubCleanerHours = subCleaners
-        .filter(sc => sc.hours_assigned !== removedHours || subCleaners.indexOf(sc) > 0)
-        .reduce((sum, sc) => sum + (sc.hours_assigned || 0), 0) - removedHours;
-      
-      const primaryCleanerHours = Math.max(0, totalHours - Math.max(0, remainingSubCleanerHours));
-      
-      let newPrimaryCleanerPay: number;
-      
-      if (booking.cleaner_rate && booking.cleaner_rate > 0) {
-        // Hourly rate
-        newPrimaryCleanerPay = primaryCleanerHours * booking.cleaner_rate;
-      } else if (booking.cleaner_percentage && booking.cleaner_percentage > 0) {
-        // Percentage rate - calculate proportionally based on hours
-        const hoursRatio = totalHours > 0 ? primaryCleanerHours / totalHours : 0;
-        newPrimaryCleanerPay = (booking.total_cost || 0) * (booking.cleaner_percentage / 100) * hoursRatio;
-      } else {
-        // Default fallback - use hourly rate of 20
-        newPrimaryCleanerPay = primaryCleanerHours * 20;
-      }
-      
-      // Update the booking with new cleaner_pay
-      const { error: updateError } = await supabase
-        .from('bookings')
-        .update({ cleaner_pay: newPrimaryCleanerPay })
-        .eq('id', bookingId);
-      
-      if (updateError) {
-        console.error('Error updating primary cleaner pay:', updateError);
-      }
-    } catch (error) {
-      console.error('Error updating primary cleaner pay:', error);
-    }
-  };
-
-  const handleEditClick = (subCleaner: SubCleaner) => {
+  const handleEditClick = (subCleaner: BookingCleaner) => {
     setEditingSubCleaner(subCleaner);
     setEditDialogOpen(true);
   };
@@ -197,7 +101,16 @@ const SubCleanersList = ({
   };
 
   // Calculate total pay for all sub-cleaners
-  const totalSubCleanerPay = subCleaners.reduce((sum, sc) => sum + (sc.cleaner_pay || 0), 0);
+  const totalSubCleanerPay = subCleaners.reduce((sum, sc) => sum + (sc.calculated_pay || 0), 0);
+
+  const getPaymentMethodLabel = (paymentType: string) => {
+    switch (paymentType) {
+      case 'hourly': return 'Hourly';
+      case 'percentage': return 'Percentage';
+      case 'fixed': return 'Fixed';
+      default: return paymentType;
+    }
+  };
 
   if (loading) {
     return (
@@ -220,16 +133,16 @@ const SubCleanersList = ({
             <div className="flex items-center gap-2">
               <User className="h-3 w-3 text-muted-foreground" />
               <span className="font-medium">
-                {subCleaner.cleaner.full_name || 
-                 `${subCleaner.cleaner.first_name} ${subCleaner.cleaner.last_name}`}
+                {subCleaner.cleaner?.full_name || 
+                 `${subCleaner.cleaner?.first_name} ${subCleaner.cleaner?.last_name}`}
               </span>
               <Badge variant="outline" className="text-xs">
-                {subCleaner.payment_method === 'hourly' ? 'Hourly' : 'Percentage'}
+                {getPaymentMethodLabel(subCleaner.payment_type)}
               </Badge>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">
-                £{subCleaner.cleaner_pay?.toFixed(2) || '0.00'}
+                £{subCleaner.calculated_pay?.toFixed(2) || '0.00'}
               </span>
               <Button
                 size="icon"
@@ -309,28 +222,33 @@ const SubCleanersList = ({
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="font-medium">
-                      {subCleaner.cleaner.full_name || 
-                       `${subCleaner.cleaner.first_name} ${subCleaner.cleaner.last_name}`}
+                      {subCleaner.cleaner?.full_name || 
+                       `${subCleaner.cleaner?.first_name} ${subCleaner.cleaner?.last_name}`}
                     </span>
                     <Badge variant="outline">
-                      {subCleaner.payment_method === 'hourly' ? 'Hourly' : 'Percentage'}
+                      {getPaymentMethodLabel(subCleaner.payment_type)}
                     </Badge>
                   </div>
                   
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      {subCleaner.hours_assigned}h
-                    </div>
+                    {subCleaner.hours_assigned && (
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {subCleaner.hours_assigned}h
+                      </div>
+                    )}
                     <div className="flex items-center gap-1">
                       <Banknote className="h-4 w-4" />
-                      £{subCleaner.cleaner_pay?.toFixed(2) || '0.00'}
+                      £{subCleaner.calculated_pay?.toFixed(2) || '0.00'}
                     </div>
-                    {subCleaner.payment_method === 'hourly' && (
+                    {subCleaner.payment_type === 'hourly' && subCleaner.hourly_rate && (
                       <span>@ £{subCleaner.hourly_rate}/hour</span>
                     )}
-                    {subCleaner.payment_method === 'percentage' && (
+                    {subCleaner.payment_type === 'percentage' && subCleaner.percentage_rate && (
                       <span>{subCleaner.percentage_rate}% of total</span>
+                    )}
+                    {subCleaner.payment_type === 'fixed' && (
+                      <span>Fixed amount</span>
                     )}
                   </div>
                 </div>
