@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { EndOfTenancyBookingData } from '../EndOfTenancyBookingForm';
-import { Home, Building, Users, Plus, Minus, CheckCircle, Info, Microwave } from 'lucide-react';
+import { Home, Building, Users, Plus, Minus, CheckCircle, Info, Microwave, UtensilsCrossed, BookOpen, WashingMachine, Trees, Sofa, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface EndOfTenancyPropertyStepProps {
@@ -49,13 +49,13 @@ const FURNITURE_STATUS = [
 ];
 
 const ADDITIONAL_ROOMS = [
-  { id: 'dining-room', label: 'Dining Room' },
-  { id: 'study', label: 'Study Room' },
-  { id: 'utility-room', label: 'Utility Room' },
-  { id: 'conservatory', label: 'Conservatory' },
-  { id: 'additional-living', label: 'Additional Living Room' },
-  { id: 'basement', label: 'Basement' },
-  { id: 'loft', label: 'Loft Room' },
+  { id: 'dining-room', label: 'Dining Room', icon: UtensilsCrossed },
+  { id: 'study', label: 'Study Room', icon: BookOpen },
+  { id: 'utility-room', label: 'Utility Room', icon: WashingMachine },
+  { id: 'conservatory', label: 'Conservatory', icon: Trees },
+  { id: 'additional-living', label: 'Additional Living Room', icon: Sofa },
+  { id: 'basement', label: 'Basement', icon: ArrowDownToLine },
+  { id: 'loft', label: 'Loft Room', icon: ArrowUpFromLine },
 ];
 
 const HOUSE_SHARE_AREAS = [
@@ -419,15 +419,16 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {ADDITIONAL_ROOMS.map((room) => {
                 const isSelected = data.additionalRooms?.includes(room.id);
+                const Icon = room.icon;
                 return (
                   <button
                     key={room.id}
-                    className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center ${
+                    className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center gap-2 ${
                       isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
                     }`}
                     onClick={() => toggleAdditionalRoom(room.id)}
                   >
-                    {isSelected && <CheckCircle className="h-4 w-4 text-primary mr-2" />}
+                    <Icon className={`h-4 w-4 ${isSelected ? 'text-primary' : 'text-slate-400'}`} />
                     <span className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>
                       {room.label}
                     </span>
