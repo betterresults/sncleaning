@@ -1271,7 +1271,8 @@ useEffect(() => {
               amount: data.totalCost,
               description: `Cleaning Service - ${data.selectedDate ? new Date(data.selectedDate).toLocaleDateString('en-GB') : 'Booking'} - #${bookingId}`,
               booking_id: bookingId,
-              collect_payment_method: true // Save card for future use
+              collect_payment_method: true, // Save card for future use
+              payment_method_type: 'card' // Explicitly use card to avoid automatic_payment_methods error
             }
           });
 
@@ -1309,7 +1310,8 @@ useEffect(() => {
                 date_time: data.selectedDate?.toISOString()
               },
               collect_only: false,
-              send_email: false // Don't send email, customer is being redirected
+              send_email: false, // Don't send email, customer is being redirected
+              payment_method_type: 'card' // Explicitly use card to avoid automatic_payment_methods error
             }
           });
 
