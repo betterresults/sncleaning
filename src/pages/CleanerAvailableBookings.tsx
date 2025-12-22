@@ -46,7 +46,7 @@ const CleanerAvailableBookingsPage = () => {
         <CleanerTopNav />
         
         <main className="pt-header-safe pb-20 content-bottom-spacer">
-          <div className="p-4">
+          <div className="p-4 pt-2">
             {userRole === 'admin' && <AdminCleanerSelector />}
             <CleanerAvailableBookings />
           </div>
