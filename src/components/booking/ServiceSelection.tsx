@@ -35,7 +35,7 @@ const getServices = (isAdminView: boolean = false) => [
     id: 'end-of-tenancy',
     title: 'End Of Tenancy Cleaning',
     icon: Users,
-    available: isAdminView,
+    available: true,
     image: '/lovable-uploads/5ae020cf-fd8c-46fe-8586-933da3fa509c.png',
     description: 'Deep clean for move-out properties'
   },
