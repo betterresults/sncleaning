@@ -80,7 +80,6 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
   const { toast } = useToast();
   
   const isHouseShare = data.propertyType === 'house-share';
-  const isFlatOrHouse = data.propertyType === 'flat' || data.propertyType === 'house';
   
   const getBedroomLabel = (value: string) => {
     if (value === 'studio') return 'Studio';
@@ -151,7 +150,7 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
     }
   };
   
-  // Validation
+  // Validation - for house share, need areas; for others, need bedrooms/bathrooms
   const canContinue = data.propertyType && 
     data.propertyCondition && 
     data.furnitureStatus &&
@@ -163,8 +162,8 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
       if (!data.propertyType) missingFields.push('property type');
       if (!data.propertyCondition) missingFields.push('property condition');
       if (!data.furnitureStatus) missingFields.push('furniture status');
-      if (isFlatOrHouse && !data.bedrooms) missingFields.push('bedrooms');
-      if (isFlatOrHouse && !data.bathrooms) missingFields.push('bathrooms');
+      if (!isHouseShare && !data.bedrooms) missingFields.push('bedrooms');
+      if (!isHouseShare && !data.bathrooms) missingFields.push('bathrooms');
       if (isHouseShare && (!data.houseShareAreas || data.houseShareAreas.length === 0)) missingFields.push('areas to clean');
       
       toast({
@@ -199,9 +198,8 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
                     } else {
                       onUpdate({ 
                         propertyType: type.id as any,
-                        bedrooms: '',
-                        bathrooms: '',
-                        houseShareAreas: [],
+                        // Reset relevant fields when switching type
+                        ...(type.id === 'house-share' ? { bedrooms: '', bathrooms: '' } : { houseShareAreas: [] }),
                       });
                     }
                   }}
@@ -242,8 +240,8 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
           </div>
         )}
 
-        {/* Property Size (for flat/house only) */}
-        {isFlatOrHouse && (
+        {/* Property Size (hide for house share) */}
+        {!isHouseShare && (
           <div className="relative z-[9]">
             <h2 className="text-2xl font-bold text-slate-700 mb-4">Size of the property</h2>
             
@@ -317,78 +315,74 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
           </div>
         )}
 
-        {/* Condition of the Property */}
-        {isFlatOrHouse && (
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <h2 className="text-2xl font-bold text-slate-700">Condition Of The Property</h2>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button className="p-1 hover:bg-muted rounded-full transition-colors">
-                    <Info className="h-5 w-5 text-muted-foreground" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="right" className="max-w-xs">
-                  <p>Indicate the current state of the property to help us prepare the right cleaning approach.</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {PROPERTY_CONDITIONS.map((condition) => {
-                const isSelected = data.propertyCondition === condition.id;
-                return (
-                  <Tooltip key={condition.id}>
-                    <TooltipTrigger asChild>
-                      <button
-                        className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center gap-2 ${
-                          isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
-                        }`}
-                        onClick={() => onUpdate({ propertyCondition: isSelected ? '' : condition.id as any })}
-                      >
-                        {isSelected && <CheckCircle className="h-4 w-4 text-primary" />}
-                        <span className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>
-                          {condition.label}
-                        </span>
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="max-w-xs">
-                      <p>{condition.description}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              })}
-            </div>
+        {/* Condition of the Property - always visible */}
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-2xl font-bold text-slate-700">Condition Of The Property</h2>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button className="p-1 hover:bg-muted rounded-full transition-colors">
+                  <Info className="h-5 w-5 text-muted-foreground" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="max-w-xs">
+                <p>Indicate the current state of the property to help us prepare the right cleaning approach.</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
-        )}
-
-        {/* Furniture Status */}
-        {isFlatOrHouse && (
-          <div>
-            <h2 className="text-2xl font-bold text-slate-700 mb-4">Property Status</h2>
-            <div className="grid grid-cols-3 gap-3">
-              {FURNITURE_STATUS.map((status) => {
-                const isSelected = data.furnitureStatus === status.id;
-                return (
-                  <button
-                    key={status.id}
-                    className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center ${
-                      isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
-                    }`}
-                    onClick={() => onUpdate({ furnitureStatus: isSelected ? '' : status.id as any })}
-                  >
-                    {isSelected && <CheckCircle className="h-4 w-4 text-primary mr-2" />}
-                    <span className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>
-                      {status.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+          <div className="grid grid-cols-2 gap-3">
+            {PROPERTY_CONDITIONS.map((condition) => {
+              const isSelected = data.propertyCondition === condition.id;
+              return (
+                <Tooltip key={condition.id}>
+                  <TooltipTrigger asChild>
+                    <button
+                      className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center gap-2 ${
+                        isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
+                      }`}
+                      onClick={() => onUpdate({ propertyCondition: isSelected ? '' : condition.id as any })}
+                    >
+                      {isSelected && <CheckCircle className="h-4 w-4 text-primary" />}
+                      <span className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>
+                        {condition.label}
+                      </span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs">
+                    <p>{condition.description}</p>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
           </div>
-        )}
+        </div>
 
-        {/* Kitchen/Living Room Layout */}
-        {isFlatOrHouse && (
+        {/* Furniture Status - always visible */}
+        <div>
+          <h2 className="text-2xl font-bold text-slate-700 mb-4">Property Status</h2>
+          <div className="grid grid-cols-3 gap-3">
+            {FURNITURE_STATUS.map((status) => {
+              const isSelected = data.furnitureStatus === status.id;
+              return (
+                <button
+                  key={status.id}
+                  className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center ${
+                    isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
+                  }`}
+                  onClick={() => onUpdate({ furnitureStatus: isSelected ? '' : status.id as any })}
+                >
+                  {isSelected && <CheckCircle className="h-4 w-4 text-primary mr-2" />}
+                  <span className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>
+                    {status.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Kitchen/Living Room Layout (hide for house share) */}
+        {!isHouseShare && (
           <div>
             <h2 className="text-2xl font-bold text-slate-700 mb-4">Kitchen & Living Room Layout</h2>
             <div className="grid grid-cols-2 gap-3">
@@ -418,8 +412,8 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
           </div>
         )}
 
-        {/* Additional Rooms */}
-        {isFlatOrHouse && (
+        {/* Additional Rooms (hide for house share) */}
+        {!isHouseShare && (
           <div>
             <h2 className="text-2xl font-bold text-slate-700 mb-4">Additional Rooms</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -444,8 +438,8 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
           </div>
         )}
 
-        {/* Oven Cleaning - Switch Style like PropertyStep */}
-        {isFlatOrHouse && (
+        {/* Oven Cleaning - Switch Style (hide for house share) */}
+        {!isHouseShare && (
           <div className="relative z-[5]">
             <div className="flex items-center justify-between mb-4 p-3 bg-muted/30 rounded-xl border border-border">
               <div className="flex items-center gap-3">
