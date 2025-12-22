@@ -65,7 +65,7 @@ import AdminProfitTracking from "./pages/AdminProfitTracking";
 import AdminActivityLogs from "./pages/AdminActivityLogs";
 import AdminNotificationManagement from "./pages/AdminNotificationManagement";
 import ApplyToWork from "./pages/ApplyToWork";
-import InvoilessAPITest from "./pages/InvoilessAPITest";
+
 import AdminAirbnbFormSettings from "./pages/AdminAirbnbFormSettings";
 import AdminEndOfTenancyFormSettings from "./pages/AdminEndOfTenancyFormSettings";
 import AdminCustomerPricing from "./pages/AdminCustomerPricing";
@@ -195,7 +195,7 @@ const App = () => (
                    <Route path="/admin-activity-logs" element={<AdminActivityLogs />} />
                    <Route path="/admin-quote-leads" element={<AdminQuoteLeads />} />
                     <Route path="/admin-notification-management" element={<AdminNotificationManagement />} />
-                     <Route path="/invoiless-api-test" element={<InvoilessAPITest />} />
+                     
                      <Route path="/admin-airbnb-form-settings" element={<AdminAirbnbFormSettings />} />
                      <Route path="/admin-end-of-tenancy-form-settings" element={<AdminEndOfTenancyFormSettings />} />
                      <Route path="/admin-customer-pricing" element={<AdminCustomerPricing />} />

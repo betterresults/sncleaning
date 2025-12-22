@@ -308,11 +308,6 @@ export const adminNavigation = [
         url: "/admin/linen",
         icon: Shirt,
       },
-      {
-        title: "Invoiless API Test",
-        url: "/invoiless-api-test",
-        icon: TestTube,
-      },
     ],
   },
 ];
