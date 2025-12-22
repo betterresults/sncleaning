@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CarpetCleaningItemsStep } from './steps/CarpetCleaningItemsStep';
@@ -6,11 +6,13 @@ import { UpholsteryMattressStep } from './steps/UpholsteryMattressStep';
 import { ScheduleStep } from './steps/ScheduleStep';
 import { CarpetCleaningSummary } from './CarpetCleaningSummary';
 import { PaymentStep } from './steps/PaymentStep';
+import { CarpetExitQuotePopup } from './CarpetExitQuotePopup';
 import { Layers, Sofa, Calendar, CreditCard, ArrowLeft, Mail } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
+import { useCarpetQuoteTracking } from '../../hooks/useCarpetQuoteTracking';
 
 export interface CarpetCleaningItem {
   id: string;
@@ -87,6 +89,7 @@ const CarpetCleaningForm: React.FC = () => {
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [adminUserId, setAdminUserId] = useState<string | null>(null);
+  const [showExitPopup, setShowExitPopup] = useState(false);
   
   const [bookingData, setBookingData] = useState<CarpetCleaningData>({
     carpetItems: [],
@@ -111,6 +114,12 @@ const CarpetCleaningForm: React.FC = () => {
     estimatedHours: null,
     hourlyRate: 0,
     totalCost: 0,
+  });
+
+  // Initialize tracking
+  const { sessionId, saveQuoteLead, markCompleted } = useCarpetQuoteTracking({
+    isAdminMode,
+    adminId: adminUserId || undefined,
   });
 
   // Check if user is admin AND on admin route
@@ -189,12 +198,35 @@ const CarpetCleaningForm: React.FC = () => {
     initStripe();
   }, []);
 
-  const updateBookingData = (updates: Partial<CarpetCleaningData>) => {
+  const updateBookingData = useCallback((updates: Partial<CarpetCleaningData>) => {
     setBookingData(prev => {
       const newData = { ...prev, ...updates };
+      // Save to tracking (non-admin only)
+      if (!isAdminMode) {
+        const stepName = currentStep === 1 ? 'carpets' : currentStep === 2 ? 'upholstery' : currentStep === 3 ? 'schedule' : 'payment';
+        saveQuoteLead(newData, stepName);
+      }
       return newData;
     });
-  };
+  }, [currentStep, isAdminMode, saveQuoteLead]);
+
+  // Handle browser back button to show exit popup
+  useEffect(() => {
+    if (isAdminMode) return;
+    
+    const handlePopState = (e: PopStateEvent) => {
+      if (bookingData.totalCost > 0) {
+        e.preventDefault();
+        window.history.pushState(null, '', window.location.href);
+        setShowExitPopup(true);
+      }
+    };
+    
+    window.history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', handlePopState);
+    
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isAdminMode, bookingData.totalCost]);
 
   const nextStep = () => {
     if (currentStep < steps.length) {
@@ -378,6 +410,16 @@ const CarpetCleaningForm: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* Exit Quote Popup */}
+      <CarpetExitQuotePopup
+        open={showExitPopup}
+        onOpenChange={setShowExitPopup}
+        email={bookingData.email}
+        data={bookingData}
+        sessionId={sessionId}
+        onSaveEmail={(email) => updateBookingData({ email })}
+      />
     </div>
   );
 };
