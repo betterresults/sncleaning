@@ -409,48 +409,70 @@ export const EndOfTenancyExtrasStep: React.FC<EndOfTenancyExtrasStepProps> = ({
       {/* Blinds/Shutters Cleaning */}
       <div>
         <h2 className="text-xl font-bold text-slate-700 mb-4">Add Blinds / Shutters Cleaning If Required</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {BLINDS_OPTIONS.map((option) => {
             const quantity = getBlindQuantity(option.id);
             const isSelected = quantity > 0;
             return (
-              <div
+              <button
                 key={option.id}
-                className={`relative rounded-2xl border p-4 transition-all duration-300 ${
-                  isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card'
+                className={`group relative h-32 rounded-2xl border transition-all duration-300 ${
+                  isSelected ? 'border-primary bg-primary/5 shadow-md' : 'border-border bg-card hover:border-primary/50 hover:shadow-sm'
                 }`}
+                onClick={() => {
+                  if (quantity === 0) {
+                    updateBlindQuantity(option.id, 1);
+                  }
+                }}
               >
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex items-center gap-2">
-                    <Blinds className={`h-8 w-8 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                {isSelected ? (
+                  <div className="flex flex-col items-center justify-center h-full p-3">
+                    <div className="p-2.5 rounded-full bg-primary/10 mb-2">
+                      <Blinds className="h-7 w-7 text-primary" />
+                    </div>
+                    <span className="text-sm font-bold text-primary mb-2 text-center leading-tight">
+                      {option.label}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateBlindQuantity(option.id, -1);
+                        }}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <div className="w-8 text-center">
+                        <span className="text-xl font-bold text-primary">{quantity}</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateBlindQuantity(option.id, 1);
+                        }}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <span className="text-lg font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded">£{option.price}</span>
-                </div>
-                <h3 className={`font-bold mb-1 ${isSelected ? 'text-primary' : 'text-slate-700'}`}>{option.label}</h3>
-                <p className="text-xs text-muted-foreground mb-3">{option.description}</p>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Qty</span>
-                  <input
-                    type="number"
-                    min="0"
-                    value={quantity}
-                    onChange={(e) => {
-                      const newQty = parseInt(e.target.value) || 0;
-                      const delta = newQty - quantity;
-                      if (delta !== 0) updateBlindQuantity(option.id, delta);
-                    }}
-                    className="w-16 h-8 text-center border border-border rounded-lg"
-                  />
-                </div>
-                <Button
-                  size="sm"
-                  className="w-full mt-3"
-                  variant={isSelected ? "outline" : "default"}
-                  onClick={() => updateBlindQuantity(option.id, isSelected ? -quantity : 1)}
-                >
-                  {isSelected ? 'Remove' : 'Add'}
-                </Button>
-              </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full p-3">
+                    <div className="p-2.5 rounded-full bg-muted mb-2 group-hover:bg-primary/10 transition-colors">
+                      <Blinds className="h-7 w-7 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </div>
+                    <span className="text-sm font-bold text-slate-700 group-hover:text-primary text-center leading-tight transition-colors">
+                      {option.label}
+                    </span>
+                    <span className="text-base font-bold text-primary mt-1">£{option.price}</span>
+                  </div>
+                )}
+              </button>
             );
           })}
         </div>
@@ -459,48 +481,71 @@ export const EndOfTenancyExtrasStep: React.FC<EndOfTenancyExtrasStepProps> = ({
       {/* Extra Services */}
       <div>
         <h2 className="text-xl font-bold text-slate-700 mb-4">Add Any Extras If Required</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {EXTRA_SERVICES.map((service) => {
             const quantity = getExtraServiceQuantity(service.id);
             const isSelected = quantity > 0;
             const Icon = service.icon;
             return (
-              <div
+              <button
                 key={service.id}
-                className={`relative rounded-2xl border p-4 transition-all duration-300 ${
-                  isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card'
+                className={`group relative h-32 rounded-2xl border transition-all duration-300 ${
+                  isSelected ? 'border-primary bg-primary/5 shadow-md' : 'border-border bg-card hover:border-primary/50 hover:shadow-sm'
                 }`}
+                onClick={() => {
+                  if (quantity === 0) {
+                    updateExtraService(service.id, 1);
+                  }
+                }}
               >
-                <div className="flex justify-between items-start mb-2">
-                  <div className="p-2 rounded-full bg-primary/10">
-                    <Icon className={`h-8 w-8 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                {isSelected ? (
+                  <div className="flex flex-col items-center justify-center h-full p-3">
+                    <div className="p-2.5 rounded-full bg-primary/10 mb-2">
+                      <Icon className="h-7 w-7 text-primary" />
+                    </div>
+                    <span className="text-sm font-bold text-primary mb-2 text-center leading-tight">
+                      {service.name}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateExtraService(service.id, -1);
+                        }}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <div className="w-8 text-center">
+                        <span className="text-xl font-bold text-primary">{quantity}</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateExtraService(service.id, 1);
+                        }}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <span className="text-lg font-bold text-white bg-slate-700 px-2 py-1 rounded">£{service.price}</span>
-                </div>
-                <h3 className={`font-bold mb-3 ${isSelected ? 'text-primary' : 'text-slate-700'}`}>{service.name}</h3>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Qty</span>
-                  <input
-                    type="number"
-                    min="0"
-                    value={quantity}
-                    onChange={(e) => {
-                      const newQty = parseInt(e.target.value) || 0;
-                      const delta = newQty - quantity;
-                      if (delta !== 0) updateExtraService(service.id, delta);
-                    }}
-                    className="w-16 h-8 text-center border border-border rounded-lg"
-                  />
-                </div>
-                <Button
-                  size="sm"
-                  className="w-full mt-3"
-                  variant={isSelected ? "outline" : "default"}
-                  onClick={() => updateExtraService(service.id, isSelected ? -quantity : 1)}
-                >
-                  {isSelected ? 'Remove' : 'Add'}
-                </Button>
-              </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full p-3">
+                    <div className="p-2.5 rounded-full bg-muted mb-2 group-hover:bg-primary/10 transition-colors">
+                      <Icon className="h-7 w-7 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </div>
+                    <span className="text-sm font-bold text-slate-700 group-hover:text-primary text-center leading-tight transition-colors">
+                      {service.name}
+                    </span>
+                    <span className="text-base font-bold text-primary mt-1">£{service.price}</span>
+                  </div>
+                )}
+              </button>
             );
           })}
         </div>
