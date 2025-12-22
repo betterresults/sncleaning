@@ -132,8 +132,13 @@ const PaymentElementInner: React.FC<{
     <div className="min-h-[200px]">
       <PaymentElement 
         options={{
-          layout: 'accordion',
-          paymentMethodOrder: ['apple_pay', 'google_pay', 'card'],
+          layout: {
+            type: 'accordion',
+            defaultCollapsed: false,
+            radios: false,
+            spacedAccordionItems: true,
+          },
+          paymentMethodOrder: ['card', 'apple_pay', 'google_pay'],
           business: { name: 'SN Cleaning Services' },
         }}
         onReady={onReady}
@@ -359,7 +364,7 @@ useEffect(() => {
   // Bank transfer is available for all customers
   const canUseBankTransfer = !isAdminMode;
 
-  // Check for existing customer by email (for guest users)
+  // Check for existing customer by email OR auto-create new customer (for guest users)
   useEffect(() => {
     // Skip if logged in, admin mode, or no valid email
     if (user || isAdminMode || !data.email) {
@@ -374,7 +379,7 @@ useEffect(() => {
       return;
     }
     
-    const checkExistingCustomer = async () => {
+    const checkOrCreateCustomer = async () => {
       setCheckingGuestCustomer(true);
       try {
         // Look up customer by email
@@ -384,41 +389,63 @@ useEffect(() => {
           .eq('email', data.email)
           .single();
         
-        if (customerError || !customerData?.id) {
-          setGuestCustomerId(null);
-          setGuestPaymentMethods([]);
-          setCheckingGuestCustomer(false);
-          return;
-        }
-        
-        console.log('[PaymentStep] Found existing customer by email:', customerData.id);
-        setGuestCustomerId(customerData.id);
-        
-        // Fetch their saved payment methods
-        const { data: methods, error: methodsError } = await supabase
-          .from('customer_payment_methods')
-          .select('*')
-          .eq('customer_id', customerData.id)
-          .order('created_at', { ascending: false });
-        
-        if (!methodsError && methods && methods.length > 0) {
-          console.log('[PaymentStep] Found saved payment methods for guest:', methods.length);
-          setGuestPaymentMethods(methods);
-          setUseGuestSavedCard(true);
+        if (customerData?.id) {
+          // Existing customer found
+          console.log('[PaymentStep] Found existing customer by email:', customerData.id);
+          setGuestCustomerId(customerData.id);
+          
+          // Fetch their saved payment methods
+          const { data: methods, error: methodsError } = await supabase
+            .from('customer_payment_methods')
+            .select('*')
+            .eq('customer_id', customerData.id)
+            .order('created_at', { ascending: false });
+          
+          if (!methodsError && methods && methods.length > 0) {
+            console.log('[PaymentStep] Found saved payment methods for guest:', methods.length);
+            setGuestPaymentMethods(methods);
+            setUseGuestSavedCard(true);
+          } else {
+            setGuestPaymentMethods([]);
+          }
         } else {
+          // No customer found - auto-create one
+          console.log('[PaymentStep] No customer found, creating new customer for email:', data.email);
+          
+          const { data: newCustomer, error: createError } = await supabase
+            .from('customers')
+            .insert({
+              email: data.email,
+              first_name: data.firstName || null,
+              last_name: data.lastName || null,
+              phone: data.phone || null,
+              full_name: data.firstName && data.lastName 
+                ? `${data.firstName} ${data.lastName}` 
+                : (data.firstName || data.lastName || null),
+            })
+            .select('id')
+            .single();
+          
+          if (createError) {
+            console.error('[PaymentStep] Error creating customer:', createError);
+            setGuestCustomerId(null);
+          } else if (newCustomer?.id) {
+            console.log('[PaymentStep] Created new customer:', newCustomer.id);
+            setGuestCustomerId(newCustomer.id);
+          }
           setGuestPaymentMethods([]);
         }
       } catch (err) {
-        console.error('[PaymentStep] Error checking existing customer:', err);
+        console.error('[PaymentStep] Error checking/creating customer:', err);
       } finally {
         setCheckingGuestCustomer(false);
       }
     };
     
     // Debounce the check
-    const timeoutId = setTimeout(checkExistingCustomer, 500);
+    const timeoutId = setTimeout(checkOrCreateCustomer, 800);
     return () => clearTimeout(timeoutId);
-  }, [data.email, user, isAdminMode]);
+  }, [data.email, user, isAdminMode, data.firstName, data.lastName, data.phone]);
 
   // Create SetupIntent for PaymentElement when needed (new customers without saved cards)
   useEffect(() => {
