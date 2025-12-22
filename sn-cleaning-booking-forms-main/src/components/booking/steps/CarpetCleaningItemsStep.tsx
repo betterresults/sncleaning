@@ -129,14 +129,11 @@ export const CarpetCleaningItemsStep: React.FC<CarpetCleaningItemsStepProps> = (
 
   const renderSectionHeader = () => {
     return (
-      <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 mb-4">
-        <div className="p-3 rounded-xl bg-white/80 shadow-sm">
-          <Layers className="h-6 w-6 text-slate-700" />
+      <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-slate-50 to-slate-100 mb-4">
+        <div className="p-3 rounded-xl bg-white shadow-sm">
+          <Layers className="h-6 w-6 text-primary" />
         </div>
-        <div>
-          <h2 className="text-xl font-bold text-slate-800">Carpet Cleaning</h2>
-          <p className="text-sm text-slate-600">Rugs, room carpets, stairs & hallways</p>
-        </div>
+        <h2 className="text-xl font-bold text-slate-800">Carpet Cleaning</h2>
       </div>
     );
   };

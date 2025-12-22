@@ -138,17 +138,14 @@ export const UpholsteryMattressStep: React.FC<UpholsteryMattressStepProps> = ({
     );
   };
 
-  const renderSectionHeader = (title: string, icon: LucideIcon, description: string, color: string) => {
+  const renderSectionHeader = (title: string, icon: LucideIcon, color: string) => {
     const IconComponent = icon;
     return (
       <div className={`flex items-center gap-4 p-4 rounded-xl ${color} mb-4`}>
-        <div className="p-3 rounded-xl bg-white/80 shadow-sm">
-          <IconComponent className="h-6 w-6 text-slate-700" />
+        <div className="p-3 rounded-xl bg-white shadow-sm">
+          <IconComponent className="h-6 w-6 text-primary" />
         </div>
-        <div>
-          <h2 className="text-xl font-bold text-slate-800">{title}</h2>
-          <p className="text-sm text-slate-600">{description}</p>
-        </div>
+        <h2 className="text-xl font-bold text-slate-800">{title}</h2>
       </div>
     );
   };
@@ -156,14 +153,14 @@ export const UpholsteryMattressStep: React.FC<UpholsteryMattressStepProps> = ({
   return (
     <div className="space-y-8">
       {/* Upholstery Cleaning Section */}
-      {renderSectionHeader('Upholstery Cleaning', Sofa, 'Sofas, chairs, ottomans & curtains', 'bg-gradient-to-r from-blue-50 to-indigo-50')}
+      {renderSectionHeader('Upholstery Cleaning', Sofa, 'bg-gradient-to-r from-slate-50 to-slate-100')}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {upholsteryOptions.map(option => renderItemCard(option, 'upholstery', data.upholsteryItems))}
       </div>
 
       {/* Mattress Cleaning Section */}
       <div className="mt-8">
-        {renderSectionHeader('Mattress Cleaning', Bed, 'Deep clean & sanitize mattresses', 'bg-gradient-to-r from-purple-50 to-pink-50')}
+        {renderSectionHeader('Mattress Cleaning', Bed, 'bg-gradient-to-r from-slate-50 to-slate-100')}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
           {mattressOptions.map(option => renderItemCard(option, 'mattress', data.mattressItems))}
         </div>
