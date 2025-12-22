@@ -69,9 +69,14 @@ serve(async (req) => {
         .maybeSingle();
 
       stripeCustomerId = existingPaymentMethod?.stripe_customer_id;
-      
-      // If no existing Stripe customer ID in our DB, try to find by metadata
-      if (!stripeCustomerId) {
+    }
+
+    // If no existing Stripe customer, find or create one
+    // NOTE: Customer creation is REQUIRED for SetupIntent to save payment methods
+    // To stop receiving notifications, disable them in Stripe Dashboard > Settings > Emails
+    if (!stripeCustomerId) {
+      // First try to find by internal_customer_id in metadata (if we have one)
+      if (internalCustomerId && internalCustomerId > 0) {
         const existingCustomers = await stripe.customers.search({
           query: `metadata['internal_customer_id']:'${internalCustomerId}'`,
           limit: 1,
@@ -82,37 +87,52 @@ serve(async (req) => {
           console.log("Found existing Stripe customer by metadata:", stripeCustomerId);
         }
       }
+      
+      // If still no customer, search by email
+      if (!stripeCustomerId) {
+        const existingByEmail = await stripe.customers.list({
+          email: customerEmail,
+          limit: 1,
+        });
+
+        if (existingByEmail.data.length > 0) {
+          stripeCustomerId = existingByEmail.data[0].id;
+          console.log("Found existing Stripe customer by email:", stripeCustomerId);
+        }
+      }
+
+      // Create new Stripe customer if none found - REQUIRED for payment methods to be saved
+      if (!stripeCustomerId) {
+        const newCustomer = await stripe.customers.create({
+          email: customerEmail,
+          name: customerName || undefined,
+          metadata: internalCustomerId && internalCustomerId > 0 ? {
+            internal_customer_id: internalCustomerId.toString(),
+          } : {
+            source: 'booking_form',
+            created_at: new Date().toISOString(),
+          },
+        });
+        stripeCustomerId = newCustomer.id;
+        console.log("Created new Stripe customer:", stripeCustomerId);
+      }
     }
 
-    // IMPORTANT: Do NOT create a new Stripe customer here just for showing the PaymentElement
-    // Stripe customers should only be created when the booking is actually completed
-    // If we don't have an existing customer, create SetupIntent without customer attachment
-    // The customer will be created/attached when the payment is confirmed via webhook
-    
-    // Create a SetupIntent - with or without customer
-    const setupIntentParams: any = {
+    // Create a SetupIntent with customer attached (required for saving payment methods)
+    const setupIntent = await stripe.setupIntents.create({
+      customer: stripeCustomerId,
       automatic_payment_methods: { 
         enabled: true,
         allow_redirects: 'always' // Allow redirect-based payment methods like Revolut Pay
       },
-      metadata: {
+      metadata: internalCustomerId && internalCustomerId > 0 ? {
+        internal_customer_id: internalCustomerId.toString(),
+      } : {
         guest_email: customerEmail,
-        guest_name: customerName || '',
-        ...(internalCustomerId && internalCustomerId > 0 ? { internal_customer_id: internalCustomerId.toString() } : {}),
       },
-    };
+    });
 
-    // Only attach customer if we found an existing one
-    if (stripeCustomerId) {
-      setupIntentParams.customer = stripeCustomerId;
-      console.log("Attaching existing Stripe customer:", stripeCustomerId);
-    } else {
-      console.log("Creating SetupIntent without customer - customer will be created on booking completion");
-    }
-
-    const setupIntent = await stripe.setupIntents.create(setupIntentParams);
-
-    console.log("Created SetupIntent:", setupIntent.id, stripeCustomerId ? `for Stripe customer: ${stripeCustomerId}` : "without customer");
+    console.log("Created SetupIntent:", setupIntent.id, "for Stripe customer:", stripeCustomerId);
 
     return new Response(
       JSON.stringify({
