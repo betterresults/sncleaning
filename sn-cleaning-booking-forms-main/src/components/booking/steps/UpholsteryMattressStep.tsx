@@ -17,7 +17,7 @@ const upholsteryOptions: { id: string; name: string; size: 'small' | 'medium' | 
   { id: 'sofa_corner', name: 'Corner Sofa', size: 'large', description: 'L-shaped sectional', price: 85, icon: Sofa },
   { id: 'armchair', name: 'Armchair', size: 'small', description: 'Single chair', price: 30, icon: Armchair },
   { id: 'dining_chair', name: 'Dining Chair', size: 'small', description: 'Fabric seat', price: 15, icon: UtensilsCrossed },
-  { id: 'ottoman', name: 'Ottoman', size: 'small', description: 'Fabric ottoman', price: 20, icon: CircleDot },
+  { id: 'ottoman', name: 'Ottoman', size: 'small', description: 'Fabric ottoman', price: 29, icon: CircleDot },
   { id: 'curtains', name: 'Curtain Panel', size: 'medium', description: 'Per panel', price: 25, icon: Theater },
 ];
 
