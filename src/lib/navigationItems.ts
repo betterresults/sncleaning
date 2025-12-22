@@ -102,6 +102,11 @@ export const salesAgentNavigation = [
     icon: MessageSquareText,
   },
   {
+    title: "Quote Leads",
+    url: "/admin-quote-leads",
+    icon: Target,
+  },
+  {
     title: "My Tasks",
     url: "/agent-tasks",
     icon: ClipboardList,
