@@ -279,7 +279,7 @@ const CarpetCleaningForm: React.FC = () => {
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back
                 </Button>
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700 whitespace-nowrap">
                   <span className="sm:hidden">Carpet Cleaning</span>
                   <span className="hidden sm:inline">Carpet Cleaning Booking Form</span>
                 </h1>
@@ -294,14 +294,14 @@ const CarpetCleaningForm: React.FC = () => {
                 >
                   ← Back to Account
                 </Button>
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700 whitespace-nowrap">
                   <span className="sm:hidden">Carpet Cleaning</span>
                   <span className="hidden sm:inline">Carpet Cleaning Booking Form</span>
                 </h1>
                 <div className="w-[140px]" />
               </>
             ) : (
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700 mx-auto">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700 mx-auto whitespace-nowrap">
                 <span className="sm:hidden">Carpet Cleaning</span>
                 <span className="hidden sm:inline">Carpet Cleaning Booking Form</span>
               </h1>
