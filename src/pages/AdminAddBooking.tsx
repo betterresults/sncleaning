@@ -36,6 +36,9 @@ const AdminAddBooking = () => {
     } else if (serviceType === 'carpet-cleaning') {
       // Navigate to dedicated admin Carpet booking page
       navigate('/admin/carpet');
+    } else if (serviceType === 'end-of-tenancy') {
+      // Navigate to dedicated admin End of Tenancy booking page
+      navigate('/admin/end-of-tenancy');
     } else {
       // For all other services, show the form inline
       setSelectedService(serviceType);
