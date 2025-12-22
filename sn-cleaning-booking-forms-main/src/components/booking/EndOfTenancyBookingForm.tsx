@@ -64,6 +64,7 @@ export interface EndOfTenancyBookingData {
   estimatedHours: number | null;
   hourlyRate: number;
   totalCost: number;
+  isFirstTimeCustomer?: boolean;
   
   // Admin pricing overrides
   adminDiscountAmount?: number;
