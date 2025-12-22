@@ -156,17 +156,15 @@ export const UpholsteryMattressStep: React.FC<UpholsteryMattressStepProps> = ({
   return (
     <div className="space-y-8">
       {/* Upholstery Cleaning Section */}
-      <div className="bg-white rounded-2xl p-5 border border-border shadow-sm">
-        {renderSectionHeader('Upholstery Cleaning', Sofa, 'Sofas, chairs, ottomans & curtains', 'bg-gradient-to-r from-blue-50 to-indigo-50')}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {upholsteryOptions.map(option => renderItemCard(option, 'upholstery', data.upholsteryItems))}
-        </div>
+      {renderSectionHeader('Upholstery Cleaning', Sofa, 'Sofas, chairs, ottomans & curtains', 'bg-gradient-to-r from-blue-50 to-indigo-50')}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {upholsteryOptions.map(option => renderItemCard(option, 'upholstery', data.upholsteryItems))}
       </div>
 
       {/* Mattress Cleaning Section */}
-      <div className="bg-white rounded-2xl p-5 border border-border shadow-sm">
+      <div className="mt-8">
         {renderSectionHeader('Mattress Cleaning', Bed, 'Deep clean & sanitize mattresses', 'bg-gradient-to-r from-purple-50 to-pink-50')}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
           {mattressOptions.map(option => renderItemCard(option, 'mattress', data.mattressItems))}
         </div>
       </div>
