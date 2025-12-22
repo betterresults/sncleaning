@@ -314,6 +314,63 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         return;
       }
 
+      // Sync booking_cleaners table if cleaner assignment changed
+      const cleanerChanged = formData.cleanerId !== (booking.cleaner || null);
+      const cleanerPayChanged = Math.abs((formData.cleanerPay || 0) - (booking.cleaner_pay || 0)) > 0.01;
+      
+      if (cleanerChanged || cleanerPayChanged) {
+        try {
+          if (formData.cleanerId && formData.cleanerId > 0) {
+            // Check if primary cleaner entry exists
+            const { data: existingEntry } = await supabase
+              .from('booking_cleaners')
+              .select('id')
+              .eq('booking_id', booking.id)
+              .eq('is_primary', true)
+              .maybeSingle();
+            
+            if (existingEntry) {
+              // Update existing entry
+              await supabase
+                .from('booking_cleaners')
+                .update({
+                  cleaner_id: formData.cleanerId,
+                  calculated_pay: formData.cleanerPay || 0,
+                  hours_assigned: formData.totalHours || 0,
+                  percentage_rate: formData.cleanerPercentage || null,
+                  hourly_rate: formData.cleanerRate || null
+                })
+                .eq('id', existingEntry.id);
+            } else {
+              // Create new entry
+              await supabase
+                .from('booking_cleaners')
+                .insert({
+                  booking_id: booking.id,
+                  cleaner_id: formData.cleanerId,
+                  is_primary: true,
+                  payment_type: formData.cleanerPercentage ? 'percentage' : 'hourly',
+                  percentage_rate: formData.cleanerPercentage || null,
+                  hourly_rate: formData.cleanerRate || null,
+                  hours_assigned: formData.totalHours || 0,
+                  calculated_pay: formData.cleanerPay || 0,
+                  status: 'assigned'
+                });
+            }
+          } else if (cleanerChanged && !formData.cleanerId) {
+            // Cleaner was removed - delete primary entry
+            await supabase
+              .from('booking_cleaners')
+              .delete()
+              .eq('booking_id', booking.id)
+              .eq('is_primary', true);
+          }
+        } catch (syncError) {
+          console.error('Error syncing booking_cleaners:', syncError);
+          // Don't fail the update if sync fails
+        }
+      }
+
       toast({
         title: "✅ Booking Updated",
         description: needsPaymentAdjustment 

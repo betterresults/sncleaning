@@ -73,40 +73,41 @@ const CleanerUpcomingBookings = () => {
         return;
       }
 
-      // Fetch bookings where cleaner is a sub-cleaner
-      const { data: subBookingsData, error: subBookingsError } = await supabase
-        .from('sub_bookings')
-        .select('primary_booking_id, hours_assigned, cleaner_pay')
+      // Fetch bookings where cleaner is assigned (primary or additional) via booking_cleaners
+      const { data: cleanerAssignments, error: assignmentsError } = await supabase
+        .from('booking_cleaners')
+        .select('booking_id, hours_assigned, calculated_pay, is_primary')
         .eq('cleaner_id', effectiveCleanerId);
 
-      if (subBookingsError) {
-        console.error('Error fetching sub_bookings:', subBookingsError);
-        // Continue with just primary bookings
+      if (assignmentsError) {
+        console.error('Error fetching booking_cleaners:', assignmentsError);
+        // Continue with just primary bookings from bookings table
       }
 
-      // For primary bookings, fetch any sub-cleaners to adjust primary cleaner's pay
+      // For primary bookings, fetch all cleaners to adjust primary cleaner's pay
       const primaryBookingIds = (primaryBookings || []).map(b => b.id);
-      let subCleanersForPrimary: { primary_booking_id: number; hours_assigned: number; cleaner_pay: number }[] = [];
+      let additionalCleanersForPrimary: { booking_id: number; hours_assigned: number | null; calculated_pay: number }[] = [];
       
       if (primaryBookingIds.length > 0) {
-        const { data: subCleanersData, error: subCleanersError } = await supabase
-          .from('sub_bookings')
-          .select('primary_booking_id, hours_assigned, cleaner_pay')
-          .in('primary_booking_id', primaryBookingIds);
+        const { data: additionalCleanersData, error: additionalError } = await supabase
+          .from('booking_cleaners')
+          .select('booking_id, hours_assigned, calculated_pay')
+          .in('booking_id', primaryBookingIds)
+          .eq('is_primary', false);
         
-        if (!subCleanersError && subCleanersData) {
-          subCleanersForPrimary = subCleanersData;
+        if (!additionalError && additionalCleanersData) {
+          additionalCleanersForPrimary = additionalCleanersData;
         }
       }
 
-      // Adjust primary cleaner's pay based on sub-cleaners
+      // Adjust primary cleaner's pay based on additional cleaners
       let allBookings = (primaryBookings || []).map(booking => {
-        const subCleaners = subCleanersForPrimary.filter(sc => sc.primary_booking_id === booking.id);
-        if (subCleaners.length > 0) {
-          // Calculate total hours assigned to sub-cleaners
-          const subCleanerHours = subCleaners.reduce((sum, sc) => sum + (sc.hours_assigned || 0), 0);
+        const additionalCleaners = additionalCleanersForPrimary.filter(sc => sc.booking_id === booking.id);
+        if (additionalCleaners.length > 0) {
+          // Calculate total hours assigned to additional cleaners
+          const additionalCleanerHours = additionalCleaners.reduce((sum, sc) => sum + (sc.hours_assigned || 0), 0);
           const totalHours = booking.total_hours || 0;
-          const remainingHours = Math.max(0, totalHours - subCleanerHours);
+          const remainingHours = Math.max(0, totalHours - additionalCleanerHours);
           
           // Recalculate primary cleaner's pay based on remaining hours
           const cleanerRate = booking.cleaner_rate || 20; // Default to £20/hour
@@ -121,11 +122,12 @@ const CleanerUpcomingBookings = () => {
         return booking;
       });
 
-      // If there are sub-bookings, fetch those booking details
-      if (subBookingsData && subBookingsData.length > 0) {
-        const subBookingIds = subBookingsData.map(sb => sb.primary_booking_id);
+      // If cleaner is assigned as additional cleaner to other bookings, fetch those
+      const additionalAssignments = (cleanerAssignments || []).filter(a => !a.is_primary);
+      if (additionalAssignments.length > 0) {
+        const additionalBookingIds = additionalAssignments.map(a => a.booking_id);
         
-        const { data: subBookingDetails, error: subDetailsError } = await supabase
+        const { data: additionalBookingDetails, error: additionalDetailsError } = await supabase
           .from('bookings')
           .select(`
             *,
@@ -137,25 +139,25 @@ const CleanerUpcomingBookings = () => {
               full_name
             )
           `)
-          .in('id', subBookingIds)
+          .in('id', additionalBookingIds)
           .gte('date_time', startOfDay(new Date()).toISOString());
 
-        if (!subDetailsError && subBookingDetails) {
-          // Merge sub-booking pay info and mark as sub-cleaner booking
-          const enrichedSubBookings = subBookingDetails.map(booking => {
-            const subInfo = subBookingsData.find(sb => sb.primary_booking_id === booking.id);
+        if (!additionalDetailsError && additionalBookingDetails) {
+          // Merge additional cleaner pay info and mark as additional cleaner booking
+          const enrichedAdditionalBookings = additionalBookingDetails.map(booking => {
+            const assignment = additionalAssignments.find(a => a.booking_id === booking.id);
             return {
               ...booking,
-              cleaner_pay: subInfo?.cleaner_pay || booking.cleaner_pay,
-              total_hours: subInfo?.hours_assigned || booking.total_hours,
+              cleaner_pay: assignment?.calculated_pay || booking.cleaner_pay,
+              total_hours: assignment?.hours_assigned || booking.total_hours,
               is_sub_cleaner: true
             };
           });
           
-          // Add sub-bookings that aren't already in primary bookings
+          // Add additional bookings that aren't already in primary bookings
           const primaryIds = new Set(allBookings.map(b => b.id));
-          const newSubBookings = enrichedSubBookings.filter(b => !primaryIds.has(b.id));
-          allBookings = [...allBookings, ...newSubBookings];
+          const newAdditionalBookings = enrichedAdditionalBookings.filter(b => !primaryIds.has(b.id));
+          allBookings = [...allBookings, ...newAdditionalBookings];
         }
       }
 

@@ -415,6 +415,30 @@ export const useDomesticBookingSubmit = () => {
         throw new Error(bookingError?.message || 'Failed to create booking');
       }
 
+      // Insert primary cleaner into booking_cleaners if assigned
+      if (bookingData.cleanerId && bookingData.cleanerId > 0) {
+        try {
+          // Calculate cleaner pay based on total cost and default percentage
+          const cleanerPercentage = 50; // Default 50%, can be adjusted
+          const calculatedPay = (bookingData.totalCost || 0) * (cleanerPercentage / 100);
+          
+          await supabase.from('booking_cleaners').insert({
+            booking_id: booking.id,
+            cleaner_id: bookingData.cleanerId,
+            is_primary: true,
+            payment_type: 'percentage',
+            percentage_rate: cleanerPercentage,
+            hours_assigned: totalHours,
+            calculated_pay: calculatedPay,
+            status: 'assigned'
+          });
+          console.log('[useDomesticBookingSubmit] Created booking_cleaners entry for primary cleaner');
+        } catch (cleanerError) {
+          console.error('[useDomesticBookingSubmit] Failed to create booking_cleaners entry:', cleanerError);
+          // Don't fail the booking if this fails
+        }
+      }
+
       // Create recurring service if this is a recurring booking
       if (isRecurring && recurringGroupId) {
         console.log('[useDomesticBookingSubmit] Creating recurring service for frequency:', bookingData.serviceFrequency);
