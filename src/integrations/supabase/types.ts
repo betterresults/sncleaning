@@ -1346,6 +1346,63 @@ export type Database = {
         }
         Relationships: []
       }
+      end_of_tenancy_field_configs: {
+        Row: {
+          category: string
+          category_order: number | null
+          created_at: string
+          display_order: number | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          is_visible: boolean | null
+          label: string | null
+          max_value: number | null
+          min_value: number | null
+          option: string
+          time: number | null
+          updated_at: string
+          value: number
+          value_type: string
+        }
+        Insert: {
+          category: string
+          category_order?: number | null
+          created_at?: string
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_visible?: boolean | null
+          label?: string | null
+          max_value?: number | null
+          min_value?: number | null
+          option: string
+          time?: number | null
+          updated_at?: string
+          value?: number
+          value_type?: string
+        }
+        Update: {
+          category?: string
+          category_order?: number | null
+          created_at?: string
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_visible?: boolean | null
+          label?: string | null
+          max_value?: number | null
+          min_value?: number | null
+          option?: string
+          time?: number | null
+          updated_at?: string
+          value?: number
+          value_type?: string
+        }
+        Relationships: []
+      }
       funnel_events: {
         Row: {
           created_at: string
