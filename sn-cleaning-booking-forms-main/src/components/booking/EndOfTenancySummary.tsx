@@ -9,18 +9,16 @@ interface EndOfTenancySummaryProps {
   onUpdate?: (updates: Partial<EndOfTenancyBookingData>) => void;
 }
 
-// Pricing constants
-const BASE_HOURS_MAP: Record<string, Record<string, number>> = {
-  studio: { '1': 3, '2': 3.5 },
-  '1': { '1': 4, '2': 4.5 },
-  '2': { '1': 5, '2': 5.5, '3': 6 },
-  '3': { '1': 6, '2': 6.5, '3': 7, '4': 7.5 },
-  '4': { '1': 7, '2': 7.5, '3': 8, '4': 8.5 },
-  '5': { '1': 8, '2': 8.5, '3': 9, '4': 9.5, '5': 10 },
-  '6+': { '1': 9, '2': 10, '3': 11, '4': 12, '5': 13, '6+': 14 },
+// Fixed pricing based on property size
+const BASE_PRICE_MAP: Record<string, Record<string, number>> = {
+  studio: { '1': 150, '2': 170 },
+  '1': { '1': 180, '2': 200 },
+  '2': { '1': 220, '2': 250, '3': 280 },
+  '3': { '1': 280, '2': 310, '3': 340, '4': 370 },
+  '4': { '1': 340, '2': 380, '3': 420, '4': 460 },
+  '5': { '1': 400, '2': 450, '3': 500, '4': 550, '5': 600 },
+  '6+': { '1': 480, '2': 550, '3': 620, '4': 690, '5': 760, '6+': 830 },
 };
-
-const HOURLY_RATE = 28;
 
 const OVEN_PRICES: Record<string, number> = {
   single: 45,
@@ -48,16 +46,16 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Calculate estimated hours based on property size
-  const getBaseHours = () => {
+  // Calculate fixed price based on property size
+  const getBasePrice = () => {
     const bedrooms = data.bedrooms || '1';
     const bathrooms = data.bathrooms || '1';
     
-    const bedroomMap = BASE_HOURS_MAP[bedrooms] || BASE_HOURS_MAP['1'];
-    return bedroomMap[bathrooms] || bedroomMap['1'] || 4;
+    const bedroomMap = BASE_PRICE_MAP[bedrooms] || BASE_PRICE_MAP['1'];
+    return bedroomMap[bathrooms] || bedroomMap['1'] || 180;
   };
   
-  const baseHours = getBaseHours();
+  const basePrice = getBasePrice();
   const ovenCleaningCost = data.ovenType ? OVEN_PRICES[data.ovenType] || 0 : 0;
   
   // Calculate blinds total
@@ -76,15 +74,14 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
   const shortNoticeCharge = data.shortNoticeCharge || 0;
   
   // Calculate total cost
-  const baseCost = baseHours * HOURLY_RATE;
-  const totalCost = baseCost + ovenCleaningCost + blindsTotal + extrasTotal + steamCleaningTotal + shortNoticeCharge;
+  const totalCost = basePrice + ovenCleaningCost + blindsTotal + extrasTotal + steamCleaningTotal + shortNoticeCharge;
   
   // Update parent when total changes
   useEffect(() => {
     if (onUpdate && totalCost !== data.totalCost) {
-      onUpdate({ totalCost, estimatedHours: baseHours });
+      onUpdate({ totalCost });
     }
-  }, [totalCost, baseHours]);
+  }, [totalCost]);
   
   // Format property description
   const getPropertyDescription = () => {
@@ -115,12 +112,12 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
 
   const renderSummaryContent = () => (
     <div className="space-y-3">
-      {/* Service Section */}
-      {baseHours > 0 && (
+      {/* Service Section - Fixed Price */}
+      {basePrice > 0 && data.bedrooms && (
         <div className="flex justify-between items-center">
           <span className="text-muted-foreground">End of Tenancy Cleaning</span>
           <span className="text-foreground font-semibold whitespace-nowrap">
-            {baseHours}h × £{HOURLY_RATE.toFixed(2)}/hr
+            £{basePrice.toFixed(2)}
           </span>
         </div>
       )}
@@ -261,20 +258,15 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
         </div>
       )}
 
-      {baseHours > 0 && (
+      {basePrice > 0 && data.bedrooms && (
         <div className="flex items-center gap-3 mb-4 pb-4 border-b border-border">
           <div className="p-2 bg-primary/10 rounded-xl">
             <Clock className="w-5 h-5 text-primary" />
           </div>
           <div>
             <p className="font-medium text-foreground">
-              {baseHours} hour{baseHours !== 1 ? 's' : ''} - End of Tenancy
+              End of Tenancy Cleaning
             </p>
-            {isAdminMode && (
-              <p className="text-sm text-muted-foreground">
-                £{HOURLY_RATE.toFixed(2)}/hour
-              </p>
-            )}
           </div>
         </div>
       )}
@@ -297,7 +289,7 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
 
       {/* Desktop: Always visible */}
       <div className="hidden lg:block">
-        {baseHours > 0 ? renderSummaryContent() : (
+        {basePrice > 0 && data.bedrooms ? renderSummaryContent() : (
           <div className="text-center py-12 text-muted-foreground">
             <div className="flex flex-col items-center gap-3">
               <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
