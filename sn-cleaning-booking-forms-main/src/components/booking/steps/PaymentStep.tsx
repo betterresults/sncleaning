@@ -387,7 +387,7 @@ useEffect(() => {
     ? (paymentMethods.find((pm: any) => pm.is_default) || paymentMethods[0])
     : null;
 
-  // Calculate if booking is urgent (within 24 hours) - only authorize for urgent bookings
+  // Calculate if booking is urgent (within 48 hours) - only authorize for urgent bookings
   const isUrgentBooking = useMemo(() => {
     if (!data.selectedDate || !data.selectedTime) return false;
     
@@ -395,7 +395,7 @@ useEffect(() => {
       `${data.selectedDate.toISOString().split('T')[0]}T${data.selectedTime}:00`
     );
     const hoursUntilBooking = (bookingDateTime.getTime() - Date.now()) / (1000 * 60 * 60);
-    return hoursUntilBooking <= 24;
+    return hoursUntilBooking <= 48;
   }, [data.selectedDate, data.selectedTime]);
 
   // Bank transfer is available for all customers
@@ -1354,10 +1354,10 @@ useEffect(() => {
             // Don't throw - booking is created, we can link later
           }
 
-          // Process payment - only authorize for urgent bookings (within 24 hours)
-          // For non-urgent bookings (>24 hours), just save the card - no authorization
+          // Process payment - only authorize for urgent bookings (within 48 hours)
+          // For non-urgent bookings (>48 hours), just save the card - no authorization
           if (isUrgentBooking) {
-            console.log('[PaymentStep] Urgent booking (within 24 hours) - authorizing payment...');
+            console.log('[PaymentStep] Urgent booking (within 48 hours) - authorizing payment...');
             const { data: authResult, error: authError } = await supabase.functions.invoke(
               'system-payment-action',
               {
@@ -1377,7 +1377,7 @@ useEffect(() => {
               });
             }
           } else {
-            console.log('[PaymentStep] Non-urgent booking (>24 hours) - card saved, no authorization needed');
+            console.log('[PaymentStep] Non-urgent booking (>48 hours) - card saved, no authorization needed');
           }
 
           // Call success callback for quote lead tracking
@@ -2236,9 +2236,9 @@ useEffect(() => {
                     <p className={`text-lg font-bold ${isUrgentBooking ? 'text-orange-900' : 'text-amber-900'}`}>Bank Transfer Payment</p>
                     <p className={`text-sm mt-1 ${isUrgentBooking ? 'text-orange-700' : 'text-amber-700'}`}>
                       {isUrgentBooking ? (
-                        <>Payment must be made <strong>immediately</strong> to confirm your booking as it's within 24 hours.</>
+                        <>Payment must be made <strong>immediately</strong> to confirm your booking as it's within 48 hours.</>
                       ) : (
-                        <>Payment must be received at least <strong>24 hours before</strong> your booking date to secure your appointment.</>
+                        <>Payment must be received at least <strong>48 hours before</strong> your booking date to secure your appointment.</>
                       )}
                     </p>
                   </div>
