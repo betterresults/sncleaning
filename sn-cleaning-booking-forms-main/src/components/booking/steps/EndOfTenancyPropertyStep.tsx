@@ -423,13 +423,13 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
                 return (
                   <button
                     key={room.id}
-                    className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center gap-2 ${
+                    className={`h-20 rounded-2xl border transition-all duration-300 flex flex-col items-center justify-center gap-1 ${
                       isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
                     }`}
                     onClick={() => toggleAdditionalRoom(room.id)}
                   >
-                    <Icon className={`h-4 w-4 ${isSelected ? 'text-primary' : 'text-slate-400'}`} />
-                    <span className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>
+                    <Icon className={`h-6 w-6 ${isSelected ? 'text-primary' : 'text-slate-400'}`} />
+                    <span className={`text-xs font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>
                       {room.label}
                     </span>
                   </button>
