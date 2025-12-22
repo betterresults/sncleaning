@@ -74,6 +74,8 @@ interface PaymentElementWrapperProps {
   onComplete: (complete: boolean) => void;
   isUrgentBooking: boolean;
   totalCost: number;
+  onConfirmSetup?: () => Promise<{ setupIntent?: any; error?: any }>;
+  setConfirmSetupFn?: (fn: () => Promise<{ setupIntent?: any; error?: any }>) => void;
 }
 
 const PaymentElementWrapper: React.FC<PaymentElementWrapperProps> = ({ 
@@ -82,7 +84,8 @@ const PaymentElementWrapper: React.FC<PaymentElementWrapperProps> = ({
   onReady,
   onComplete,
   isUrgentBooking,
-  totalCost
+  totalCost,
+  setConfirmSetupFn
 }) => {
   if (!stripePromise) {
     return (
@@ -116,6 +119,7 @@ const PaymentElementWrapper: React.FC<PaymentElementWrapperProps> = ({
         onComplete={onComplete}
         isUrgentBooking={isUrgentBooking}
         totalCost={totalCost}
+        setConfirmSetupFn={setConfirmSetupFn}
       />
     </Elements>
   );
@@ -127,7 +131,29 @@ const PaymentElementInner: React.FC<{
   onComplete: (complete: boolean) => void;
   isUrgentBooking: boolean;
   totalCost: number;
-}> = ({ onReady, onComplete, isUrgentBooking, totalCost }) => {
+  setConfirmSetupFn?: (fn: () => Promise<{ setupIntent?: any; error?: any }>) => void;
+}> = ({ onReady, onComplete, isUrgentBooking, totalCost, setConfirmSetupFn }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  
+  // Register the confirmSetup function with parent component
+  useEffect(() => {
+    if (stripe && elements && setConfirmSetupFn) {
+      const confirmFn = async () => {
+        console.log('[PaymentElementInner] confirmSetup called with mounted elements');
+        const result = await stripe.confirmSetup({
+          elements,
+          confirmParams: {
+            return_url: `${window.location.origin}/booking-confirmation?payment_setup=pending`,
+          },
+          redirect: 'if_required',
+        });
+        return result;
+      };
+      setConfirmSetupFn(confirmFn);
+    }
+  }, [stripe, elements, setConfirmSetupFn]);
+
   return (
     <div className="min-h-[200px]">
       <PaymentElement 
@@ -138,7 +164,6 @@ const PaymentElementInner: React.FC<{
             radios: false,
             spacedAccordionItems: true,
           },
-          // Include all alternative payment methods - Stripe will show enabled ones from dashboard
           paymentMethodOrder: ['card', 'revolut_pay', 'amazon_pay', 'apple_pay', 'google_pay', 'link'],
           business: { name: 'SN Cleaning Services' },
         }}
@@ -197,6 +222,9 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   const [setupIntentClientSecret, setSetupIntentClientSecret] = useState<string | null>(null);
   const [loadingSetupIntent, setLoadingSetupIntent] = useState(false);
   const [paymentElementReady, setPaymentElementReady] = useState(false);
+  
+  // Function to confirm SetupIntent from inside PaymentElementWrapper
+  const [confirmSetupFn, setConfirmSetupFn] = useState<(() => Promise<{ setupIntent?: any; error?: any }>) | null>(null);
   
   // Guest customer lookup by email
   const [guestCustomerId, setGuestCustomerId] = useState<number | null>(null);
@@ -1204,18 +1232,12 @@ useEffect(() => {
         } else {
           navigate('/booking-confirmation', { state: { bookingId: result.bookingId } });
         }
-      } else if (setupIntentClientSecret && stripe && elements) {
+      } else if (setupIntentClientSecret && confirmSetupFn) {
         // New customer with inline PaymentElement - confirm the SetupIntent
-        console.log('[PaymentStep] Confirming SetupIntent with inline PaymentElement...');
+        console.log('[PaymentStep] Confirming SetupIntent with mounted PaymentElement...');
         
-        // First, confirm the SetupIntent to save the payment method
-        const { error: confirmError, setupIntent } = await stripe.confirmSetup({
-          elements,
-          confirmParams: {
-            return_url: `${window.location.origin}/booking-confirmation?payment_setup=pending`,
-          },
-          redirect: 'if_required', // Only redirect if payment method requires it (e.g., Revolut Pay)
-        });
+        // Call the confirmSetup function registered by PaymentElementInner
+        const { error: confirmError, setupIntent } = await confirmSetupFn();
 
         if (confirmError) {
           console.error('[PaymentStep] SetupIntent confirmation error:', confirmError);
@@ -2307,6 +2329,7 @@ useEffect(() => {
                           onComplete={(complete) => setCardComplete(complete)}
                           isUrgentBooking={isUrgentBooking}
                           totalCost={data.totalCost || 0}
+                          setConfirmSetupFn={setConfirmSetupFn}
                         />
                       ) : !data.email ? (
                         <div className="text-center py-6 text-gray-500">
@@ -2354,6 +2377,7 @@ useEffect(() => {
                       onComplete={(complete) => setCardComplete(complete)}
                       isUrgentBooking={isUrgentBooking}
                       totalCost={data.totalCost || 0}
+                      setConfirmSetupFn={setConfirmSetupFn}
                     />
                   ) : !data.email ? (
                     <div className="text-center py-6 text-gray-500">
