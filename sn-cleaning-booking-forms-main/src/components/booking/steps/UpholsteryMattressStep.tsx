@@ -189,7 +189,7 @@ export const UpholsteryMattressStep: React.FC<UpholsteryMattressStepProps> = ({
     return (
       <button
         key={option.id}
-        className={`group relative h-40 rounded-2xl border transition-all duration-300 ${
+        className={`group relative h-48 rounded-2xl border transition-all duration-300 ${
           isSelected ? 'border-primary bg-primary/5 shadow-md' : 'border-border bg-card hover:border-primary/50 hover:shadow-sm'
         }`}
         onClick={() => {
@@ -199,64 +199,64 @@ export const UpholsteryMattressStep: React.FC<UpholsteryMattressStepProps> = ({
         }}
       >
         {isSelected ? (
-          <div className="flex flex-col items-center justify-center h-full p-3">
-            <div className="p-2 rounded-full bg-primary/10 mb-1">
-              <IconComponent className="h-6 w-6 text-primary" />
+          <div className="flex flex-col items-center justify-center h-full p-4">
+            <div className="p-3 rounded-full bg-primary/10 mb-2">
+              <IconComponent className="h-7 w-7 text-primary" />
             </div>
-            <span className="text-sm font-bold text-primary mb-1 text-center leading-tight">
+            <span className="text-sm font-bold text-primary mb-2 text-center leading-tight">
               {option.name}
             </span>
             
             {/* Both Sides Toggle */}
             <div 
-              className="flex items-center gap-2 mb-2 px-2 py-1 rounded-lg bg-primary/5"
+              className="flex items-center gap-2 mb-3 px-3 py-1.5 rounded-lg bg-primary/5"
               onClick={(e) => e.stopPropagation()}
             >
               <span className="text-xs text-muted-foreground">Both sides</span>
               <Switch
                 checked={isBothSides}
                 onCheckedChange={() => toggleBothSides(option.id, option.price, option.name, option.size)}
-                className="scale-75"
+                className="scale-90"
               />
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 w-7 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
+                className="h-8 w-8 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
                 onClick={(e) => {
                   e.stopPropagation();
                   updateItemQuantity('mattress', option.id, option.name, option.size, displayPrice, -1);
                 }}
               >
-                <Minus className="h-3 w-3" />
+                <Minus className="h-4 w-4" />
               </Button>
-              <div className="w-6 text-center">
-                <span className="text-lg font-bold text-primary">{quantity}</span>
+              <div className="w-8 text-center">
+                <span className="text-xl font-bold text-primary">{quantity}</span>
               </div>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 w-7 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
+                className="h-8 w-8 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary"
                 onClick={(e) => {
                   e.stopPropagation();
                   updateItemQuantity('mattress', option.id, option.name, option.size, displayPrice, 1);
                 }}
               >
-                <Plus className="h-3 w-3" />
+                <Plus className="h-4 w-4" />
               </Button>
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full p-3">
-            <div className="p-2.5 rounded-full bg-muted mb-2 group-hover:bg-primary/10 transition-colors">
-              <IconComponent className="h-7 w-7 text-muted-foreground group-hover:text-primary transition-colors" />
+          <div className="flex flex-col items-center justify-center h-full p-4">
+            <div className="p-3 rounded-full bg-muted mb-3 group-hover:bg-primary/10 transition-colors">
+              <IconComponent className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
             </div>
             <span className="text-sm font-bold text-slate-700 group-hover:text-primary text-center leading-tight transition-colors">
               {option.name}
             </span>
-            <span className="text-base font-bold text-primary mt-1">£{option.price}</span>
+            <span className="text-lg font-bold text-primary mt-2">£{option.price}</span>
           </div>
         )}
       </button>
