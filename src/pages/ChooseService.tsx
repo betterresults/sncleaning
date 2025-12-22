@@ -113,9 +113,9 @@ const services = [
     id: 'carpet-cleaning',
     title: 'Carpet Cleaning',
     icon: Layers,
-    available: false,
+    available: true,
     description: 'Professional carpet deep cleaning',
-    gradient: 'from-gray-400 to-gray-500'
+    gradient: 'from-[#8B5A2B] to-[#5D3A1A]'
   }
 ];
 
@@ -148,6 +148,11 @@ const ChooseService = () => {
 
     if (serviceId === 'domestic-cleaning') {
       navigate(`/domestic?postcode=${encodeURIComponent(postcode)}&email=${encodeURIComponent(email)}`);
+      return;
+    }
+
+    if (serviceId === 'carpet-cleaning') {
+      navigate(`/carpet-cleaning?postcode=${encodeURIComponent(postcode)}&email=${encodeURIComponent(email)}`);
       return;
     }
 

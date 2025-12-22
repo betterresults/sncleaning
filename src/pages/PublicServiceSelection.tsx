@@ -70,6 +70,11 @@ const PublicServiceSelection = () => {
       return;
     }
     
+    if (serviceType === 'carpet-cleaning') {
+      navigate(`/carpet-cleaning?postcode=${encodeURIComponent(postcode)}&email=${encodeURIComponent(email)}`);
+      return;
+    }
+    
     // For other services, redirect to auth page to sign up/login first
     navigate(`/auth?service=${serviceType}&postcode=${encodeURIComponent(postcode)}&email=${encodeURIComponent(email)}`);
   };
