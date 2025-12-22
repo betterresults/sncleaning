@@ -16,6 +16,7 @@ interface SendPaymentLinkRequest {
   booking_id?: number;
   booking_ids?: number[]; // Optional: when creating a combined link for multiple bookings
   collect_payment_method?: boolean; // If true, also collect payment method for future use
+  payment_method_type?: string; // 'card' | 'revolut_pay' | 'amazon_pay' | etc.
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -40,10 +41,11 @@ const handler = async (req: Request): Promise<Response> => {
       description = 'Cleaning Service Payment',
       booking_id,
       booking_ids,
-      collect_payment_method = false
+      collect_payment_method = false,
+      payment_method_type
     }: SendPaymentLinkRequest = await req.json();
 
-    console.log('Sending payment link for:', { customer_id, email, amount, description });
+    console.log('Sending payment link for:', { customer_id, email, amount, description, payment_method_type });
 
     // Check if Stripe customer already exists (for reference, but don't create yet)
     let existingStripeCustomerId: string | undefined;
@@ -66,7 +68,6 @@ const handler = async (req: Request): Promise<Response> => {
     // Otherwise use Payment Link (simpler, doesn't save card)
     if (collect_payment_method) {
       // Use existing customer if found, otherwise let Stripe create one during checkout
-      // Don't specify payment_method_types to allow all enabled methods (card, Revolut Pay, Amazon Pay, etc.)
       const sessionConfig: any = {
         mode: 'payment',
         line_items: [
@@ -103,6 +104,21 @@ const handler = async (req: Request): Promise<Response> => {
           customer_name: name
         }
       };
+
+      // Configure payment methods based on type selected
+      if (!payment_method_type || payment_method_type === 'card') {
+        // Card only - use explicit type to avoid automatic_payment_methods conflicts
+        sessionConfig.payment_method_types = ['card'];
+      } else if (payment_method_type === 'revolut_pay') {
+        sessionConfig.payment_method_types = ['revolut_pay'];
+      } else if (payment_method_type === 'amazon_pay') {
+        sessionConfig.payment_method_types = ['amazon_pay'];
+      } else if (payment_method_type === 'link') {
+        sessionConfig.payment_method_types = ['link', 'card'];
+      } else {
+        // For any other type, try to use it directly
+        sessionConfig.payment_method_types = [payment_method_type];
+      }
 
       // Only attach existing customer, otherwise let Stripe create during checkout
       if (existingStripeCustomerId) {

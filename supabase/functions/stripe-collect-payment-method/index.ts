@@ -22,6 +22,7 @@ interface CollectPaymentMethodRequest {
   };
   collect_only?: boolean; // Flag to indicate collect-only mode (no booking)
   send_email?: boolean;
+  payment_method_type?: string; // 'card' | 'revolut_pay' | 'amazon_pay' | etc.
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -39,9 +40,9 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { customer_id, email, name, return_url, booking_details, collect_only, send_email }: CollectPaymentMethodRequest = await req.json();
+    const { customer_id, email, name, return_url, booking_details, collect_only, send_email, payment_method_type }: CollectPaymentMethodRequest = await req.json();
 
-    console.log('Collecting payment method for customer:', { customer_id, email, name, collect_only, send_email });
+    console.log('Collecting payment method for customer:', { customer_id, email, name, collect_only, send_email, payment_method_type });
 
     // Check if Stripe customer exists
     let stripeCustomer;
@@ -78,20 +79,38 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Created Setup Intent:', setupIntent.id);
 
     // Create Checkout Session for payment method collection
-    // Using automatic_payment_methods to support all enabled payment methods (card, Revolut Pay, Amazon Pay, etc.)
+    // If card is selected, use card only to avoid automatic_payment_methods error
+    // For other methods (revolut_pay, amazon_pay, etc.), use those specific types
     const origin = req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/') || 'https://dkomihipebixlegygnoy.supabase.co';
-    const checkoutSession = await stripe.checkout.sessions.create({
+    
+    // Determine payment method types based on selection
+    let sessionConfig: any = {
       customer: stripeCustomer.id,
       mode: 'setup',
-      // Don't restrict payment_method_types - let Stripe show all enabled methods from dashboard
-      // This allows cards, Revolut Pay, Amazon Pay, Google Pay, Apple Pay, etc.
       success_url: return_url || `${origin}/customer-settings?payment_method_added=true`,
       cancel_url: return_url || `${origin}/customer-settings?payment_method_cancelled=true`,
       metadata: {
         customer_id: customer_id.toString(),
         setup_intent_id: setupIntent.id
       }
-    });
+    };
+
+    // Configure payment methods based on type selected
+    if (!payment_method_type || payment_method_type === 'card') {
+      // Card only - use explicit type to avoid automatic_payment_methods conflicts
+      sessionConfig.payment_method_types = ['card'];
+    } else if (payment_method_type === 'revolut_pay') {
+      sessionConfig.payment_method_types = ['revolut_pay'];
+    } else if (payment_method_type === 'amazon_pay') {
+      sessionConfig.payment_method_types = ['amazon_pay'];
+    } else if (payment_method_type === 'link') {
+      sessionConfig.payment_method_types = ['link', 'card'];
+    } else {
+      // For any other type, try to use it directly
+      sessionConfig.payment_method_types = [payment_method_type];
+    }
+
+    const checkoutSession = await stripe.checkout.sessions.create(sessionConfig);
 
     console.log('Created Checkout Session:', checkoutSession.id);
 
