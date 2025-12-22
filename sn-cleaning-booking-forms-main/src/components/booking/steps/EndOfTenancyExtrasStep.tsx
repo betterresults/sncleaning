@@ -416,8 +416,8 @@ export const EndOfTenancyExtrasStep: React.FC<EndOfTenancyExtrasStepProps> = ({
             return (
               <button
                 key={option.id}
-                className={`group relative h-32 rounded-2xl border transition-all duration-300 ${
-                  isSelected ? 'border-primary bg-primary/5 shadow-md' : 'border-border bg-card hover:border-primary/50 hover:shadow-sm'
+                className={`group relative rounded-2xl border transition-all duration-300 ${
+                  isSelected ? 'border-primary bg-primary/5 shadow-md h-40' : 'border-border bg-card hover:border-primary/50 hover:shadow-sm h-32'
                 }`}
                 onClick={() => {
                   if (quantity === 0) {
@@ -426,14 +426,15 @@ export const EndOfTenancyExtrasStep: React.FC<EndOfTenancyExtrasStepProps> = ({
                 }}
               >
                 {isSelected ? (
-                  <div className="flex flex-col items-center justify-center h-full p-3">
+                  <div className="flex flex-col items-center justify-center h-full p-4">
                     <div className="p-2.5 rounded-full bg-primary/10 mb-2">
                       <Blinds className="h-7 w-7 text-primary" />
                     </div>
-                    <span className="text-sm font-bold text-primary mb-2 text-center leading-tight">
+                    <span className="text-sm font-bold text-slate-700 mb-1 text-center leading-tight">
                       {option.label}
                     </span>
-                    <div className="flex items-center gap-2">
+                    <div className="w-full border-t border-border my-2"></div>
+                    <div className="flex items-center gap-3">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -445,7 +446,7 @@ export const EndOfTenancyExtrasStep: React.FC<EndOfTenancyExtrasStepProps> = ({
                       >
                         <Minus className="h-4 w-4" />
                       </Button>
-                      <div className="w-8 text-center">
+                      <div className="w-10 text-center px-2 py-1 bg-white rounded-lg border border-border">
                         <span className="text-xl font-bold text-primary">{quantity}</span>
                       </div>
                       <Button
@@ -486,11 +487,18 @@ export const EndOfTenancyExtrasStep: React.FC<EndOfTenancyExtrasStepProps> = ({
             const quantity = getExtraServiceQuantity(service.id);
             const isSelected = quantity > 0;
             const Icon = service.icon;
+            const getServiceDescription = () => {
+              if (service.id === 'waste' && quantity > 0) {
+                return `Up to ${quantity * 10} bin bags`;
+              }
+              return null;
+            };
+            const description = getServiceDescription();
             return (
               <button
                 key={service.id}
-                className={`group relative h-32 rounded-2xl border transition-all duration-300 ${
-                  isSelected ? 'border-primary bg-primary/5 shadow-md' : 'border-border bg-card hover:border-primary/50 hover:shadow-sm'
+                className={`group relative rounded-2xl border transition-all duration-300 ${
+                  isSelected ? 'border-primary bg-primary/5 shadow-md h-44' : 'border-border bg-card hover:border-primary/50 hover:shadow-sm h-32'
                 }`}
                 onClick={() => {
                   if (quantity === 0) {
@@ -499,14 +507,18 @@ export const EndOfTenancyExtrasStep: React.FC<EndOfTenancyExtrasStepProps> = ({
                 }}
               >
                 {isSelected ? (
-                  <div className="flex flex-col items-center justify-center h-full p-3">
+                  <div className="flex flex-col items-center justify-center h-full p-4">
                     <div className="p-2.5 rounded-full bg-primary/10 mb-2">
                       <Icon className="h-7 w-7 text-primary" />
                     </div>
-                    <span className="text-sm font-bold text-primary mb-2 text-center leading-tight">
+                    <span className="text-sm font-bold text-slate-700 mb-1 text-center leading-tight">
                       {service.name}
                     </span>
-                    <div className="flex items-center gap-2">
+                    {description && (
+                      <span className="text-xs text-muted-foreground mb-2">{description}</span>
+                    )}
+                    <div className="w-full border-t border-border my-2"></div>
+                    <div className="flex items-center gap-3">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -518,7 +530,7 @@ export const EndOfTenancyExtrasStep: React.FC<EndOfTenancyExtrasStepProps> = ({
                       >
                         <Minus className="h-4 w-4" />
                       </Button>
-                      <div className="w-8 text-center">
+                      <div className="w-10 text-center px-2 py-1 bg-white rounded-lg border border-border">
                         <span className="text-xl font-bold text-primary">{quantity}</span>
                       </div>
                       <Button
