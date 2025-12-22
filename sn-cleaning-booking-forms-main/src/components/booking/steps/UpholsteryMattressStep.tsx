@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { CarpetCleaningData, CarpetCleaningItem } from '../CarpetCleaningForm';
-import { Plus, Minus, Sofa, Bed, BedDouble, BedSingle, UtensilsCrossed, Armchair, CircleDot, Theater, Crown, ArrowLeft, type LucideIcon } from 'lucide-react';
+import { Plus, Minus, Sofa, Bed, BedDouble, BedSingle, Armchair, Square, PanelTop, type LucideIcon } from 'lucide-react';
 
 interface UpholsteryMattressStepProps {
   data: CarpetCleaningData;
@@ -12,13 +12,15 @@ interface UpholsteryMattressStepProps {
 
 // Upholstery items with pricing and icons
 const upholsteryOptions: { id: string; name: string; size: 'small' | 'medium' | 'large'; description: string; price: number; icon: LucideIcon }[] = [
-  { id: 'sofa_2seat', name: '2-Seater Sofa', size: 'small', description: 'Love seat', price: 45, icon: Sofa },
-  { id: 'sofa_3seat', name: '3-Seater Sofa', size: 'medium', description: 'Standard sofa', price: 60, icon: Sofa },
-  { id: 'sofa_corner', name: 'Corner Sofa', size: 'large', description: 'L-shaped sectional', price: 85, icon: Sofa },
-  { id: 'armchair', name: 'Armchair', size: 'small', description: 'Single chair', price: 30, icon: Armchair },
-  { id: 'dining_chair', name: 'Dining Chair', size: 'small', description: 'Fabric seat', price: 15, icon: UtensilsCrossed },
-  { id: 'ottoman', name: 'Ottoman', size: 'small', description: 'Fabric ottoman', price: 29, icon: CircleDot },
-  { id: 'curtains', name: 'Curtain Panel', size: 'medium', description: 'Per panel', price: 25, icon: Theater },
+  { id: 'sofa_2seat', name: '2-Seater Sofa', size: 'small', description: 'Love seat', price: 59, icon: Sofa },
+  { id: 'sofa_3seat', name: '3-Seater Sofa', size: 'medium', description: 'Standard sofa', price: 89, icon: Sofa },
+  { id: 'sofa_corner', name: 'Corner Sofa', size: 'large', description: 'L-shaped sectional', price: 109, icon: Sofa },
+  { id: 'armchair', name: 'Armchair', size: 'small', description: 'Single chair', price: 39, icon: Armchair },
+  { id: 'dining_chair', name: 'Dining Chair', size: 'small', description: 'Fabric seat', price: 15, icon: Square },
+  { id: 'ottoman', name: 'Ottoman', size: 'small', description: 'Fabric ottoman', price: 29, icon: Square },
+  { id: 'headboard', name: 'Headboard', size: 'medium', description: 'Upholstered headboard', price: 45, icon: PanelTop },
+  { id: 'curtains_half', name: 'Curtains Set (Half)', size: 'small', description: 'Half-length curtains', price: 35, icon: PanelTop },
+  { id: 'curtains_full', name: 'Curtains Set (Full)', size: 'medium', description: 'Full-length curtains', price: 49, icon: PanelTop },
 ];
 
 // Mattress items with pricing and icons
@@ -26,7 +28,7 @@ const mattressOptions: { id: string; name: string; size: 'small' | 'medium' | 'l
   { id: 'mattress_single', name: 'Single Mattress', size: 'small', description: '90x190cm', price: 35, icon: BedSingle },
   { id: 'mattress_double', name: 'Double Mattress', size: 'medium', description: '135x190cm', price: 45, icon: BedDouble },
   { id: 'mattress_king', name: 'King Mattress', size: 'large', description: '150x200cm', price: 55, icon: Bed },
-  { id: 'mattress_superking', name: 'Super King', size: 'large', description: '180x200cm', price: 65, icon: Crown },
+  { id: 'mattress_superking', name: 'Super King', size: 'large', description: '180x200cm', price: 65, icon: Bed },
 ];
 
 export const UpholsteryMattressStep: React.FC<UpholsteryMattressStepProps> = ({
