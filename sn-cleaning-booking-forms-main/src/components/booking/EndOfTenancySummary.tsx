@@ -1,8 +1,7 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Home, Calendar, Clock, Sparkles, CookingPot, Blinds, Plus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Card } from '@/components/ui/card';
 import { EndOfTenancyBookingData } from './EndOfTenancyBookingForm';
-import { format } from 'date-fns';
+import { Home, Clock, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface EndOfTenancySummaryProps {
   data: EndOfTenancyBookingData;
@@ -47,6 +46,8 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
   isAdminMode = false,
   onUpdate,
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   // Calculate estimated hours based on property size
   const getBaseHours = () => {
     const bedrooms = data.bedrooms || '1';
@@ -78,186 +79,235 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
   const baseCost = baseHours * HOURLY_RATE;
   const totalCost = baseCost + ovenCleaningCost + blindsTotal + extrasTotal + steamCleaningTotal + shortNoticeCharge;
   
-  // Format property type
-  const getPropertyTypeLabel = () => {
+  // Update parent when total changes
+  useEffect(() => {
+    if (onUpdate && totalCost !== data.totalCost) {
+      onUpdate({ totalCost, estimatedHours: baseHours });
+    }
+  }, [totalCost, baseHours]);
+  
+  // Format property description
+  const getPropertyDescription = () => {
+    if (!data.propertyType) return '';
+    
+    let desc = '';
     switch (data.propertyType) {
-      case 'house': return 'House';
-      case 'flat': return 'Flat';
-      case 'house-share': return 'House Share';
+      case 'house': desc = 'House'; break;
+      case 'flat': desc = 'Flat'; break;
+      case 'house-share': desc = 'House Share'; break;
       default: return '';
     }
+    
+    if (data.bedrooms) {
+      if (data.bedrooms === 'studio') {
+        desc += ' Studio';
+      } else {
+        desc += ` ${data.bedrooms} Bedroom${data.bedrooms !== '1' ? 's' : ''}`;
+      }
+    }
+    
+    if (data.bathrooms) {
+      desc += `, ${data.bathrooms} Bathroom${data.bathrooms !== '1' ? 's' : ''}`;
+    }
+    
+    return desc;
   };
-  
-  // Format bedrooms
-  const getBedroomLabel = (value: string) => {
-    if (value === 'studio') return 'Studio';
-    if (value === '6+') return '6+ Bed';
-    return `${value} Bed`;
-  };
+
+  const renderSummaryContent = () => (
+    <div className="space-y-3">
+      {/* Service Section */}
+      {baseHours > 0 && (
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground">End of Tenancy Cleaning</span>
+          <span className="text-foreground font-semibold whitespace-nowrap">
+            {baseHours}h × £{HOURLY_RATE.toFixed(2)}/hr
+          </span>
+        </div>
+      )}
+
+      {/* Property Condition */}
+      {data.propertyCondition && (
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground">Condition</span>
+          <span className="text-foreground font-medium">
+            {PROPERTY_CONDITION_LABELS[data.propertyCondition]}
+          </span>
+        </div>
+      )}
+
+      {/* Furniture Status */}
+      {data.furnitureStatus && (
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground">Status</span>
+          <span className="text-foreground font-medium">
+            {FURNITURE_STATUS_LABELS[data.furnitureStatus]}
+          </span>
+        </div>
+      )}
+
+      {/* Schedule Section */}
+      {data.selectedDate && (
+        <div className="space-y-3 mt-3">
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground">Clean date</span>
+            <span className="text-foreground font-medium">
+              {data.selectedDate.toLocaleDateString('en-GB', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short'
+              })}
+            </span>
+          </div>
+          
+          {data.selectedTime && (
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Arrival time</span>
+              <span className="text-foreground font-medium">{data.selectedTime}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Oven Cleaning */}
+      {ovenCleaningCost > 0 && (
+        <div className="flex justify-between items-center mt-3">
+          <span className="text-muted-foreground capitalize">{data.ovenType} oven cleaning</span>
+          <span className="text-foreground font-semibold">£{ovenCleaningCost.toFixed(2)}</span>
+        </div>
+      )}
+
+      {/* Additional Rooms */}
+      {data.additionalRooms && data.additionalRooms.length > 0 && (
+        <div className="flex justify-between items-center mt-3">
+          <span className="text-muted-foreground">Additional Rooms ({data.additionalRooms.length})</span>
+          <span className="text-foreground font-semibold">Included</span>
+        </div>
+      )}
+
+      {/* Blinds */}
+      {blindsTotal > 0 && (
+        <div className="flex justify-between items-center mt-3">
+          <span className="text-muted-foreground">Blinds/Shutters Cleaning</span>
+          <span className="text-foreground font-semibold">£{blindsTotal.toFixed(2)}</span>
+        </div>
+      )}
+
+      {/* Extra Services */}
+      {extrasTotal > 0 && (
+        <div className="flex justify-between items-center mt-3">
+          <span className="text-muted-foreground">Extra Services</span>
+          <span className="text-foreground font-semibold">£{extrasTotal.toFixed(2)}</span>
+        </div>
+      )}
+
+      {/* Steam Cleaning */}
+      {steamCleaningTotal > 0 && (
+        <div className="space-y-1 mt-3 pt-3 border-t border-border">
+          <div className="flex justify-between items-center font-medium">
+            <span className="text-muted-foreground">Steam Cleaning</span>
+            <span className="text-foreground font-semibold">£{steamCleaningTotal.toFixed(2)}</span>
+          </div>
+          {data.carpetItems.map(item => (
+            <div key={item.id} className="flex justify-between items-center pl-4 text-sm">
+              <span className="text-muted-foreground">{item.name} x{item.quantity}</span>
+              <span className="text-foreground">£{(item.price * item.quantity).toFixed(2)}</span>
+            </div>
+          ))}
+          {data.upholsteryItems.map(item => (
+            <div key={item.id} className="flex justify-between items-center pl-4 text-sm">
+              <span className="text-muted-foreground">{item.name} x{item.quantity}</span>
+              <span className="text-foreground">£{(item.price * item.quantity).toFixed(2)}</span>
+            </div>
+          ))}
+          {data.mattressItems.map(item => (
+            <div key={item.id} className="flex justify-between items-center pl-4 text-sm">
+              <span className="text-muted-foreground">{item.name} x{item.quantity}</span>
+              <span className="text-foreground">£{(item.price * item.quantity).toFixed(2)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Short Notice Charge */}
+      {shortNoticeCharge > 0 && (
+        <div className="flex justify-between items-center mt-3 pt-3 border-t border-amber-200 bg-amber-50 -mx-4 px-4 py-2">
+          <span className="text-amber-700 font-medium">Short Notice Charge</span>
+          <span className="text-amber-700 font-semibold">£{shortNoticeCharge.toFixed(2)}</span>
+        </div>
+      )}
+
+      {/* Total */}
+      <div className="flex justify-between items-center mt-4 pt-4 border-t-2 border-primary">
+        <span className="text-lg font-semibold text-foreground">Total</span>
+        <span className="text-2xl font-bold text-primary">£{totalCost.toFixed(2)}</span>
+      </div>
+    </div>
+  );
 
   return (
-    <Card className="bg-gradient-to-br from-slate-50 to-white border-2 border-slate-200 shadow-lg">
-      <CardHeader className="pb-2 bg-primary text-white rounded-t-lg">
-        <CardTitle className="text-xl font-bold">End Of Tenancy Cleaning</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4 pt-4">
-        {/* Service Details */}
-        <div>
-          <p className="font-semibold text-slate-700 mb-2">Service Details:</p>
-          <div className="space-y-1 text-sm">
-            {data.propertyType && (
-              <p className="text-primary">{getPropertyTypeLabel()}</p>
-            )}
-            {data.furnitureStatus && (
-              <p className="text-primary">{FURNITURE_STATUS_LABELS[data.furnitureStatus]}</p>
-            )}
-            {data.propertyCondition && (
-              <p className="text-primary">{PROPERTY_CONDITION_LABELS[data.propertyCondition]}</p>
-            )}
-            {data.bedrooms && data.bathrooms && (
-              <p className="text-primary">{getBedroomLabel(data.bedrooms)} {data.bathrooms} Bathroom{data.bathrooms !== '1' ? 's' : ''}</p>
-            )}
-            {data.ovenType ? (
-              <p className="text-primary capitalize">{data.ovenType} Oven Cleaning</p>
-            ) : (
-              <p className="text-primary">No Oven Cleaning Required</p>
-            )}
-          </div>
-        </div>
+    <Card className="p-4 sm:p-5 lg:p-6 bg-white sticky top-4 border border-border">
+      <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
+        <h3 className="text-lg font-semibold text-foreground">Booking Summary</h3>
+      </div>
 
-        {/* Add-ons */}
-        {(data.additionalRooms?.length > 0 || data.blindsItems?.length > 0 || data.extraServices?.length > 0) && (
+      {getPropertyDescription() && (
+        <div className="flex items-center gap-3 mb-4 pb-4 border-b border-border">
+          <div className="p-2 bg-primary/10 rounded-xl">
+            <Home className="w-5 h-5 text-primary" />
+          </div>
           <div>
-            <p className="font-semibold text-slate-700 mb-2">Add On:</p>
-            <div className="space-y-1 text-sm text-primary">
-              {data.additionalRooms?.map(room => (
-                <p key={room}>{room.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</p>
-              ))}
-              {data.blindsItems?.map((item, idx) => (
-                <p key={idx}>{item.quantity}x {item.type.charAt(0).toUpperCase() + item.type.slice(1)} Blinds - £{item.price * item.quantity}</p>
-              ))}
-              {data.extraServices?.map(service => (
-                <p key={service.id}>{service.quantity}x {service.name} - £{service.price * service.quantity}</p>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Date & Time */}
-        {data.selectedDate && (
-          <div className="flex items-start gap-3 p-3 bg-primary/5 rounded-xl">
-            <Calendar className="h-5 w-5 text-primary mt-0.5" />
-            <div>
-              <p className="font-semibold text-slate-700">Schedule</p>
-              <p className="text-sm text-muted-foreground">
-                {format(data.selectedDate, 'EEEE, MMMM d, yyyy')}
-                {data.selectedTime && ` at ${data.selectedTime}`}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Estimated Hours */}
-        {baseHours > 0 && (
-          <div className="flex items-start gap-3 p-3 bg-primary/5 rounded-xl">
-            <Clock className="h-5 w-5 text-primary mt-0.5" />
-            <div>
-              <p className="font-semibold text-slate-700">Estimated Time</p>
-              <p className="text-sm text-muted-foreground">{baseHours} hours</p>
-            </div>
-          </div>
-        )}
-
-        {/* Oven Cleaning */}
-        {ovenCleaningCost > 0 && (
-          <div className="flex items-start gap-3 p-3 bg-primary/5 rounded-xl">
-            <CookingPot className="h-5 w-5 text-primary mt-0.5" />
-            <div className="flex-1">
-              <p className="font-semibold text-slate-700">Oven Cleaning</p>
-              <p className="text-sm text-muted-foreground capitalize">{data.ovenType} oven</p>
-            </div>
-            <span className="font-semibold text-primary">+£{ovenCleaningCost}</span>
-          </div>
-        )}
-
-        {/* Blinds */}
-        {blindsTotal > 0 && (
-          <div className="flex items-start gap-3 p-3 bg-primary/5 rounded-xl">
-            <Blinds className="h-5 w-5 text-primary mt-0.5" />
-            <div className="flex-1">
-              <p className="font-semibold text-slate-700">Blinds/Shutters Cleaning</p>
-              <p className="text-sm text-muted-foreground">
-                {data.blindsItems?.reduce((sum, item) => sum + item.quantity, 0)} items
-              </p>
-            </div>
-            <span className="font-semibold text-primary">+£{blindsTotal}</span>
-          </div>
-        )}
-
-        {/* Extras */}
-        {extrasTotal > 0 && (
-          <div className="flex items-start gap-3 p-3 bg-primary/5 rounded-xl">
-            <Plus className="h-5 w-5 text-primary mt-0.5" />
-            <div className="flex-1">
-              <p className="font-semibold text-slate-700">Extra Services</p>
-              <p className="text-sm text-muted-foreground">
-                {data.extraServices?.map(s => s.name).join(', ')}
-              </p>
-            </div>
-            <span className="font-semibold text-primary">+£{extrasTotal}</span>
-          </div>
-        )}
-
-        {/* Steam Cleaning Items */}
-        {steamCleaningTotal > 0 && (
-          <div className="p-3 bg-primary/5 rounded-xl">
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              <p className="font-semibold text-slate-700">Steam Cleaning Add-ons</p>
-            </div>
-            <div className="space-y-1 ml-7">
-              {data.carpetItems.map(item => (
-                <div key={item.id} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{item.name} x{item.quantity}</span>
-                  <span className="text-slate-700">£{item.price * item.quantity}</span>
-                </div>
-              ))}
-              {data.upholsteryItems.map(item => (
-                <div key={item.id} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{item.name} x{item.quantity}</span>
-                  <span className="text-slate-700">£{item.price * item.quantity}</span>
-                </div>
-              ))}
-              {data.mattressItems.map(item => (
-                <div key={item.id} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{item.name} x{item.quantity}</span>
-                  <span className="text-slate-700">£{item.price * item.quantity}</span>
-                </div>
-              ))}
-              <div className="flex justify-between font-semibold pt-1 border-t border-primary/20">
-                <span className="text-slate-700">Steam Cleaning Total</span>
-                <span className="text-primary">£{steamCleaningTotal.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Short Notice Charge */}
-        {shortNoticeCharge > 0 && (
-          <div className="flex items-center justify-between p-3 bg-amber-50 rounded-xl border border-amber-200">
-            <span className="text-sm font-medium text-amber-700">Short Notice Charge</span>
-            <span className="font-semibold text-amber-700">+£{shortNoticeCharge.toFixed(2)}</span>
-          </div>
-        )}
-
-        {/* Total */}
-        <div className="bg-gradient-to-r from-primary to-primary/80 rounded-2xl p-4 text-white">
-          <div className="flex justify-between items-center">
-            <span className="text-lg font-semibold">Total Cost:</span>
-            <span className="text-3xl font-bold">£ {totalCost.toFixed(2)}</span>
+            <p className="font-medium text-foreground">{getPropertyDescription()}</p>
           </div>
         </div>
-      </CardContent>
+      )}
+
+      {baseHours > 0 && (
+        <div className="flex items-center gap-3 mb-4 pb-4 border-b border-border">
+          <div className="p-2 bg-primary/10 rounded-xl">
+            <Clock className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <p className="font-medium text-foreground">
+              {baseHours} hour{baseHours !== 1 ? 's' : ''} - End of Tenancy
+            </p>
+            {isAdminMode && (
+              <p className="text-sm text-muted-foreground">
+                £{HOURLY_RATE.toFixed(2)}/hour
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Mobile: Collapsible details */}
+      <div className="lg:hidden">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center justify-between w-full py-2 text-primary"
+        >
+          <span className="font-medium">View Details</span>
+          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </button>
+        {isExpanded && (
+          <div className="pt-2 border-t border-border">
+            {renderSummaryContent()}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop: Always visible */}
+      <div className="hidden lg:block">
+        {baseHours > 0 ? renderSummaryContent() : (
+          <div className="text-center py-12 text-muted-foreground">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
+                <Calendar className="w-8 h-8 text-muted-foreground/60" />
+              </div>
+              <p className="text-sm font-medium">Complete the form to see your booking summary</p>
+            </div>
+          </div>
+        )}
+      </div>
     </Card>
   );
 };
