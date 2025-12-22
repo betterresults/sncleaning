@@ -237,8 +237,6 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   const [guestCustomerName, setGuestCustomerName] = useState<string | null>(null);
   const [checkingGuestCustomer, setCheckingGuestCustomer] = useState(false);
   const [useGuestSavedCard, setUseGuestSavedCard] = useState(true);
-  // Track if we've already auto-filled from guest customer lookup (to avoid overwriting user edits)
-  const guestAutoFillDoneRef = useRef<string | null>(null);
   
   // Collapsible states for quote link mode - start collapsed if data is pre-filled
   const [detailsOpen, setDetailsOpen] = useState(!isQuoteLinkMode || !data.firstName);
@@ -408,8 +406,6 @@ useEffect(() => {
       setGuestCustomerId(null);
       setGuestPaymentMethods([]);
       setGuestCustomerName(null);
-      // Reset auto-fill tracking when email clears
-      guestAutoFillDoneRef.current = null;
       return;
     }
     
@@ -445,31 +441,14 @@ useEffect(() => {
             onUpdate({ customerId: lookupResult.customer.id });
           }
           
-          // Store customer name for welcome message
+          // Store customer name for welcome message (but don't pre-fill form fields)
           const customerName = lookupResult.customer.fullName || 
             [lookupResult.customer.firstName, lookupResult.customer.lastName].filter(Boolean).join(' ') ||
             null;
           setGuestCustomerName(customerName);
           
-          // Only auto-fill ONCE per email - don't overwrite user edits
-          // Track by email to allow re-fill if user changes to a different email
-          if (guestAutoFillDoneRef.current !== data.email) {
-            const updates: Record<string, string> = {};
-            if (lookupResult.customer.firstName && !data.firstName) {
-              updates.firstName = lookupResult.customer.firstName;
-            }
-            if (lookupResult.customer.lastName && !data.lastName) {
-              updates.lastName = lookupResult.customer.lastName;
-            }
-            if (lookupResult.customer.phone && !data.phone) {
-              updates.phone = lookupResult.customer.phone;
-            }
-            if (Object.keys(updates).length > 0) {
-              onUpdate(updates);
-            }
-            // Mark this email as auto-filled
-            guestAutoFillDoneRef.current = data.email;
-          }
+          // NOTE: We intentionally do NOT auto-fill firstName, lastName, or phone
+          // The user must enter their own details - no pre-filling from existing customer data
           
           // Use payment methods from the lookup result
           if (lookupResult.paymentMethods && lookupResult.paymentMethods.length > 0) {
