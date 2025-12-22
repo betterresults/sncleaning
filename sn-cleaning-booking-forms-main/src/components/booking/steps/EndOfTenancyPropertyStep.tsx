@@ -416,23 +416,36 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
         {!isHouseShare && (
           <div>
             <h2 className="text-2xl font-bold text-slate-700 mb-4">Additional Rooms</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {ADDITIONAL_ROOMS.map((room) => {
                 const isSelected = data.additionalRooms?.includes(room.id);
                 const Icon = room.icon;
                 return (
-                  <button
+                  <div
                     key={room.id}
-                    className={`h-20 rounded-2xl border transition-all duration-300 flex flex-col items-center justify-center gap-1 ${
-                      isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
+                    className={`p-4 rounded-2xl border transition-all duration-300 ${
+                      isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card'
                     }`}
-                    onClick={() => toggleAdditionalRoom(room.id)}
                   >
-                    <Icon className={`h-6 w-6 ${isSelected ? 'text-primary' : 'text-slate-400'}`} />
-                    <span className={`text-xs font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>
+                    <div className="flex items-start justify-between mb-3">
+                      <div className={`p-2 rounded-lg ${isSelected ? 'bg-primary/10' : 'bg-muted'}`}>
+                        <Icon className={`h-6 w-6 ${isSelected ? 'text-primary' : 'text-slate-500'}`} />
+                      </div>
+                    </div>
+                    <h3 className={`font-bold mb-3 ${isSelected ? 'text-primary' : 'text-slate-700'}`}>
                       {room.label}
-                    </span>
-                  </button>
+                    </h3>
+                    <button
+                      className={`w-full py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                        isSelected 
+                          ? 'bg-primary text-primary-foreground' 
+                          : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                      }`}
+                      onClick={() => toggleAdditionalRoom(room.id)}
+                    >
+                      {isSelected ? 'Remove' : 'Add'}
+                    </button>
+                  </div>
                 );
               })}
             </div>
