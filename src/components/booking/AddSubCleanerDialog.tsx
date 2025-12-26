@@ -133,7 +133,7 @@ const AddSubCleanerDialog = ({ bookingId, onSubCleanerAdded, children }: AddSubC
     try {
       const subCleanerHours = paymentMethod === 'hourly' ? parseFloat(hoursAssigned) : 0;
 
-      // Add to booking_cleaners table
+      // Add to cleaner_payments table
       await addBookingCleaner({
         bookingId,
         cleanerId: parseInt(selectedCleaner),

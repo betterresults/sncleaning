@@ -102,7 +102,7 @@ const CleanerTodayBookingsList = () => {
       if (allBookings.length > 0) {
         const bookingIds = allBookings.map(b => b.id);
         const { data: additionalCleanersData } = await supabase
-          .from('booking_cleaners')
+          .from('cleaner_payments')
           .select('booking_id, hours_assigned, calculated_pay')
           .in('booking_id', bookingIds)
           .eq('is_primary', false);
@@ -131,7 +131,7 @@ const CleanerTodayBookingsList = () => {
 
       // Also fetch bookings where this cleaner is an additional cleaner
       const { data: additionalAssignments } = await supabase
-        .from('booking_cleaners')
+        .from('cleaner_payments')
         .select('booking_id, hours_assigned, calculated_pay')
         .eq('cleaner_id', effectiveCleanerId)
         .eq('is_primary', false);

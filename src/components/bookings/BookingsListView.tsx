@@ -193,14 +193,14 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter }: TodayBo
         return;
       }
 
-      // Fetch all cleaners data from booking_cleaners table (both primary and additional)
+      // Fetch all cleaners data from cleaner_payments table (both primary and additional)
       const bookingIds = (bookingsData || []).map(b => b.id);
       let primaryCleanersData: Record<number, { cleanerId: number; calculatedPay: number }> = {};
       let additionalCleanersData: Record<number, { count: number; totalPay: number; totalHours: number }> = {};
       
       if (bookingIds.length > 0) {
         const { data: bookingCleanersData } = await supabase
-          .from('booking_cleaners')
+          .from('cleaner_payments')
           .select('booking_id, cleaner_id, calculated_pay, hours_assigned, is_primary')
           .in('booking_id', bookingIds);
         
@@ -225,12 +225,12 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter }: TodayBo
         }
       }
 
-      // Merge cleaners data into bookings - use booking_cleaners table as primary source
+      // Merge cleaners data into bookings - use cleaner_payments table as primary source
       const enrichedBookings = (bookingsData || []).map(booking => {
         const primaryData = primaryCleanersData[booking.id];
         const additionalData = additionalCleanersData[booking.id];
         
-        // Use calculated_pay from booking_cleaners if available, otherwise fall back to bookings table
+        // Use calculated_pay from cleaner_payments if available, otherwise fall back to bookings table
         const cleanerPay = primaryData ? primaryData.calculatedPay : (booking.cleaner_pay || 0);
         
         return {

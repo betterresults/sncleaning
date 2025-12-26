@@ -71,7 +71,7 @@ export const calculateCleanerPay = (
 // Fetch all cleaners for a booking
 export const fetchBookingCleaners = async (bookingId: number): Promise<BookingCleaner[]> => {
   const { data, error } = await supabase
-    .from('booking_cleaners')
+    .from('cleaner_payments')
     .select(`
       *,
       cleaner:cleaners (
@@ -102,7 +102,7 @@ export const fetchBookingCleaners = async (bookingId: number): Promise<BookingCl
 // Fetch additional cleaners only (is_primary = false)
 export const fetchAdditionalCleaners = async (bookingId: number): Promise<BookingCleaner[]> => {
   const { data, error } = await supabase
-    .from('booking_cleaners')
+    .from('cleaner_payments')
     .select(`
       *,
       cleaner:cleaners (
@@ -142,7 +142,7 @@ export const addBookingCleaner = async (params: AddBookingCleanerParams): Promis
   );
 
   const { data, error } = await supabase
-    .from('booking_cleaners')
+    .from('cleaner_payments')
     .insert({
       booking_id: params.bookingId,
       cleaner_id: params.cleanerId,
@@ -196,7 +196,7 @@ export const updateBookingCleaner = async (params: UpdateBookingCleanerParams): 
   );
 
   const { error } = await supabase
-    .from('booking_cleaners')
+    .from('cleaner_payments')
     .update(updateData)
     .eq('id', params.id);
 
@@ -209,7 +209,7 @@ export const updateBookingCleaner = async (params: UpdateBookingCleanerParams): 
 // Remove a cleaner from a booking
 export const removeBookingCleaner = async (id: string): Promise<void> => {
   const { error } = await supabase
-    .from('booking_cleaners')
+    .from('cleaner_payments')
     .delete()
     .eq('id', id);
 
@@ -232,7 +232,7 @@ export const upsertPrimaryCleaner = async (
 ): Promise<void> => {
   // Check if primary cleaner already exists
   const { data: existing } = await supabase
-    .from('booking_cleaners')
+    .from('cleaner_payments')
     .select('id')
     .eq('booking_id', bookingId)
     .eq('is_primary', true)
@@ -250,7 +250,7 @@ export const upsertPrimaryCleaner = async (
   if (existing) {
     // Update existing primary cleaner
     const { error } = await supabase
-      .from('booking_cleaners')
+      .from('cleaner_payments')
       .update({
         cleaner_id: cleanerId,
         payment_type: paymentType,
@@ -266,7 +266,7 @@ export const upsertPrimaryCleaner = async (
   } else {
     // Insert new primary cleaner
     const { error } = await supabase
-      .from('booking_cleaners')
+      .from('cleaner_payments')
       .insert({
         booking_id: bookingId,
         cleaner_id: cleanerId,
@@ -287,7 +287,7 @@ export const upsertPrimaryCleaner = async (
 // Get total pay for additional cleaners
 export const getTotalAdditionalCleanersPay = async (bookingId: number): Promise<number> => {
   const { data, error } = await supabase
-    .from('booking_cleaners')
+    .from('cleaner_payments')
     .select('calculated_pay')
     .eq('booking_id', bookingId)
     .eq('is_primary', false);
@@ -303,7 +303,7 @@ export const getTotalAdditionalCleanersPay = async (bookingId: number): Promise<
 // Get total hours assigned to additional cleaners
 export const getTotalAdditionalCleanersHours = async (bookingId: number): Promise<number> => {
   const { data, error } = await supabase
-    .from('booking_cleaners')
+    .from('cleaner_payments')
     .select('hours_assigned')
     .eq('booking_id', bookingId)
     .eq('is_primary', false);
@@ -332,7 +332,7 @@ export const recalculatePrimaryCleanerPay = async (
   
   // Get total additional cleaner hours
   const { data: additionalCleaners } = await supabase
-    .from('booking_cleaners')
+    .from('cleaner_payments')
     .select('hours_assigned')
     .eq('booking_id', bookingId)
     .eq('is_primary', false);
@@ -362,9 +362,9 @@ export const recalculatePrimaryCleanerPay = async (
     .update({ cleaner_pay: newPrimaryCleanerPay })
     .eq('id', bookingId);
   
-  // Also update booking_cleaners if primary exists there
+  // Also update cleaner_payments if primary exists there
   const { data: primaryCleaner } = await supabase
-    .from('booking_cleaners')
+    .from('cleaner_payments')
     .select('id')
     .eq('booking_id', bookingId)
     .eq('is_primary', true)
@@ -372,7 +372,7 @@ export const recalculatePrimaryCleanerPay = async (
   
   if (primaryCleaner) {
     await supabase
-      .from('booking_cleaners')
+      .from('cleaner_payments')
       .update({ 
         calculated_pay: newPrimaryCleanerPay,
         hours_assigned: primaryCleanerHours 
@@ -388,7 +388,7 @@ export const fetchCleanerBookings = async (
 ): Promise<{ primary: number[]; additional: { bookingId: number; pay: number; hours: number }[] }> => {
   // Get bookings where cleaner is additional
   const { data: additionalData } = await supabase
-    .from('booking_cleaners')
+    .from('cleaner_payments')
     .select('booking_id, calculated_pay, hours_assigned')
     .eq('cleaner_id', cleanerId)
     .eq('is_primary', false);

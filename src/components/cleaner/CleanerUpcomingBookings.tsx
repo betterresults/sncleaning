@@ -73,14 +73,14 @@ const CleanerUpcomingBookings = () => {
         return;
       }
 
-      // Fetch bookings where cleaner is assigned (primary or additional) via booking_cleaners
+      // Fetch bookings where cleaner is assigned (primary or additional) via cleaner_payments
       const { data: cleanerAssignments, error: assignmentsError } = await supabase
-        .from('booking_cleaners')
+        .from('cleaner_payments')
         .select('booking_id, hours_assigned, calculated_pay, is_primary')
         .eq('cleaner_id', effectiveCleanerId);
 
       if (assignmentsError) {
-        console.error('Error fetching booking_cleaners:', assignmentsError);
+        console.error('Error fetching cleaner_payments:', assignmentsError);
         // Continue with just primary bookings from bookings table
       }
 
@@ -90,7 +90,7 @@ const CleanerUpcomingBookings = () => {
       
       if (primaryBookingIds.length > 0) {
         const { data: additionalCleanersData, error: additionalError } = await supabase
-          .from('booking_cleaners')
+          .from('cleaner_payments')
           .select('booking_id, hours_assigned, calculated_pay')
           .in('booking_id', primaryBookingIds)
           .eq('is_primary', false);
