@@ -269,17 +269,14 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
     setIsLoading(true);
 
     try {
-      // Handle unassigning a cleaner
+      // Handle unassigning a cleaner - remove from cleaner_payments only
       if (selectedCleaner === 'unassigned') {
+        // Delete the primary cleaner from cleaner_payments
         const { error } = await supabase
-          .from('bookings')
-          .update({ 
-            cleaner: null,
-            cleaner_pay: null,
-            cleaner_rate: null,
-            cleaner_percentage: null
-          })
-          .eq('id', bookingId);
+          .from('cleaner_payments')
+          .delete()
+          .eq('booking_id', bookingId)
+          .eq('is_primary', true);
 
         if (error) {
           console.error('Error unassigning cleaner:', error);
@@ -297,34 +294,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
         return;
       }
 
-      const updateData: any = { 
-        cleaner: parseInt(selectedCleaner)
-      };
-
-      // Add calculated cleaner pay if available
-      if (calculatedCleanerPay !== null) {
-        updateData.cleaner_pay = calculatedCleanerPay;
-        
-        if (paymentMethod === 'hourly') {
-          updateData.cleaner_rate = parseFloat(customHourlyRate);
-          updateData.cleaner_percentage = null;
-        } else {
-          updateData.cleaner_percentage = parseFloat(customPercentageRate);
-          updateData.cleaner_rate = null;
-        }
-      }
-
-      const { error } = await supabase
-        .from('bookings')
-        .update(updateData)
-        .eq('id', bookingId);
-
-      if (error) {
-        console.error('Error assigning cleaner:', error);
-        throw error;
-      }
-
-      // Also update/create primary cleaner in cleaner_payments table
+      // SINGLE SOURCE OF TRUTH: Only update cleaner_payments table
       await upsertPrimaryCleaner(
         bookingId,
         parseInt(selectedCleaner),
