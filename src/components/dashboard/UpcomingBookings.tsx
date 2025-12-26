@@ -57,10 +57,10 @@ interface Booking {
   additional_details?: string;
   frequently?: string;
   same_day?: boolean; // Same-day Airbnb turnover flag
-  cleaners?: {
+  // Primary cleaner from cleaner_payments (single source of truth)
+  primary_cleaner?: {
     id: number;
-    first_name: string;
-    last_name: string;
+    full_name: string;
   } | null;
   customers?: {
     id: number;
@@ -73,6 +73,7 @@ interface Cleaner {
   id: number;
   first_name: string;
   last_name: string;
+  full_name?: string;
 }
 
 interface Customer {
@@ -162,11 +163,6 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
         .select(`
           *,
           time_only,
-          cleaners!bookings_cleaner_fkey (
-            id,
-            first_name,
-            last_name
-          ),
           customers!bookings_customer_fkey (
             id,
             first_name,
@@ -190,10 +186,10 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
         return;
       }
 
-      // Fetch cleaners and customers
+      // Fetch cleaners for dropdown
       const { data: cleanersData, error: cleanersError } = await supabase
         .from('cleaners')
-        .select('id, first_name, last_name')
+        .select('id, first_name, last_name, full_name')
         .order('first_name');
 
       if (cleanersError) {
@@ -209,13 +205,49 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
         console.error('Error fetching customers:', customersError);
       }
 
+      // SINGLE SOURCE OF TRUTH: Fetch primary cleaners from cleaner_payments
+      const bookingIds = (bookingsData || []).map(b => b.id);
+      let primaryCleanersMap: Record<number, { id: number; full_name: string }> = {};
+      
+      if (bookingIds.length > 0) {
+        const { data: primaryCleanersData } = await supabase
+          .from('cleaner_payments')
+          .select(`
+            booking_id,
+            cleaner_id,
+            cleaners (
+              id,
+              full_name
+            )
+          `)
+          .in('booking_id', bookingIds)
+          .eq('is_primary', true);
+
+        if (primaryCleanersData) {
+          primaryCleanersData.forEach(pc => {
+            if (pc.cleaners) {
+              primaryCleanersMap[pc.booking_id] = {
+                id: pc.cleaner_id,
+                full_name: pc.cleaners.full_name || 'Unknown'
+              };
+            }
+          });
+        }
+      }
+
+      // Enrich bookings with primary cleaner from cleaner_payments
+      const enrichedBookings = (bookingsData || []).map(booking => ({
+        ...booking,
+        primary_cleaner: primaryCleanersMap[booking.id] || null
+      }));
+
       console.log('Fetched data:', {
-        bookings: bookingsData?.length || 0,
+        bookings: enrichedBookings.length,
         cleaners: cleanersData?.length || 0,
         customers: customersData?.length || 0
       });
 
-      setBookings(bookingsData || []);
+      setBookings(enrichedBookings);
       setCleaners(cleanersData || []);
       setCustomers(customersData || []);
 
@@ -242,10 +274,10 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
       );
     }
 
-    // Apply cleaner filter
+    // Apply cleaner filter - use primary_cleaner from cleaner_payments
     if (filters.cleanerId && filters.cleanerId !== 'all') {
       filtered = filtered.filter(booking => 
-        booking.cleaner === parseInt(filters.cleanerId)
+        booking.primary_cleaner?.id === parseInt(filters.cleanerId)
       );
     }
 
@@ -280,20 +312,12 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   };
 
   const getCleanerName = (booking: Booking) => {
-    if (!booking.cleaner) {
-      return 'Unsigned';
+    // Use primary_cleaner from cleaner_payments (single source of truth)
+    if (booking.primary_cleaner) {
+      return booking.primary_cleaner.full_name;
     }
 
-    if (booking.cleaners) {
-      return `${booking.cleaners.first_name} ${booking.cleaners.last_name}`;
-    }
-
-    const cleaner = cleaners.find(c => c.id === booking.cleaner);
-    if (cleaner) {
-      return `${cleaner.first_name} ${cleaner.last_name}`;
-    }
-
-    return 'Unsigned';
+    return 'Unassigned';
   };
 
   const handleEdit = (bookingId: number) => {
