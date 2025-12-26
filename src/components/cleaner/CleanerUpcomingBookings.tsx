@@ -161,6 +161,41 @@ const CleanerUpcomingBookings = () => {
         }
       }
 
+      // Fetch all co-cleaners for all bookings
+      const allBookingIds = allBookings.map(b => b.id);
+      if (allBookingIds.length > 0) {
+        const { data: allCleanerPayments } = await supabase
+          .from('cleaner_payments')
+          .select(`
+            booking_id,
+            cleaner_id,
+            is_primary,
+            cleaners (
+              id,
+              full_name
+            )
+          `)
+          .in('booking_id', allBookingIds);
+
+        if (allCleanerPayments) {
+          // Add co-cleaners to each booking
+          allBookings = allBookings.map(booking => {
+            const bookingCleaners = allCleanerPayments
+              .filter(cp => cp.booking_id === booking.id && cp.cleaner_id !== effectiveCleanerId)
+              .map(cp => ({
+                id: cp.cleaner_id,
+                full_name: cp.cleaners?.full_name || 'Unknown',
+                is_primary: cp.is_primary
+              }));
+            
+            return {
+              ...booking,
+              co_cleaners: bookingCleaners
+            };
+          });
+        }
+      }
+
       // Sort all bookings by date
       allBookings.sort((a, b) => {
         const dateA = new Date(a.date_time || 0).getTime();
