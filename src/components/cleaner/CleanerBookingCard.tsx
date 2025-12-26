@@ -1,7 +1,8 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Calendar, Clock, MapPin, User, Upload, Eye, CheckCircle, X, FileText, Camera } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, Clock, MapPin, User, Upload, Eye, CheckCircle, X, FileText, Camera, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Booking } from './types';
 import { useServiceTypes, useCleaningTypes, getServiceTypeLabel, getCleaningTypeLabel } from '@/hooks/useCompanySettings';
@@ -71,6 +72,11 @@ const CleanerBookingCard = ({
                 Same Day
               </span>
             )}
+            {booking.is_sub_cleaner && (
+              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                Helper
+              </Badge>
+            )}
           </div>
           {cleaningTypeLabel && (
             <p className="text-sm text-muted-foreground">
@@ -117,6 +123,26 @@ const CleanerBookingCard = ({
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <User className="h-4 w-4 text-blue-600 flex-shrink-0" />
             <span className="font-medium text-blue-600 dark:text-blue-400">{booking.first_name} {booking.last_name}</span>
+          </div>
+        )}
+        
+        {/* Co-cleaners display */}
+        {booking.co_cleaners && booking.co_cleaners.length > 0 && (
+          <div className="flex items-center gap-2 text-sm">
+            <Users className="h-4 w-4 text-purple-600 flex-shrink-0" />
+            <span className="text-muted-foreground">Working with:</span>
+            <div className="flex flex-wrap gap-1">
+              {booking.co_cleaners.map((coCleaner) => (
+                <Badge 
+                  key={coCleaner.id} 
+                  variant="outline" 
+                  className={`text-xs ${coCleaner.is_primary ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-gray-50 text-gray-700 border-gray-200'}`}
+                >
+                  {coCleaner.full_name}
+                  {coCleaner.is_primary && ' (Lead)'}
+                </Badge>
+              ))}
+            </div>
           </div>
         )}
       </div>

@@ -1,3 +1,9 @@
+export interface CoCleaner {
+  id: number;
+  full_name: string;
+  is_primary: boolean;
+}
+
 export interface Booking {
   id: number;
   date_time: string;
@@ -29,6 +35,8 @@ export interface Booking {
   parking_details?: string;
   same_day?: boolean;
   has_photos?: boolean;
+  is_sub_cleaner?: boolean;
+  co_cleaners?: CoCleaner[];
   cleaners?: {
     id: number;
     first_name: string;

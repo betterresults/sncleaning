@@ -5,11 +5,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Clock, CheckCircle2, XCircle, Camera, FileText } from 'lucide-react';
+import { MapPin, Clock, CheckCircle2, XCircle, Camera, FileText, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import LocationTracker from './LocationTracker';
 import CleaningPhotosUploadDialog from './CleaningPhotosUploadDialog';
+
+interface CoCleaner {
+  id: number;
+  full_name: string;
+  is_primary: boolean;
+}
 
 interface Booking {
   id: number;
@@ -27,6 +33,8 @@ interface Booking {
   cleaner_pay?: number;
   cleaner_percentage?: number;
   booking_status?: string;
+  is_sub_cleaner?: boolean;
+  co_cleaners?: CoCleaner[];
 }
 
 interface TrackingRecord {
@@ -161,6 +169,41 @@ const CleanerTodayBookingsList = () => {
           const primaryIds = new Set(allBookings.map(b => b.id));
           const newAdditionalBookings = enrichedAdditionalBookings.filter(b => !primaryIds.has(b.id));
           allBookings = [...allBookings, ...newAdditionalBookings];
+        }
+      }
+
+      // Fetch all co-cleaners for all bookings
+      const allBookingIds = allBookings.map(b => b.id);
+      if (allBookingIds.length > 0) {
+        const { data: allCleanerPayments } = await supabase
+          .from('cleaner_payments')
+          .select(`
+            booking_id,
+            cleaner_id,
+            is_primary,
+            cleaners (
+              id,
+              full_name
+            )
+          `)
+          .in('booking_id', allBookingIds);
+
+        if (allCleanerPayments) {
+          // Add co-cleaners to each booking
+          allBookings = allBookings.map(booking => {
+            const bookingCleaners = allCleanerPayments
+              .filter(cp => cp.booking_id === booking.id && cp.cleaner_id !== effectiveCleanerId)
+              .map(cp => ({
+                id: cp.cleaner_id,
+                full_name: cp.cleaners?.full_name || 'Unknown',
+                is_primary: cp.is_primary
+              }));
+            
+            return {
+              ...booking,
+              co_cleaners: bookingCleaners
+            };
+          });
         }
       }
 
@@ -435,17 +478,43 @@ const CleanerTodayBookingsList = () => {
           const isEndOfTenancy = booking.service_type === 'End of Tenancy' || booking.cleaning_type === 'End of Tenancy';
 
           return (
-            <Card key={booking.id} className="border-l-4 border-l-primary">
+            <Card key={booking.id} className={`border-l-4 ${booking.is_sub_cleaner ? 'border-l-purple-500' : 'border-l-primary'}`}>
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="text-lg">
-                      {booking.first_name} {booking.last_name}
-                    </CardTitle>
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-lg">
+                        {booking.first_name} {booking.last_name}
+                      </CardTitle>
+                      {booking.is_sub_cleaner && (
+                        <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                          Helper
+                        </Badge>
+                      )}
+                    </div>
                     <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
                       <MapPin className="h-4 w-4" />
                       <span>{booking.address}, {booking.postcode}</span>
                     </div>
+                    {/* Co-cleaners display */}
+                    {booking.co_cleaners && booking.co_cleaners.length > 0 && (
+                      <div className="flex items-center gap-2 text-sm mt-2">
+                        <Users className="h-4 w-4 text-purple-600" />
+                        <span className="text-gray-600">Working with:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {booking.co_cleaners.map((coCleaner) => (
+                            <Badge 
+                              key={coCleaner.id} 
+                              variant="outline" 
+                              className={`text-xs ${coCleaner.is_primary ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-gray-50 text-gray-700 border-gray-200'}`}
+                            >
+                              {coCleaner.full_name}
+                              {coCleaner.is_primary && ' (Lead)'}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     {isCheckedOut ? (
