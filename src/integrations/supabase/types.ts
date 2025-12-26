@@ -2874,6 +2874,8 @@ export type Database = {
       }
       generate_recurring_bookings: { Args: never; Returns: undefined }
       get_current_user_role: { Args: never; Returns: string }
+      get_user_cleaner_id: { Args: { _user_id: string }; Returns: number }
+      get_user_customer_id: { Args: { _user_id: string }; Returns: number }
       get_user_role: { Args: { user_uuid: string }; Returns: string }
       has_role: {
         Args: {
@@ -2883,6 +2885,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_cleaner_assigned_to_booking: {
+        Args: { _booking_id: number; _user_id: string }
+        Returns: boolean
+      }
       log_activity: {
         Args: {
           p_action_type: string
