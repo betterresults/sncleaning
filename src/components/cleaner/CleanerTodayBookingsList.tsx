@@ -88,11 +88,32 @@ const CleanerTodayBookingsList = () => {
       const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000 - 1);
 
-      // Fetch today's bookings where cleaner is primary
+      // SINGLE SOURCE OF TRUTH: Get all bookings where this cleaner is assigned via cleaner_payments
+      const { data: cleanerAssignments, error: assignmentsError } = await supabase
+        .from('cleaner_payments')
+        .select('booking_id, hours_assigned, calculated_pay, is_primary')
+        .eq('cleaner_id', effectiveCleanerId);
+
+      if (assignmentsError) {
+        console.error('Error fetching cleaner_payments:', assignmentsError);
+        setError('Failed to fetch bookings: ' + assignmentsError.message);
+        return;
+      }
+
+      if (!cleanerAssignments || cleanerAssignments.length === 0) {
+        setBookings([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get all booking IDs where this cleaner is assigned
+      const bookingIds = cleanerAssignments.map(a => a.booking_id);
+
+      // Fetch today's booking details for all assigned bookings
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
         .select('*')
-        .eq('cleaner', effectiveCleanerId)
+        .in('id', bookingIds)
         .or('booking_status.is.null,booking_status.neq.cancelled')
         .gte('date_time', startOfDay.toISOString())
         .lte('date_time', endOfDay.toISOString())
@@ -104,108 +125,48 @@ const CleanerTodayBookingsList = () => {
         return;
       }
 
-      let allBookings = bookingsData || [];
+      const todayBookingIds = (bookingsData || []).map(b => b.id);
 
-      // Fetch additional cleaners for these bookings to adjust primary cleaner's pay
-      if (allBookings.length > 0) {
-        const bookingIds = allBookings.map(b => b.id);
-        const { data: additionalCleanersData } = await supabase
-          .from('cleaner_payments')
-          .select('booking_id, hours_assigned, calculated_pay')
-          .in('booking_id', bookingIds)
-          .eq('is_primary', false);
-
-        // Adjust primary cleaner's pay based on additional cleaners
-        if (additionalCleanersData && additionalCleanersData.length > 0) {
-          allBookings = allBookings.map(booking => {
-            const additionalCleaners = additionalCleanersData.filter(sc => sc.booking_id === booking.id);
-            if (additionalCleaners.length > 0) {
-              const additionalCleanerHours = additionalCleaners.reduce((sum, sc) => sum + (sc.hours_assigned || 0), 0);
-              const totalHours = booking.total_hours || 0;
-              const remainingHours = Math.max(0, totalHours - additionalCleanerHours);
-              const cleanerRate = booking.cleaner_rate || 20;
-              const adjustedPay = remainingHours * cleanerRate;
-              
-              return {
-                ...booking,
-                cleaner_pay: adjustedPay,
-                total_hours: remainingHours
-              };
-            }
-            return booking;
-          });
-        }
-      }
-
-      // Also fetch bookings where this cleaner is an additional cleaner
-      const { data: additionalAssignments } = await supabase
+      // Fetch all cleaner assignments for these bookings (for co-cleaners info)
+      const { data: allCleanerPayments } = await supabase
         .from('cleaner_payments')
-        .select('booking_id, hours_assigned, calculated_pay')
-        .eq('cleaner_id', effectiveCleanerId)
-        .eq('is_primary', false);
+        .select(`
+          booking_id,
+          cleaner_id,
+          is_primary,
+          hours_assigned,
+          calculated_pay,
+          cleaners (
+            id,
+            full_name
+          )
+        `)
+        .in('booking_id', todayBookingIds);
 
-      if (additionalAssignments && additionalAssignments.length > 0) {
-        const additionalBookingIds = additionalAssignments.map(a => a.booking_id);
+      // Enrich bookings with cleaner assignment data and co-cleaners
+      let allBookings = (bookingsData || []).map(booking => {
+        // Find this cleaner's assignment for the booking
+        const myAssignment = cleanerAssignments.find(a => a.booking_id === booking.id);
+        const isPrimary = myAssignment?.is_primary || false;
         
-        const { data: additionalBookingDetails } = await supabase
-          .from('bookings')
-          .select('*')
-          .in('id', additionalBookingIds)
-          .or('booking_status.is.null,booking_status.neq.cancelled')
-          .gte('date_time', startOfDay.toISOString())
-          .lte('date_time', endOfDay.toISOString());
+        // Get co-cleaners (other cleaners assigned to this booking)
+        const coCleaners = (allCleanerPayments || [])
+          .filter(cp => cp.booking_id === booking.id && cp.cleaner_id !== effectiveCleanerId)
+          .map(cp => ({
+            id: cp.cleaner_id,
+            full_name: cp.cleaners?.full_name || 'Unknown',
+            is_primary: cp.is_primary
+          }));
 
-        if (additionalBookingDetails) {
-          const enrichedAdditionalBookings = additionalBookingDetails.map(booking => {
-            const assignment = additionalAssignments.find(a => a.booking_id === booking.id);
-            return {
-              ...booking,
-              cleaner_pay: assignment?.calculated_pay || booking.cleaner_pay,
-              total_hours: assignment?.hours_assigned || booking.total_hours,
-              is_sub_cleaner: true
-            };
-          });
-          
-          const primaryIds = new Set(allBookings.map(b => b.id));
-          const newAdditionalBookings = enrichedAdditionalBookings.filter(b => !primaryIds.has(b.id));
-          allBookings = [...allBookings, ...newAdditionalBookings];
-        }
-      }
-
-      // Fetch all co-cleaners for all bookings
-      const allBookingIds = allBookings.map(b => b.id);
-      if (allBookingIds.length > 0) {
-        const { data: allCleanerPayments } = await supabase
-          .from('cleaner_payments')
-          .select(`
-            booking_id,
-            cleaner_id,
-            is_primary,
-            cleaners (
-              id,
-              full_name
-            )
-          `)
-          .in('booking_id', allBookingIds);
-
-        if (allCleanerPayments) {
-          // Add co-cleaners to each booking
-          allBookings = allBookings.map(booking => {
-            const bookingCleaners = allCleanerPayments
-              .filter(cp => cp.booking_id === booking.id && cp.cleaner_id !== effectiveCleanerId)
-              .map(cp => ({
-                id: cp.cleaner_id,
-                full_name: cp.cleaners?.full_name || 'Unknown',
-                is_primary: cp.is_primary
-              }));
-            
-            return {
-              ...booking,
-              co_cleaners: bookingCleaners
-            };
-          });
-        }
-      }
+        // Use cleaner_payments data for pay and hours
+        return {
+          ...booking,
+          cleaner_pay: myAssignment?.calculated_pay || booking.cleaner_pay,
+          total_hours: myAssignment?.hours_assigned || booking.total_hours,
+          is_sub_cleaner: !isPrimary,
+          co_cleaners: coCleaners
+        };
+      });
 
       // Sort by date
       allBookings.sort((a, b) => new Date(a.date_time || 0).getTime() - new Date(b.date_time || 0).getTime());
@@ -214,11 +175,11 @@ const CleanerTodayBookingsList = () => {
 
       // Fetch tracking records for today's bookings
       if (allBookings.length > 0) {
-        const bookingIds = allBookings.map(b => b.id);
+        const allBookingIds = allBookings.map(b => b.id);
         const { data: trackingData, error: trackingError } = await supabase
           .from('cleaner_tracking')
           .select('*')
-          .in('booking_id', bookingIds);
+          .in('booking_id', allBookingIds);
 
         if (trackingError) {
           console.error('Error fetching tracking records:', trackingError);
