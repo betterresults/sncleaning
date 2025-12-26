@@ -324,7 +324,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
         throw error;
       }
 
-      // Also update/create primary cleaner in booking_cleaners table
+      // Also update/create primary cleaner in cleaner_payments table
       await upsertPrimaryCleaner(
         bookingId,
         parseInt(selectedCleaner),

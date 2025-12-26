@@ -78,15 +78,15 @@ export const ProfitTrackingDashboard = () => {
     // Get all booking IDs to fetch additional cleaners
     const bookingIds = bookings.map(b => b.id);
 
-    // Fetch additional cleaners for these bookings using booking_cleaners table
+    // Fetch additional cleaners for these bookings using cleaner_payments table
     const { data: bookingCleanersData, error: cleanersError } = await supabase
-      .from('booking_cleaners')
+      .from('cleaner_payments')
       .select('booking_id, cleaner_id, calculated_pay, hours_assigned')
       .in('booking_id', bookingIds)
       .eq('is_primary', false);
 
     if (cleanersError) {
-      console.error('Error fetching booking_cleaners:', cleanersError);
+      console.error('Error fetching cleaner_payments:', cleanersError);
     }
 
     // Collect all cleaner IDs for name lookup

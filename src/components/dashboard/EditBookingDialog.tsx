@@ -314,7 +314,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         return;
       }
 
-      // Sync booking_cleaners table if cleaner assignment changed
+      // Sync cleaner_payments table if cleaner assignment changed
       const cleanerChanged = formData.cleanerId !== (booking.cleaner || null);
       const cleanerPayChanged = Math.abs((formData.cleanerPay || 0) - (booking.cleaner_pay || 0)) > 0.01;
       
@@ -323,7 +323,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
           if (formData.cleanerId && formData.cleanerId > 0) {
             // Check if primary cleaner entry exists
             const { data: existingEntry } = await supabase
-              .from('booking_cleaners')
+              .from('cleaner_payments')
               .select('id')
               .eq('booking_id', booking.id)
               .eq('is_primary', true)
@@ -332,7 +332,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
             if (existingEntry) {
               // Update existing entry
               await supabase
-                .from('booking_cleaners')
+                .from('cleaner_payments')
                 .update({
                   cleaner_id: formData.cleanerId,
                   calculated_pay: formData.cleanerPay || 0,
@@ -344,7 +344,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
             } else {
               // Create new entry
               await supabase
-                .from('booking_cleaners')
+                .from('cleaner_payments')
                 .insert({
                   booking_id: booking.id,
                   cleaner_id: formData.cleanerId,
@@ -360,13 +360,13 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
           } else if (cleanerChanged && !formData.cleanerId) {
             // Cleaner was removed - delete primary entry
             await supabase
-              .from('booking_cleaners')
+              .from('cleaner_payments')
               .delete()
               .eq('booking_id', booking.id)
               .eq('is_primary', true);
           }
         } catch (syncError) {
-          console.error('Error syncing booking_cleaners:', syncError);
+          console.error('Error syncing cleaner_payments:', syncError);
           // Don't fail the update if sync fails
         }
       }

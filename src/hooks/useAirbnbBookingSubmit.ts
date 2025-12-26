@@ -562,14 +562,14 @@ export const useAirbnbBookingSubmit = () => {
         throw new Error(bookingError?.message || 'Failed to create booking');
       }
 
-      // Insert primary cleaner into booking_cleaners if assigned
+      // Insert primary cleaner into cleaner_payments if assigned
       if (bookingData.cleanerId && bookingData.cleanerId > 0) {
         try {
           // Calculate cleaner pay based on total cost and default percentage (or cleaner's rate)
           const cleanerPercentage = 50; // Default 50%, can be adjusted
           const calculatedPay = (bookingData.totalCost || 0) * (cleanerPercentage / 100);
           
-          await supabase.from('booking_cleaners').insert({
+          await supabase.from('cleaner_payments').insert({
             booking_id: booking.id,
             cleaner_id: bookingData.cleanerId,
             is_primary: true,
@@ -579,9 +579,9 @@ export const useAirbnbBookingSubmit = () => {
             calculated_pay: calculatedPay,
             status: 'assigned'
           });
-          console.log('[useAirbnbBookingSubmit] Created booking_cleaners entry for primary cleaner');
+          console.log('[useAirbnbBookingSubmit] Created cleaner_payments entry for primary cleaner');
         } catch (cleanerError) {
-          console.error('[useAirbnbBookingSubmit] Failed to create booking_cleaners entry:', cleanerError);
+          console.error('[useAirbnbBookingSubmit] Failed to create cleaner_payments entry:', cleanerError);
           // Don't fail the booking if this fails
         }
       }
