@@ -63,7 +63,7 @@ const CleanerUpcomingBookings = () => {
           )
         `)
         .eq('cleaner', effectiveCleanerId)
-        .neq('booking_status', 'cancelled')
+        .or('booking_status.is.null,booking_status.neq.cancelled')
         .gte('date_time', startOfDay(new Date()).toISOString())
         .order('date_time', { ascending: sortOrder === 'asc' });
 

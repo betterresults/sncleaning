@@ -93,7 +93,7 @@ const CleanerTodayBookingsList = () => {
         .from('bookings')
         .select('*')
         .eq('cleaner', effectiveCleanerId)
-        .neq('booking_status', 'cancelled')
+        .or('booking_status.is.null,booking_status.neq.cancelled')
         .gte('date_time', startOfDay.toISOString())
         .lte('date_time', endOfDay.toISOString())
         .order('date_time', { ascending: true });
@@ -151,7 +151,7 @@ const CleanerTodayBookingsList = () => {
           .from('bookings')
           .select('*')
           .in('id', additionalBookingIds)
-          .neq('booking_status', 'cancelled')
+          .or('booking_status.is.null,booking_status.neq.cancelled')
           .gte('date_time', startOfDay.toISOString())
           .lte('date_time', endOfDay.toISOString());
 
