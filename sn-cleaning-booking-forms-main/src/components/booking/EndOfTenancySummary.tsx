@@ -202,8 +202,7 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
       {/* First-Time Customer Discount */}
       {data.isFirstTimeCustomer && calculations.firstTimeDiscount > 0 && (
         <div className="flex justify-between items-center mt-3 pt-3 border-t border-green-200 bg-green-50 -mx-4 px-4 py-2">
-          <span className="text-green-700 font-medium flex items-center gap-1">
-            <Percent className="w-3 h-3" />
+          <span className="text-green-700 font-medium">
             New Customer Discount (10%)
           </span>
           <span className="text-green-700 font-semibold">-£{calculations.firstTimeDiscount.toFixed(2)}</span>
