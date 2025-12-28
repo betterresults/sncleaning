@@ -5,6 +5,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { EndOfTenancyBookingData } from '../EndOfTenancyBookingForm';
 import { Home, Building, Users, Plus, Minus, CheckCircle, Info, Microwave, UtensilsCrossed, BookOpen, WashingMachine, Trees, Sofa, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useEndOfTenancyFieldConfigs } from '@/hooks/useEndOfTenancyFieldConfigs';
 
 interface EndOfTenancyPropertyStepProps {
   data: EndOfTenancyBookingData;
@@ -65,12 +66,7 @@ const HOUSE_SHARE_AREAS = [
   { id: 'living-shared', label: 'Living Room (Shared)' },
 ];
 
-const OVEN_OPTIONS = [
-  { id: 'none', label: 'No Oven Cleaning' },
-  { id: 'single', label: 'Single Oven' },
-  { id: 'double', label: 'Double Oven' },
-  { id: 'range', label: 'Range Cooker' },
-];
+// Oven options are now fetched from database
 
 export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> = ({
   data,
@@ -79,6 +75,24 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
   isAdminMode = false
 }) => {
   const { toast } = useToast();
+  
+  // Fetch oven options from database
+  const { data: ovenConfigs } = useEndOfTenancyFieldConfigs('oven_cleaning', true);
+  
+  // Build oven options from database config, with "No Oven Cleaning" as first option
+  const ovenOptions = React.useMemo(() => {
+    const options = [{ id: 'none', label: 'No Oven Cleaning', price: 0 }];
+    if (ovenConfigs) {
+      ovenConfigs.forEach(config => {
+        options.push({
+          id: config.option,
+          label: config.label || config.option,
+          price: config.value
+        });
+      });
+    }
+    return options;
+  }, [ovenConfigs]);
   
   const isHouseShare = data.propertyType === 'house-share';
   
@@ -447,7 +461,7 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
           <div className="relative z-[5]">
             <h2 className="text-2xl font-bold text-slate-700 mb-4">Oven Cleaning</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {OVEN_OPTIONS.map((oven) => {
+              {ovenOptions.map((oven) => {
                 const isSelected = data.ovenType === oven.id;
                 return (
                   <button
