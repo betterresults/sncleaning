@@ -155,6 +155,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
     estimatedHours: null,
     hourlyRate: HOURLY_RATE,
     totalCost: 0,
+    isFirstTimeCustomer: true, // Default to true for new customers - will be checked against DB later
   });
 
   // Calculate totals
@@ -245,14 +246,35 @@ const EndOfTenancyBookingForm: React.FC = () => {
           }
           
           if (customerId) {
+            // Check if customer has any past bookings
+            const { data: pastBookings } = await supabase
+              .from('past_bookings')
+              .select('id')
+              .eq('customer', customerId)
+              .limit(1);
+            
+            const { data: currentBookings } = await supabase
+              .from('bookings')
+              .select('id')
+              .eq('customer', customerId)
+              .limit(1);
+            
+            const hasPreviousBookings = (pastBookings && pastBookings.length > 0) || (currentBookings && currentBookings.length > 0);
+            
             setBookingData(prev => ({
               ...prev,
               customerId: customerId,
+              isFirstTimeCustomer: !hasPreviousBookings // Not first time if they have previous bookings
             }));
           }
         }
       } else {
+        // Not logged in = new customer, eligible for discount
         setIsAdminMode(false);
+        setBookingData(prev => ({
+          ...prev,
+          isFirstTimeCustomer: true
+        }));
       }
     };
     checkAdminAndLoadCustomer();
