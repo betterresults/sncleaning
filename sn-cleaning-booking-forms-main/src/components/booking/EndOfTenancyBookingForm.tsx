@@ -97,11 +97,8 @@ const BASE_HOURS_MAP: Record<string, Record<string, number>> = {
 
 const HOURLY_RATE = 28;
 
-const OVEN_PRICES: Record<string, number> = {
-  single: 45,
-  double: 65,
-  range: 85,
-};
+// Note: Oven prices are fetched from database via useEndOfTenancyCalculations hook
+// The calculateTotals function below is a quick estimate - actual totals come from the hook
 
 const steps = [
   { id: 1, title: 'Property', key: 'property', icon: <Home className="w-4 h-4" /> },
@@ -158,7 +155,8 @@ const EndOfTenancyBookingForm: React.FC = () => {
     isFirstTimeCustomer: true, // Default to true for new customers - will be checked against DB later
   });
 
-  // Calculate totals
+  // Calculate totals - this is a quick estimate for tracking purposes
+  // Actual totals are calculated by useEndOfTenancyCalculations hook in EndOfTenancySummary
   const calculateTotals = useCallback((data: EndOfTenancyBookingData) => {
     const bedrooms = data.bedrooms || '1';
     const bathrooms = data.bathrooms || '1';
@@ -167,7 +165,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
     const baseHours = bedroomMap[bathrooms] || bedroomMap['1'] || 4;
     
     const baseCost = baseHours * HOURLY_RATE;
-    const ovenCost = data.ovenType ? OVEN_PRICES[data.ovenType] || 0 : 0;
+    // Note: Oven and other costs are calculated from database in the summary component
     
     // Blinds total
     const blindsTotal = data.blindsItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -184,7 +182,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
     
     return {
       estimatedHours: baseHours,
-      totalCost: baseCost + ovenCost + blindsTotal + extrasTotal + steamCleaningTotal + shortNoticeCharge,
+      totalCost: baseCost + blindsTotal + extrasTotal + steamCleaningTotal + shortNoticeCharge,
     };
   }, []);
 
