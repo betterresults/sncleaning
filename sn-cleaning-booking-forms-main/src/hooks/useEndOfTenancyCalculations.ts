@@ -139,11 +139,14 @@ export const useEndOfTenancyCalculations = (
       });
     }
 
-    // Oven cleaning
-    if (data.ovenType) {
+    // Oven cleaning - stored separately as it's a fixed add-on not affected by percentages
+    let ovenCleaningCost = 0;
+    let ovenCleaningTime = 0;
+    if (data.ovenType && data.ovenType !== 'none') {
       const ovenConfig = getConfigValue('oven_cleaning', data.ovenType);
-      baseCost += ovenConfig.value;
-      totalTime += ovenConfig.time;
+      ovenCleaningCost = ovenConfig.value;
+      ovenCleaningTime = ovenConfig.time;
+      totalTime += ovenCleaningTime;
     }
 
     // 2. Get PERCENTAGE adjustments for property condition and furniture status
@@ -186,8 +189,9 @@ export const useEndOfTenancyCalculations = (
     const steamCleaningFinal = steamCleaningTotal - steamCleaningDiscount;
 
     // 6. Calculate subtotal before first-time discount
+    // Oven cleaning is added as a fixed cost, not affected by condition/furniture percentages
     const shortNoticeCharge = data.shortNoticeCharge || 0;
-    const subtotalBeforeDiscounts = adjustedBaseCost + blindsTotal + extrasTotal + steamCleaningFinal + shortNoticeCharge;
+    const subtotalBeforeDiscounts = adjustedBaseCost + ovenCleaningCost + blindsTotal + extrasTotal + steamCleaningFinal + shortNoticeCharge;
 
     // 7. Apply 10% first-time customer discount
     const firstTimeDiscount = isFirstTimeCustomer ? subtotalBeforeDiscounts * FIRST_TIME_DISCOUNT_PERCENTAGE : 0;
