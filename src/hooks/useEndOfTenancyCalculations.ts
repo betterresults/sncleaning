@@ -41,10 +41,11 @@ interface FieldConfig {
 }
 
 export interface EndOfTenancyCalculationResult {
-  baseCost: number;           // Sum of fixed costs (bedrooms, bathrooms, kitchen, additional rooms, house share, oven)
+  baseCost: number;           // Sum of fixed costs (bedrooms, bathrooms, kitchen, additional rooms, house share)
   conditionPercentage: number; // Property condition % to add
   furniturePercentage: number; // Furniture status % to add
   adjustedBaseCost: number;   // Base cost after applying percentages
+  ovenCleaningCost: number;   // Oven cleaning (fixed, not affected by percentages)
   blindsTotal: number;        // Blinds cost (not affected by percentages)
   extrasTotal: number;        // Extra services cost (not affected by percentages)
   steamCleaningTotal: number; // Carpet/upholstery/mattress total
@@ -91,6 +92,7 @@ export const useEndOfTenancyCalculations = (
         conditionPercentage: 0,
         furniturePercentage: 0,
         adjustedBaseCost: 0,
+        ovenCleaningCost: 0,
         blindsTotal: 0,
         extrasTotal: 0,
         steamCleaningTotal: 0,
@@ -157,11 +159,14 @@ export const useEndOfTenancyCalculations = (
       });
     }
 
-    // Oven cleaning
-    if (data.ovenType) {
+    // Oven cleaning - stored separately as it's a fixed add-on not affected by percentages
+    let ovenCleaningCost = 0;
+    let ovenCleaningTime = 0;
+    if (data.ovenType && data.ovenType !== 'none') {
       const ovenConfig = getConfigValue('oven_cleaning', data.ovenType);
-      baseCost += ovenConfig.value;
-      totalTime += ovenConfig.time;
+      ovenCleaningCost = ovenConfig.value;
+      ovenCleaningTime = ovenConfig.time;
+      totalTime += ovenCleaningTime;
     }
 
     // 2. Get PERCENTAGE adjustments for property condition and furniture status
@@ -204,8 +209,9 @@ export const useEndOfTenancyCalculations = (
     const steamCleaningFinal = steamCleaningTotal - steamCleaningDiscount;
 
     // 6. Calculate subtotal before first-time discount
+    // Oven cleaning is added as a fixed cost, not affected by condition/furniture percentages
     const shortNoticeCharge = data.shortNoticeCharge || 0;
-    const subtotalBeforeDiscounts = adjustedBaseCost + blindsTotal + extrasTotal + steamCleaningFinal + shortNoticeCharge;
+    const subtotalBeforeDiscounts = adjustedBaseCost + ovenCleaningCost + blindsTotal + extrasTotal + steamCleaningFinal + shortNoticeCharge;
 
     // 7. Apply 10% first-time customer discount
     const firstTimeDiscount = isFirstTimeCustomer ? subtotalBeforeDiscounts * FIRST_TIME_DISCOUNT_PERCENTAGE : 0;
@@ -219,6 +225,7 @@ export const useEndOfTenancyCalculations = (
       conditionPercentage,
       furniturePercentage,
       adjustedBaseCost,
+      ovenCleaningCost,
       blindsTotal,
       extrasTotal,
       steamCleaningTotal,

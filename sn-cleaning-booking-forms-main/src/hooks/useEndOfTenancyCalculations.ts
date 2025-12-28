@@ -27,6 +27,7 @@ export interface EndOfTenancyCalculationResult {
   conditionPercentage: number; // Property condition % to add
   furniturePercentage: number; // Furniture status % to add
   adjustedBaseCost: number;   // Base cost after applying percentages
+  ovenCleaningCost: number;   // Oven cleaning (fixed, not affected by percentages)
   blindsTotal: number;        // Blinds cost (not affected by percentages)
   extrasTotal: number;        // Extra services cost (not affected by percentages)
   steamCleaningTotal: number; // Carpet/upholstery/mattress total
@@ -73,6 +74,7 @@ export const useEndOfTenancyCalculations = (
         conditionPercentage: 0,
         furniturePercentage: 0,
         adjustedBaseCost: 0,
+        ovenCleaningCost: 0,
         blindsTotal: 0,
         extrasTotal: 0,
         steamCleaningTotal: 0,
@@ -205,6 +207,7 @@ export const useEndOfTenancyCalculations = (
       conditionPercentage,
       furniturePercentage,
       adjustedBaseCost,
+      ovenCleaningCost,
       blindsTotal,
       extrasTotal,
       steamCleaningTotal,

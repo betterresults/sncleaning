@@ -89,7 +89,7 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
       {data.propertyCondition && calculations.conditionPercentage > 0 && (
         <div className="flex justify-between items-center">
           <span className="text-muted-foreground">
-            {PROPERTY_CONDITION_LABELS[data.propertyCondition]} (+{calculations.conditionPercentage}%)
+            {PROPERTY_CONDITION_LABELS[data.propertyCondition]}
           </span>
           <span className="text-foreground font-medium">
             +£{(calculations.baseCost * calculations.conditionPercentage / 100).toFixed(2)}
@@ -101,11 +101,19 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
       {data.furnitureStatus && calculations.furniturePercentage > 0 && (
         <div className="flex justify-between items-center">
           <span className="text-muted-foreground">
-            {FURNITURE_STATUS_LABELS[data.furnitureStatus]} (+{calculations.furniturePercentage}%)
+            {FURNITURE_STATUS_LABELS[data.furnitureStatus]}
           </span>
           <span className="text-foreground font-medium">
             +£{(calculations.baseCost * calculations.furniturePercentage / 100).toFixed(2)}
           </span>
+        </div>
+      )}
+
+      {/* Oven Cleaning */}
+      {calculations.ovenCleaningCost > 0 && (
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground">Oven Cleaning</span>
+          <span className="text-foreground font-semibold">£{calculations.ovenCleaningCost.toFixed(2)}</span>
         </div>
       )}
 
@@ -226,7 +234,7 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
       {data.propertyCondition && calculations.conditionPercentage > 0 && (
         <div className="flex justify-between items-center">
           <span className="text-muted-foreground text-sm">
-            {PROPERTY_CONDITION_LABELS[data.propertyCondition]} (+{calculations.conditionPercentage}%)
+            {PROPERTY_CONDITION_LABELS[data.propertyCondition]}
           </span>
           <span className="text-foreground font-medium">
             +£{(calculations.baseCost * calculations.conditionPercentage / 100).toFixed(2)}
@@ -238,11 +246,19 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
       {data.furnitureStatus && calculations.furniturePercentage > 0 && (
         <div className="flex justify-between items-center">
           <span className="text-muted-foreground text-sm">
-            {FURNITURE_STATUS_LABELS[data.furnitureStatus]} (+{calculations.furniturePercentage}%)
+            {FURNITURE_STATUS_LABELS[data.furnitureStatus]}
           </span>
           <span className="text-foreground font-medium">
             +£{(calculations.baseCost * calculations.furniturePercentage / 100).toFixed(2)}
           </span>
+        </div>
+      )}
+
+      {/* Oven Cleaning */}
+      {calculations.ovenCleaningCost > 0 && (
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground">Oven Cleaning</span>
+          <span className="text-foreground font-semibold">£{calculations.ovenCleaningCost.toFixed(2)}</span>
         </div>
       )}
 
