@@ -29,6 +29,7 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
   onUpdate,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isSteamExpanded, setIsSteamExpanded] = useState(false);
 
   // Use the calculation hook with database prices
   const calculations = useEndOfTenancyCalculations(data, data.isFirstTimeCustomer || false);
@@ -156,38 +157,50 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
         </div>
       )}
 
-      {/* Steam Cleaning with 20% discount */}
+      {/* Steam Cleaning */}
       {calculations.steamCleaningTotal > 0 && (
-        <div className="space-y-1 mt-3 pt-3 border-t border-border">
-          <div className="flex justify-between items-center font-medium">
+        <div className="space-y-2 mt-3 pt-3 border-t border-border">
+          <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Steam Cleaning</span>
-            <span className="text-muted-foreground line-through text-sm">£{calculations.steamCleaningTotal.toFixed(2)}</span>
+            <span className="text-foreground font-semibold">£{calculations.steamCleaningFinal.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between items-center text-green-600">
-            <span className="text-sm flex items-center gap-1">
-              <Percent className="w-3 h-3" />
-              Combined discount (20% off)
-            </span>
-            <span className="font-semibold">£{calculations.steamCleaningFinal.toFixed(2)}</span>
-          </div>
-          {data.carpetItems.map(item => (
-            <div key={item.id} className="flex justify-between items-center pl-4 text-sm">
-              <span className="text-muted-foreground">{item.name} x{item.quantity}</span>
-              <span className="text-foreground">£{(item.price * item.quantity).toFixed(2)}</span>
+          <button
+            onClick={() => setIsSteamExpanded(!isSteamExpanded)}
+            className="flex items-center gap-1 text-sm text-primary hover:underline"
+          >
+            <span>View details</span>
+            {isSteamExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </button>
+          {isSteamExpanded && (
+            <div className="pl-4 space-y-1 text-sm">
+              {data.carpetItems.map(item => (
+                <div key={item.id} className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{item.name} x{item.quantity}</span>
+                  <span className="text-foreground">£{(item.price * item.quantity).toFixed(2)}</span>
+                </div>
+              ))}
+              {data.upholsteryItems.map(item => (
+                <div key={item.id} className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{item.name} x{item.quantity}</span>
+                  <span className="text-foreground">£{(item.price * item.quantity).toFixed(2)}</span>
+                </div>
+              ))}
+              {data.mattressItems.map(item => (
+                <div key={item.id} className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{item.name} x{item.quantity}</span>
+                  <span className="text-foreground">£{(item.price * item.quantity).toFixed(2)}</span>
+                </div>
+              ))}
+              <div className="flex justify-between items-center pt-1 border-t border-border/50">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span className="text-muted-foreground line-through">£{calculations.steamCleaningTotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center text-green-600">
+                <span>Bundle discount (20% off)</span>
+                <span>-£{(calculations.steamCleaningTotal - calculations.steamCleaningFinal).toFixed(2)}</span>
+              </div>
             </div>
-          ))}
-          {data.upholsteryItems.map(item => (
-            <div key={item.id} className="flex justify-between items-center pl-4 text-sm">
-              <span className="text-muted-foreground">{item.name} x{item.quantity}</span>
-              <span className="text-foreground">£{(item.price * item.quantity).toFixed(2)}</span>
-            </div>
-          ))}
-          {data.mattressItems.map(item => (
-            <div key={item.id} className="flex justify-between items-center pl-4 text-sm">
-              <span className="text-muted-foreground">{item.name} x{item.quantity}</span>
-              <span className="text-foreground">£{(item.price * item.quantity).toFixed(2)}</span>
-            </div>
-          ))}
+          )}
         </div>
       )}
 
