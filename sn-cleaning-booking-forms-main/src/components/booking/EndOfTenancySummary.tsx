@@ -327,7 +327,7 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
           </div>
           <div>
             <p className="font-medium text-foreground">
-              Est. {calculations.estimatedHours.toFixed(1)} hours
+              Est. {calculations.estimatedHours.toFixed(1)} hours team work
             </p>
           </div>
         </div>
