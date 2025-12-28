@@ -66,6 +66,7 @@ const HOUSE_SHARE_AREAS = [
 ];
 
 const OVEN_OPTIONS = [
+  { id: 'none', label: 'No Oven Cleaning' },
   { id: 'single', label: 'Single Oven' },
   { id: 'double', label: 'Double Oven' },
   { id: 'range', label: 'Range Cooker' },
@@ -416,95 +417,56 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
         {!isHouseShare && (
           <div>
             <h2 className="text-2xl font-bold text-slate-700 mb-4">Additional Rooms</h2>
-            <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-3">
               {ADDITIONAL_ROOMS.map((room) => {
                 const isSelected = data.additionalRooms?.includes(room.id);
                 const Icon = room.icon;
                 return (
-                  <div
+                  <button
                     key={room.id}
-                    className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-300 ${
+                    className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center gap-2 ${
                       isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
                     }`}
+                    onClick={() => toggleAdditionalRoom(room.id)}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg transition-colors ${
-                        isSelected ? 'bg-primary/10' : 'bg-muted'
-                      }`}>
-                        <Icon className={`h-5 w-5 transition-colors ${
-                          isSelected ? 'text-primary' : 'text-muted-foreground'
-                        }`} />
-                      </div>
-                      <span className={`text-sm font-bold transition-colors ${
-                        isSelected ? 'text-primary' : 'text-slate-700'
-                      }`}>
-                        {room.label}
-                      </span>
-                    </div>
-                    <Switch
-                      checked={isSelected}
-                      onCheckedChange={() => toggleAdditionalRoom(room.id)}
-                      className={`${!isSelected ? 'border-2 border-border' : ''}`}
-                    />
-                  </div>
+                    <Icon className={`h-5 w-5 transition-colors ${
+                      isSelected ? 'text-primary' : 'text-muted-foreground'
+                    }`} />
+                    <span className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-slate-500'}`}>
+                      {room.label}
+                    </span>
+                  </button>
                 );
               })}
             </div>
           </div>
         )}
 
-        {/* Oven Cleaning - Switch Style (hide for house share) */}
+        {/* Oven Cleaning (hide for house share) */}
         {!isHouseShare && (
           <div className="relative z-[5]">
-            <div className="flex items-center justify-between mb-4 p-3 bg-muted/30 rounded-xl border border-border">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Microwave className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-slate-700">
-                    Add professional oven cleaning
-                  </h2>
-                  <p className="text-sm text-slate-600 mt-1">
-                    Include professional oven cleaning service
-                  </p>
-                </div>
-              </div>
-              <Switch
-                checked={!!data.ovenType}
-                onCheckedChange={(checked) => {
-                  onUpdate({ 
-                    ovenType: checked ? 'single' : ''
-                  });
-                }}
-                className={`w-16 h-7 ${!data.ovenType ? 'border-2 border-border' : ''}`}
-              />
+            <h2 className="text-2xl font-bold text-slate-700 mb-4">Oven Cleaning</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {OVEN_OPTIONS.map((oven) => {
+                const isSelected = data.ovenType === oven.id;
+                return (
+                  <button
+                    key={oven.id}
+                    className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center gap-2 ${
+                      isSelected
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border bg-card hover:border-primary/50'
+                    }`}
+                    onClick={() => onUpdate({ ovenType: isSelected ? '' : oven.id })}
+                  >
+                    {isSelected && <CheckCircle className="h-4 w-4 text-primary" />}
+                    <span className={`text-sm font-bold transition-colors ${
+                      isSelected ? 'text-primary' : 'text-slate-500'
+                    }`}>{oven.label}</span>
+                  </button>
+                );
+              })}
             </div>
-            
-            {data.ovenType && (
-              <div className="grid grid-cols-3 gap-3">
-                {OVEN_OPTIONS.map((oven) => {
-                  const isSelected = data.ovenType === oven.id;
-                  return (
-                    <button
-                      key={oven.id}
-                      className={`group relative h-20 rounded-2xl border transition-all duration-300 ${
-                        isSelected
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border bg-card hover:border-primary/50'
-                      }`}
-                      onClick={() => onUpdate({ ovenType: oven.id })}
-                    >
-                      <div className="flex flex-col items-center justify-center h-full">
-                        <span className={`text-base font-bold transition-colors ${
-                          isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'
-                        }`}>{oven.label}</span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
           </div>
         )}
 
