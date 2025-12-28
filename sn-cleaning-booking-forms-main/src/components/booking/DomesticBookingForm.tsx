@@ -682,9 +682,10 @@ const DomesticBookingForm: React.FC = () => {
     const handlePopState = (e: PopStateEvent) => {
       const emailAlreadySent = sessionStorage.getItem('quote_email_sent') === 'true';
       const cameFromQuoteLink = sessionStorage.getItem('came_from_quote_link') === 'true';
+      const paymentRedirectInProgress = localStorage.getItem('payment_redirect_in_progress') === 'true';
       
-      // If quote was already sent or user came from quote link, allow navigation
-      if (emailAlreadySent || cameFromQuoteLink) {
+      // If quote was already sent, user came from quote link, or payment redirect in progress, allow navigation
+      if (emailAlreadySent || cameFromQuoteLink || paymentRedirectInProgress) {
         return;
       }
       
@@ -708,6 +709,12 @@ const DomesticBookingForm: React.FC = () => {
       const alreadyShownThisSession = sessionStorage.getItem('exit_popup_shown') === 'true';
       const emailAlreadySent = sessionStorage.getItem('quote_email_sent') === 'true';
       const cameFromQuoteLink = sessionStorage.getItem('came_from_quote_link') === 'true';
+      const paymentRedirectInProgress = localStorage.getItem('payment_redirect_in_progress') === 'true';
+      
+      // Don't trigger exit popup if user is in payment redirect flow (Revolut Pay, etc.)
+      if (paymentRedirectInProgress) {
+        return;
+      }
       
       // Don't trigger exit popup on payment step - user may be adding card details in Stripe
       if (currentStep === 3) {

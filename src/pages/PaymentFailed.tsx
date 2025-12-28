@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { XCircle, RefreshCw } from 'lucide-react';
@@ -8,6 +9,11 @@ const PaymentFailed = () => {
   
   const errorMessage = searchParams.get('error') || 'Your payment could not be processed.';
   const bookingId = searchParams.get('bookingId');
+
+  // Clear payment redirect flag on page load
+  useEffect(() => {
+    localStorage.removeItem('payment_redirect_in_progress');
+  }, []);
 
   const handleTryAgain = () => {
     // Navigate back to the booking form - user will need to restart the process

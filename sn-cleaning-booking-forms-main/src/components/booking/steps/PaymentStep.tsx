@@ -1303,12 +1303,17 @@ useEffect(() => {
         const successReturnUrl = `${window.location.origin}/booking-confirmation?bookingId=${bookingId}&payment_setup=success&urgent=${isUrgentBooking ? '1' : '0'}`;
         const failureReturnUrl = `${window.location.origin}/payment-failed?bookingId=${bookingId}&error=Payment%20was%20cancelled%20or%20failed`;
         
+        // Set flag to prevent exit popup when user is redirected to payment provider (Revolut Pay, etc.)
+        localStorage.setItem('payment_redirect_in_progress', 'true');
+        
         // Step 3: Call the confirmSetup function with the return URL
         console.log('[PaymentStep] Confirming SetupIntent with return_url:', successReturnUrl);
         const { error: confirmError, setupIntent } = await confirmSetupFnRef.current(successReturnUrl);
 
         if (confirmError) {
           console.error('[PaymentStep] SetupIntent confirmation error:', confirmError);
+          // Clear payment redirect flag since we're not redirecting
+          localStorage.removeItem('payment_redirect_in_progress');
           // Booking was created but payment failed - navigate to failure page
           navigate(`/payment-failed?bookingId=${bookingId}&error=${encodeURIComponent(confirmError.message || 'Payment failed')}`);
           return;
@@ -1363,6 +1368,9 @@ useEffect(() => {
 
           // Call success callback for quote lead tracking
           onBookingSuccess?.(bookingId);
+
+          // Clear payment redirect flag since payment succeeded inline (no redirect)
+          localStorage.removeItem('payment_redirect_in_progress');
 
           // Navigate to confirmation page
           navigate('/booking-confirmation', { state: { bookingId: bookingId } });
