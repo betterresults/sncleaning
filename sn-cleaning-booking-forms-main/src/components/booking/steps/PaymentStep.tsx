@@ -19,6 +19,7 @@ import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { User } from 'lucide-react';
+import { useDomesticHardcodedCalculations } from '@/hooks/useDomesticHardcodedCalculations';
 
 // Simple auth check without using AuthContext
 const useSimpleAuth = () => {
@@ -251,6 +252,9 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
     if (path.includes('/end-of-tenancy')) return 'end-of-tenancy';
     return 'airbnb'; // default
   }, [location.pathname]);
+
+// Calculate hours for domestic bookings (includes first deep clean hours)
+const domesticCalculations = useDomesticHardcodedCalculations(data as any);
 
 // Use admin-selected customerId or logged-in/selected customerId
 const { selectedCustomerId } = useAdminCustomer();
@@ -816,7 +820,8 @@ useEffect(() => {
             paymentMethod: 'Bank Transfer',
             agentUserId: data.agentUserId,
             wantsFirstDeepClean: data.wantsFirstDeepClean,
-            firstDeepCleanExtraHours: data.firstDeepCleanExtraHours
+            firstDeepCleanExtraHours: data.firstDeepCleanExtraHours || domesticCalculations.firstDeepCleanExtraHours,
+            firstDeepCleanHours: domesticCalculations.firstDeepCleanHours
           }
         });
 
@@ -1284,7 +1289,8 @@ useEffect(() => {
             paymentStatus: 'pending', // Set to pending until payment is confirmed
             agentUserId: data.agentUserId,
             wantsFirstDeepClean: data.wantsFirstDeepClean,
-            firstDeepCleanExtraHours: data.firstDeepCleanExtraHours,
+            firstDeepCleanExtraHours: data.firstDeepCleanExtraHours || domesticCalculations.firstDeepCleanExtraHours,
+            firstDeepCleanHours: domesticCalculations.firstDeepCleanHours,
           }
         });
 
@@ -1420,7 +1426,8 @@ useEffect(() => {
             paymentMethod: 'Stripe',
             agentUserId: data.agentUserId,
             wantsFirstDeepClean: data.wantsFirstDeepClean,
-            firstDeepCleanExtraHours: data.firstDeepCleanExtraHours
+            firstDeepCleanExtraHours: data.firstDeepCleanExtraHours || domesticCalculations.firstDeepCleanExtraHours,
+            firstDeepCleanHours: domesticCalculations.firstDeepCleanHours
           }
         });
 

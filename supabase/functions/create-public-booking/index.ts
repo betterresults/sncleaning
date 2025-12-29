@@ -88,7 +88,13 @@ const handler = async (req: Request): Promise<Response> => {
       email: data.email,
       firstName: data.firstName,
       totalCost: data.totalCost,
-      paymentMethod: data.paymentMethod
+      paymentMethod: data.paymentMethod,
+      // Deep clean hours tracking
+      wantsFirstDeepClean: data.wantsFirstDeepClean,
+      firstDeepCleanExtraHours: data.firstDeepCleanExtraHours,
+      estimatedHours: data.estimatedHours,
+      totalHours: data.totalHours,
+      firstDeepCleanHours: data.firstDeepCleanHours
     });
 
     // Step 1: Find or create customer
@@ -251,13 +257,24 @@ const handler = async (req: Request): Promise<Response> => {
     
     // For the FIRST booking with deep clean, total hours should include extra deep clean hours
     // e.g., 2 regular hours + 1 extra hour = 3 hours for first visit
-    const totalHoursForBooking = data.wantsFirstDeepClean 
-      ? regularHours + firstDeepCleanExtraHours  
-      : regularHours;
+    // Use firstDeepCleanHours directly if provided (most accurate), otherwise calculate
+    let totalHoursForBooking: number;
+    if (data.wantsFirstDeepClean) {
+      // If firstDeepCleanHours is explicitly provided, use it directly (most accurate)
+      if (data.firstDeepCleanHours && data.firstDeepCleanHours > 0) {
+        totalHoursForBooking = data.firstDeepCleanHours;
+      } else {
+        // Fallback to calculating from regular hours + extra hours
+        totalHoursForBooking = regularHours + firstDeepCleanExtraHours;
+      }
+    } else {
+      totalHoursForBooking = regularHours;
+    }
     
     console.log('[create-public-booking] Hours calculation:', {
       regularHours,
       firstDeepCleanExtraHours,
+      firstDeepCleanHours: data.firstDeepCleanHours,
       wantsFirstDeepClean: data.wantsFirstDeepClean,
       totalHoursForBooking
     });
