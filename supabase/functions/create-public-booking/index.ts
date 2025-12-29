@@ -305,7 +305,7 @@ const handler = async (req: Request): Promise<Response> => {
       postcode: data.postcode || '',
       property_details: JSON.stringify(propertyDetails),
       service_type: data.serviceType || 'Domestic',
-      cleaning_type: data.wantsFirstDeepClean ? 'Deep Cleaning' : (data.cleaningType || 'Standard Cleaning'),
+      cleaning_type: (data.wantsFirstDeepClean || data.serviceFrequency === 'onetime') ? 'Deep Cleaning' : (data.cleaningType || 'Standard Cleaning'),
       frequently: data.serviceFrequency || 'onetime',
       date_time: bookingDateTimeStr || null,
       date_only: dateStr || null,
