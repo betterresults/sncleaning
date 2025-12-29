@@ -162,7 +162,7 @@ export const useEndOfTenancyCalculations = (
     // Oven cleaning - stored separately as it's a fixed add-on not affected by percentages
     let ovenCleaningCost = 0;
     let ovenCleaningTime = 0;
-    if (data.ovenType && data.ovenType !== 'none') {
+    if (data.ovenType && data.ovenType !== 'none' && data.ovenType !== 'no_oven_cleaning') {
       const ovenConfig = getConfigValue('oven_cleaning', data.ovenType);
       ovenCleaningCost = ovenConfig.value;
       ovenCleaningTime = ovenConfig.time;
