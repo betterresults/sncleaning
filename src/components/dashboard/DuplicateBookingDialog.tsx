@@ -198,8 +198,10 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
         customers,
         photos, // Exclude this - not a column in bookings table
         cleaner_pay_status, // Exclude this - only exists in past_bookings table
+        sub_cleaners_count, // Exclude this - computed field, not in bookings table
+        sub_cleaners_total_pay, // Exclude this - computed field, not in bookings table
         ...bookingData 
-      } = booking;
+      } = booking as any;
       
       // Handle frequently field for Airbnb same day cleaning
       let frequently = bookingData.frequently;
