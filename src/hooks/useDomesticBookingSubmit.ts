@@ -336,7 +336,8 @@ export const useDomesticBookingSubmit = () => {
         property_details: buildPropertyDetails(bookingData),
         
         service_type: 'Domestic Cleaning',
-        cleaning_type: bookingData.serviceFrequency || 'onetime', // For domestic, cleaning_type = frequency
+        // cleaning_type for Domestic: "Deep Cleaning" for one-time OR if first deep clean selected, otherwise "Standard Cleaning"
+        cleaning_type: (bookingData.wantsFirstDeepClean || bookingData.serviceFrequency === 'onetime') ? 'Deep Cleaning' : 'Standard Cleaning',
         frequently: bookingData.serviceFrequency || 'onetime',
         
         // Dates - stored as London time without timezone conversion
