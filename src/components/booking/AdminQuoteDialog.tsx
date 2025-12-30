@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Send, CheckCircle2, Link2, MessageSquare, Loader2 } from "lucide-react";
+import { Mail, Send, CheckCircle2, Link2, MessageSquare, Loader2, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -68,7 +68,8 @@ const extractStartTime = (timeSlot: string | null | undefined): string | null =>
   // If it's a range format like "9am - 10am", take the first part
   let timePart = timeSlot.includes(' - ') ? timeSlot.split(' - ')[0].trim() : timeSlot.trim();
   
-  // Try to parse formats like "9:00 AM", "9:00 PM", "9am", "9pm"
+  // Try to parse formats like "9:00 AM", "9:00 PM", "9am", "9pm", "9:00AM"
+  // Updated regex to handle optional space before AM/PM
   const timeRegex = /^(\d{1,2}):?(\d{2})?\s*(AM|PM|am|pm)?$/i;
   const match = timePart.match(timeRegex);
   
@@ -83,9 +84,12 @@ const extractStartTime = (timeSlot: string | null | undefined): string | null =>
       hours = 0;
     }
     
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+    const result = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+    console.log('[extractStartTime] Converted', timeSlot, 'to', result);
+    return result;
   }
   
+  console.warn('[extractStartTime] Failed to parse time:', timeSlot);
   return null;
 };
 
@@ -171,6 +175,13 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
   const saveQuoteAndGetShortUrl = async (): Promise<string> => {
     const shortCode = generateShortCode();
     
+    // Log input data for debugging
+    console.log('[AdminQuoteDialog] Saving quote data:', {
+      selectedTime: quoteData.selectedTime,
+      selectedDate: quoteData.selectedDate,
+      extractedTime: extractStartTime(quoteData.selectedTime),
+    });
+    
     // Build the quote_leads record
     const quoteLeadData = {
       session_id: sessionId || `admin_${Date.now()}`,
@@ -215,6 +226,8 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
       created_by_admin_id: agentUserId,
       updated_at: new Date().toISOString(),
     };
+    
+    console.log('[AdminQuoteDialog] Quote lead data to save:', quoteLeadData);
 
     // Upsert (update if session exists, insert if not)
     const { error } = await supabase
@@ -471,6 +484,27 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                 </div>
               )}
 
+              {/* Warning if date/time not set - customer won't skip to payment */}
+              {(!quoteData.selectedDate || !quoteData.selectedTime) && (
+                <div className="rounded-xl p-4 border bg-orange-50 border-orange-200">
+                  <div className="flex items-start gap-3">
+                    <Calendar className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-orange-800">
+                        Schedule not set
+                      </p>
+                      <p className="text-xs text-orange-600 mt-0.5">
+                        {!quoteData.selectedDate && !quoteData.selectedTime 
+                          ? 'Date and time are missing. Customer will need to fill in the schedule step.'
+                          : !quoteData.selectedDate 
+                            ? 'Date is missing. Customer will need to select a date.'
+                            : 'Time is missing. Customer will need to select a time.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Quote Summary */}
               {quoteData.totalCost > 0 && (
                 <div className="bg-slate-50 rounded-xl p-4 space-y-2 border border-slate-100">
@@ -489,6 +523,21 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-500">Duration:</span>
                       <span className="font-medium text-slate-700">{quoteData.estimatedHours} hours</span>
+                    </div>
+                  )}
+                  {/* Show date/time if set */}
+                  {quoteData.selectedDate && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500">Date:</span>
+                      <span className="font-medium text-slate-700">
+                        {quoteData.selectedDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+                      </span>
+                    </div>
+                  )}
+                  {quoteData.selectedTime && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500">Time:</span>
+                      <span className="font-medium text-slate-700">{quoteData.selectedTime}</span>
                     </div>
                   )}
                 </div>
