@@ -288,6 +288,7 @@ const DomesticBookingForm: React.FC = () => {
       const ovenType = searchParams.get('ovenType') || '';
       const dateStr = searchParams.get('date');
       const time = searchParams.get('time') || '';
+      const flexibility = searchParams.get('flexibility') as 'not-flexible' | 'flexible-time' | 'flexible-date' | '' || '';
       const email = searchParams.get('email') || '';
       const firstName = searchParams.get('firstName') || '';
       const lastName = searchParams.get('lastName') || '';
@@ -344,6 +345,7 @@ const DomesticBookingForm: React.FC = () => {
         ovenType: ovenType || prev.ovenType,
         selectedDate: dateStr ? new Date(dateStr) : prev.selectedDate,
         selectedTime: time || prev.selectedTime,
+        flexibility: flexibility || prev.flexibility, // Apply flexibility from URL
         email: email || prev.email,
         firstName: firstName || prev.firstName,
         lastName: lastName || prev.lastName,
@@ -391,8 +393,14 @@ const DomesticBookingForm: React.FC = () => {
       // Determine if we can auto-navigate to payment step
       // Check if property and schedule data is sufficiently complete
       const hasPropertyData = propertyType && bedrooms && bathrooms && frequency;
-      const hasScheduleData = dateStr && time;
+      // Schedule is complete if: (date AND time) OR (date AND flexible-time)
+      const hasScheduleData = dateStr && (time || flexibility === 'flexible-time');
       const hasContactData = firstName && email;
+      
+      console.log('[DomesticBookingForm] Auto-nav check:', { 
+        hasPropertyData, hasScheduleData, hasContactData, refSessionId,
+        dateStr, time, flexibility 
+      });
       
       // Auto-navigate to step 3 (payment) if data is complete
       if (hasPropertyData && hasScheduleData && hasContactData && refSessionId) {
@@ -436,6 +444,7 @@ const DomesticBookingForm: React.FC = () => {
           ovenType: data.oven_size || prev.ovenType,
           selectedDate: data.selected_date ? new Date(data.selected_date) : prev.selectedDate,
           selectedTime: data.selected_time || prev.selectedTime,
+          flexibility: data.is_flexible ? 'flexible-time' : prev.flexibility, // Apply flexibility from DB
           firstName: data.first_name || prev.firstName,
           lastName: data.last_name || prev.lastName,
           email: data.email || prev.email,
@@ -463,8 +472,14 @@ const DomesticBookingForm: React.FC = () => {
         
         // Auto-navigate to step 3 (payment/summary) if data is complete
         const hasPropertyData = data.property_type && data.bedrooms && data.bathrooms && data.frequency;
-        const hasScheduleData = data.selected_date && data.selected_time;
+        // Schedule is complete if: (date AND time) OR (date AND is_flexible)
+        const hasScheduleData = data.selected_date && (data.selected_time || data.is_flexible);
         const hasContactData = data.first_name && data.email;
+        
+        console.log('[DomesticBookingForm] Resume auto-nav check:', { 
+          hasPropertyData, hasScheduleData, hasContactData,
+          selected_date: data.selected_date, selected_time: data.selected_time, is_flexible: data.is_flexible 
+        });
         
         if (hasPropertyData && hasScheduleData && hasContactData) {
           setIsQuoteLinkMode(true);
@@ -970,6 +985,7 @@ const DomesticBookingForm: React.FC = () => {
             ovenType: bookingData.ovenType,
             selectedDate: bookingData.selectedDate,
             selectedTime: bookingData.selectedTime,
+            flexibility: bookingData.flexibility, // Pass flexibility setting
             postcode: bookingData.postcode,
             shortNoticeCharge: bookingData.shortNoticeCharge,
             isFirstTimeCustomer: bookingData.isFirstTimeCustomer,

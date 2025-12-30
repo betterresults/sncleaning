@@ -58,6 +58,10 @@ const ShortLinkResolver = () => {
             params.set('time', data.selected_time);
           }
         }
+        // Pass flexibility setting - if is_flexible is true, time is flexible
+        if (data.is_flexible) {
+          params.set('flexibility', 'flexible-time');
+        }
         
         // Contact info
         if (data.email) params.set('email', data.email);
