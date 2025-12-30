@@ -27,6 +27,7 @@ interface QuoteData {
   ovenType: string;
   selectedDate: Date | null;
   selectedTime: string;
+  flexibility?: 'not-flexible' | 'flexible-time' | 'flexible-date' | ''; // Time flexibility setting
   postcode: string;
   shortNoticeCharge?: number;
   isFirstTimeCustomer?: boolean;
@@ -197,6 +198,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
       oven_size: quoteData.ovenType,
       selected_date: quoteData.selectedDate ? quoteData.selectedDate.toISOString().split('T')[0] : null,
       selected_time: extractStartTime(quoteData.selectedTime), // Convert time slot to HH:MM:SS format for SQL time column
+      is_flexible: quoteData.flexibility === 'flexible-time', // Store flexibility setting
       calculated_quote: quoteData.totalCost,
       recommended_hours: quoteData.estimatedHours,
       weekly_hours: quoteData.weeklyHours, // Store weekly hours separately
@@ -484,8 +486,8 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                 </div>
               )}
 
-              {/* Warning if date/time not set - customer won't skip to payment */}
-              {(!quoteData.selectedDate || !quoteData.selectedTime) && (
+              {/* Warning if date/time not set (unless flexible time selected) - customer won't skip to payment */}
+              {(!quoteData.selectedDate || (!quoteData.selectedTime && quoteData.flexibility !== 'flexible-time')) && (
                 <div className="rounded-xl p-4 border bg-orange-50 border-orange-200">
                   <div className="flex items-start gap-3">
                     <Calendar className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
@@ -494,11 +496,11 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                         Schedule not set
                       </p>
                       <p className="text-xs text-orange-600 mt-0.5">
-                        {!quoteData.selectedDate && !quoteData.selectedTime 
+                        {!quoteData.selectedDate && (!quoteData.selectedTime && quoteData.flexibility !== 'flexible-time')
                           ? 'Date and time are missing. Customer will need to fill in the schedule step.'
                           : !quoteData.selectedDate 
                             ? 'Date is missing. Customer will need to select a date.'
-                            : 'Time is missing. Customer will need to select a time.'}
+                            : 'Time is missing. Customer will need to select a time or enable flexible timing.'}
                       </p>
                     </div>
                   </div>
@@ -534,10 +536,12 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                       </span>
                     </div>
                   )}
-                  {quoteData.selectedTime && (
+                  {(quoteData.selectedTime || quoteData.flexibility === 'flexible-time') && (
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-500">Time:</span>
-                      <span className="font-medium text-slate-700">{quoteData.selectedTime}</span>
+                      <span className="font-medium text-slate-700">
+                        {quoteData.flexibility === 'flexible-time' ? 'Flexible timing' : quoteData.selectedTime}
+                      </span>
                     </div>
                   )}
                 </div>
