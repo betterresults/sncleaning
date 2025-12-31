@@ -9,7 +9,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Send, CheckCircle2, Link2, MessageSquare, Loader2, Calendar, Home } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Mail, Send, CheckCircle2, Link2, MessageSquare, Loader2, Calendar, Home, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -125,6 +126,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
   const [sendingEmail, setSendingEmail] = useState(false);
   const [existingQuoteStatus, setExistingQuoteStatus] = useState<string | null>(null);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+  const [flexibleTimeOverride, setFlexibleTimeOverride] = useState(false); // Allow admin to set flexible time from dialog
   const { toast } = useToast();
   
   // Check if there's already a quote/link sent for this session
@@ -169,6 +171,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
     if (open) {
       setSelectedOption(null);
       setSendStatus('idle');
+      setFlexibleTimeOverride(false); // Reset flexible time override when dialog opens
     }
   }, [open]);
 
@@ -178,9 +181,16 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
     
     // Log input data for debugging
     console.log('[AdminQuoteDialog] Saving quote data:', {
+      bedrooms: quoteData.bedrooms,
+      bathrooms: quoteData.bathrooms,
+      propertyType: quoteData.propertyType,
+      serviceFrequency: quoteData.serviceFrequency,
       selectedTime: quoteData.selectedTime,
       selectedDate: quoteData.selectedDate,
+      flexibility: quoteData.flexibility,
+      flexibleTimeOverride,
       extractedTime: extractStartTime(quoteData.selectedTime),
+      isFlexible: quoteData.flexibility === 'flexible-time' || flexibleTimeOverride,
     });
     
     // Helper to parse bedrooms - handles 'studio' as 0
@@ -206,7 +216,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
       oven_size: quoteData.ovenType,
       selected_date: quoteData.selectedDate ? quoteData.selectedDate.toISOString().split('T')[0] : null,
       selected_time: extractStartTime(quoteData.selectedTime), // Convert time slot to HH:MM:SS format for SQL time column
-      is_flexible: quoteData.flexibility === 'flexible-time', // Store flexibility setting
+      is_flexible: quoteData.flexibility === 'flexible-time' || flexibleTimeOverride, // Store flexibility setting (from form OR admin override)
       calculated_quote: quoteData.totalCost,
       recommended_hours: quoteData.estimatedHours,
       weekly_hours: quoteData.weeklyHours, // Store weekly hours separately
@@ -516,13 +526,13 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                 </div>
               )}
 
-              {/* Warning if date/time not set (unless flexible time selected) - customer won't skip to payment */}
+              {/* Warning if date/time not set (unless flexible time selected or override enabled) - customer won't skip to payment */}
               {quoteData.propertyType && quoteData.bedrooms && quoteData.bathrooms && quoteData.serviceFrequency && 
-               (!quoteData.selectedDate || (!quoteData.selectedTime && quoteData.flexibility !== 'flexible-time')) && (
+               (!quoteData.selectedDate || (!quoteData.selectedTime && quoteData.flexibility !== 'flexible-time' && !flexibleTimeOverride)) && (
                 <div className="rounded-xl p-4 border bg-orange-50 border-orange-200">
                   <div className="flex items-start gap-3">
                     <Calendar className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
-                    <div>
+                    <div className="flex-1">
                       <p className="text-sm font-medium text-orange-800">
                         Schedule not set
                       </p>
@@ -531,8 +541,25 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                           ? 'Date and time are missing. Customer will need to fill in the schedule step.'
                           : !quoteData.selectedDate 
                             ? 'Date is missing. Customer will need to select a date.'
-                            : 'Time is missing. Customer will need to select a time or enable flexible timing.'}
+                            : 'Time is missing. Enable flexible timing below or go back to select a time.'}
                       </p>
+                      {/* Only show flexible time option if we have a date but no time */}
+                      {quoteData.selectedDate && !quoteData.selectedTime && quoteData.flexibility !== 'flexible-time' && (
+                        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-orange-200">
+                          <Checkbox
+                            id="flexibleTimeOverride"
+                            checked={flexibleTimeOverride}
+                            onCheckedChange={(checked) => setFlexibleTimeOverride(checked === true)}
+                          />
+                          <label
+                            htmlFor="flexibleTimeOverride"
+                            className="text-sm font-medium text-orange-800 cursor-pointer flex items-center gap-1.5"
+                          >
+                            <Clock className="w-4 h-4" />
+                            Set as flexible timing
+                          </label>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -567,11 +594,11 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                       </span>
                     </div>
                   )}
-                  {(quoteData.selectedTime || quoteData.flexibility === 'flexible-time') && (
+                  {(quoteData.selectedTime || quoteData.flexibility === 'flexible-time' || flexibleTimeOverride) && (
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-500">Time:</span>
                       <span className="font-medium text-slate-700">
-                        {quoteData.flexibility === 'flexible-time' ? 'Flexible timing' : quoteData.selectedTime}
+                        {(quoteData.flexibility === 'flexible-time' || flexibleTimeOverride) ? 'Flexible timing' : quoteData.selectedTime}
                       </span>
                     </div>
                   )}
