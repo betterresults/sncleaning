@@ -34,8 +34,14 @@ const ShortLinkResolver = () => {
 
         // Property details
         if (data.property_type) params.set('propertyType', data.property_type);
-        if (data.bedrooms) params.set('bedrooms', data.bedrooms.toString());
-        if (data.bathrooms) params.set('bathrooms', data.bathrooms.toString());
+        // Use !== null check for bedrooms/bathrooms since 0 (studio) is a valid value
+        if (data.bedrooms !== null && data.bedrooms !== undefined) {
+          // Convert 0 back to 'studio' for the form
+          params.set('bedrooms', data.bedrooms === 0 ? 'studio' : data.bedrooms.toString());
+        }
+        if (data.bathrooms !== null && data.bathrooms !== undefined) {
+          params.set('bathrooms', data.bathrooms.toString());
+        }
         if (data.frequency) params.set('frequency', data.frequency);
         if (data.postcode) params.set('postcode', data.postcode);
         
