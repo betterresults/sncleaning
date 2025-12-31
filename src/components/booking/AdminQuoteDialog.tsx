@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Send, CheckCircle2, Link2, MessageSquare, Loader2, Calendar } from "lucide-react";
+import { Mail, Send, CheckCircle2, Link2, MessageSquare, Loader2, Calendar, Home } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -183,6 +183,14 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
       extractedTime: extractStartTime(quoteData.selectedTime),
     });
     
+    // Helper to parse bedrooms - handles 'studio' as 0
+    const parseBedroomsValue = (bedrooms: string | undefined): number | null => {
+      if (!bedrooms) return null;
+      if (bedrooms === 'studio') return 0;
+      const parsed = parseInt(bedrooms);
+      return isNaN(parsed) ? null : parsed;
+    };
+    
     // Build the quote_leads record
     const quoteLeadData = {
       session_id: sessionId || `admin_${Date.now()}`,
@@ -190,7 +198,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
       agent_user_id: agentUserId,
       service_type: serviceType,
       property_type: quoteData.propertyType,
-      bedrooms: quoteData.bedrooms ? parseInt(quoteData.bedrooms) : null,
+      bedrooms: parseBedroomsValue(quoteData.bedrooms),
       bathrooms: quoteData.bathrooms ? parseInt(quoteData.bathrooms) : null,
       frequency: quoteData.serviceFrequency,
       postcode: quoteData.postcode,
@@ -486,8 +494,31 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                 </div>
               )}
 
+              {/* Warning if property data is missing - customer won't skip to payment */}
+              {(!quoteData.propertyType || !quoteData.bedrooms || !quoteData.bathrooms || !quoteData.serviceFrequency) && (
+                <div className="rounded-xl p-4 border bg-red-50 border-red-200">
+                  <div className="flex items-start gap-3">
+                    <Home className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-red-800">
+                        Property details incomplete
+                      </p>
+                      <p className="text-xs text-red-600 mt-0.5">
+                        Missing: {[
+                          !quoteData.propertyType && 'property type',
+                          !quoteData.bedrooms && 'bedrooms',
+                          !quoteData.bathrooms && 'bathrooms',
+                          !quoteData.serviceFrequency && 'frequency'
+                        ].filter(Boolean).join(', ')}. Customer will start from step 1.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Warning if date/time not set (unless flexible time selected) - customer won't skip to payment */}
-              {(!quoteData.selectedDate || (!quoteData.selectedTime && quoteData.flexibility !== 'flexible-time')) && (
+              {quoteData.propertyType && quoteData.bedrooms && quoteData.bathrooms && quoteData.serviceFrequency && 
+               (!quoteData.selectedDate || (!quoteData.selectedTime && quoteData.flexibility !== 'flexible-time')) && (
                 <div className="rounded-xl p-4 border bg-orange-50 border-orange-200">
                   <div className="flex items-start gap-3">
                     <Calendar className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
