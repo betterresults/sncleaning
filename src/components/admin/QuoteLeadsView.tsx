@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, subDays, startOfDay, endOfDay, subWeeks, subMonths, isWithinInterval } from 'date-fns';
-import { RefreshCw, Eye, MousePointerClick, TrendingUp, Trash2, Users, CheckCircle2, Home, Building, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { RefreshCw, Eye, MousePointerClick, TrendingUp, Trash2, Users, CheckCircle2, Home, Building, ChevronLeft, ChevronRight, Calendar, ArrowUpDown } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -158,6 +158,7 @@ const QuoteLeadsView = ({ agentUserId, isAgent = false }: QuoteLeadsViewProps) =
   const [adminProfiles, setAdminProfiles] = useState<Map<string, AdminProfile>>(new Map());
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
   const fetchData = async () => {
     setRefreshing(true);
@@ -321,19 +322,25 @@ const QuoteLeadsView = ({ agentUserId, isAgent = false }: QuoteLeadsViewProps) =
   const timeFilteredLeads = filterByTimePeriod(leads);
   const timeFilteredEvents = filterByTimePeriod(events);
 
-  const filteredLeads = timeFilteredLeads.filter(lead => {
-    if (statusFilter === 'email_sent') {
-      if (!lead.quote_email_sent) return false;
-    } else if (statusFilter === 'idle') {
-      if (!isLeadIdle(lead)) return false;
-    } else if (statusFilter === 'live') {
-      if (lead.status !== 'live' || isLeadIdle(lead)) return false;
-    } else if (statusFilter !== 'all' && lead.status !== statusFilter) {
-      return false;
-    }
-    if (serviceFilter !== 'all' && lead.service_type !== serviceFilter) return false;
-    return true;
-  });
+  const filteredLeads = timeFilteredLeads
+    .filter(lead => {
+      if (statusFilter === 'email_sent') {
+        if (!lead.quote_email_sent) return false;
+      } else if (statusFilter === 'idle') {
+        if (!isLeadIdle(lead)) return false;
+      } else if (statusFilter === 'live') {
+        if (lead.status !== 'live' || isLeadIdle(lead)) return false;
+      } else if (statusFilter !== 'all' && lead.status !== statusFilter) {
+        return false;
+      }
+      if (serviceFilter !== 'all' && lead.service_type !== serviceFilter) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.created_at || 0).getTime();
+      const dateB = new Date(b.created_at || 0).getTime();
+      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+    });
 
   // Pagination
   const totalPages = Math.ceil(filteredLeads.length / ITEMS_PER_PAGE);
@@ -345,7 +352,7 @@ const QuoteLeadsView = ({ agentUserId, isAgent = false }: QuoteLeadsViewProps) =
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, serviceFilter, timePeriod]);
+  }, [statusFilter, serviceFilter, timePeriod, sortOrder]);
 
   // Calculate funnel stats from time-filtered data
   const pageViews = timeFilteredEvents.filter(e => e.event_type === 'page_view').length;
@@ -587,6 +594,16 @@ const QuoteLeadsView = ({ agentUserId, isAgent = false }: QuoteLeadsViewProps) =
                       <SelectItem value="all">All Services</SelectItem>
                       <SelectItem value="Air BnB">Air BnB</SelectItem>
                       <SelectItem value="Domestic">Domestic</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as 'newest' | 'oldest')}>
+                    <SelectTrigger className="w-[140px] bg-white rounded-xl border-gray-200">
+                      <ArrowUpDown className="h-4 w-4 mr-2 text-gray-500" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white">
+                      <SelectItem value="newest">Newest First</SelectItem>
+                      <SelectItem value="oldest">Oldest First</SelectItem>
                     </SelectContent>
                   </Select>
                   
