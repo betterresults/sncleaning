@@ -100,7 +100,27 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
     
     // Use admin override if set (works in admin mode AND for resumed admin quotes)
     if (data.adminTotalCostOverride !== undefined && data.adminTotalCostOverride !== null && data.adminTotalCostOverride > 0) {
-      return data.adminTotalCostOverride;
+      let total = data.adminTotalCostOverride;
+      
+      // Apply short notice removal if admin toggled it
+      if (isAdminMode && data.adminRemoveShortNoticeCharge) {
+        total -= calculations.shortNoticeCharge || 0;
+      }
+      
+      // Apply first-time customer 10% discount
+      if (data.isFirstTimeCustomer) {
+        total = total * 0.90;
+      }
+      
+      // Apply admin discounts
+      if (isAdminMode && data.adminDiscountPercentage) {
+        total -= total * data.adminDiscountPercentage / 100;
+      }
+      if (isAdminMode && data.adminDiscountAmount) {
+        total -= data.adminDiscountAmount;
+      }
+      
+      return Math.max(0, total);
     }
     
     // If first deep clean is selected, use the first deep clean cost for the first booking
