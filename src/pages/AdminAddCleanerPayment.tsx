@@ -53,6 +53,7 @@ const AdminAddCleanerPayment = () => {
   const [selectedCleanerId, setSelectedCleanerId] = useState<number | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<PastBooking | null>(null);
   const [cleanerPay, setCleanerPay] = useState('');
+  const [hoursWorked, setHoursWorked] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('Unpaid');
   const [submitting, setSubmitting] = useState(false);
   const [cleanerDropdownOpen, setCleanerDropdownOpen] = useState(false);
@@ -100,18 +101,43 @@ const AdminAddCleanerPayment = () => {
       return;
     }
 
+    const hours = hoursWorked ? parseFloat(hoursWorked) : (selectedBooking.total_hours || 0);
+    const payAmount = parseFloat(cleanerPay);
+
     setSubmitting(true);
     try {
-      const { error } = await supabase
+      // Update past_bookings with cleaner assignment
+      const { error: bookingError } = await supabase
         .from('past_bookings')
         .update({
           cleaner: selectedCleanerId,
-          cleaner_pay: parseFloat(cleanerPay),
+          cleaner_pay: payAmount,
           cleaner_pay_status: paymentStatus
         })
         .eq('id', selectedBooking.id);
 
-      if (error) throw error;
+      if (bookingError) throw bookingError;
+
+      // Also create a cleaner_payments record for proper tracking
+      const { error: paymentError } = await supabase
+        .from('cleaner_payments')
+        .upsert({
+          booking_id: selectedBooking.id,
+          cleaner_id: selectedCleanerId,
+          payment_type: 'fixed',
+          fixed_amount: payAmount,
+          hours_assigned: hours,
+          calculated_pay: payAmount,
+          is_primary: false,
+          status: paymentStatus === 'Paid' ? 'paid' : 'assigned'
+        }, {
+          onConflict: 'booking_id,cleaner_id'
+        });
+
+      if (paymentError) {
+        console.error('Error creating cleaner_payments record:', paymentError);
+        // Don't fail the whole operation if cleaner_payments fails
+      }
 
       toast.success('Payment record added successfully');
       navigate('/admin-cleaner-payments');
@@ -380,8 +406,28 @@ const AdminAddCleanerPayment = () => {
                       </Card>
                     )}
 
-                    {/* Payment Amount & Status */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Hours Worked, Payment Amount & Status */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="space-y-3">
+                        <Label className="text-base font-medium flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          Hours Worked
+                        </Label>
+                        <Input
+                          type="number"
+                          step="0.5"
+                          placeholder={selectedBooking ? `${selectedBooking.total_hours || 0}` : "0"}
+                          value={hoursWorked}
+                          onChange={(e) => setHoursWorked(e.target.value)}
+                          className="h-12 text-lg"
+                        />
+                        {selectedBooking && (
+                          <p className="text-xs text-muted-foreground">
+                            Booking total: {selectedBooking.total_hours || 0}h
+                          </p>
+                        )}
+                      </div>
+
                       <div className="space-y-3">
                         <Label className="text-base font-medium flex items-center gap-2">
                           <DollarSign className="h-4 w-4 text-muted-foreground" />
