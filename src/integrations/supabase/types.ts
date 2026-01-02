@@ -2461,6 +2461,7 @@ export type Database = {
           cleaner: number | null
           cleaner_rate: number | null
           cleaning_type: string | null
+          confirmed: boolean
           cost_per_hour: number | null
           created_at: string
           created_by_source: string | null
@@ -2486,6 +2487,7 @@ export type Database = {
           cleaner?: number | null
           cleaner_rate?: number | null
           cleaning_type?: string | null
+          confirmed?: boolean
           cost_per_hour?: number | null
           created_at?: string
           created_by_source?: string | null
@@ -2511,6 +2513,7 @@ export type Database = {
           cleaner?: number | null
           cleaner_rate?: number | null
           cleaning_type?: string | null
+          confirmed?: boolean
           cost_per_hour?: number | null
           created_at?: string
           created_by_source?: string | null

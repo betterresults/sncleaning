@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Navigate } from "react-router-dom";
-import { Plus, Edit, Trash2, Calendar, User, MapPin, Pause, Play, Clock, Search, DollarSign } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar, User, MapPin, Pause, Play, Clock, Search, DollarSign, CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
@@ -34,6 +34,7 @@ interface RecurringService {
   days_of_the_week?: string;
   postponed: boolean;
   resume_date?: string;
+  confirmed: boolean;
 }
 export default function RecurringBookings() {
   const [recurringServices, setRecurringServices] = useState<RecurringService[]>([]);
@@ -41,6 +42,7 @@ export default function RecurringBookings() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [frequencyFilter, setFrequencyFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const navigate = useNavigate();
   const {
     user,
@@ -166,7 +168,37 @@ export default function RecurringBookings() {
       });
     }
   };
-  // Filter services based on search and frequency
+  // Confirm recurring service
+  const handleConfirm = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('recurring_services')
+        .update({ confirmed: true })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      setRecurringServices(prev => 
+        prev.map(service => 
+          service.id === id ? { ...service, confirmed: true } : service
+        )
+      );
+      
+      toast({
+        title: "Success",
+        description: "Recurring service confirmed. Future bookings will now be generated automatically."
+      });
+    } catch (error) {
+      console.error('Error confirming recurring service:', error);
+      toast({
+        title: "Error",
+        description: "Failed to confirm recurring service",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Filter services based on search, frequency, and status
   useEffect(() => {
     let filtered = [...recurringServices];
 
@@ -187,8 +219,17 @@ export default function RecurringBookings() {
       );
     }
 
+    // Apply status filter
+    if (statusFilter === 'pending') {
+      filtered = filtered.filter(service => !service.confirmed);
+    } else if (statusFilter === 'confirmed') {
+      filtered = filtered.filter(service => service.confirmed);
+    } else if (statusFilter === 'postponed') {
+      filtered = filtered.filter(service => service.postponed);
+    }
+
     setFilteredServices(filtered);
-  }, [recurringServices, searchQuery, frequencyFilter]);
+  }, [recurringServices, searchQuery, frequencyFilter, statusFilter]);
 
   const getFrequencyBadgeColor = (frequency: string) => {
     switch (frequency?.toLowerCase()) {
@@ -246,9 +287,9 @@ export default function RecurringBookings() {
                       </div>
                     </div>
                     
-                    <div className="flex gap-2 w-full sm:w-auto">
+                    <div className="flex gap-2 w-full sm:w-auto flex-wrap">
                       <Select value={frequencyFilter} onValueChange={setFrequencyFilter}>
-                        <SelectTrigger className="w-full sm:w-[180px]">
+                        <SelectTrigger className="w-full sm:w-[150px]">
                           <SelectValue placeholder="All Frequencies" />
                         </SelectTrigger>
                         <SelectContent>
@@ -256,6 +297,18 @@ export default function RecurringBookings() {
                           <SelectItem value="weekly">Weekly</SelectItem>
                           <SelectItem value="bi-weekly">Bi-Weekly</SelectItem>
                           <SelectItem value="monthly">Monthly</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger className="w-full sm:w-[180px]">
+                          <SelectValue placeholder="All Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Status</SelectItem>
+                          <SelectItem value="pending">Pending Confirmation</SelectItem>
+                          <SelectItem value="confirmed">Confirmed</SelectItem>
+                          <SelectItem value="postponed">Postponed</SelectItem>
                         </SelectContent>
                       </Select>
                       
@@ -308,6 +361,18 @@ export default function RecurringBookings() {
                        service.frequently === 'monthly' ? 'Monthly' : 
                        service.frequently}
                     </Badge>
+                    {!service.confirmed && (
+                      <Badge variant="outline" className="border-amber-300 text-amber-700 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400">
+                        <AlertCircle className="h-3 w-3 mr-1" />
+                        Pending Confirmation
+                      </Badge>
+                    )}
+                    {service.confirmed && (
+                      <Badge variant="outline" className="border-green-300 text-green-700 bg-green-100 dark:bg-green-900/30 dark:text-green-400">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Confirmed
+                      </Badge>
+                    )}
                     {service.postponed && (
                       <Badge variant="outline" className="border-orange-300 text-orange-700 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400">
                         <Pause className="h-3 w-3 mr-1" />
@@ -392,6 +457,18 @@ export default function RecurringBookings() {
 
               {/* Actions */}
               <div className="flex items-center gap-2 pt-3 border-t border-border/40">
+                {!service.confirmed && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleConfirm(service.id)}
+                    className="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 hover:text-emerald-700 border-emerald-200 hover:border-emerald-300 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/30"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="ml-1 hidden sm:inline">Confirm</span>
+                  </Button>
+                )}
+                
                 <PostponeDialog serviceId={service.id} isPostponed={service.postponed} onUpdate={fetchRecurringServices}>
                   <Button 
                     variant="outline" 
