@@ -14,7 +14,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowLeft, ChevronDown, User, Calendar, MapPin, DollarSign, Clock, CreditCard, X } from 'lucide-react';
+import { ArrowLeft, ChevronDown, User, Calendar, MapPin, DollarSign, Clock, CreditCard, X, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
 import { Badge } from '@/components/ui/badge';
@@ -60,6 +60,9 @@ const AdminAddCleanerPayment = () => {
   const [bookingDropdownOpen, setBookingDropdownOpen] = useState(false);
   const [cleanerSearch, setCleanerSearch] = useState('');
   const [bookingSearch, setBookingSearch] = useState('');
+  const [paymentTitle, setPaymentTitle] = useState('');
+  const [paymentDescription, setPaymentDescription] = useState('');
+  const [paymentDate, setPaymentDate] = useState('');
 
   const { cleaners: linkedCleaners, loading: cleanersLoading } = useLinkedCleaners(true);
 
@@ -140,6 +143,17 @@ const AdminAddCleanerPayment = () => {
         }
       } else {
         // Standalone payment without booking - create cleaner_payments record only
+        if (!paymentTitle.trim()) {
+          toast.error('Please enter a title for standalone payments');
+          setSubmitting(false);
+          return;
+        }
+        if (!paymentDate) {
+          toast.error('Please select a date for standalone payments');
+          setSubmitting(false);
+          return;
+        }
+        
         // Use a placeholder booking_id (0) for standalone payments
         const { error: paymentError } = await supabase
           .from('cleaner_payments')
@@ -151,7 +165,10 @@ const AdminAddCleanerPayment = () => {
             hours_assigned: hours,
             calculated_pay: payAmount,
             is_primary: false,
-            status: paymentStatus === 'Paid' ? 'paid' : 'assigned'
+            status: paymentStatus === 'Paid' ? 'paid' : 'assigned',
+            title: paymentTitle.trim(),
+            description: paymentDescription.trim() || null,
+            payment_date: paymentDate
           });
 
         if (paymentError) throw paymentError;
@@ -432,6 +449,55 @@ const AdminAddCleanerPayment = () => {
                               <p className="text-muted-foreground text-xs">Hours</p>
                               <p className="font-medium">{selectedBooking.total_hours || 0}h</p>
                             </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* Standalone Payment Details - shown when no booking selected */}
+                    {!selectedBooking && (
+                      <Card className="bg-primary/5 border-primary/20">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-sm font-medium flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-primary" />
+                            Standalone Payment Details
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium">
+                                Title <span className="text-destructive">*</span>
+                              </Label>
+                              <Input
+                                placeholder="e.g., Bonus, Extra work, Tips..."
+                                value={paymentTitle}
+                                onChange={(e) => setPaymentTitle(e.target.value)}
+                                className="h-10"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium">
+                                Date <span className="text-destructive">*</span>
+                              </Label>
+                              <Input
+                                type="date"
+                                value={paymentDate}
+                                onChange={(e) => setPaymentDate(e.target.value)}
+                                className="h-10"
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">
+                              Description <span className="text-muted-foreground text-xs">(Optional)</span>
+                            </Label>
+                            <Input
+                              placeholder="Add any notes about this payment..."
+                              value={paymentDescription}
+                              onChange={(e) => setPaymentDescription(e.target.value)}
+                              className="h-10"
+                            />
                           </div>
                         </CardContent>
                       </Card>
