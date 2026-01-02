@@ -16,18 +16,19 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Find all domestic bookings with incorrect cleaning_type values
+    // Find all domestic bookings where cleaning_type is incorrectly set to check-in/check-out
+    // but should show the frequency (weekly, biweekly, monthly, onetime) or Deep Cleaning
     const { data: bookingsToFix, error: fetchError } = await supabase
       .from('bookings')
       .select('id, service_type, cleaning_type, frequently, additional_details')
-      .or('service_type.ilike.%domestic%')
-      .in('cleaning_type', ['weekly', 'fortnightly', 'onetime', 'checkin-checkout', 'monthly', 'biweekly', 'one-time']);
+      .eq('service_type', 'Domestic Cleaning')
+      .in('cleaning_type', ['checkin-checkout', 'check-in-checkout', 'check_in_check_out', 'standard_cleaning']);
 
     if (fetchError) {
       throw new Error(`Failed to fetch bookings: ${fetchError.message}`);
     }
 
-    console.log(`Found ${bookingsToFix?.length || 0} bookings to fix`);
+    console.log(`Found ${bookingsToFix?.length || 0} domestic bookings to fix`);
 
     const results: any[] = [];
 
@@ -45,29 +46,25 @@ serve(async (req) => {
         }
       }
 
-      const newCleaningType = isDeepClean ? 'Deep Cleaning' : 'Standard Cleaning';
-      
-      // The old cleaning_type was actually the frequency, so copy it to frequently if not set
-      const newFrequently = booking.frequently || booking.cleaning_type;
+      // For domestic: cleaning_type should be the frequency OR "Deep Cleaning" if deep clean selected
+      // Use the frequently field value, fallback to 'onetime' if not set
+      const newCleaningType = isDeepClean ? 'Deep Cleaning' : (booking.frequently || 'onetime');
 
       const { error: updateError } = await supabase
         .from('bookings')
-        .update({ 
-          cleaning_type: newCleaningType,
-          frequently: newFrequently,
-          service_type: 'Domestic'
-        })
+        .update({ cleaning_type: newCleaningType })
         .eq('id', booking.id);
 
       if (updateError) {
         results.push({ id: booking.id, success: false, error: updateError.message });
       } else {
+        console.log(`Fixed booking ${booking.id}: cleaning_type "${booking.cleaning_type}" -> "${newCleaningType}"`);
         results.push({ 
           id: booking.id, 
           success: true, 
           oldCleaningType: booking.cleaning_type,
           newCleaningType,
-          newFrequently 
+          frequently: booking.frequently
         });
       }
     }
