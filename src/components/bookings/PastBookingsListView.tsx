@@ -77,6 +77,7 @@ interface Filters {
   serviceType: string;
   cleaningType: string;
   bookingStatus: string;
+  customerSource: string;
 }
 
 interface PastBookingsListViewProps {
@@ -91,6 +92,8 @@ const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false }
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
+  const [availableSources, setAvailableSources] = useState<string[]>([]);
+  const [customerSourceMap, setCustomerSourceMap] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -105,7 +108,8 @@ const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false }
     paymentStatus: 'all',
     serviceType: 'all',
     cleaningType: 'all',
-    bookingStatus: showOnlyCancelled ? 'cancelled' : 'not_cancelled'
+    bookingStatus: showOnlyCancelled ? 'cancelled' : 'not_cancelled',
+    customerSource: 'all'
   });
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<Booking | null>(null);
@@ -255,7 +259,25 @@ const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false }
 
       const { data: allCustomers } = await supabase
         .from('customers')
-        .select('id, first_name, last_name');
+        .select('id, first_name, last_name, source');
+
+      // Build customer source map and extract unique sources that have bookings
+      const sourceMap: Record<number, string> = {};
+      const sourcesWithBookings = new Set<string>();
+      const customerIdsInBookings = new Set((bookingsData || []).map((b: any) => b.customer).filter(Boolean));
+      
+      allCustomers?.forEach(c => {
+        if (c.source) {
+          sourceMap[c.id] = c.source;
+          // Only include sources for customers that have bookings
+          if (customerIdsInBookings.has(c.id)) {
+            sourcesWithBookings.add(c.source);
+          }
+        }
+      });
+      
+      setCustomerSourceMap(sourceMap);
+      setAvailableSources(Array.from(sourcesWithBookings).sort());
 
       // Map cleaner and customer data to bookings
       const bookingsWithRelations = (bookingsData || []).map((booking: any) => ({
@@ -364,6 +386,14 @@ const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false }
         booking.address?.toLowerCase().includes(searchLower) ||
         booking.postcode?.toLowerCase().includes(searchLower)
       );
+    }
+
+    // Apply customer source filter
+    if (filters.customerSource && filters.customerSource !== 'all') {
+      filtered = filtered.filter(booking => {
+        const customerId = booking.customer;
+        return customerId && customerSourceMap[customerId] === filters.customerSource;
+      });
     }
 
     setFilteredBookings(filtered);
@@ -573,6 +603,7 @@ const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false }
           filters={filters}
           onFiltersChange={setFilters}
           cleaners={cleaners}
+          availableSources={availableSources}
           onRefresh={handleRefresh}
           isRefreshing={isRefreshing}
           showOnlyCancelled={showOnlyCancelled}
