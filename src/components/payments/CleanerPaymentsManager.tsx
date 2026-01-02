@@ -381,32 +381,8 @@ const CleanerPaymentsManager = () => {
       
       // Fetch data for each selected cleaner
       for (const cleanerId of selectedCleanerIds) {
-        // Fetch bookings from past_bookings
-        const { data: bookingsData, error: bookingsError } = await supabase
-          .from('past_bookings')
-          .select(`
-            id,
-            date_time,
-            address,
-            postcode,
-            service_type,
-            cleaner_pay,
-            total_hours,
-            payment_status,
-            cleaner_pay_status,
-            customer,
-            booking_status
-          `)
-          .eq('cleaner', parseInt(cleanerId))
-          .neq('booking_status', 'cancelled')
-          .gte('date_time', start.toISOString())
-          .lte('date_time', end.toISOString())
-          .order('date_time', { ascending: false });
-
-        if (bookingsError) throw bookingsError;
-
-        // Fetch standalone payments from cleaner_payments (booking_id = 0)
-        const { data: standaloneData, error: standaloneError } = await supabase
+        // Fetch all payments from cleaner_payments table
+        const { data: paymentsData, error: paymentsError } = await supabase
           .from('cleaner_payments')
           .select(`
             id,
@@ -421,40 +397,84 @@ const CleanerPaymentsManager = () => {
             created_at
           `)
           .eq('cleaner_id', parseInt(cleanerId))
-          .eq('booking_id', 0)
-          .gte('payment_date', format(start, 'yyyy-MM-dd'))
-          .lte('payment_date', format(end, 'yyyy-MM-dd'))
-          .order('payment_date', { ascending: false });
+          .order('created_at', { ascending: false });
 
-        if (standaloneError) throw standaloneError;
+        if (paymentsError) throw paymentsError;
 
-        // Convert bookings to BookingPayment format
-        const bookings: BookingPayment[] = (bookingsData || []).map(booking => ({
-          ...booking,
-          is_standalone: false
-        }));
+        // Get booking IDs that are not standalone (booking_id > 0)
+        const bookingIds = (paymentsData || [])
+          .filter(p => p.booking_id > 0)
+          .map(p => p.booking_id);
 
-        // Convert standalone payments to BookingPayment format
-        const standalonePayments: BookingPayment[] = (standaloneData || []).map(payment => ({
-          id: 0, // Use 0 to indicate standalone
-          payment_id: payment.id,
-          date_time: payment.payment_date ? `${payment.payment_date}T00:00:00Z` : payment.created_at,
-          address: payment.title || 'Standalone Payment',
-          postcode: '',
-          service_type: 'Standalone',
-          cleaner_pay: payment.calculated_pay || 0,
-          total_hours: payment.hours_assigned || 0,
-          payment_status: payment.status || 'assigned',
-          cleaner_pay_status: payment.status === 'paid' ? 'Paid' : 'Unpaid',
-          is_standalone: true,
-          title: payment.title,
-          description: payment.description
-        }));
+        // Fetch booking details from past_bookings for non-standalone payments
+        let bookingDetailsMap: { [key: number]: any } = {};
+        if (bookingIds.length > 0) {
+          const { data: bookingsData, error: bookingsError } = await supabase
+            .from('past_bookings')
+            .select(`
+              id,
+              date_time,
+              address,
+              postcode,
+              service_type,
+              total_hours,
+              customer,
+              booking_status
+            `)
+            .in('id', bookingIds)
+            .neq('booking_status', 'cancelled');
 
-        // Merge bookings and standalone payments, sort by date
-        const allPayments = [...bookings, ...standalonePayments].sort((a, b) => 
-          new Date(b.date_time).getTime() - new Date(a.date_time).getTime()
-        );
+          if (bookingsError) throw bookingsError;
+
+          (bookingsData || []).forEach(b => {
+            bookingDetailsMap[b.id] = b;
+          });
+        }
+
+        // Convert payments to BookingPayment format
+        const allPayments: BookingPayment[] = (paymentsData || [])
+          .map(payment => {
+            const isStandalone = payment.booking_id === 0;
+            const bookingDetails = bookingDetailsMap[payment.booking_id];
+            
+            // Skip payments for cancelled bookings (no booking details found for non-standalone)
+            if (!isStandalone && !bookingDetails) {
+              return null;
+            }
+
+            // Determine the date to use for filtering
+            let paymentDateTime: string;
+            if (isStandalone) {
+              paymentDateTime = payment.payment_date ? `${payment.payment_date}T00:00:00Z` : payment.created_at;
+            } else {
+              paymentDateTime = bookingDetails.date_time;
+            }
+
+            // Filter by date range
+            const paymentDate = new Date(paymentDateTime);
+            if (paymentDate < start || paymentDate > end) {
+              return null;
+            }
+
+            return {
+              id: isStandalone ? 0 : payment.booking_id,
+              payment_id: payment.id,
+              date_time: paymentDateTime,
+              address: isStandalone ? (payment.title || 'Standalone Payment') : (bookingDetails?.address || ''),
+              postcode: isStandalone ? '' : (bookingDetails?.postcode || ''),
+              service_type: isStandalone ? 'Standalone' : (bookingDetails?.service_type || ''),
+              cleaner_pay: payment.calculated_pay || 0,
+              total_hours: payment.hours_assigned || bookingDetails?.total_hours || 0,
+              payment_status: payment.status || 'assigned',
+              cleaner_pay_status: payment.status === 'paid' ? 'Paid' : 'Unpaid',
+              customer: isStandalone ? undefined : bookingDetails?.customer,
+              is_standalone: isStandalone,
+              title: payment.title,
+              description: payment.description
+            } as BookingPayment;
+          })
+          .filter((p): p is BookingPayment => p !== null)
+          .sort((a, b) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime());
 
         const totalEarnings = allPayments.reduce((sum, payment) => sum + (Number(payment.cleaner_pay) || 0), 0);
         const completedJobs = allPayments.length;
