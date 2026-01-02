@@ -8,7 +8,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { CalendarIcon, Clock, MapPin, User, Edit3, AlertCircle, Users, UserPlus } from 'lucide-react';
+import { CalendarIcon, Clock, MapPin, User, Edit3, AlertCircle, Users, UserPlus, Briefcase } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,6 +35,14 @@ interface Booking {
   last_name: string | null;
   linen_management: boolean;
   linen_used: any;
+  created_by_user_id?: string | null;
+  created_by_source?: string | null;
+}
+
+interface SalesAgent {
+  user_id: string;
+  first_name: string;
+  last_name: string;
 }
 
 interface Address {
@@ -63,6 +71,8 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [addresses, setAddresses] = useState<Address[]>([]);
+  const [salesAgents, setSalesAgents] = useState<SalesAgent[]>([]);
+  const [selectedSalesAgent, setSelectedSalesAgent] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedHour, setSelectedHour] = useState('');
   const [selectedMinute, setSelectedMinute] = useState('00');
@@ -104,6 +114,32 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     }
   };
 
+  // Fetch sales agents for admin reassignment
+  const fetchSalesAgents = async () => {
+    try {
+      // First get user_ids with sales_agent or admin role
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .in('role', ['sales_agent', 'admin']);
+      
+      if (roleError) throw roleError;
+      
+      const userIds = roleData?.map(r => r.user_id) || [];
+      if (userIds.length > 0) {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('user_id, first_name, last_name')
+          .in('user_id', userIds);
+        
+        if (profileError) throw profileError;
+        setSalesAgents(profileData || []);
+      }
+    } catch (error) {
+      console.error('Error fetching sales agents:', error);
+    }
+  };
+
   React.useEffect(() => {
     if (booking && open) {
       const bookingDate = new Date(booking.date_time);
@@ -132,6 +168,9 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
         access: booking.access || '',
         additional_details: booking.additional_details || ''
       });
+      
+      // Set sales agent assignment
+      setSelectedSalesAgent(booking.created_by_user_id || '');
     }
   }, [booking, open, addresses]);
 
@@ -168,7 +207,10 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     if (open && activeCustomerId) {
       fetchAddresses();
     }
-  }, [open, activeCustomerId]);
+    if (open && userRole === 'admin') {
+      fetchSalesAgents();
+    }
+  }, [open, activeCustomerId, userRole]);
 
   const handleSave = async () => {
     if (!booking || !selectedDate || !selectedHour || !selectedMinute) return;
@@ -204,20 +246,29 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                               booking.cleaning_type?.toLowerCase().includes('airbnb');
       const finalSameDay = isAirbnbBooking ? isSameDay : false;
 
+      // Build update object
+      const updateData: Record<string, any> = {
+        date_time: dateTimeStr,
+        date_only: dateOnly,
+        time_only: timeOnly,
+        total_hours: totalHours,
+        total_cost: totalCost,
+        address: addressData.address,
+        postcode: addressData.postcode,
+        same_day: finalSameDay,
+        access: formData.access,
+        additional_details: formData.additional_details
+      };
+
+      // Add sales agent assignment if admin changed it
+      if (userRole === 'admin' && selectedSalesAgent !== (booking.created_by_user_id || '')) {
+        updateData.created_by_user_id = selectedSalesAgent || null;
+        updateData.created_by_source = selectedSalesAgent ? 'sales_agent' : null;
+      }
+
       const { error } = await supabase
         .from('bookings')
-        .update({
-          date_time: dateTimeStr,
-          date_only: dateOnly,
-          time_only: timeOnly,
-          total_hours: totalHours,
-          total_cost: totalCost,
-          address: addressData.address,
-          postcode: addressData.postcode,
-          same_day: finalSameDay,
-          access: formData.access,
-          additional_details: formData.additional_details
-        })
+        .update(updateData)
         .eq('id', booking.id);
 
       if (error) throw error;
@@ -452,6 +503,32 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
               className="border-gray-200 hover:border-gray-300 focus:border-[#185166]"
             />
           </div>
+
+          {/* Sales Agent Assignment - Admin only */}
+          {userRole === 'admin' && (
+            <div className="space-y-2 p-4 border border-blue-200 rounded-lg bg-blue-50/50">
+              <div className="flex items-center gap-2 mb-2">
+                <Briefcase className="h-4 w-4 text-blue-600" />
+                <Label className="text-sm font-semibold text-[#185166]">Assigned Sales Agent</Label>
+              </div>
+              <Select value={selectedSalesAgent} onValueChange={setSelectedSalesAgent}>
+                <SelectTrigger className="border-gray-200 hover:border-gray-300 focus:border-[#185166] bg-white">
+                  <SelectValue placeholder="Not assigned to any agent" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Not assigned</SelectItem>
+                  {salesAgents.map((agent) => (
+                    <SelectItem key={agent.user_id} value={agent.user_id}>
+                      {agent.first_name} {agent.last_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500">
+                Assign this booking to a sales agent for tracking and commission purposes.
+              </p>
+            </div>
+          )}
 
           {/* Additional Cleaners Section - Admin only */}
           {userRole === 'admin' && (

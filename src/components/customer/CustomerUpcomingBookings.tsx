@@ -37,6 +37,8 @@ interface Booking {
   same_day: boolean;
   linen_management: boolean;
   linen_used: any;
+  created_by_user_id?: string | null;
+  created_by_source?: string | null;
   cleaner?: {
     first_name: string;
     last_name: string;
@@ -188,6 +190,8 @@ const CustomerUpcomingBookings = () => {
           same_day,
           linen_management,
           linen_used,
+          created_by_user_id,
+          created_by_source,
           cleaner:cleaners(first_name, last_name)
         `)
         .eq('customer', activeCustomerId)
