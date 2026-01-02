@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings } from 'lucide-react';
+import { Settings, CalendarPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
@@ -13,6 +13,8 @@ interface BookingsViewControlsProps {
   itemsPerPage: number;
   onItemsPerPageChange: (count: number) => void;
   onBulkEditClick: () => void;
+  showBookedToday?: boolean;
+  onShowBookedTodayChange?: (show: boolean) => void;
 }
 
 export function BookingsViewControls({
@@ -22,7 +24,9 @@ export function BookingsViewControls({
   onSortOrderChange,
   itemsPerPage,
   onItemsPerPageChange,
-  onBulkEditClick
+  onBulkEditClick,
+  showBookedToday = false,
+  onShowBookedTodayChange
 }: BookingsViewControlsProps) {
   return (
     <div className="bg-white p-3 sm:p-5 rounded-xl shadow-sm border-0">
@@ -90,6 +94,17 @@ export function BookingsViewControls({
               </SelectContent>
             </Select>
           </div>
+
+          {onShowBookedTodayChange && (
+            <Button 
+              onClick={() => onShowBookedTodayChange(!showBookedToday)}
+              variant={showBookedToday ? "default" : "outline"}
+              className={`flex items-center gap-1 rounded-lg h-8 px-3 text-xs ${showBookedToday ? 'bg-primary text-white' : ''}`}
+            >
+              <CalendarPlus className="h-3 w-3" />
+              <span>Booked Today</span>
+            </Button>
+          )}
 
           <Button 
             onClick={onBulkEditClick}
@@ -163,6 +178,18 @@ export function BookingsViewControls({
             </SelectContent>
           </Select>
         </div>
+
+        {/* Booked Today Button */}
+        {onShowBookedTodayChange && (
+          <Button 
+            onClick={() => onShowBookedTodayChange(!showBookedToday)}
+            variant={showBookedToday ? "default" : "outline"}
+            className={`flex items-center gap-2 rounded-lg h-9 px-4 ${showBookedToday ? 'bg-primary text-white' : ''}`}
+          >
+            <CalendarPlus className="h-4 w-4" />
+            <span>Booked Today</span>
+          </Button>
+        )}
 
         {/* Bulk Edit Button */}
         <div className="ml-auto">
