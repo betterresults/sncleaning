@@ -11,7 +11,7 @@ import { Building2, UserCheck, UserPlus } from 'lucide-react';
 
 const Users = () => {
   const { user, userRole, signOut } = useAuth();
-  const [activeTab, setActiveTab] = useState('office');
+  const [activeTab, setActiveTab] = useState('customers');
 
   const handleSignOut = async () => {
     try {
@@ -42,30 +42,30 @@ const Users = () => {
                 <div className="max-w-7xl mx-auto">
                   <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className="grid w-full grid-cols-3 mb-6">
-                      <TabsTrigger value="office" className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4" />
-                        <span className="hidden sm:inline">Office</span>
+                      <TabsTrigger value="customers" className="flex items-center gap-2">
+                        <UserPlus className="h-4 w-4" />
+                        <span className="hidden sm:inline">Customers</span>
                       </TabsTrigger>
                       <TabsTrigger value="cleaners" className="flex items-center gap-2">
                         <UserCheck className="h-4 w-4" />
                         <span className="hidden sm:inline">Cleaners</span>
                       </TabsTrigger>
-                      <TabsTrigger value="customers" className="flex items-center gap-2">
-                        <UserPlus className="h-4 w-4" />
-                        <span className="hidden sm:inline">Customers</span>
+                      <TabsTrigger value="office" className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4" />
+                        <span className="hidden sm:inline">Office Staff</span>
                       </TabsTrigger>
                     </TabsList>
                     
-                    <TabsContent value="office">
-                      <ModernUsersTable userType="office" />
+                    <TabsContent value="customers">
+                      <ModernUsersTable userType="customer" />
                     </TabsContent>
                     
                     <TabsContent value="cleaners">
                       <ModernUsersTable userType="cleaner" />
                     </TabsContent>
                     
-                    <TabsContent value="customers">
-                      <ModernUsersTable userType="customer" />
+                    <TabsContent value="office">
+                      <ModernUsersTable userType="office" />
                     </TabsContent>
                   </Tabs>
                 </div>
