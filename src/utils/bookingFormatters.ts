@@ -239,23 +239,61 @@ export const formatPropertyDetails = (detailsString: string | null | undefined):
 };
 
 /**
- * Formats service/cleaning type to display name
+ * Formats service/cleaning type to user-friendly display name
+ * Handles all raw database values including legacy and inconsistent formats
  */
 export const formatServiceType = (serviceType: string | null | undefined): string => {
   if (!serviceType) return 'Standard Cleaning';
   
+  const lowerType = serviceType.toLowerCase().trim();
+  
   const serviceTypeMap: Record<string, string> = {
-    'standard_cleaning': 'Standard Cleaning',
-    'deep_cleaning': 'Deep Cleaning',
-    'checkin-checkout': 'Check-in/Check-out',
-    'check_in_check_out': 'Check-in/Check-out',
+    // Service types
+    'domestic': 'Domestic Cleaning',
+    'domestic cleaning': 'Domestic Cleaning',
+    'domestic_cleaning': 'Domestic Cleaning',
+    'commercial': 'Commercial Cleaning',
+    'commercial cleaning': 'Commercial Cleaning',
+    'commercial_cleaning': 'Commercial Cleaning',
+    'airbnb': 'Airbnb Cleaning',
+    'airbnb cleaning': 'Airbnb Cleaning',
+    'airbnb_cleaning': 'Airbnb Cleaning',
+    'air bnb': 'Airbnb Cleaning',
+    'carpet': 'Carpet Cleaning',
+    'carpet cleaning': 'Carpet Cleaning',
+    'carpet_cleaning': 'Carpet Cleaning',
+    'end of tenancy': 'End of Tenancy',
+    'end_of_tenancy': 'End of Tenancy',
+    'end-of-tenancy': 'End of Tenancy',
+    
+    // Cleaning types - Airbnb related
+    'checkin-checkout': 'Airbnb Cleaning',
+    'check_in_check_out': 'Airbnb Cleaning',
+    'check-in/check-out': 'Airbnb Cleaning',
     'midstay': 'Midstay Cleaning',
     'midstay_cleaning': 'Midstay Cleaning',
-    'end_of_tenancy': 'End of Tenancy',
+    'mid-stay': 'Midstay Cleaning',
+    
+    // Cleaning types - Domestic related
+    'standard_cleaning': 'Standard Cleaning',
+    'standard cleaning': 'Standard Cleaning',
+    'deep_cleaning': 'Deep Cleaning',
+    'deep cleaning': 'Deep Cleaning',
+    'one_off': 'One-Off Cleaning',
+    'one-off': 'One-Off Cleaning',
+    'onetime': 'One-Off Cleaning',
+    'weekly': 'Weekly Cleaning',
+    'biweekly': 'Bi-Weekly Cleaning',
+    'bi-weekly': 'Bi-Weekly Cleaning',
+    'fortnightly': 'Fortnightly Cleaning',
+    'monthly': 'Monthly Cleaning',
+    'light_cleaning': 'Light Cleaning',
+    'light cleaning': 'Light Cleaning',
     'after_party': 'After Party Cleaning',
+    'after party': 'After Party Cleaning',
   };
   
-  return serviceTypeMap[serviceType] || serviceType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  return serviceTypeMap[lowerType] || serviceType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 };
 
 /**
