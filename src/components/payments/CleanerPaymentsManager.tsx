@@ -329,17 +329,20 @@ const CleanerPaymentsManager = () => {
     }
   };
 
-  const handleCleanerToggle = (cleanerId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedCleanerIds([...selectedCleanerIds, cleanerId]);
-    } else {
+  const handleCleanerToggle = (cleanerId: string) => {
+    if (selectedCleanerIds.includes(cleanerId)) {
       setSelectedCleanerIds(selectedCleanerIds.filter(id => id !== cleanerId));
+    } else {
+      setSelectedCleanerIds([...selectedCleanerIds, cleanerId]);
     }
   };
 
   const handleSelectAllCleaners = () => {
-    setSelectedCleanerIds(cleaners.map(c => c.id.toString()));
-    setCleanerDropdownOpen(false);
+    if (selectedCleanerIds.length === cleaners.length) {
+      setSelectedCleanerIds([]);
+    } else {
+      setSelectedCleanerIds(cleaners.map(c => c.id.toString()));
+    }
   };
 
   const getCleanerDisplayText = () => {
@@ -456,28 +459,36 @@ const CleanerPaymentsManager = () => {
                   <CommandList>
                     <CommandEmpty>No cleaners found.</CommandEmpty>
                     <CommandGroup className="max-h-64 overflow-auto">
-                      <CommandItem
-                        onSelect={handleSelectAllCleaners}
-                        className="cursor-pointer"
+                      <div
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleSelectAllCleaners();
+                        }}
+                        className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
                       >
                         <Checkbox
                           checked={selectedCleanerIds.length === cleaners.length}
                           className="mr-2"
                         />
                         All cleaners
-                      </CommandItem>
+                      </div>
                       {filteredCleaners.map((cleaner) => (
-                        <CommandItem
+                        <div
                           key={cleaner.id}
-                          onSelect={() => handleCleanerToggle(cleaner.id.toString(), !selectedCleanerIds.includes(cleaner.id.toString()))}
-                          className="cursor-pointer"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleCleanerToggle(cleaner.id.toString());
+                          }}
+                          className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
                         >
                           <Checkbox
                             checked={selectedCleanerIds.includes(cleaner.id.toString())}
                             className="mr-2"
                           />
                           {cleaner.first_name} {cleaner.last_name}
-                        </CommandItem>
+                        </div>
                       ))}
                     </CommandGroup>
                   </CommandList>
