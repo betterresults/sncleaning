@@ -11,9 +11,9 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
-import { Calendar, DollarSign, Clock, User, Edit2, Check, X, MapPin, CalendarIcon, ChevronDown } from 'lucide-react';
+import { Calendar, DollarSign, Clock, User, Edit2, Check, X, MapPin, CalendarIcon, ChevronDown, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import AddCleanerPaymentDialog from './AddCleanerPaymentDialog';
+import { useNavigate } from 'react-router-dom';
 
 // Helper to format service type for display
 const formatServiceType = (serviceType: string | null | undefined): string => {
@@ -250,6 +250,7 @@ const BookingPaymentCard: React.FC<BookingPaymentCardProps> = ({ booking, onUpda
 };
 
 const CleanerPaymentsManager = () => {
+  const navigate = useNavigate();
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [selectedCleanerIds, setSelectedCleanerIds] = useState<string[]>([]);
   const [selectedBookingIds, setSelectedBookingIds] = useState<number[]>([]);
@@ -486,7 +487,10 @@ const CleanerPaymentsManager = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Cleaner Payments</h1>
-        <AddCleanerPaymentDialog onPaymentAdded={fetchPaymentData} />
+        <Button onClick={() => navigate('/admin-cleaner-payments/add')} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Add Payment
+        </Button>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
