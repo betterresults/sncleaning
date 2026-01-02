@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Edit, Trash2, Copy, UserPlus, DollarSign, Repeat, MoreHorizontal, Clock, MapPin, User, Mail, Phone, Send, Calendar, Camera } from 'lucide-react';
+import { Edit, Trash2, Copy, UserPlus, DollarSign, Repeat, MoreHorizontal, Clock, MapPin, User, Mail, Phone, Send, Calendar, Camera, AlertTriangle } from 'lucide-react';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import { InvoilessPaymentDialog } from '@/components/payments/InvoilessPaymentDialog';
@@ -86,9 +86,10 @@ interface PastBookingsListViewProps {
     dateTo: string;
   };
   showOnlyCancelled?: boolean;
+  showStatsForAdmin?: boolean;
 }
 
-const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false }: PastBookingsListViewProps) => {
+const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false, showStatsForAdmin = false }: PastBookingsListViewProps) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
@@ -585,6 +586,22 @@ const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false }
   // Determine which bookings to display
   const displayBookings = !dashboardDateFilter ? filteredBookings : bookings;
 
+  // Calculate stats from displayed bookings (excluding cancelled)
+  const activeDisplayBookings = displayBookings.filter(booking => {
+    const status = booking.booking_status?.toLowerCase();
+    return status !== 'cancelled' && status !== 'canceled';
+  });
+  
+  const filteredStats = {
+    totalBookings: activeDisplayBookings.length,
+    totalRevenue: activeDisplayBookings.reduce((sum, booking) => {
+      return sum + (parseFloat(String(booking.total_cost)) || 0);
+    }, 0),
+    unpaidCount: activeDisplayBookings.filter(booking => 
+      booking.payment_status === 'Unpaid' || booking.payment_status === 'Not Paid'
+    ).length
+  };
+
   // Pagination: 10 bookings per page
   const itemsPerPage = 10;
   const totalPages = Math.ceil(displayBookings.length / itemsPerPage);
@@ -597,6 +614,50 @@ const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false }
 
   return (
     <div className="space-y-4">
+      {/* Stats Cards - reflect filtered bookings (only for admin) */}
+      {showFilters && !showOnlyCancelled && showStatsForAdmin && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0 bg-gradient-to-br from-teal-500 via-teal-600 to-cyan-700 text-white">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 pt-3 sm:px-4 sm:pt-4">
+              <CardTitle className="text-sm font-medium opacity-90">Bookings</CardTitle>
+              <div className="p-1.5 bg-white/20 rounded-lg">
+                <Calendar className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent className="pb-3 px-3 sm:pb-4 sm:px-4">
+              <div className="text-3xl sm:text-4xl font-bold">{filteredStats.totalBookings}</div>
+              <p className="text-xs opacity-75 mt-1">Matching filters</p>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0 bg-gradient-to-br from-emerald-500 via-green-600 to-teal-700 text-white">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 pt-3 sm:px-4 sm:pt-4">
+              <CardTitle className="text-sm font-medium opacity-90">Revenue</CardTitle>
+              <div className="p-1.5 bg-white/20 rounded-lg">
+                <DollarSign className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent className="pb-3 px-3 sm:pb-4 sm:px-4">
+              <div className="text-2xl sm:text-3xl font-bold">£{filteredStats.totalRevenue.toFixed(2)}</div>
+              <p className="text-xs opacity-75 mt-1">Matching filters</p>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0 bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 text-white">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 pt-3 sm:px-4 sm:pt-4">
+              <CardTitle className="text-sm font-medium opacity-90">Unpaid</CardTitle>
+              <div className="p-1.5 bg-white/20 rounded-lg">
+                <AlertTriangle className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent className="pb-3 px-3 sm:pb-4 sm:px-4">
+              <div className="text-3xl sm:text-4xl font-bold">{filteredStats.unpaidCount}</div>
+              <p className="text-xs opacity-75 mt-1">Pending payment</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Filters - only show for past bookings page */}
       {showFilters && (
         <PastBookingsFilters
