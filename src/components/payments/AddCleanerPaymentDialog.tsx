@@ -175,7 +175,12 @@ const AddCleanerPaymentDialog: React.FC<AddCleanerPaymentDialogProps> = ({ onPay
                   <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-full p-0 bg-popover z-50" align="start">
+              <PopoverContent 
+                className="w-full p-0 bg-popover z-50" 
+                align="start"
+                onPointerDownOutside={(e) => e.preventDefault()}
+                onInteractOutside={(e) => e.preventDefault()}
+              >
                 <Command shouldFilter={false}>
                   <CommandInput
                     placeholder="Search cleaner..."
@@ -226,7 +231,12 @@ const AddCleanerPaymentDialog: React.FC<AddCleanerPaymentDialogProps> = ({ onPay
                   <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[450px] p-0 bg-popover z-50" align="start">
+              <PopoverContent 
+                className="w-[450px] p-0 bg-popover z-50" 
+                align="start"
+                onPointerDownOutside={(e) => e.preventDefault()}
+                onInteractOutside={(e) => e.preventDefault()}
+              >
                 <Command shouldFilter={false}>
                   <CommandInput
                     placeholder="Search by address, postcode, or ID..."
