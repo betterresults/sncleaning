@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Mail, Send, CheckCircle2, Link2, MessageSquare, Loader2, Calendar, Home, Clock } from "lucide-react";
+import { Mail, Send, CheckCircle2, Link2, MessageSquare, Loader2, Calendar, Home, Clock, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -127,6 +127,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
   const [existingQuoteStatus, setExistingQuoteStatus] = useState<string | null>(null);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [flexibleTimeOverride, setFlexibleTimeOverride] = useState(false); // Allow admin to set flexible time from dialog
+  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
   const { toast } = useToast();
   
   // Check if there's already a quote/link sent for this session
@@ -432,6 +433,28 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
     setSendStatus('idle');
   };
 
+  // Generate preview link and open in new tab
+  const handlePreviewLink = async () => {
+    setIsGeneratingPreview(true);
+    try {
+      const shortUrl = await saveQuoteAndGetShortUrl();
+      window.open(shortUrl, '_blank');
+      toast({
+        title: "Preview Link Generated",
+        description: "The quote has been saved and opened in a new tab.",
+      });
+    } catch (error: any) {
+      console.error('Error generating preview link:', error);
+      toast({
+        title: "Failed to Generate Preview",
+        description: "Could not generate the preview link. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPreview(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-lg rounded-2xl border-0 p-0 overflow-hidden shadow-2xl">
@@ -604,6 +627,26 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                   )}
                 </div>
               )}
+
+              {/* Preview Link Button */}
+              <Button
+                onClick={handlePreviewLink}
+                disabled={isGeneratingPreview}
+                variant="outline"
+                className="w-full h-11 rounded-xl border-slate-200 hover:border-primary hover:bg-primary/5 transition-all"
+              >
+                {isGeneratingPreview ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating Preview...
+                  </>
+                ) : (
+                  <>
+                    <Eye className="w-4 h-4 mr-2" />
+                    Preview Link (opens in new tab)
+                  </>
+                )}
+              </Button>
 
               {/* Option buttons */}
               <div className="grid grid-cols-1 gap-3">
