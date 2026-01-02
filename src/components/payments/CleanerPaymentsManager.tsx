@@ -25,6 +25,8 @@ interface BookingPayment {
   id: number;
   date_time: string;
   address: string;
+  postcode: string;
+  service_type: string;
   cleaner_pay: number;
   total_hours: number;
   payment_status: string;
@@ -128,15 +130,24 @@ const BookingPaymentCard: React.FC<BookingPaymentCardProps> = ({ booking, onUpda
           <div className="flex-1 space-y-2">
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">{booking.address}</span>
+              <span className="font-medium">{booking.postcode || 'No postcode'}</span>
+              <span className="text-muted-foreground">-</span>
+              <span className="text-sm text-muted-foreground">{booking.address || 'No address'}</span>
             </div>
             
-            {customerName && (
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Customer: {customerName}</span>
-              </div>
-            )}
+            <div className="flex items-center gap-2 flex-wrap">
+              {booking.service_type && (
+                <Badge variant="outline" className="text-xs">
+                  {booking.service_type}
+                </Badge>
+              )}
+              {customerName && (
+                <span className="text-sm text-muted-foreground">
+                  <User className="h-3 w-3 inline mr-1" />
+                  {customerName}
+                </span>
+              )}
+            </div>
             
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <span>{format(new Date(booking.date_time), 'MMM dd, yyyy HH:mm')}</span>
@@ -294,6 +305,8 @@ const CleanerPaymentsManager = () => {
             id,
             date_time,
             address,
+            postcode,
+            service_type,
             cleaner_pay,
             total_hours,
             payment_status,
