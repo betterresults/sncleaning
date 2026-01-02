@@ -87,9 +87,10 @@ export const useAgentTasks = (options?: {
     console.log('fetchTasks called with options:', options);
     
     // Skip fetch if assignedTo is expected but user hasn't loaded yet
+    // Keep loading=true so the UI shows a loading state until user is ready
     if ('assignedTo' in (options || {}) && !options?.assignedTo) {
-      console.log('Skipping fetch - assignedTo not ready');
-      setLoading(false);
+      console.log('Skipping fetch - assignedTo not ready, keeping loading state');
+      // Don't set loading to false - wait for user to be available
       return;
     }
     
