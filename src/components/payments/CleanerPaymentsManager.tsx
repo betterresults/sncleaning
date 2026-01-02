@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { Calendar, DollarSign, Clock, User, Edit2, Check, X, MapPin, CalendarIcon, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import AddCleanerPaymentDialog from './AddCleanerPaymentDialog';
 
 // Helper to format service type for display
 const formatServiceType = (serviceType: string | null | undefined): string => {
@@ -483,6 +484,10 @@ const CleanerPaymentsManager = () => {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Cleaner Payments</h1>
+        <AddCleanerPaymentDialog onPaymentAdded={fetchPaymentData} />
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardContent className="pt-6">
