@@ -298,9 +298,11 @@ const CleanerPaymentsManager = () => {
             total_hours,
             payment_status,
             cleaner_pay_status,
-            customer
+            customer,
+            booking_status
           `)
           .eq('cleaner', parseInt(cleanerId))
+          .neq('booking_status', 'cancelled')
           .gte('date_time', start.toISOString())
           .lte('date_time', end.toISOString())
           .order('date_time', { ascending: false });
