@@ -11,7 +11,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
-import { Calendar, DollarSign, Clock, User, Edit2, Check, X, MapPin, CalendarIcon, ChevronDown, Plus } from 'lucide-react';
+import { Calendar, DollarSign, Clock, User, Edit2, Check, X, MapPin, CalendarIcon, ChevronDown, Plus, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 
@@ -71,6 +71,11 @@ interface BookingPayment {
   first_name?: string;
   last_name?: string;
   customer?: number;
+  // Standalone payment fields
+  is_standalone?: boolean;
+  title?: string;
+  description?: string;
+  payment_id?: string;
 }
 
 interface PaymentData {
@@ -118,22 +123,36 @@ const BookingPaymentCard: React.FC<BookingPaymentCardProps> = ({ booking, onUpda
 
   const handleSave = async () => {
     try {
-      const { error } = await supabase
-        .from('past_bookings')
-        .update({
-          cleaner_pay: parseFloat(editingPay),
-          cleaner_pay_status: editingStatus
-        })
-        .eq('id', booking.id);
+      if (booking.is_standalone && booking.payment_id) {
+        // Update cleaner_payments for standalone payments
+        const { error } = await supabase
+          .from('cleaner_payments')
+          .update({
+            calculated_pay: parseFloat(editingPay),
+            status: editingStatus === 'Paid' ? 'paid' : 'assigned'
+          })
+          .eq('id', booking.payment_id);
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        // Update past_bookings for regular bookings
+        const { error } = await supabase
+          .from('past_bookings')
+          .update({
+            cleaner_pay: parseFloat(editingPay),
+            cleaner_pay_status: editingStatus
+          })
+          .eq('id', booking.id);
+
+        if (error) throw error;
+      }
       
-      toast.success('Booking updated successfully');
+      toast.success('Payment updated successfully');
       setIsEditing(false);
       onUpdate();
     } catch (error) {
-      console.error('Error updating booking:', error);
-      toast.error('Failed to update booking');
+      console.error('Error updating payment:', error);
+      toast.error('Failed to update payment');
     }
   };
 
@@ -156,36 +175,63 @@ const BookingPaymentCard: React.FC<BookingPaymentCardProps> = ({ booking, onUpda
     }
   };
 
+  // For standalone payments, use payment_id for selection; for bookings use id
+  const selectionId = booking.is_standalone ? (booking.payment_id ? parseInt(booking.payment_id.slice(0, 8), 16) : 0) : booking.id;
+
   return (
-    <Card className="p-4">
+    <Card className={cn("p-4", booking.is_standalone && "border-primary/30 bg-primary/5")}>
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className="flex items-center gap-3">
           <Checkbox
             checked={isSelected}
-            onCheckedChange={(checked) => onSelectionChange(booking.id, checked as boolean)}
+            onCheckedChange={(checked) => onSelectionChange(selectionId, checked as boolean)}
+            disabled={booking.is_standalone} // Disable selection for standalone payments for now
           />
           <div className="flex-1 space-y-2">
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">{booking.postcode || 'No postcode'}</span>
-              <span className="text-muted-foreground">-</span>
-              <span className="text-sm text-muted-foreground">{booking.address || 'No address'}</span>
-            </div>
-            
-            <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="outline" className="text-xs">
-                {formatServiceType(booking.service_type)}
-              </Badge>
-              {customerName && (
-                <span className="text-sm text-muted-foreground">
-                  <User className="h-3 w-3 inline mr-1" />
-                  {customerName}
-                </span>
-              )}
-            </div>
+            {booking.is_standalone ? (
+              // Standalone payment display
+              <>
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  <span className="font-medium text-primary">{booking.title || 'Standalone Payment'}</span>
+                </div>
+                {booking.description && (
+                  <div className="text-sm text-muted-foreground">
+                    {booking.description}
+                  </div>
+                )}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="outline" className="text-xs bg-primary/10 border-primary/30">
+                    Standalone
+                  </Badge>
+                </div>
+              </>
+            ) : (
+              // Regular booking display
+              <>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">{booking.postcode || 'No postcode'}</span>
+                  <span className="text-muted-foreground">-</span>
+                  <span className="text-sm text-muted-foreground">{booking.address || 'No address'}</span>
+                </div>
+                
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="outline" className="text-xs">
+                    {formatServiceType(booking.service_type)}
+                  </Badge>
+                  {customerName && (
+                    <span className="text-sm text-muted-foreground">
+                      <User className="h-3 w-3 inline mr-1" />
+                      {customerName}
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
             
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>{format(new Date(booking.date_time), 'MMM dd, yyyy HH:mm')}</span>
+              <span>{format(new Date(booking.date_time), booking.is_standalone ? 'MMM dd, yyyy' : 'MMM dd, yyyy HH:mm')}</span>
               <span>{booking.total_hours}h</span>
             </div>
           </div>
@@ -335,7 +381,8 @@ const CleanerPaymentsManager = () => {
       
       // Fetch data for each selected cleaner
       for (const cleanerId of selectedCleanerIds) {
-        const { data, error } = await supabase
+        // Fetch bookings from past_bookings
+        const { data: bookingsData, error: bookingsError } = await supabase
           .from('past_bookings')
           .select(`
             id,
@@ -356,18 +403,68 @@ const CleanerPaymentsManager = () => {
           .lte('date_time', end.toISOString())
           .order('date_time', { ascending: false });
 
-        if (error) throw error;
+        if (bookingsError) throw bookingsError;
 
-        const bookings = data || [];
-        const totalEarnings = bookings.reduce((sum, booking) => sum + (Number(booking.cleaner_pay) || 0), 0);
-        const completedJobs = bookings.length;
+        // Fetch standalone payments from cleaner_payments (booking_id = 0)
+        const { data: standaloneData, error: standaloneError } = await supabase
+          .from('cleaner_payments')
+          .select(`
+            id,
+            booking_id,
+            cleaner_id,
+            calculated_pay,
+            hours_assigned,
+            status,
+            title,
+            description,
+            payment_date,
+            created_at
+          `)
+          .eq('cleaner_id', parseInt(cleanerId))
+          .eq('booking_id', 0)
+          .gte('payment_date', format(start, 'yyyy-MM-dd'))
+          .lte('payment_date', format(end, 'yyyy-MM-dd'))
+          .order('payment_date', { ascending: false });
+
+        if (standaloneError) throw standaloneError;
+
+        // Convert bookings to BookingPayment format
+        const bookings: BookingPayment[] = (bookingsData || []).map(booking => ({
+          ...booking,
+          is_standalone: false
+        }));
+
+        // Convert standalone payments to BookingPayment format
+        const standalonePayments: BookingPayment[] = (standaloneData || []).map(payment => ({
+          id: 0, // Use 0 to indicate standalone
+          payment_id: payment.id,
+          date_time: payment.payment_date ? `${payment.payment_date}T00:00:00Z` : payment.created_at,
+          address: payment.title || 'Standalone Payment',
+          postcode: '',
+          service_type: 'Standalone',
+          cleaner_pay: payment.calculated_pay || 0,
+          total_hours: payment.hours_assigned || 0,
+          payment_status: payment.status || 'assigned',
+          cleaner_pay_status: payment.status === 'paid' ? 'Paid' : 'Unpaid',
+          is_standalone: true,
+          title: payment.title,
+          description: payment.description
+        }));
+
+        // Merge bookings and standalone payments, sort by date
+        const allPayments = [...bookings, ...standalonePayments].sort((a, b) => 
+          new Date(b.date_time).getTime() - new Date(a.date_time).getTime()
+        );
+
+        const totalEarnings = allPayments.reduce((sum, payment) => sum + (Number(payment.cleaner_pay) || 0), 0);
+        const completedJobs = allPayments.length;
         const averagePerJob = completedJobs > 0 ? totalEarnings / completedJobs : 0;
 
         newPaymentData[cleanerId] = {
           totalEarnings,
           completedJobs,
           averagePerJob,
-          bookings
+          bookings: allPayments
         };
       }
 
