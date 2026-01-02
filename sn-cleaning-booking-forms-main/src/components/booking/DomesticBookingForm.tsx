@@ -636,6 +636,13 @@ const DomesticBookingForm: React.FC = () => {
         const baseCost = (newData.estimatedHours ?? 0) * newData.hourlyRate;
         const discountAmount = newData.isFirstTimeCustomer ? updates.totalCost * 0.10 / 0.90 : 0; // Reverse calculate the 10% discount
         
+        // For recurring bookings, calculate the actual weekly/recurring cost
+        // This is different from totalCost when first deep clean is selected
+        const isRecurringService = ['weekly', 'biweekly', 'monthly'].includes(newData.serviceFrequency);
+        const recurringWeeklyCost = isRecurringService 
+          ? calculations.regularRecurringCost 
+          : undefined;
+        
         trackQuoteCalculated(updates.totalCost, newData.estimatedHours ?? undefined, {
           propertyType: newData.propertyType || undefined,
           bedrooms: parseBedroomsToNumber(newData.bedrooms),
@@ -645,7 +652,7 @@ const DomesticBookingForm: React.FC = () => {
           ovenCleaning: newData.hasOvenCleaning,
           ovenSize: newData.ovenType || undefined,
           postcode: newData.postcode || undefined,
-          weeklyCost: updates.totalCost, // This is the per-visit cost shown
+          weeklyCost: recurringWeeklyCost, // Use actual recurring cost, not first deep clean cost
           discountAmount: discountAmount > 0 ? Math.round(discountAmount * 100) / 100 : undefined,
           shortNoticeCharge: newData.shortNoticeCharge || undefined,
           isFirstTimeCustomer: newData.isFirstTimeCustomer,
