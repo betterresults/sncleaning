@@ -131,3 +131,6 @@ verify_jwt = false
 
 [functions.send-sms-reply]
 verify_jwt = true
+
+[functions.fix-domestic-cleaning-types]
+verify_jwt = false
