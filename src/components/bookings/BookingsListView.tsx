@@ -90,9 +90,10 @@ interface TodayBookingsCardsProps {
     dateTo: string;
   };
   initialCleanerFilter?: string;
+  filterBySubmissionDate?: boolean; // If true, filter by date_submited instead of date_time
 }
 
-const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter }: TodayBookingsCardsProps) => {
+const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterBySubmissionDate = false }: TodayBookingsCardsProps) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
@@ -183,9 +184,20 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter }: TodayBo
         `);
 
       if (dashboardDateFilter) {
-        bookingsQuery = bookingsQuery
-          .gte('date_time', dashboardDateFilter.dateFrom)
-          .lte('date_time', dashboardDateFilter.dateTo);
+        if (filterBySubmissionDate) {
+          // Filter by date_submited (when booking was created)
+          // date_submited is stored as text, so we need to handle it differently
+          const dateFrom = dashboardDateFilter.dateFrom.split('T')[0];
+          const dateTo = dashboardDateFilter.dateTo.split('T')[0];
+          bookingsQuery = bookingsQuery
+            .gte('date_submited', dateFrom)
+            .lte('date_submited', dateTo + 'T23:59:59');
+        } else {
+          // Filter by date_time (scheduled booking date)
+          bookingsQuery = bookingsQuery
+            .gte('date_time', dashboardDateFilter.dateFrom)
+            .lte('date_time', dashboardDateFilter.dateTo);
+        }
       }
 
       const { data: bookingsData, error: bookingsError } = await bookingsQuery
