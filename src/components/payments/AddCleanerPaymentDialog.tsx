@@ -223,7 +223,9 @@ const AddCleanerPaymentDialog: React.FC<AddCleanerPaymentDialogProps> = ({ onPay
                 >
                   {selectedBooking ? (
                     <span className="truncate">
-                      #{selectedBooking.id} - {selectedBooking.postcode} - {format(new Date(selectedBooking.date_time), 'dd/MM/yy')}
+                      {selectedBooking.first_name || selectedBooking.last_name 
+                        ? `${selectedBooking.first_name || ''} ${selectedBooking.last_name || ''}`.trim()
+                        : 'Unknown'} - {selectedBooking.service_type || 'Unknown'} - {selectedBooking.postcode || 'No postcode'}
                     </span>
                   ) : (
                     "Select a booking..."
@@ -258,21 +260,24 @@ const AddCleanerPaymentDialog: React.FC<AddCleanerPaymentDialogProps> = ({ onPay
                           className="relative flex flex-col cursor-pointer select-none items-start rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
                         >
                           <div className="flex items-center gap-2 w-full">
-                            <span className="font-medium">#{booking.id}</span>
-                            <span className="text-muted-foreground">-</span>
-                            <span className="font-medium">{booking.postcode}</span>
-                            <span className="text-muted-foreground text-sm ml-auto">
-                              {format(new Date(booking.date_time), 'dd MMM yyyy')}
+                            <span className="font-medium">
+                              {booking.first_name || booking.last_name 
+                                ? `${booking.first_name || ''} ${booking.last_name || ''}`.trim()
+                                : 'Unknown Client'}
                             </span>
+                            <span className="text-muted-foreground">-</span>
+                            <span className="text-sm">{booking.service_type || 'Unknown'}</span>
+                            <span className="text-muted-foreground">-</span>
+                            <span className="font-medium">{booking.postcode || 'N/A'}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>#{booking.id}</span>
+                            <span>•</span>
+                            <span>{format(new Date(booking.date_time), 'dd MMM yyyy')}</span>
                           </div>
                           <div className="text-sm text-muted-foreground truncate w-full">
                             {booking.address}
                           </div>
-                          {(booking.first_name || booking.last_name) && (
-                            <div className="text-xs text-muted-foreground">
-                              Customer: {booking.first_name} {booking.last_name}
-                            </div>
-                          )}
                         </div>
                       ))}
                     </CommandGroup>
