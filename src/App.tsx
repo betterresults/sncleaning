@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 
 import Users from "./pages/Users";
 import PastBookings from "./pages/PastBookings";
+import CancelledBookings from "./pages/CancelledBookings";
 import CleanerDashboard from "./pages/CleanerDashboard";
 import CleanerTodayBookings from "./pages/CleanerTodayBookings";
 import CleanerTodayPage from "./pages/CleanerTodayPage";
@@ -146,6 +147,7 @@ const App = () => (
             <Route path="/staff-settings" element={<StaffSettings />} />
             <Route path="/users" element={<Users />} />
             <Route path="/past-bookings" element={<PastBookings />} />
+            <Route path="/cancelled-bookings" element={<CancelledBookings />} />
             <Route path="/cleaner-dashboard" element={<CleanerDashboard />} />
            <Route path="/cleaner-today-bookings" element={<CleanerTodayBookings />} />
            <Route path="/cleaner-today" element={<CleanerTodayPage />} />
