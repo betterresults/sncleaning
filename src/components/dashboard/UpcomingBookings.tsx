@@ -92,6 +92,7 @@ interface Filters {
   serviceType: string;
   cleaningType: string;
   bookingStatus: string;
+  customerSource: string;
 }
 
 interface UpcomingBookingsProps {
@@ -107,6 +108,8 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [availableSources, setAvailableSources] = useState<string[]>([]);
+  const [customerSourceMap, setCustomerSourceMap] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -121,7 +124,8 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
     paymentStatus: 'all',
     serviceType: 'all',
     cleaningType: 'all',
-    bookingStatus: 'all'
+    bookingStatus: 'all',
+    customerSource: 'all'
   });
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<Booking | null>(null);
@@ -198,7 +202,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
 
       const { data: customersData, error: customersError } = await supabase
         .from('customers')
-        .select('id, first_name, last_name')
+        .select('id, first_name, last_name, source')
         .order('first_name');
 
       if (customersError) {
@@ -247,6 +251,23 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
         customers: customersData?.length || 0
       });
 
+      // Build customer source map
+      const sourceMap: Record<number, string> = {};
+      const customerIdsInBookings = new Set((bookingsData || []).map((b: any) => b.customer).filter(Boolean));
+      const sourcesWithBookings = new Set<string>();
+      
+      customersData?.forEach(c => {
+        if (c.source) {
+          sourceMap[c.id] = c.source;
+          if (customerIdsInBookings.has(c.id)) {
+            sourcesWithBookings.add(c.source);
+          }
+        }
+      });
+      
+      setCustomerSourceMap(sourceMap);
+      setAvailableSources(Array.from(sourcesWithBookings).sort());
+
       setBookings(enrichedBookings);
       setCleaners(cleanersData || []);
       setCustomers(customersData || []);
@@ -281,6 +302,14 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
       );
     }
 
+    // Apply customer source filter
+    if (filters.customerSource && filters.customerSource !== 'all') {
+      filtered = filtered.filter(booking => {
+        const customerId = booking.customer;
+        return customerId && customerSourceMap[customerId] === filters.customerSource;
+      });
+    }
+
     // Apply search term - searches in customer name, email, phone, address
     if (filters.searchTerm) {
       const searchLower = filters.searchTerm.toLowerCase();
@@ -307,7 +336,8 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
       paymentStatus: 'all',
       serviceType: 'all',
       cleaningType: 'all',
-      bookingStatus: 'all'
+      bookingStatus: 'all',
+      customerSource: 'all'
     });
   };
 
@@ -679,6 +709,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
           filters={filters}
           onFiltersChange={setFilters}
           cleaners={cleaners}
+          availableSources={availableSources}
         />
       )}
 

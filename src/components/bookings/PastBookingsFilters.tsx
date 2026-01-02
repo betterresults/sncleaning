@@ -26,21 +26,23 @@ interface FiltersState {
   serviceType: string;
   cleaningType: string;
   bookingStatus: string;
+  customerSource: string;
 }
 
 interface PastBookingsFiltersProps {
   filters: FiltersState;
   onFiltersChange: (filters: FiltersState) => void;
   cleaners: Cleaner[];
+  availableSources?: string[];
   onRefresh?: () => void;
   isRefreshing?: boolean;
   showOnlyCancelled?: boolean;
 }
 
-export function PastBookingsFilters({ filters, onFiltersChange, cleaners, onRefresh, isRefreshing = false, showOnlyCancelled = false }: PastBookingsFiltersProps) {
+export function PastBookingsFilters({ filters, onFiltersChange, cleaners, availableSources = [], onRefresh, isRefreshing = false, showOnlyCancelled = false }: PastBookingsFiltersProps) {
   const navigate = useNavigate();
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [filterType, setFilterType] = useState<'cleaner' | 'paymentMethod' | 'paymentStatus' | 'serviceType' | 'cleaningType' | 'bookingStatus' | ''>('');
+  const [filterType, setFilterType] = useState<'cleaner' | 'paymentMethod' | 'paymentStatus' | 'serviceType' | 'cleaningType' | 'bookingStatus' | 'customerSource' | ''>('');
   const [activeDateTab, setActiveDateTab] = useState<'from' | 'to'>('from');
   
   // Determine the default booking status based on the mode
@@ -88,6 +90,10 @@ export function PastBookingsFilters({ filters, onFiltersChange, cleaners, onRefr
     onFiltersChange({ ...filters, bookingStatus: value });
   };
 
+  const handleCustomerSourceChange = (value: string) => {
+    onFiltersChange({ ...filters, customerSource: value });
+  };
+
   const clearFilters = () => {
     onFiltersChange({
       searchTerm: '',
@@ -98,7 +104,8 @@ export function PastBookingsFilters({ filters, onFiltersChange, cleaners, onRefr
       paymentStatus: 'all',
       serviceType: 'all',
       cleaningType: 'all',
-      bookingStatus: defaultBookingStatus
+      bookingStatus: defaultBookingStatus,
+      customerSource: 'all'
     });
     setFilterType('');
     setShowAdvancedFilters(false);
@@ -110,7 +117,8 @@ export function PastBookingsFilters({ filters, onFiltersChange, cleaners, onRefr
                           (filters.paymentStatus && filters.paymentStatus !== 'all') ||
                           (filters.serviceType && filters.serviceType !== 'all') ||
                           (filters.cleaningType && filters.cleaningType !== 'all') ||
-                          (filters.bookingStatus && filters.bookingStatus !== 'all' && filters.bookingStatus !== defaultBookingStatus);
+                          (filters.bookingStatus && filters.bookingStatus !== 'all' && filters.bookingStatus !== defaultBookingStatus) ||
+                          (filters.customerSource && filters.customerSource !== 'all');
 
   return (
     <div className="bg-white p-3 sm:p-5 rounded-xl shadow-sm border-0">
@@ -251,6 +259,9 @@ export function PastBookingsFilters({ filters, onFiltersChange, cleaners, onRefr
                       <SelectItem value="serviceType">Service Type</SelectItem>
                       <SelectItem value="cleaningType">Cleaning Type</SelectItem>
                       <SelectItem value="bookingStatus">Booking Status</SelectItem>
+                      {availableSources.length > 0 && (
+                        <SelectItem value="customerSource">Customer Source</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -361,6 +372,25 @@ export function PastBookingsFilters({ filters, onFiltersChange, cleaners, onRefr
                       <SelectItem value="active">Active</SelectItem>
                       <SelectItem value="cancelled">Cancelled</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {filterType === 'customerSource' && availableSources.length > 0 && (
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Customer Source</label>
+                  <Select value={filters.customerSource} onValueChange={handleCustomerSourceChange}>
+                    <SelectTrigger className="rounded-lg">
+                      <SelectValue placeholder="Choose source" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white shadow-lg rounded-lg z-[100]">
+                      <SelectItem value="all">All sources</SelectItem>
+                      {availableSources.map((source) => (
+                        <SelectItem key={source} value={source}>
+                          {source}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

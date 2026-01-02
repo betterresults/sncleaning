@@ -81,6 +81,7 @@ interface Filters {
   serviceType: string;
   cleaningType: string;
   bookingStatus: string;
+  customerSource: string;
 }
 
 interface TodayBookingsCardsProps {
@@ -95,6 +96,8 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter }: TodayBo
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
+  const [availableSources, setAvailableSources] = useState<string[]>([]);
+  const [customerSourceMap, setCustomerSourceMap] = useState<Record<number, string>>({});
   const [customersWithPaymentMethods, setCustomersWithPaymentMethods] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -109,7 +112,8 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter }: TodayBo
     paymentStatus: 'all',
     serviceType: 'all',
     cleaningType: 'all',
-    bookingStatus: 'all'
+    bookingStatus: 'all',
+    customerSource: 'all'
   });
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<Booking | null>(null);
@@ -253,6 +257,27 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter }: TodayBo
         } else {
           setCleaners(cleanersData || []);
         }
+
+        // Fetch customer sources for filter
+        const { data: customersData } = await supabase
+          .from('customers')
+          .select('id, source');
+        
+        const sourceMap: Record<number, string> = {};
+        const customerIdsInBookings = new Set((bookingsData || []).map((b: any) => b.customer).filter(Boolean));
+        const sourcesWithBookings = new Set<string>();
+        
+        customersData?.forEach(c => {
+          if (c.source) {
+            sourceMap[c.id] = c.source;
+            if (customerIdsInBookings.has(c.id)) {
+              sourcesWithBookings.add(c.source);
+            }
+          }
+        });
+        
+        setCustomerSourceMap(sourceMap);
+        setAvailableSources(Array.from(sourcesWithBookings).sort());
       }
 
       setBookings(enrichedBookings);
@@ -363,6 +388,14 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter }: TodayBo
         booking.address?.toLowerCase().includes(searchLower) ||
         booking.postcode?.toLowerCase().includes(searchLower)
       );
+    }
+
+    // Apply customer source filter
+    if (filters.customerSource && filters.customerSource !== 'all') {
+      filtered = filtered.filter(booking => {
+        const customerId = booking.customer;
+        return customerId && customerSourceMap[customerId] === filters.customerSource;
+      });
     }
 
     setFilteredBookings(filtered);
@@ -640,6 +673,7 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter }: TodayBo
           filters={filters}
           onFiltersChange={setFilters}
           cleaners={cleaners}
+          availableSources={availableSources}
           onRefresh={handleRefresh}
           isRefreshing={isRefreshing}
         />
