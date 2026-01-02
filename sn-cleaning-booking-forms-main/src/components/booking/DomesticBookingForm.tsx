@@ -284,9 +284,12 @@ const DomesticBookingForm: React.FC = () => {
     // Check for URL parameter prefilling (from exit popup email or edit quote)
     const hasUrlPrefill = searchParams.get('propertyType') || searchParams.get('bedrooms') || searchParams.get('postcode');
     
+    // Determine if this is admin editing a quote (vs customer viewing quote link)
+    const isAdminEditMode = !!editQuoteIdParam;
+    
     if (hasUrlPrefill) {
       // Prefill from URL parameters (works across devices)
-      console.log('Prefilling from URL parameters');
+      console.log('Prefilling from URL parameters, isAdminEditMode:', isAdminEditMode);
       
       const propertyType = searchParams.get('propertyType') as 'flat' | 'house' | '' || '';
       const bedrooms = searchParams.get('bedrooms') || '';
@@ -392,32 +395,38 @@ const DomesticBookingForm: React.FC = () => {
       // Initialize tracking with ref session if available
       if (refSessionId) {
         initializeFromResume(refSessionId);
-        // Mark as quote link mode for streamlined checkout
-        setIsQuoteLinkMode(true);
+        // Mark as quote link mode for streamlined checkout - BUT NOT for admin editing
+        if (!isAdminEditMode) {
+          setIsQuoteLinkMode(true);
+        }
       }
       
-      // Mark that user came from a quote link - suppress exit popup
-      sessionStorage.setItem('came_from_quote_link', 'true');
+      // Mark that user came from a quote link - suppress exit popup (but not for admin edit)
+      if (!isAdminEditMode) {
+        sessionStorage.setItem('came_from_quote_link', 'true');
+      }
       
-      // Determine if we can auto-navigate to payment step
-      // Check if property and schedule data is sufficiently complete
-      const hasPropertyData = propertyType && bedrooms && bathrooms && frequency;
-      // Schedule is complete if: (date AND time) OR (date AND flexible-time)
-      const hasScheduleData = dateStr && (time || flexibility === 'flexible-time');
-      const hasContactData = firstName && email;
-      
-      console.log('[DomesticBookingForm] Auto-nav check:', { 
-        hasPropertyData, hasScheduleData, hasContactData, refSessionId,
-        dateStr, time, flexibility 
-      });
-      
-      // Auto-navigate to step 3 (payment) if data is complete
-      if (hasPropertyData && hasScheduleData && hasContactData && refSessionId) {
-        // Small delay to ensure state is updated
-        setTimeout(() => {
-          setCurrentStep(3);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }, 100);
+      // Determine if we can auto-navigate to payment step (only for customer quote links, not admin edit)
+      if (!isAdminEditMode) {
+        // Check if property and schedule data is sufficiently complete
+        const hasPropertyData = propertyType && bedrooms && bathrooms && frequency;
+        // Schedule is complete if: (date AND time) OR (date AND flexible-time)
+        const hasScheduleData = dateStr && (time || flexibility === 'flexible-time');
+        const hasContactData = firstName && email;
+        
+        console.log('[DomesticBookingForm] Auto-nav check:', { 
+          hasPropertyData, hasScheduleData, hasContactData, refSessionId,
+          dateStr, time, flexibility 
+        });
+        
+        // Auto-navigate to step 3 (payment) if data is complete
+        if (hasPropertyData && hasScheduleData && hasContactData && refSessionId) {
+          // Small delay to ensure state is updated
+          setTimeout(() => {
+            setCurrentStep(3);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }, 100);
+        }
       }
       
       return;
