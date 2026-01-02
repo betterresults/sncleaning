@@ -84,9 +84,10 @@ interface PastBookingsListViewProps {
     dateFrom: string;
     dateTo: string;
   };
+  showOnlyCancelled?: boolean;
 }
 
-const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps) => {
+const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false }: PastBookingsListViewProps) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
@@ -94,6 +95,7 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  // When showing only cancelled, default to 'cancelled' status; otherwise default to 'not_cancelled' to hide them
   const [filters, setFilters] = useState<Filters>({
     searchTerm: '',
     dateFrom: '',
@@ -103,7 +105,7 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
     paymentStatus: 'all',
     serviceType: 'all',
     cleaningType: 'all',
-    bookingStatus: 'all'
+    bookingStatus: showOnlyCancelled ? 'cancelled' : 'not_cancelled'
   });
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<Booking | null>(null);
@@ -333,9 +335,23 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
 
     // Apply booking status filter
     if (filters.bookingStatus && filters.bookingStatus !== 'all') {
-      filtered = filtered.filter(booking => 
-        booking.booking_status === filters.bookingStatus
-      );
+      if (filters.bookingStatus === 'not_cancelled') {
+        // Exclude cancelled bookings
+        filtered = filtered.filter(booking => {
+          const status = booking.booking_status?.toLowerCase();
+          return status !== 'cancelled' && status !== 'canceled';
+        });
+      } else if (filters.bookingStatus === 'cancelled') {
+        // Show only cancelled bookings
+        filtered = filtered.filter(booking => {
+          const status = booking.booking_status?.toLowerCase();
+          return status === 'cancelled' || status === 'canceled';
+        });
+      } else {
+        filtered = filtered.filter(booking => 
+          booking.booking_status === filters.bookingStatus
+        );
+      }
     }
 
     // Apply search term - searches in customer name, email, phone, address
@@ -559,6 +575,7 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
           cleaners={cleaners}
           onRefresh={handleRefresh}
           isRefreshing={isRefreshing}
+          showOnlyCancelled={showOnlyCancelled}
         />
       )}
 

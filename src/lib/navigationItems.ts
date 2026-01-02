@@ -1,4 +1,4 @@
-import { Briefcase, Calendar, History, DollarSign, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package, TrendingUp, Activity, Bell, CheckSquare, TestTube, Shirt, Target, Map, ClipboardList, MessageSquareText } from 'lucide-react';
+import { Briefcase, Calendar, History, DollarSign, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package, TrendingUp, Activity, Bell, CheckSquare, TestTube, Shirt, Target, Map, ClipboardList, MessageSquareText, XCircle } from 'lucide-react';
 
 export const cleanerNavigation = [
   {
@@ -72,6 +72,11 @@ export const salesAgentNavigation = [
         title: "Recurring Bookings",
         url: "/recurring-bookings",
         icon: Repeat,
+      },
+      {
+        title: "Cancelled Bookings",
+        url: "/cancelled-bookings",
+        icon: XCircle,
       },
     ],
   },
@@ -179,6 +184,11 @@ export const adminNavigation = [
         title: "Recurring Bookings",
         url: "/recurring-bookings",
         icon: Repeat,
+      },
+      {
+        title: "Cancelled Bookings",
+        url: "/cancelled-bookings",
+        icon: XCircle,
       },
     ],
   },

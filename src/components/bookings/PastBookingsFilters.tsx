@@ -34,13 +34,17 @@ interface PastBookingsFiltersProps {
   cleaners: Cleaner[];
   onRefresh?: () => void;
   isRefreshing?: boolean;
+  showOnlyCancelled?: boolean;
 }
 
-export function PastBookingsFilters({ filters, onFiltersChange, cleaners, onRefresh, isRefreshing = false }: PastBookingsFiltersProps) {
+export function PastBookingsFilters({ filters, onFiltersChange, cleaners, onRefresh, isRefreshing = false, showOnlyCancelled = false }: PastBookingsFiltersProps) {
   const navigate = useNavigate();
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [filterType, setFilterType] = useState<'cleaner' | 'paymentMethod' | 'paymentStatus' | 'serviceType' | 'cleaningType' | 'bookingStatus' | ''>('');
   const [activeDateTab, setActiveDateTab] = useState<'from' | 'to'>('from');
+  
+  // Determine the default booking status based on the mode
+  const defaultBookingStatus = showOnlyCancelled ? 'cancelled' : 'not_cancelled';
 
   const handleSearchChange = (value: string) => {
     onFiltersChange({ ...filters, searchTerm: value });
@@ -94,7 +98,7 @@ export function PastBookingsFilters({ filters, onFiltersChange, cleaners, onRefr
       paymentStatus: 'all',
       serviceType: 'all',
       cleaningType: 'all',
-      bookingStatus: 'all'
+      bookingStatus: defaultBookingStatus
     });
     setFilterType('');
     setShowAdvancedFilters(false);
@@ -106,7 +110,7 @@ export function PastBookingsFilters({ filters, onFiltersChange, cleaners, onRefr
                           (filters.paymentStatus && filters.paymentStatus !== 'all') ||
                           (filters.serviceType && filters.serviceType !== 'all') ||
                           (filters.cleaningType && filters.cleaningType !== 'all') ||
-                          (filters.bookingStatus && filters.bookingStatus !== 'all');
+                          (filters.bookingStatus && filters.bookingStatus !== 'all' && filters.bookingStatus !== defaultBookingStatus);
 
   return (
     <div className="bg-white p-3 sm:p-5 rounded-xl shadow-sm border-0">
