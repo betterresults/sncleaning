@@ -217,7 +217,8 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
       oven_cleaning: quoteData.hasOvenCleaning,
       oven_size: quoteData.ovenType,
       selected_date: quoteData.selectedDate ? quoteData.selectedDate.toISOString().split('T')[0] : null,
-      selected_time: extractStartTime(quoteData.selectedTime), // Convert time slot to HH:MM:SS format for SQL time column
+      // Default to 10:00 AM if no time selected and not flexible - ensures quote links work for step 3
+      selected_time: extractStartTime(quoteData.selectedTime) || (flexibleTimeOverride || quoteData.flexibility === 'flexible-time' ? null : '10:00:00'),
       is_flexible: quoteData.flexibility === 'flexible-time' || flexibleTimeOverride, // Store flexibility setting (from form OR admin override)
       calculated_quote: quoteData.totalCost,
       recommended_hours: quoteData.estimatedHours,
