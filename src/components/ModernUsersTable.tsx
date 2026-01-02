@@ -143,6 +143,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   const [selectedBusinessIds, setSelectedBusinessIds] = useState<number[]>([]);
   const [bulkType, setBulkType] = useState<string | 'no-change' | 'empty'>('no-change');
   const [bulkStatus, setBulkStatus] = useState<string | 'no-change'>('no-change');
+  const [bulkSource, setBulkSource] = useState<string | 'no-change' | 'empty'>('no-change');
   const [bulkUpdating, setBulkUpdating] = useState(false);
 
   const fetchUsers = async () => {
@@ -804,8 +805,9 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       if (selectedBusinessIds.length === 0) return;
       const updates: any = {};
       if (bulkType !== 'no-change') updates.clent_type = bulkType === 'empty' ? null : bulkType;
+      if (bulkSource !== 'no-change') updates.source = bulkSource === 'empty' ? null : bulkSource;
       if (Object.keys(updates).length === 0) {
-        toast({ title: 'Nothing to update', description: 'Choose Type to apply', variant: 'destructive' });
+        toast({ title: 'Nothing to update', description: 'Choose Type or Source to apply', variant: 'destructive' });
         return;
       }
       setBulkUpdating(true);
@@ -815,6 +817,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       setSelectedIds(new Set());
       setSelectedBusinessIds([]);
       setBulkType('no-change');
+      setBulkSource('no-change');
       fetchUsers();
     } catch (e: any) {
       toast({ title: 'Error', description: e.message || 'Bulk update failed', variant: 'destructive' });
@@ -1012,10 +1015,24 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="no-change">No change</SelectItem>
+                <SelectItem value="no-change">Type: No change</SelectItem>
                 <SelectItem value="client">Client</SelectItem>
                 <SelectItem value="business">Business</SelectItem>
-                <SelectItem value="empty">Clear</SelectItem>
+                <SelectItem value="empty">Clear Type</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={bulkSource} onValueChange={setBulkSource}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Source" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="no-change">Source: No change</SelectItem>
+                <SelectItem value="Facebook ads">Facebook Ads</SelectItem>
+                <SelectItem value="Google ads">Google Ads</SelectItem>
+                <SelectItem value="Organic">Organic</SelectItem>
+                <SelectItem value="Referral">Referral</SelectItem>
+                <SelectItem value="Website">Website</SelectItem>
+                <SelectItem value="empty">Clear Source</SelectItem>
               </SelectContent>
             </Select>
             <Button onClick={applyBulkUpdate} disabled={bulkUpdating} size="sm">
