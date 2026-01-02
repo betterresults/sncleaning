@@ -723,13 +723,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "booking_cleaners_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "booking_cleaners_cleaner_id_fkey"
             columns: ["cleaner_id"]
             isOneToOne: false

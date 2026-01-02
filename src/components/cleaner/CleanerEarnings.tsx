@@ -185,22 +185,54 @@ const CleanerEarnings = () => {
 
       console.log('Fetching earnings for cleaner ID:', currentCleanerId);
 
-      // Get all completed bookings for this cleaner from past_bookings table
-      const { data: pastBookingsData, error: pastBookingsError } = await supabase
-        .from('past_bookings')
+      // Get all completed payments for this cleaner from cleaner_payments table
+      // This includes both primary assignments AND co-cleaner assignments
+      const { data: paymentsData, error: paymentsError } = await supabase
+        .from('cleaner_payments')
         .select('*')
-        .eq('cleaner', currentCleanerId)
-        .order('date_time', { ascending: false });
+        .eq('cleaner_id', currentCleanerId)
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false });
 
-      if (pastBookingsError) {
-        console.error('Error fetching past bookings:', pastBookingsError);
-        setError('Failed to fetch earnings: ' + pastBookingsError.message);
+      if (paymentsError) {
+        console.error('Error fetching cleaner payments:', paymentsError);
+        setError('Failed to fetch earnings: ' + paymentsError.message);
         return;
       }
 
-      console.log('Fetched past bookings:', pastBookingsData?.length || 0);
+      console.log('Fetched cleaner payments:', paymentsData?.length || 0);
 
-      const completedBookings = pastBookingsData || [];
+      // Get booking details from past_bookings for display
+      const bookingIds = paymentsData?.map(p => p.booking_id) || [];
+      
+      let pastBookingsMap: Record<number, any> = {};
+      if (bookingIds.length > 0) {
+        const { data: pastBookingsData } = await supabase
+          .from('past_bookings')
+          .select('id, date_time, cleaning_type, booking_status, first_name, last_name')
+          .in('id', bookingIds);
+        
+        if (pastBookingsData) {
+          pastBookingsMap = pastBookingsData.reduce((acc, pb) => {
+            acc[pb.id] = pb;
+            return acc;
+          }, {} as Record<number, any>);
+        }
+      }
+
+      // Map payments to BookingEarning format
+      const completedBookings: BookingEarning[] = (paymentsData || []).map(payment => {
+        const pastBooking = pastBookingsMap[payment.booking_id] || {};
+        return {
+          id: payment.booking_id,
+          date_time: pastBooking.date_time || payment.created_at,
+          cleaner_pay: Number(payment.calculated_pay) || 0,
+          cleaning_type: pastBooking.cleaning_type || 'Cleaning',
+          booking_status: pastBooking.booking_status || 'completed',
+          first_name: pastBooking.first_name || '',
+          last_name: pastBooking.last_name || ''
+        };
+      });
       
       // Get payment period info
       const paymentInfo = getPaymentPeriodInfo();
@@ -248,16 +280,49 @@ const CleanerEarnings = () => {
     const currentCleanerId = userRole === 'admin' ? selectedCleanerId : cleanerId;
     
     // Recalculate data for the selected period
-    if (earnings.recentJobs.length > 0 && currentCleanerId) {
-      // We need to get all bookings again to calculate for the new period
-      const { data: pastBookingsData } = await supabase
-        .from('past_bookings')
+    if (currentCleanerId) {
+      // Get all completed payments for this cleaner from cleaner_payments
+      const { data: paymentsData } = await supabase
+        .from('cleaner_payments')
         .select('*')
-        .eq('cleaner', currentCleanerId)
-        .order('date_time', { ascending: false });
+        .eq('cleaner_id', currentCleanerId)
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false });
 
-      if (pastBookingsData) {
-        const newPeriodData = calculatePeriodData(pastBookingsData, value);
+      if (paymentsData) {
+        // Get booking details from past_bookings for dates
+        const bookingIds = paymentsData.map(p => p.booking_id);
+        let pastBookingsMap: Record<number, any> = {};
+        
+        if (bookingIds.length > 0) {
+          const { data: pastBookingsData } = await supabase
+            .from('past_bookings')
+            .select('id, date_time')
+            .in('id', bookingIds);
+          
+          if (pastBookingsData) {
+            pastBookingsMap = pastBookingsData.reduce((acc, pb) => {
+              acc[pb.id] = pb;
+              return acc;
+            }, {} as Record<number, any>);
+          }
+        }
+
+        // Map to BookingEarning format for period calculation
+        const completedBookings: BookingEarning[] = paymentsData.map(payment => {
+          const pastBooking = pastBookingsMap[payment.booking_id] || {};
+          return {
+            id: payment.booking_id,
+            date_time: pastBooking.date_time || payment.created_at,
+            cleaner_pay: Number(payment.calculated_pay) || 0,
+            cleaning_type: '',
+            booking_status: 'completed',
+            first_name: '',
+            last_name: ''
+          };
+        });
+
+        const newPeriodData = calculatePeriodData(completedBookings, value);
         setPeriodData(newPeriodData);
       }
     }
