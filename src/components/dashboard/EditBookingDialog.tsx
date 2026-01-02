@@ -242,7 +242,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
   // Initialize sales agent from booking
   useEffect(() => {
     if (booking && open) {
-      setSelectedSalesAgent(booking.created_by_user_id || '');
+      setSelectedSalesAgent(booking.created_by_user_id || 'none');
     }
   }, [booking, open]);
 
@@ -348,9 +348,10 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
       };
 
       // Add sales agent assignment if changed
-      if (selectedSalesAgent !== (booking.created_by_user_id || '')) {
-        updateData.created_by_user_id = selectedSalesAgent || null;
-        updateData.created_by_source = selectedSalesAgent ? 'sales_agent' : null;
+      const currentAgentId = booking.created_by_user_id || 'none';
+      if (selectedSalesAgent !== currentAgentId) {
+        updateData.created_by_user_id = selectedSalesAgent === 'none' ? null : selectedSalesAgent;
+        updateData.created_by_source = selectedSalesAgent !== 'none' ? 'sales_agent' : null;
       }
 
       // Proceed with booking update
@@ -1051,12 +1052,14 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                           <SelectValue placeholder="Not assigned to any agent" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Not assigned</SelectItem>
-                          {salesAgents.map((agent) => (
-                            <SelectItem key={agent.user_id} value={agent.user_id}>
-                              {agent.first_name} {agent.last_name}
-                            </SelectItem>
-                          ))}
+                          <SelectItem value="none">Not assigned</SelectItem>
+                          {salesAgents
+                            .filter((agent) => agent.user_id && agent.user_id.trim() !== '')
+                            .map((agent) => (
+                              <SelectItem key={agent.user_id} value={agent.user_id}>
+                                {agent.first_name} {agent.last_name}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                     </div>
