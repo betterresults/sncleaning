@@ -175,8 +175,8 @@ const AddCleanerPaymentDialog: React.FC<AddCleanerPaymentDialogProps> = ({ onPay
                   <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-full p-0" align="start">
-                <Command>
+              <PopoverContent className="w-full p-0 bg-popover z-50" align="start">
+                <Command shouldFilter={false}>
                   <CommandInput
                     placeholder="Search cleaner..."
                     value={cleanerSearch}
@@ -186,15 +186,18 @@ const AddCleanerPaymentDialog: React.FC<AddCleanerPaymentDialogProps> = ({ onPay
                     <CommandEmpty>No cleaner found.</CommandEmpty>
                     <CommandGroup className="max-h-48 overflow-auto">
                       {filteredCleaners.map((cleaner) => (
-                        <CommandItem
+                        <div
                           key={cleaner.id}
-                          onSelect={() => {
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
                             setSelectedCleaner(cleaner);
                             setCleanerDropdownOpen(false);
                           }}
+                          className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
                         >
                           {cleaner.first_name} {cleaner.last_name}
-                        </CommandItem>
+                        </div>
                       ))}
                     </CommandGroup>
                   </CommandList>
@@ -223,8 +226,8 @@ const AddCleanerPaymentDialog: React.FC<AddCleanerPaymentDialogProps> = ({ onPay
                   <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[450px] p-0" align="start">
-                <Command>
+              <PopoverContent className="w-[450px] p-0 bg-popover z-50" align="start">
+                <Command shouldFilter={false}>
                   <CommandInput
                     placeholder="Search by address, postcode, or ID..."
                     value={bookingSearch}
@@ -234,13 +237,15 @@ const AddCleanerPaymentDialog: React.FC<AddCleanerPaymentDialogProps> = ({ onPay
                     <CommandEmpty>No booking found.</CommandEmpty>
                     <CommandGroup className="max-h-64 overflow-auto">
                       {filteredBookings.slice(0, 50).map((booking) => (
-                        <CommandItem
+                        <div
                           key={booking.id}
-                          onSelect={() => {
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
                             setSelectedBooking(booking);
                             setBookingDropdownOpen(false);
                           }}
-                          className="flex flex-col items-start py-2"
+                          className="relative flex flex-col cursor-pointer select-none items-start rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
                         >
                           <div className="flex items-center gap-2 w-full">
                             <span className="font-medium">#{booking.id}</span>
@@ -258,7 +263,7 @@ const AddCleanerPaymentDialog: React.FC<AddCleanerPaymentDialogProps> = ({ onPay
                               Customer: {booking.first_name} {booking.last_name}
                             </div>
                           )}
-                        </CommandItem>
+                        </div>
                       ))}
                     </CommandGroup>
                   </CommandList>
