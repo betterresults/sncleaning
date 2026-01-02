@@ -234,7 +234,7 @@ const SentQuotesTab: React.FC<SentQuotesTabProps> = ({ agentUserId, isAgent = fa
     }
     
     // Navigate to admin domestic form with edit mode
-    navigate(`/admin/domestic-cleaning?${params.toString()}`);
+    navigate(`/admin/domestic?${params.toString()}`);
   };
 
   // Filter by time period
