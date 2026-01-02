@@ -56,6 +56,7 @@ interface BookingSubmission {
   sameDayTurnaround?: boolean;
   shortNoticeCharge?: number;
   serviceFrequency?: string; // weekly, biweekly, monthly, onetime
+  wantsFirstDeepClean?: boolean; // First clean as deep clean option
   weeklyCost?: number; // Recurring weekly cost (may include discounts)
   
   // Access
@@ -462,14 +463,15 @@ export const useAirbnbBookingSubmit = () => {
         // cleaning_type: For Airbnb = type of cleaning (checkin-checkout, midstay), For others = frequency or specific type
         cleaning_type: (() => {
           const subType = bookingData.subServiceType || 'airbnb';
-          // For Domestic bookings, use "Standard Cleaning" or "Deep Cleaning" based on serviceType/frequency
+          // For Domestic bookings: show frequency (weekly/biweekly/monthly/onetime)
+          // EXCEPT when "First Clean as Deep Clean" is selected, then show "Deep Cleaning"
           if (subType === 'domestic') {
-            // If serviceType explicitly says "deep", use Deep Cleaning
-            if (bookingData.serviceType?.toLowerCase().includes('deep')) {
+            // Check if first clean as deep clean is selected OR if it's onetime
+            if (bookingData.wantsFirstDeepClean || bookingData.serviceFrequency === 'onetime') {
               return 'Deep Cleaning';
             }
-            // Otherwise use Standard Cleaning for domestic
-            return 'Standard Cleaning';
+            // Otherwise show the frequency
+            return bookingData.serviceFrequency || 'onetime';
           }
           // For Airbnb, use the serviceType (checkin-checkout, midstay, etc.)
           return bookingData.serviceType || 'checkin-checkout';
