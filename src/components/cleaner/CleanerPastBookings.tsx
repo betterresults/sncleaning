@@ -205,21 +205,78 @@ const CleanerPastBookings = () => {
     try {
       console.log('Fetching past bookings for cleaner ID:', currentCleanerId);
       
-      // Only get past bookings that were assigned to this specific cleaner
-      const { data, error } = await supabase
-        .from('past_bookings')
+      // Get completed payments for this cleaner from cleaner_payments
+      const { data: paymentsData, error: paymentsError } = await supabase
+        .from('cleaner_payments')
         .select('*')
-        .eq('cleaner', currentCleanerId)
-        .order('date_time', { ascending: false });
+        .eq('cleaner_id', currentCleanerId)
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching past bookings:', error);
+      if (paymentsError) {
+        console.error('Error fetching cleaner payments:', paymentsError);
         setError('Failed to fetch past bookings');
         return;
       }
 
-      console.log('Past bookings data for cleaner:', data?.length || 0);
-      setBookings(data || []);
+      // Get booking details from past_bookings
+      const bookingIds = paymentsData?.map(p => p.booking_id) || [];
+      
+      if (bookingIds.length === 0) {
+        console.log('No completed payments found for cleaner');
+        setBookings([]);
+        setLoading(false);
+        return;
+      }
+
+      const { data: pastBookingsData, error: pastBookingsError } = await supabase
+        .from('past_bookings')
+        .select('*')
+        .in('id', bookingIds)
+        // Filter out cancelled bookings - cleaners shouldn't see them
+        .or('booking_status.is.null,booking_status.neq.cancelled')
+        .order('date_time', { ascending: false });
+
+      if (pastBookingsError) {
+        console.error('Error fetching past bookings details:', pastBookingsError);
+        setError('Failed to fetch past bookings');
+        return;
+      }
+
+      // Create a map of payments by booking_id for quick lookup
+      const paymentsMap = (paymentsData || []).reduce((acc, payment) => {
+        acc[payment.booking_id] = payment;
+        return acc;
+      }, {} as Record<number, any>);
+
+      // Combine past bookings with their payment data
+      const combinedBookings: PastBooking[] = (pastBookingsData || []).map(booking => {
+        const payment = paymentsMap[booking.id];
+        return {
+          id: booking.id,
+          date_time: booking.date_time,
+          time_only: booking.cleaning_time,
+          first_name: booking.first_name || '',
+          last_name: booking.last_name || '',
+          email: booking.email || '',
+          phone_number: booking.phone_number || '',
+          address: booking.address || '',
+          postcode: booking.postcode || '',
+          service_type: booking.service_type || '',
+          cleaning_type: booking.cleaning_type || '',
+          total_cost: booking.total_cost || '0',
+          // Use calculated_pay from cleaner_payments instead of past_bookings.cleaner_pay
+          cleaner_pay: payment ? Number(payment.calculated_pay) || 0 : 0,
+          payment_status: booking.payment_status || '',
+          booking_status: booking.booking_status || '',
+          has_photos: booking.has_photos || false,
+          customer: booking.customer,
+          cleaner: booking.cleaner
+        };
+      });
+
+      console.log('Past bookings data for cleaner:', combinedBookings.length);
+      setBookings(combinedBookings);
     } catch (error) {
       console.error('Error in fetchPastBookings:', error);
       setError('An unexpected error occurred');
