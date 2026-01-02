@@ -163,26 +163,32 @@ export const useDomesticHardcodedCalculations = (bookingData: DomesticBookingDat
       }
     }
 
+    // DOMESTIC-SPECIFIC EQUIPMENT PRICING
+    // One-time equipment charge for domestic is £15 (different from Airbnb)
+    const DOMESTIC_EQUIPMENT_ONETIME_CHARGE = 15;
+    const DOMESTIC_EQUIPMENT_ONGOING_CHARGE = 2.8; // Per hour addition
+
     let equipmentValue = 0;
     if (bookingData.cleaningProducts && Array.isArray(bookingData.cleaningProducts) && bookingData.cleaningProducts.includes('equipment')) {
       if (bookingData.equipmentArrangement) {
-        equipmentValue = getConfigValue('equipment arrangement', bookingData.equipmentArrangement);
+        // Use domestic-specific pricing instead of database config
+        if (bookingData.equipmentArrangement.toLowerCase() === 'oneoff' || bookingData.equipmentArrangement.toLowerCase() === 'one-off') {
+          equipmentValue = DOMESTIC_EQUIPMENT_ONETIME_CHARGE;
+        } else if (bookingData.equipmentArrangement.toLowerCase() === 'ongoing') {
+          equipmentValue = DOMESTIC_EQUIPMENT_ONGOING_CHARGE;
+        } else {
+          // Fallback to config if different arrangement type
+          equipmentValue = getConfigValue('equipment arrangement', bookingData.equipmentArrangement);
+        }
       }
     }
 
-    // Determine if equipment is ongoing or one-time
-    const equipmentConfigs = allConfigs.filter((cfg: any) => 
-      String(cfg.category || '').toLowerCase() === 'equipment arrangement'
-    );
-    const equipmentValues = equipmentConfigs.map((cfg: any) => cfg?.value || 0).sort((a, b) => a - b);
-    const smallerEquipmentValue = equipmentValues[0] || 0;
-    const largerEquipmentValue = equipmentValues[1] || 0;
-
+    // Determine if equipment is ongoing or one-time based on arrangement selection
     let equipmentHourlyAddition = 0;
     let equipmentOneTimeCost = 0;
     
     if (equipmentValue > 0) {
-      if (equipmentValue <= smallerEquipmentValue || (equipmentValue < largerEquipmentValue && Math.abs(equipmentValue - smallerEquipmentValue) < Math.abs(equipmentValue - largerEquipmentValue))) {
+      if (bookingData.equipmentArrangement?.toLowerCase() === 'ongoing') {
         equipmentHourlyAddition = equipmentValue;
       } else {
         equipmentOneTimeCost = equipmentValue;
