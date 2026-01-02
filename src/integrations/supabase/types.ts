@@ -1264,6 +1264,7 @@ export type Database = {
           invoiless_id: string | null
           last_name: string | null
           phone: string | null
+          source: string | null
           whatsapp: string | null
         }
         Insert: {
@@ -1280,6 +1281,7 @@ export type Database = {
           invoiless_id?: string | null
           last_name?: string | null
           phone?: string | null
+          source?: string | null
           whatsapp?: string | null
         }
         Update: {
@@ -1296,6 +1298,7 @@ export type Database = {
           invoiless_id?: string | null
           last_name?: string | null
           phone?: string | null
+          source?: string | null
           whatsapp?: string | null
         }
         Relationships: []

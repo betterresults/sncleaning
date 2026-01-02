@@ -23,6 +23,7 @@ interface CustomerData {
   postcode?: string;
   client_status: string;
   full_name: string;
+  source?: string;
   booking_count?: number;
   upcoming_bookings?: number;
 }
@@ -52,7 +53,8 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess, r
     email: '',
     phone: '',
     address: '',
-    postcode: ''
+    postcode: '',
+    source: ''
   });
   const { toast } = useToast();
   const { paymentData, loading: paymentDataLoading } = useCustomerPaymentMethods(customers.map(c => c.id));
@@ -118,6 +120,7 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess, r
           phone: formatPhoneToInternational(newCustomer.phone),
           address: newCustomer.address,
           postcode: newCustomer.postcode,
+          source: newCustomer.source || null,
           client_status: 'Current'
         })
         .select();
@@ -135,7 +138,8 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess, r
         email: '', 
         phone: '', 
         address: '', 
-        postcode: '' 
+        postcode: '',
+        source: ''
       });
       fetchCustomers();
     } catch (error: any) {
@@ -195,7 +199,8 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess, r
       phone: customer.phone,
       address: customer.address,
       postcode: customer.postcode,
-      client_status: customer.client_status
+      client_status: customer.client_status,
+      source: customer.source
     });
   };
 
@@ -323,6 +328,18 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess, r
               />
             </div>
           </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
+            <div>
+              <Label htmlFor="customerSource" className="text-sm">Source</Label>
+              <Input
+                id="customerSource"
+                placeholder="e.g. Facebook ads, Organic, Referral"
+                value={newCustomer.source}
+                onChange={(e) => setNewCustomer({ ...newCustomer, source: e.target.value })}
+                className="text-sm"
+              />
+            </div>
+          </div>
           <Button
             onClick={async () => {
               await createCustomer();
@@ -400,6 +417,14 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess, r
                           className="text-sm"
                         />
                       </div>
+                      <div>
+                        <Input
+                          placeholder="Source (e.g. Facebook ads)"
+                          value={editCustomerData.source || ''}
+                          onChange={(e) => setEditCustomerData({ ...editCustomerData, source: e.target.value })}
+                          className="text-sm"
+                        />
+                      </div>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-2">
                       <Button 
@@ -433,6 +458,7 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess, r
                         </div>
                         <div className="text-xs text-gray-400">
                           ID: {customer.id} • Bookings: {customer.booking_count || 0}
+                          {customer.source && <> • Source: {customer.source}</>}
                         </div>
                       </div>
                       <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-2 lg:items-end">
