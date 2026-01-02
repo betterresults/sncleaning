@@ -626,7 +626,6 @@ const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false, 
             </CardHeader>
             <CardContent className="pb-3 px-3 sm:pb-4 sm:px-4">
               <div className="text-3xl sm:text-4xl font-bold">{filteredStats.totalBookings}</div>
-              <p className="text-xs opacity-75 mt-1">Matching filters</p>
             </CardContent>
           </Card>
 
@@ -639,7 +638,6 @@ const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false, 
             </CardHeader>
             <CardContent className="pb-3 px-3 sm:pb-4 sm:px-4">
               <div className="text-2xl sm:text-3xl font-bold">£{filteredStats.totalRevenue.toFixed(2)}</div>
-              <p className="text-xs opacity-75 mt-1">Matching filters</p>
             </CardContent>
           </Card>
 
@@ -652,7 +650,6 @@ const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false, 
             </CardHeader>
             <CardContent className="pb-3 px-3 sm:pb-4 sm:px-4">
               <div className="text-3xl sm:text-4xl font-bold">{filteredStats.unpaidCount}</div>
-              <p className="text-xs opacity-75 mt-1">Pending payment</p>
             </CardContent>
           </Card>
         </div>
