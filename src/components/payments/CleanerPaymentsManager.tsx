@@ -14,6 +14,42 @@ import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { Calendar, DollarSign, Clock, User, Edit2, Check, X, MapPin, CalendarIcon, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// Helper to format service type for display
+const formatServiceType = (serviceType: string | null | undefined): string => {
+  if (!serviceType) return 'Unknown';
+  
+  const normalized = serviceType.toLowerCase().replace(/_/g, ' ').trim();
+  
+  if (normalized.includes('airbnb') || normalized.includes('air bnb')) {
+    return 'Airbnb Cleaning';
+  }
+  if (normalized.includes('domestic')) {
+    return 'Domestic Cleaning';
+  }
+  if (normalized.includes('end of tenancy') || normalized.includes('eot')) {
+    return 'End of Tenancy';
+  }
+  if (normalized.includes('commercial')) {
+    return 'Commercial Cleaning';
+  }
+  if (normalized.includes('carpet')) {
+    return 'Carpet Cleaning';
+  }
+  if (normalized.includes('standard') || normalized.includes('regular')) {
+    return 'Domestic Cleaning';
+  }
+  if (normalized.includes('deep')) {
+    return 'Deep Cleaning';
+  }
+  
+  // Capitalize first letter of each word as fallback
+  return serviceType
+    .replace(/_/g, ' ')
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
+
 interface Cleaner {
   id: number;
   first_name: string;
@@ -136,11 +172,9 @@ const BookingPaymentCard: React.FC<BookingPaymentCardProps> = ({ booking, onUpda
             </div>
             
             <div className="flex items-center gap-2 flex-wrap">
-              {booking.service_type && (
-                <Badge variant="outline" className="text-xs">
-                  {booking.service_type}
-                </Badge>
-              )}
+              <Badge variant="outline" className="text-xs">
+                {formatServiceType(booking.service_type)}
+              </Badge>
               {customerName && (
                 <span className="text-sm text-muted-foreground">
                   <User className="h-3 w-3 inline mr-1" />
