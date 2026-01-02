@@ -575,11 +575,12 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
         const serviceBadgeColor = serviceTypes ? getBadgeColor(booking.service_type, serviceTypes) : 'bg-gray-500 text-white';
         const serviceLabel = getServiceTypeLabel(booking.service_type);
         const cleaningLabel = getCleaningTypeLabel(booking.cleaning_type);
+        const isCancelled = booking.booking_status?.toLowerCase() === 'cancelled' || booking.booking_status?.toLowerCase() === 'canceled';
 
         return (
           <div
             key={booking.id} 
-            className="bg-card rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.18)] hover:-translate-y-1 transition-all duration-200 border-none overflow-hidden"
+            className={`bg-card rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.18)] hover:-translate-y-1 transition-all duration-200 border-none overflow-hidden ${isCancelled ? 'opacity-60 border-2 border-red-300' : ''}`}
           >
             {/* Desktop Layout */}
             <div className="hidden lg:grid lg:grid-cols-[100px_1fr_2fr_15%_16%_15%_40px] items-center gap-3 p-0">
@@ -600,9 +601,16 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
 
               {/* Customer Name */}
               <div className="py-4">
-                <h3 className="text-lg font-bold text-foreground leading-tight">
-                  {booking.first_name} {booking.last_name}
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-foreground leading-tight">
+                    {booking.first_name} {booking.last_name}
+                  </h3>
+                  {isCancelled && (
+                    <Badge variant="destructive" className="text-xs font-medium px-2 py-0.5">
+                      Cancelled
+                    </Badge>
+                  )}
+                </div>
                 <div className="flex items-center gap-2 mt-2">
                   <Popover>
                     <PopoverTrigger asChild>
@@ -790,9 +798,16 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
                   
                   {/* Customer Name */}
                   <div>
-                    <h3 className="text-base font-bold text-foreground">
-                      {booking.first_name} {booking.last_name}
-                    </h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-foreground">
+                        {booking.first_name} {booking.last_name}
+                      </h3>
+                      {isCancelled && (
+                        <Badge variant="destructive" className="text-xs font-medium px-2 py-0.5">
+                          Cancelled
+                        </Badge>
+                      )}
+                    </div>
                     <div className="flex items-center gap-2 mt-1">
                       <Popover>
                         <PopoverTrigger asChild>
