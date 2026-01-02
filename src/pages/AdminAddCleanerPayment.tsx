@@ -14,7 +14,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowLeft, ChevronDown, User, Calendar, MapPin, DollarSign, Clock, CreditCard } from 'lucide-react';
+import { ArrowLeft, ChevronDown, User, Calendar, MapPin, DollarSign, Clock, CreditCard, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
 import { Badge } from '@/components/ui/badge';
@@ -91,8 +91,8 @@ const AdminAddCleanerPayment = () => {
   };
 
   const handleSubmit = async () => {
-    if (!selectedCleanerId || !selectedBooking) {
-      toast.error('Please select both a cleaner and a booking');
+    if (!selectedCleanerId) {
+      toast.error('Please select a cleaner');
       return;
     }
 
@@ -101,42 +101,60 @@ const AdminAddCleanerPayment = () => {
       return;
     }
 
-    const hours = hoursWorked ? parseFloat(hoursWorked) : (selectedBooking.total_hours || 0);
+    const hours = hoursWorked ? parseFloat(hoursWorked) : (selectedBooking?.total_hours || 0);
     const payAmount = parseFloat(cleanerPay);
 
     setSubmitting(true);
     try {
-      // Update past_bookings with cleaner assignment
-      const { error: bookingError } = await supabase
-        .from('past_bookings')
-        .update({
-          cleaner: selectedCleanerId,
-          cleaner_pay: payAmount,
-          cleaner_pay_status: paymentStatus
-        })
-        .eq('id', selectedBooking.id);
+      // If a booking is selected, update past_bookings
+      if (selectedBooking) {
+        const { error: bookingError } = await supabase
+          .from('past_bookings')
+          .update({
+            cleaner: selectedCleanerId,
+            cleaner_pay: payAmount,
+            cleaner_pay_status: paymentStatus
+          })
+          .eq('id', selectedBooking.id);
 
-      if (bookingError) throw bookingError;
+        if (bookingError) throw bookingError;
 
-      // Also create a cleaner_payments record for proper tracking
-      const { error: paymentError } = await supabase
-        .from('cleaner_payments')
-        .upsert({
-          booking_id: selectedBooking.id,
-          cleaner_id: selectedCleanerId,
-          payment_type: 'fixed',
-          fixed_amount: payAmount,
-          hours_assigned: hours,
-          calculated_pay: payAmount,
-          is_primary: false,
-          status: paymentStatus === 'Paid' ? 'paid' : 'assigned'
-        }, {
-          onConflict: 'booking_id,cleaner_id'
-        });
+        // Also create a cleaner_payments record for proper tracking
+        const { error: paymentError } = await supabase
+          .from('cleaner_payments')
+          .upsert({
+            booking_id: selectedBooking.id,
+            cleaner_id: selectedCleanerId,
+            payment_type: 'fixed',
+            fixed_amount: payAmount,
+            hours_assigned: hours,
+            calculated_pay: payAmount,
+            is_primary: false,
+            status: paymentStatus === 'Paid' ? 'paid' : 'assigned'
+          }, {
+            onConflict: 'booking_id,cleaner_id'
+          });
 
-      if (paymentError) {
-        console.error('Error creating cleaner_payments record:', paymentError);
-        // Don't fail the whole operation if cleaner_payments fails
+        if (paymentError) {
+          console.error('Error creating cleaner_payments record:', paymentError);
+        }
+      } else {
+        // Standalone payment without booking - create cleaner_payments record only
+        // Use a placeholder booking_id (0) for standalone payments
+        const { error: paymentError } = await supabase
+          .from('cleaner_payments')
+          .insert({
+            booking_id: 0, // Placeholder for standalone payments
+            cleaner_id: selectedCleanerId,
+            payment_type: 'fixed',
+            fixed_amount: payAmount,
+            hours_assigned: hours,
+            calculated_pay: payAmount,
+            is_primary: false,
+            status: paymentStatus === 'Paid' ? 'paid' : 'assigned'
+          });
+
+        if (paymentError) throw paymentError;
       }
 
       toast.success('Payment record added successfully');
@@ -211,7 +229,7 @@ const AdminAddCleanerPayment = () => {
                   </Button>
                   <div>
                     <h1 className="text-2xl font-bold text-foreground">Add Cleaner Payment</h1>
-                    <p className="text-muted-foreground">Assign a cleaner to a past booking with payment details</p>
+                    <p className="text-muted-foreground">Assign a cleaner to a booking or add a standalone payment</p>
                   </div>
                 </div>
 
@@ -283,31 +301,33 @@ const AdminAddCleanerPayment = () => {
                       </Popover>
                     </div>
 
-                    {/* Booking Selection */}
+                    {/* Booking Selection (Optional) */}
                     <div className="space-y-3">
                       <Label className="text-base font-medium flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         Select Booking
+                        <span className="text-xs text-muted-foreground font-normal">(Optional - for standalone payments like bonuses)</span>
                       </Label>
-                      <Popover open={bookingDropdownOpen} onOpenChange={setBookingDropdownOpen}>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            className="w-full justify-between h-12 text-left font-normal"
-                          >
-                            {selectedBooking ? (
-                              <span className="truncate">
-                                {selectedBooking.first_name || selectedBooking.last_name 
-                                  ? `${selectedBooking.first_name || ''} ${selectedBooking.last_name || ''}`.trim()
-                                  : 'Unknown'} - {formatServiceType(selectedBooking.service_type)} - {selectedBooking.postcode || 'No postcode'}
-                              </span>
-                            ) : (
-                              "Select a booking..."
-                            )}
-                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
+                      <div className="flex gap-2">
+                        <Popover open={bookingDropdownOpen} onOpenChange={setBookingDropdownOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className="flex-1 justify-between h-12 text-left font-normal"
+                            >
+                              {selectedBooking ? (
+                                <span className="truncate">
+                                  {selectedBooking.first_name || selectedBooking.last_name 
+                                    ? `${selectedBooking.first_name || ''} ${selectedBooking.last_name || ''}`.trim()
+                                    : 'Unknown'} - {formatServiceType(selectedBooking.service_type)} - {selectedBooking.postcode || 'No postcode'}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">Select a booking (optional)...</span>
+                              )}
+                              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
                         <PopoverContent 
                           className="w-[500px] p-0 bg-popover z-50" 
                           align="start"
@@ -363,7 +383,18 @@ const AdminAddCleanerPayment = () => {
                           </Command>
                         </PopoverContent>
                       </Popover>
+                      {selectedBooking && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-12 w-12 shrink-0"
+                          onClick={() => setSelectedBooking(null)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
+                  </div>
 
                     {/* Selected Booking Details */}
                     {selectedBooking && (
@@ -475,7 +506,7 @@ const AdminAddCleanerPayment = () => {
                       </Button>
                       <Button 
                         onClick={handleSubmit} 
-                        disabled={submitting || !selectedCleanerId || !selectedBooking}
+                        disabled={submitting || !selectedCleanerId || !cleanerPay}
                         className="px-8"
                       >
                         {submitting ? 'Adding...' : 'Add Payment'}
