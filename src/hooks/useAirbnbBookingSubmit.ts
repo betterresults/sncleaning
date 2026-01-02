@@ -460,7 +460,20 @@ export const useAirbnbBookingSubmit = () => {
           return serviceTypeMap[subType] || subType;
         })(),
         // cleaning_type: For Airbnb = type of cleaning (checkin-checkout, midstay), For others = frequency or specific type
-        cleaning_type: bookingData.serviceType || 'checkin-checkout',
+        cleaning_type: (() => {
+          const subType = bookingData.subServiceType || 'airbnb';
+          // For Domestic bookings, use "Standard Cleaning" or "Deep Cleaning" based on serviceType/frequency
+          if (subType === 'domestic') {
+            // If serviceType explicitly says "deep", use Deep Cleaning
+            if (bookingData.serviceType?.toLowerCase().includes('deep')) {
+              return 'Deep Cleaning';
+            }
+            // Otherwise use Standard Cleaning for domestic
+            return 'Standard Cleaning';
+          }
+          // For Airbnb, use the serviceType (checkin-checkout, midstay, etc.)
+          return bookingData.serviceType || 'checkin-checkout';
+        })(),
         frequently: bookingData.serviceFrequency || 'onetime', // Default to onetime
         
         // Dates - stored as London time without timezone conversion
