@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { CalendarDays, DollarSign, TrendingUp, Clock, Calendar, CreditCard } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subMonths, addMonths, subDays, isAfter, startOfYear } from 'date-fns';
+import { formatServiceType } from '@/utils/bookingFormatters';
 
 interface EarningsData {
   upcomingPayment: {
@@ -524,7 +525,7 @@ const CleanerEarnings = () => {
                     </div>
                     <div className="flex justify-between text-sm text-gray-500">
                       <span>{format(new Date(job.date_time), 'dd/MM/yyyy')}</span>
-                      <span>{job.cleaning_type || 'Standard Cleaning'}</span>
+                      <span>{formatServiceType(job.cleaning_type)}</span>
                     </div>
                   </div>
                   
@@ -537,7 +538,7 @@ const CleanerEarnings = () => {
                       {format(new Date(job.date_time), 'dd/MM/yyyy')}
                     </div>
                     <div className="flex-1 text-sm text-gray-600 text-center">
-                      {job.cleaning_type || 'Standard Cleaning'}
+                      {formatServiceType(job.cleaning_type)}
                     </div>
                     <div className="flex-1 font-bold text-green-600 text-right">
                       £{Number(job.cleaner_pay)?.toFixed(2) || '0.00'}
