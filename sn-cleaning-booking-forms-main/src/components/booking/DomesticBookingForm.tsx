@@ -5,7 +5,7 @@ import { DomesticPropertyStep } from './steps/DomesticPropertyStep';
 import { ScheduleStep } from './steps/ScheduleStep';
 import { DomesticBookingSummary } from './DomesticBookingSummary';
 import { PaymentStep } from './steps/PaymentStep';
-import { Home, Calendar, CreditCard, ArrowLeft, Send } from 'lucide-react';
+import { Home, Calendar, CreditCard, ArrowLeft, Send, Save } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -133,6 +133,8 @@ const DomesticBookingForm: React.FC = () => {
   const [isQuoteLinkMode, setIsQuoteLinkMode] = useState(false);
   const [storedQuotePrice, setStoredQuotePrice] = useState<number | null>(null); // Exact price from quote link
   const [hasModifiedAfterLoad, setHasModifiedAfterLoad] = useState(false); // Track if user modified form after loading quote
+  const [editQuoteId, setEditQuoteId] = useState<string | null>(null); // Quote ID when editing from admin
+  const [isSavingQuote, setIsSavingQuote] = useState(false);
   
   // Quote lead tracking
   const { saveQuoteLead, trackStep, trackQuoteCalculated, markCompleted, trackBookingAttempt, initializeFromResume, markQuoteEmailSent, sessionId } = useQuoteLeadTracking('Domestic');
@@ -271,8 +273,15 @@ const DomesticBookingForm: React.FC = () => {
   // Resume from saved quote lead OR prefill from URL parameters
   useEffect(() => {
     const resumeSessionId = searchParams.get('resume');
+    const editQuoteIdParam = searchParams.get('editQuoteId');
     
-    // Check for URL parameter prefilling (from exit popup email)
+    // Check if we're in quote edit mode (from Sent Quotes admin tab)
+    if (editQuoteIdParam) {
+      setEditQuoteId(editQuoteIdParam);
+      console.log('[DomesticBookingForm] Quote edit mode, quoteId:', editQuoteIdParam);
+    }
+    
+    // Check for URL parameter prefilling (from exit popup email or edit quote)
     const hasUrlPrefill = searchParams.get('propertyType') || searchParams.get('bedrooms') || searchParams.get('postcode');
     
     if (hasUrlPrefill) {
@@ -786,6 +795,78 @@ const DomesticBookingForm: React.FC = () => {
     }
   };
 
+  // Save quote function (for editing existing quotes from admin)
+  const handleSaveQuote = async () => {
+    if (!editQuoteId) return;
+    
+    setIsSavingQuote(true);
+    try {
+      const { toast } = await import('sonner');
+      
+      // Map frequency to DB format
+      const frequencyMap: Record<string, string> = {
+        'weekly': 'Weekly',
+        'biweekly': 'Fortnightly', 
+        'monthly': 'Monthly',
+        'onetime': 'One-off',
+      };
+      
+      // Map property type to DB format
+      const propertyTypeMap: Record<string, string> = {
+        'flat': 'Flat',
+        'house': 'House',
+      };
+      
+      const updateData = {
+        first_name: bookingData.firstName || null,
+        last_name: bookingData.lastName || null,
+        email: bookingData.email || null,
+        phone: bookingData.phone || null,
+        postcode: bookingData.postcode || null,
+        address: bookingData.houseNumber && bookingData.street 
+          ? `${bookingData.houseNumber} ${bookingData.street}${bookingData.city ? `, ${bookingData.city}` : ''}`
+          : null,
+        property_type: propertyTypeMap[bookingData.propertyType] || bookingData.propertyType || null,
+        bedrooms: bookingData.bedrooms ? parseInt(bookingData.bedrooms) : null,
+        bathrooms: bookingData.bathrooms ? parseInt(bookingData.bathrooms) : null,
+        toilets: bookingData.toilets ? parseInt(bookingData.toilets) : null,
+        frequency: frequencyMap[bookingData.serviceFrequency] || bookingData.serviceFrequency || null,
+        oven_cleaning: bookingData.hasOvenCleaning,
+        oven_size: bookingData.ovenType || null,
+        selected_date: bookingData.selectedDate ? bookingData.selectedDate.toISOString().split('T')[0] : null,
+        selected_time: bookingData.selectedTime || null,
+        is_flexible: bookingData.flexibility === 'flexible-time' || bookingData.flexibility === 'flexible-date',
+        property_access: bookingData.propertyAccess || null,
+        access_notes: bookingData.accessNotes || null,
+        calculated_quote: calculatedTotal,
+        recommended_hours: bookingData.estimatedHours || null,
+        first_deep_clean: bookingData.wantsFirstDeepClean,
+        weekly_cost: bookingData.weeklyCost || null,
+        weekly_hours: bookingData.wantsFirstDeepClean && bookingData.estimatedHours 
+          ? bookingData.estimatedHours 
+          : null,
+        short_notice_charge: bookingData.shortNoticeCharge || null,
+        updated_at: new Date().toISOString(),
+      };
+      
+      const { error } = await supabase
+        .from('quote_leads')
+        .update(updateData)
+        .eq('id', editQuoteId);
+      
+      if (error) throw error;
+      
+      toast.success('Quote updated successfully');
+      navigate('/admin-quote-leads');
+    } catch (error) {
+      console.error('Error updating quote:', error);
+      const { toast } = await import('sonner');
+      toast.error('Failed to update quote');
+    } finally {
+      setIsSavingQuote(false);
+    }
+  };
+
   const renderStep = () => {
     switch (currentStep) {
       case 1:
@@ -842,7 +923,31 @@ const DomesticBookingForm: React.FC = () => {
       <header className="bg-white py-4 mb-3 border-b border-border">
         <div className="container mx-auto px-2 sm:px-4">
           <div className="flex items-center justify-between mb-4">
-            {isAdminMode ? (
+            {editQuoteId ? (
+              // Edit Quote Mode - show back and save buttons
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate('/admin-quote-leads')}
+                  className="text-sm font-medium hover:bg-accent/50 transition-all duration-200 shadow-sm"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Quotes
+                </Button>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700">
+                  <span className="sm:hidden">Edit Quote</span>
+                  <span className="hidden sm:inline">Edit Quote</span>
+                </h1>
+                <Button
+                  onClick={handleSaveQuote}
+                  disabled={isSavingQuote}
+                  className="text-sm font-medium bg-green-600 hover:bg-green-700 text-white transition-all duration-200 shadow-sm"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {isSavingQuote ? 'Saving...' : 'Save Quote'}
+                </Button>
+              </>
+            ) : isAdminMode ? (
               <>
                 <Button
                   variant="outline"
