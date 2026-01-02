@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Mail, Send, CheckCircle2, Link2, MessageSquare, Loader2, Calendar, Home, Clock, Eye } from "lucide-react";
+import { Mail, Send, CheckCircle2, Link2, MessageSquare, Loader2, Calendar, Home, Clock, Eye, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -128,6 +128,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [flexibleTimeOverride, setFlexibleTimeOverride] = useState(false); // Allow admin to set flexible time from dialog
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
+  const [isCopyingLink, setIsCopyingLink] = useState(false);
   const { toast } = useToast();
   
   // Check if there's already a quote/link sent for this session
@@ -455,6 +456,28 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
     }
   };
 
+  // Generate link and copy to clipboard without sending
+  const handleCopyLink = async () => {
+    setIsCopyingLink(true);
+    try {
+      const shortUrl = await saveQuoteAndGetShortUrl();
+      await navigator.clipboard.writeText(shortUrl);
+      toast({
+        title: "Link Copied!",
+        description: "The booking link has been copied to your clipboard.",
+      });
+    } catch (error: any) {
+      console.error('Error copying link:', error);
+      toast({
+        title: "Failed to Copy",
+        description: "Could not generate or copy the link. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCopyingLink(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-lg rounded-2xl border-0 p-0 overflow-hidden shadow-2xl">
@@ -628,25 +651,45 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                 </div>
               )}
 
-              {/* Preview Link Button */}
-              <Button
-                onClick={handlePreviewLink}
-                disabled={isGeneratingPreview}
-                variant="outline"
-                className="w-full h-11 rounded-xl border-slate-200 hover:border-primary hover:bg-primary/5 transition-all"
-              >
-                {isGeneratingPreview ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Generating Preview...
-                  </>
-                ) : (
-                  <>
-                    <Eye className="w-4 h-4 mr-2" />
-                    Preview Link (opens in new tab)
-                  </>
-                )}
-              </Button>
+              {/* Preview & Copy Link Buttons */}
+              <div className="flex gap-2">
+                <Button
+                  onClick={handlePreviewLink}
+                  disabled={isGeneratingPreview || isCopyingLink}
+                  variant="outline"
+                  className="flex-1 h-11 rounded-xl border-slate-200 hover:border-primary hover:bg-primary/5 transition-all"
+                >
+                  {isGeneratingPreview ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Opening...
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="w-4 h-4 mr-2" />
+                      Preview
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={handleCopyLink}
+                  disabled={isGeneratingPreview || isCopyingLink}
+                  variant="outline"
+                  className="flex-1 h-11 rounded-xl border-slate-200 hover:border-green-500 hover:bg-green-50 transition-all"
+                >
+                  {isCopyingLink ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Copying...
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy Link
+                    </>
+                  )}
+                </Button>
+              </div>
 
               {/* Option buttons */}
               <div className="grid grid-cols-1 gap-3">
