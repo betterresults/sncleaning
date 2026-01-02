@@ -78,12 +78,12 @@ const Dashboard = () => {
                 {/* Statistics - Last 30 Days - ONLY for admins */}
                 {userRole === 'admin' && <DashboardStats />}
                 
-                {/* Booked Today - bookings submitted today */}
+                {/* Today's Bookings */}
                 <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0">
                   <CardHeader className="flex flex-row items-center justify-between pb-3">
                     <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                      <Plus className="h-5 w-5" />
-                      Booked Today
+                      <Calendar className="h-5 w-5" />
+                      Today's Bookings
                     </CardTitle>
                     <Button 
                       onClick={() => navigate('/admin-add-booking')}
@@ -92,22 +92,6 @@ const Dashboard = () => {
                       <Plus className="h-4 w-4" />
                       New Booking
                     </Button>
-                  </CardHeader>
-                  <CardContent className="p-4 sm:p-6 pt-0 pb-4">
-                    <BookingsListView 
-                      dashboardDateFilter={todayRange}
-                      filterBySubmissionDate={true}
-                    />
-                  </CardContent>
-                </Card>
-
-                {/* Today's Bookings - bookings scheduled for today */}
-                <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0">
-                  <CardHeader className="flex flex-row items-center justify-between pb-3">
-                    <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                      <Calendar className="h-5 w-5" />
-                      Today's Bookings
-                    </CardTitle>
                   </CardHeader>
                   <CardContent className="p-4 sm:p-6 pt-0 pb-4">
                     <BookingsListView 

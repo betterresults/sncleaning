@@ -151,6 +151,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   const [dayBookingsDialogOpen, setDayBookingsDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedDayBookings, setSelectedDayBookings] = useState<Booking[]>([]);
+  const [showBookedToday, setShowBookedToday] = useState(false);
   const { toast } = useToast();
 
   // Setup calendar localizer
@@ -725,13 +726,23 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
           setCurrentPage(1);
         }}
         onBulkEditClick={() => navigate('/bulk-edit-bookings')}
+        showBookedToday={showBookedToday}
+        onShowBookedTodayChange={setShowBookedToday}
       />
 
       <div className="bg-white rounded-xl border-0 shadow-sm overflow-hidden">
           {viewMode === 'list' ? (
             <BookingsListView 
-              dashboardDateFilter={dashboardDateFilter}
+              dashboardDateFilter={showBookedToday ? (() => {
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                return {
+                  dateFrom: today.toISOString(),
+                  dateTo: new Date(today.getTime() + 24 * 60 * 60 * 1000 - 1).toISOString()
+                };
+              })() : dashboardDateFilter}
               initialCleanerFilter={filters.cleanerId}
+              filterBySubmissionDate={showBookedToday}
             />
           ) : (
             <div className="p-4" style={{ height: '600px' }}>
