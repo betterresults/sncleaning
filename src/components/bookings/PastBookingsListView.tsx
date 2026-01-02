@@ -959,7 +959,7 @@ const PastBookingsListView = ({ dashboardDateFilter }: PastBookingsListViewProps
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-6 px-4">
           <div className="text-sm text-muted-foreground">
-            Showing {startIndex + 1}-{Math.min(endIndex, bookings.length)} of {bookings.length} bookings
+            Showing {startIndex + 1}-{Math.min(endIndex, displayBookings.length)} of {displayBookings.length} bookings
           </div>
           <div className="flex gap-2">
             <Button
