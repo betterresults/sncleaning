@@ -37,7 +37,7 @@ const PastBookingsStats = () => {
       // Build query for past bookings in selected month
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('past_bookings')
-        .select('total_cost, payment_status, date_only')
+        .select('total_cost, payment_status, date_only, booking_status')
         .gte('date_only', dateFrom)
         .lte('date_only', dateTo);
 
@@ -46,14 +46,20 @@ const PastBookingsStats = () => {
         return;
       }
 
-      // Calculate stats
-      const totalBookings = bookingsData?.length || 0;
-      const monthlyRevenue = bookingsData?.reduce((sum, booking) => {
+      // Filter out cancelled bookings for revenue calculations
+      const activeBookings = bookingsData?.filter(booking => {
+        const status = booking.booking_status?.toLowerCase();
+        return status !== 'cancelled' && status !== 'canceled';
+      }) || [];
+
+      // Calculate stats - exclude cancelled from revenue and counts
+      const totalBookings = activeBookings.length;
+      const monthlyRevenue = activeBookings.reduce((sum, booking) => {
         return sum + (parseFloat(String(booking.total_cost)) || 0);
-      }, 0) || 0;
-      const unpaidInvoices = bookingsData?.filter(booking => 
+      }, 0);
+      const unpaidInvoices = activeBookings.filter(booking => 
         booking.payment_status === 'Unpaid' || booking.payment_status === 'Not Paid'
-      ).length || 0;
+      ).length;
 
       setStats({
         totalBookings,
