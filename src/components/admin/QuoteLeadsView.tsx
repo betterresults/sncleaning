@@ -6,13 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, subDays, startOfDay, endOfDay, subWeeks, subMonths, isWithinInterval } from 'date-fns';
-import { RefreshCw, Eye, MousePointerClick, TrendingUp, Trash2, Users, CheckCircle2, Home, Building, ChevronLeft, ChevronRight, Calendar, ArrowUpDown } from 'lucide-react';
+import { RefreshCw, Eye, MousePointerClick, TrendingUp, Trash2, Users, CheckCircle2, Home, Building, ChevronLeft, ChevronRight, Calendar, ArrowUpDown, Send } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import QuoteLeadCard from './QuoteLeadCard';
+import SentQuotesTab from './SentQuotesTab';
 
 type TimePeriod = 'today' | 'yesterday' | 'last_week' | 'last_month' | 'last_3_months' | 'all';
 
@@ -555,17 +556,25 @@ const QuoteLeadsView = ({ agentUserId, isAgent = false }: QuoteLeadsViewProps) =
       )}
 
       {/* Leads Section */}
-      <Tabs defaultValue="leads" className="space-y-4">
+      <Tabs defaultValue="sent_quotes" className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <TabsList className="bg-gray-100/80 p-1 rounded-xl">
+            <TabsTrigger value="sent_quotes" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 gap-1">
+              <Send className="h-4 w-4" />
+              Sent Quotes
+            </TabsTrigger>
             <TabsTrigger value="leads" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm px-4">
-              Quote Leads ({filteredLeads.length})
+              All Leads ({filteredLeads.length})
             </TabsTrigger>
             <TabsTrigger value="events" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm px-4">
               Events ({timeFilteredEvents.length})
             </TabsTrigger>
           </TabsList>
         </div>
+
+        <TabsContent value="sent_quotes" className="space-y-4">
+          <SentQuotesTab agentUserId={agentUserId} isAgent={isAgent} />
+        </TabsContent>
 
         <TabsContent value="leads" className="space-y-4">
           {/* Filters & Actions */}
