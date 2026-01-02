@@ -13,7 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import LinenManagementSelector from '@/components/booking/LinenManagementSelector';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { User, Calendar, MapPin, CreditCard, UserCheck, Clock, Home, Phone, Mail, AlertTriangle, Settings, Users } from 'lucide-react';
+import { User, Calendar, MapPin, CreditCard, UserCheck, Clock, Home, Phone, Mail, AlertTriangle, Settings, Users, Briefcase } from 'lucide-react';
 import SubCleanersList from '@/components/booking/SubCleanersList';
 import AddSubCleanerDialog from '@/components/booking/AddSubCleanerDialog';
 import { EmailNotificationConfirmDialog } from '@/components/notifications/EmailNotificationConfirmDialog';
@@ -38,10 +38,18 @@ interface Cleaner {
   presentage_rate: number;
 }
 
+interface SalesAgent {
+  user_id: string;
+  first_name: string;
+  last_name: string;
+}
+
 const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: EditBookingDialogProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
+  const [salesAgents, setSalesAgents] = useState<SalesAgent[]>([]);
+  const [selectedSalesAgent, setSelectedSalesAgent] = useState<string>('');
   const [isSameDayCleaning, setIsSameDayCleaning] = useState(false);
   const [subCleanersKey, setSubCleanersKey] = useState(0);
   
@@ -200,6 +208,44 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
     }
   }, [linkedCleaners]);
 
+  // Fetch sales agents for assignment dropdown
+  useEffect(() => {
+    const fetchSalesAgents = async () => {
+      try {
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select('user_id, role')
+          .in('role', ['sales_agent', 'admin']);
+        
+        if (roleError) throw roleError;
+        
+        const userIds = roleData?.map(r => r.user_id) || [];
+        if (userIds.length > 0) {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('user_id, first_name, last_name')
+            .in('user_id', userIds);
+          
+          if (profileError) throw profileError;
+          setSalesAgents(profileData || []);
+        }
+      } catch (error) {
+        console.error('Error fetching sales agents:', error);
+      }
+    };
+    
+    if (open) {
+      fetchSalesAgents();
+    }
+  }, [open]);
+
+  // Initialize sales agent from booking
+  useEffect(() => {
+    if (booking && open) {
+      setSelectedSalesAgent(booking.created_by_user_id || '');
+    }
+  }, [booking, open]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -271,37 +317,46 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         frequently = '';
       }
 
+      // Build update object with sales agent assignment if changed
+      const updateData: Record<string, any> = {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        phone_number: formData.phoneNumber,
+        address: formData.address,
+        postcode: formData.postcode,
+        date_time: convertToISOString(formData.dateTime),
+        total_hours: formData.totalHours,
+        total_cost: formData.totalCost,
+        discount: formData.discount,
+        cleaner_pay: formData.cleanerPay,
+        cleaner: formData.cleanerId,
+        cleaner_rate: formData.cleanerRate,
+        cleaner_percentage: formData.cleanerPercentage,
+        payment_method: formData.paymentMethod,
+        payment_status: formData.paymentStatus,
+        booking_status: formData.bookingStatus,
+        service_type: formData.formName,
+        cleaning_type: formData.cleaningType,
+        additional_details: formData.additionalDetails,
+        property_details: formData.propertyDetails,
+        deposit: formData.deposit,
+        linen_management: formData.linenManagement,
+        linen_used: formData.linenUsed,
+        frequently: frequently,
+        same_day: isSameDayCleaning
+      };
+
+      // Add sales agent assignment if changed
+      if (selectedSalesAgent !== (booking.created_by_user_id || '')) {
+        updateData.created_by_user_id = selectedSalesAgent || null;
+        updateData.created_by_source = selectedSalesAgent ? 'sales_agent' : null;
+      }
+
       // Proceed with booking update
       const { error } = await supabase
         .from('bookings')
-        .update({
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          email: formData.email,
-          phone_number: formData.phoneNumber,
-          address: formData.address,
-          postcode: formData.postcode,
-          date_time: convertToISOString(formData.dateTime),
-          total_hours: formData.totalHours,
-          total_cost: formData.totalCost,
-          discount: formData.discount,
-          cleaner_pay: formData.cleanerPay,
-          cleaner: formData.cleanerId,
-          cleaner_rate: formData.cleanerRate,
-          cleaner_percentage: formData.cleanerPercentage,
-          payment_method: formData.paymentMethod,
-          payment_status: formData.paymentStatus,
-          booking_status: formData.bookingStatus,
-          service_type: formData.formName,
-          cleaning_type: formData.cleaningType,
-          additional_details: formData.additionalDetails,
-          property_details: formData.propertyDetails,
-          deposit: formData.deposit,
-          linen_management: formData.linenManagement,
-          linen_used: formData.linenUsed,
-          frequently: frequently,
-          same_day: isSameDayCleaning
-        })
+        .update(updateData)
         .eq('id', booking.id);
 
       if (error) {
@@ -969,6 +1024,42 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                         Add Additional Cleaner
                       </Button>
                     </AddSubCleanerDialog>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              {/* Sales Agent Assignment Section */}
+              <AccordionItem value="sales-agent" className="border rounded-lg">
+                <AccordionTrigger className="px-6 py-4 bg-blue-50 hover:bg-blue-100 rounded-t-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-500 rounded-full">
+                      <Briefcase className="h-4 w-4 text-white" />
+                    </div>
+                    <span className="text-lg font-semibold text-blue-900">Sales Agent Assignment</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 py-4 bg-white">
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Assign this booking to a sales agent for tracking and commission purposes.
+                    </p>
+                    
+                    <div>
+                      <Label htmlFor="salesAgent" className="text-sm font-medium">Assigned Sales Agent</Label>
+                      <Select value={selectedSalesAgent} onValueChange={setSelectedSalesAgent}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Not assigned to any agent" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Not assigned</SelectItem>
+                          {salesAgents.map((agent) => (
+                            <SelectItem key={agent.user_id} value={agent.user_id}>
+                              {agent.first_name} {agent.last_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </AccordionContent>
               </AccordionItem>
